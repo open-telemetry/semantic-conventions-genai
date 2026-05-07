@@ -5710,6 +5710,7 @@ refinements:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
         conditionally_required: If provided by the application.
+      sampling_relevant: true
       stability: development
       type: string
     - brief: The version of the GenAI agent.
@@ -7096,6 +7097,7 @@ refinements:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
         conditionally_required: when available
+      sampling_relevant: true
       stability: development
       type: string
     - brief: The version of the GenAI agent.
@@ -7746,6 +7748,7 @@ refinements:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
         conditionally_required: when available
+      sampling_relevant: true
       stability: development
       type: string
     - brief: The version of the GenAI agent.
@@ -14639,6 +14642,7 @@ registry:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
         conditionally_required: If provided by the application.
+      sampling_relevant: true
       stability: development
       type: string
     - brief: The version of the GenAI agent.
@@ -16021,6 +16025,7 @@ registry:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
         conditionally_required: when available
+      sampling_relevant: true
       stability: development
       type: string
     - brief: The version of the GenAI agent.
@@ -16670,6 +16675,7 @@ registry:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
         conditionally_required: when available
+      sampling_relevant: true
       stability: development
       type: string
     - brief: The version of the GenAI agent.
