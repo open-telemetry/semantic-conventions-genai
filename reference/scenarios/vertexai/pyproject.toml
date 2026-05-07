@@ -3,7 +3,7 @@ name = "vertexai-reference-test"
 version = "0.0.0"
 requires-python = ">=3.12"
 dependencies = [
-    "google-cloud-aiplatform==1.149.0",
+    "google-cloud-aiplatform==1.150.0",
     "genai-reference-shared",
 ]
 

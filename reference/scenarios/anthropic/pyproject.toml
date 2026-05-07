@@ -3,7 +3,7 @@ name = "anthropic-reference-test"
 version = "0.0.0"
 requires-python = ">=3.12"
 dependencies = [
-    "anthropic==0.98.1",
+    "anthropic==0.100.0",
     "genai-reference-shared",
 ]
 
