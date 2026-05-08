@@ -3,7 +3,7 @@ name = "azure-ai-evaluation-reference-test"
 version = "0.0.0"
 requires-python = ">=3.12"
 dependencies = [
-    "azure-ai-evaluation==1.16.6",
+    "azure-ai-evaluation==1.16.7",
     "genai-reference-shared",
 ]
 
