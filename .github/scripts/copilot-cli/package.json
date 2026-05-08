@@ -4,6 +4,6 @@
   "private": true,
   "description": "Pinned install of @github/copilot CLI used by .github/workflows/pr-review-dashboard.yml",
   "dependencies": {
-    "@github/copilot": "1.0.40"
+    "@github/copilot": "1.0.43"
   }
 }
