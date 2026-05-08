@@ -1,0 +1,6 @@
+name: "CodeQL config"
+
+# The mock server under reference/src/semconv_genai/mock_server is local test
+# infrastructure used by the reference scenarios. Exclude it from analysis.
+paths-ignore:
+  - reference/src/semconv_genai/mock_server/**

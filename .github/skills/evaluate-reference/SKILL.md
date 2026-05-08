@@ -93,6 +93,19 @@ Flag it if it depends on app-specific naming, opaque identifiers, cached data fr
 7. For each library that was not implemented, decide whether it is out of scope, not yet implemented here, or a missed supporting library.
 8. Prefer these outcomes in order: `fix implementation` -> `add missing supporting library` -> `leave unchanged; honest capture gap`.
 
+## Implementation Defects To Flag
+
+Beyond attribute coverage, flag these implementation-shape defects:
+
+- **Span not wrapping the SDK call.** The span must be open around the library invocation, with request attributes set inline before the call and response attributes set from the returned object inside the same `with` / `using` block. A scenario that captures the response, closes (or never opened) the span, and then replays attributes onto a separately-opened or post-hoc span is a defect, even if the final attribute set looks correct.
+- **Private API as scenario entry point.** The scenario must invoke the library's public API. Patching private methods to open spans around them is acceptable, but the scenario calling private methods directly is a defect — it does not credibly demonstrate what native instrumentation could capture.
+
+## Not Defects
+
+Do not flag these as problems:
+
+- **Library-native sibling spans.** Extra spans produced by the library's natural execution shape — worker tasks that run after planning, retries, converters, fall-through paths — are honest reference data, not noise. If invoking the public entry point produces extra LLM round-trips beyond the one being demonstrated, accept them.
+
 ## Determining the PR Changeset
 
 Use `gh pr diff <number>` (not `git diff main`) to get the changeset. A stale local `main` causes `git diff main` to include unrelated commits.

@@ -544,8 +544,11 @@ def compute_facts(raw: dict[str, Any], author: str, events: list[dict[str, Any]]
     approver_activity_ts = latest_substantive_activity(events, {"approver"})
     external_activity_ts = latest_substantive_activity(events, {"outsider"})
     api_author = actor_login(pr.get("author") or {})
+    assignees = [actor_login(a) for a in (pr.get("assignees") or [])]
+    assignees = [a for a in assignees if a]
     return {
         "author": author,
+        "assignees": assignees,
         "is_otelbot_author": api_author.lower() == "app/otelbot",
         "is_draft": bool(pr.get("isDraft")),
         "approved": pr.get("reviewDecision") == "APPROVED",
@@ -1101,8 +1104,8 @@ def render_markdown_compact(
         rows.sort(key=row_sort_key, reverse=True)
         out.append(f"## {SIDE_LABELS.get(side, side)}")
         out.append("")
-        out.append("| PR | Author | CI | Conflicts | Age |")
-        out.append("|---|---|:---:|:---:|:---:|")
+        out.append("| PR | Author | Assignees | CI | Conflicts | Age |")
+        out.append("|---|---|---|:---:|:---:|:---:|")
         for pr in rows:
             number = pr["number"]
             title = _md_escape(pr.get("title", ""))
@@ -1110,12 +1113,16 @@ def render_markdown_compact(
             res = results.get(number) or {}
             facts = res.get("facts") or {}
             author = facts.get("author") or actor_login(pr.get("author") or {})
+            assignees = facts.get("assignees") or [
+                actor_login(a) for a in (pr.get("assignees") or [])
+            ]
+            assignees_cell = _md_escape(", ".join(a for a in assignees if a))
             activity_cell = age_cell(facts)
             pr_cell = f"[{title} (#{number})]({url})"
             if facts.get("approved"):
                 pr_cell += " ✅"
             out.append(
-                f"| {pr_cell} | {author} | {ci_cell(facts)} | "
+                f"| {pr_cell} | {author} | {assignees_cell} | {ci_cell(facts)} | "
                 f"{conflicts_cell(facts)} | {activity_cell} |"
             )
         out.append("")

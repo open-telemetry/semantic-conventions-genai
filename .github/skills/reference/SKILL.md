@@ -42,6 +42,8 @@ If the value would have to be guessed, carried forward from an unrelated call, o
 
 When editing reference tests in this repository:
 
+- Open the span **around** the SDK call, not after it. Set request attributes inline before invoking the library, invoke the library inside the `with` block, then set response attributes from the returned object inside the same `with` block. Do not capture a completion and replay attribute emission against it after the span has closed or against a separately-opened span.
+- When the library's public entry point does not expose the operation directly (for example, an internal-only span boundary inside a library helper), it is acceptable to patch the library's private methods to open spans around them. The scenario itself must still invoke the **public** API. Do not call private methods directly from the scenario.
 - Emit attributes inline at the span or activity site.
 - Keep request, derived, and response attributes close together.
 - Reuse the same current-call variable that the SDK call uses when emitting request attributes.
@@ -67,6 +69,8 @@ When editing reference tests in this repository:
 The default expectation is repository-wide reference coverage for all supporting libraries, not a single illustrative example.
 
 When the same semantic-convention change applies to multiple ecosystems, look for parallel implementations instead of stopping after the first passing library.
+
+Prefer the library's natural execution shape over surgical paths that minimize trace output. Sibling spans from worker tasks, retries, converters, fall-through paths, and similar library-native behavior are honest reference data, not noise to suppress. If invoking the public entry point produces extra LLM round-trips or extra spans beyond the one being demonstrated, accept them.
 
 ## Output Format
 

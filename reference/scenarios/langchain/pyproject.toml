@@ -3,7 +3,7 @@ name = "langchain-reference-test"
 version = "0.0.0"
 requires-python = ">=3.12"
 dependencies = [
-    "langchain==1.2.17",
+    "langchain==1.2.18",
     "langchain-openai==1.2.1",
     "openai==2.36.0",
     "genai-reference-shared",

@@ -4,6 +4,11 @@
     "config:recommended",
     "helpers:pinGitHubActionDigestsToSemver"
   ],
+  // Security updates are owned by Dependabot. See .github/DEPENDENCIES.md.
+  "vulnerabilityAlerts": {
+    "enabled": false
+  },
+  "osvVulnerabilityAlerts": false,
   "customManagers": [
     {
       "customType": "regex",
@@ -39,8 +44,8 @@
     {
       "groupName": "GitHub Actions",
       "commitMessageTopic": "GitHub Actions",
-      "matchManagers": [
-        "github-actions"
+      "matchFileNames": [
+        ".github/**"
       ],
       "schedule": [
         "* * 2 * *"
