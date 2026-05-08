@@ -131,11 +131,7 @@ RESPONSES_RESPONSE = {
 }
 
 
-def _mock_chat_content(body):
-    message_text = "\n".join(
-        message.get("content", "") for message in body.get("messages", []) if isinstance(message.get("content"), str)
-    )
-
+def _mock_chat_content(body, message_text):
     # CrewAI converter retry: when convert_with_instructions builds a
     # Converter and calls to_pydantic(), the LLM call carries CrewAI's
     # schema-conversion system prompt ("Format your final answer ...", from
@@ -305,11 +301,11 @@ def chat_completions(deployment=None):
     # builds a Converter that issues a third LLM call with the schema-
     # conversion system prompt ("Format your final answer ..."). Three real
     # LLM round-trips through CrewAI's NATURAL agent flow, all under one
-    # plan span. The [FORCE_PLANNER_RETRY] sentinel scopes the malformed
+    # plan span. The [FORCE_PLANNER_MULTI_CALL] sentinel scopes the malformed
     # behavior to this scenario only; other crewai paths see the standard
     # planner branch below.
     if (
-        "[FORCE_PLANNER_RETRY]" in message_text
+        "[FORCE_PLANNER_MULTI_CALL]" in message_text
         and "Task Execution Planner" in message_text
         and body.get("response_format")
     ):
@@ -320,7 +316,7 @@ def chat_completions(deployment=None):
         return resp
 
     if (
-        "[FORCE_PLANNER_RETRY]" in message_text
+        "[FORCE_PLANNER_MULTI_CALL]" in message_text
         and "Task Execution Planner" in message_text
         and not body.get("response_format")
     ):
@@ -337,7 +333,7 @@ def chat_completions(deployment=None):
     resp = dict(CHAT_RESPONSE)
     resp["model"] = body.get("model", resp["model"])
     resp["choices"] = copy.deepcopy(resp["choices"])
-    resp["choices"][0]["message"]["content"] = _mock_chat_content(body)
+    resp["choices"][0]["message"]["content"] = _mock_chat_content(body, message_text)
     return resp
 
 

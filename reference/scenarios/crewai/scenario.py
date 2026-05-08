@@ -212,177 +212,23 @@ def run_crew():
             print(f"    -> {str(result)[:60]}")
 
 
-def run_crew_planning():
-    """Scenario: agent planning phase via CrewPlanner with reference implementation.
+def _run_crew_planning_scenario(*, header, task_description):
+    """Shared body for the plan-span scenarios.
 
-    CrewPlanner produces a strategy before tasks are executed. CrewPlanner
-    synthesizes its own internal Agent(role="Task Execution Planner", ...) to
-    actually run the planning LLM call (see CrewPlanner._create_planning_agent
-    in crewai/utilities/planning_handler.py); that planner agent -- not the
-    worker agent owning the surrounding tasks -- is what `gen_ai.agent.id`
-    and `gen_ai.agent.name` should identify on the plan span. The tool/task
-    spans that follow from the produced plan are siblings under the
-    surrounding invoke_agent span (not modeled here -- planning is emitted
-    standalone).
+    The two scenarios (run_crew_planning, run_crew_planning_multi_call)
+    differ only by the task description string they pass in: the
+    `[FORCE_PLANNER_MULTI_CALL]` sentinel routes the mock through the
+    refusal -> fall-through -> converter sequence. Everything else --
+    LLM/Agent/Crew construction, plan-span and chat-span wiring,
+    teardown -- is identical. Attribute emission stays inline in this
+    function so reviewers can see, in one place, exactly what the
+    plan-span scenarios emit.
     """
-    print("  [crew] agent planning phase (reference implementation)")
+    print(header)
     os.environ["CREWAI_DISABLE_TELEMETRY"] = "true"
     os.environ["CREWAI_DISABLE_TRACKING"] = "true"
     os.environ["CREWAI_TRACING_ENABLED"] = "false"
-    from crewai import LLM, Agent, Task
-    from crewai.utilities.planning_handler import CrewPlanner
-
-    request_model = "gpt-4o-mini"
-    system_prompt = "You are a helpful research assistant."
-    host, port = mock_server_host_port(MOCK_BASE_URL)
-    os.environ["OPENAI_API_KEY"] = "mock-key"
-    os.environ["OPENAI_API_BASE"] = MOCK_BASE_URL
-    os.environ["OPENAI_MODEL_NAME"] = request_model
-    llm = LLM(
-        model=request_model,
-        provider="openai",
-        base_url=MOCK_BASE_URL,
-        api_key="mock-key",
-    )
-
-    researcher_role = "Researcher"
-    researcher = Agent(
-        role=researcher_role,
-        goal="Find information",
-        backstory=system_prompt,
-        llm=llm,
-        verbose=False,
-        allow_delegation=False,
-    )
-
-    task = Task(
-        description="Research the weather forecasting techniques used by meteorologists.",
-        expected_output="A short summary of forecasting techniques.",
-        agent=researcher,
-    )
-
-    # Build the same planner agent CrewPlanner uses internally so the span
-    # attributes refer to the agent that actually runs the planning LLM call.
-    # CrewPlanner._handle_crew_planning() then drives a real LLM round-trip
-    # via planning_agent.execute_task(...) with
-    # output_pydantic=PlannerTaskPydanticOutput; the mock server returns a
-    # PlannerTaskPydanticOutput-shaped JSON body for messages containing the
-    # planner role string (see _mock_chat_content), so this exercises the
-    # real planning code path end-to-end.
-    planner = CrewPlanner(tasks=[task], planning_agent_llm=llm)
-    planning_agent = planner._create_planning_agent()
-    # Reuse the synthesized planner agent so the span attrs and the LLM
-    # call refer to the same Agent instance.
-    planner._create_planning_agent = lambda: planning_agent
-    captured_completion = None
-    captured_messages = None
-
-    with _reference_tracer.start_as_current_span(f"plan {planning_agent.role}") as plan_span:
-        plan_span.set_attribute("gen_ai.operation.name", "plan")
-        plan_span.set_attribute("gen_ai.agent.id", str(planning_agent.id))
-        plan_span.set_attribute("gen_ai.agent.name", planning_agent.role)
-
-        with _reference_tracer.start_as_current_span("chat gpt-4o-mini") as chat_span:
-            chat_span.set_attribute("gen_ai.operation.name", "chat")
-            chat_span.set_attribute("gen_ai.provider.name", "openai")
-            chat_span.set_attribute("gen_ai.request.model", request_model)
-            if host:
-                chat_span.set_attribute("server.address", host)
-            if port is not None:
-                chat_span.set_attribute("server.port", port)
-
-            # CrewAI routes calls with a Pydantic response model through
-            # beta.chat.completions.parse (see crewai/llms/providers/openai/
-            # completion.py around line 1612), not the regular create path.
-            # Patch parse so we capture the real outgoing messages and the
-            # real ParsedChatCompletion response.
-            original_parse = llm._client.beta.chat.completions.parse
-
-            def _capture_parse(*args, **kwargs):
-                nonlocal captured_completion, captured_messages
-                captured_messages = kwargs.get("messages")
-                response = original_parse(*args, **kwargs)
-                captured_completion = response
-                return response
-
-            llm._client.beta.chat.completions.parse = _capture_parse
-            try:
-                result = planner._handle_crew_planning()
-            finally:
-                llm._client.beta.chat.completions.parse = original_parse
-
-            if captured_messages is not None:
-                system_messages = [m for m in captured_messages if m.get("role") == "system"]
-                user_messages = [m for m in captured_messages if m.get("role") == "user"]
-                if system_messages:
-                    chat_span.set_attribute(
-                        "gen_ai.system_instructions",
-                        json.dumps([{"parts": [{"type": "text", "content": m["content"]}]} for m in system_messages]),
-                    )
-                if user_messages:
-                    chat_span.set_attribute(
-                        "gen_ai.input.messages",
-                        json.dumps(
-                            [
-                                {"role": "user", "parts": [{"type": "text", "content": m["content"]}]}
-                                for m in user_messages
-                            ]
-                        ),
-                    )
-
-            if captured_completion is not None:
-                chat_span.set_attribute("gen_ai.response.model", captured_completion.model)
-                chat_span.set_attribute("gen_ai.response.id", captured_completion.id)
-                chat_span.set_attribute(
-                    "gen_ai.response.finish_reasons",
-                    [choice.finish_reason for choice in captured_completion.choices],
-                )
-                if captured_completion.usage:
-                    chat_span.set_attribute("gen_ai.usage.input_tokens", captured_completion.usage.prompt_tokens)
-                    chat_span.set_attribute("gen_ai.usage.output_tokens", captured_completion.usage.completion_tokens)
-                if captured_completion.choices:
-                    assistant_content = captured_completion.choices[0].message.content
-                    if assistant_content:
-                        chat_span.set_attribute(
-                            "gen_ai.output.messages",
-                            json.dumps(
-                                [
-                                    {
-                                        "role": "assistant",
-                                        "parts": [{"type": "text", "content": assistant_content}],
-                                    }
-                                ]
-                            ),
-                        )
-            print(f"    -> planned {len(result.list_of_plans_per_task)} task(s)")
-
-
-def run_crew_planning_with_native_retry():
-    """Scenario: planning that exercises CrewAI's natural multi-call path.
-
-    Demonstrates real multi-call planning through CrewAI's normal agent
-    execution flow (no scenario-side parser shim, no Converter manual
-    instantiation, no supports_function_calling override). The mock returns
-    a refusal-shaped response on the planner's first beta.parse call,
-    which causes CrewAI's _handle_completion (crewai/llms/providers/openai/
-    completion.py) to fall through to a plain chat.completions.create.
-    The planner's LLM instance leaves self.response_format unset, so that
-    second call's body carries no response_format key. The mock returns
-    plain text on that second call. CrewAI's Task._export_output then
-    routes the text through convert_to_model -> handle_partial_json ->
-    convert_with_instructions, which constructs a Converter and issues a
-    third LLM call carrying the schema-conversion system prompt. The mock
-    detects the schema-conversion prompt and returns valid Pydantic JSON.
-
-    Three real LLM round-trips for one planner.plan() call, all under one
-    plan span via 100% library-native code paths. The [FORCE_PLANNER_RETRY]
-    sentinel scopes the malformed responses to this scenario only.
-    """
-    print("  [crew] planner natural multi-call retry (reference implementation)")
-    os.environ["CREWAI_DISABLE_TELEMETRY"] = "true"
-    os.environ["CREWAI_DISABLE_TRACKING"] = "true"
-    os.environ["CREWAI_TRACING_ENABLED"] = "false"
-    from crewai import LLM, Agent, Task
+    from crewai import LLM, Agent, Crew, Task
     from crewai.utilities.planning_handler import CrewPlanner
 
     request_model = "gpt-4o-mini"
@@ -407,115 +253,195 @@ def run_crew_planning_with_native_retry():
         allow_delegation=False,
     )
 
-    # The [FORCE_PLANNER_RETRY] sentinel routes the planner's first two calls
-    # through the mock's malformed branches, triggering CrewAI's natural
-    # convert_with_instructions path for a third (successful) call.
     task = Task(
-        description=("[FORCE_PLANNER_RETRY] Research the weather forecasting techniques used by meteorologists."),
+        description=task_description,
         expected_output="A short summary of forecasting techniques.",
         agent=researcher,
     )
 
-    planner = CrewPlanner(tasks=[task], planning_agent_llm=llm)
-    planning_agent = planner._create_planning_agent()
-    planner._create_planning_agent = lambda: planning_agent
+    crew = Crew(
+        agents=[researcher],
+        tasks=[task],
+        planning=True,
+        planning_llm=llm,
+        verbose=False,
+    )
 
-    captured_completions: list = []
-    captured_messages_per_call: list = []
+    # Class-level patch on CrewPlanner._handle_crew_planning to open
+    # the plan span around it. Patching private CrewPlanner internals
+    # is OK; the scenario's entry point is the public
+    # Crew(...planning=True).kickoff() below.
+    #
+    # We pre-build the planner agent (CrewPlanner._create_planning_agent
+    # is deterministic and arg-less) so we can record gen_ai.agent.{id,
+    # name} on the plan span at creation time, then inject the same
+    # instance back via an instance-level override so CrewAI uses the
+    # agent whose id we just recorded.
+    original_handle = CrewPlanner._handle_crew_planning
+    original_create_planning_agent = CrewPlanner._create_planning_agent
 
-    with _reference_tracer.start_as_current_span(f"plan {planning_agent.role}") as plan_span:
-        plan_span.set_attribute("gen_ai.operation.name", "plan")
-        plan_span.set_attribute("gen_ai.agent.id", str(planning_agent.id))
-        plan_span.set_attribute("gen_ai.agent.name", planning_agent.role)
+    def _wrapped_handle_crew_planning(self):
+        planner_agent = original_create_planning_agent(self)
+        with _reference_tracer.start_as_current_span(f"plan {planner_agent.role}") as plan_span:
+            plan_span.set_attribute("gen_ai.operation.name", "plan")
+            plan_span.set_attribute("gen_ai.agent.id", str(planner_agent.id))
+            plan_span.set_attribute("gen_ai.agent.name", planner_agent.role)
+            self._create_planning_agent = lambda: planner_agent
+            try:
+                return original_handle(self)
+            finally:
+                del self._create_planning_agent
 
-        # Patch BOTH beta.parse (planner's first call) and chat.completions.
-        # create (fall-through and converter calls) so we capture every LLM
-        # call under this plan span regardless of which method CrewAI routes
-        # through.
-        original_parse = llm._client.beta.chat.completions.parse
-        original_create = llm._client.chat.completions.create
+    # CrewAI routes the planner's structured-output call through
+    # beta.chat.completions.parse (crewai/llms/providers/openai/
+    # completion.py around line 1612); fall-through, converter, and
+    # worker calls go through chat.completions.create. Wrap both so
+    # each LLM round-trip is captured in its own chat span. Calls made
+    # while the plan span is active land under it; the worker task call
+    # lands as a sibling top-level chat span.
+    original_parse = llm._client.beta.chat.completions.parse
+    original_create = llm._client.chat.completions.create
 
-        def _capture_parse(*args, **kwargs):
-            captured_messages_per_call.append(kwargs.get("messages"))
-            response = original_parse(*args, **kwargs)
-            captured_completions.append(response)
-            return response
+    def _emit_chat_span(call_fn, call_args, call_kwargs):
+        messages = call_kwargs.get("messages")
+        with _reference_tracer.start_as_current_span(f"chat {request_model}") as chat_span:
+            chat_span.set_attribute("gen_ai.operation.name", "chat")
+            chat_span.set_attribute("gen_ai.provider.name", "openai")
+            chat_span.set_attribute("gen_ai.request.model", request_model)
+            if host:
+                chat_span.set_attribute("server.address", host)
+            if port is not None:
+                chat_span.set_attribute("server.port", port)
 
-        def _capture_create(*args, **kwargs):
-            captured_messages_per_call.append(kwargs.get("messages"))
-            response = original_create(*args, **kwargs)
-            captured_completions.append(response)
-            return response
-
-        llm._client.beta.chat.completions.parse = _capture_parse
-        llm._client.chat.completions.create = _capture_create
-        try:
-            result = planner._handle_crew_planning()
-        finally:
-            llm._client.beta.chat.completions.parse = original_parse
-            llm._client.chat.completions.create = original_create
-
-        for messages, completion in zip(captured_messages_per_call, captured_completions, strict=True):
-            with _reference_tracer.start_as_current_span("chat gpt-4o-mini") as chat_span:
-                chat_span.set_attribute("gen_ai.operation.name", "chat")
-                chat_span.set_attribute("gen_ai.provider.name", "openai")
-                chat_span.set_attribute("gen_ai.request.model", request_model)
-                if host:
-                    chat_span.set_attribute("server.address", host)
-                if port is not None:
-                    chat_span.set_attribute("server.port", port)
-
-                if messages is not None:
-                    system_messages = [m for m in messages if m.get("role") == "system"]
-                    user_messages = [m for m in messages if m.get("role") == "user"]
-                    if system_messages:
-                        chat_span.set_attribute(
-                            "gen_ai.system_instructions",
-                            json.dumps(
-                                [{"parts": [{"type": "text", "content": m["content"]}]} for m in system_messages]
-                            ),
-                        )
-                    if user_messages:
-                        chat_span.set_attribute(
-                            "gen_ai.input.messages",
-                            json.dumps(
-                                [
-                                    {"role": "user", "parts": [{"type": "text", "content": m["content"]}]}
-                                    for m in user_messages
-                                ]
-                            ),
-                        )
-
-                if getattr(completion, "model", None):
-                    chat_span.set_attribute("gen_ai.response.model", completion.model)
-                if getattr(completion, "id", None):
-                    chat_span.set_attribute("gen_ai.response.id", completion.id)
-                if getattr(completion, "choices", None):
+            if messages is not None:
+                system_messages = [m for m in messages if m.get("role") == "system"]
+                user_messages = [m for m in messages if m.get("role") == "user"]
+                if system_messages:
                     chat_span.set_attribute(
-                        "gen_ai.response.finish_reasons",
-                        [choice.finish_reason for choice in completion.choices if choice.finish_reason],
+                        "gen_ai.system_instructions",
+                        json.dumps([{"parts": [{"type": "text", "content": m["content"]}]} for m in system_messages]),
                     )
-                    assistant_content = completion.choices[0].message.content
-                    if assistant_content:
-                        chat_span.set_attribute(
-                            "gen_ai.output.messages",
-                            json.dumps(
-                                [
-                                    {
-                                        "role": "assistant",
-                                        "parts": [{"type": "text", "content": assistant_content}],
-                                    }
-                                ]
-                            ),
-                        )
-                if getattr(completion, "usage", None):
-                    chat_span.set_attribute("gen_ai.usage.input_tokens", completion.usage.prompt_tokens)
-                    chat_span.set_attribute("gen_ai.usage.output_tokens", completion.usage.completion_tokens)
+                if user_messages:
+                    chat_span.set_attribute(
+                        "gen_ai.input.messages",
+                        json.dumps(
+                            [
+                                {"role": "user", "parts": [{"type": "text", "content": m["content"]}]}
+                                for m in user_messages
+                            ]
+                        ),
+                    )
 
-        print(
-            f"    -> planned {len(result.list_of_plans_per_task)} task(s) "
-            f"after {len(captured_completions)} chat call(s)"
-        )
+            completion = call_fn(*call_args, **call_kwargs)
+
+            if getattr(completion, "model", None):
+                chat_span.set_attribute("gen_ai.response.model", completion.model)
+            if getattr(completion, "id", None):
+                chat_span.set_attribute("gen_ai.response.id", completion.id)
+            if getattr(completion, "choices", None):
+                chat_span.set_attribute(
+                    "gen_ai.response.finish_reasons",
+                    [choice.finish_reason for choice in completion.choices if choice.finish_reason],
+                )
+                assistant_content = completion.choices[0].message.content
+                if assistant_content:
+                    chat_span.set_attribute(
+                        "gen_ai.output.messages",
+                        json.dumps(
+                            [
+                                {
+                                    "role": "assistant",
+                                    "parts": [{"type": "text", "content": assistant_content}],
+                                }
+                            ]
+                        ),
+                    )
+            if getattr(completion, "usage", None):
+                chat_span.set_attribute("gen_ai.usage.input_tokens", completion.usage.prompt_tokens)
+                chat_span.set_attribute("gen_ai.usage.output_tokens", completion.usage.completion_tokens)
+
+            return completion
+
+    def _capture_parse(*args, **kwargs):
+        return _emit_chat_span(original_parse, args, kwargs)
+
+    def _capture_create(*args, **kwargs):
+        return _emit_chat_span(original_create, args, kwargs)
+
+    CrewPlanner._handle_crew_planning = _wrapped_handle_crew_planning
+    llm._client.beta.chat.completions.parse = _capture_parse
+    llm._client.chat.completions.create = _capture_create
+    try:
+        result = crew.kickoff()
+    finally:
+        llm._client.beta.chat.completions.parse = original_parse
+        llm._client.chat.completions.create = original_create
+        CrewPlanner._handle_crew_planning = original_handle
+
+    print(f"    -> {str(result)[:60]}")
+
+
+def run_crew_planning():
+    """Scenario: agent planning phase via Crew(planning=True).kickoff().
+
+    Uses the public CrewAI entry point: `Crew(..., planning=True,
+    planning_llm=llm).kickoff()`. CrewAI's CrewPlanner synthesizes its
+    own internal Agent(role="Task Execution Planner", ...) to actually
+    run the planning LLM call (see CrewPlanner._create_planning_agent in
+    crewai/utilities/planning_handler.py); that planner agent -- not
+    the worker agent owning the surrounding tasks -- is what
+    `gen_ai.agent.id` and `gen_ai.agent.name` identify on the plan span.
+
+    The plan span and chat-under-plan span are wired in by patching the
+    private `CrewPlanner._handle_crew_planning` and
+    `CrewPlanner._create_planning_agent` (private patches are fine; the
+    entry point stays public). After planning succeeds, `kickoff()` also
+    runs the Researcher worker task, which issues an additional LLM
+    round-trip; that call is captured as a sibling chat span -- a normal
+    inference span that contributes to the crewai inference-span coverage,
+    not part of the plan-span demo itself.
+    """
+    _run_crew_planning_scenario(
+        header="  [crew] agent planning phase via Crew(planning=True).kickoff() (reference implementation)",
+        task_description="Research the weather forecasting techniques used by meteorologists.",
+    )
+
+
+def run_crew_planning_multi_call():
+    """Scenario: planning that exercises CrewAI's natural multi-call path.
+
+    Same public entry point and wiring as `run_crew_planning()`; the
+    only difference is the `[FORCE_PLANNER_MULTI_CALL]` sentinel in the
+    task description, which routes the mock through three planner-side
+    branches in sequence:
+
+    1. The planner's first call uses
+       `output_pydantic=PlannerTaskPydanticOutput`, so CrewAI routes it
+       through `beta.chat.completions.parse` (response_format set in
+       body). The mock returns a refusal payload, which causes
+       `_handle_completion` (crewai/llms/providers/openai/completion.py)
+       to fall through to a plain `chat.completions.create`.
+    2. The fall-through `chat.completions.create` carries the planner's
+       prompt with no `response_format`. The mock returns plain text the
+       converter cannot validate as `PlannerTaskPydanticOutput`. CrewAI's
+       `Task._export_output -> convert_to_model -> handle_partial_json
+       -> convert_with_instructions` then constructs a Converter that
+       issues a third LLM call.
+    3. The Converter's call carries the schema-conversion system prompt
+       ("Format your final answer ..."). The mock returns valid Pydantic
+       JSON and planning succeeds.
+
+    Three real LLM round-trips for one planning operation, all under
+    one plan span via 100% library-native code paths. After planning
+    succeeds, `kickoff()` also runs the Researcher worker task (one
+    additional LLM round-trip captured as a sibling chat span). The
+    sentinel is gated together with "Task Execution Planner" in the
+    mock so it never affects the worker agent's chat call.
+    """
+    _run_crew_planning_scenario(
+        header="  [crew] planner natural multi-call fall-through via Crew(planning=True).kickoff() (reference implementation)",
+        task_description="[FORCE_PLANNER_MULTI_CALL] Research the weather forecasting techniques used by meteorologists.",
+    )
 
 
 def main():
@@ -526,7 +452,7 @@ def main():
 
     run_crew()
     run_crew_planning()
-    run_crew_planning_with_native_retry()
+    run_crew_planning_multi_call()
 
     flush_and_shutdown(tp, lp, mp)
 
