@@ -44,8 +44,8 @@
     {
       "groupName": "GitHub Actions",
       "commitMessageTopic": "GitHub Actions",
-      "matchManagers": [
-        "github-actions"
+      "matchFileNames": [
+        ".github/**"
       ],
       "schedule": [
         "* * 2 * *"
