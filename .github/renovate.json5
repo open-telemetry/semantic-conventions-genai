@@ -30,7 +30,11 @@
         "digest"
       ],
       "groupName": "reference implementation dependencies (non-major)",
-      "commitMessageTopic": "reference implementation dependencies (non-major)"
+      "commitMessageTopic": "reference implementation dependencies (non-major)",
+      "schedule": [
+        "* 0-3 * * 2" // Tuesdays, midnight–4am
+      ],
+      "timezone": "America/Los_Angeles"
     },
     {
       "groupName": "GitHub Actions",
