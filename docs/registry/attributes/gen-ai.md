@@ -205,6 +205,12 @@ by summing different token types parsed from the provider output.
 **[19] `gen_ai.usage.reasoning.output_tokens`:** The value SHOULD be included in `gen_ai.usage.output_tokens`.
 
 **[20] `gen_ai.workflow.name`:** This attribute can be populated in different frameworks eg: name of the first chain in LangChain OR name of the crew in CrewAI.
+Workflow name is usually provided by user application in a way specific to generative AI framework or library orchestrating the workflow.
+It's usually a static name that's expected to be unique within one application.
+
+`gen_ai.workflow.name` MUST have low cardinality.
+Semantic conventions for individual Generative AI frameworks SHOULD document what `gen_ai.workflow.name` means in the context of that framework.
+If there is no low-cardinality workflow name available for a given framework, this attribute MUST NOT be captured by default.
 
 ---
 

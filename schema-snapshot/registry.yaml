@@ -2217,6 +2217,61 @@ refinements:
       path: ./model/gen-ai/metrics.yaml
     stability: development
     unit: s
+  - annotations:
+      code_generation:
+        metric_value_type: double
+    attributes:
+    - brief: |
+        Describes a class of error the operation ended with.
+      examples:
+      - timeout
+      - java.net.UnknownHostException
+      - server_certificate_invalid
+      - \u0027500\u0027
+      key: error.type
+      note: |
+        The `error.type` SHOULD match the error code returned by the Generative AI provider or the client library,
+        the canonical name of exception that occurred, or another low-cardinality error identifier.
+        Instrumentations SHOULD document the list of errors they report.
+      requirement_level:
+        conditionally_required: if the workflow ended in an error
+      stability: stable
+      type:
+        members:
+        - brief: |
+            A fallback error value to be used when the instrumentation doesn\u0027t define a custom value.
+          id: other
+          stability: stable
+          value: _OTHER
+    - brief: Human-readable name of the GenAI workflow provided by the application.
+      examples:
+      - multi_agent_rag
+      - customer_support_pipeline
+      key: gen_ai.workflow.name
+      note: |
+        This attribute can be populated in different frameworks eg: name of the first chain in LangChain OR name of the crew in CrewAI.
+        Workflow name is usually provided by user application in a way specific to generative AI framework or library orchestrating the workflow.
+        It\u0027s usually a static name that\u0027s expected to be unique within one application.
+
+        `gen_ai.workflow.name` MUST have low cardinality.
+        Semantic conventions for individual Generative AI frameworks SHOULD document what `gen_ai.workflow.name` means in the context of that framework.
+        If there is no low-cardinality workflow name available for a given framework, this attribute MUST NOT be captured by default.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: If available.
+      stability: development
+      type: string
+    brief: GenAI workflow duration.
+    id: gen_ai.workflow.duration
+    instrument: histogram
+    name: gen_ai.workflow.duration
+    note: |
+      This metric instruments describe an operation that executes a coordinated process composed of multiple agents or other operations involving generative AI.
+    provenance:
+      path: ./model/gen-ai/metrics.yaml
+    stability: development
+    unit: s
   - attributes:
     - brief: |
         Describes a class of error the operation ended with.
@@ -8495,6 +8550,12 @@ refinements:
       key: gen_ai.workflow.name
       note: |
         This attribute can be populated in different frameworks eg: name of the first chain in LangChain OR name of the crew in CrewAI.
+        Workflow name is usually provided by user application in a way specific to generative AI framework or library orchestrating the workflow.
+        It\u0027s usually a static name that\u0027s expected to be unique within one application.
+
+        `gen_ai.workflow.name` MUST have low cardinality.
+        Semantic conventions for individual Generative AI frameworks SHOULD document what `gen_ai.workflow.name` means in the context of that framework.
+        If there is no low-cardinality workflow name available for a given framework, this attribute MUST NOT be captured by default.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
@@ -11197,6 +11258,12 @@ registry:
     key: gen_ai.workflow.name
     note: |
       This attribute can be populated in different frameworks eg: name of the first chain in LangChain OR name of the crew in CrewAI.
+      Workflow name is usually provided by user application in a way specific to generative AI framework or library orchestrating the workflow.
+      It\u0027s usually a static name that\u0027s expected to be unique within one application.
+
+      `gen_ai.workflow.name` MUST have low cardinality.
+      Semantic conventions for individual Generative AI frameworks SHOULD document what `gen_ai.workflow.name` means in the context of that framework.
+      If there is no low-cardinality workflow name available for a given framework, this attribute MUST NOT be captured by default.
     provenance:
       path: ./model/gen-ai/registry.yaml
     stability: development
@@ -13615,6 +13682,60 @@ registry:
     brief: Time to generate first token for successful responses.
     instrument: histogram
     name: gen_ai.server.time_to_first_token
+    provenance:
+      path: ./model/gen-ai/metrics.yaml
+    stability: development
+    unit: s
+  - annotations:
+      code_generation:
+        metric_value_type: double
+    attributes:
+    - brief: |
+        Describes a class of error the operation ended with.
+      examples:
+      - timeout
+      - java.net.UnknownHostException
+      - server_certificate_invalid
+      - \u0027500\u0027
+      key: error.type
+      note: |
+        The `error.type` SHOULD match the error code returned by the Generative AI provider or the client library,
+        the canonical name of exception that occurred, or another low-cardinality error identifier.
+        Instrumentations SHOULD document the list of errors they report.
+      requirement_level:
+        conditionally_required: if the workflow ended in an error
+      stability: stable
+      type:
+        members:
+        - brief: |
+            A fallback error value to be used when the instrumentation doesn\u0027t define a custom value.
+          id: other
+          stability: stable
+          value: _OTHER
+    - brief: Human-readable name of the GenAI workflow provided by the application.
+      examples:
+      - multi_agent_rag
+      - customer_support_pipeline
+      key: gen_ai.workflow.name
+      note: |
+        This attribute can be populated in different frameworks eg: name of the first chain in LangChain OR name of the crew in CrewAI.
+        Workflow name is usually provided by user application in a way specific to generative AI framework or library orchestrating the workflow.
+        It\u0027s usually a static name that\u0027s expected to be unique within one application.
+
+        `gen_ai.workflow.name` MUST have low cardinality.
+        Semantic conventions for individual Generative AI frameworks SHOULD document what `gen_ai.workflow.name` means in the context of that framework.
+        If there is no low-cardinality workflow name available for a given framework, this attribute MUST NOT be captured by default.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: If available.
+      stability: development
+      type: string
+    brief: GenAI workflow duration.
+    instrument: histogram
+    name: gen_ai.workflow.duration
+    note: |
+      This metric instruments describe an operation that executes a coordinated process composed of multiple agents or other operations involving generative AI.
     provenance:
       path: ./model/gen-ai/metrics.yaml
     stability: development
@@ -17418,6 +17539,12 @@ registry:
       key: gen_ai.workflow.name
       note: |
         This attribute can be populated in different frameworks eg: name of the first chain in LangChain OR name of the crew in CrewAI.
+        Workflow name is usually provided by user application in a way specific to generative AI framework or library orchestrating the workflow.
+        It\u0027s usually a static name that\u0027s expected to be unique within one application.
+
+        `gen_ai.workflow.name` MUST have low cardinality.
+        Semantic conventions for individual Generative AI frameworks SHOULD document what `gen_ai.workflow.name` means in the context of that framework.
+        If there is no low-cardinality workflow name available for a given framework, this attribute MUST NOT be captured by default.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
