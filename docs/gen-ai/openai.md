@@ -311,7 +311,30 @@ Reports the usage of tokens following the common [gen_ai.client.token.usage](./g
 
 | Name | Instrument Type | Unit (UCUM) | Description | Stability | Entity Associations |
 | -------- | --------------- | ----------- | -------------- | --------- | ------ |
-| `gen_ai.client.token.usage` | Histogram | `{token}` | OpenAI-specific extension to `gen_ai.client.token.usage`. Adds `openai.response.service_tier` and `openai.response.system_fingerprint` when the provider is `openai`. | ![Development](https://img.shields.io/badge/-development-blue) | |
+| `gen_ai.client.token.usage` | Histogram | `{token}` | OpenAI-specific extension to `gen_ai.client.token.usage`. Adds `openai.response.service_tier` and `openai.response.system_fingerprint` when the provider is `openai`. [1] | ![Development](https://img.shields.io/badge/-development-blue) | |
+
+**[1]:** When the provider reports a detailed token breakdown for a given token
+type, instrumentations SHOULD partition the token count for that type
+across the relevant attribute values instead of emitting a separate
+total. The partitioned data points MUST sum to the total token count
+for that token type, and a bare data point with only
+`gen_ai.token.type` set MUST NOT be emitted alongside the partitioned
+data points for the same token type.
+
+When no detailed breakdown is available for a given token type, a
+single data point with only `gen_ai.token.type` set SHOULD be recorded
+for that type.
+
+Each partitioned metric attribute value corresponds to span attributes
+on the same request:
+
+| Metric attribute            | Equals (per request)                                              |
+|-----------------------------|-------------------------------------------------------------------|
+| cache=read                  | gen_ai.usage.cache_read.input_tokens                              |
+| cache=creation              | gen_ai.usage.cache_creation.input_tokens                          |
+| cache=uncached              | gen_ai.usage.input_tokens − cache_read − cache_creation           |
+| reasoning=true              | gen_ai.usage.reasoning.output_tokens                              |
+| reasoning=false             | gen_ai.usage.output_tokens − gen_ai.usage.reasoning.output_tokens |
 
 **Attributes:**
 
@@ -321,11 +344,13 @@ Reports the usage of tokens following the common [gen_ai.client.token.usage](./g
 | [`gen_ai.provider.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Required` | string | The Generative AI provider as identified by the client or server instrumentation. [2] | `openai`; `gcp.gen_ai`; `gcp.vertex_ai` |
 | [`gen_ai.token.type`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Required` | string | The type of token being counted. | `input`; `output` |
 | [`gen_ai.request.model`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If available. | string | The name of the GenAI model a request is being made to. [3] | `gpt-4` |
-| [`server.port`](https://github.com/open-telemetry/semantic-conventions/blob/v1.41.1/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If `server.address` is set. | int | GenAI server port. [4] | `80`; `8080`; `443` |
+| [`gen_ai.token.cache`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [4] | string | The cache classification for input tokens. [5] | `read`; `creation`; `uncached` |
+| [`gen_ai.token.reasoning`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [6] | boolean | Whether the output tokens were used for internal reasoning (e.g., chain-of-thought). [7] | |
+| [`server.port`](https://github.com/open-telemetry/semantic-conventions/blob/v1.41.1/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If `server.address` is set. | int | GenAI server port. [8] | `80`; `8080`; `443` |
 | [`gen_ai.response.model`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The name of the model that generated the response. | `gpt-4-0613` |
 | [`openai.response.service_tier`](/docs/registry/attributes/openai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The service tier used for the response. | `scale`; `default` |
 | [`openai.response.system_fingerprint`](/docs/registry/attributes/openai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | A fingerprint to track any eventual change in the Generative AI environment. | `fp_44709d6fcb` |
-| [`server.address`](https://github.com/open-telemetry/semantic-conventions/blob/v1.41.1/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | GenAI server address. [5] | `example.com`; `10.1.2.80`; `/tmp/my.sock` |
+| [`server.address`](https://github.com/open-telemetry/semantic-conventions/blob/v1.41.1/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | GenAI server address. [9] | `example.com`; `10.1.2.80`; `/tmp/my.sock` |
 
 **[1] `gen_ai.operation.name`:** If one of the predefined values applies, but specific system uses a different name it's RECOMMENDED to document it in the semantic conventions for specific GenAI system and use system-specific name in the instrumentation. If a different name is not documented, instrumentation libraries SHOULD use applicable predefined value.
 
@@ -350,9 +375,42 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 
 **[3] `gen_ai.request.model`:** The name of the GenAI model a request is being made to. If the model is supplied by a vendor, then the value must be the exact name of the model requested. If the model is a fine-tuned custom model, the value should have a more specific name than the base model that's been fine-tuned.
 
-**[4] `server.port`:** When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries, for example proxies, if it's available.
+**[4] `gen_ai.token.cache`:** when `gen_ai.token.type` is `input` and the provider reports a cache breakdown.
 
-**[5] `server.address`:** When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent the server address behind any intermediaries, for example proxies, if it's available.
+**[5] `gen_ai.token.cache`:** This attribute MUST only be set when `gen_ai.token.type` is `input`.
+
+When the provider reports a cache breakdown, instrumentations SHOULD
+partition input tokens across values of this attribute so that they
+sum to the total input token count. Instrumentations MUST NOT emit a
+bare `gen_ai.token.type=input` data point alongside cache-partitioned
+data points for the same request.
+
+When the provider does not report a cache breakdown, omit this
+attribute entirely and record a single `gen_ai.token.type=input`
+data point with the total count.
+
+Partition members with a value of zero MAY be omitted.
+
+**[6] `gen_ai.token.reasoning`:** when `gen_ai.token.type` is `output` and the provider reports a reasoning token breakdown.
+
+**[7] `gen_ai.token.reasoning`:** This attribute MUST only be set when `gen_ai.token.type` is `output`.
+
+When the provider reports a reasoning token breakdown, instrumentations
+SHOULD partition output tokens by setting this attribute to `true`
+(reasoning tokens) and `false` (non-reasoning tokens) so that they
+sum to the total output token count. Instrumentations MUST NOT emit a
+bare `gen_ai.token.type=output` data point alongside reasoning-partitioned
+data points for the same request.
+
+When the provider does not report a reasoning breakdown, omit this
+attribute entirely and record a single `gen_ai.token.type=output`
+data point with the total count.
+
+Partition members with a value of zero MAY be omitted.
+
+**[8] `server.port`:** When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries, for example proxies, if it's available.
+
+**[9] `server.address`:** When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent the server address behind any intermediaries, for example proxies, if it's available.
 
 ---
 
@@ -383,9 +441,9 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 | `azure.ai.openai` | [Azure OpenAI](https://learn.microsoft.com/en-us/azure/ai-services/openai/overview) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `cohere` | [Cohere](https://cohere.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `deepseek` | [DeepSeek](https://www.deepseek.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
-| `gcp.gemini` | [Gemini](https://cloud.google.com/products/gemini) [6] | ![Development](https://img.shields.io/badge/-development-blue) |
-| `gcp.gen_ai` | Any Google generative AI endpoint [7] | ![Development](https://img.shields.io/badge/-development-blue) |
-| `gcp.vertex_ai` | [Vertex AI](https://cloud.google.com/vertex-ai) [8] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `gcp.gemini` | [Gemini](https://cloud.google.com/products/gemini) [10] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `gcp.gen_ai` | Any Google generative AI endpoint [11] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `gcp.vertex_ai` | [Vertex AI](https://cloud.google.com/vertex-ai) [12] | ![Development](https://img.shields.io/badge/-development-blue) |
 | `groq` | [Groq](https://groq.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `ibm.watsonx.ai` | [IBM Watsonx AI](https://www.ibm.com/products/watsonx-ai) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `mistral_ai` | [Mistral AI](https://mistral.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
@@ -393,11 +451,21 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 | `perplexity` | [Perplexity](https://www.perplexity.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `x_ai` | [xAI](https://x.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 
-**[6]:** Used when accessing the 'generativelanguage.googleapis.com' endpoint. Also known as the AI Studio API.
+**[10]:** Used when accessing the 'generativelanguage.googleapis.com' endpoint. Also known as the AI Studio API.
 
-**[7]:** May be used when specific backend is unknown.
+**[11]:** May be used when specific backend is unknown.
 
-**[8]:** Used when accessing the 'aiplatform.googleapis.com' endpoint.
+**[12]:** Used when accessing the 'aiplatform.googleapis.com' endpoint.
+
+---
+
+`gen_ai.token.cache` has the following list of well-known values. If one of them applies, then the respective value MUST be used; otherwise, a custom value MAY be used.
+
+| Value | Description | Stability |
+| --- | --- | --- |
+| `creation` | Input tokens written to a provider-managed cache. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `read` | Input tokens served from a provider-managed cache. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `uncached` | Input tokens neither served from nor written to a provider-managed cache. | ![Development](https://img.shields.io/badge/-development-blue) |
 
 ---
 

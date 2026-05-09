@@ -19,6 +19,9 @@
   ([#97](https://github.com/open-telemetry/semantic-conventions-genai/pull/97))
 - Add `gen_ai.workflow.duration` metric to track duration of a workflow.
   ([#126](https://github.com/open-telemetry/semantic-conventions-genai/pull/126))
+- Add `gen_ai.token.cache` and `gen_ai.token.reasoning` attributes to
+  `gen_ai.client.token.usage` for detailed token usage breakdowns.
+  ([#96](https://github.com/open-telemetry/semantic-conventions-genai/pull/96))
 
 ### 🧰 Bug fixes 🧰
 
