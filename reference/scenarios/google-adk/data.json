@@ -50,6 +50,24 @@
       "server.address",
       "server.port"
     ],
+    "create_memory_store": [
+      "gen_ai.memory.store.id",
+      "gen_ai.operation.name",
+      "gen_ai.provider.name"
+    ],
+    "search_memory": [
+      "gen_ai.memory.query.text",
+      "gen_ai.memory.records",
+      "gen_ai.memory.store.id",
+      "gen_ai.operation.name",
+      "gen_ai.provider.name"
+    ],
+    "update_memory": [
+      "gen_ai.memory.records",
+      "gen_ai.memory.store.id",
+      "gen_ai.operation.name",
+      "gen_ai.provider.name"
+    ],
     "execute_tool": [
       "gen_ai.operation.name",
       "gen_ai.tool.call.arguments",

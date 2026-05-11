@@ -288,6 +288,93 @@ def run_agent_reference():
         asyncio.run(_run())
 
 
+def run_memory_reference():
+    """Scenario: Google ADK memory add/search with reference implementation."""
+    from google.adk.events.event import Event
+    from google.adk.memory.in_memory_memory_service import InMemoryMemoryService
+    from google.adk.sessions.session import Session
+    from google.genai import types
+
+    print("  [memory] ADK in-memory memory service (reference implementation)")
+
+    app_name = "test_app"
+    user_id = "test_user"
+    session_id = "session_memory_1"
+    store_id = f"{app_name}/{user_id}"
+    memory_text = "User prefers vegetarian meals and dark mode."
+    query_text = "vegetarian meals"
+
+    async def _run():
+        create_span_attributes = {
+            "gen_ai.operation.name": "create_memory_store",
+            "gen_ai.provider.name": "gcp.gemini",
+        }
+        with _reference_tracer.start_as_current_span(
+            f"create_memory_store {store_id}", attributes=create_span_attributes
+        ) as create_span:
+            memory_service = InMemoryMemoryService()
+            create_span.set_attribute("gen_ai.memory.store.id", store_id)
+
+        event = Event(
+            author="user",
+            content=types.Content(role="user", parts=[types.Part(text=memory_text)]),
+        )
+        session = Session(
+            id=session_id,
+            app_name=app_name,
+            user_id=user_id,
+            events=[event],
+        )
+        memory_records = json.dumps(
+            [
+                {
+                    "content": memory_text,
+                    "id": event.id,
+                    "metadata": {"author": event.author, "session_id": session.id},
+                }
+            ]
+        )
+
+        update_span_attributes = {
+            "gen_ai.operation.name": "update_memory",
+            "gen_ai.provider.name": "gcp.gemini",
+            "gen_ai.memory.store.id": store_id,
+        }
+        with _reference_tracer.start_as_current_span(
+            f"update_memory {store_id}", attributes=update_span_attributes
+        ) as update_span:
+            update_span.set_attribute("gen_ai.memory.records", memory_records)
+            await memory_service.add_session_to_memory(session)
+
+        search_span_attributes = {
+            "gen_ai.operation.name": "search_memory",
+            "gen_ai.provider.name": "gcp.gemini",
+            "gen_ai.memory.store.id": store_id,
+        }
+        with _reference_tracer.start_as_current_span(
+            f"search_memory {store_id}", attributes=search_span_attributes
+        ) as search_span:
+            search_span.set_attribute("gen_ai.memory.query.text", query_text)
+            response = await memory_service.search_memory(
+                app_name=app_name,
+                user_id=user_id,
+                query=query_text,
+            )
+            search_records = []
+            for index, memory in enumerate(response.memories):
+                content_text = " ".join(part.text for part in memory.content.parts if part.text)
+                search_records.append(
+                    {
+                        "content": content_text,
+                        "id": memory.id or f"{session.id}/{index}",
+                        "metadata": {"author": memory.author},
+                    }
+                )
+            search_span.set_attribute("gen_ai.memory.records", json.dumps(search_records))
+
+    asyncio.run(_run())
+
+
 def main():
     print("=== Reference Implementation: Google ADK Reference Implementation ===")
 
@@ -297,6 +384,7 @@ def main():
     tp.add_span_processor(span_counter)
 
     run_agent_reference()
+    run_memory_reference()
 
     print(f"\n  [diagnostic] Spans generated: {span_counter.count}")
 
