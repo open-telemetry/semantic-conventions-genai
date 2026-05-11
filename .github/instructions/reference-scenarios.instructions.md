@@ -5,7 +5,7 @@ applyTo: "reference/scenarios/**/*.py"
 
 # Reference scenarios
 
-Reference scenarios are runnable Python instrumentation that proves proposed
+Reference scenarios are runnable Python instrumentation that prove proposed
 GenAI conventions are capturable. They should be easy to scan: a reader
 should see, at the instrumentation site, exactly what attributes get emitted
 and where each value comes from.
