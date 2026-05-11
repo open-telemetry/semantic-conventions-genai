@@ -309,11 +309,8 @@ def run_memory_reference():
             "gen_ai.operation.name": "create_memory_store",
             "gen_ai.provider.name": "gcp.gemini",
         }
-        with _reference_tracer.start_as_current_span(
-            f"create_memory_store {store_id}", attributes=create_span_attributes
-        ) as create_span:
+        with _reference_tracer.start_as_current_span("create_memory_store", attributes=create_span_attributes):
             memory_service = InMemoryMemoryService()
-            create_span.set_attribute("gen_ai.memory.store.id", store_id)
 
         event = Event(
             author="user",
@@ -361,15 +358,15 @@ def run_memory_reference():
                 query=query_text,
             )
             search_records = []
-            for index, memory in enumerate(response.memories):
+            for memory in response.memories:
                 content_text = " ".join(part.text for part in memory.content.parts if part.text)
-                search_records.append(
-                    {
-                        "content": content_text,
-                        "id": memory.id or f"{session.id}/{index}",
-                        "metadata": {"author": memory.author},
-                    }
-                )
+                search_record = {
+                    "content": content_text,
+                    "metadata": {"author": memory.author},
+                }
+                if memory.id:
+                    search_record["id"] = memory.id
+                search_records.append(search_record)
             search_span.set_attribute("gen_ai.memory.records", json.dumps(search_records))
 
     asyncio.run(_run())

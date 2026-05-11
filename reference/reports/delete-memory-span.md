@@ -6,19 +6,21 @@
 
 | Attribute | Supporting Libraries |
 | --- | --- |
-| gen_ai.operation.name | (none) |
-| gen_ai.provider.name | (none) |
+| gen_ai.operation.name | [aws-bedrock-agentcore] |
+| gen_ai.provider.name | [aws-bedrock-agentcore] |
 
 ## Conditionally Required
 
 | Attribute | Supporting Libraries |
 | --- | --- |
-| gen_ai.memory.record.id | (none) |
-| gen_ai.memory.store.id | (none) |
-| server.port | (none) |
+| gen_ai.memory.record.id | [aws-bedrock-agentcore] |
+| gen_ai.memory.store.id | [aws-bedrock-agentcore] |
+| server.port | [aws-bedrock-agentcore] |
 
 ## Recommended
 
 | Attribute | Supporting Libraries |
 | --- | --- |
-| server.address | (none) |
+| server.address | [aws-bedrock-agentcore] |
+
+[aws-bedrock-agentcore]: ../scenarios/aws-bedrock-agentcore/scenario.py

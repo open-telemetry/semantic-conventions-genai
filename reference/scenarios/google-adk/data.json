@@ -51,7 +51,6 @@
       "server.port"
     ],
     "create_memory_store": [
-      "gen_ai.memory.store.id",
       "gen_ai.operation.name",
       "gen_ai.provider.name"
     ],
