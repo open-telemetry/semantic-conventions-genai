@@ -19,6 +19,7 @@ jobs:
       DASHBOARD_TITLE: "Pull Request Dashboard"
       DASHBOARD_LABEL: "dashboard"
       DASHBOARD_OUTPUT: pull-request-dashboard.md
+      DASHBOARD_PREVIOUS: previous-pull-request-dashboard.md
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
@@ -34,17 +35,7 @@ jobs:
           # expose the locally-installed `copilot` binary to subsequent steps
           echo "$GITHUB_WORKSPACE/.github/scripts/copilot-cli/node_modules/.bin" >> "$GITHUB_PATH"
 
-      - name: Generate dashboard
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # needed for reading approver team membership (org:read)
-          OTELBOT_TOKEN: ${{ steps.otelbot-token.outputs.token }}
-          COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
-        run: |
-          python3 .github/scripts/pull-request-dashboard.py \
-            --output "$DASHBOARD_OUTPUT"
-
-      - name: Update or create dashboard issue
+      - name: Fetch existing dashboard issue
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -57,9 +48,37 @@ jobs:
             | sort -n \
             | sed -n '1p')
 
+          echo "DASHBOARD_ISSUE_NUMBER=$number" >> "$GITHUB_ENV"
+
           if [[ -n "$number" ]]; then
-            echo "Updating existing issue #$number"
-            gh issue edit "$number" --body-file "$DASHBOARD_OUTPUT"
+            gh issue view "$number" --json body --jq .body > "$DASHBOARD_PREVIOUS"
+          else
+            : > "$DASHBOARD_PREVIOUS"
+          fi
+
+      - name: Generate dashboard
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # needed for reading approver team membership (org:read)
+          OTELBOT_TOKEN: ${{ steps.otelbot-token.outputs.token }}
+          COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_USER_MAP_JSON: ${{ secrets.SLACK_USER_MAP_JSON }}
+        run: |
+          python3 .github/scripts/pull-request-dashboard.py \
+            --output "$DASHBOARD_OUTPUT" \
+            --previous-dashboard "$DASHBOARD_PREVIOUS" \
+            --slack-notify-approver-waiting
+
+      - name: Update or create dashboard issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          if [[ -n "${DASHBOARD_ISSUE_NUMBER:-}" ]]; then
+            echo "Updating existing issue #$DASHBOARD_ISSUE_NUMBER"
+            gh issue edit "$DASHBOARD_ISSUE_NUMBER" --body-file "$DASHBOARD_OUTPUT"
           else
             echo "Creating new dashboard issue"
             gh issue create \
