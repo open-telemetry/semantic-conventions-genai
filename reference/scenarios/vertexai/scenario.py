@@ -56,10 +56,12 @@ def run_chat():
 
     print("  [chat] basic chat completion via Vertex AI (reference implementation)")
     request_model = "gemini-2.0-flash"
-    with _reference_tracer.start_as_current_span("chat gemini-2.0-flash") as span:
-        span.set_attribute("gen_ai.operation.name", "chat")
-        span.set_attribute("gen_ai.provider.name", "gcp.vertex_ai")
-        span.set_attribute("gen_ai.request.model", request_model)
+    span_attributes = {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "gcp.vertex_ai",
+        "gen_ai.request.model": request_model,
+    }
+    with _reference_tracer.start_as_current_span("chat gemini-2.0-flash", attributes=span_attributes) as span:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", DeprecationWarning)
             warnings.simplefilter("ignore", UserWarning)
@@ -132,10 +134,12 @@ def run_chat_tool_call():
         },
     )
     tool = Tool(function_declarations=[get_weather_func])
-    with _reference_tracer.start_as_current_span("chat gemini-2.0-flash") as span:
-        span.set_attribute("gen_ai.operation.name", "chat")
-        span.set_attribute("gen_ai.provider.name", "gcp.vertex_ai")
-        span.set_attribute("gen_ai.request.model", request_model)
+    span_attributes_2 = {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "gcp.vertex_ai",
+        "gen_ai.request.model": request_model,
+    }
+    with _reference_tracer.start_as_current_span("chat gemini-2.0-flash", attributes=span_attributes_2) as span:
         span.set_attribute(
             "gen_ai.tool.definitions",
             json.dumps(
@@ -147,9 +151,7 @@ def run_chat_tool_call():
                                 "description": "Get the current weather",
                                 "parameters": {
                                     "type": "object",
-                                    "properties": {
-                                        "location": {"type": "string", "description": "City name"},
-                                    },
+                                    "properties": {"location": {"type": "string", "description": "City name"}},
                                     "required": ["location"],
                                 },
                             }
@@ -189,10 +191,12 @@ def run_chat_streaming():
 
     print("  [chat_streaming] streaming chat completion via Vertex AI (reference implementation)")
     request_model = "gemini-2.0-flash"
-    with _reference_tracer.start_as_current_span("chat gemini-2.0-flash") as span:
-        span.set_attribute("gen_ai.operation.name", "chat")
-        span.set_attribute("gen_ai.provider.name", "gcp.vertex_ai")
-        span.set_attribute("gen_ai.request.model", request_model)
+    span_attributes_3 = {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "gcp.vertex_ai",
+        "gen_ai.request.model": request_model,
+    }
+    with _reference_tracer.start_as_current_span("chat gemini-2.0-flash", attributes=span_attributes_3) as span:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", DeprecationWarning)
             warnings.simplefilter("ignore", UserWarning)

@@ -22,21 +22,23 @@ def run_chat_reference(llm, request_model, request_temperature, request_choice_c
 
     print("  [chat] basic chat completion (reference implementation)")
     host, port = mock_server_host_port(MOCK_BASE_URL)
-    with _reference_tracer.start_as_current_span("chat gpt-4o-mini") as span:
-        span.set_attribute("gen_ai.operation.name", "chat")
-        span.set_attribute("gen_ai.provider.name", "openai")
-        span.set_attribute("gen_ai.request.model", request_model)
+    user_content = "Say hello."
+    span_attributes = {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "openai",
+        "gen_ai.request.model": request_model,
+    }
+    if host:
+        span_attributes["server.address"] = host
+    if port is not None:
+        span_attributes["server.port"] = port
+    with _reference_tracer.start_as_current_span("chat gpt-4o-mini", attributes=span_attributes) as span:
         span.set_attribute("gen_ai.request.choice.count", request_choice_count)
         span.set_attribute("gen_ai.request.temperature", request_temperature)
-        user_content = "Say hello."
         span.set_attribute(
             "gen_ai.input.messages",
             json.dumps([{"role": "user", "parts": [{"type": "text", "content": user_content}]}]),
         )
-        if host:
-            span.set_attribute("server.address", host)
-        if port is not None:
-            span.set_attribute("server.port", port)
         resp = llm.chat([ChatMessage(role=MessageRole.USER, content=user_content)])
         raw = getattr(resp, "raw", None)
         if raw:
@@ -109,15 +111,17 @@ def run_chat_streaming_reference(llm, request_model, request_temperature):
 
     print("  [chat_streaming] streaming chat completion (reference implementation)")
     host, port = mock_server_host_port(MOCK_BASE_URL)
-    with _reference_tracer.start_as_current_span("chat gpt-4o-mini") as span:
-        span.set_attribute("gen_ai.operation.name", "chat")
-        span.set_attribute("gen_ai.provider.name", "openai")
-        span.set_attribute("gen_ai.request.model", request_model)
+    span_attributes_2 = {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "openai",
+        "gen_ai.request.model": request_model,
+    }
+    if host:
+        span_attributes_2["server.address"] = host
+    if port is not None:
+        span_attributes_2["server.port"] = port
+    with _reference_tracer.start_as_current_span("chat gpt-4o-mini", attributes=span_attributes_2) as span:
         span.set_attribute("gen_ai.request.temperature", request_temperature)
-        if host:
-            span.set_attribute("server.address", host)
-        if port is not None:
-            span.set_attribute("server.port", port)
         text = ""
         finish_reasons = []
         stream_resp = llm.stream_chat([ChatMessage(role=MessageRole.USER, content="Tell me a joke.")])
@@ -157,17 +161,18 @@ def run_agent_reference(llm, request_model, request_temperature):
 
     def get_weather(location: str) -> str:
         """Get the current weather for a location."""
-        with _reference_tracer.start_as_current_span("execute_tool get_weather") as tool_span:
-            tool_span.set_attribute("gen_ai.operation.name", "execute_tool")
+        tool_span_attributes = {
+            "gen_ai.operation.name": "execute_tool",
+        }
+        with _reference_tracer.start_as_current_span(
+            "execute_tool get_weather", attributes=tool_span_attributes
+        ) as tool_span:
             tool_span.set_attribute("gen_ai.tool.name", "get_weather")
             tool_span.set_attribute("gen_ai.tool.description", get_weather.__doc__ or "")
             tool_span.set_attribute("gen_ai.tool.type", "function")
             if current_tool_call_id:
                 tool_span.set_attribute("gen_ai.tool.call.id", current_tool_call_id)
-            tool_span.set_attribute(
-                "gen_ai.tool.call.arguments",
-                json.dumps({"location": location}),
-            )
+            tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps({"location": location}))
             result = "Sunny, 72°F"
             tool_span.set_attribute("gen_ai.tool.call.result", result)
             return result
@@ -196,13 +201,14 @@ def run_agent_reference(llm, request_model, request_temperature):
         current_tool_call_id = tool_call.tool_id or None
         return original_call_tool_with_selection(tool_call, tools, verbose=verbose)
 
-    with _reference_tracer.start_as_current_span("chat gpt-4o-mini") as span:
-        span.set_attribute("gen_ai.operation.name", "chat")
-        span.set_attribute("gen_ai.provider.name", "openai")
-        span.set_attribute("gen_ai.request.model", request_model)
+    span_attributes_3 = {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "openai",
+        "gen_ai.request.model": request_model,
+    }
+    with _reference_tracer.start_as_current_span("chat gpt-4o-mini", attributes=span_attributes_3) as span:
         span.set_attribute("gen_ai.request.temperature", request_temperature)
         span.set_attribute("gen_ai.tool.definitions", json.dumps([tool_definition]))
-
         try:
             tool_calling.call_tool_with_selection = _capture_call_tool_with_selection
             response = llm.predict_and_call(
@@ -224,7 +230,6 @@ def run_embeddings_reference():
     request_model = "text-embedding-3-small"
     request_encoding_format = "base64"
     captured_response = None
-    captured_encoding_format = None
     host, port = mock_server_host_port(MOCK_BASE_URL)
     embed_model = OpenAIEmbedding(
         model_name=request_model,
@@ -235,28 +240,29 @@ def run_embeddings_reference():
     original_get_embedding = openai_embedding_base.get_embedding
 
     def _capture_get_embedding(client, text, engine, **kwargs):
-        nonlocal captured_encoding_format, captured_response
+        nonlocal captured_response
         text = text.replace("\n", " ")
-        if kwargs.get("encoding_format"):
-            captured_encoding_format = kwargs["encoding_format"]
         captured_response = client.embeddings.create(input=[text], model=engine, **kwargs)
         return captured_response.data[0].embedding
 
-    with _reference_tracer.start_as_current_span("embeddings text-embedding-3-small") as span:
-        span.set_attribute("gen_ai.operation.name", "embeddings")
-        span.set_attribute("gen_ai.provider.name", "openai")
-        span.set_attribute("gen_ai.request.model", request_model)
-        if host:
-            span.set_attribute("server.address", host)
-        if port is not None:
-            span.set_attribute("server.port", port)
+    span_attributes_4 = {
+        "gen_ai.operation.name": "embeddings",
+        "gen_ai.provider.name": "openai",
+        "gen_ai.request.model": request_model,
+    }
+    if host:
+        span_attributes_4["server.address"] = host
+    if port is not None:
+        span_attributes_4["server.port"] = port
+    with _reference_tracer.start_as_current_span(
+        "embeddings text-embedding-3-small", attributes=span_attributes_4
+    ) as span:
+        span.set_attribute("gen_ai.request.encoding_formats", [request_encoding_format])
         try:
             openai_embedding_base.get_embedding = _capture_get_embedding
             result = embed_model.get_text_embedding("Hello, world!")
         finally:
             openai_embedding_base.get_embedding = original_get_embedding
-        if captured_encoding_format:
-            span.set_attribute("gen_ai.request.encoding_formats", [captured_encoding_format])
         span.set_attribute("gen_ai.embeddings.dimension.count", len(result))
         if captured_response is not None:
             if getattr(captured_response, "model", None):

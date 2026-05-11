@@ -177,6 +177,12 @@ SPAN_SPECS: dict[str, AttributeSpec] = {
         op_names=frozenset({"invoke_workflow"}),
         discriminator_attrs=frozenset({"gen_ai.workflow.name"}),
     ),
+    "plan": _from_yaml(
+        _groups,
+        "span.gen_ai.plan.internal",
+        label="Plan",
+        op_names=frozenset({"plan"}),
+    ),
 }
 
 EVENT_SPECS: dict[str, AttributeSpec] = {

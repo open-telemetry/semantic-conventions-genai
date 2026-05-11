@@ -22,15 +22,17 @@ def run_chat_reference(client):
 
     print("  [chat] basic chat completion (reference implementation)")
     request_model = "gpt-4o-mini"
-    with _reference_tracer.start_as_current_span("chat gpt-4o-mini") as span:
-        host, port = mock_server_host_port(MOCK_BASE_URL)
-        span.set_attribute("gen_ai.operation.name", "chat")
-        span.set_attribute("gen_ai.provider.name", "azure.ai.inference")
-        span.set_attribute("gen_ai.request.model", request_model)
-        if host:
-            span.set_attribute("server.address", host)
-        if port is not None:
-            span.set_attribute("server.port", port)
+    host, port = mock_server_host_port(MOCK_BASE_URL)
+    span_attributes = {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "azure.ai.inference",
+        "gen_ai.request.model": request_model,
+    }
+    if host:
+        span_attributes["server.address"] = host
+    if port is not None:
+        span_attributes["server.port"] = port
+    with _reference_tracer.start_as_current_span("chat gpt-4o-mini", attributes=span_attributes) as span:
         user_content = "Say hello."
         resp = client.complete(
             model=request_model,
@@ -107,11 +109,17 @@ def run_chat_tool_call_reference(client):
         )
     )
     tools = [tool]
-    with _reference_tracer.start_as_current_span("chat gpt-4o-mini") as span:
-        host, port = mock_server_host_port(MOCK_BASE_URL)
-        span.set_attribute("gen_ai.operation.name", "chat")
-        span.set_attribute("gen_ai.provider.name", "azure.ai.inference")
-        span.set_attribute("gen_ai.request.model", request_model)
+    host, port = mock_server_host_port(MOCK_BASE_URL)
+    span_attributes_2 = {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "azure.ai.inference",
+        "gen_ai.request.model": request_model,
+    }
+    if host:
+        span_attributes_2["server.address"] = host
+    if port is not None:
+        span_attributes_2["server.port"] = port
+    with _reference_tracer.start_as_current_span("chat gpt-4o-mini", attributes=span_attributes_2) as span:
         span.set_attribute(
             "gen_ai.tool.definitions",
             json.dumps(
@@ -127,10 +135,6 @@ def run_chat_tool_call_reference(client):
                 ]
             ),
         )
-        if host:
-            span.set_attribute("server.address", host)
-        if port is not None:
-            span.set_attribute("server.port", port)
         resp = client.complete(
             model=request_model,
             messages=[UserMessage(content="What's the weather in Seattle?")],
@@ -157,15 +161,17 @@ def run_chat_streaming_reference(client):
 
     print("  [chat_streaming] streaming chat completion (reference implementation)")
     request_model = "gpt-4o-mini"
-    with _reference_tracer.start_as_current_span("chat gpt-4o-mini") as span:
-        host, port = mock_server_host_port(MOCK_BASE_URL)
-        span.set_attribute("gen_ai.operation.name", "chat")
-        span.set_attribute("gen_ai.provider.name", "azure.ai.inference")
-        span.set_attribute("gen_ai.request.model", request_model)
-        if host:
-            span.set_attribute("server.address", host)
-        if port is not None:
-            span.set_attribute("server.port", port)
+    host, port = mock_server_host_port(MOCK_BASE_URL)
+    span_attributes_3 = {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "azure.ai.inference",
+        "gen_ai.request.model": request_model,
+    }
+    if host:
+        span_attributes_3["server.address"] = host
+    if port is not None:
+        span_attributes_3["server.port"] = port
+    with _reference_tracer.start_as_current_span("chat gpt-4o-mini", attributes=span_attributes_3) as span:
         stream = client.complete(
             model=request_model,
             messages=[UserMessage(content="Tell me a joke.")],
@@ -195,15 +201,19 @@ def run_embeddings_reference(client):
     """Scenario: embedding generation with reference implementation."""
     print("  [embeddings] embedding generation (reference implementation)")
     request_model = "text-embedding-3-small"
-    with _reference_tracer.start_as_current_span("embeddings text-embedding-3-small") as span:
-        host, port = mock_server_host_port(MOCK_BASE_URL)
-        span.set_attribute("gen_ai.operation.name", "embeddings")
-        span.set_attribute("gen_ai.provider.name", "azure.ai.inference")
-        span.set_attribute("gen_ai.request.model", request_model)
-        if host:
-            span.set_attribute("server.address", host)
-        if port is not None:
-            span.set_attribute("server.port", port)
+    host, port = mock_server_host_port(MOCK_BASE_URL)
+    span_attributes_4 = {
+        "gen_ai.operation.name": "embeddings",
+        "gen_ai.provider.name": "azure.ai.inference",
+        "gen_ai.request.model": request_model,
+    }
+    if host:
+        span_attributes_4["server.address"] = host
+    if port is not None:
+        span_attributes_4["server.port"] = port
+    with _reference_tracer.start_as_current_span(
+        "embeddings text-embedding-3-small", attributes=span_attributes_4
+    ) as span:
         resp = client.embed(
             model=request_model,
             input=["Hello, world!"],

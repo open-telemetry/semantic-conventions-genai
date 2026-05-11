@@ -483,6 +483,43 @@ spans:
       - ref: gen_ai.output.messages
         requirement_level: opt_in
 
+  - type: gen_ai.plan.internal
+    kind: internal
+    name:
+      note: >
+        **Span name** SHOULD be `plan {gen_ai.agent.name}` if `gen_ai.agent.name` is readily available.
+        When `gen_ai.agent.name` is not available, it SHOULD be `plan`.
+    brief: >
+      Represents an agent planning or task decomposition phase.
+    note: |
+      The `gen_ai.operation.name` SHOULD be `plan`.
+
+      **Span name** SHOULD be `plan {gen_ai.agent.name}` if `gen_ai.agent.name` is readily available.
+      When `gen_ai.agent.name` is not available, it SHOULD be `plan`.
+
+      A plan span represents the decision phase where an agent formulates
+      a strategy before executing it. The LLM call that generates the plan
+      SHOULD be a child of the plan span, and the tool or task spans produced
+      from the plan are typically sibling operations under the same
+      `invoke_agent` span.
+
+      This span SHOULD be reported by instrumentations when they can reliably determine
+      that the operation being instrumented is planning or task decomposition, and SHOULD
+      NOT be reported when the instrumentation cannot distinguish planning from generic
+      reasoning or normal inference.
+    stability: development
+    attributes:
+      - ref_group: attributes.gen_ai.error
+      - ref: gen_ai.operation.name
+        requirement_level: required
+        sampling_relevant: true
+      - ref: gen_ai.agent.id
+        requirement_level:
+          conditionally_required: if applicable.
+      - ref: gen_ai.agent.name
+        requirement_level:
+          conditionally_required: when available
+
 span_refinements:
   - id: openai.inference.client
     ref: gen_ai.inference.client
