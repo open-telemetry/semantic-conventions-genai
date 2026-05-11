@@ -848,6 +848,8 @@ Instrumentation MAY emit both metrics for the same request path when both bounda
 
 This metric is [required][MetricRequired] when instrumented component implements workflow operations.
 
+When this metric is reported alongside a `gen_ai.invoke_workflow` span, the metric value SHOULD be the same as the span duration.
+
 This metric SHOULD be specified with [ExplicitBucketBoundaries] of [1, 5, 10, 30, 60, 120, 300, 600, 1800, 3600, 7200].
 
 <!-- weaver .registry.metrics[] | select(.name == "gen_ai.workflow.duration") -->
@@ -859,22 +861,22 @@ This metric SHOULD be specified with [ExplicitBucketBoundaries] of [1, 5, 10, 30
 | -------- | --------------- | ----------- | -------------- | --------- | ------ |
 | `gen_ai.workflow.duration` | Histogram | `s` | GenAI workflow duration. [1] | ![Development](https://img.shields.io/badge/-development-blue) | |
 
-**[1]:** This metric instruments describe an operation that executes a coordinated process composed of multiple agents or other operations involving generative AI.
+**[1]:** This metric instrument describes an operation that executes a coordinated process composed of multiple agents or other operations involving generative AI.
 
 **Attributes:**
 
 | Key | Stability | [Requirement Level](https://opentelemetry.io/docs/specs/semconv/general/attribute-requirement-level/) | Value Type | Description | Example Values |
 | --- | --- | --- | --- | --- | --- |
-| [`error.type`](/docs/registry/attributes/error.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` if the workflow ended in an error | string | Describes a class of error the operation ended with. [1] | `timeout`; `java.net.UnknownHostException`; `server_certificate_invalid`; `500` |
+| [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.41.0/docs/registry/attributes/error.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` if the operation ended in an error | string | Describes a class of error the operation ended with. [1] | `timeout`; `java.net.UnknownHostException`; `server_certificate_invalid`; `500` |
 | [`gen_ai.workflow.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If available. | string | Human-readable name of the GenAI workflow provided by the application. [2] | `multi_agent_rag`; `customer_support_pipeline` |
 
 **[1] `error.type`:** The `error.type` SHOULD match the error code returned by the Generative AI provider or the client library,
 the canonical name of exception that occurred, or another low-cardinality error identifier.
 Instrumentations SHOULD document the list of errors they report.
 
-**[2] `gen_ai.workflow.name`:** This attribute can be populated in different frameworks eg: name of the first chain in LangChain OR name of the crew in CrewAI.
-Workflow name is usually provided by user application in a way specific to generative AI framework or library orchestrating the workflow.
-It's usually a static name that's expected to be unique within one application.
+**[2] `gen_ai.workflow.name`:** This attribute can be populated in different frameworks; for example, as the name of the first chain in LangChain or the name of the crew in CrewAI.
+The workflow name is usually provided by the application in a way that is specific to the generative AI framework or library that orchestrates the workflow.
+It is usually a static name that is expected to be unique within an application.
 
 `gen_ai.workflow.name` MUST have low cardinality.
 Semantic conventions for individual Generative AI frameworks SHOULD document what `gen_ai.workflow.name` means in the context of that framework.

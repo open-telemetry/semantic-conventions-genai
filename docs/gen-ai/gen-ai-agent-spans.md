@@ -737,9 +737,9 @@ that is separate from individual agents, so they SHOULD report `invoke_workflow`
 the canonical name of exception that occurred, or another low-cardinality error identifier.
 Instrumentations SHOULD document the list of errors they report.
 
-**[3] `gen_ai.workflow.name`:** This attribute can be populated in different frameworks eg: name of the first chain in LangChain OR name of the crew in CrewAI.
-Workflow name is usually provided by user application in a way specific to generative AI framework or library orchestrating the workflow.
-It's usually a static name that's expected to be unique within one application.
+**[3] `gen_ai.workflow.name`:** This attribute can be populated in different frameworks; for example, as the name of the first chain in LangChain or the name of the crew in CrewAI.
+The workflow name is usually provided by the application in a way that is specific to the generative AI framework or library that orchestrates the workflow.
+It is usually a static name that is expected to be unique within an application.
 
 `gen_ai.workflow.name` MUST have low cardinality.
 Semantic conventions for individual Generative AI frameworks SHOULD document what `gen_ai.workflow.name` means in the context of that framework.
