@@ -16,6 +16,8 @@
   ([#107](https://github.com/open-telemetry/semantic-conventions-genai/pull/107))
 - Add `plan` operation for GenAI agent planning/task decomposition spans.
   ([#97](https://github.com/open-telemetry/semantic-conventions-genai/pull/97))
+- Add `gen_ai.workflow.duration` metric to track duration of a workflow.
+  ([#126](https://github.com/open-telemetry/semantic-conventions-genai/pull/126))
 
 ### 🧰 Bug fixes 🧰
 
