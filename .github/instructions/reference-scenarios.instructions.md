@@ -1,6 +1,6 @@
 ---
 description: "Conventions for reference instrumentation under reference/scenarios. Covers inline attribute emission, span boundaries, public-entry-point usage, and what to ignore."
-applyTo: "reference/scenarios/**/*.py"
+applyTo: "reference/scenarios/**/scenario.py"
 ---
 
 # Reference scenarios
@@ -40,7 +40,7 @@ and where each value comes from.
 
 - The span must be open around the library invocation. `sampling_relevant`
   request attributes go in the span-start arguments; response attributes are
-  set from the returned object inside the same `with` / `using` block.
+  set from the returned object inside the same `with` block.
 - Capturing the response and then replaying attributes onto a separately
   opened or post-hoc span is a defect even if the final attribute set looks
   correct.
