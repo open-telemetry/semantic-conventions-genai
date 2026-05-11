@@ -5,7 +5,8 @@
       "description": "Represents a single memory record stored in or retrieved from a memory store.",
       "properties": {
         "content": {
-          "description": "The content of the memory record."
+          "description": "The content of the memory record.",
+          "title": "Content"
         },
         "id": {
           "description": "A unique identifier for the memory record.",
