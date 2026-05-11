@@ -268,6 +268,13 @@ See the [normative JSON schema](/docs/gen-ai/gen-ai-input-messages.json) for mor
         "modality": "audio",
         "mime_type": "audio/wav",
         "content": "aGVsbG8gd29ybGQgaW1hZ2luZSB0aGlzIGlzIGFuIGltYWdlCg=="
+      },
+      // A document (e.g. a PDF for KYC extraction) referenced by URI
+      {
+        "type": "uri",
+        "modality": "document",
+        "mime_type": "application/pdf",
+        "uri": "s3://my-bucket/kyc-form.pdf"
       }
     ]
   }
