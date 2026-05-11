@@ -6360,7 +6360,7 @@ refinements:
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
-        conditionally_required: when returned by the operation
+        conditionally_required: if applicable
       stability: development
       type: string
     - brief: The name of the operation being performed.
@@ -17302,7 +17302,7 @@ registry:
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
-        conditionally_required: when returned by the operation
+        conditionally_required: if applicable
       stability: development
       type: string
     - brief: The name of the operation being performed.

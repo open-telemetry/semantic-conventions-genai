@@ -323,7 +323,7 @@ spans:
         requirement_level: required
       - ref: gen_ai.memory.store.id
         requirement_level:
-          conditionally_required: when returned by the operation
+          conditionally_required: if applicable
 
   - type: gen_ai.search_memory.client
     kind: client
