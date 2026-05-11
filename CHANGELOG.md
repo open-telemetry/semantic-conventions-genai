@@ -15,4 +15,7 @@
 
 ### 🧰 Bug fixes 🧰
 
+- Add missing `gen_ai.tool.call.arguments` and `gen_ai.tool.call.result` opt-in attributes to MCP server span.
+  ([#136](https://github.com/open-telemetry/semantic-conventions-genai/pull/136))
+
 ### 📚 Clarifications 📚

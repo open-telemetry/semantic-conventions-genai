@@ -106,3 +106,8 @@ spans:
       - ref: client.port
         requirement_level:
           recommended: When `client.address` is set
+
+      - ref: gen_ai.tool.call.arguments
+        requirement_level: opt_in
+      - ref: gen_ai.tool.call.result
+        requirement_level: opt_in
