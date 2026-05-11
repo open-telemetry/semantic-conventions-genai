@@ -37,12 +37,13 @@ async def run_agent_query_reference():
     )
 
     prompt_text = "Say hello."
-    with _reference_tracer.start_as_current_span("chat claude") as span:
-        span.set_attribute("gen_ai.operation.name", "chat")
-        span.set_attribute("gen_ai.provider.name", "anthropic")
+    span_attributes = {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "anthropic",
+    }
+    with _reference_tracer.start_as_current_span("chat claude", attributes=span_attributes) as span:
         span.set_attribute(
-            "gen_ai.input.messages",
-            json.dumps([{"role": "user", "parts": [{"type": "text", "content": prompt_text}]}]),
+            "gen_ai.input.messages", json.dumps([{"role": "user", "parts": [{"type": "text", "content": prompt_text}]}])
         )
         output_text = ""
         response_model = None

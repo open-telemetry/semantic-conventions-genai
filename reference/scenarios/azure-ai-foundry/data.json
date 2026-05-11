@@ -13,6 +13,7 @@
       "server.port"
     ],
     "invoke_agent_client": [
+      "gen_ai.agent.name",
       "gen_ai.input.messages",
       "gen_ai.operation.name",
       "gen_ai.output.messages",

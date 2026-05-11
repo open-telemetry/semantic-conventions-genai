@@ -20,11 +20,13 @@ def run_chat_reference(client):
     class Greeting(BaseModel):
         message: str
 
-    with _reference_tracer.start_as_current_span("chat gpt-4o-mini") as span:
-        span.set_attribute("gen_ai.operation.name", "chat")
-        span.set_attribute("gen_ai.provider.name", "openai")
-        span.set_attribute("gen_ai.request.model", request_model)
-        messages = [{"role": "user", "content": "Say hello."}]
+    messages = [{"role": "user", "content": "Say hello."}]
+    span_attributes = {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "openai",
+        "gen_ai.request.model": request_model,
+    }
+    with _reference_tracer.start_as_current_span("chat gpt-4o-mini", attributes=span_attributes) as span:
         span.set_attribute(
             "gen_ai.input.messages",
             json.dumps([{"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]} for m in messages]),
@@ -113,12 +115,14 @@ def run_chat_tool_call_reference(client):
     def get_weather(location: str) -> str:
         return f"Sunny in {location}"
 
-    with _reference_tracer.start_as_current_span("chat gpt-4o-mini") as span:
-        span.set_attribute("gen_ai.operation.name", "chat")
-        span.set_attribute("gen_ai.provider.name", "openai")
-        span.set_attribute("gen_ai.request.model", request_model)
+    messages = [{"role": "user", "content": "What's the weather in Seattle?"}]
+    span_attributes_2 = {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "openai",
+        "gen_ai.request.model": request_model,
+    }
+    with _reference_tracer.start_as_current_span("chat gpt-4o-mini", attributes=span_attributes_2) as span:
         span.set_attribute("gen_ai.tool.definitions", json.dumps(tools))
-        messages = [{"role": "user", "content": "What's the weather in Seattle?"}]
         span.set_attribute(
             "gen_ai.input.messages",
             json.dumps([{"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]} for m in messages]),
@@ -152,8 +156,12 @@ def run_chat_tool_call_reference(client):
             tool_call = tool_calls[0]
             arguments_json = tool_call.function.arguments or json.dumps({"location": resp.location})
             arguments = json.loads(arguments_json)
-            with _reference_tracer.start_as_current_span("execute_tool WeatherRequest") as tool_span:
-                tool_span.set_attribute("gen_ai.operation.name", "execute_tool")
+            tool_span_attributes = {
+                "gen_ai.operation.name": "execute_tool",
+            }
+            with _reference_tracer.start_as_current_span(
+                "execute_tool WeatherRequest", attributes=tool_span_attributes
+            ) as tool_span:
                 tool_span.set_attribute("gen_ai.tool.name", tool_call.function.name)
                 tool_span.set_attribute("gen_ai.tool.description", tools[0]["function"]["description"])
                 tool_span.set_attribute("gen_ai.tool.type", tools[0]["type"])

@@ -3,7 +3,7 @@ name = "dspy-reference-test"
 version = "0.0.0"
 requires-python = ">=3.12"
 dependencies = [
-    "dspy==3.2.0",
+    "dspy==3.2.1",
     "genai-reference-shared",
 ]
 

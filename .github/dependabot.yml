@@ -1,0 +1,29 @@
+# See .github/DEPENDENCIES.md for the rationale behind this configuration
+# and the split of responsibilities between Dependabot and Renovate.
+version: 2
+updates:
+  - package-ecosystem: "uv"
+    directories:
+      - "/reference"
+      - "/reference/scenarios/*"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 0
+    groups:
+      python-security:
+        applies-to: security-updates
+        patterns:
+          - "*"
+
+  - package-ecosystem: "github-actions"
+    directories:
+      - "/"
+      - "/.github/actions/*"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 0
+    groups:
+      actions-security:
+        applies-to: security-updates
+        patterns:
+          - "*"

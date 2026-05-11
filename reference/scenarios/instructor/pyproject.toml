@@ -4,8 +4,8 @@ version = "0.0.0"
 requires-python = ">=3.12"
 dependencies = [
     "instructor==1.15.1",
-    "openai==2.34.0",
-    "pydantic==2.13.3",
+    "openai==2.36.0",
+    "pydantic==2.13.4",
     "genai-reference-shared",
 ]
 

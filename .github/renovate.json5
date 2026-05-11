@@ -4,6 +4,12 @@
     "config:recommended",
     "helpers:pinGitHubActionDigestsToSemver"
   ],
+  // Security updates are owned by Dependabot. See .github/DEPENDENCIES.md.
+  "vulnerabilityAlerts": {
+    "enabled": false
+  },
+  "osvVulnerabilityAlerts": false,
+  "rebaseWhen": "conflicted", // Avoid rebasing after every main update
   "customManagers": [
     {
       "customType": "regex",
@@ -30,13 +36,17 @@
         "digest"
       ],
       "groupName": "reference implementation dependencies (non-major)",
-      "commitMessageTopic": "reference implementation dependencies (non-major)"
+      "commitMessageTopic": "reference implementation dependencies (non-major)",
+      "schedule": [
+        "* 0-3 * * 2" // Tuesdays, midnight–4am
+      ],
+      "timezone": "America/Los_Angeles"
     },
     {
       "groupName": "GitHub Actions",
       "commitMessageTopic": "GitHub Actions",
-      "matchManagers": [
-        "github-actions"
+      "matchFileNames": [
+        ".github/**"
       ],
       "schedule": [
         "* * 2 * *"

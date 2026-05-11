@@ -147,7 +147,7 @@ wheels = [
 
 [[package]]
 name = "azure-ai-evaluation"
-version = "1.16.6"
+version = "1.16.7"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiohttp" },
@@ -163,9 +163,9 @@ dependencies = [
     { name = "pyjwt" },
     { name = "ruamel-yaml" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/be/b9/62d03ff555fa4a13a2ee89b3fc20d019abc0d13fed3250d9b99994db8e2c/azure_ai_evaluation-1.16.6.tar.gz", hash = "sha256:245e87c4531f5388e377a5aa8111b445b5d2b4e710dfdc5428de6e530c7eeae1", size = 2334030, upload-time = "2026-04-28T13:46:53.515Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/aa/4b/eb5d98b417dbb2e5f567636512a305dd2e031e31ceaedadf956bf0f70610/azure_ai_evaluation-1.16.7.tar.gz", hash = "sha256:6648e90452ced8618e9493e7f56b97b2689314003eddbf2dcc8e72d428f82ceb", size = 2350195, upload-time = "2026-05-08T13:48:13.703Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/86/52/f49a8eded78303737376987757e8bbc6867e553743b1fb62bce29f65bb1d/azure_ai_evaluation-1.16.6-py3-none-any.whl", hash = "sha256:a4bb2c5f51fbbf330f8a01b960345d3e86b6ad86355a8651a5859c4e2878155a", size = 1217776, upload-time = "2026-04-28T13:46:55.732Z" },
+    { url = "https://files.pythonhosted.org/packages/3a/56/9c57f70642b49e987b3da1dd19bab5e7b68fd48d56327860b091bb8ba487/azure_ai_evaluation-1.16.7-py3-none-any.whl", hash = "sha256:7852da4aea4d4f38d4fa05b66314f7ded3102169d1f2e2c0d8e8a6d13ba52e97", size = 1221470, upload-time = "2026-05-08T13:48:15.698Z" },
 ]
 
 [[package]]
@@ -179,7 +179,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "azure-ai-evaluation", specifier = "==1.16.6" },
+    { name = "azure-ai-evaluation", specifier = "==1.16.7" },
     { name = "genai-reference-shared", editable = "../../shared" },
 ]
 

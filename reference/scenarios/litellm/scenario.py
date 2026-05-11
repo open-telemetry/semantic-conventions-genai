@@ -29,27 +29,26 @@ def run_chat():
     provider_name = _provider_name(litellm_model)
     prompt_text = "Say hello."
     request_messages = [{"role": "user", "content": prompt_text}]
-    with _reference_tracer.start_as_current_span("chat gpt-4o-mini") as span:
-        span.set_attribute("gen_ai.operation.name", "chat")
-        span.set_attribute("gen_ai.provider.name", provider_name)
-        span.set_attribute("gen_ai.request.model", request_model)
+    span_attributes = {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": provider_name,
+        "gen_ai.request.model": request_model,
+    }
+    with _reference_tracer.start_as_current_span("chat gpt-4o-mini", attributes=span_attributes) as span:
+        span.set_attribute(
+            "gen_ai.input.messages",
+            json.dumps(
+                [
+                    {"role": message["role"], "parts": [{"type": "text", "content": message["content"]}]}
+                    for message in request_messages
+                ]
+            ),
+        )
         resp = litellm.completion(
             model=litellm_model,
             messages=request_messages,
             api_base=MOCK_BASE_URL,
             api_key="mock-key",
-        )
-        span.set_attribute(
-            "gen_ai.input.messages",
-            json.dumps(
-                [
-                    {
-                        "role": message["role"],
-                        "parts": [{"type": "text", "content": message["content"]}],
-                    }
-                    for message in request_messages
-                ]
-            ),
         )
         span.set_attribute("gen_ai.response.model", resp.model)
         span.set_attribute("gen_ai.response.id", resp.id)
@@ -116,28 +115,27 @@ def run_chat_streaming():
     provider_name = _provider_name(litellm_model)
     prompt_text = "Tell me a joke."
     request_messages = [{"role": "user", "content": prompt_text}]
-    with _reference_tracer.start_as_current_span("chat gpt-4o-mini") as span:
-        span.set_attribute("gen_ai.operation.name", "chat")
-        span.set_attribute("gen_ai.provider.name", provider_name)
-        span.set_attribute("gen_ai.request.model", request_model)
+    span_attributes_2 = {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": provider_name,
+        "gen_ai.request.model": request_model,
+    }
+    with _reference_tracer.start_as_current_span("chat gpt-4o-mini", attributes=span_attributes_2) as span:
+        span.set_attribute(
+            "gen_ai.input.messages",
+            json.dumps(
+                [
+                    {"role": message["role"], "parts": [{"type": "text", "content": message["content"]}]}
+                    for message in request_messages
+                ]
+            ),
+        )
         resp = litellm.completion(
             model=litellm_model,
             messages=request_messages,
             api_base=MOCK_BASE_URL,
             api_key="mock-key",
             stream=True,
-        )
-        span.set_attribute(
-            "gen_ai.input.messages",
-            json.dumps(
-                [
-                    {
-                        "role": message["role"],
-                        "parts": [{"type": "text", "content": message["content"]}],
-                    }
-                    for message in request_messages
-                ]
-            ),
         )
         text = ""
         finish_reason = None
@@ -188,19 +186,18 @@ def run_chat_tool_call():
     def get_weather(location: str) -> str:
         return f"Sunny in {location}"
 
-    with _reference_tracer.start_as_current_span("chat gpt-4o-mini") as span:
-        span.set_attribute("gen_ai.operation.name", "chat")
-        span.set_attribute("gen_ai.provider.name", provider_name)
-        span.set_attribute("gen_ai.request.model", request_model)
+    span_attributes_3 = {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": provider_name,
+        "gen_ai.request.model": request_model,
+    }
+    with _reference_tracer.start_as_current_span("chat gpt-4o-mini", attributes=span_attributes_3) as span:
         span.set_attribute("gen_ai.tool.definitions", json.dumps([request_tool]))
         span.set_attribute(
             "gen_ai.input.messages",
             json.dumps(
                 [
-                    {
-                        "role": message["role"],
-                        "parts": [{"type": "text", "content": message["content"]}],
-                    }
+                    {"role": message["role"], "parts": [{"type": "text", "content": message["content"]}]}
                     for message in request_messages
                 ]
             ),
@@ -223,8 +220,12 @@ def run_chat_tool_call():
             tool_call = tool_calls[0]
             arguments_json = tool_call.function.arguments or "{}"
             arguments = json.loads(arguments_json)
-            with _reference_tracer.start_as_current_span("execute_tool get_weather") as tool_span:
-                tool_span.set_attribute("gen_ai.operation.name", "execute_tool")
+            tool_span_attributes = {
+                "gen_ai.operation.name": "execute_tool",
+            }
+            with _reference_tracer.start_as_current_span(
+                "execute_tool get_weather", attributes=tool_span_attributes
+            ) as tool_span:
                 tool_span.set_attribute("gen_ai.tool.name", tool_call.function.name)
                 tool_span.set_attribute("gen_ai.tool.description", request_tool["function"]["description"])
                 tool_span.set_attribute("gen_ai.tool.type", request_tool["type"])
@@ -246,10 +247,14 @@ def run_embeddings():
     request_model = "text-embedding-3-small"
     litellm_model = f"openai/{request_model}"
     provider_name = _provider_name(litellm_model)
-    with _reference_tracer.start_as_current_span("embeddings text-embedding-3-small") as span:
-        span.set_attribute("gen_ai.operation.name", "embeddings")
-        span.set_attribute("gen_ai.provider.name", provider_name)
-        span.set_attribute("gen_ai.request.model", request_model)
+    span_attributes_4 = {
+        "gen_ai.operation.name": "embeddings",
+        "gen_ai.provider.name": provider_name,
+        "gen_ai.request.model": request_model,
+    }
+    with _reference_tracer.start_as_current_span(
+        "embeddings text-embedding-3-small", attributes=span_attributes_4
+    ) as span:
         resp = litellm.embedding(
             model=litellm_model,
             input=["Hello, world!"],

@@ -110,7 +110,10 @@ For more information about the maintainer role, see the [community repository](h
 
 ### Approvers
 
-- TODO
+- [Aaron Abbott](https://github.com/aabmass), Google
+- [Ankit Singhal](https://github.com/singankit), Microsoft
+- [JWinermaSplunk](https://github.com/JWinermaSplunk), Splunk
+- [Mike Goldsmith](https://github.com/MikeGoldsmith), Honeycomb
 
 For more information about the approver role, see the [community repository](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#approver).
 

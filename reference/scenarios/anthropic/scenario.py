@@ -30,16 +30,18 @@ def run_chat():
     messages = [{"role": "user", "content": "Say hello."}]
     client = anthropic.Anthropic(base_url=MOCK_BASE_URL, api_key="mock-key")
 
-    with _reference_tracer.start_as_current_span("chat claude-sonnet-4-20250514") as span:
-        host, port = mock_server_host_port(MOCK_BASE_URL)
-        span.set_attribute("gen_ai.operation.name", "chat")
-        span.set_attribute("gen_ai.provider.name", "anthropic")
-        span.set_attribute("gen_ai.request.model", request_model)
+    host, port = mock_server_host_port(MOCK_BASE_URL)
+    span_attributes = {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "anthropic",
+        "gen_ai.request.model": request_model,
+    }
+    if host:
+        span_attributes["server.address"] = host
+    if port is not None:
+        span_attributes["server.port"] = port
+    with _reference_tracer.start_as_current_span("chat claude-sonnet-4-20250514", attributes=span_attributes) as span:
         span.set_attribute("gen_ai.request.max_tokens", request_max_tokens)
-        if host:
-            span.set_attribute("server.address", host)
-        if port is not None:
-            span.set_attribute("server.port", port)
         span.set_attribute(
             "gen_ai.input.messages",
             json.dumps([{"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]} for m in messages]),

@@ -1,6 +1,6 @@
 ---
 name: reference
-description: 'Use when implementing a semantic-conventions PR, upstream proposal diff, spec change, or new GenAI span or attribute in this repository. Adds reference instrumentation, reference scenario updates, inline attribute emission, and data coverage for every Python, JS, Java, and .NET library that credibly supports the change.'
+description: 'Use when implementing a semantic-conventions PR, upstream proposal diff, spec change, or new GenAI span or attribute in this repository. Adds reference instrumentation, reference scenario updates, inline attribute emission, and data coverage for every Python library that credibly supports the change.'
 argument-hint: 'Describe the semantic-conventions PR or the convention changes that need reference coverage.'
 ---
 
@@ -42,8 +42,11 @@ If the value would have to be guessed, carried forward from an unrelated call, o
 
 When editing reference tests in this repository:
 
+- Open the span **around** the SDK call, not after it. Put available `sampling_relevant` request attributes in the span-start `attributes` / `tags` argument. Then invoke the library inside the `with` block and set response attributes from the returned object inside the same `with` block. Do not capture a completion and replay attribute emission against it after the span has closed or against a separately-opened span.
+- When the library's public entry point does not expose the operation directly (for example, an internal-only span boundary inside a library helper), it is acceptable to patch the library's private methods to open spans around them. The scenario itself must still invoke the **public** API. Do not call private methods directly from the scenario.
 - Emit attributes inline at the span or activity site.
 - Keep request, derived, and response attributes close together.
+- Emit non-`sampling_relevant` request attributes inline after the span/activity has started. Keep response values, generated IDs, token usage, output messages, retrieval results, and tool results after the operation that produces them.
 - Reuse the same current-call variable that the SDK call uses when emitting request attributes.
 - Read response values from the current response or streamed result object.
 - Avoid helpers that hide emitted attributes.
@@ -54,7 +57,7 @@ When editing reference tests in this repository:
 
 1. Read the semantic-conventions PR and extract the exact changed spans, attributes, requirement levels, and examples.
 2. Translate the PR into a concrete implementation worklist grouped by operation, not by prose section.
-3. Inventory the libraries in this repository that implement the affected operation across Python, JS, Java, and .NET.
+3. Inventory the Python libraries in this repository that implement the affected operation.
 4. For each library, decide whether the changed fields are credibly available from the current call boundary.
 5. Add or update the reference scenario for every supporting library.
 6. Emit the new reference attributes inline and keep them tied to current request or response values.
@@ -67,6 +70,8 @@ When editing reference tests in this repository:
 The default expectation is repository-wide reference coverage for all supporting libraries, not a single illustrative example.
 
 When the same semantic-convention change applies to multiple ecosystems, look for parallel implementations instead of stopping after the first passing library.
+
+Prefer the library's natural execution shape over surgical paths that minimize trace output. Sibling spans from worker tasks, retries, converters, fall-through paths, and similar library-native behavior are honest reference data, not noise to suppress. If invoking the public entry point produces extra LLM round-trips or extra spans beyond the one being demonstrated, accept them.
 
 ## Output Format
 
