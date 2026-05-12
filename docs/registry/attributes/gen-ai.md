@@ -89,7 +89,7 @@ by an explicit user opt-in, for example `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESS
 > [!Warning]
 > This attribute may contain sensitive information.
 
-**[5] `gen_ai.memory.record.count`:** For `search_memory` operations, this is the number of memory records returned by the operation. For `update_memory` operations, this is the number of memory records the operation attempted to create or modify.
+**[5] `gen_ai.memory.record.count`:** For `search_memory` operations, this is the number of memory records returned by the operation. For `create_memory` operations, this is the number of memory records the operation attempted to create. For `update_memory` operations, this is the number of memory records the operation attempted to modify. For `upsert_memory` operations, this is the number of memory records the operation attempted to create or update.
 
 **[6] `gen_ai.memory.records`:** Instrumentations MUST follow [Memory records JSON schema](/docs/gen-ai/gen-ai-memory-records.json).
 When the attribute is recorded on events, it MUST be recorded in structured
@@ -246,6 +246,7 @@ If there is no low-cardinality workflow name available for a given framework, th
 | --- | --- | --- |
 | `chat` | Chat completion operation such as [OpenAI Chat API](https://platform.openai.com/docs/api-reference/chat) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `create_agent` | Create GenAI agent | ![Development](https://img.shields.io/badge/-development-blue) |
+| `create_memory` | Create new memory records | ![Development](https://img.shields.io/badge/-development-blue) |
 | `create_memory_store` | Create or initialize a memory store | ![Development](https://img.shields.io/badge/-development-blue) |
 | `delete_memory` | Delete memory records | ![Development](https://img.shields.io/badge/-development-blue) |
 | `delete_memory_store` | Delete or deprovision a memory store | ![Development](https://img.shields.io/badge/-development-blue) |
@@ -258,7 +259,8 @@ If there is no low-cardinality workflow name available for a given framework, th
 | `retrieval` | Retrieval operation such as [OpenAI Search Vector Store API](https://platform.openai.com/docs/api-reference/vector-stores/search) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `search_memory` | Search/query memories from a memory store | ![Development](https://img.shields.io/badge/-development-blue) |
 | `text_completion` | Text completions operation such as [OpenAI Completions API (Legacy)](https://platform.openai.com/docs/api-reference/completions) | ![Development](https://img.shields.io/badge/-development-blue) |
-| `update_memory` | Create or update memory records | ![Development](https://img.shields.io/badge/-development-blue) |
+| `update_memory` | Update existing memory records | ![Development](https://img.shields.io/badge/-development-blue) |
+| `upsert_memory` | Create or update memory records without the caller choosing which | ![Development](https://img.shields.io/badge/-development-blue) |
 
 ---
 

@@ -1,6 +1,6 @@
-# Update Memory Span
+# Create Memory Span
 
-> **[Semantic Convention](../../docs/gen-ai/gen-ai-spans.md#update-memory)**
+> **[Semantic Convention](../../docs/gen-ai/gen-ai-spans.md#create-memory)**
 
 ## Required
 

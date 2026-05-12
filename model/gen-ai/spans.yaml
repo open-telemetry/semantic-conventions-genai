@@ -355,20 +355,78 @@ spans:
       - ref: gen_ai.memory.records
         requirement_level: opt_in
 
+  - type: gen_ai.create_memory.client
+    kind: client
+    name:
+      note: |
+        **Span name** SHOULD be `create_memory`.
+    brief: >
+      Describes a memory create operation that creates new memory records in a memory store.
+    note: |
+      The `gen_ai.operation.name` SHOULD be `create_memory`.
+
+      This operation SHOULD be used when the caller requests creation of new memory records.
+
+      **Span name** SHOULD be `create_memory`.
+      Memory operation span names intentionally omit `gen_ai.memory.store.id` because memory store
+      identifiers may be high-cardinality.
+    stability: development
+    attributes:
+      - ref_group: attributes.gen_ai.memory.client
+      - ref: gen_ai.provider.name
+        requirement_level:
+          conditionally_required: if the operation is handled by a named external GenAI provider or service
+      - ref: gen_ai.memory.store.id
+        requirement_level:
+          conditionally_required: if applicable
+      - ref: gen_ai.memory.record.count
+        requirement_level: recommended
+      - ref: gen_ai.memory.records
+        requirement_level: opt_in
+
   - type: gen_ai.update_memory.client
     kind: client
     name:
       note: |
         **Span name** SHOULD be `update_memory`.
     brief: >
-      Describes a memory update operation that creates new or modifies existing
-      memory records in a memory store.
+      Describes a memory update operation that modifies existing memory records in a memory store.
     note: |
       The `gen_ai.operation.name` SHOULD be `update_memory`.
 
-      This operation covers both creating new and updating existing memory records.
+      This operation SHOULD be used when the caller requests modification of known existing memory records.
 
       **Span name** SHOULD be `update_memory`.
+      Memory operation span names intentionally omit `gen_ai.memory.store.id` because memory store
+      identifiers may be high-cardinality.
+    stability: development
+    attributes:
+      - ref_group: attributes.gen_ai.memory.client
+      - ref: gen_ai.provider.name
+        requirement_level:
+          conditionally_required: if the operation is handled by a named external GenAI provider or service
+      - ref: gen_ai.memory.store.id
+        requirement_level:
+          conditionally_required: if applicable
+      - ref: gen_ai.memory.record.count
+        requirement_level: recommended
+      - ref: gen_ai.memory.records
+        requirement_level: opt_in
+
+  - type: gen_ai.upsert_memory.client
+    kind: client
+    name:
+      note: |
+        **Span name** SHOULD be `upsert_memory`.
+    brief: >
+      Describes a memory upsert operation that may create or update memory records in a memory store.
+    note: |
+      The `gen_ai.operation.name` SHOULD be `upsert_memory`.
+
+      This operation SHOULD be used when the caller invokes a public API that may create,
+      update, or consolidate memory records without the caller choosing which.
+
+      **Span name** SHOULD be `upsert_memory`.
       Memory operation span names intentionally omit `gen_ai.memory.store.id` because memory store
       identifiers may be high-cardinality.
     stability: development

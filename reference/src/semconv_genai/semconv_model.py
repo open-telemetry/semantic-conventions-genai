@@ -148,11 +148,23 @@ SPAN_SPECS: dict[str, AttributeSpec] = {
         label="Search Memory",
         op_names=frozenset({"search_memory"}),
     ),
+    "create_memory": _from_yaml(
+        _groups,
+        "span.gen_ai.create_memory.client",
+        label="Create Memory",
+        op_names=frozenset({"create_memory"}),
+    ),
     "update_memory": _from_yaml(
         _groups,
         "span.gen_ai.update_memory.client",
         label="Update Memory",
         op_names=frozenset({"update_memory"}),
+    ),
+    "upsert_memory": _from_yaml(
+        _groups,
+        "span.gen_ai.upsert_memory.client",
+        label="Upsert Memory",
+        op_names=frozenset({"upsert_memory"}),
     ),
     "delete_memory": _from_yaml(
         _groups,

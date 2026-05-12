@@ -331,13 +331,13 @@ def run_memory_reference():
             ]
         )
 
-        update_span_attributes = {
-            "gen_ai.operation.name": "update_memory",
+        upsert_span_attributes = {
+            "gen_ai.operation.name": "upsert_memory",
             "gen_ai.memory.store.id": store_id,
         }
-        with _reference_tracer.start_as_current_span("update_memory", attributes=update_span_attributes) as update_span:
-            update_span.set_attribute("gen_ai.memory.record.count", len(session.events))
-            update_span.set_attribute("gen_ai.memory.records", memory_records)
+        with _reference_tracer.start_as_current_span("upsert_memory", attributes=upsert_span_attributes) as upsert_span:
+            upsert_span.set_attribute("gen_ai.memory.record.count", len(session.events))
+            upsert_span.set_attribute("gen_ai.memory.records", memory_records)
             await memory_service.add_session_to_memory(session)
 
         search_span_attributes = {

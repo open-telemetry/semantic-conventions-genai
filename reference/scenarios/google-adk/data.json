@@ -60,7 +60,7 @@
       "gen_ai.memory.store.id",
       "gen_ai.operation.name"
     ],
-    "update_memory": [
+    "upsert_memory": [
       "gen_ai.memory.record.count",
       "gen_ai.memory.records",
       "gen_ai.memory.store.id",

@@ -34,7 +34,9 @@ Run `uv run update-reports` to regenerate.
 | [Retrieval](reports/retrieval-span.md) | haystack, langchain, llamaindex |
 | [Create Memory Store](reports/create-memory-store-span.md) | aws-bedrock-agentcore, google-adk |
 | [Search Memory](reports/search-memory-span.md) | aws-bedrock-agentcore, google-adk |
-| [Update Memory](reports/update-memory-span.md) | aws-bedrock-agentcore, google-adk |
+| [Create Memory](reports/create-memory-span.md) | aws-bedrock-agentcore |
+| [Update Memory](reports/update-memory-span.md) | aws-bedrock-agentcore |
+| [Upsert Memory](reports/upsert-memory-span.md) | google-adk |
 | [Delete Memory](reports/delete-memory-span.md) | aws-bedrock-agentcore |
 | [Delete Memory Store](reports/delete-memory-store-span.md) | aws-bedrock-agentcore |
 | [Execute Tool](reports/execute-tool-span.md) | autogen, crewai, google-adk, groq, instructor, litellm, llamaindex, mistralai, openai, openai-agents, openai-assistants, pydantic-ai |

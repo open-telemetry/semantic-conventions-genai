@@ -431,9 +431,17 @@ attributes:
           value: "search_memory"
           brief: 'Search/query memories from a memory store'
           stability: development
+        - id: create_memory
+          value: "create_memory"
+          brief: 'Create new memory records'
+          stability: development
         - id: update_memory
           value: "update_memory"
-          brief: 'Create or update memory records'
+          brief: 'Update existing memory records'
+          stability: development
+        - id: upsert_memory
+          value: "upsert_memory"
+          brief: 'Create or update memory records without the caller choosing which'
           stability: development
         - id: delete_memory
           value: "delete_memory"
@@ -548,8 +556,10 @@ attributes:
     brief: The number of memory records relevant to the operation.
     note: >
       For `search_memory` operations, this is the number of memory records returned by the operation.
+      For `create_memory` operations, this is the number of memory records the operation attempted to create.
       For `update_memory` operations, this is the number of memory records the operation attempted to
-      create or modify.
+      modify. For `upsert_memory` operations, this is the number of memory records the operation
+      attempted to create or update.
     examples: [3]
     stability: development
   - key: gen_ai.memory.query.text

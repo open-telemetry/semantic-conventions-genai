@@ -88,9 +88,9 @@ def run_create_memory_store_reference(client, stubber):
         span.set_attribute("gen_ai.memory.store.id", response["memory"]["id"])
 
 
-def run_update_memory_reference(client, stubber):
+def run_create_and_update_memory_reference(client, stubber):
     """Scenario: AgentCore BatchCreateMemoryRecords and BatchUpdateMemoryRecords."""
-    print("  [update_memory] Bedrock AgentCore BatchCreateMemoryRecords")
+    print("  [create_memory] Bedrock AgentCore BatchCreateMemoryRecords")
     create_records = [
         {
             "requestIdentifier": "create-record-1",
@@ -121,7 +121,7 @@ def run_update_memory_reference(client, stubber):
 
     host, port = mock_server_host_port(MOCK_BASE_URL)
     span_attributes = {
-        "gen_ai.operation.name": "update_memory",
+        "gen_ai.operation.name": "create_memory",
         "gen_ai.provider.name": "aws.bedrock",
         "gen_ai.memory.store.id": MEMORY_ID,
     }
@@ -130,7 +130,7 @@ def run_update_memory_reference(client, stubber):
     if port is not None:
         span_attributes["server.port"] = port
     with _reference_tracer.start_as_current_span(
-        "update_memory", kind=SpanKind.CLIENT, attributes=span_attributes
+        "create_memory", kind=SpanKind.CLIENT, attributes=span_attributes
     ) as span:
         response = client.batch_create_memory_records(
             memoryId=MEMORY_ID,
@@ -351,7 +351,7 @@ def main():
     data_client = create_agentcore_data_client()
     with Stubber(control_client) as control_stubber, Stubber(data_client) as data_stubber:
         run_create_memory_store_reference(control_client, control_stubber)
-        run_update_memory_reference(data_client, data_stubber)
+        run_create_and_update_memory_reference(data_client, data_stubber)
         run_search_memory_reference(data_client, data_stubber)
         run_delete_memory_reference(data_client, data_stubber)
         run_delete_memory_store_reference(control_client, control_stubber)
