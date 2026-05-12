@@ -312,9 +312,7 @@ def run_chat_with_document_input_reference(client):
         span_attributes_doc["server.address"] = host
     if port is not None:
         span_attributes_doc["server.port"] = port
-    with _reference_tracer.start_as_current_span(
-        "chat gpt-4o-mini", attributes=span_attributes_doc
-    ) as span:
+    with _reference_tracer.start_as_current_span("chat gpt-4o-mini", attributes=span_attributes_doc) as span:
         span.set_attribute("gen_ai.input.messages", input_messages)
         resp = client.chat.completions.create(
             model=request_model,
