@@ -1074,12 +1074,17 @@ def notification_due(
     previous_waiting_since = parse_ts(previous_pr_state.get("waiting_since") or "")
     last_notified = parse_ts(previous_assignee_state.get("last_notified_at") or "")
     if last_notified is None:
+        is_same_waiting_period = previous_waiting_since == current_waiting_since
         is_seen_waiting_period = (
             previous_assignee_state
             and not previous_assignee_state.get("notification_pending")
-            and previous_waiting_since == current_waiting_since
+            and is_same_waiting_period
         )
-        return None if is_seen_waiting_period else "initial"
+        if is_seen_waiting_period:
+            return None
+        if previous_pr_state and not previous_assignee_state and is_same_waiting_period:
+            return None
+        return "initial"
     if current_waiting_since > last_notified:
         return "initial"
     if now.weekday() < 5 and (now - last_notified).total_seconds() >= APPROVER_FOLLOW_UP_SECONDS:
