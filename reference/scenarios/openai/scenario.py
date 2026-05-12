@@ -265,39 +265,51 @@ def run_chat_tool_call_reference(client):
 
 
 def run_chat_with_document_input_reference(client):
-    """Scenario: chat with a document attachment (document modality).
+    """Scenario: chat with an inline PDF document attachment (document modality).
 
-    Exercises the `document` value of the `Modality` enum on a `UriPart`
-    in `gen_ai.input.messages`. The user message carries a text instruction
-    plus a PDF reference, mirroring how a document-extraction workload
-    (e.g. KYC) surfaces in the canonical message JSON.
+    Exercises the `document` value of the `Modality` enum on a `BlobPart`
+    in `gen_ai.input.messages`. Every emitted field on the BlobPart is
+    derivable directly from the OpenAI SDK call boundary:
+
+    - The SDK call passes a `{"type": "file", "file": {"file_data": "data:application/pdf;base64,..."}}`
+      content block. The `file_data` value is a data-URI a native
+      instrumentation can parse without a separate Files-API roundtrip.
+    - `mime_type` comes from the data-URI prefix (`application/pdf`).
+    - `content` is the base64 payload of the data-URI.
+    - `modality: "document"` is the classification of `application/pdf`
+      under the new enum value -- the whole point of this PR.
     """
-    print("  [chat_document] chat with PDF document input (reference implementation)")
-    request_model = "gpt-4o-mini"
-    document_uri = "https://example.com/sample-kyc.pdf"
-    document_mime_type = "application/pdf"
-    instruction = "Summarize the attached document in one sentence."
+    import base64
 
-    # OpenAI Chat Completions accepts a multimodal `content` array for
-    # vision/document-capable models. For a PDF the documented shape is a
-    # `file` content block referencing an uploaded file by id.
+    print("  [chat_document] chat with inline PDF document input (reference implementation)")
+    request_model = "gpt-4o-mini"
+    instruction = "Summarize the attached document in one sentence."
+    # Minimal valid-looking PDF bytes; the mock LLM does not parse this.
+    pdf_bytes = b"%PDF-1.4\n%mock pdf for reference scenario\n%%EOF\n"
+    pdf_b64 = base64.b64encode(pdf_bytes).decode("ascii")
+    mime_type = "application/pdf"
+    data_uri = f"data:{mime_type};base64,{pdf_b64}"
+    filename = "sample-kyc.pdf"
+
+    # SDK boundary: documented `file` content block with inline `file_data`.
     user_content = [
         {"type": "text", "text": instruction},
-        {"type": "file", "file": {"file_id": "file-mock-kyc"}},
+        {"type": "file", "file": {"file_data": data_uri, "filename": filename}},
     ]
     messages = [{"role": "user", "content": user_content}]
 
-    # Canonical OTel parts representation: a TextPart followed by a UriPart
-    # with modality="document". The URI points at the same artifact the
-    # `file` content block references (in production this is typically an
-    # S3 / MinIO / GCS object URI captured by an offload-on-capture step).
+    # Canonical OTel parts: TextPart + BlobPart(modality="document"). Each
+    # field on the BlobPart traces back to the SDK arg above:
+    #   - mime_type: parsed from the data-URI prefix
+    #   - content:   the base64 portion of the data-URI
+    #   - modality:  derived classification of mime_type "application/pdf"
     input_parts = [
         {"type": "text", "content": instruction},
         {
-            "type": "uri",
+            "type": "blob",
             "modality": "document",
-            "mime_type": document_mime_type,
-            "uri": document_uri,
+            "mime_type": mime_type,
+            "content": pdf_b64,
         },
     ]
     input_messages = json.dumps([{"role": "user", "parts": input_parts}])
