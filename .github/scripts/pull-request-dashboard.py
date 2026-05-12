@@ -547,7 +547,7 @@ def utc_now() -> datetime:
 
 
 def empty_notification_state(loaded: bool = False) -> dict[str, Any]:
-    return {"version": 1, "prs": {}, "_loaded_from_dashboard": loaded}
+    return {"_loaded_from_dashboard": loaded}
 
 
 def notification_state_from_body(body: str) -> dict[str, Any]:
@@ -561,9 +561,10 @@ def notification_state_from_body(body: str) -> dict[str, Any]:
     if not isinstance(state, dict):
         return empty_notification_state()
     prs = state.get("prs")
-    if not isinstance(prs, dict):
-        state["prs"] = {}
-    state["version"] = 1
+    if isinstance(prs, dict):
+        state = dict(prs)
+    else:
+        state = {k: v for k, v in state.items() if isinstance(v, dict) and not k.startswith("_")}
     state["_loaded_from_dashboard"] = True
     return state
 
@@ -1113,7 +1114,7 @@ def update_notification_state(
     notify_slack: bool,
     now: datetime,
 ) -> dict[str, Any]:
-    previous_prs = previous_state.get("prs") or {}
+    previous_prs = {k: v for k, v in previous_state.items() if isinstance(v, dict) and not k.startswith("_")}
     previous_state_exists = bool(previous_state.get("_loaded_from_dashboard"))
     webhook_url = os.environ.get("SLACK_WEBHOOK_URL") or ""
     notification_errors: list[str] = []
@@ -1185,7 +1186,7 @@ def update_notification_state(
             current_pr_state["assignee_notifications"][assignee_key] = assignee_state
         if current_pr_state["assignee_notifications"]:
             new_prs[pr_key] = current_pr_state
-    return {"version": 1, "prs": new_prs, "_slack_notification_errors": notification_errors}
+    return {**new_prs, "_slack_notification_errors": notification_errors}
 
 
 def _md_escape(s: str) -> str:
