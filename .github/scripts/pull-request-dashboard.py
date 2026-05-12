@@ -315,7 +315,10 @@ def fetch_review_threads(owner: str, repo_name: str, number: int) -> list[dict[s
 def parse_ts(s: str | None) -> datetime | None:
     if not s:
         return None
-    return datetime.fromisoformat(s.replace("Z", "+00:00"))
+    try:
+        return datetime.fromisoformat(s.replace("Z", "+00:00"))
+    except ValueError:
+        return None
 
 
 def seconds_since(ts: datetime | None) -> int | None:
