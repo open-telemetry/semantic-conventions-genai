@@ -68,4 +68,4 @@ Under `Libraries not updated`, state whether each library is:
 - `not yet implemented in this repo`
 - `honest capture gap; evaluate separately`
 
-Under `Capture gaps`, list each library left without a reference implementation and the exact missing current-call source that prevented a credible implementation. This is the content that belongs in the PR description's `Capture gaps` section.
+Under `Capture gaps`, list each library left without a reference implementation and the exact missing current-call source that prevented a credible implementation.
