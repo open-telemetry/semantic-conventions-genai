@@ -47,8 +47,8 @@ def create_agentcore_data_client():
 
 
 def run_create_memory_store_reference(client, stubber):
-    """Scenario: AgentCore CreateMemory."""
-    print("  [create_memory_store] Bedrock AgentCore CreateMemory")
+    """Scenario: Bedrock AgentCore create_memory_store operation."""
+    print("  [create_memory_store] Bedrock AgentCore create_memory_store")
     event_expiry_duration = 30
     stubber.add_response(
         "create_memory",
@@ -309,8 +309,8 @@ def run_delete_memory_reference(client, stubber):
 
 
 def run_delete_memory_store_reference(client, stubber):
-    """Scenario: AgentCore DeleteMemory."""
-    print("  [delete_memory_store] Bedrock AgentCore DeleteMemory")
+    """Scenario: Bedrock AgentCore delete_memory_store operation."""
+    print("  [delete_memory_store] Bedrock AgentCore delete_memory_store")
     client_token = "delete-memory-store-token"
     stubber.add_response(
         "delete_memory",
