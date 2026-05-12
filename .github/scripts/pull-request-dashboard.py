@@ -25,7 +25,7 @@ import time
 import urllib.error
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -39,7 +39,6 @@ PR_COMMENT_WINDOW = 20
 MAX_BODY_CHARS = 1200
 MAX_PROMPT_CHARS = 18_000
 APPROVER_FOLLOW_UP_SECONDS = 24 * 60 * 60
-SLACK_NOTIFICATION_RETRY_AFTER_SECONDS = 6 * 60 * 60
 SLACK_WEBHOOK_RETRY_ATTEMPTS = 3
 SLACK_WEBHOOK_RETRY_DELAY_SECONDS = 1.0
 NOTIFICATION_STATE_MARKER_RE = re.compile(r"<!--\s*pr-review-dashboard-state:(.*?)\s*-->", re.S)
@@ -1145,27 +1144,9 @@ def update_notification_state(
         for assignee in facts.get("assignees") or []:
             assignee_key = assignee.lower()
             previous_assignee_state = previous_notifications.get(assignee_key) or previous_notifications.get(assignee) or {}
-            previous_waiting_since = parse_ts(previous_pr_state.get("waiting_since") or "")
-            previous_retry_after = parse_ts(previous_assignee_state.get("notification_retry_after") or "")
             assignee_state = {
                 "last_notified_at": previous_assignee_state.get("last_notified_at") or "",
             }
-            if (
-                previous_assignee_state.get("notification_pending")
-                and previous_retry_after
-                and now < previous_retry_after
-                and previous_waiting_since == current_waiting_since
-            ):
-                assignee_state["notification_pending"] = True
-                assignee_state["notification_retry_after"] = ts_text(previous_retry_after)
-                if previous_assignee_state.get("notification_last_error"):
-                    assignee_state["notification_last_error"] = previous_assignee_state.get("notification_last_error")
-                    notification_errors.append(
-                        f"PR #{number}: Slack notification retry paused until {ts_text(previous_retry_after)}: "
-                        f"{previous_assignee_state.get('notification_last_error')}"
-                    )
-                current_pr_state["assignee_notifications"][assignee_key] = assignee_state
-                continue
             kind = notification_due(
                 previous_state_exists,
                 previous_pr_state,
@@ -1186,10 +1167,6 @@ def update_notification_state(
                     print(f"  warning: {error}", file=sys.stderr)
                     notification_errors.append(error)
                     assignee_state["notification_pending"] = True
-                    assignee_state["notification_retry_after"] = ts_text(
-                        now + timedelta(seconds=SLACK_NOTIFICATION_RETRY_AFTER_SECONDS)
-                    )
-                    assignee_state["notification_last_error"] = error
                 else:
                     assignee_state["last_notified_at"] = ts_text(now)
                     assignee_state["last_notification_kind"] = kind
