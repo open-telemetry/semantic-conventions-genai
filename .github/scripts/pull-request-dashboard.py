@@ -986,7 +986,10 @@ def load_slack_user_map() -> dict[str, str]:
     raw = os.environ.get("SLACK_USER_MAP_JSON") or ""
     if not raw.strip():
         return {}
-    data = json.loads(raw)
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError as e:
+        raise RuntimeError(f"SLACK_USER_MAP_JSON must be valid JSON: {e.msg} at char {e.pos}") from e
     if not isinstance(data, dict):
         raise RuntimeError("SLACK_USER_MAP_JSON must be a JSON object mapping GitHub logins to Slack user IDs")
     return {str(k).lower(): str(v) for k, v in data.items() if str(k).strip() and str(v).strip()}
@@ -1059,15 +1062,18 @@ def try_send_slack_notification(
     kind: str,
     webhook_url: str,
     slack_user_id: str | None,
-) -> None:
+) -> str | None:
     number = result.get("pr_num")
+    if not webhook_url:
+        return "SLACK_WEBHOOK_URL is not set"
     if not slack_user_id:
-        raise RuntimeError(f"no Slack user mapping for GitHub assignee @{assignee} on PR #{number}")
+        return f"PR #{number}: no Slack user mapping for GitHub assignee @{assignee}"
     try:
         post_slack_webhook(slack_message(repo, result, f"<@{slack_user_id}>", kind), webhook_url)
     except Exception as e:
-        raise RuntimeError(f"failed to notify @{assignee} for PR #{number}: {e}") from e
+        return f"PR #{number}: failed to notify @{assignee}: {e}"
     print(f"  mentioned @{assignee} on Slack for PR #{number} ({kind})", file=sys.stderr)
+    return None
 
 
 def update_notification_state(
@@ -1080,9 +1086,12 @@ def update_notification_state(
     previous_prs = previous_state.get("prs") or {}
     previous_state_exists = bool(previous_state.get("_loaded_from_dashboard"))
     webhook_url = os.environ.get("SLACK_WEBHOOK_URL") or ""
-    if notify_slack and not webhook_url:
-        raise RuntimeError("SLACK_WEBHOOK_URL is required when Slack notifications are enabled")
-    slack_user_map = load_slack_user_map() if notify_slack else {}
+    notification_errors: list[str] = []
+    try:
+        slack_user_map = load_slack_user_map() if notify_slack else {}
+    except Exception as e:
+        notification_errors.append(str(e))
+        slack_user_map = {}
 
     new_prs: dict[str, Any] = {}
     for number, result in sorted(results.items()):
@@ -1117,7 +1126,7 @@ def update_notification_state(
                 now,
             )
             if kind and notify_slack:
-                try_send_slack_notification(
+                error = try_send_slack_notification(
                     repo,
                     result,
                     assignee,
@@ -1125,9 +1134,14 @@ def update_notification_state(
                     webhook_url,
                     slack_user_map.get(assignee_key),
                 )
-                assignee_state["last_notified_at"] = ts_text(now)
-                assignee_state["last_notification_kind"] = kind
-                assignee_state["notification_pending"] = False
+                if error:
+                    print(f"  warning: {error}", file=sys.stderr)
+                    notification_errors.append(error)
+                    assignee_state["notification_pending"] = True
+                else:
+                    assignee_state["last_notified_at"] = ts_text(now)
+                    assignee_state["last_notification_kind"] = kind
+                    assignee_state["notification_pending"] = False
             elif kind:
                 assignee_state["notification_pending"] = True
             elif previous_assignee_state.get("last_notification_kind"):
@@ -1137,11 +1151,37 @@ def update_notification_state(
                 assignee_state["notification_pending"] = True
             current_pr_state["assignee_notifications"][assignee_key] = assignee_state
         new_prs[pr_key] = current_pr_state
-    return {"version": 1, "prs": new_prs}
+    return {"version": 1, "prs": new_prs, "_slack_notification_errors": notification_errors}
 
 
 def _md_escape(s: str) -> str:
     return (s or "").replace("|", "\\|").replace("\n", " ").strip()
+
+
+def github_run_url(repo: str) -> str:
+    server_url = os.environ.get("GITHUB_SERVER_URL") or "https://github.com"
+    repository = os.environ.get("GITHUB_REPOSITORY") or repo
+    run_id = os.environ.get("GITHUB_RUN_ID") or ""
+    if run_id:
+        return f"{server_url}/{repository}/actions/runs/{run_id}"
+    return f"https://github.com/{repo}/actions/workflows/pr-review-dashboard.yml"
+
+
+def prepend_slack_notification_warning(md: str, errors: list[str], repo: str) -> str:
+    if not errors:
+        return md
+    unique_errors = list(dict.fromkeys(errors))
+    run_url = github_run_url(repo)
+    lines = [
+        "> [!WARNING]",
+        "> Slack notifications for assignees are currently failing. "
+        f"See the [latest dashboard run]({run_url}) for logs.",
+    ]
+    for error in unique_errors[:5]:
+        lines.append(f"> - {_md_escape(error)}")
+    if len(unique_errors) > 5:
+        lines.append(f"> - ...and {len(unique_errors) - 5} more notification error(s).")
+    return "\n".join(lines) + "\n\n" + md
 
 
 def fetch_workflow_failure_issues(repo: str) -> list[dict[str, Any]]:
@@ -1452,6 +1492,11 @@ def main() -> int:
         utc_now(),
     )
     md = render_markdown_compact(prs, results, repo, workflow_issues)
+    md = prepend_slack_notification_warning(
+        md,
+        notification_state.get("_slack_notification_errors") or [],
+        repo,
+    )
     md = append_notification_state(md, notification_state)
     Path(args.output).write_text(md, encoding="utf-8")
     print(f"wrote {args.output}", file=sys.stderr)
