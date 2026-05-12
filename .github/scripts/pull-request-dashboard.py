@@ -1158,7 +1158,6 @@ def update_notification_state(
             if kind and notify_slack:
                 slack_user_id = slack_user_map.get(assignee_key)
                 if not slack_user_id:
-                    current_pr_state["assignee_notifications"][assignee_key] = assignee_state
                     continue
                 error = try_send_slack_notification(
                     repo,
