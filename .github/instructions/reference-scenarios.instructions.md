@@ -10,7 +10,7 @@ GenAI conventions are capturable. They should be easy to scan: a reader
 should see, at the instrumentation site, exactly what attributes get emitted
 and where each value comes from.
 
-## Attribute and tag emission
+## Attribute emission
 
 - Set emitted attributes inline at the instrumentation site. Do not move
   emission into helper methods such as `_set_request_attributes`,
