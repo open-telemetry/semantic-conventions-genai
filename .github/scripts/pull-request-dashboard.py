@@ -1095,8 +1095,6 @@ def try_send_slack_notification(
     number = result.get("pr_num")
     if not webhook_url:
         return "SLACK_WEBHOOK_URL is not set"
-    if not slack_user_id:
-        return f"PR #{number}: no Slack user mapping for GitHub assignee @{assignee}"
     try:
         post_slack_webhook(slack_message(repo, result, f"<@{slack_user_id}>", kind), webhook_url)
     except Exception as e:
@@ -1155,13 +1153,17 @@ def update_notification_state(
                 now,
             )
             if kind and notify_slack:
+                slack_user_id = slack_user_map.get(assignee_key)
+                if not slack_user_id:
+                    current_pr_state["assignee_notifications"][assignee_key] = assignee_state
+                    continue
                 error = try_send_slack_notification(
                     repo,
                     result,
                     assignee,
                     kind,
                     webhook_url,
-                    slack_user_map.get(assignee_key),
+                    slack_user_id,
                 )
                 if error:
                     print(f"  warning: {error}", file=sys.stderr)
