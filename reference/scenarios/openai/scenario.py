@@ -264,6 +264,80 @@ def run_chat_tool_call_reference(client):
             print(f"    -> {choice.message.content[:60]}")
 
 
+def run_chat_with_document_input_reference(client):
+    """Scenario: chat with a document attachment (document modality).
+
+    Exercises the `document` value of the `Modality` enum on a `UriPart`
+    in `gen_ai.input.messages`. The user message carries a text instruction
+    plus a PDF reference, mirroring how a document-extraction workload
+    (e.g. KYC) surfaces in the canonical message JSON.
+    """
+    print("  [chat_document] chat with PDF document input (reference implementation)")
+    request_model = "gpt-4o-mini"
+    document_uri = "https://example.com/sample-kyc.pdf"
+    document_mime_type = "application/pdf"
+    instruction = "Summarize the attached document in one sentence."
+
+    # OpenAI Chat Completions accepts a multimodal `content` array for
+    # vision/document-capable models. For a PDF the documented shape is a
+    # `file` content block referencing an uploaded file by id.
+    user_content = [
+        {"type": "text", "text": instruction},
+        {"type": "file", "file": {"file_id": "file-mock-kyc"}},
+    ]
+    messages = [{"role": "user", "content": user_content}]
+
+    # Canonical OTel parts representation: a TextPart followed by a UriPart
+    # with modality="document". The URI points at the same artifact the
+    # `file` content block references (in production this is typically an
+    # S3 / MinIO / GCS object URI captured by an offload-on-capture step).
+    input_parts = [
+        {"type": "text", "content": instruction},
+        {
+            "type": "uri",
+            "modality": "document",
+            "mime_type": document_mime_type,
+            "uri": document_uri,
+        },
+    ]
+    input_messages = json.dumps([{"role": "user", "parts": input_parts}])
+
+    host, port = mock_server_host_port(MOCK_BASE_URL)
+    span_attributes_doc = {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "openai",
+        "gen_ai.request.model": request_model,
+    }
+    if host:
+        span_attributes_doc["server.address"] = host
+    if port is not None:
+        span_attributes_doc["server.port"] = port
+    with _reference_tracer.start_as_current_span(
+        "chat gpt-4o-mini", attributes=span_attributes_doc
+    ) as span:
+        span.set_attribute("gen_ai.input.messages", input_messages)
+        resp = client.chat.completions.create(
+            model=request_model,
+            messages=messages,
+        )
+        span.set_attribute("gen_ai.response.model", resp.model)
+        span.set_attribute("gen_ai.response.id", resp.id)
+        span.set_attribute("gen_ai.response.finish_reasons", [c.finish_reason for c in resp.choices])
+        output_messages = [
+            {
+                "role": c.message.role,
+                "parts": [{"type": "text", "content": c.message.content}],
+                "finish_reason": c.finish_reason,
+            }
+            for c in resp.choices
+        ]
+        span.set_attribute("gen_ai.output.messages", json.dumps(output_messages))
+        if resp.usage:
+            span.set_attribute("gen_ai.usage.input_tokens", resp.usage.prompt_tokens)
+            span.set_attribute("gen_ai.usage.output_tokens", resp.usage.completion_tokens)
+        print(f"    -> {resp.choices[0].message.content[:60]}")
+
+
 def run_embeddings_reference(client):
     """Scenario: embedding generation with reference implementation."""
     print("  [embeddings] embedding generation (reference implementation)")
@@ -308,6 +382,7 @@ def main():
     run_chat_reference(client)
     run_chat_streaming_reference(client)
     run_chat_tool_call_reference(client)
+    run_chat_with_document_input_reference(client)
     run_embeddings_reference(client)
 
     flush_and_shutdown(tp, lp, mp)
