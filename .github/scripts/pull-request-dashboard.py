@@ -541,16 +541,20 @@ def utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
 
+def empty_notification_state(loaded: bool = False) -> dict[str, Any]:
+    return {"version": 1, "prs": {}, "_loaded_from_dashboard": loaded}
+
+
 def notification_state_from_body(body: str) -> dict[str, Any]:
     matches = NOTIFICATION_STATE_MARKER_RE.findall(body or "")
     if not matches:
-        return {"version": 1, "prs": {}, "_loaded_from_dashboard": False}
+        return empty_notification_state()
     try:
         state = json.loads(matches[-1])
     except json.JSONDecodeError:
-        return {"version": 1, "prs": {}, "_loaded_from_dashboard": False}
+        return empty_notification_state()
     if not isinstance(state, dict):
-        return {"version": 1, "prs": {}, "_loaded_from_dashboard": False}
+        return empty_notification_state()
     prs = state.get("prs")
     if not isinstance(prs, dict):
         state["prs"] = {}
@@ -561,10 +565,10 @@ def notification_state_from_body(body: str) -> dict[str, Any]:
 
 def notification_state_from_file(path: str | None) -> dict[str, Any]:
     if not path:
-        return {"version": 1, "prs": {}, "_loaded_from_dashboard": False}
+        return empty_notification_state()
     p = Path(path)
     if not p.exists():
-        return {"version": 1, "prs": {}, "_loaded_from_dashboard": False}
+        return empty_notification_state()
     return notification_state_from_body(p.read_text(encoding="utf-8"))
 
 
