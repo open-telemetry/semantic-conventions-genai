@@ -190,6 +190,103 @@ def run_converse_tool_call_reference(client):
             print(f"    -> {content[0]['text'][:60]}")
 
 
+def run_converse_with_document_input_reference(client):
+    """Scenario: Bedrock Converse API with a DocumentBlock (document modality).
+
+    The Converse API exposes a first-class DocumentBlock that carries the
+    payload format, name, and raw bytes directly on the SDK call boundary
+    -- so every emitted BlobPart field on `gen_ai.input.messages` traces
+    back to the SDK arg without any out-of-band lookup:
+
+      {"document": {"format": "pdf", "name": "...",
+                    "source": {"bytes": <raw bytes>}}}
+    """
+    import base64
+
+    print("  [converse_document] Bedrock Converse with PDF document block (reference implementation)")
+    request_model = "anthropic.claude-3-haiku-20240307-v1:0"
+    instruction = "Summarize the attached document in one sentence."
+    pdf_bytes = b"%PDF-1.4\n%mock pdf for reference scenario\n%%EOF\n"
+    pdf_format = "pdf"
+    document_name = "sample-kyc"
+
+    # SDK boundary: native Bedrock Converse DocumentBlock.
+    messages = [
+        {
+            "role": "user",
+            "content": [
+                {"text": instruction},
+                {
+                    "document": {
+                        "format": pdf_format,
+                        "name": document_name,
+                        "source": {"bytes": pdf_bytes},
+                    }
+                },
+            ],
+        }
+    ]
+
+    # Canonical OTel parts: TextPart + BlobPart(modality="document"). Each
+    # BlobPart field is derivable from the DocumentBlock above:
+    #   - mime_type: classification of `format` "pdf" -> "application/pdf"
+    #   - content:   base64-encoded `source.bytes`
+    #   - modality:  classification of mime "application/pdf" -> "document"
+    pdf_b64 = base64.b64encode(pdf_bytes).decode("ascii")
+    mime_type = "application/pdf"
+    input_parts = [
+        {"type": "text", "content": instruction},
+        {
+            "type": "blob",
+            "modality": "document",
+            "mime_type": mime_type,
+            "content": pdf_b64,
+        },
+    ]
+    input_messages = json.dumps([{"role": "user", "parts": input_parts}])
+
+    host, port = mock_server_host_port(MOCK_BASE_URL)
+    span_attributes_doc = {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "aws.bedrock",
+        "gen_ai.request.model": request_model,
+    }
+    if host:
+        span_attributes_doc["server.address"] = host
+    if port is not None:
+        span_attributes_doc["server.port"] = port
+    with _reference_tracer.start_as_current_span(
+        "chat anthropic.claude-3-haiku-20240307-v1:0", attributes=span_attributes_doc
+    ) as span:
+        span.set_attribute("gen_ai.input.messages", input_messages)
+        response = client.converse(
+            modelId=request_model,
+            messages=messages,
+        )
+        stop_reason = response.get("stopReason")
+        if stop_reason:
+            span.set_attribute("gen_ai.response.finish_reasons", [stop_reason])
+        usage = response.get("usage", {})
+        if usage.get("inputTokens") is not None:
+            span.set_attribute("gen_ai.usage.input_tokens", usage["inputTokens"])
+        if usage.get("outputTokens") is not None:
+            span.set_attribute("gen_ai.usage.output_tokens", usage["outputTokens"])
+        text = response["output"]["message"]["content"][0]["text"]
+        span.set_attribute(
+            "gen_ai.output.messages",
+            json.dumps(
+                [
+                    {
+                        "role": "assistant",
+                        "parts": [{"type": "text", "content": text}],
+                        **({"finish_reason": stop_reason} if stop_reason else {}),
+                    }
+                ]
+            ),
+        )
+        print(f"    -> {text[:60]}")
+
+
 def run_embeddings_reference(client):
     """Scenario: Bedrock Titan Embeddings with reference implementation."""
     import json as _json
@@ -230,6 +327,7 @@ def main():
 
     run_converse_reference(client)
     run_converse_tool_call_reference(client)
+    run_converse_with_document_input_reference(client)
     run_embeddings_reference(client)
 
     flush_and_shutdown(tp, lp, mp)

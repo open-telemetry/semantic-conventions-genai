@@ -124,8 +124,9 @@ def run_chat_with_document_input():
       {"type": "document",
        "source": {"type": "base64", "media_type": "application/pdf", "data": "..."}}
     """
-    import anthropic
     import base64
+
+    import anthropic
 
     print("  [chat_document] chat with PDF document block (reference implementation)")
     request_model = "claude-sonnet-4-20250514"
