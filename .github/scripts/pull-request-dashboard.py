@@ -39,6 +39,8 @@ PR_COMMENT_WINDOW = 20
 MAX_BODY_CHARS = 1200
 MAX_PROMPT_CHARS = 18_000
 APPROVER_FOLLOW_UP_SECONDS = 24 * 60 * 60
+SLACK_WEBHOOK_RETRY_ATTEMPTS = 3
+SLACK_WEBHOOK_RETRY_DELAY_SECONDS = 1.0
 NOTIFICATION_STATE_MARKER_RE = re.compile(r"<!--\s*pr-review-dashboard-state:(.*?)\s*-->", re.S)
 
 APPROVER_TEAM_SLUGS = [
@@ -999,6 +1001,21 @@ def load_slack_user_map() -> dict[str, str]:
     return {str(k).lower(): str(v) for k, v in data.items() if str(k).strip() and str(v).strip()}
 
 
+def slack_webhook_retry_delay(attempt: int, e: urllib.error.HTTPError | None = None) -> float:
+    if e is not None:
+        retry_after = e.headers.get("Retry-After")
+        if retry_after:
+            try:
+                return min(float(retry_after), 30.0)
+            except ValueError:
+                pass
+    return min(SLACK_WEBHOOK_RETRY_DELAY_SECONDS * (2**attempt), 30.0)
+
+
+def should_retry_slack_http_error(e: urllib.error.HTTPError) -> bool:
+    return e.code == 429 or 500 <= e.code < 600
+
+
 def post_slack_webhook(message: str, webhook_url: str) -> None:
     req = urllib.request.Request(
         webhook_url,
@@ -1008,16 +1025,24 @@ def post_slack_webhook(message: str, webhook_url: str) -> None:
         },
         method="POST",
     )
-    try:
-        with urllib.request.urlopen(req, timeout=20) as response:
-            body = response.read().decode("utf-8")
-    except urllib.error.HTTPError as e:
-        body = e.read().decode("utf-8", errors="replace")
-        raise RuntimeError(f"Slack webhook request failed with HTTP {e.code}: {body}") from e
-    except urllib.error.URLError as e:
-        raise RuntimeError(f"Slack webhook request failed: {e}") from e
-    if body.strip().lower() != "ok":
-        raise RuntimeError(f"Slack webhook request failed: {body}")
+    for attempt in range(SLACK_WEBHOOK_RETRY_ATTEMPTS):
+        try:
+            with urllib.request.urlopen(req, timeout=20) as response:
+                body = response.read().decode("utf-8")
+        except urllib.error.HTTPError as e:
+            body = e.read().decode("utf-8", errors="replace")
+            if attempt + 1 < SLACK_WEBHOOK_RETRY_ATTEMPTS and should_retry_slack_http_error(e):
+                time.sleep(slack_webhook_retry_delay(attempt, e))
+                continue
+            raise RuntimeError(f"Slack webhook request failed with HTTP {e.code}: {body}") from e
+        except urllib.error.URLError as e:
+            if attempt + 1 < SLACK_WEBHOOK_RETRY_ATTEMPTS:
+                time.sleep(slack_webhook_retry_delay(attempt))
+                continue
+            raise RuntimeError(f"Slack webhook request failed: {e}") from e
+        if body.strip().lower() != "ok":
+            raise RuntimeError(f"Slack webhook request failed: {body}")
+        return
 
 
 def slack_message(repo: str, result: dict[str, Any], assignee_mention: str, kind: str) -> str:
