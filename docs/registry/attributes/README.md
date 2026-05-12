@@ -36,4 +36,4 @@ Currently, the following namespaces exist:
 - [MCP](mcp.md)
 - [OpenAI](openai.md)
 
-[developers recommendations]: https://github.com/open-telemetry/semantic-conventions/blob/v1.41.0/docs/general/naming.md#recommendations-for-application-developers
+[developers recommendations]: https://github.com/open-telemetry/semantic-conventions/blob/v1.41.1/docs/general/naming.md#recommendations-for-application-developers
