@@ -307,7 +307,6 @@ def run_memory_reference():
     async def _run():
         create_span_attributes = {
             "gen_ai.operation.name": "create_memory_store",
-            "gen_ai.provider.name": "gcp.gemini",
         }
         with _reference_tracer.start_as_current_span("create_memory_store", attributes=create_span_attributes):
             memory_service = InMemoryMemoryService()
@@ -334,23 +333,18 @@ def run_memory_reference():
 
         update_span_attributes = {
             "gen_ai.operation.name": "update_memory",
-            "gen_ai.provider.name": "gcp.gemini",
             "gen_ai.memory.store.id": store_id,
         }
-        with _reference_tracer.start_as_current_span(
-            f"update_memory {store_id}", attributes=update_span_attributes
-        ) as update_span:
+        with _reference_tracer.start_as_current_span("update_memory", attributes=update_span_attributes) as update_span:
+            update_span.set_attribute("gen_ai.memory.record.count", len(session.events))
             update_span.set_attribute("gen_ai.memory.records", memory_records)
             await memory_service.add_session_to_memory(session)
 
         search_span_attributes = {
             "gen_ai.operation.name": "search_memory",
-            "gen_ai.provider.name": "gcp.gemini",
             "gen_ai.memory.store.id": store_id,
         }
-        with _reference_tracer.start_as_current_span(
-            f"search_memory {store_id}", attributes=search_span_attributes
-        ) as search_span:
+        with _reference_tracer.start_as_current_span("search_memory", attributes=search_span_attributes) as search_span:
             search_span.set_attribute("gen_ai.memory.query.text", query_text)
             response = await memory_service.search_memory(
                 app_name=app_name,
@@ -367,6 +361,7 @@ def run_memory_reference():
                 if memory.id:
                     search_record["id"] = memory.id
                 search_records.append(search_record)
+            search_span.set_attribute("gen_ai.memory.record.count", len(search_records))
             search_span.set_attribute("gen_ai.memory.records", json.dumps(search_records))
 
     asyncio.run(_run())

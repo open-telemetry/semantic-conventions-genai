@@ -307,20 +307,21 @@ spans:
     kind: client
     name:
       note: |
-        **Span name** SHOULD be `create_memory_store {gen_ai.memory.store.id}`
-        or `create_memory_store` if the store id is not available.
+        **Span name** SHOULD be `create_memory_store`.
     brief: >
       Describes creation or initialization of a memory store.
     note: |
       The `gen_ai.operation.name` SHOULD be `create_memory_store`.
 
-      **Span name** SHOULD be `create_memory_store {gen_ai.memory.store.id}`
-      or `create_memory_store` if the store id is not available.
+      **Span name** SHOULD be `create_memory_store`.
+      Memory operation span names intentionally omit `gen_ai.memory.store.id` because memory store
+      identifiers may be high-cardinality.
     stability: development
     attributes:
       - ref_group: attributes.gen_ai.memory.client
       - ref: gen_ai.provider.name
-        requirement_level: required
+        requirement_level:
+          conditionally_required: if the operation is handled by a named external GenAI provider or service
       - ref: gen_ai.memory.store.id
         requirement_level:
           conditionally_required: if applicable
@@ -329,23 +330,26 @@ spans:
     kind: client
     name:
       note: |
-        **Span name** SHOULD be `search_memory {gen_ai.memory.store.id}`
-        or `search_memory` if the store id is not available.
+        **Span name** SHOULD be `search_memory`.
     brief: >
       Describes a memory search operation that queries a memory store for relevant memories.
     note: |
       The `gen_ai.operation.name` SHOULD be `search_memory`.
 
-      **Span name** SHOULD be `search_memory {gen_ai.memory.store.id}`
-      or `search_memory` if the store id is not available.
+      **Span name** SHOULD be `search_memory`.
+      Memory operation span names intentionally omit `gen_ai.memory.store.id` because memory store
+      identifiers may be high-cardinality.
     stability: development
     attributes:
       - ref_group: attributes.gen_ai.memory.client
       - ref: gen_ai.provider.name
-        requirement_level: required
+        requirement_level:
+          conditionally_required: if the operation is handled by a named external GenAI provider or service
       - ref: gen_ai.memory.store.id
         requirement_level:
           conditionally_required: if applicable
+      - ref: gen_ai.memory.record.count
+        requirement_level: recommended
       - ref: gen_ai.memory.query.text
         requirement_level: opt_in
       - ref: gen_ai.memory.records
@@ -355,8 +359,7 @@ spans:
     kind: client
     name:
       note: |
-        **Span name** SHOULD be `update_memory {gen_ai.memory.store.id}`
-        or `update_memory` if the store id is not available.
+        **Span name** SHOULD be `update_memory`.
     brief: >
       Describes a memory update operation that creates new or modifies existing
       memory records in a memory store.
@@ -365,16 +368,20 @@ spans:
 
       This operation covers both creating new and updating existing memory records.
 
-      **Span name** SHOULD be `update_memory {gen_ai.memory.store.id}`
-      or `update_memory` if the store id is not available.
+      **Span name** SHOULD be `update_memory`.
+      Memory operation span names intentionally omit `gen_ai.memory.store.id` because memory store
+      identifiers may be high-cardinality.
     stability: development
     attributes:
       - ref_group: attributes.gen_ai.memory.client
       - ref: gen_ai.provider.name
-        requirement_level: required
+        requirement_level:
+          conditionally_required: if the operation is handled by a named external GenAI provider or service
       - ref: gen_ai.memory.store.id
         requirement_level:
           conditionally_required: if applicable
+      - ref: gen_ai.memory.record.count
+        requirement_level: recommended
       - ref: gen_ai.memory.records
         requirement_level: opt_in
 
@@ -382,15 +389,15 @@ spans:
     kind: client
     name:
       note: |
-        **Span name** SHOULD be `delete_memory {gen_ai.memory.store.id}`
-        or `delete_memory` if the store id is not available.
+        **Span name** SHOULD be `delete_memory`.
     brief: >
       Describes a memory deletion operation that removes one or more memory records.
     note: |
       The `gen_ai.operation.name` SHOULD be `delete_memory`.
 
-      **Span name** SHOULD be `delete_memory {gen_ai.memory.store.id}`
-      or `delete_memory` if the store id is not available.
+      **Span name** SHOULD be `delete_memory`.
+      Memory operation span names intentionally omit `gen_ai.memory.store.id` because memory store
+      identifiers may be high-cardinality.
 
       Depending on the instrumented library, lack of `gen_ai.memory.record.id` may indicate that
       the operation intends to delete all memory records in the specified store.
@@ -398,7 +405,8 @@ spans:
     attributes:
       - ref_group: attributes.gen_ai.memory.client
       - ref: gen_ai.provider.name
-        requirement_level: required
+        requirement_level:
+          conditionally_required: if the operation is handled by a named external GenAI provider or service
       - ref: gen_ai.memory.store.id
         requirement_level:
           conditionally_required: if applicable
@@ -410,20 +418,21 @@ spans:
     kind: client
     name:
       note: |
-        **Span name** SHOULD be `delete_memory_store {gen_ai.memory.store.id}`
-        or `delete_memory_store` if the store id is not available.
+        **Span name** SHOULD be `delete_memory_store`.
     brief: >
       Describes deletion or deprovisioning of a memory store.
     note: |
       The `gen_ai.operation.name` SHOULD be `delete_memory_store`.
 
-      **Span name** SHOULD be `delete_memory_store {gen_ai.memory.store.id}`
-      or `delete_memory_store` if the store id is not available.
+      **Span name** SHOULD be `delete_memory_store`.
+      Memory operation span names intentionally omit `gen_ai.memory.store.id` because memory store
+      identifiers may be high-cardinality.
     stability: development
     attributes:
       - ref_group: attributes.gen_ai.memory.client
       - ref: gen_ai.provider.name
-        requirement_level: required
+        requirement_level:
+          conditionally_required: if the operation is handled by a named external GenAI provider or service
       - ref: gen_ai.memory.store.id
         requirement_level:
           conditionally_required: if applicable

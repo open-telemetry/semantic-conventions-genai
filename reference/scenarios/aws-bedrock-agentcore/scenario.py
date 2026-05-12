@@ -130,13 +130,14 @@ def run_update_memory_reference(client, stubber):
     if port is not None:
         span_attributes["server.port"] = port
     with _reference_tracer.start_as_current_span(
-        f"update_memory {MEMORY_ID}", kind=SpanKind.CLIENT, attributes=span_attributes
+        "update_memory", kind=SpanKind.CLIENT, attributes=span_attributes
     ) as span:
         response = client.batch_create_memory_records(
             memoryId=MEMORY_ID,
             records=create_records,
         )
         memory_record_id = response["successfulRecords"][0]["memoryRecordId"]
+        span.set_attribute("gen_ai.memory.record.count", len(create_records))
         span.set_attribute(
             "gen_ai.memory.records",
             json.dumps(
@@ -188,12 +189,13 @@ def run_update_memory_reference(client, stubber):
     if port is not None:
         span_attributes_2["server.port"] = port
     with _reference_tracer.start_as_current_span(
-        f"update_memory {MEMORY_ID}", kind=SpanKind.CLIENT, attributes=span_attributes_2
+        "update_memory", kind=SpanKind.CLIENT, attributes=span_attributes_2
     ) as span:
         client.batch_update_memory_records(
             memoryId=MEMORY_ID,
             records=update_records,
         )
+        span.set_attribute("gen_ai.memory.record.count", len(update_records))
         span.set_attribute(
             "gen_ai.memory.records",
             json.dumps(
@@ -249,7 +251,7 @@ def run_search_memory_reference(client, stubber):
     if port is not None:
         span_attributes["server.port"] = port
     with _reference_tracer.start_as_current_span(
-        f"search_memory {MEMORY_ID}", kind=SpanKind.CLIENT, attributes=span_attributes
+        "search_memory", kind=SpanKind.CLIENT, attributes=span_attributes
     ) as span:
         span.set_attribute("gen_ai.memory.query.text", search_criteria["searchQuery"])
         response = client.retrieve_memory_records(
@@ -270,6 +272,7 @@ def run_search_memory_reference(client, stubber):
                     },
                 }
             )
+        span.set_attribute("gen_ai.memory.record.count", len(memory_records))
         span.set_attribute("gen_ai.memory.records", json.dumps(memory_records))
 
 
@@ -296,7 +299,7 @@ def run_delete_memory_reference(client, stubber):
     if port is not None:
         span_attributes["server.port"] = port
     with _reference_tracer.start_as_current_span(
-        f"delete_memory {MEMORY_ID}", kind=SpanKind.CLIENT, attributes=span_attributes
+        "delete_memory", kind=SpanKind.CLIENT, attributes=span_attributes
     ) as span:
         span.set_attribute("gen_ai.memory.record.id", MEMORY_RECORD_ID)
         client.delete_memory_record(
@@ -332,7 +335,7 @@ def run_delete_memory_store_reference(client, stubber):
     if port is not None:
         span_attributes["server.port"] = port
     with _reference_tracer.start_as_current_span(
-        f"delete_memory_store {MEMORY_ID}", kind=SpanKind.CLIENT, attributes=span_attributes
+        "delete_memory_store", kind=SpanKind.CLIENT, attributes=span_attributes
     ):
         client.delete_memory(
             memoryId=MEMORY_ID,

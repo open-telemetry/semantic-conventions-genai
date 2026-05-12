@@ -6511,7 +6511,8 @@ refinements:
         `openai.*` attributes.
       provenance:
         path: ./model/gen-ai/registry.yaml
-      requirement_level: required
+      requirement_level:
+        conditionally_required: if the operation is handled by a named external GenAI provider or service
       stability: development
       type:
         members:
@@ -6613,8 +6614,9 @@ refinements:
     note: |
       The `gen_ai.operation.name` SHOULD be `create_memory_store`.
 
-      **Span name** SHOULD be `create_memory_store {gen_ai.memory.store.id}`
-      or `create_memory_store` if the store id is not available.
+      **Span name** SHOULD be `create_memory_store`.
+      Memory operation span names intentionally omit `gen_ai.memory.store.id` because memory store
+      identifiers may be high-cardinality.
     provenance:
       path: ./model/gen-ai/spans.yaml
     stability: development
@@ -6758,7 +6760,8 @@ refinements:
         `openai.*` attributes.
       provenance:
         path: ./model/gen-ai/registry.yaml
-      requirement_level: required
+      requirement_level:
+        conditionally_required: if the operation is handled by a named external GenAI provider or service
       stability: development
       type:
         members:
@@ -6860,8 +6863,9 @@ refinements:
     note: |
       The `gen_ai.operation.name` SHOULD be `delete_memory`.
 
-      **Span name** SHOULD be `delete_memory {gen_ai.memory.store.id}`
-      or `delete_memory` if the store id is not available.
+      **Span name** SHOULD be `delete_memory`.
+      Memory operation span names intentionally omit `gen_ai.memory.store.id` because memory store
+      identifiers may be high-cardinality.
 
       Depending on the instrumented library, lack of `gen_ai.memory.record.id` may indicate that
       the operation intends to delete all memory records in the specified store.
@@ -6998,7 +7002,8 @@ refinements:
         `openai.*` attributes.
       provenance:
         path: ./model/gen-ai/registry.yaml
-      requirement_level: required
+      requirement_level:
+        conditionally_required: if the operation is handled by a named external GenAI provider or service
       stability: development
       type:
         members:
@@ -7100,8 +7105,9 @@ refinements:
     note: |
       The `gen_ai.operation.name` SHOULD be `delete_memory_store`.
 
-      **Span name** SHOULD be `delete_memory_store {gen_ai.memory.store.id}`
-      or `delete_memory_store` if the store id is not available.
+      **Span name** SHOULD be `delete_memory_store`.
+      Memory operation span names intentionally omit `gen_ai.memory.store.id` because memory store
+      identifiers may be high-cardinality.
     provenance:
       path: ./model/gen-ai/spans.yaml
     stability: development
@@ -10310,6 +10316,9 @@ refinements:
       - past flight bookings
       key: gen_ai.memory.query.text
       note: |
+        Instrumentations SHOULD NOT capture this attribute by default. Capture SHOULD be gated
+        by an explicit user opt-in, for example `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT`.
+
         \u003e [!Warning]
         \u003e This attribute may contain sensitive information.
       provenance:
@@ -10317,6 +10326,17 @@ refinements:
       requirement_level: opt_in
       stability: development
       type: string
+    - brief: The number of memory records relevant to the operation.
+      examples:
+      - 3
+      key: gen_ai.memory.record.count
+      note: |
+        For `search_memory` operations, this is the number of memory records returned by the operation. For `update_memory` operations, this is the number of memory records the operation attempted to create or modify.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: recommended
+      stability: development
+      type: int
     - brief: The memory records stored or retrieved in a memory operation.
       examples:
       - |
@@ -10342,6 +10362,9 @@ refinements:
         When the attribute is recorded on events, it MUST be recorded in structured
         form. When recorded on spans, it MAY be recorded as a JSON string if structured
         format is not supported and SHOULD be recorded in structured form otherwise.
+
+        Instrumentations SHOULD NOT capture this attribute by default. Capture SHOULD be gated
+        by an explicit user opt-in, for example `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT`.
 
         \u003e [!Warning]
         \u003e This attribute may contain sensitive information including user/PII data.
@@ -10456,7 +10479,8 @@ refinements:
         `openai.*` attributes.
       provenance:
         path: ./model/gen-ai/registry.yaml
-      requirement_level: required
+      requirement_level:
+        conditionally_required: if the operation is handled by a named external GenAI provider or service
       stability: development
       type:
         members:
@@ -10558,8 +10582,9 @@ refinements:
     note: |
       The `gen_ai.operation.name` SHOULD be `search_memory`.
 
-      **Span name** SHOULD be `search_memory {gen_ai.memory.store.id}`
-      or `search_memory` if the store id is not available.
+      **Span name** SHOULD be `search_memory`.
+      Memory operation span names intentionally omit `gen_ai.memory.store.id` because memory store
+      identifiers may be high-cardinality.
     provenance:
       path: ./model/gen-ai/spans.yaml
     stability: development
@@ -10587,6 +10612,17 @@ refinements:
           id: other
           stability: stable
           value: _OTHER
+    - brief: The number of memory records relevant to the operation.
+      examples:
+      - 3
+      key: gen_ai.memory.record.count
+      note: |
+        For `search_memory` operations, this is the number of memory records returned by the operation. For `update_memory` operations, this is the number of memory records the operation attempted to create or modify.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: recommended
+      stability: development
+      type: int
     - brief: The memory records stored or retrieved in a memory operation.
       examples:
       - |
@@ -10612,6 +10648,9 @@ refinements:
         When the attribute is recorded on events, it MUST be recorded in structured
         form. When recorded on spans, it MAY be recorded as a JSON string if structured
         format is not supported and SHOULD be recorded in structured form otherwise.
+
+        Instrumentations SHOULD NOT capture this attribute by default. Capture SHOULD be gated
+        by an explicit user opt-in, for example `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT`.
 
         \u003e [!Warning]
         \u003e This attribute may contain sensitive information including user/PII data.
@@ -10726,7 +10765,8 @@ refinements:
         `openai.*` attributes.
       provenance:
         path: ./model/gen-ai/registry.yaml
-      requirement_level: required
+      requirement_level:
+        conditionally_required: if the operation is handled by a named external GenAI provider or service
       stability: development
       type:
         members:
@@ -10830,8 +10870,9 @@ refinements:
 
       This operation covers both creating new and updating existing memory records.
 
-      **Span name** SHOULD be `update_memory {gen_ai.memory.store.id}`
-      or `update_memory` if the store id is not available.
+      **Span name** SHOULD be `update_memory`.
+      Memory operation span names intentionally omit `gen_ai.memory.store.id` because memory store
+      identifiers may be high-cardinality.
     provenance:
       path: ./model/gen-ai/spans.yaml
     stability: development
@@ -12667,12 +12708,25 @@ registry:
     - past flight bookings
     key: gen_ai.memory.query.text
     note: |
+      Instrumentations SHOULD NOT capture this attribute by default. Capture SHOULD be gated
+      by an explicit user opt-in, for example `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT`.
+
       \u003e [!Warning]
       \u003e This attribute may contain sensitive information.
     provenance:
       path: ./model/gen-ai/registry.yaml
     stability: development
     type: string
+  - brief: The number of memory records relevant to the operation.
+    examples:
+    - 3
+    key: gen_ai.memory.record.count
+    note: |
+      For `search_memory` operations, this is the number of memory records returned by the operation. For `update_memory` operations, this is the number of memory records the operation attempted to create or modify.
+    provenance:
+      path: ./model/gen-ai/registry.yaml
+    stability: development
+    type: int
   - brief: The unique identifier of the memory record.
     examples:
     - mem_5j66UpCpwteGg4YSxUnt7lPY
@@ -12706,6 +12760,9 @@ registry:
       When the attribute is recorded on events, it MUST be recorded in structured
       form. When recorded on spans, it MAY be recorded as a JSON string if structured
       format is not supported and SHOULD be recorded in structured form otherwise.
+
+      Instrumentations SHOULD NOT capture this attribute by default. Capture SHOULD be gated
+      by an explicit user opt-in, for example `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT`.
 
       \u003e [!Warning]
       \u003e This attribute may contain sensitive information including user/PII data.
@@ -17519,7 +17576,8 @@ registry:
         `openai.*` attributes.
       provenance:
         path: ./model/gen-ai/registry.yaml
-      requirement_level: required
+      requirement_level:
+        conditionally_required: if the operation is handled by a named external GenAI provider or service
       stability: development
       type:
         members:
@@ -17620,8 +17678,9 @@ registry:
     note: |
       The `gen_ai.operation.name` SHOULD be `create_memory_store`.
 
-      **Span name** SHOULD be `create_memory_store {gen_ai.memory.store.id}`
-      or `create_memory_store` if the store id is not available.
+      **Span name** SHOULD be `create_memory_store`.
+      Memory operation span names intentionally omit `gen_ai.memory.store.id` because memory store
+      identifiers may be high-cardinality.
     provenance:
       path: ./model/gen-ai/spans.yaml
     stability: development
@@ -17765,7 +17824,8 @@ registry:
         `openai.*` attributes.
       provenance:
         path: ./model/gen-ai/registry.yaml
-      requirement_level: required
+      requirement_level:
+        conditionally_required: if the operation is handled by a named external GenAI provider or service
       stability: development
       type:
         members:
@@ -17866,8 +17926,9 @@ registry:
     note: |
       The `gen_ai.operation.name` SHOULD be `delete_memory`.
 
-      **Span name** SHOULD be `delete_memory {gen_ai.memory.store.id}`
-      or `delete_memory` if the store id is not available.
+      **Span name** SHOULD be `delete_memory`.
+      Memory operation span names intentionally omit `gen_ai.memory.store.id` because memory store
+      identifiers may be high-cardinality.
 
       Depending on the instrumented library, lack of `gen_ai.memory.record.id` may indicate that
       the operation intends to delete all memory records in the specified store.
@@ -18004,7 +18065,8 @@ registry:
         `openai.*` attributes.
       provenance:
         path: ./model/gen-ai/registry.yaml
-      requirement_level: required
+      requirement_level:
+        conditionally_required: if the operation is handled by a named external GenAI provider or service
       stability: development
       type:
         members:
@@ -18105,8 +18167,9 @@ registry:
     note: |
       The `gen_ai.operation.name` SHOULD be `delete_memory_store`.
 
-      **Span name** SHOULD be `delete_memory_store {gen_ai.memory.store.id}`
-      or `delete_memory_store` if the store id is not available.
+      **Span name** SHOULD be `delete_memory_store`.
+      Memory operation span names intentionally omit `gen_ai.memory.store.id` because memory store
+      identifiers may be high-cardinality.
     provenance:
       path: ./model/gen-ai/spans.yaml
     stability: development
@@ -21307,6 +21370,9 @@ registry:
       - past flight bookings
       key: gen_ai.memory.query.text
       note: |
+        Instrumentations SHOULD NOT capture this attribute by default. Capture SHOULD be gated
+        by an explicit user opt-in, for example `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT`.
+
         \u003e [!Warning]
         \u003e This attribute may contain sensitive information.
       provenance:
@@ -21314,6 +21380,17 @@ registry:
       requirement_level: opt_in
       stability: development
       type: string
+    - brief: The number of memory records relevant to the operation.
+      examples:
+      - 3
+      key: gen_ai.memory.record.count
+      note: |
+        For `search_memory` operations, this is the number of memory records returned by the operation. For `update_memory` operations, this is the number of memory records the operation attempted to create or modify.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: recommended
+      stability: development
+      type: int
     - brief: The memory records stored or retrieved in a memory operation.
       examples:
       - |
@@ -21339,6 +21416,9 @@ registry:
         When the attribute is recorded on events, it MUST be recorded in structured
         form. When recorded on spans, it MAY be recorded as a JSON string if structured
         format is not supported and SHOULD be recorded in structured form otherwise.
+
+        Instrumentations SHOULD NOT capture this attribute by default. Capture SHOULD be gated
+        by an explicit user opt-in, for example `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT`.
 
         \u003e [!Warning]
         \u003e This attribute may contain sensitive information including user/PII data.
@@ -21453,7 +21533,8 @@ registry:
         `openai.*` attributes.
       provenance:
         path: ./model/gen-ai/registry.yaml
-      requirement_level: required
+      requirement_level:
+        conditionally_required: if the operation is handled by a named external GenAI provider or service
       stability: development
       type:
         members:
@@ -21554,8 +21635,9 @@ registry:
     note: |
       The `gen_ai.operation.name` SHOULD be `search_memory`.
 
-      **Span name** SHOULD be `search_memory {gen_ai.memory.store.id}`
-      or `search_memory` if the store id is not available.
+      **Span name** SHOULD be `search_memory`.
+      Memory operation span names intentionally omit `gen_ai.memory.store.id` because memory store
+      identifiers may be high-cardinality.
     provenance:
       path: ./model/gen-ai/spans.yaml
     stability: development
@@ -21583,6 +21665,17 @@ registry:
           id: other
           stability: stable
           value: _OTHER
+    - brief: The number of memory records relevant to the operation.
+      examples:
+      - 3
+      key: gen_ai.memory.record.count
+      note: |
+        For `search_memory` operations, this is the number of memory records returned by the operation. For `update_memory` operations, this is the number of memory records the operation attempted to create or modify.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: recommended
+      stability: development
+      type: int
     - brief: The memory records stored or retrieved in a memory operation.
       examples:
       - |
@@ -21608,6 +21701,9 @@ registry:
         When the attribute is recorded on events, it MUST be recorded in structured
         form. When recorded on spans, it MAY be recorded as a JSON string if structured
         format is not supported and SHOULD be recorded in structured form otherwise.
+
+        Instrumentations SHOULD NOT capture this attribute by default. Capture SHOULD be gated
+        by an explicit user opt-in, for example `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT`.
 
         \u003e [!Warning]
         \u003e This attribute may contain sensitive information including user/PII data.
@@ -21722,7 +21818,8 @@ registry:
         `openai.*` attributes.
       provenance:
         path: ./model/gen-ai/registry.yaml
-      requirement_level: required
+      requirement_level:
+        conditionally_required: if the operation is handled by a named external GenAI provider or service
       stability: development
       type:
         members:
@@ -21825,8 +21922,9 @@ registry:
 
       This operation covers both creating new and updating existing memory records.
 
-      **Span name** SHOULD be `update_memory {gen_ai.memory.store.id}`
-      or `update_memory` if the store id is not available.
+      **Span name** SHOULD be `update_memory`.
+      Memory operation span names intentionally omit `gen_ai.memory.store.id` because memory store
+      identifiers may be high-cardinality.
     provenance:
       path: ./model/gen-ai/spans.yaml
     stability: development

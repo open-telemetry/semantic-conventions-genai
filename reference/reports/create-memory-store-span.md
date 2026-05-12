@@ -7,13 +7,13 @@
 | Attribute | Supporting Libraries |
 | --- | --- |
 | gen_ai.operation.name | [aws-bedrock-agentcore], [google-adk] |
-| gen_ai.provider.name | [aws-bedrock-agentcore], [google-adk] |
 
 ## Conditionally Required
 
 | Attribute | Supporting Libraries |
 | --- | --- |
 | gen_ai.memory.store.id | [aws-bedrock-agentcore] |
+| gen_ai.provider.name | [aws-bedrock-agentcore] |
 | server.port | [aws-bedrock-agentcore] |
 
 ## Recommended
