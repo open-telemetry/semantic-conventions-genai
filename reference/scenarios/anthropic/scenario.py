@@ -117,9 +117,9 @@ def run_chat_with_document_input():
 
     Exercises the `document` value of the `Modality` enum on a `BlobPart`
     in `gen_ai.input.messages`. Anthropic's Messages API has a first-class
-    `document` content block that exposes the mime type, source bytes, and
-    filename directly on the SDK call boundary -- so every emitted BlobPart
-    field traces back to the SDK arg without any Files-API roundtrip:
+    `document` content block that exposes the mime type and source bytes
+    directly on the SDK call boundary -- so every emitted BlobPart field
+    traces back to the SDK arg without any Files-API roundtrip:
 
       {"type": "document",
        "source": {"type": "base64", "media_type": "application/pdf", "data": "..."}}
