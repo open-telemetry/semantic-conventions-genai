@@ -1052,13 +1052,12 @@ def post_slack_webhook(message: str, webhook_url: str) -> None:
 def slack_message(repo: str, result: dict[str, Any], assignee_mention: str, kind: str) -> str:
     facts = result.get("facts") or {}
     number = result.get("pr_num")
-    title = result.get("pr_title") or f"PR #{number}"
     url = result.get("pr_url") or f"https://github.com/{repo}/pull/{number}"
     if kind == "follow-up":
-        lead = f"PR #{number} is still waiting on approvers after {facts.get('waiting_age') or '24h'}"
+        lead = f"has been waiting on approvers for {facts.get('waiting_age') or '24h'}"
     else:
-        lead = f"PR #{number} is now waiting on approvers"
-    return f"{lead}, and {assignee_mention} is assigned on GitHub.\n{title}\n{url}"
+        lead = "moved to waiting on approvers"
+    return f"{assignee_mention} <{url}|PR #{number}> {lead}"
 
 
 def notification_due(
