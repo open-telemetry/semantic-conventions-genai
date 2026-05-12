@@ -1134,10 +1134,10 @@ def update_notification_state(
             "assignee_notifications": {},
         }
         if result.get("returncode") != 0 or side in ("transient-failure", "unknown"):
-            new_prs[pr_key] = previous_pr_state or current_pr_state
+            if previous_pr_state:
+                new_prs[pr_key] = previous_pr_state
             continue
         if side != "approver":
-            new_prs[pr_key] = current_pr_state
             continue
 
         current_waiting_since = parse_ts(facts.get("waiting_since") or "")
@@ -1183,7 +1183,8 @@ def update_notification_state(
             elif previous_assignee_state.get("notification_pending"):
                 assignee_state["notification_pending"] = True
             current_pr_state["assignee_notifications"][assignee_key] = assignee_state
-        new_prs[pr_key] = current_pr_state
+        if current_pr_state["assignee_notifications"]:
+            new_prs[pr_key] = current_pr_state
     return {"version": 1, "prs": new_prs, "_slack_notification_errors": notification_errors}
 
 
