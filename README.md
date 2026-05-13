@@ -28,4 +28,4 @@ For contribution guidance specific to that project, see
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md) for contributor guidance.
