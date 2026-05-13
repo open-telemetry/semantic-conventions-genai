@@ -27,8 +27,8 @@ jobs:
 
       - uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
 
-      - name: Check links for pull requests
-        if: github.event_name == 'pull_request'
+      - name: Check links for trusted pull requests
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
         env:
           GITHUB_TOKEN: ${{ github.token }}
           GITHUB_REPOSITORY: ${{ github.repository }}
@@ -36,6 +36,17 @@ jobs:
           GITHUB_HEAD_REF: ${{ github.head_ref }}
           PR_HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
         run: mise run links
+
+      - name: Check repository links for fork pull requests
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository
+        shell: bash
+        run: |
+          mapfile -t files < <(git ls-files | grep -Ei '\.(md|mkd|mdx|mdown|mdwn|mkdn|mkdown|markdown|html|htm|txt)$')
+          if [ "${#files[@]}" -eq 0 ]; then
+            echo "No link-checkable files found."
+            exit 0
+          fi
+          mise exec -- lychee --config .github/config/lychee.toml --scheme file --include-fragments -- "${files[@]}"
 
       - name: Check links for pushes and merge queues
         if: github.event_name != 'pull_request'
