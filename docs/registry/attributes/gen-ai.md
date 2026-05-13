@@ -102,7 +102,7 @@ by an explicit user opt-in, for example `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESS
 > [!Warning]
 > This attribute may contain sensitive information including user/PII data.
 
-**[7] `gen_ai.memory.store.id`:** Instrumentations for individual memory components SHOULD pick a low-cardinality identifier and SHOULD NOT set `gen_ai.memory.store.id` if no such identifier exists for this component. Semantic conventions for individual components SHOULD document what `gen_ai.memory.store.id` maps to within the implementation.
+**[7] `gen_ai.memory.store.id`:** Semantic conventions for individual components SHOULD document what `gen_ai.memory.store.id` maps to within the implementation.
 
 **[8] `gen_ai.operation.name`:** If one of the predefined values applies, but specific system uses a different name it's RECOMMENDED to document it in the semantic conventions for specific GenAI system and use system-specific name in the instrumentation. If a different name is not documented, instrumentation libraries SHOULD use applicable predefined value.
 

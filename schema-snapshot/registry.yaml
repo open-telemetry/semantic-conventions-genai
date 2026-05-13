@@ -6586,7 +6586,7 @@ refinements:
       - user-preferences-store
       key: gen_ai.memory.store.id
       note: |
-        Instrumentations for individual memory components SHOULD pick a low-cardinality identifier and SHOULD NOT set `gen_ai.memory.store.id` if no such identifier exists for this component. Semantic conventions for individual components SHOULD document what `gen_ai.memory.store.id` maps to within the implementation.
+        Semantic conventions for individual components SHOULD document what `gen_ai.memory.store.id` maps to within the implementation.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
@@ -6800,8 +6800,6 @@ refinements:
       This operation SHOULD be used when the caller requests creation of new memory records.
 
       **Span name** SHOULD be `create_memory`.
-      Memory operation span names intentionally omit `gen_ai.memory.store.id` because memory store
-      identifiers may be high-cardinality.
     provenance:
       path: ./model/gen-ai/spans.yaml
     stability: development
@@ -6835,7 +6833,7 @@ refinements:
       - user-preferences-store
       key: gen_ai.memory.store.id
       note: |
-        Instrumentations for individual memory components SHOULD pick a low-cardinality identifier and SHOULD NOT set `gen_ai.memory.store.id` if no such identifier exists for this component. Semantic conventions for individual components SHOULD document what `gen_ai.memory.store.id` maps to within the implementation.
+        Semantic conventions for individual components SHOULD document what `gen_ai.memory.store.id` maps to within the implementation.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
@@ -7047,8 +7045,6 @@ refinements:
       The `gen_ai.operation.name` SHOULD be `create_memory_store`.
 
       **Span name** SHOULD be `create_memory_store`.
-      Memory operation span names intentionally omit `gen_ai.memory.store.id` because memory store
-      identifiers may be high-cardinality.
     provenance:
       path: ./model/gen-ai/spans.yaml
     stability: development
@@ -7092,7 +7088,7 @@ refinements:
       - user-preferences-store
       key: gen_ai.memory.store.id
       note: |
-        Instrumentations for individual memory components SHOULD pick a low-cardinality identifier and SHOULD NOT set `gen_ai.memory.store.id` if no such identifier exists for this component. Semantic conventions for individual components SHOULD document what `gen_ai.memory.store.id` maps to within the implementation.
+        Semantic conventions for individual components SHOULD document what `gen_ai.memory.store.id` maps to within the implementation.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
@@ -7304,8 +7300,6 @@ refinements:
       The `gen_ai.operation.name` SHOULD be `delete_memory`.
 
       **Span name** SHOULD be `delete_memory`.
-      Memory operation span names intentionally omit `gen_ai.memory.store.id` because memory store
-      identifiers may be high-cardinality.
 
       Depending on the instrumented library, lack of `gen_ai.memory.record.id` may indicate that
       the operation intends to delete all memory records in the specified store.
@@ -7342,7 +7336,7 @@ refinements:
       - user-preferences-store
       key: gen_ai.memory.store.id
       note: |
-        Instrumentations for individual memory components SHOULD pick a low-cardinality identifier and SHOULD NOT set `gen_ai.memory.store.id` if no such identifier exists for this component. Semantic conventions for individual components SHOULD document what `gen_ai.memory.store.id` maps to within the implementation.
+        Semantic conventions for individual components SHOULD document what `gen_ai.memory.store.id` maps to within the implementation.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
@@ -7554,8 +7548,6 @@ refinements:
       The `gen_ai.operation.name` SHOULD be `delete_memory_store`.
 
       **Span name** SHOULD be `delete_memory_store`.
-      Memory operation span names intentionally omit `gen_ai.memory.store.id` because memory store
-      identifiers may be high-cardinality.
     provenance:
       path: ./model/gen-ai/spans.yaml
     stability: development
@@ -10891,7 +10883,7 @@ refinements:
       - user-preferences-store
       key: gen_ai.memory.store.id
       note: |
-        Instrumentations for individual memory components SHOULD pick a low-cardinality identifier and SHOULD NOT set `gen_ai.memory.store.id` if no such identifier exists for this component. Semantic conventions for individual components SHOULD document what `gen_ai.memory.store.id` maps to within the implementation.
+        Semantic conventions for individual components SHOULD document what `gen_ai.memory.store.id` maps to within the implementation.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
@@ -11103,8 +11095,6 @@ refinements:
       The `gen_ai.operation.name` SHOULD be `search_memory`.
 
       **Span name** SHOULD be `search_memory`.
-      Memory operation span names intentionally omit `gen_ai.memory.store.id` because memory store
-      identifiers may be high-cardinality.
     provenance:
       path: ./model/gen-ai/spans.yaml
     stability: development
@@ -11185,7 +11175,7 @@ refinements:
       - user-preferences-store
       key: gen_ai.memory.store.id
       note: |
-        Instrumentations for individual memory components SHOULD pick a low-cardinality identifier and SHOULD NOT set `gen_ai.memory.store.id` if no such identifier exists for this component. Semantic conventions for individual components SHOULD document what `gen_ai.memory.store.id` maps to within the implementation.
+        Semantic conventions for individual components SHOULD document what `gen_ai.memory.store.id` maps to within the implementation.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
@@ -11399,8 +11389,6 @@ refinements:
       This operation SHOULD be used when the caller requests modification of known existing memory records.
 
       **Span name** SHOULD be `update_memory`.
-      Memory operation span names intentionally omit `gen_ai.memory.store.id` because memory store
-      identifiers may be high-cardinality.
     provenance:
       path: ./model/gen-ai/spans.yaml
     stability: development
@@ -11481,7 +11469,7 @@ refinements:
       - user-preferences-store
       key: gen_ai.memory.store.id
       note: |
-        Instrumentations for individual memory components SHOULD pick a low-cardinality identifier and SHOULD NOT set `gen_ai.memory.store.id` if no such identifier exists for this component. Semantic conventions for individual components SHOULD document what `gen_ai.memory.store.id` maps to within the implementation.
+        Semantic conventions for individual components SHOULD document what `gen_ai.memory.store.id` maps to within the implementation.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
@@ -11696,8 +11684,6 @@ refinements:
       update, or consolidate memory records without the caller choosing which.
 
       **Span name** SHOULD be `upsert_memory`.
-      Memory operation span names intentionally omit `gen_ai.memory.store.id` because memory store
-      identifiers may be high-cardinality.
     provenance:
       path: ./model/gen-ai/spans.yaml
     stability: development
@@ -13625,7 +13611,7 @@ registry:
     - user-preferences-store
     key: gen_ai.memory.store.id
     note: |
-      Instrumentations for individual memory components SHOULD pick a low-cardinality identifier and SHOULD NOT set `gen_ai.memory.store.id` if no such identifier exists for this component. Semantic conventions for individual components SHOULD document what `gen_ai.memory.store.id` maps to within the implementation.
+      Semantic conventions for individual components SHOULD document what `gen_ai.memory.store.id` maps to within the implementation.
     provenance:
       path: ./model/gen-ai/registry.yaml
     stability: development
@@ -18468,7 +18454,7 @@ registry:
       - user-preferences-store
       key: gen_ai.memory.store.id
       note: |
-        Instrumentations for individual memory components SHOULD pick a low-cardinality identifier and SHOULD NOT set `gen_ai.memory.store.id` if no such identifier exists for this component. Semantic conventions for individual components SHOULD document what `gen_ai.memory.store.id` maps to within the implementation.
+        Semantic conventions for individual components SHOULD document what `gen_ai.memory.store.id` maps to within the implementation.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
@@ -18681,8 +18667,6 @@ registry:
       This operation SHOULD be used when the caller requests creation of new memory records.
 
       **Span name** SHOULD be `create_memory`.
-      Memory operation span names intentionally omit `gen_ai.memory.store.id` because memory store
-      identifiers may be high-cardinality.
     provenance:
       path: ./model/gen-ai/spans.yaml
     stability: development
@@ -18716,7 +18700,7 @@ registry:
       - user-preferences-store
       key: gen_ai.memory.store.id
       note: |
-        Instrumentations for individual memory components SHOULD pick a low-cardinality identifier and SHOULD NOT set `gen_ai.memory.store.id` if no such identifier exists for this component. Semantic conventions for individual components SHOULD document what `gen_ai.memory.store.id` maps to within the implementation.
+        Semantic conventions for individual components SHOULD document what `gen_ai.memory.store.id` maps to within the implementation.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
@@ -18927,8 +18911,6 @@ registry:
       The `gen_ai.operation.name` SHOULD be `create_memory_store`.
 
       **Span name** SHOULD be `create_memory_store`.
-      Memory operation span names intentionally omit `gen_ai.memory.store.id` because memory store
-      identifiers may be high-cardinality.
     provenance:
       path: ./model/gen-ai/spans.yaml
     stability: development
@@ -18972,7 +18954,7 @@ registry:
       - user-preferences-store
       key: gen_ai.memory.store.id
       note: |
-        Instrumentations for individual memory components SHOULD pick a low-cardinality identifier and SHOULD NOT set `gen_ai.memory.store.id` if no such identifier exists for this component. Semantic conventions for individual components SHOULD document what `gen_ai.memory.store.id` maps to within the implementation.
+        Semantic conventions for individual components SHOULD document what `gen_ai.memory.store.id` maps to within the implementation.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
@@ -19183,8 +19165,6 @@ registry:
       The `gen_ai.operation.name` SHOULD be `delete_memory`.
 
       **Span name** SHOULD be `delete_memory`.
-      Memory operation span names intentionally omit `gen_ai.memory.store.id` because memory store
-      identifiers may be high-cardinality.
 
       Depending on the instrumented library, lack of `gen_ai.memory.record.id` may indicate that
       the operation intends to delete all memory records in the specified store.
@@ -19221,7 +19201,7 @@ registry:
       - user-preferences-store
       key: gen_ai.memory.store.id
       note: |
-        Instrumentations for individual memory components SHOULD pick a low-cardinality identifier and SHOULD NOT set `gen_ai.memory.store.id` if no such identifier exists for this component. Semantic conventions for individual components SHOULD document what `gen_ai.memory.store.id` maps to within the implementation.
+        Semantic conventions for individual components SHOULD document what `gen_ai.memory.store.id` maps to within the implementation.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
@@ -19432,8 +19412,6 @@ registry:
       The `gen_ai.operation.name` SHOULD be `delete_memory_store`.
 
       **Span name** SHOULD be `delete_memory_store`.
-      Memory operation span names intentionally omit `gen_ai.memory.store.id` because memory store
-      identifiers may be high-cardinality.
     provenance:
       path: ./model/gen-ai/spans.yaml
     stability: development
@@ -22761,7 +22739,7 @@ registry:
       - user-preferences-store
       key: gen_ai.memory.store.id
       note: |
-        Instrumentations for individual memory components SHOULD pick a low-cardinality identifier and SHOULD NOT set `gen_ai.memory.store.id` if no such identifier exists for this component. Semantic conventions for individual components SHOULD document what `gen_ai.memory.store.id` maps to within the implementation.
+        Semantic conventions for individual components SHOULD document what `gen_ai.memory.store.id` maps to within the implementation.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
@@ -22972,8 +22950,6 @@ registry:
       The `gen_ai.operation.name` SHOULD be `search_memory`.
 
       **Span name** SHOULD be `search_memory`.
-      Memory operation span names intentionally omit `gen_ai.memory.store.id` because memory store
-      identifiers may be high-cardinality.
     provenance:
       path: ./model/gen-ai/spans.yaml
     stability: development
@@ -23054,7 +23030,7 @@ registry:
       - user-preferences-store
       key: gen_ai.memory.store.id
       note: |
-        Instrumentations for individual memory components SHOULD pick a low-cardinality identifier and SHOULD NOT set `gen_ai.memory.store.id` if no such identifier exists for this component. Semantic conventions for individual components SHOULD document what `gen_ai.memory.store.id` maps to within the implementation.
+        Semantic conventions for individual components SHOULD document what `gen_ai.memory.store.id` maps to within the implementation.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
@@ -23267,8 +23243,6 @@ registry:
       This operation SHOULD be used when the caller requests modification of known existing memory records.
 
       **Span name** SHOULD be `update_memory`.
-      Memory operation span names intentionally omit `gen_ai.memory.store.id` because memory store
-      identifiers may be high-cardinality.
     provenance:
       path: ./model/gen-ai/spans.yaml
     stability: development
@@ -23349,7 +23323,7 @@ registry:
       - user-preferences-store
       key: gen_ai.memory.store.id
       note: |
-        Instrumentations for individual memory components SHOULD pick a low-cardinality identifier and SHOULD NOT set `gen_ai.memory.store.id` if no such identifier exists for this component. Semantic conventions for individual components SHOULD document what `gen_ai.memory.store.id` maps to within the implementation.
+        Semantic conventions for individual components SHOULD document what `gen_ai.memory.store.id` maps to within the implementation.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
@@ -23563,8 +23537,6 @@ registry:
       update, or consolidate memory records without the caller choosing which.
 
       **Span name** SHOULD be `upsert_memory`.
-      Memory operation span names intentionally omit `gen_ai.memory.store.id` because memory store
-      identifiers may be high-cardinality.
     provenance:
       path: ./model/gen-ai/spans.yaml
     stability: development

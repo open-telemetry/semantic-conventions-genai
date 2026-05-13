@@ -630,8 +630,6 @@ Describes creation or initialization of a memory store.
 The `gen_ai.operation.name` SHOULD be `create_memory_store`.
 
 **Span name** SHOULD be `create_memory_store`.
-Memory operation span names intentionally omit `gen_ai.memory.store.id` because memory store
-identifiers may be high-cardinality.
 
 **Span kind** SHOULD be `CLIENT`.
 
@@ -654,7 +652,7 @@ identifiers may be high-cardinality.
 the canonical name of exception that occurred, or another low-cardinality error identifier.
 Instrumentations SHOULD document the list of errors they report.
 
-**[3] `gen_ai.memory.store.id`:** Instrumentations for individual memory components SHOULD pick a low-cardinality identifier and SHOULD NOT set `gen_ai.memory.store.id` if no such identifier exists for this component. Semantic conventions for individual components SHOULD document what `gen_ai.memory.store.id` maps to within the implementation.
+**[3] `gen_ai.memory.store.id`:** Semantic conventions for individual components SHOULD document what `gen_ai.memory.store.id` maps to within the implementation.
 
 **[4] `gen_ai.provider.name`:** if the operation is handled by a named external GenAI provider or service
 
@@ -759,8 +757,6 @@ Describes a memory search operation that queries a memory store for relevant mem
 The `gen_ai.operation.name` SHOULD be `search_memory`.
 
 **Span name** SHOULD be `search_memory`.
-Memory operation span names intentionally omit `gen_ai.memory.store.id` because memory store
-identifiers may be high-cardinality.
 
 **Span kind** SHOULD be `CLIENT`.
 
@@ -786,7 +782,7 @@ identifiers may be high-cardinality.
 the canonical name of exception that occurred, or another low-cardinality error identifier.
 Instrumentations SHOULD document the list of errors they report.
 
-**[3] `gen_ai.memory.store.id`:** Instrumentations for individual memory components SHOULD pick a low-cardinality identifier and SHOULD NOT set `gen_ai.memory.store.id` if no such identifier exists for this component. Semantic conventions for individual components SHOULD document what `gen_ai.memory.store.id` maps to within the implementation.
+**[3] `gen_ai.memory.store.id`:** Semantic conventions for individual components SHOULD document what `gen_ai.memory.store.id` maps to within the implementation.
 
 **[4] `gen_ai.provider.name`:** if the operation is handled by a named external GenAI provider or service
 
@@ -912,8 +908,6 @@ The `gen_ai.operation.name` SHOULD be `create_memory`.
 This operation SHOULD be used when the caller requests creation of new memory records.
 
 **Span name** SHOULD be `create_memory`.
-Memory operation span names intentionally omit `gen_ai.memory.store.id` because memory store
-identifiers may be high-cardinality.
 
 **Span kind** SHOULD be `CLIENT`.
 
@@ -938,7 +932,7 @@ identifiers may be high-cardinality.
 the canonical name of exception that occurred, or another low-cardinality error identifier.
 Instrumentations SHOULD document the list of errors they report.
 
-**[3] `gen_ai.memory.store.id`:** Instrumentations for individual memory components SHOULD pick a low-cardinality identifier and SHOULD NOT set `gen_ai.memory.store.id` if no such identifier exists for this component. Semantic conventions for individual components SHOULD document what `gen_ai.memory.store.id` maps to within the implementation.
+**[3] `gen_ai.memory.store.id`:** Semantic conventions for individual components SHOULD document what `gen_ai.memory.store.id` maps to within the implementation.
 
 **[4] `gen_ai.provider.name`:** if the operation is handled by a named external GenAI provider or service
 
@@ -1058,8 +1052,6 @@ The `gen_ai.operation.name` SHOULD be `update_memory`.
 This operation SHOULD be used when the caller requests modification of known existing memory records.
 
 **Span name** SHOULD be `update_memory`.
-Memory operation span names intentionally omit `gen_ai.memory.store.id` because memory store
-identifiers may be high-cardinality.
 
 **Span kind** SHOULD be `CLIENT`.
 
@@ -1084,7 +1076,7 @@ identifiers may be high-cardinality.
 the canonical name of exception that occurred, or another low-cardinality error identifier.
 Instrumentations SHOULD document the list of errors they report.
 
-**[3] `gen_ai.memory.store.id`:** Instrumentations for individual memory components SHOULD pick a low-cardinality identifier and SHOULD NOT set `gen_ai.memory.store.id` if no such identifier exists for this component. Semantic conventions for individual components SHOULD document what `gen_ai.memory.store.id` maps to within the implementation.
+**[3] `gen_ai.memory.store.id`:** Semantic conventions for individual components SHOULD document what `gen_ai.memory.store.id` maps to within the implementation.
 
 **[4] `gen_ai.provider.name`:** if the operation is handled by a named external GenAI provider or service
 
@@ -1205,8 +1197,6 @@ This operation SHOULD be used when the caller invokes a public API that may crea
 update, or consolidate memory records without the caller choosing which.
 
 **Span name** SHOULD be `upsert_memory`.
-Memory operation span names intentionally omit `gen_ai.memory.store.id` because memory store
-identifiers may be high-cardinality.
 
 **Span kind** SHOULD be `CLIENT`.
 
@@ -1231,7 +1221,7 @@ identifiers may be high-cardinality.
 the canonical name of exception that occurred, or another low-cardinality error identifier.
 Instrumentations SHOULD document the list of errors they report.
 
-**[3] `gen_ai.memory.store.id`:** Instrumentations for individual memory components SHOULD pick a low-cardinality identifier and SHOULD NOT set `gen_ai.memory.store.id` if no such identifier exists for this component. Semantic conventions for individual components SHOULD document what `gen_ai.memory.store.id` maps to within the implementation.
+**[3] `gen_ai.memory.store.id`:** Semantic conventions for individual components SHOULD document what `gen_ai.memory.store.id` maps to within the implementation.
 
 **[4] `gen_ai.provider.name`:** if the operation is handled by a named external GenAI provider or service
 
@@ -1349,8 +1339,6 @@ Describes a memory deletion operation that removes one or more memory records.
 The `gen_ai.operation.name` SHOULD be `delete_memory`.
 
 **Span name** SHOULD be `delete_memory`.
-Memory operation span names intentionally omit `gen_ai.memory.store.id` because memory store
-identifiers may be high-cardinality.
 
 Depending on the instrumented library, lack of `gen_ai.memory.record.id` may indicate that
 the operation intends to delete all memory records in the specified store.
@@ -1377,7 +1365,7 @@ the operation intends to delete all memory records in the specified store.
 the canonical name of exception that occurred, or another low-cardinality error identifier.
 Instrumentations SHOULD document the list of errors they report.
 
-**[3] `gen_ai.memory.store.id`:** Instrumentations for individual memory components SHOULD pick a low-cardinality identifier and SHOULD NOT set `gen_ai.memory.store.id` if no such identifier exists for this component. Semantic conventions for individual components SHOULD document what `gen_ai.memory.store.id` maps to within the implementation.
+**[3] `gen_ai.memory.store.id`:** Semantic conventions for individual components SHOULD document what `gen_ai.memory.store.id` maps to within the implementation.
 
 **[4] `gen_ai.provider.name`:** if the operation is handled by a named external GenAI provider or service
 
@@ -1482,8 +1470,6 @@ Describes deletion or deprovisioning of a memory store.
 The `gen_ai.operation.name` SHOULD be `delete_memory_store`.
 
 **Span name** SHOULD be `delete_memory_store`.
-Memory operation span names intentionally omit `gen_ai.memory.store.id` because memory store
-identifiers may be high-cardinality.
 
 **Span kind** SHOULD be `CLIENT`.
 
@@ -1506,7 +1492,7 @@ identifiers may be high-cardinality.
 the canonical name of exception that occurred, or another low-cardinality error identifier.
 Instrumentations SHOULD document the list of errors they report.
 
-**[3] `gen_ai.memory.store.id`:** Instrumentations for individual memory components SHOULD pick a low-cardinality identifier and SHOULD NOT set `gen_ai.memory.store.id` if no such identifier exists for this component. Semantic conventions for individual components SHOULD document what `gen_ai.memory.store.id` maps to within the implementation.
+**[3] `gen_ai.memory.store.id`:** Semantic conventions for individual components SHOULD document what `gen_ai.memory.store.id` maps to within the implementation.
 
 **[4] `gen_ai.provider.name`:** if the operation is handled by a named external GenAI provider or service
 

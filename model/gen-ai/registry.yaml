@@ -540,10 +540,8 @@ attributes:
     type: string
     brief: The unique identifier of the memory store.
     note: >
-      Instrumentations for individual memory components SHOULD pick a low-cardinality identifier and
-      SHOULD NOT set `gen_ai.memory.store.id` if no such identifier exists for this component. Semantic
-      conventions for individual components SHOULD document what `gen_ai.memory.store.id` maps to within
-      the implementation.
+      Semantic conventions for individual components SHOULD document what `gen_ai.memory.store.id` maps
+      to within the implementation.
     examples: ["ms_abc123", "user-preferences-store"]
     stability: development
   - key: gen_ai.memory.record.id
