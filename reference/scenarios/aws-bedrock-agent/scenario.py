@@ -33,24 +33,18 @@ def run_invoke_agent(client):
     what an instrumentation library should capture.
     """
     print("  [invoke_agent] Bedrock Agent Runtime InvokeAgent")
-    with tracer.start_as_current_span("invoke_agent", kind=SpanKind.CLIENT) as span:
-        span.set_attribute("gen_ai.operation.name", "invoke_agent")
-        span.set_attribute("gen_ai.provider.name", "aws.bedrock")
+    span_attributes = {
+        "gen_ai.operation.name": "invoke_agent",
+        "gen_ai.provider.name": "aws.bedrock",
+        "server.address": _SERVER_ADDRESS,
+        "server.port": _SERVER_PORT,
+    }
+    with tracer.start_as_current_span("invoke_agent", kind=SpanKind.CLIENT, attributes=span_attributes) as span:
         span.set_attribute("gen_ai.agent.id", AGENT_ID)
         span.set_attribute("gen_ai.conversation.id", SESSION_ID)
         span.set_attribute(
-            "gen_ai.input.messages",
-            json.dumps(
-                [
-                    {
-                        "role": "user",
-                        "parts": [{"type": "text", "content": USER_INPUT}],
-                    }
-                ]
-            ),
+            "gen_ai.input.messages", json.dumps([{"role": "user", "parts": [{"type": "text", "content": USER_INPUT}]}])
         )
-        span.set_attribute("server.address", _SERVER_ADDRESS)
-        span.set_attribute("server.port", _SERVER_PORT)
         try:
             response = client.invoke_agent(
                 agentId=AGENT_ID,

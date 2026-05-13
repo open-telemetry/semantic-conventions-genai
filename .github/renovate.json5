@@ -9,6 +9,7 @@
     "enabled": false
   },
   "osvVulnerabilityAlerts": false,
+  "rebaseWhen": "conflicted", // Avoid rebasing after every main update
   "customManagers": [
     {
       "customType": "regex",

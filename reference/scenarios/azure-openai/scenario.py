@@ -13,15 +13,17 @@ def run_chat_reference(client):
     """Scenario: basic chat completion with reference implementation."""
     print("  [chat] basic chat completion (reference implementation)")
     request_model = "gpt-4o-mini"
-    with _reference_tracer.start_as_current_span("chat gpt-4o-mini") as span:
-        host, port = mock_server_host_port(MOCK_BASE_URL)
-        span.set_attribute("gen_ai.operation.name", "chat")
-        span.set_attribute("gen_ai.provider.name", "azure.openai")
-        span.set_attribute("gen_ai.request.model", request_model)
-        if host:
-            span.set_attribute("server.address", host)
-        if port is not None:
-            span.set_attribute("server.port", port)
+    host, port = mock_server_host_port(MOCK_BASE_URL)
+    span_attributes = {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "azure.openai",
+        "gen_ai.request.model": request_model,
+    }
+    if host:
+        span_attributes["server.address"] = host
+    if port is not None:
+        span_attributes["server.port"] = port
+    with _reference_tracer.start_as_current_span("chat gpt-4o-mini", attributes=span_attributes) as span:
         messages = [{"role": "user", "content": "Say hello."}]
         resp = client.chat.completions.create(
             model=request_model,
@@ -41,16 +43,20 @@ def run_embeddings_reference(client):
     print("  [embeddings] embedding generation (reference implementation)")
     request_model = "text-embedding-3-small"
     request_encoding_format = "float"
-    with _reference_tracer.start_as_current_span("embeddings text-embedding-3-small") as span:
-        host, port = mock_server_host_port(MOCK_BASE_URL)
-        span.set_attribute("gen_ai.operation.name", "embeddings")
-        span.set_attribute("gen_ai.provider.name", "azure.openai")
-        span.set_attribute("gen_ai.request.model", request_model)
+    host, port = mock_server_host_port(MOCK_BASE_URL)
+    span_attributes_2 = {
+        "gen_ai.operation.name": "embeddings",
+        "gen_ai.provider.name": "azure.openai",
+        "gen_ai.request.model": request_model,
+    }
+    if host:
+        span_attributes_2["server.address"] = host
+    if port is not None:
+        span_attributes_2["server.port"] = port
+    with _reference_tracer.start_as_current_span(
+        "embeddings text-embedding-3-small", attributes=span_attributes_2
+    ) as span:
         span.set_attribute("gen_ai.request.encoding_formats", [request_encoding_format])
-        if host:
-            span.set_attribute("server.address", host)
-        if port is not None:
-            span.set_attribute("server.port", port)
         resp = client.embeddings.create(
             model=request_model,
             input="Hello, world!",

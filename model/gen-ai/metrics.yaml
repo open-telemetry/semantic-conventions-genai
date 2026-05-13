@@ -97,6 +97,22 @@ metrics:
         metric_value_type: double
     attributes:
       - ref_group: metric_attributes.gen_ai
+  - name: gen_ai.workflow.duration
+    annotations:
+      code_generation:
+        metric_value_type: double
+    brief: 'GenAI workflow duration.'
+    note: >
+      This metric instrument describes an operation that executes a coordinated process
+      composed of multiple agents or other operations involving generative AI.
+    instrument: histogram
+    unit: "s"
+    stability: development
+    attributes:
+      - ref_group: attributes.gen_ai.error
+      - ref: gen_ai.workflow.name
+        requirement_level:
+          conditionally_required: If available.
 
 metric_refinements:
   - id: openai.client.token.usage

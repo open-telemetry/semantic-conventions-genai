@@ -1,12 +1,12 @@
 ---
 name: evaluate-reference
-description: 'Use when reviewing completed reference instrumentation, reference scenario outputs, or data results against a semantic-conventions PR, upstream proposal, or spec change. Evaluates reference coverage, capturability, direct observability, derivable fields, missing supporting libraries, and honest capture gaps without forcing fake compliance.'
+description: 'Use when reviewing completed reference scenarios, scenario outputs, or data results against a semantic-conventions PR, upstream proposal, or spec change. Evaluates reference coverage, capturability, direct observability, derivable fields, missing supporting libraries, and honest capture gaps without forcing fake compliance.'
 argument-hint: 'Describe the semantic-conventions PR and the reference implementation, files, or results to evaluate.'
 ---
 
 # Reference Evaluation
 
-Use this skill after reference instrumentation has been added for a semantic-conventions PR and the repository needs an evaluation of coverage quality and capturability.
+Use this skill after reference scenarios have been added for a semantic-conventions PR and the repository needs an evaluation of coverage quality and capturability.
 
 ## Goal
 

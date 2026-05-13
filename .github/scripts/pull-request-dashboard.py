@@ -22,6 +22,8 @@ import re
 import subprocess
 import sys
 import time
+import urllib.error
+import urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from pathlib import Path
@@ -36,6 +38,10 @@ PER_THREAD_TIMEOUT = 180
 PR_COMMENT_WINDOW = 20
 MAX_BODY_CHARS = 1200
 MAX_PROMPT_CHARS = 18_000
+APPROVER_FOLLOW_UP_SECONDS = 24 * 60 * 60
+SLACK_WEBHOOK_RETRY_ATTEMPTS = 3
+SLACK_WEBHOOK_RETRY_DELAY_SECONDS = 1.0
+NOTIFICATION_STATE_MARKER_RE = re.compile(r"<!--\s*pr-review-dashboard-state:(.*?)\s*-->", re.S)
 
 APPROVER_TEAM_SLUGS = [
     "semconv-genai-approvers",
@@ -309,7 +315,10 @@ def fetch_review_threads(owner: str, repo_name: str, number: int) -> list[dict[s
 def parse_ts(s: str | None) -> datetime | None:
     if not s:
         return None
-    return datetime.fromisoformat(s.replace("Z", "+00:00"))
+    try:
+        return datetime.fromisoformat(s.replace("Z", "+00:00"))
+    except ValueError:
+        return None
 
 
 def seconds_since(ts: datetime | None) -> int | None:
@@ -531,6 +540,52 @@ def latest_substantive_activity(events: list[dict[str, Any]], actor_roles: set[s
 
 def ts_text(ts: datetime | None) -> str:
     return ts.isoformat() if ts else ""
+
+
+def utc_now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def empty_notification_state(loaded: bool = False) -> dict[str, Any]:
+    return {"version": 1, "prs": {}, "_loaded_from_dashboard": loaded}
+
+
+def notification_state_from_body(body: str) -> dict[str, Any]:
+    matches = NOTIFICATION_STATE_MARKER_RE.findall(body or "")
+    if not matches:
+        return empty_notification_state()
+    try:
+        state = json.loads(matches[-1])
+    except json.JSONDecodeError:
+        return empty_notification_state()
+    if not isinstance(state, dict):
+        return empty_notification_state()
+    prs = state.get("prs")
+    if not isinstance(prs, dict):
+        state["prs"] = {}
+    state["version"] = 1
+    state["_loaded_from_dashboard"] = True
+    return state
+
+
+def notification_state_from_file(path: str | None) -> dict[str, Any]:
+    if not path:
+        return empty_notification_state()
+    p = Path(path)
+    if not p.exists():
+        return empty_notification_state()
+    return notification_state_from_body(p.read_text(encoding="utf-8"))
+
+
+def notification_state_marker(state: dict[str, Any]) -> str:
+    stored_state = {k: v for k, v in state.items() if not k.startswith("_")}
+    state_json = json.dumps(stored_state, sort_keys=True, separators=(",", ":"))
+    return f"<!-- pr-review-dashboard-state:{state_json} -->"
+
+
+def append_notification_state(md: str, state: dict[str, Any]) -> str:
+    stripped = NOTIFICATION_STATE_MARKER_RE.sub("", md).rstrip()
+    return f"{stripped}\n\n{notification_state_marker(state)}\n"
 
 
 def compute_facts(raw: dict[str, Any], author: str, events: list[dict[str, Any]]) -> dict[str, Any]:
@@ -930,13 +985,237 @@ def add_wait_age_facts(
     if wait_ts is None:
         wait_ts = parse_ts(facts.get("created_at") or "")
         basis = "created"
+    facts["waiting_since"] = ts_text(wait_ts)
     facts["seconds_since_waiting"] = seconds_since(wait_ts)
     facts["waiting_age"] = activity_age(wait_ts)
     facts["waiting_age_basis"] = basis
 
 
+def load_slack_user_map() -> dict[str, str]:
+    raw = os.environ.get("SLACK_USER_MAP_JSON") or ""
+    if not raw.strip():
+        return {}
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError as e:
+        raise RuntimeError(f"SLACK_USER_MAP_JSON must be valid JSON: {e.msg} at char {e.pos}") from e
+    if not isinstance(data, dict):
+        raise RuntimeError("SLACK_USER_MAP_JSON must be a JSON object mapping GitHub logins to Slack user IDs")
+    return {str(k).lower(): str(v) for k, v in data.items() if str(k).strip() and str(v).strip()}
+
+
+def slack_webhook_retry_delay(attempt: int, e: urllib.error.HTTPError | None = None) -> float:
+    if e is not None:
+        retry_after = e.headers.get("Retry-After")
+        if retry_after:
+            try:
+                return min(float(retry_after), 30.0)
+            except ValueError:
+                pass
+    return min(SLACK_WEBHOOK_RETRY_DELAY_SECONDS * (2**attempt), 30.0)
+
+
+def should_retry_slack_http_error(e: urllib.error.HTTPError) -> bool:
+    return e.code == 429 or 500 <= e.code < 600
+
+
+def post_slack_webhook(message: str, webhook_url: str) -> None:
+    req = urllib.request.Request(
+        webhook_url,
+        data=json.dumps({"text": message, "unfurl_links": False}).encode("utf-8"),
+        headers={
+            "Content-Type": "application/json; charset=utf-8",
+        },
+        method="POST",
+    )
+    for attempt in range(SLACK_WEBHOOK_RETRY_ATTEMPTS):
+        try:
+            with urllib.request.urlopen(req, timeout=20) as response:
+                body = response.read().decode("utf-8")
+        except urllib.error.HTTPError as e:
+            body = e.read().decode("utf-8", errors="replace")
+            if attempt + 1 < SLACK_WEBHOOK_RETRY_ATTEMPTS and should_retry_slack_http_error(e):
+                time.sleep(slack_webhook_retry_delay(attempt, e))
+                continue
+            raise RuntimeError(f"Slack webhook request failed with HTTP {e.code}: {body}") from e
+        except urllib.error.URLError as e:
+            if attempt + 1 < SLACK_WEBHOOK_RETRY_ATTEMPTS:
+                time.sleep(slack_webhook_retry_delay(attempt))
+                continue
+            raise RuntimeError(f"Slack webhook request failed: {e}") from e
+        if body.strip().lower() != "ok":
+            raise RuntimeError(f"Slack webhook request failed: {body}")
+        return
+
+
+def slack_message(repo: str, result: dict[str, Any], assignee_mention: str, kind: str) -> str:
+    facts = result.get("facts") or {}
+    number = result.get("pr_num")
+    title = result.get("pr_title") or f"PR #{number}"
+    url = result.get("pr_url") or f"https://github.com/{repo}/pull/{number}"
+    if kind == "follow-up":
+        lead = f"PR #{number} is still waiting on approvers after {facts.get('waiting_age') or '24h'}"
+    else:
+        lead = f"PR #{number} is now waiting on approvers"
+    return f"{lead}, and {assignee_mention} is assigned on GitHub.\n{title}\n{url}"
+
+
+def notification_due(
+    previous_state_exists: bool,
+    previous_pr_state: dict[str, Any],
+    previous_assignee_state: dict[str, Any],
+    current_waiting_since: datetime | None,
+    now: datetime,
+) -> str | None:
+    if not previous_state_exists:
+        return None
+    if current_waiting_since is None:
+        return None
+    previous_waiting_since = parse_ts(previous_pr_state.get("waiting_since") or "")
+    last_notified = parse_ts(previous_assignee_state.get("last_notified_at") or "")
+    if last_notified is None:
+        is_seen_waiting_period = (
+            previous_assignee_state
+            and not previous_assignee_state.get("notification_pending")
+            and previous_waiting_since == current_waiting_since
+        )
+        return None if is_seen_waiting_period else "initial"
+    if current_waiting_since > last_notified:
+        return "initial"
+    if now.weekday() < 5 and (now - last_notified).total_seconds() >= APPROVER_FOLLOW_UP_SECONDS:
+        return "follow-up"
+    return None
+
+
+def try_send_slack_notification(
+    repo: str,
+    result: dict[str, Any],
+    assignee: str,
+    kind: str,
+    webhook_url: str,
+    slack_user_id: str | None,
+) -> str | None:
+    number = result.get("pr_num")
+    if not webhook_url:
+        return "SLACK_WEBHOOK_URL is not set"
+    try:
+        post_slack_webhook(slack_message(repo, result, f"<@{slack_user_id}>", kind), webhook_url)
+    except Exception as e:
+        return f"PR #{number}: failed to notify @{assignee}: {e}"
+    print(f"  mentioned @{assignee} on Slack for PR #{number} ({kind})", file=sys.stderr)
+    return None
+
+
+def update_notification_state(
+    repo: str,
+    results: dict[int, dict[str, Any]],
+    previous_state: dict[str, Any],
+    notify_slack: bool,
+    now: datetime,
+) -> dict[str, Any]:
+    previous_prs = previous_state.get("prs") or {}
+    previous_state_exists = bool(previous_state.get("_loaded_from_dashboard"))
+    webhook_url = os.environ.get("SLACK_WEBHOOK_URL") or ""
+    notification_errors: list[str] = []
+    try:
+        slack_user_map = load_slack_user_map() if notify_slack else {}
+    except Exception as e:
+        notification_errors.append(str(e))
+        slack_user_map = {}
+
+    new_prs: dict[str, Any] = {}
+    for number, result in sorted(results.items()):
+        facts = result.get("facts") or {}
+        side = result.get("side") or "unknown"
+        pr_key = str(number)
+        previous_pr_state = previous_prs.get(pr_key) or {}
+        current_pr_state: dict[str, Any] = {
+            "waiting_since": facts.get("waiting_since") or "",
+            "assignee_notifications": {},
+        }
+        if result.get("returncode") != 0 or side in ("transient-failure", "unknown"):
+            if previous_pr_state:
+                new_prs[pr_key] = previous_pr_state
+            continue
+        if side != "approver":
+            continue
+
+        current_waiting_since = parse_ts(facts.get("waiting_since") or "")
+        previous_notifications = previous_pr_state.get("assignee_notifications") or {}
+        for assignee in facts.get("assignees") or []:
+            assignee_key = assignee.lower()
+            previous_assignee_state = previous_notifications.get(assignee_key) or previous_notifications.get(assignee) or {}
+            assignee_state = {
+                "last_notified_at": previous_assignee_state.get("last_notified_at") or "",
+            }
+            kind = notification_due(
+                previous_state_exists,
+                previous_pr_state,
+                previous_assignee_state,
+                current_waiting_since,
+                now,
+            )
+            if kind and notify_slack:
+                slack_user_id = slack_user_map.get(assignee_key)
+                if not slack_user_id:
+                    continue
+                error = try_send_slack_notification(
+                    repo,
+                    result,
+                    assignee,
+                    kind,
+                    webhook_url,
+                    slack_user_id,
+                )
+                if error:
+                    print(f"  warning: {error}", file=sys.stderr)
+                    notification_errors.append(error)
+                    assignee_state["notification_pending"] = True
+                else:
+                    assignee_state["last_notified_at"] = ts_text(now)
+                    assignee_state["last_notification_kind"] = kind
+                    assignee_state["notification_pending"] = False
+            elif kind:
+                assignee_state["notification_pending"] = True
+            elif previous_assignee_state.get("last_notification_kind"):
+                assignee_state["last_notification_kind"] = previous_assignee_state.get("last_notification_kind")
+                assignee_state["notification_pending"] = bool(previous_assignee_state.get("notification_pending"))
+            elif previous_assignee_state.get("notification_pending"):
+                assignee_state["notification_pending"] = True
+            current_pr_state["assignee_notifications"][assignee_key] = assignee_state
+        if current_pr_state["assignee_notifications"]:
+            new_prs[pr_key] = current_pr_state
+    return {"version": 1, "prs": new_prs, "_slack_notification_errors": notification_errors}
+
+
 def _md_escape(s: str) -> str:
     return (s or "").replace("|", "\\|").replace("\n", " ").strip()
+
+
+def github_run_url(repo: str) -> str:
+    server_url = os.environ.get("GITHUB_SERVER_URL") or "https://github.com"
+    repository = os.environ.get("GITHUB_REPOSITORY") or repo
+    run_id = os.environ.get("GITHUB_RUN_ID") or ""
+    if run_id:
+        return f"{server_url}/{repository}/actions/runs/{run_id}"
+    return f"https://github.com/{repo}/actions/workflows/pr-review-dashboard.yml"
+
+
+def prepend_slack_notification_warning(md: str, errors: list[str], repo: str) -> str:
+    if not errors:
+        return md
+    unique_errors = list(dict.fromkeys(errors))
+    run_url = github_run_url(repo)
+    lines = [
+        "> [!WARNING]",
+        "> Slack notifications for assignees are currently failing. "
+        f"See the [latest dashboard run]({run_url}) for logs.",
+    ]
+    for error in unique_errors[:5]:
+        lines.append(f"> - {_md_escape(error)}")
+    if len(unique_errors) > 5:
+        lines.append(f"> - ...and {len(unique_errors) - 5} more notification error(s).")
+    return "\n".join(lines) + "\n\n" + md
 
 
 def fetch_workflow_failure_issues(repo: str) -> list[dict[str, Any]]:
@@ -1157,7 +1436,9 @@ def build_pr_result(
         side = route_pr(facts, classifications)
         add_wait_age_facts(facts, side, threads, classifications)
         return {
-            "pr": number,
+            "pr_num": number,
+            "pr_title": raw["pr"].get("title") or "",
+            "pr_url": raw["pr"].get("url") or "",
             "returncode": 0,
             "facts": facts,
             "delegator": delegator,
@@ -1168,7 +1449,7 @@ def build_pr_result(
         }
     except TransientGhError as e:
         return {
-            "pr": number,
+            "pr_num": number,
             "returncode": -1,
             "facts": {},
             "threads": [],
@@ -1178,7 +1459,7 @@ def build_pr_result(
         }
     except Exception as e:
         return {
-            "pr": number,
+            "pr_num": number,
             "returncode": -1,
             "facts": {},
             "threads": [],
@@ -1191,12 +1472,19 @@ def build_pr_result(
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--output", default=DEFAULT_OUTPUT, help=f"output file (default: {DEFAULT_OUTPUT})")
+    ap.add_argument("--previous-dashboard", help="previous dashboard issue body, used as the notification ledger")
+    ap.add_argument(
+        "--slack-notify-approver-waiting",
+        action="store_true",
+        help="Post Slack notifications when assigned PRs enter or remain in the approver bucket",
+    )
     ap.add_argument("--jobs", type=int, default=DEFAULT_JOBS, help=f"parallel workers (default: {DEFAULT_JOBS})")
     ap.add_argument("--model", default=DEFAULT_MODEL, help=f"copilot model (default: {DEFAULT_MODEL})")
     args = ap.parse_args()
 
     repo = detect_repo()
     owner, repo_name = repo.split("/", 1)
+    previous_state = notification_state_from_file(args.previous_dashboard)
 
     reviewers = load_reviewer_set(owner)
     print(f"reviewer set ({len(reviewers)})", file=sys.stderr)
@@ -1220,7 +1508,7 @@ def main() -> int:
             try:
                 res = fut.result()
             except Exception as e:
-                res = {"pr": pr["number"], "returncode": -1, "side": "unknown", "raw_stderr": repr(e)}
+                res = {"pr_num": pr["number"], "returncode": -1, "side": "unknown", "raw_stderr": repr(e)}
             results[pr["number"]] = res
             counts = action_counts(res.get("classifications") or [])
             print(
@@ -1230,7 +1518,20 @@ def main() -> int:
             )
 
     workflow_issues = fetch_workflow_failure_issues(repo)
+    notification_state = update_notification_state(
+        repo,
+        results,
+        previous_state,
+        args.slack_notify_approver_waiting,
+        utc_now(),
+    )
     md = render_markdown_compact(prs, results, repo, workflow_issues)
+    md = prepend_slack_notification_warning(
+        md,
+        notification_state.get("_slack_notification_errors") or [],
+        repo,
+    )
+    md = append_notification_state(md, notification_state)
     Path(args.output).write_text(md, encoding="utf-8")
     print(f"wrote {args.output}", file=sys.stderr)
     return 0

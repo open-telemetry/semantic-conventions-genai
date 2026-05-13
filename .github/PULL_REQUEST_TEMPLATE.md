@@ -26,7 +26,7 @@ Update the reference scenarios under `reference/scenarios/` to demonstrate this.
 ## Checklist
 
 - [ ] Motivation section filled in above
-- [ ] Reference instrumentation and scenarios updated for affected libraries
+- [ ] Reference scenarios updated for affected libraries
 - [ ] Changelog entry added under `Unreleased` in `CHANGELOG.md` for any change to the conventions that a consumer would care about. Editorial changes (typos, pure rewording, repo tooling) don't need an entry.
 
 See [CONTRIBUTING.md]

@@ -104,17 +104,18 @@ def run_agent_reference():
 
     def get_weather(location: str, tool_context: ToolContext) -> str:
         """Get the current weather."""
-        with _reference_tracer.start_as_current_span("execute_tool get_weather") as tool_span:
-            tool_span.set_attribute("gen_ai.operation.name", "execute_tool")
+        tool_span_attributes = {
+            "gen_ai.operation.name": "execute_tool",
+        }
+        with _reference_tracer.start_as_current_span(
+            "execute_tool get_weather", attributes=tool_span_attributes
+        ) as tool_span:
             tool_span.set_attribute("gen_ai.tool.name", "get_weather")
             tool_span.set_attribute("gen_ai.tool.type", "function")
             tool_span.set_attribute("gen_ai.tool.description", "Get the current weather.")
             if tool_context.function_call_id:
                 tool_span.set_attribute("gen_ai.tool.call.id", tool_context.function_call_id)
-            tool_span.set_attribute(
-                "gen_ai.tool.call.arguments",
-                json.dumps({"location": location}),
-            )
+            tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps({"location": location}))
             result = f"Sunny in {location}"
             tool_span.set_attribute("gen_ai.tool.call.result", result)
         return result
@@ -159,21 +160,26 @@ def run_agent_reference():
                 app_name="test_app",
                 user_id="test_user",
             )
-            with _reference_tracer.start_as_current_span(f"invoke_workflow {runner.app_name}") as workflow_span:
-                workflow_span.set_attribute("gen_ai.operation.name", "invoke_workflow")
+            workflow_span_attributes = {
+                "gen_ai.operation.name": "invoke_workflow",
+            }
+            with _reference_tracer.start_as_current_span(
+                f"invoke_workflow {runner.app_name}", attributes=workflow_span_attributes
+            ) as workflow_span:
                 workflow_span.set_attribute("gen_ai.workflow.name", runner.app_name)
                 workflow_span.set_attribute(
                     "gen_ai.input.messages",
-                    json.dumps(
-                        [
-                            {"role": "user", "parts": [{"type": "text", "content": input_text}]},
-                        ]
-                    ),
+                    json.dumps([{"role": "user", "parts": [{"type": "text", "content": input_text}]}]),
                 )
-                with _reference_tracer.start_as_current_span("invoke_agent test_agent") as agent_span:
-                    agent_span.set_attribute("gen_ai.operation.name", "invoke_agent")
-                    agent_span.set_attribute("gen_ai.provider.name", "gcp.gemini")
-                    agent_span.set_attribute("gen_ai.request.model", request_model)
+                agent_span_attributes = {
+                    "gen_ai.operation.name": "invoke_agent",
+                    "gen_ai.provider.name": "gcp.gemini",
+                    "gen_ai.request.model": request_model,
+                    "gen_ai.agent.name": agent.name,
+                }
+                with _reference_tracer.start_as_current_span(
+                    "invoke_agent test_agent", attributes=agent_span_attributes
+                ) as agent_span:
                     agent_span.set_attribute("gen_ai.request.choice.count", request_choice_count)
                     agent_span.set_attribute("gen_ai.request.max_tokens", request_max_tokens)
                     agent_span.set_attribute("gen_ai.request.temperature", request_temperature)
@@ -183,26 +189,28 @@ def run_agent_reference():
                     agent_span.set_attribute("gen_ai.request.presence_penalty", request_presence_penalty)
                     agent_span.set_attribute("gen_ai.request.stop_sequences", request_stop_sequences)
                     agent_span.set_attribute("gen_ai.conversation.id", session.id)
-                    agent_span.set_attribute("gen_ai.agent.name", agent.name)
                     agent_span.set_attribute(
                         "gen_ai.system_instructions",
                         json.dumps([{"parts": [{"type": "text", "content": agent.instruction}]}]),
                     )
                     agent_span.set_attribute(
                         "gen_ai.input.messages",
-                        json.dumps(
-                            [
-                                {"role": "user", "parts": [{"type": "text", "content": input_text}]},
-                            ]
-                        ),
+                        json.dumps([{"role": "user", "parts": [{"type": "text", "content": input_text}]}]),
                     )
                     agent_span.set_attribute("gen_ai.tool.definitions", json.dumps(tool_defs))
-
-                    with _reference_tracer.start_as_current_span("chat gemini-2.0-flash") as span:
-                        span.set_attribute("gen_ai.operation.name", "chat")
-                        span.set_attribute("gen_ai.provider.name", "gcp.gemini")
+                    span_attributes = {
+                        "gen_ai.operation.name": "chat",
+                        "gen_ai.provider.name": "gcp.gemini",
+                        "gen_ai.request.model": request_model,
+                    }
+                    if host:
+                        span_attributes["server.address"] = host
+                    if port is not None:
+                        span_attributes["server.port"] = port
+                    with _reference_tracer.start_as_current_span(
+                        "chat gemini-2.0-flash", attributes=span_attributes
+                    ) as span:
                         span.set_attribute("gen_ai.conversation.id", session.id)
-                        span.set_attribute("gen_ai.request.model", request_model)
                         span.set_attribute("gen_ai.request.choice.count", request_choice_count)
                         span.set_attribute("gen_ai.request.max_tokens", request_max_tokens)
                         span.set_attribute("gen_ai.request.temperature", request_temperature)
@@ -217,17 +225,9 @@ def run_agent_reference():
                         )
                         span.set_attribute(
                             "gen_ai.input.messages",
-                            json.dumps(
-                                [
-                                    {"role": "user", "parts": [{"type": "text", "content": input_text}]},
-                                ]
-                            ),
+                            json.dumps([{"role": "user", "parts": [{"type": "text", "content": input_text}]}]),
                         )
                         span.set_attribute("gen_ai.tool.definitions", json.dumps(tool_defs))
-                        if host:
-                            span.set_attribute("server.address", host)
-                        if port is not None:
-                            span.set_attribute("server.port", port)
                         usage_metadata = None
                         finish_reason = None
                         last_text = ""

@@ -15,7 +15,7 @@
 | --- | --- |
 | gen_ai.agent.description | [openai-assistants] |
 | gen_ai.agent.id | [aws-bedrock-agent], [openai-assistants] |
-| gen_ai.agent.name | [openai-agents], [openai-assistants] |
+| gen_ai.agent.name | [azure-ai-foundry], [openai-agents], [openai-assistants] |
 | gen_ai.agent.version | [aws-bedrock-agent] |
 | gen_ai.conversation.id | [aws-bedrock-agent], [openai-assistants] |
 | gen_ai.data_source.id | (none) |

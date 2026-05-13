@@ -15,9 +15,10 @@ def _matches_spec(op_name: str, attrs: dict[str, object], span_type_key: str) ->
     if op_name and op_name in spec.op_names:
         return True
     if spec.discriminator_attrs and _has_any_attr(attrs, *spec.discriminator_attrs):
-        # create_agent shares op_name semantics with invoke_agent's attr set;
-        # a span explicitly marked as create_agent never counts as invoke_agent.
-        return not (span_type_key.startswith("invoke_agent") and op_name == "create_agent")
+        # create_agent and plan share their attribute set with invoke_agent
+        # (gen_ai.agent.{id,name}); a span explicitly marked as one of those
+        # operations never counts as invoke_agent.
+        return not (span_type_key.startswith("invoke_agent") and op_name in {"create_agent", "plan"})
     return False
 
 

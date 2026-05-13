@@ -34,16 +34,18 @@ def run_chat(client):
     """Scenario: basic chat completion with reference implementation."""
     print("  [chat] basic chat completion (reference implementation)")
     request_model = "mistral-large-latest"
-    with _reference_tracer.start_as_current_span("chat mistral-large-latest") as span:
-        host, port = mock_server_host_port(MOCK_BASE_URL)
-        span.set_attribute("gen_ai.operation.name", "chat")
-        span.set_attribute("gen_ai.provider.name", "mistral_ai")
-        span.set_attribute("gen_ai.request.model", request_model)
-        if host:
-            span.set_attribute("server.address", host)
-        if port is not None:
-            span.set_attribute("server.port", port)
-        messages = [{"role": "user", "content": "Say hello."}]
+    host, port = mock_server_host_port(MOCK_BASE_URL)
+    messages = [{"role": "user", "content": "Say hello."}]
+    span_attributes = {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "mistral_ai",
+        "gen_ai.request.model": request_model,
+    }
+    if host:
+        span_attributes["server.address"] = host
+    if port is not None:
+        span_attributes["server.port"] = port
+    with _reference_tracer.start_as_current_span("chat mistral-large-latest", attributes=span_attributes) as span:
         span.set_attribute(
             "gen_ai.input.messages",
             json.dumps([{"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]} for m in messages]),
@@ -119,17 +121,19 @@ def run_chat_tool_call(client):
         },
     }
     tools = [request_tool]
-    with _reference_tracer.start_as_current_span("chat mistral-large-latest") as span:
-        host, port = mock_server_host_port(MOCK_BASE_URL)
-        span.set_attribute("gen_ai.operation.name", "chat")
-        span.set_attribute("gen_ai.provider.name", "mistral_ai")
-        span.set_attribute("gen_ai.request.model", request_model)
+    host, port = mock_server_host_port(MOCK_BASE_URL)
+    messages = [{"role": "user", "content": "What's the weather in Seattle?"}]
+    span_attributes_2 = {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "mistral_ai",
+        "gen_ai.request.model": request_model,
+    }
+    if host:
+        span_attributes_2["server.address"] = host
+    if port is not None:
+        span_attributes_2["server.port"] = port
+    with _reference_tracer.start_as_current_span("chat mistral-large-latest", attributes=span_attributes_2) as span:
         span.set_attribute("gen_ai.tool.definitions", json.dumps(tools))
-        if host:
-            span.set_attribute("server.address", host)
-        if port is not None:
-            span.set_attribute("server.port", port)
-        messages = [{"role": "user", "content": "What's the weather in Seattle?"}]
         span.set_attribute(
             "gen_ai.input.messages",
             json.dumps([{"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]} for m in messages]),
@@ -155,8 +159,12 @@ def run_chat_tool_call(client):
             tool_call = choice.message.tool_calls[0]
             arguments_json = tool_call.function.arguments or "{}"
             arguments = json.loads(arguments_json)
-            with _reference_tracer.start_as_current_span("execute_tool get_weather") as tool_span:
-                tool_span.set_attribute("gen_ai.operation.name", "execute_tool")
+            tool_span_attributes = {
+                "gen_ai.operation.name": "execute_tool",
+            }
+            with _reference_tracer.start_as_current_span(
+                "execute_tool get_weather", attributes=tool_span_attributes
+            ) as tool_span:
                 tool_span.set_attribute("gen_ai.tool.name", tool_call.function.name)
                 tool_span.set_attribute("gen_ai.tool.description", request_tool["function"]["description"])
                 tool_span.set_attribute("gen_ai.tool.type", request_tool["type"])
@@ -173,16 +181,18 @@ def run_chat_streaming(client):
     """Scenario: streaming chat completion with reference implementation."""
     print("  [chat_streaming] streaming chat completion (reference implementation)")
     request_model = "mistral-large-latest"
-    with _reference_tracer.start_as_current_span("chat mistral-large-latest") as span:
-        host, port = mock_server_host_port(MOCK_BASE_URL)
-        span.set_attribute("gen_ai.operation.name", "chat")
-        span.set_attribute("gen_ai.provider.name", "mistral_ai")
-        span.set_attribute("gen_ai.request.model", request_model)
-        if host:
-            span.set_attribute("server.address", host)
-        if port is not None:
-            span.set_attribute("server.port", port)
-        messages = [{"role": "user", "content": "Tell me a joke."}]
+    host, port = mock_server_host_port(MOCK_BASE_URL)
+    messages = [{"role": "user", "content": "Tell me a joke."}]
+    span_attributes_3 = {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "mistral_ai",
+        "gen_ai.request.model": request_model,
+    }
+    if host:
+        span_attributes_3["server.address"] = host
+    if port is not None:
+        span_attributes_3["server.port"] = port
+    with _reference_tracer.start_as_current_span("chat mistral-large-latest", attributes=span_attributes_3) as span:
         span.set_attribute(
             "gen_ai.input.messages",
             json.dumps([{"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]} for m in messages]),
@@ -241,15 +251,17 @@ def run_embeddings(client):
     """Scenario: embedding generation with reference implementation."""
     print("  [embeddings] embedding generation (reference implementation)")
     request_model = "mistral-embed"
-    with _reference_tracer.start_as_current_span("embeddings mistral-embed") as span:
-        host, port = mock_server_host_port(MOCK_BASE_URL)
-        span.set_attribute("gen_ai.operation.name", "embeddings")
-        span.set_attribute("gen_ai.provider.name", "mistral_ai")
-        span.set_attribute("gen_ai.request.model", request_model)
-        if host:
-            span.set_attribute("server.address", host)
-        if port is not None:
-            span.set_attribute("server.port", port)
+    host, port = mock_server_host_port(MOCK_BASE_URL)
+    span_attributes_4 = {
+        "gen_ai.operation.name": "embeddings",
+        "gen_ai.provider.name": "mistral_ai",
+        "gen_ai.request.model": request_model,
+    }
+    if host:
+        span_attributes_4["server.address"] = host
+    if port is not None:
+        span_attributes_4["server.port"] = port
+    with _reference_tracer.start_as_current_span("embeddings mistral-embed", attributes=span_attributes_4) as span:
         resp = client.embeddings.create(
             model=request_model,
             inputs=["Hello, world!"],

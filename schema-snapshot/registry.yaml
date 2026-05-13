@@ -151,6 +151,10 @@ refinements:
           id: invoke_workflow
           stability: development
           value: invoke_workflow
+        - brief: Agent planning or task decomposition phase
+          id: plan
+          stability: development
+          value: plan
     - brief: Messages returned by the model where each message represents a specific model response (choice, candidate).
       examples:
       - |
@@ -855,6 +859,10 @@ refinements:
           id: invoke_workflow
           stability: development
           value: invoke_workflow
+        - brief: Agent planning or task decomposition phase
+          id: plan
+          stability: development
+          value: plan
     - brief: The Generative AI provider as identified by the client or server instrumentation.
       key: gen_ai.provider.name
       note: |
@@ -1049,6 +1057,10 @@ refinements:
           id: invoke_workflow
           stability: development
           value: invoke_workflow
+        - brief: Agent planning or task decomposition phase
+          id: plan
+          stability: development
+          value: plan
     - brief: The Generative AI provider as identified by the client or server instrumentation.
       key: gen_ai.provider.name
       note: |
@@ -1246,6 +1258,10 @@ refinements:
           id: invoke_workflow
           stability: development
           value: invoke_workflow
+        - brief: Agent planning or task decomposition phase
+          id: plan
+          stability: development
+          value: plan
     - brief: The Generative AI provider as identified by the client or server instrumentation.
       key: gen_ai.provider.name
       note: |
@@ -1442,6 +1458,10 @@ refinements:
           id: invoke_workflow
           stability: development
           value: invoke_workflow
+        - brief: Agent planning or task decomposition phase
+          id: plan
+          stability: development
+          value: plan
     - brief: The Generative AI provider as identified by the client or server instrumentation.
       key: gen_ai.provider.name
       note: |
@@ -1685,6 +1705,10 @@ refinements:
           id: invoke_workflow
           stability: development
           value: invoke_workflow
+        - brief: Agent planning or task decomposition phase
+          id: plan
+          stability: development
+          value: plan
     - brief: The Generative AI provider as identified by the client or server instrumentation.
       key: gen_ai.provider.name
       note: |
@@ -1879,6 +1903,10 @@ refinements:
           id: invoke_workflow
           stability: development
           value: invoke_workflow
+        - brief: Agent planning or task decomposition phase
+          id: plan
+          stability: development
+          value: plan
     - brief: The Generative AI provider as identified by the client or server instrumentation.
       key: gen_ai.provider.name
       note: |
@@ -2073,6 +2101,10 @@ refinements:
           id: invoke_workflow
           stability: development
           value: invoke_workflow
+        - brief: Agent planning or task decomposition phase
+          id: plan
+          stability: development
+          value: plan
     - brief: The Generative AI provider as identified by the client or server instrumentation.
       key: gen_ai.provider.name
       note: |
@@ -2217,6 +2249,61 @@ refinements:
       path: ./model/gen-ai/metrics.yaml
     stability: development
     unit: s
+  - annotations:
+      code_generation:
+        metric_value_type: double
+    attributes:
+    - brief: |
+        Describes a class of error the operation ended with.
+      examples:
+      - timeout
+      - java.net.UnknownHostException
+      - server_certificate_invalid
+      - \u0027500\u0027
+      key: error.type
+      note: |
+        The `error.type` SHOULD match the error code returned by the Generative AI provider or the client library,
+        the canonical name of exception that occurred, or another low-cardinality error identifier.
+        Instrumentations SHOULD document the list of errors they report.
+      requirement_level:
+        conditionally_required: if the operation ended in an error
+      stability: stable
+      type:
+        members:
+        - brief: |
+            A fallback error value to be used when the instrumentation doesn\u0027t define a custom value.
+          id: other
+          stability: stable
+          value: _OTHER
+    - brief: Human-readable name of the GenAI workflow provided by the application.
+      examples:
+      - multi_agent_rag
+      - customer_support_pipeline
+      key: gen_ai.workflow.name
+      note: |
+        This attribute can be populated in different frameworks; for example, as the name of the first chain in LangChain or the name of the crew in CrewAI.
+        The workflow name is usually provided by the application in a way that is specific to the generative AI framework or library that orchestrates the workflow.
+        It is usually a static name that is expected to be unique within an application.
+
+        `gen_ai.workflow.name` MUST have low cardinality.
+        Semantic conventions for individual Generative AI frameworks SHOULD document what `gen_ai.workflow.name` means in the context of that framework.
+        If there is no low-cardinality workflow name available for a given framework, this attribute MUST NOT be captured by default.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: If available.
+      stability: development
+      type: string
+    brief: GenAI workflow duration.
+    id: gen_ai.workflow.duration
+    instrument: histogram
+    name: gen_ai.workflow.duration
+    note: |
+      This metric instrument describes an operation that executes a coordinated process composed of multiple agents or other operations involving generative AI.
+    provenance:
+      path: ./model/gen-ai/metrics.yaml
+    stability: development
+    unit: s
   - attributes:
     - brief: |
         Describes a class of error the operation ended with.
@@ -2296,6 +2383,10 @@ refinements:
           id: invoke_workflow
           stability: development
           value: invoke_workflow
+        - brief: Agent planning or task decomposition phase
+          id: plan
+          stability: development
+          value: plan
     - brief: The name of the prompt or prompt template provided in the request or response.
       examples:
       - analyze-code
@@ -2805,6 +2896,10 @@ refinements:
           id: invoke_workflow
           stability: development
           value: invoke_workflow
+        - brief: Agent planning or task decomposition phase
+          id: plan
+          stability: development
+          value: plan
     - brief: The name of the prompt or prompt template provided in the request or response.
       examples:
       - analyze-code
@@ -3259,6 +3354,10 @@ refinements:
           id: invoke_workflow
           stability: development
           value: invoke_workflow
+        - brief: Agent planning or task decomposition phase
+          id: plan
+          stability: development
+          value: plan
     - brief: The Generative AI provider as identified by the client or server instrumentation.
       key: gen_ai.provider.name
       note: |
@@ -3473,6 +3572,10 @@ refinements:
           id: invoke_workflow
           stability: development
           value: invoke_workflow
+        - brief: Agent planning or task decomposition phase
+          id: plan
+          stability: development
+          value: plan
     - brief: The Generative AI provider as identified by the client or server instrumentation.
       key: gen_ai.provider.name
       note: |
@@ -3817,6 +3920,10 @@ refinements:
           id: invoke_workflow
           stability: development
           value: invoke_workflow
+        - brief: Agent planning or task decomposition phase
+          id: plan
+          stability: development
+          value: plan
     - brief: Messages returned by the model where each message represents a specific model response (choice, candidate).
       examples:
       - |
@@ -4486,6 +4593,10 @@ refinements:
           id: invoke_workflow
           stability: development
           value: invoke_workflow
+        - brief: Agent planning or task decomposition phase
+          id: plan
+          stability: development
+          value: plan
     - brief: Messages returned by the model where each message represents a specific model response (choice, candidate).
       examples:
       - |
@@ -5146,6 +5257,10 @@ refinements:
           id: invoke_workflow
           stability: development
           value: invoke_workflow
+        - brief: Agent planning or task decomposition phase
+          id: plan
+          stability: development
+          value: plan
     - brief: Messages returned by the model where each message represents a specific model response (choice, candidate).
       examples:
       - |
@@ -5771,6 +5886,10 @@ refinements:
           id: invoke_workflow
           stability: development
           value: invoke_workflow
+        - brief: Agent planning or task decomposition phase
+          id: plan
+          stability: development
+          value: plan
     - brief: The Generative AI provider as identified by the client or server instrumentation.
       key: gen_ai.provider.name
       note: |
@@ -6023,6 +6142,10 @@ refinements:
           id: invoke_workflow
           stability: development
           value: invoke_workflow
+        - brief: Agent planning or task decomposition phase
+          id: plan
+          stability: development
+          value: plan
     - brief: The Generative AI provider as identified by the client or server instrumentation.
       key: gen_ai.provider.name
       note: |
@@ -6273,6 +6396,10 @@ refinements:
           id: invoke_workflow
           stability: development
           value: invoke_workflow
+        - brief: Agent planning or task decomposition phase
+          id: plan
+          stability: development
+          value: plan
     - brief: Parameters passed to the tool call.
       examples:
       - |
@@ -6538,6 +6665,10 @@ refinements:
           id: invoke_workflow
           stability: development
           value: invoke_workflow
+        - brief: Agent planning or task decomposition phase
+          id: plan
+          stability: development
+          value: plan
     - brief: Messages returned by the model where each message represents a specific model response (choice, candidate).
       examples:
       - |
@@ -7252,6 +7383,10 @@ refinements:
           id: invoke_workflow
           stability: development
           value: invoke_workflow
+        - brief: Agent planning or task decomposition phase
+          id: plan
+          stability: development
+          value: plan
     - brief: Messages returned by the model where each message represents a specific model response (choice, candidate).
       examples:
       - |
@@ -7903,6 +8038,10 @@ refinements:
           id: invoke_workflow
           stability: development
           value: invoke_workflow
+        - brief: Agent planning or task decomposition phase
+          id: plan
+          stability: development
+          value: plan
     - brief: Messages returned by the model where each message represents a specific model response (choice, candidate).
       examples:
       - |
@@ -8450,6 +8589,10 @@ refinements:
           id: invoke_workflow
           stability: development
           value: invoke_workflow
+        - brief: Agent planning or task decomposition phase
+          id: plan
+          stability: development
+          value: plan
     - brief: Messages returned by the model where each message represents a specific model response (choice, candidate).
       examples:
       - |
@@ -8497,7 +8640,13 @@ refinements:
       - customer_support_pipeline
       key: gen_ai.workflow.name
       note: |
-        This attribute can be populated in different frameworks eg: name of the first chain in LangChain OR name of the crew in CrewAI.
+        This attribute can be populated in different frameworks; for example, as the name of the first chain in LangChain or the name of the crew in CrewAI.
+        The workflow name is usually provided by the application in a way that is specific to the generative AI framework or library that orchestrates the workflow.
+        It is usually a static name that is expected to be unique within an application.
+
+        `gen_ai.workflow.name` MUST have low cardinality.
+        Semantic conventions for individual Generative AI frameworks SHOULD document what `gen_ai.workflow.name` means in the context of that framework.
+        If there is no low-cardinality workflow name available for a given framework, this attribute MUST NOT be captured by default.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
@@ -8526,6 +8675,127 @@ refinements:
       path: ./model/gen-ai/spans.yaml
     stability: development
     type: gen_ai.invoke_workflow.internal
+  - attributes:
+    - brief: |
+        Describes a class of error the operation ended with.
+      examples:
+      - timeout
+      - java.net.UnknownHostException
+      - server_certificate_invalid
+      - \u0027500\u0027
+      key: error.type
+      note: |
+        The `error.type` SHOULD match the error code returned by the Generative AI provider or the client library,
+        the canonical name of exception that occurred, or another low-cardinality error identifier.
+        Instrumentations SHOULD document the list of errors they report.
+      requirement_level:
+        conditionally_required: if the operation ended in an error
+      stability: stable
+      type:
+        members:
+        - brief: |
+            A fallback error value to be used when the instrumentation doesn\u0027t define a custom value.
+          id: other
+          stability: stable
+          value: _OTHER
+    - brief: The unique identifier of the GenAI agent.
+      examples:
+      - asst_5j66UpCpwteGg4YSxUnt7lPY
+      key: gen_ai.agent.id
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: if applicable.
+      stability: development
+      type: string
+    - brief: Human-readable name of the GenAI agent provided by the application.
+      examples:
+      - Math Tutor
+      - Fiction Writer
+      key: gen_ai.agent.name
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: when available
+      stability: development
+      type: string
+    - brief: The name of the operation being performed.
+      key: gen_ai.operation.name
+      note: |
+        If one of the predefined values applies, but specific system uses a different name it\u0027s RECOMMENDED to document it in the semantic conventions for specific GenAI system and use system-specific name in the instrumentation. If a different name is not documented, instrumentation libraries SHOULD use applicable predefined value.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: required
+      sampling_relevant: true
+      stability: development
+      type:
+        members:
+        - brief: Chat completion operation such as [OpenAI Chat API](https://platform.openai.com/docs/api-reference/chat)
+          id: chat
+          stability: development
+          value: chat
+        - brief: Multimodal content generation operation such as [Gemini Generate Content](https://ai.google.dev/api/generate-content)
+          id: generate_content
+          stability: development
+          value: generate_content
+        - brief: Text completions operation such as [OpenAI Completions API (Legacy)](https://platform.openai.com/docs/api-reference/completions)
+          id: text_completion
+          stability: development
+          value: text_completion
+        - brief: Embeddings operation such as [OpenAI Create embeddings API](https://platform.openai.com/docs/api-reference/embeddings/create)
+          id: embeddings
+          stability: development
+          value: embeddings
+        - brief: Retrieval operation such as [OpenAI Search Vector Store API](https://platform.openai.com/docs/api-reference/vector-stores/search)
+          id: retrieval
+          stability: development
+          value: retrieval
+        - brief: Create GenAI agent
+          id: create_agent
+          stability: development
+          value: create_agent
+        - brief: Invoke GenAI agent
+          id: invoke_agent
+          stability: development
+          value: invoke_agent
+        - brief: Execute a tool
+          id: execute_tool
+          stability: development
+          value: execute_tool
+        - brief: Invoke GenAI workflow
+          id: invoke_workflow
+          stability: development
+          value: invoke_workflow
+        - brief: Agent planning or task decomposition phase
+          id: plan
+          stability: development
+          value: plan
+    brief: |
+      Represents an agent planning or task decomposition phase.
+    id: gen_ai.plan.internal
+    kind: internal
+    name:
+      note: gen_ai.plan.internal
+    note: |
+      The `gen_ai.operation.name` SHOULD be `plan`.
+
+      **Span name** SHOULD be `plan {gen_ai.agent.name}` if `gen_ai.agent.name` is readily available.
+      When `gen_ai.agent.name` is not available, it SHOULD be `plan`.
+
+      A plan span represents the decision phase where an agent formulates
+      a strategy before executing it. The LLM call that generates the plan
+      SHOULD be a child of the plan span, and the tool or task spans produced
+      from the plan are typically sibling operations under the same
+      `invoke_agent` span.
+
+      This span SHOULD be reported by instrumentations when they can reliably determine
+      that the operation being instrumented is planning or task decomposition, and SHOULD
+      NOT be reported when the instrumentation cannot distinguish planning from generic
+      reasoning or normal inference.
+    provenance:
+      path: ./model/gen-ai/spans.yaml
+    stability: development
+    type: gen_ai.plan.internal
   - attributes:
     - brief: |
         Describes a class of error the operation ended with.
@@ -8607,6 +8877,10 @@ refinements:
           id: invoke_workflow
           stability: development
           value: invoke_workflow
+        - brief: Agent planning or task decomposition phase
+          id: plan
+          stability: development
+          value: plan
     - brief: The Generative AI provider as identified by the client or server instrumentation.
       key: gen_ai.provider.name
       note: |
@@ -8882,6 +9156,10 @@ refinements:
           id: invoke_workflow
           stability: development
           value: invoke_workflow
+        - brief: Agent planning or task decomposition phase
+          id: plan
+          stability: development
+          value: plan
     - brief: The name of the prompt or prompt template provided in the request or response.
       examples:
       - analyze-code
@@ -9360,6 +9638,10 @@ refinements:
           id: invoke_workflow
           stability: development
           value: invoke_workflow
+        - brief: Agent planning or task decomposition phase
+          id: plan
+          stability: development
+          value: plan
     - brief: The name of the prompt or prompt template provided in the request or response.
       examples:
       - analyze-code
@@ -9855,6 +10137,10 @@ refinements:
           id: invoke_workflow
           stability: development
           value: invoke_workflow
+        - brief: Agent planning or task decomposition phase
+          id: plan
+          stability: development
+          value: plan
     - brief: Messages returned by the model where each message represents a specific model response (choice, candidate).
       examples:
       - |
@@ -10644,6 +10930,10 @@ registry:
         id: invoke_workflow
         stability: development
         value: invoke_workflow
+      - brief: Agent planning or task decomposition phase
+        id: plan
+        stability: development
+        value: plan
   - brief: Messages returned by the model where each message represents a specific model response (choice, candidate).
     examples:
     - |
@@ -11242,7 +11532,13 @@ registry:
     - customer_support_pipeline
     key: gen_ai.workflow.name
     note: |
-      This attribute can be populated in different frameworks eg: name of the first chain in LangChain OR name of the crew in CrewAI.
+      This attribute can be populated in different frameworks; for example, as the name of the first chain in LangChain or the name of the crew in CrewAI.
+      The workflow name is usually provided by the application in a way that is specific to the generative AI framework or library that orchestrates the workflow.
+      It is usually a static name that is expected to be unique within an application.
+
+      `gen_ai.workflow.name` MUST have low cardinality.
+      Semantic conventions for individual Generative AI frameworks SHOULD document what `gen_ai.workflow.name` means in the context of that framework.
+      If there is no low-cardinality workflow name available for a given framework, this attribute MUST NOT be captured by default.
     provenance:
       path: ./model/gen-ai/registry.yaml
     stability: development
@@ -11609,6 +11905,10 @@ registry:
           id: invoke_workflow
           stability: development
           value: invoke_workflow
+        - brief: Agent planning or task decomposition phase
+          id: plan
+          stability: development
+          value: plan
     - brief: Messages returned by the model where each message represents a specific model response (choice, candidate).
       examples:
       - |
@@ -12310,6 +12610,10 @@ registry:
           id: invoke_workflow
           stability: development
           value: invoke_workflow
+        - brief: Agent planning or task decomposition phase
+          id: plan
+          stability: development
+          value: plan
     - brief: The Generative AI provider as identified by the client or server instrumentation.
       key: gen_ai.provider.name
       note: |
@@ -12503,6 +12807,10 @@ registry:
           id: invoke_workflow
           stability: development
           value: invoke_workflow
+        - brief: Agent planning or task decomposition phase
+          id: plan
+          stability: development
+          value: plan
     - brief: The Generative AI provider as identified by the client or server instrumentation.
       key: gen_ai.provider.name
       note: |
@@ -12699,6 +13007,10 @@ registry:
           id: invoke_workflow
           stability: development
           value: invoke_workflow
+        - brief: Agent planning or task decomposition phase
+          id: plan
+          stability: development
+          value: plan
     - brief: The Generative AI provider as identified by the client or server instrumentation.
       key: gen_ai.provider.name
       note: |
@@ -12894,6 +13206,10 @@ registry:
           id: invoke_workflow
           stability: development
           value: invoke_workflow
+        - brief: Agent planning or task decomposition phase
+          id: plan
+          stability: development
+          value: plan
     - brief: The Generative AI provider as identified by the client or server instrumentation.
       key: gen_ai.provider.name
       note: |
@@ -13136,6 +13452,10 @@ registry:
           id: invoke_workflow
           stability: development
           value: invoke_workflow
+        - brief: Agent planning or task decomposition phase
+          id: plan
+          stability: development
+          value: plan
     - brief: The Generative AI provider as identified by the client or server instrumentation.
       key: gen_ai.provider.name
       note: |
@@ -13329,6 +13649,10 @@ registry:
           id: invoke_workflow
           stability: development
           value: invoke_workflow
+        - brief: Agent planning or task decomposition phase
+          id: plan
+          stability: development
+          value: plan
     - brief: The Generative AI provider as identified by the client or server instrumentation.
       key: gen_ai.provider.name
       note: |
@@ -13522,6 +13846,10 @@ registry:
           id: invoke_workflow
           stability: development
           value: invoke_workflow
+        - brief: Agent planning or task decomposition phase
+          id: plan
+          stability: development
+          value: plan
     - brief: The Generative AI provider as identified by the client or server instrumentation.
       key: gen_ai.provider.name
       note: |
@@ -13665,6 +13993,60 @@ registry:
       path: ./model/gen-ai/metrics.yaml
     stability: development
     unit: s
+  - annotations:
+      code_generation:
+        metric_value_type: double
+    attributes:
+    - brief: |
+        Describes a class of error the operation ended with.
+      examples:
+      - timeout
+      - java.net.UnknownHostException
+      - server_certificate_invalid
+      - \u0027500\u0027
+      key: error.type
+      note: |
+        The `error.type` SHOULD match the error code returned by the Generative AI provider or the client library,
+        the canonical name of exception that occurred, or another low-cardinality error identifier.
+        Instrumentations SHOULD document the list of errors they report.
+      requirement_level:
+        conditionally_required: if the operation ended in an error
+      stability: stable
+      type:
+        members:
+        - brief: |
+            A fallback error value to be used when the instrumentation doesn\u0027t define a custom value.
+          id: other
+          stability: stable
+          value: _OTHER
+    - brief: Human-readable name of the GenAI workflow provided by the application.
+      examples:
+      - multi_agent_rag
+      - customer_support_pipeline
+      key: gen_ai.workflow.name
+      note: |
+        This attribute can be populated in different frameworks; for example, as the name of the first chain in LangChain or the name of the crew in CrewAI.
+        The workflow name is usually provided by the application in a way that is specific to the generative AI framework or library that orchestrates the workflow.
+        It is usually a static name that is expected to be unique within an application.
+
+        `gen_ai.workflow.name` MUST have low cardinality.
+        Semantic conventions for individual Generative AI frameworks SHOULD document what `gen_ai.workflow.name` means in the context of that framework.
+        If there is no low-cardinality workflow name available for a given framework, this attribute MUST NOT be captured by default.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: If available.
+      stability: development
+      type: string
+    brief: GenAI workflow duration.
+    instrument: histogram
+    name: gen_ai.workflow.duration
+    note: |
+      This metric instrument describes an operation that executes a coordinated process composed of multiple agents or other operations involving generative AI.
+    provenance:
+      path: ./model/gen-ai/metrics.yaml
+    stability: development
+    unit: s
   - attributes:
     - brief: |
         Describes a class of error the operation ended with.
@@ -13744,6 +14126,10 @@ registry:
           id: invoke_workflow
           stability: development
           value: invoke_workflow
+        - brief: Agent planning or task decomposition phase
+          id: plan
+          stability: development
+          value: plan
     - brief: The name of the prompt or prompt template provided in the request or response.
       examples:
       - analyze-code
@@ -14251,6 +14637,10 @@ registry:
           id: invoke_workflow
           stability: development
           value: invoke_workflow
+        - brief: Agent planning or task decomposition phase
+          id: plan
+          stability: development
+          value: plan
     - brief: The name of the prompt or prompt template provided in the request or response.
       examples:
       - analyze-code
@@ -14746,6 +15136,10 @@ registry:
           id: invoke_workflow
           stability: development
           value: invoke_workflow
+        - brief: Agent planning or task decomposition phase
+          id: plan
+          stability: development
+          value: plan
     - brief: The Generative AI provider as identified by the client or server instrumentation.
       key: gen_ai.provider.name
       note: |
@@ -14997,6 +15391,10 @@ registry:
           id: invoke_workflow
           stability: development
           value: invoke_workflow
+        - brief: Agent planning or task decomposition phase
+          id: plan
+          stability: development
+          value: plan
     - brief: The Generative AI provider as identified by the client or server instrumentation.
       key: gen_ai.provider.name
       note: |
@@ -15246,6 +15644,10 @@ registry:
           id: invoke_workflow
           stability: development
           value: invoke_workflow
+        - brief: Agent planning or task decomposition phase
+          id: plan
+          stability: development
+          value: plan
     - brief: Parameters passed to the tool call.
       examples:
       - |
@@ -15510,6 +15912,10 @@ registry:
           id: invoke_workflow
           stability: development
           value: invoke_workflow
+        - brief: Agent planning or task decomposition phase
+          id: plan
+          stability: development
+          value: plan
     - brief: Messages returned by the model where each message represents a specific model response (choice, candidate).
       examples:
       - |
@@ -16223,6 +16629,10 @@ registry:
           id: invoke_workflow
           stability: development
           value: invoke_workflow
+        - brief: Agent planning or task decomposition phase
+          id: plan
+          stability: development
+          value: plan
     - brief: Messages returned by the model where each message represents a specific model response (choice, candidate).
       examples:
       - |
@@ -16873,6 +17283,10 @@ registry:
           id: invoke_workflow
           stability: development
           value: invoke_workflow
+        - brief: Agent planning or task decomposition phase
+          id: plan
+          stability: development
+          value: plan
     - brief: Messages returned by the model where each message represents a specific model response (choice, candidate).
       examples:
       - |
@@ -17419,6 +17833,10 @@ registry:
           id: invoke_workflow
           stability: development
           value: invoke_workflow
+        - brief: Agent planning or task decomposition phase
+          id: plan
+          stability: development
+          value: plan
     - brief: Messages returned by the model where each message represents a specific model response (choice, candidate).
       examples:
       - |
@@ -17466,7 +17884,13 @@ registry:
       - customer_support_pipeline
       key: gen_ai.workflow.name
       note: |
-        This attribute can be populated in different frameworks eg: name of the first chain in LangChain OR name of the crew in CrewAI.
+        This attribute can be populated in different frameworks; for example, as the name of the first chain in LangChain or the name of the crew in CrewAI.
+        The workflow name is usually provided by the application in a way that is specific to the generative AI framework or library that orchestrates the workflow.
+        It is usually a static name that is expected to be unique within an application.
+
+        `gen_ai.workflow.name` MUST have low cardinality.
+        Semantic conventions for individual Generative AI frameworks SHOULD document what `gen_ai.workflow.name` means in the context of that framework.
+        If there is no low-cardinality workflow name available for a given framework, this attribute MUST NOT be captured by default.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
@@ -17494,6 +17918,126 @@ registry:
       path: ./model/gen-ai/spans.yaml
     stability: development
     type: gen_ai.invoke_workflow.internal
+  - attributes:
+    - brief: |
+        Describes a class of error the operation ended with.
+      examples:
+      - timeout
+      - java.net.UnknownHostException
+      - server_certificate_invalid
+      - \u0027500\u0027
+      key: error.type
+      note: |
+        The `error.type` SHOULD match the error code returned by the Generative AI provider or the client library,
+        the canonical name of exception that occurred, or another low-cardinality error identifier.
+        Instrumentations SHOULD document the list of errors they report.
+      requirement_level:
+        conditionally_required: if the operation ended in an error
+      stability: stable
+      type:
+        members:
+        - brief: |
+            A fallback error value to be used when the instrumentation doesn\u0027t define a custom value.
+          id: other
+          stability: stable
+          value: _OTHER
+    - brief: The unique identifier of the GenAI agent.
+      examples:
+      - asst_5j66UpCpwteGg4YSxUnt7lPY
+      key: gen_ai.agent.id
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: if applicable.
+      stability: development
+      type: string
+    - brief: Human-readable name of the GenAI agent provided by the application.
+      examples:
+      - Math Tutor
+      - Fiction Writer
+      key: gen_ai.agent.name
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: when available
+      stability: development
+      type: string
+    - brief: The name of the operation being performed.
+      key: gen_ai.operation.name
+      note: |
+        If one of the predefined values applies, but specific system uses a different name it\u0027s RECOMMENDED to document it in the semantic conventions for specific GenAI system and use system-specific name in the instrumentation. If a different name is not documented, instrumentation libraries SHOULD use applicable predefined value.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: required
+      sampling_relevant: true
+      stability: development
+      type:
+        members:
+        - brief: Chat completion operation such as [OpenAI Chat API](https://platform.openai.com/docs/api-reference/chat)
+          id: chat
+          stability: development
+          value: chat
+        - brief: Multimodal content generation operation such as [Gemini Generate Content](https://ai.google.dev/api/generate-content)
+          id: generate_content
+          stability: development
+          value: generate_content
+        - brief: Text completions operation such as [OpenAI Completions API (Legacy)](https://platform.openai.com/docs/api-reference/completions)
+          id: text_completion
+          stability: development
+          value: text_completion
+        - brief: Embeddings operation such as [OpenAI Create embeddings API](https://platform.openai.com/docs/api-reference/embeddings/create)
+          id: embeddings
+          stability: development
+          value: embeddings
+        - brief: Retrieval operation such as [OpenAI Search Vector Store API](https://platform.openai.com/docs/api-reference/vector-stores/search)
+          id: retrieval
+          stability: development
+          value: retrieval
+        - brief: Create GenAI agent
+          id: create_agent
+          stability: development
+          value: create_agent
+        - brief: Invoke GenAI agent
+          id: invoke_agent
+          stability: development
+          value: invoke_agent
+        - brief: Execute a tool
+          id: execute_tool
+          stability: development
+          value: execute_tool
+        - brief: Invoke GenAI workflow
+          id: invoke_workflow
+          stability: development
+          value: invoke_workflow
+        - brief: Agent planning or task decomposition phase
+          id: plan
+          stability: development
+          value: plan
+    brief: |
+      Represents an agent planning or task decomposition phase.
+    kind: internal
+    name:
+      note: gen_ai.plan.internal
+    note: |
+      The `gen_ai.operation.name` SHOULD be `plan`.
+
+      **Span name** SHOULD be `plan {gen_ai.agent.name}` if `gen_ai.agent.name` is readily available.
+      When `gen_ai.agent.name` is not available, it SHOULD be `plan`.
+
+      A plan span represents the decision phase where an agent formulates
+      a strategy before executing it. The LLM call that generates the plan
+      SHOULD be a child of the plan span, and the tool or task spans produced
+      from the plan are typically sibling operations under the same
+      `invoke_agent` span.
+
+      This span SHOULD be reported by instrumentations when they can reliably determine
+      that the operation being instrumented is planning or task decomposition, and SHOULD
+      NOT be reported when the instrumentation cannot distinguish planning from generic
+      reasoning or normal inference.
+    provenance:
+      path: ./model/gen-ai/spans.yaml
+    stability: development
+    type: gen_ai.plan.internal
   - attributes:
     - brief: |
         Describes a class of error the operation ended with.
@@ -17575,6 +18119,10 @@ registry:
           id: invoke_workflow
           stability: development
           value: invoke_workflow
+        - brief: Agent planning or task decomposition phase
+          id: plan
+          stability: development
+          value: plan
     - brief: The Generative AI provider as identified by the client or server instrumentation.
       key: gen_ai.provider.name
       note: |
@@ -17849,6 +18397,10 @@ registry:
           id: invoke_workflow
           stability: development
           value: invoke_workflow
+        - brief: Agent planning or task decomposition phase
+          id: plan
+          stability: development
+          value: plan
     - brief: The name of the prompt or prompt template provided in the request or response.
       examples:
       - analyze-code
@@ -18326,6 +18878,10 @@ registry:
           id: invoke_workflow
           stability: development
           value: invoke_workflow
+        - brief: Agent planning or task decomposition phase
+          id: plan
+          stability: development
+          value: plan
     - brief: The name of the prompt or prompt template provided in the request or response.
       examples:
       - analyze-code

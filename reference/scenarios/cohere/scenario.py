@@ -24,15 +24,17 @@ def run_chat(client):
     """Scenario: basic chat completion with reference implementation."""
     print("  [chat] basic chat completion (reference implementation)")
     request_model = "command-r-plus"
-    with _reference_tracer.start_as_current_span("chat command-r-plus") as span:
-        host, port = mock_server_host_port(MOCK_BASE_URL)
-        span.set_attribute("gen_ai.operation.name", "chat")
-        span.set_attribute("gen_ai.provider.name", "cohere")
-        span.set_attribute("gen_ai.request.model", request_model)
-        if host:
-            span.set_attribute("server.address", host)
-        if port is not None:
-            span.set_attribute("server.port", port)
+    host, port = mock_server_host_port(MOCK_BASE_URL)
+    span_attributes = {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "cohere",
+        "gen_ai.request.model": request_model,
+    }
+    if host:
+        span_attributes["server.address"] = host
+    if port is not None:
+        span_attributes["server.port"] = port
+    with _reference_tracer.start_as_current_span("chat command-r-plus", attributes=span_attributes) as span:
         messages = [{"role": "user", "content": "Say hello."}]
         resp = client.chat(
             model=request_model,
@@ -103,16 +105,18 @@ def run_chat_tool_call(client):
         },
     }
     tools = [request_tool]
-    with _reference_tracer.start_as_current_span("chat command-r-plus") as span:
-        host, port = mock_server_host_port(MOCK_BASE_URL)
-        span.set_attribute("gen_ai.operation.name", "chat")
-        span.set_attribute("gen_ai.provider.name", "cohere")
-        span.set_attribute("gen_ai.request.model", request_model)
+    host, port = mock_server_host_port(MOCK_BASE_URL)
+    span_attributes_2 = {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "cohere",
+        "gen_ai.request.model": request_model,
+    }
+    if host:
+        span_attributes_2["server.address"] = host
+    if port is not None:
+        span_attributes_2["server.port"] = port
+    with _reference_tracer.start_as_current_span("chat command-r-plus", attributes=span_attributes_2) as span:
         span.set_attribute("gen_ai.tool.definitions", json.dumps(tools))
-        if host:
-            span.set_attribute("server.address", host)
-        if port is not None:
-            span.set_attribute("server.port", port)
         resp = client.chat(
             model=request_model,
             messages=[{"role": "user", "content": "What's the weather in Seattle?"}],
@@ -132,8 +136,12 @@ def run_chat_tool_call(client):
             tool_call = resp.message.tool_calls[0]
             arguments_json = tool_call.function.arguments or "{}"
             arguments = json.loads(arguments_json)
-            with _reference_tracer.start_as_current_span("execute_tool get_weather") as tool_span:
-                tool_span.set_attribute("gen_ai.operation.name", "execute_tool")
+            tool_span_attributes = {
+                "gen_ai.operation.name": "execute_tool",
+            }
+            with _reference_tracer.start_as_current_span(
+                "execute_tool get_weather", attributes=tool_span_attributes
+            ) as tool_span:
                 tool_span.set_attribute("gen_ai.tool.name", tool_call.function.name)
                 tool_span.set_attribute("gen_ai.tool.description", request_tool["function"]["description"])
                 tool_span.set_attribute("gen_ai.tool.type", request_tool["type"])
@@ -150,15 +158,17 @@ def run_embeddings(client):
     """Scenario: embedding generation with reference implementation."""
     print("  [embeddings] embedding generation (reference implementation)")
     request_model = "embed-v4.0"
-    with _reference_tracer.start_as_current_span("embeddings embed-v4.0") as span:
-        host, port = mock_server_host_port(MOCK_BASE_URL)
-        span.set_attribute("gen_ai.operation.name", "embeddings")
-        span.set_attribute("gen_ai.provider.name", "cohere")
-        span.set_attribute("gen_ai.request.model", request_model)
-        if host:
-            span.set_attribute("server.address", host)
-        if port is not None:
-            span.set_attribute("server.port", port)
+    host, port = mock_server_host_port(MOCK_BASE_URL)
+    span_attributes_3 = {
+        "gen_ai.operation.name": "embeddings",
+        "gen_ai.provider.name": "cohere",
+        "gen_ai.request.model": request_model,
+    }
+    if host:
+        span_attributes_3["server.address"] = host
+    if port is not None:
+        span_attributes_3["server.port"] = port
+    with _reference_tracer.start_as_current_span("embeddings embed-v4.0", attributes=span_attributes_3) as span:
         resp = client.embed(
             model=request_model,
             texts=["Hello, world!"],

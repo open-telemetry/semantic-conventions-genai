@@ -69,24 +69,18 @@ def run_invoke_agent(client):
     ]
 
     # Create agent version using the v2 AIProjectClient surface.
-    with tracer.start_as_current_span("create_agent", kind=SpanKind.CLIENT) as span:
-        span.set_attribute("gen_ai.operation.name", "create_agent")
-        span.set_attribute("gen_ai.provider.name", "azure.ai.openai")
-        span.set_attribute("gen_ai.request.model", AGENT_MODEL)
-        span.set_attribute(
-            "gen_ai.system_instructions",
-            json.dumps(
-                [
-                    {
-                        "type": "text",
-                        "content": AGENT_INSTRUCTIONS,
-                    }
-                ]
-            ),
-        )
+    span_attributes = {
+        "gen_ai.operation.name": "create_agent",
+        "gen_ai.provider.name": "azure.ai.openai",
+        "gen_ai.request.model": AGENT_MODEL,
+        "gen_ai.agent.name": AGENT_NAME,
+        "server.address": _SERVER_ADDRESS,
+        "server.port": _SERVER_PORT,
+    }
+    with tracer.start_as_current_span("create_agent", kind=SpanKind.CLIENT, attributes=span_attributes) as span:
+        span.set_attribute("gen_ai.agent.description", AGENT_DESCRIPTION)
+        span.set_attribute("gen_ai.system_instructions", json.dumps([{"type": "text", "content": AGENT_INSTRUCTIONS}]))
         span.set_attribute("gen_ai.tool.definitions", json.dumps(tool_defs))
-        span.set_attribute("server.address", _SERVER_ADDRESS)
-        span.set_attribute("server.port", _SERVER_PORT)
         agent = client.agents.create_version(
             agent_name=AGENT_NAME,
             definition=PromptAgentDefinition(
@@ -97,47 +91,29 @@ def run_invoke_agent(client):
             description=AGENT_DESCRIPTION,
         )
         span.set_attribute("gen_ai.agent.id", agent.id)
-        span.set_attribute("gen_ai.agent.name", agent.name or "")
-        if getattr(agent, "description", None):
-            span.set_attribute("gen_ai.agent.description", agent.description)
         if getattr(agent, "version", None):
             span.set_attribute("gen_ai.agent.version", str(agent.version))
 
     # Invoke the agent through the Responses API, wrapped in a manual span.
     openai_client = client.get_openai_client()
 
-    with tracer.start_as_current_span("invoke_agent", kind=SpanKind.CLIENT) as span:
-        span.set_attribute("gen_ai.operation.name", "invoke_agent")
-        span.set_attribute("gen_ai.provider.name", "azure.ai.openai")
-        span.set_attribute("gen_ai.request.model", AGENT_MODEL)
+    span_attributes_2 = {
+        "gen_ai.operation.name": "invoke_agent",
+        "gen_ai.provider.name": "azure.ai.openai",
+        "gen_ai.request.model": AGENT_MODEL,
+        "gen_ai.agent.name": agent.name,
+        "server.address": _SERVER_ADDRESS,
+        "server.port": _SERVER_PORT,
+    }
+    with tracer.start_as_current_span("invoke_agent", kind=SpanKind.CLIENT, attributes=span_attributes_2) as span:
         span.set_attribute("gen_ai.request.max_tokens", REQUEST_MAX_TOKENS)
         span.set_attribute("gen_ai.request.temperature", REQUEST_TEMPERATURE)
         span.set_attribute("gen_ai.request.top_p", REQUEST_TOP_P)
+        span.set_attribute("gen_ai.system_instructions", json.dumps([{"type": "text", "content": AGENT_INSTRUCTIONS}]))
         span.set_attribute(
-            "gen_ai.system_instructions",
-            json.dumps(
-                [
-                    {
-                        "type": "text",
-                        "content": AGENT_INSTRUCTIONS,
-                    }
-                ]
-            ),
-        )
-        span.set_attribute(
-            "gen_ai.input.messages",
-            json.dumps(
-                [
-                    {
-                        "role": "user",
-                        "parts": [{"type": "text", "content": USER_INPUT}],
-                    }
-                ]
-            ),
+            "gen_ai.input.messages", json.dumps([{"role": "user", "parts": [{"type": "text", "content": USER_INPUT}]}])
         )
         span.set_attribute("gen_ai.tool.definitions", json.dumps(tool_defs))
-        span.set_attribute("server.address", _SERVER_ADDRESS)
-        span.set_attribute("server.port", _SERVER_PORT)
         try:
             response = openai_client.responses.create(
                 model=AGENT_MODEL,

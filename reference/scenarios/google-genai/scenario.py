@@ -28,10 +28,12 @@ def run_chat():
         ),
     )
     request_model = "gemini-2.0-flash"
-    with _reference_tracer.start_as_current_span("chat gemini-2.0-flash") as span:
-        span.set_attribute("gen_ai.operation.name", "chat")
-        span.set_attribute("gen_ai.provider.name", "gcp.gemini")
-        span.set_attribute("gen_ai.request.model", request_model)
+    span_attributes = {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "gcp.gemini",
+        "gen_ai.request.model": request_model,
+    }
+    with _reference_tracer.start_as_current_span("chat gemini-2.0-flash", attributes=span_attributes) as span:
         prompt_text = "Say hello."
         response = client.models.generate_content(
             model=request_model,
@@ -118,10 +120,12 @@ def run_chat_tool_call():
         ]
     )
     tools = [tool]
-    with _reference_tracer.start_as_current_span("chat gemini-2.0-flash") as span:
-        span.set_attribute("gen_ai.operation.name", "chat")
-        span.set_attribute("gen_ai.provider.name", "gcp.gemini")
-        span.set_attribute("gen_ai.request.model", request_model)
+    span_attributes_2 = {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "gcp.gemini",
+        "gen_ai.request.model": request_model,
+    }
+    with _reference_tracer.start_as_current_span("chat gemini-2.0-flash", attributes=span_attributes_2) as span:
         span.set_attribute(
             "gen_ai.tool.definitions",
             json.dumps(
@@ -133,9 +137,7 @@ def run_chat_tool_call():
                                 "description": "Get the current weather",
                                 "parameters": {
                                     "type": "object",
-                                    "properties": {
-                                        "location": {"type": "string", "description": "City name"},
-                                    },
+                                    "properties": {"location": {"type": "string", "description": "City name"}},
                                     "required": ["location"],
                                 },
                             }
@@ -185,10 +187,12 @@ def run_chat_streaming():
         ),
     )
     request_model = "gemini-2.0-flash"
-    with _reference_tracer.start_as_current_span("chat gemini-2.0-flash") as span:
-        span.set_attribute("gen_ai.operation.name", "chat")
-        span.set_attribute("gen_ai.provider.name", "gcp.gemini")
-        span.set_attribute("gen_ai.request.model", request_model)
+    span_attributes_3 = {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "gcp.gemini",
+        "gen_ai.request.model": request_model,
+    }
+    with _reference_tracer.start_as_current_span("chat gemini-2.0-flash", attributes=span_attributes_3) as span:
         text = ""
         last_chunk = None
         for chunk in client.models.generate_content_stream(
@@ -230,10 +234,12 @@ def run_embeddings():
         ),
     )
     request_model = "text-embedding-004"
-    with _reference_tracer.start_as_current_span("embeddings text-embedding-004") as span:
-        span.set_attribute("gen_ai.operation.name", "embeddings")
-        span.set_attribute("gen_ai.provider.name", "gcp.gemini")
-        span.set_attribute("gen_ai.request.model", request_model)
+    span_attributes_4 = {
+        "gen_ai.operation.name": "embeddings",
+        "gen_ai.provider.name": "gcp.gemini",
+        "gen_ai.request.model": request_model,
+    }
+    with _reference_tracer.start_as_current_span("embeddings text-embedding-004", attributes=span_attributes_4) as span:
         response = client.models.embed_content(
             model=request_model,
             contents="Hello, world!",
