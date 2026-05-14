@@ -5,7 +5,6 @@ import os
 from datetime import UTC, datetime
 
 import boto3
-from botocore.stub import Stubber
 from opentelemetry.trace import SpanKind
 from reference_shared import flush_and_shutdown, mock_server_host_port, reference_tracer, setup_otel
 
@@ -46,29 +45,10 @@ def create_agentcore_data_client():
     )
 
 
-def run_create_memory_store_reference(client, stubber):
+def run_create_memory_store_reference(client):
     """Scenario: Bedrock AgentCore create_memory_store operation."""
     print("  [create_memory_store] Bedrock AgentCore create_memory_store")
     event_expiry_duration = 30
-    stubber.add_response(
-        "create_memory",
-        {
-            "memory": {
-                "arn": "arn:aws:bedrock-agentcore:us-east-1:123456789012:memory/mem-abc123456",
-                "id": MEMORY_ID,
-                "name": MEMORY_NAME,
-                "eventExpiryDuration": event_expiry_duration,
-                "status": "ACTIVE",
-                "createdAt": TIMESTAMP,
-                "updatedAt": TIMESTAMP,
-            }
-        },
-        {
-            "name": MEMORY_NAME,
-            "eventExpiryDuration": event_expiry_duration,
-        },
-    )
-
     host, port = mock_server_host_port(MOCK_BASE_URL)
     span_attributes = {
         "gen_ai.operation.name": "create_memory_store",
@@ -88,7 +68,7 @@ def run_create_memory_store_reference(client, stubber):
         span.set_attribute("gen_ai.memory.store.id", response["memory"]["id"])
 
 
-def run_create_and_update_memory_reference(client, stubber):
+def run_create_and_update_memory_reference(client):
     """Scenario: AgentCore BatchCreateMemoryRecords and BatchUpdateMemoryRecords."""
     print("  [create_memory] Bedrock AgentCore BatchCreateMemoryRecords")
     create_records = [
@@ -101,23 +81,6 @@ def run_create_and_update_memory_reference(client, stubber):
             "metadata": {"author": {"stringValue": "user"}},
         }
     ]
-    stubber.add_response(
-        "batch_create_memory_records",
-        {
-            "successfulRecords": [
-                {
-                    "memoryRecordId": MEMORY_RECORD_ID,
-                    "status": "SUCCEEDED",
-                    "requestIdentifier": "create-record-1",
-                }
-            ],
-            "failedRecords": [],
-        },
-        {
-            "memoryId": MEMORY_ID,
-            "records": create_records,
-        },
-    )
 
     host, port = mock_server_host_port(MOCK_BASE_URL)
     span_attributes = {
@@ -162,22 +125,6 @@ def run_create_and_update_memory_reference(client, stubber):
             "metadata": {"author": {"stringValue": "assistant"}},
         }
     ]
-    stubber.add_response(
-        "batch_update_memory_records",
-        {
-            "successfulRecords": [
-                {
-                    "memoryRecordId": MEMORY_RECORD_ID,
-                    "status": "SUCCEEDED",
-                }
-            ],
-            "failedRecords": [],
-        },
-        {
-            "memoryId": MEMORY_ID,
-            "records": update_records,
-        },
-    )
 
     span_attributes_2 = {
         "gen_ai.operation.name": "update_memory",
@@ -210,7 +157,7 @@ def run_create_and_update_memory_reference(client, stubber):
         )
 
 
-def run_search_memory_reference(client, stubber):
+def run_search_memory_reference(client):
     """Scenario: AgentCore RetrieveMemoryRecords."""
     print("  [search_memory] Bedrock AgentCore RetrieveMemoryRecords")
     search_criteria = {
@@ -218,27 +165,6 @@ def run_search_memory_reference(client, stubber):
         "memoryStrategyId": MEMORY_STRATEGY_ID,
         "topK": 3,
     }
-    stubber.add_response(
-        "retrieve_memory_records",
-        {
-            "memoryRecordSummaries": [
-                {
-                    "memoryRecordId": MEMORY_RECORD_ID,
-                    "content": {"text": UPDATED_MEMORY_TEXT},
-                    "memoryStrategyId": MEMORY_STRATEGY_ID,
-                    "namespaces": [NAMESPACE],
-                    "createdAt": TIMESTAMP,
-                    "score": 0.93,
-                    "metadata": {"author": {"stringValue": "assistant"}},
-                }
-            ]
-        },
-        {
-            "memoryId": MEMORY_ID,
-            "namespace": NAMESPACE,
-            "searchCriteria": search_criteria,
-        },
-    )
 
     host, port = mock_server_host_port(MOCK_BASE_URL)
     span_attributes = {
@@ -276,18 +202,9 @@ def run_search_memory_reference(client, stubber):
         span.set_attribute("gen_ai.memory.records", json.dumps(memory_records))
 
 
-def run_delete_memory_reference(client, stubber):
+def run_delete_memory_reference(client):
     """Scenario: AgentCore DeleteMemoryRecord."""
     print("  [delete_memory] Bedrock AgentCore DeleteMemoryRecord")
-    stubber.add_response(
-        "delete_memory_record",
-        {"memoryRecordId": MEMORY_RECORD_ID},
-        {
-            "memoryId": MEMORY_ID,
-            "memoryRecordId": MEMORY_RECORD_ID,
-        },
-    )
-
     host, port = mock_server_host_port(MOCK_BASE_URL)
     span_attributes = {
         "gen_ai.operation.name": "delete_memory",
@@ -309,22 +226,10 @@ def run_delete_memory_reference(client, stubber):
         )
 
 
-def run_delete_memory_store_reference(client, stubber):
+def run_delete_memory_store_reference(client):
     """Scenario: Bedrock AgentCore delete_memory_store operation."""
     print("  [delete_memory_store] Bedrock AgentCore delete_memory_store")
     client_token = "delete-memory-store-token"
-    stubber.add_response(
-        "delete_memory",
-        {
-            "memoryId": MEMORY_ID,
-            "status": "DELETING",
-        },
-        {
-            "memoryId": MEMORY_ID,
-            "clientToken": client_token,
-        },
-    )
-
     host, port = mock_server_host_port(MOCK_BASE_URL)
     span_attributes = {
         "gen_ai.operation.name": "delete_memory_store",
@@ -350,12 +255,11 @@ def main():
 
     control_client = create_agentcore_control_client()
     data_client = create_agentcore_data_client()
-    with Stubber(control_client) as control_stubber, Stubber(data_client) as data_stubber:
-        run_create_memory_store_reference(control_client, control_stubber)
-        run_create_and_update_memory_reference(data_client, data_stubber)
-        run_search_memory_reference(data_client, data_stubber)
-        run_delete_memory_reference(data_client, data_stubber)
-        run_delete_memory_store_reference(control_client, control_stubber)
+    run_create_memory_store_reference(control_client)
+    run_create_and_update_memory_reference(data_client)
+    run_search_memory_reference(data_client)
+    run_delete_memory_reference(data_client)
+    run_delete_memory_store_reference(control_client)
 
     flush_and_shutdown(tp, lp, mp)
 
