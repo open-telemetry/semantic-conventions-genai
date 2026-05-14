@@ -89,7 +89,7 @@ by an explicit user opt-in, for example `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESS
 > [!Warning]
 > This attribute may contain sensitive information.
 
-**[5] `gen_ai.memory.record.count`:** For `search_memory` operations, this is the number of memory records returned by the operation. For `create_memory` operations, this is the number of memory records the operation attempted to create. For `update_memory` operations, this is the number of memory records the operation attempted to modify. For `upsert_memory` operations, this is the number of memory records the operation attempted to create or update.
+**[5] `gen_ai.memory.record.count`:** For `search_memory` operations, this is the number of memory records returned by the operation. For `create_memory` operations, this is the number of memory records the operation attempted to create. For `update_memory` operations, this is the number of memory records the operation attempted to modify. For `upsert_memory` operations, this is the number of memory records the operation attempted to create or update. For `delete_memory` operations, this is the number of memory records the operation attempted to delete.
 
 **[6] `gen_ai.memory.records`:** Instrumentations MUST follow [Memory records JSON schema](/docs/gen-ai/gen-ai-memory-records.json).
 When the attribute is recorded on events, it MUST be recorded in structured

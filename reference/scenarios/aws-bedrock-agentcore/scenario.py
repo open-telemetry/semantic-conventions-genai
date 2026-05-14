@@ -302,6 +302,7 @@ def run_delete_memory_reference(client, stubber):
         "delete_memory", kind=SpanKind.CLIENT, attributes=span_attributes
     ) as span:
         span.set_attribute("gen_ai.memory.record.id", MEMORY_RECORD_ID)
+        span.set_attribute("gen_ai.memory.record.count", 1)
         client.delete_memory_record(
             memoryId=MEMORY_ID,
             memoryRecordId=MEMORY_RECORD_ID,

@@ -557,7 +557,8 @@ attributes:
       For `create_memory` operations, this is the number of memory records the operation attempted to create.
       For `update_memory` operations, this is the number of memory records the operation attempted to
       modify. For `upsert_memory` operations, this is the number of memory records the operation
-      attempted to create or update.
+      attempted to create or update. For `delete_memory` operations, this is the number of memory
+      records the operation attempted to delete.
     examples: [3]
     stability: development
   - key: gen_ai.memory.query.text
