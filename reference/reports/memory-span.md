@@ -1,6 +1,6 @@
-# Search Memory Span
+# Memory Span
 
-> **[Semantic Convention](../../docs/gen-ai/gen-ai-spans.md#search-memory)**
+> **[Semantic Convention](../../docs/gen-ai/gen-ai-spans.md#memory)**
 
 ## Required
 
@@ -12,6 +12,7 @@
 
 | Attribute | Supporting Libraries |
 | --- | --- |
+| gen_ai.memory.record.id | [aws-bedrock-agentcore] |
 | gen_ai.memory.store.id | [aws-bedrock-agentcore], [google-adk] |
 | gen_ai.provider.name | [aws-bedrock-agentcore] |
 | server.port | [aws-bedrock-agentcore] |

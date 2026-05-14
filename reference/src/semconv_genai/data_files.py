@@ -42,13 +42,7 @@ SPAN_TYPE_ORDER = [
     "inference",
     "embeddings",
     "retrieval",
-    "create_memory_store",
-    "search_memory",
-    "create_memory",
-    "update_memory",
-    "upsert_memory",
-    "delete_memory",
-    "delete_memory_store",
+    "memory",
     "execute_tool",
 ]
 

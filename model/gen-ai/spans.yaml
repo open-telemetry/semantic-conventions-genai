@@ -303,149 +303,29 @@ spans:
         requirement_level:
           conditionally_required: when applicable
 
-  - type: gen_ai.create_memory_store.client
+  - type: gen_ai.memory.client
     kind: client
     name:
       note: |
-        **Span name** SHOULD be `create_memory_store`.
+        **Span name** SHOULD be `{gen_ai.operation.name}`.
     brief: >
-      Describes creation or initialization of a memory store.
+      Describes a memory operation, including memory store lifecycle operations and memory record operations.
     note: |
-      The `gen_ai.operation.name` SHOULD be `create_memory_store`.
+      The `gen_ai.operation.name` SHOULD be one of `create_memory_store`, `search_memory`, `create_memory`,
+      `update_memory`, `upsert_memory`, `delete_memory`, or `delete_memory_store`.
 
-      **Span name** SHOULD be `create_memory_store`.
-    stability: development
-    attributes:
-      - ref_group: attributes.gen_ai.memory.client
-      - ref: gen_ai.provider.name
-        requirement_level:
-          conditionally_required: if the operation is handled by a named external GenAI provider or service
-      - ref: gen_ai.memory.store.id
-        requirement_level:
-          conditionally_required: if applicable
+      `create_memory_store` and `delete_memory_store` cover memory store lifecycle operations.
+      `create_memory`, `update_memory`, `upsert_memory`, `search_memory`, and `delete_memory`
+      cover memory record operations.
 
-  - type: gen_ai.search_memory.client
-    kind: client
-    name:
-      note: |
-        **Span name** SHOULD be `search_memory`.
-    brief: >
-      Describes a memory search operation that queries a memory store for relevant memories.
-    note: |
-      The `gen_ai.operation.name` SHOULD be `search_memory`.
+      Use `create_memory` when the caller requests creation of new memory records.
+      Use `update_memory` when the caller requests modification of known existing memory records.
+      Use `upsert_memory` when the caller invokes a public API that may create, update, or consolidate
+      memory records without the caller choosing which.
 
-      **Span name** SHOULD be `search_memory`.
-    stability: development
-    attributes:
-      - ref_group: attributes.gen_ai.memory.client
-      - ref: gen_ai.provider.name
-        requirement_level:
-          conditionally_required: if the operation is handled by a named external GenAI provider or service
-      - ref: gen_ai.memory.store.id
-        requirement_level:
-          conditionally_required: if applicable
-      - ref: gen_ai.memory.record.count
-        requirement_level: recommended
-      - ref: gen_ai.memory.query.text
-        requirement_level: opt_in
-      - ref: gen_ai.memory.records
-        requirement_level: opt_in
+      **Span name** SHOULD be `{gen_ai.operation.name}`.
 
-  - type: gen_ai.create_memory.client
-    kind: client
-    name:
-      note: |
-        **Span name** SHOULD be `create_memory`.
-    brief: >
-      Describes a memory create operation that creates new memory records in a memory store.
-    note: |
-      The `gen_ai.operation.name` SHOULD be `create_memory`.
-
-      This operation SHOULD be used when the caller requests creation of new memory records.
-
-      **Span name** SHOULD be `create_memory`.
-    stability: development
-    attributes:
-      - ref_group: attributes.gen_ai.memory.client
-      - ref: gen_ai.provider.name
-        requirement_level:
-          conditionally_required: if the operation is handled by a named external GenAI provider or service
-      - ref: gen_ai.memory.store.id
-        requirement_level:
-          conditionally_required: if applicable
-      - ref: gen_ai.memory.record.count
-        requirement_level: recommended
-      - ref: gen_ai.memory.records
-        requirement_level: opt_in
-
-  - type: gen_ai.update_memory.client
-    kind: client
-    name:
-      note: |
-        **Span name** SHOULD be `update_memory`.
-    brief: >
-      Describes a memory update operation that modifies existing memory records in a memory store.
-    note: |
-      The `gen_ai.operation.name` SHOULD be `update_memory`.
-
-      This operation SHOULD be used when the caller requests modification of known existing memory records.
-
-      **Span name** SHOULD be `update_memory`.
-    stability: development
-    attributes:
-      - ref_group: attributes.gen_ai.memory.client
-      - ref: gen_ai.provider.name
-        requirement_level:
-          conditionally_required: if the operation is handled by a named external GenAI provider or service
-      - ref: gen_ai.memory.store.id
-        requirement_level:
-          conditionally_required: if applicable
-      - ref: gen_ai.memory.record.count
-        requirement_level: recommended
-      - ref: gen_ai.memory.records
-        requirement_level: opt_in
-
-  - type: gen_ai.upsert_memory.client
-    kind: client
-    name:
-      note: |
-        **Span name** SHOULD be `upsert_memory`.
-    brief: >
-      Describes a memory upsert operation that may create or update memory records in a memory store.
-    note: |
-      The `gen_ai.operation.name` SHOULD be `upsert_memory`.
-
-      This operation SHOULD be used when the caller invokes a public API that may create,
-      update, or consolidate memory records without the caller choosing which.
-
-      **Span name** SHOULD be `upsert_memory`.
-    stability: development
-    attributes:
-      - ref_group: attributes.gen_ai.memory.client
-      - ref: gen_ai.provider.name
-        requirement_level:
-          conditionally_required: if the operation is handled by a named external GenAI provider or service
-      - ref: gen_ai.memory.store.id
-        requirement_level:
-          conditionally_required: if applicable
-      - ref: gen_ai.memory.record.count
-        requirement_level: recommended
-      - ref: gen_ai.memory.records
-        requirement_level: opt_in
-
-  - type: gen_ai.delete_memory.client
-    kind: client
-    name:
-      note: |
-        **Span name** SHOULD be `delete_memory`.
-    brief: >
-      Describes a memory deletion operation that removes one or more memory records.
-    note: |
-      The `gen_ai.operation.name` SHOULD be `delete_memory`.
-
-      **Span name** SHOULD be `delete_memory`.
-
-      Depending on the instrumented library, lack of `gen_ai.memory.record.id` may indicate that
+      For `delete_memory`, lack of `gen_ai.memory.record.id` may indicate that
       the operation intends to delete all memory records in the specified store.
     stability: development
     attributes:
@@ -458,28 +338,14 @@ spans:
           conditionally_required: if applicable
       - ref: gen_ai.memory.record.id
         requirement_level:
-          conditionally_required: when deleting a specific memory record
-
-  - type: gen_ai.delete_memory_store.client
-    kind: client
-    name:
-      note: |
-        **Span name** SHOULD be `delete_memory_store`.
-    brief: >
-      Describes deletion or deprovisioning of a memory store.
-    note: |
-      The `gen_ai.operation.name` SHOULD be `delete_memory_store`.
-
-      **Span name** SHOULD be `delete_memory_store`.
-    stability: development
-    attributes:
-      - ref_group: attributes.gen_ai.memory.client
-      - ref: gen_ai.provider.name
+          conditionally_required: when the operation applies to a specific memory record
+      - ref: gen_ai.memory.record.count
         requirement_level:
-          conditionally_required: if the operation is handled by a named external GenAI provider or service
-      - ref: gen_ai.memory.store.id
-        requirement_level:
-          conditionally_required: if applicable
+          recommended: if the operation involves memory records and the count is available
+      - ref: gen_ai.memory.query.text
+        requirement_level: opt_in
+      - ref: gen_ai.memory.records
+        requirement_level: opt_in
 
   - type: gen_ai.create_agent.client
     kind: client

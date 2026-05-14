@@ -6533,1048 +6533,6 @@ refinements:
           id: other
           stability: stable
           value: _OTHER
-    - brief: The number of memory records relevant to the operation.
-      examples:
-      - 3
-      key: gen_ai.memory.record.count
-      note: |
-        For `search_memory` operations, this is the number of memory records returned by the operation. For `create_memory` operations, this is the number of memory records the operation attempted to create. For `update_memory` operations, this is the number of memory records the operation attempted to modify. For `upsert_memory` operations, this is the number of memory records the operation attempted to create or update.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level: recommended
-      stability: development
-      type: int
-    - brief: The memory records stored or retrieved in a memory operation.
-      examples:
-      - |
-        [
-          {
-            "content": "User prefers dark mode",
-            "id": "mem_123",
-            "score": 0.95
-          },
-          {
-            "content": {
-              "preference": "vegetarian meals",
-              "confidence": 0.9
-            },
-            "metadata": {
-              "source": "profile"
-            }
-          }
-        ]
-      key: gen_ai.memory.records
-      note: |
-        Instrumentations MUST follow [Memory records JSON schema](/docs/gen-ai/gen-ai-memory-records.json).
-        When the attribute is recorded on events, it MUST be recorded in structured
-        form. When recorded on spans, it MAY be recorded as a JSON string if structured
-        format is not supported and SHOULD be recorded in structured form otherwise.
-
-        Instrumentations SHOULD NOT capture this attribute by default. Capture SHOULD be gated
-        by an explicit user opt-in, for example `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT`.
-
-        \u003e [!Warning]
-        \u003e This attribute may contain sensitive information including user/PII data.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level: opt_in
-      stability: development
-      type: any
-    - brief: The unique identifier of the memory store.
-      examples:
-      - ms_abc123
-      - user-preferences-store
-      key: gen_ai.memory.store.id
-      note: |
-        Semantic conventions for individual components SHOULD document what `gen_ai.memory.store.id` maps to within the implementation.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        conditionally_required: if applicable
-      stability: development
-      type: string
-    - brief: The name of the operation being performed.
-      key: gen_ai.operation.name
-      note: |
-        If one of the predefined values applies, but specific system uses a different name it\u0027s RECOMMENDED to document it in the semantic conventions for specific GenAI system and use system-specific name in the instrumentation. If a different name is not documented, instrumentation libraries SHOULD use applicable predefined value.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level: required
-      stability: development
-      type:
-        members:
-        - brief: Chat completion operation such as [OpenAI Chat API](https://platform.openai.com/docs/api-reference/chat)
-          id: chat
-          stability: development
-          value: chat
-        - brief: Multimodal content generation operation such as [Gemini Generate Content](https://ai.google.dev/api/generate-content)
-          id: generate_content
-          stability: development
-          value: generate_content
-        - brief: Text completions operation such as [OpenAI Completions API (Legacy)](https://platform.openai.com/docs/api-reference/completions)
-          id: text_completion
-          stability: development
-          value: text_completion
-        - brief: Embeddings operation such as [OpenAI Create embeddings API](https://platform.openai.com/docs/api-reference/embeddings/create)
-          id: embeddings
-          stability: development
-          value: embeddings
-        - brief: Retrieval operation such as [OpenAI Search Vector Store API](https://platform.openai.com/docs/api-reference/vector-stores/search)
-          id: retrieval
-          stability: development
-          value: retrieval
-        - brief: Create GenAI agent
-          id: create_agent
-          stability: development
-          value: create_agent
-        - brief: Invoke GenAI agent
-          id: invoke_agent
-          stability: development
-          value: invoke_agent
-        - brief: Execute a tool
-          id: execute_tool
-          stability: development
-          value: execute_tool
-        - brief: Invoke GenAI workflow
-          id: invoke_workflow
-          stability: development
-          value: invoke_workflow
-        - brief: Agent planning or task decomposition phase
-          id: plan
-          stability: development
-          value: plan
-        - brief: Search/query memories from a memory store
-          id: search_memory
-          stability: development
-          value: search_memory
-        - brief: Create new memory records
-          id: create_memory
-          stability: development
-          value: create_memory
-        - brief: Update existing memory records
-          id: update_memory
-          stability: development
-          value: update_memory
-        - brief: Create or update memory records without the caller choosing which
-          id: upsert_memory
-          stability: development
-          value: upsert_memory
-        - brief: Delete memory records
-          id: delete_memory
-          stability: development
-          value: delete_memory
-        - brief: Create or initialize a memory store
-          id: create_memory_store
-          stability: development
-          value: create_memory_store
-        - brief: Delete or deprovision a memory store
-          id: delete_memory_store
-          stability: development
-          value: delete_memory_store
-    - brief: The Generative AI provider as identified by the client or server instrumentation.
-      key: gen_ai.provider.name
-      note: |
-        The attribute SHOULD be set based on the instrumentation\u0027s best
-        knowledge and may differ from the actual model provider.
-
-        Multiple providers, including Azure OpenAI, Gemini, and AI hosting platforms
-        are accessible using the OpenAI REST API and corresponding client libraries,
-        but may proxy or host models from different providers.
-
-        The `gen_ai.request.model`, `gen_ai.response.model`, and `server.address`
-        attributes may help identify the actual system in use.
-
-        The `gen_ai.provider.name` attribute acts as a discriminator that
-        identifies the GenAI telemetry format flavor specific to that provider
-        within GenAI semantic conventions.
-        It SHOULD be set consistently with provider-specific attributes and signals.
-        For example, GenAI spans, metrics, and events related to AWS Bedrock
-        should have the `gen_ai.provider.name` set to `aws.bedrock` and include
-        applicable `aws.bedrock.*` attributes and are not expected to include
-        `openai.*` attributes.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        conditionally_required: if the operation is handled by a named external GenAI provider or service
-      stability: development
-      type:
-        members:
-        - brief: \u0027[OpenAI](https://openai.com/)\u0027
-          id: openai
-          stability: development
-          value: openai
-        - brief: Any Google generative AI endpoint
-          id: gcp.gen_ai
-          note: |
-            May be used when specific backend is unknown.
-          stability: development
-          value: gcp.gen_ai
-        - brief: \u0027[Vertex AI](https://cloud.google.com/vertex-ai)\u0027
-          id: gcp.vertex_ai
-          note: |
-            Used when accessing the \u0027aiplatform.googleapis.com\u0027 endpoint.
-          stability: development
-          value: gcp.vertex_ai
-        - brief: \u0027[Gemini](https://cloud.google.com/products/gemini)\u0027
-          id: gcp.gemini
-          note: |
-            Used when accessing the \u0027generativelanguage.googleapis.com\u0027 endpoint. Also known as the AI Studio API.
-          stability: development
-          value: gcp.gemini
-        - brief: \u0027[Anthropic](https://www.anthropic.com/)\u0027
-          id: anthropic
-          stability: development
-          value: anthropic
-        - brief: \u0027[Cohere](https://cohere.com/)\u0027
-          id: cohere
-          stability: development
-          value: cohere
-        - brief: Azure AI Inference
-          id: azure.ai.inference
-          stability: development
-          value: azure.ai.inference
-        - brief: \u0027[Azure OpenAI](https://learn.microsoft.com/en-us/azure/ai-services/openai/overview)\u0027
-          id: azure.ai.openai
-          stability: development
-          value: azure.ai.openai
-        - brief: \u0027[IBM Watsonx AI](https://www.ibm.com/products/watsonx-ai)\u0027
-          id: ibm.watsonx.ai
-          stability: development
-          value: ibm.watsonx.ai
-        - brief: \u0027[AWS Bedrock](https://aws.amazon.com/bedrock)\u0027
-          id: aws.bedrock
-          stability: development
-          value: aws.bedrock
-        - brief: \u0027[Perplexity](https://www.perplexity.ai/)\u0027
-          id: perplexity
-          stability: development
-          value: perplexity
-        - brief: \u0027[xAI](https://x.ai/)\u0027
-          id: x_ai
-          stability: development
-          value: x_ai
-        - brief: \u0027[DeepSeek](https://www.deepseek.com/)\u0027
-          id: deepseek
-          stability: development
-          value: deepseek
-        - brief: \u0027[Groq](https://groq.com/)\u0027
-          id: groq
-          stability: development
-          value: groq
-        - brief: \u0027[Mistral AI](https://mistral.ai/)\u0027
-          id: mistral_ai
-          stability: development
-          value: mistral_ai
-    - brief: GenAI server address.
-      examples:
-      - example.com
-      - 10.1.2.80
-      - /tmp/my.sock
-      key: server.address
-      note: |
-        When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent the server address behind any intermediaries, for example proxies, if it\u0027s available.
-      requirement_level: recommended
-      stability: stable
-      type: string
-    - brief: GenAI server port.
-      examples:
-      - 80
-      - 8080
-      - 443
-      key: server.port
-      note: |
-        When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries, for example proxies, if it\u0027s available.
-      requirement_level:
-        conditionally_required: If `server.address` is set.
-      stability: stable
-      type: int
-    brief: |
-      Describes a memory create operation that creates new memory records in a memory store.
-    id: gen_ai.create_memory.client
-    kind: client
-    name:
-      note: gen_ai.create_memory.client
-    note: |
-      The `gen_ai.operation.name` SHOULD be `create_memory`.
-
-      This operation SHOULD be used when the caller requests creation of new memory records.
-
-      **Span name** SHOULD be `create_memory`.
-    provenance:
-      path: ./model/gen-ai/spans.yaml
-    stability: development
-    type: gen_ai.create_memory.client
-  - attributes:
-    - brief: |
-        Describes a class of error the operation ended with.
-      examples:
-      - timeout
-      - java.net.UnknownHostException
-      - server_certificate_invalid
-      - \u0027500\u0027
-      key: error.type
-      note: |
-        The `error.type` SHOULD match the error code returned by the Generative AI provider or the client library,
-        the canonical name of exception that occurred, or another low-cardinality error identifier.
-        Instrumentations SHOULD document the list of errors they report.
-      requirement_level:
-        conditionally_required: if the operation ended in an error
-      stability: stable
-      type:
-        members:
-        - brief: |
-            A fallback error value to be used when the instrumentation doesn\u0027t define a custom value.
-          id: other
-          stability: stable
-          value: _OTHER
-    - brief: The unique identifier of the memory store.
-      examples:
-      - ms_abc123
-      - user-preferences-store
-      key: gen_ai.memory.store.id
-      note: |
-        Semantic conventions for individual components SHOULD document what `gen_ai.memory.store.id` maps to within the implementation.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        conditionally_required: if applicable
-      stability: development
-      type: string
-    - brief: The name of the operation being performed.
-      key: gen_ai.operation.name
-      note: |
-        If one of the predefined values applies, but specific system uses a different name it\u0027s RECOMMENDED to document it in the semantic conventions for specific GenAI system and use system-specific name in the instrumentation. If a different name is not documented, instrumentation libraries SHOULD use applicable predefined value.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level: required
-      stability: development
-      type:
-        members:
-        - brief: Chat completion operation such as [OpenAI Chat API](https://platform.openai.com/docs/api-reference/chat)
-          id: chat
-          stability: development
-          value: chat
-        - brief: Multimodal content generation operation such as [Gemini Generate Content](https://ai.google.dev/api/generate-content)
-          id: generate_content
-          stability: development
-          value: generate_content
-        - brief: Text completions operation such as [OpenAI Completions API (Legacy)](https://platform.openai.com/docs/api-reference/completions)
-          id: text_completion
-          stability: development
-          value: text_completion
-        - brief: Embeddings operation such as [OpenAI Create embeddings API](https://platform.openai.com/docs/api-reference/embeddings/create)
-          id: embeddings
-          stability: development
-          value: embeddings
-        - brief: Retrieval operation such as [OpenAI Search Vector Store API](https://platform.openai.com/docs/api-reference/vector-stores/search)
-          id: retrieval
-          stability: development
-          value: retrieval
-        - brief: Create GenAI agent
-          id: create_agent
-          stability: development
-          value: create_agent
-        - brief: Invoke GenAI agent
-          id: invoke_agent
-          stability: development
-          value: invoke_agent
-        - brief: Execute a tool
-          id: execute_tool
-          stability: development
-          value: execute_tool
-        - brief: Invoke GenAI workflow
-          id: invoke_workflow
-          stability: development
-          value: invoke_workflow
-        - brief: Agent planning or task decomposition phase
-          id: plan
-          stability: development
-          value: plan
-        - brief: Search/query memories from a memory store
-          id: search_memory
-          stability: development
-          value: search_memory
-        - brief: Create new memory records
-          id: create_memory
-          stability: development
-          value: create_memory
-        - brief: Update existing memory records
-          id: update_memory
-          stability: development
-          value: update_memory
-        - brief: Create or update memory records without the caller choosing which
-          id: upsert_memory
-          stability: development
-          value: upsert_memory
-        - brief: Delete memory records
-          id: delete_memory
-          stability: development
-          value: delete_memory
-        - brief: Create or initialize a memory store
-          id: create_memory_store
-          stability: development
-          value: create_memory_store
-        - brief: Delete or deprovision a memory store
-          id: delete_memory_store
-          stability: development
-          value: delete_memory_store
-    - brief: The Generative AI provider as identified by the client or server instrumentation.
-      key: gen_ai.provider.name
-      note: |
-        The attribute SHOULD be set based on the instrumentation\u0027s best
-        knowledge and may differ from the actual model provider.
-
-        Multiple providers, including Azure OpenAI, Gemini, and AI hosting platforms
-        are accessible using the OpenAI REST API and corresponding client libraries,
-        but may proxy or host models from different providers.
-
-        The `gen_ai.request.model`, `gen_ai.response.model`, and `server.address`
-        attributes may help identify the actual system in use.
-
-        The `gen_ai.provider.name` attribute acts as a discriminator that
-        identifies the GenAI telemetry format flavor specific to that provider
-        within GenAI semantic conventions.
-        It SHOULD be set consistently with provider-specific attributes and signals.
-        For example, GenAI spans, metrics, and events related to AWS Bedrock
-        should have the `gen_ai.provider.name` set to `aws.bedrock` and include
-        applicable `aws.bedrock.*` attributes and are not expected to include
-        `openai.*` attributes.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        conditionally_required: if the operation is handled by a named external GenAI provider or service
-      stability: development
-      type:
-        members:
-        - brief: \u0027[OpenAI](https://openai.com/)\u0027
-          id: openai
-          stability: development
-          value: openai
-        - brief: Any Google generative AI endpoint
-          id: gcp.gen_ai
-          note: |
-            May be used when specific backend is unknown.
-          stability: development
-          value: gcp.gen_ai
-        - brief: \u0027[Vertex AI](https://cloud.google.com/vertex-ai)\u0027
-          id: gcp.vertex_ai
-          note: |
-            Used when accessing the \u0027aiplatform.googleapis.com\u0027 endpoint.
-          stability: development
-          value: gcp.vertex_ai
-        - brief: \u0027[Gemini](https://cloud.google.com/products/gemini)\u0027
-          id: gcp.gemini
-          note: |
-            Used when accessing the \u0027generativelanguage.googleapis.com\u0027 endpoint. Also known as the AI Studio API.
-          stability: development
-          value: gcp.gemini
-        - brief: \u0027[Anthropic](https://www.anthropic.com/)\u0027
-          id: anthropic
-          stability: development
-          value: anthropic
-        - brief: \u0027[Cohere](https://cohere.com/)\u0027
-          id: cohere
-          stability: development
-          value: cohere
-        - brief: Azure AI Inference
-          id: azure.ai.inference
-          stability: development
-          value: azure.ai.inference
-        - brief: \u0027[Azure OpenAI](https://learn.microsoft.com/en-us/azure/ai-services/openai/overview)\u0027
-          id: azure.ai.openai
-          stability: development
-          value: azure.ai.openai
-        - brief: \u0027[IBM Watsonx AI](https://www.ibm.com/products/watsonx-ai)\u0027
-          id: ibm.watsonx.ai
-          stability: development
-          value: ibm.watsonx.ai
-        - brief: \u0027[AWS Bedrock](https://aws.amazon.com/bedrock)\u0027
-          id: aws.bedrock
-          stability: development
-          value: aws.bedrock
-        - brief: \u0027[Perplexity](https://www.perplexity.ai/)\u0027
-          id: perplexity
-          stability: development
-          value: perplexity
-        - brief: \u0027[xAI](https://x.ai/)\u0027
-          id: x_ai
-          stability: development
-          value: x_ai
-        - brief: \u0027[DeepSeek](https://www.deepseek.com/)\u0027
-          id: deepseek
-          stability: development
-          value: deepseek
-        - brief: \u0027[Groq](https://groq.com/)\u0027
-          id: groq
-          stability: development
-          value: groq
-        - brief: \u0027[Mistral AI](https://mistral.ai/)\u0027
-          id: mistral_ai
-          stability: development
-          value: mistral_ai
-    - brief: GenAI server address.
-      examples:
-      - example.com
-      - 10.1.2.80
-      - /tmp/my.sock
-      key: server.address
-      note: |
-        When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent the server address behind any intermediaries, for example proxies, if it\u0027s available.
-      requirement_level: recommended
-      stability: stable
-      type: string
-    - brief: GenAI server port.
-      examples:
-      - 80
-      - 8080
-      - 443
-      key: server.port
-      note: |
-        When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries, for example proxies, if it\u0027s available.
-      requirement_level:
-        conditionally_required: If `server.address` is set.
-      stability: stable
-      type: int
-    brief: |
-      Describes creation or initialization of a memory store.
-    id: gen_ai.create_memory_store.client
-    kind: client
-    name:
-      note: gen_ai.create_memory_store.client
-    note: |
-      The `gen_ai.operation.name` SHOULD be `create_memory_store`.
-
-      **Span name** SHOULD be `create_memory_store`.
-    provenance:
-      path: ./model/gen-ai/spans.yaml
-    stability: development
-    type: gen_ai.create_memory_store.client
-  - attributes:
-    - brief: |
-        Describes a class of error the operation ended with.
-      examples:
-      - timeout
-      - java.net.UnknownHostException
-      - server_certificate_invalid
-      - \u0027500\u0027
-      key: error.type
-      note: |
-        The `error.type` SHOULD match the error code returned by the Generative AI provider or the client library,
-        the canonical name of exception that occurred, or another low-cardinality error identifier.
-        Instrumentations SHOULD document the list of errors they report.
-      requirement_level:
-        conditionally_required: if the operation ended in an error
-      stability: stable
-      type:
-        members:
-        - brief: |
-            A fallback error value to be used when the instrumentation doesn\u0027t define a custom value.
-          id: other
-          stability: stable
-          value: _OTHER
-    - brief: The unique identifier of the memory record.
-      examples:
-      - mem_5j66UpCpwteGg4YSxUnt7lPY
-      key: gen_ai.memory.record.id
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        conditionally_required: when deleting a specific memory record
-      stability: development
-      type: string
-    - brief: The unique identifier of the memory store.
-      examples:
-      - ms_abc123
-      - user-preferences-store
-      key: gen_ai.memory.store.id
-      note: |
-        Semantic conventions for individual components SHOULD document what `gen_ai.memory.store.id` maps to within the implementation.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        conditionally_required: if applicable
-      stability: development
-      type: string
-    - brief: The name of the operation being performed.
-      key: gen_ai.operation.name
-      note: |
-        If one of the predefined values applies, but specific system uses a different name it\u0027s RECOMMENDED to document it in the semantic conventions for specific GenAI system and use system-specific name in the instrumentation. If a different name is not documented, instrumentation libraries SHOULD use applicable predefined value.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level: required
-      stability: development
-      type:
-        members:
-        - brief: Chat completion operation such as [OpenAI Chat API](https://platform.openai.com/docs/api-reference/chat)
-          id: chat
-          stability: development
-          value: chat
-        - brief: Multimodal content generation operation such as [Gemini Generate Content](https://ai.google.dev/api/generate-content)
-          id: generate_content
-          stability: development
-          value: generate_content
-        - brief: Text completions operation such as [OpenAI Completions API (Legacy)](https://platform.openai.com/docs/api-reference/completions)
-          id: text_completion
-          stability: development
-          value: text_completion
-        - brief: Embeddings operation such as [OpenAI Create embeddings API](https://platform.openai.com/docs/api-reference/embeddings/create)
-          id: embeddings
-          stability: development
-          value: embeddings
-        - brief: Retrieval operation such as [OpenAI Search Vector Store API](https://platform.openai.com/docs/api-reference/vector-stores/search)
-          id: retrieval
-          stability: development
-          value: retrieval
-        - brief: Create GenAI agent
-          id: create_agent
-          stability: development
-          value: create_agent
-        - brief: Invoke GenAI agent
-          id: invoke_agent
-          stability: development
-          value: invoke_agent
-        - brief: Execute a tool
-          id: execute_tool
-          stability: development
-          value: execute_tool
-        - brief: Invoke GenAI workflow
-          id: invoke_workflow
-          stability: development
-          value: invoke_workflow
-        - brief: Agent planning or task decomposition phase
-          id: plan
-          stability: development
-          value: plan
-        - brief: Search/query memories from a memory store
-          id: search_memory
-          stability: development
-          value: search_memory
-        - brief: Create new memory records
-          id: create_memory
-          stability: development
-          value: create_memory
-        - brief: Update existing memory records
-          id: update_memory
-          stability: development
-          value: update_memory
-        - brief: Create or update memory records without the caller choosing which
-          id: upsert_memory
-          stability: development
-          value: upsert_memory
-        - brief: Delete memory records
-          id: delete_memory
-          stability: development
-          value: delete_memory
-        - brief: Create or initialize a memory store
-          id: create_memory_store
-          stability: development
-          value: create_memory_store
-        - brief: Delete or deprovision a memory store
-          id: delete_memory_store
-          stability: development
-          value: delete_memory_store
-    - brief: The Generative AI provider as identified by the client or server instrumentation.
-      key: gen_ai.provider.name
-      note: |
-        The attribute SHOULD be set based on the instrumentation\u0027s best
-        knowledge and may differ from the actual model provider.
-
-        Multiple providers, including Azure OpenAI, Gemini, and AI hosting platforms
-        are accessible using the OpenAI REST API and corresponding client libraries,
-        but may proxy or host models from different providers.
-
-        The `gen_ai.request.model`, `gen_ai.response.model`, and `server.address`
-        attributes may help identify the actual system in use.
-
-        The `gen_ai.provider.name` attribute acts as a discriminator that
-        identifies the GenAI telemetry format flavor specific to that provider
-        within GenAI semantic conventions.
-        It SHOULD be set consistently with provider-specific attributes and signals.
-        For example, GenAI spans, metrics, and events related to AWS Bedrock
-        should have the `gen_ai.provider.name` set to `aws.bedrock` and include
-        applicable `aws.bedrock.*` attributes and are not expected to include
-        `openai.*` attributes.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        conditionally_required: if the operation is handled by a named external GenAI provider or service
-      stability: development
-      type:
-        members:
-        - brief: \u0027[OpenAI](https://openai.com/)\u0027
-          id: openai
-          stability: development
-          value: openai
-        - brief: Any Google generative AI endpoint
-          id: gcp.gen_ai
-          note: |
-            May be used when specific backend is unknown.
-          stability: development
-          value: gcp.gen_ai
-        - brief: \u0027[Vertex AI](https://cloud.google.com/vertex-ai)\u0027
-          id: gcp.vertex_ai
-          note: |
-            Used when accessing the \u0027aiplatform.googleapis.com\u0027 endpoint.
-          stability: development
-          value: gcp.vertex_ai
-        - brief: \u0027[Gemini](https://cloud.google.com/products/gemini)\u0027
-          id: gcp.gemini
-          note: |
-            Used when accessing the \u0027generativelanguage.googleapis.com\u0027 endpoint. Also known as the AI Studio API.
-          stability: development
-          value: gcp.gemini
-        - brief: \u0027[Anthropic](https://www.anthropic.com/)\u0027
-          id: anthropic
-          stability: development
-          value: anthropic
-        - brief: \u0027[Cohere](https://cohere.com/)\u0027
-          id: cohere
-          stability: development
-          value: cohere
-        - brief: Azure AI Inference
-          id: azure.ai.inference
-          stability: development
-          value: azure.ai.inference
-        - brief: \u0027[Azure OpenAI](https://learn.microsoft.com/en-us/azure/ai-services/openai/overview)\u0027
-          id: azure.ai.openai
-          stability: development
-          value: azure.ai.openai
-        - brief: \u0027[IBM Watsonx AI](https://www.ibm.com/products/watsonx-ai)\u0027
-          id: ibm.watsonx.ai
-          stability: development
-          value: ibm.watsonx.ai
-        - brief: \u0027[AWS Bedrock](https://aws.amazon.com/bedrock)\u0027
-          id: aws.bedrock
-          stability: development
-          value: aws.bedrock
-        - brief: \u0027[Perplexity](https://www.perplexity.ai/)\u0027
-          id: perplexity
-          stability: development
-          value: perplexity
-        - brief: \u0027[xAI](https://x.ai/)\u0027
-          id: x_ai
-          stability: development
-          value: x_ai
-        - brief: \u0027[DeepSeek](https://www.deepseek.com/)\u0027
-          id: deepseek
-          stability: development
-          value: deepseek
-        - brief: \u0027[Groq](https://groq.com/)\u0027
-          id: groq
-          stability: development
-          value: groq
-        - brief: \u0027[Mistral AI](https://mistral.ai/)\u0027
-          id: mistral_ai
-          stability: development
-          value: mistral_ai
-    - brief: GenAI server address.
-      examples:
-      - example.com
-      - 10.1.2.80
-      - /tmp/my.sock
-      key: server.address
-      note: |
-        When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent the server address behind any intermediaries, for example proxies, if it\u0027s available.
-      requirement_level: recommended
-      stability: stable
-      type: string
-    - brief: GenAI server port.
-      examples:
-      - 80
-      - 8080
-      - 443
-      key: server.port
-      note: |
-        When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries, for example proxies, if it\u0027s available.
-      requirement_level:
-        conditionally_required: If `server.address` is set.
-      stability: stable
-      type: int
-    brief: |
-      Describes a memory deletion operation that removes one or more memory records.
-    id: gen_ai.delete_memory.client
-    kind: client
-    name:
-      note: gen_ai.delete_memory.client
-    note: |
-      The `gen_ai.operation.name` SHOULD be `delete_memory`.
-
-      **Span name** SHOULD be `delete_memory`.
-
-      Depending on the instrumented library, lack of `gen_ai.memory.record.id` may indicate that
-      the operation intends to delete all memory records in the specified store.
-    provenance:
-      path: ./model/gen-ai/spans.yaml
-    stability: development
-    type: gen_ai.delete_memory.client
-  - attributes:
-    - brief: |
-        Describes a class of error the operation ended with.
-      examples:
-      - timeout
-      - java.net.UnknownHostException
-      - server_certificate_invalid
-      - \u0027500\u0027
-      key: error.type
-      note: |
-        The `error.type` SHOULD match the error code returned by the Generative AI provider or the client library,
-        the canonical name of exception that occurred, or another low-cardinality error identifier.
-        Instrumentations SHOULD document the list of errors they report.
-      requirement_level:
-        conditionally_required: if the operation ended in an error
-      stability: stable
-      type:
-        members:
-        - brief: |
-            A fallback error value to be used when the instrumentation doesn\u0027t define a custom value.
-          id: other
-          stability: stable
-          value: _OTHER
-    - brief: The unique identifier of the memory store.
-      examples:
-      - ms_abc123
-      - user-preferences-store
-      key: gen_ai.memory.store.id
-      note: |
-        Semantic conventions for individual components SHOULD document what `gen_ai.memory.store.id` maps to within the implementation.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        conditionally_required: if applicable
-      stability: development
-      type: string
-    - brief: The name of the operation being performed.
-      key: gen_ai.operation.name
-      note: |
-        If one of the predefined values applies, but specific system uses a different name it\u0027s RECOMMENDED to document it in the semantic conventions for specific GenAI system and use system-specific name in the instrumentation. If a different name is not documented, instrumentation libraries SHOULD use applicable predefined value.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level: required
-      stability: development
-      type:
-        members:
-        - brief: Chat completion operation such as [OpenAI Chat API](https://platform.openai.com/docs/api-reference/chat)
-          id: chat
-          stability: development
-          value: chat
-        - brief: Multimodal content generation operation such as [Gemini Generate Content](https://ai.google.dev/api/generate-content)
-          id: generate_content
-          stability: development
-          value: generate_content
-        - brief: Text completions operation such as [OpenAI Completions API (Legacy)](https://platform.openai.com/docs/api-reference/completions)
-          id: text_completion
-          stability: development
-          value: text_completion
-        - brief: Embeddings operation such as [OpenAI Create embeddings API](https://platform.openai.com/docs/api-reference/embeddings/create)
-          id: embeddings
-          stability: development
-          value: embeddings
-        - brief: Retrieval operation such as [OpenAI Search Vector Store API](https://platform.openai.com/docs/api-reference/vector-stores/search)
-          id: retrieval
-          stability: development
-          value: retrieval
-        - brief: Create GenAI agent
-          id: create_agent
-          stability: development
-          value: create_agent
-        - brief: Invoke GenAI agent
-          id: invoke_agent
-          stability: development
-          value: invoke_agent
-        - brief: Execute a tool
-          id: execute_tool
-          stability: development
-          value: execute_tool
-        - brief: Invoke GenAI workflow
-          id: invoke_workflow
-          stability: development
-          value: invoke_workflow
-        - brief: Agent planning or task decomposition phase
-          id: plan
-          stability: development
-          value: plan
-        - brief: Search/query memories from a memory store
-          id: search_memory
-          stability: development
-          value: search_memory
-        - brief: Create new memory records
-          id: create_memory
-          stability: development
-          value: create_memory
-        - brief: Update existing memory records
-          id: update_memory
-          stability: development
-          value: update_memory
-        - brief: Create or update memory records without the caller choosing which
-          id: upsert_memory
-          stability: development
-          value: upsert_memory
-        - brief: Delete memory records
-          id: delete_memory
-          stability: development
-          value: delete_memory
-        - brief: Create or initialize a memory store
-          id: create_memory_store
-          stability: development
-          value: create_memory_store
-        - brief: Delete or deprovision a memory store
-          id: delete_memory_store
-          stability: development
-          value: delete_memory_store
-    - brief: The Generative AI provider as identified by the client or server instrumentation.
-      key: gen_ai.provider.name
-      note: |
-        The attribute SHOULD be set based on the instrumentation\u0027s best
-        knowledge and may differ from the actual model provider.
-
-        Multiple providers, including Azure OpenAI, Gemini, and AI hosting platforms
-        are accessible using the OpenAI REST API and corresponding client libraries,
-        but may proxy or host models from different providers.
-
-        The `gen_ai.request.model`, `gen_ai.response.model`, and `server.address`
-        attributes may help identify the actual system in use.
-
-        The `gen_ai.provider.name` attribute acts as a discriminator that
-        identifies the GenAI telemetry format flavor specific to that provider
-        within GenAI semantic conventions.
-        It SHOULD be set consistently with provider-specific attributes and signals.
-        For example, GenAI spans, metrics, and events related to AWS Bedrock
-        should have the `gen_ai.provider.name` set to `aws.bedrock` and include
-        applicable `aws.bedrock.*` attributes and are not expected to include
-        `openai.*` attributes.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        conditionally_required: if the operation is handled by a named external GenAI provider or service
-      stability: development
-      type:
-        members:
-        - brief: \u0027[OpenAI](https://openai.com/)\u0027
-          id: openai
-          stability: development
-          value: openai
-        - brief: Any Google generative AI endpoint
-          id: gcp.gen_ai
-          note: |
-            May be used when specific backend is unknown.
-          stability: development
-          value: gcp.gen_ai
-        - brief: \u0027[Vertex AI](https://cloud.google.com/vertex-ai)\u0027
-          id: gcp.vertex_ai
-          note: |
-            Used when accessing the \u0027aiplatform.googleapis.com\u0027 endpoint.
-          stability: development
-          value: gcp.vertex_ai
-        - brief: \u0027[Gemini](https://cloud.google.com/products/gemini)\u0027
-          id: gcp.gemini
-          note: |
-            Used when accessing the \u0027generativelanguage.googleapis.com\u0027 endpoint. Also known as the AI Studio API.
-          stability: development
-          value: gcp.gemini
-        - brief: \u0027[Anthropic](https://www.anthropic.com/)\u0027
-          id: anthropic
-          stability: development
-          value: anthropic
-        - brief: \u0027[Cohere](https://cohere.com/)\u0027
-          id: cohere
-          stability: development
-          value: cohere
-        - brief: Azure AI Inference
-          id: azure.ai.inference
-          stability: development
-          value: azure.ai.inference
-        - brief: \u0027[Azure OpenAI](https://learn.microsoft.com/en-us/azure/ai-services/openai/overview)\u0027
-          id: azure.ai.openai
-          stability: development
-          value: azure.ai.openai
-        - brief: \u0027[IBM Watsonx AI](https://www.ibm.com/products/watsonx-ai)\u0027
-          id: ibm.watsonx.ai
-          stability: development
-          value: ibm.watsonx.ai
-        - brief: \u0027[AWS Bedrock](https://aws.amazon.com/bedrock)\u0027
-          id: aws.bedrock
-          stability: development
-          value: aws.bedrock
-        - brief: \u0027[Perplexity](https://www.perplexity.ai/)\u0027
-          id: perplexity
-          stability: development
-          value: perplexity
-        - brief: \u0027[xAI](https://x.ai/)\u0027
-          id: x_ai
-          stability: development
-          value: x_ai
-        - brief: \u0027[DeepSeek](https://www.deepseek.com/)\u0027
-          id: deepseek
-          stability: development
-          value: deepseek
-        - brief: \u0027[Groq](https://groq.com/)\u0027
-          id: groq
-          stability: development
-          value: groq
-        - brief: \u0027[Mistral AI](https://mistral.ai/)\u0027
-          id: mistral_ai
-          stability: development
-          value: mistral_ai
-    - brief: GenAI server address.
-      examples:
-      - example.com
-      - 10.1.2.80
-      - /tmp/my.sock
-      key: server.address
-      note: |
-        When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent the server address behind any intermediaries, for example proxies, if it\u0027s available.
-      requirement_level: recommended
-      stability: stable
-      type: string
-    - brief: GenAI server port.
-      examples:
-      - 80
-      - 8080
-      - 443
-      key: server.port
-      note: |
-        When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries, for example proxies, if it\u0027s available.
-      requirement_level:
-        conditionally_required: If `server.address` is set.
-      stability: stable
-      type: int
-    brief: |
-      Describes deletion or deprovisioning of a memory store.
-    id: gen_ai.delete_memory_store.client
-    kind: client
-    name:
-      note: gen_ai.delete_memory_store.client
-    note: |
-      The `gen_ai.operation.name` SHOULD be `delete_memory_store`.
-
-      **Span name** SHOULD be `delete_memory_store`.
-    provenance:
-      path: ./model/gen-ai/spans.yaml
-    stability: development
-    type: gen_ai.delete_memory_store.client
-  - attributes:
-    - brief: |
-        Describes a class of error the operation ended with.
-      examples:
-      - timeout
-      - java.net.UnknownHostException
-      - server_certificate_invalid
-      - \u0027500\u0027
-      key: error.type
-      note: |
-        The `error.type` SHOULD match the error code returned by the Generative AI provider or the client library,
-        the canonical name of exception that occurred, or another low-cardinality error identifier.
-        Instrumentations SHOULD document the list of errors they report.
-      requirement_level:
-        conditionally_required: if the operation ended in an error
-      stability: stable
-      type:
-        members:
-        - brief: |
-            A fallback error value to be used when the instrumentation doesn\u0027t define a custom value.
-          id: other
-          stability: stable
-          value: _OTHER
     - brief: The number of dimensions the resulting output embeddings should have.
       examples:
       - 512
@@ -10356,6 +9314,338 @@ refinements:
           id: other
           stability: stable
           value: _OTHER
+    - brief: The search query used to retrieve memories.
+      examples:
+      - user dietary preferences
+      - past flight bookings
+      key: gen_ai.memory.query.text
+      note: |
+        Instrumentations SHOULD NOT capture this attribute by default. Capture SHOULD be gated
+        by an explicit user opt-in, for example `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT`.
+
+        \u003e [!Warning]
+        \u003e This attribute may contain sensitive information.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: opt_in
+      stability: development
+      type: string
+    - brief: The number of memory records relevant to the operation.
+      examples:
+      - 3
+      key: gen_ai.memory.record.count
+      note: |
+        For `search_memory` operations, this is the number of memory records returned by the operation. For `create_memory` operations, this is the number of memory records the operation attempted to create. For `update_memory` operations, this is the number of memory records the operation attempted to modify. For `upsert_memory` operations, this is the number of memory records the operation attempted to create or update.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: if the operation involves memory records and the count is available
+      stability: development
+      type: int
+    - brief: The unique identifier of the memory record.
+      examples:
+      - mem_5j66UpCpwteGg4YSxUnt7lPY
+      key: gen_ai.memory.record.id
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: when the operation applies to a specific memory record
+      stability: development
+      type: string
+    - brief: The memory records stored or retrieved in a memory operation.
+      examples:
+      - |
+        [
+          {
+            "content": "User prefers dark mode",
+            "id": "mem_123",
+            "score": 0.95
+          },
+          {
+            "content": {
+              "preference": "vegetarian meals",
+              "confidence": 0.9
+            },
+            "metadata": {
+              "source": "profile"
+            }
+          }
+        ]
+      key: gen_ai.memory.records
+      note: |
+        Instrumentations MUST follow [Memory records JSON schema](/docs/gen-ai/gen-ai-memory-records.json).
+        When the attribute is recorded on events, it MUST be recorded in structured
+        form. When recorded on spans, it MAY be recorded as a JSON string if structured
+        format is not supported and SHOULD be recorded in structured form otherwise.
+
+        Instrumentations SHOULD NOT capture this attribute by default. Capture SHOULD be gated
+        by an explicit user opt-in, for example `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT`.
+
+        \u003e [!Warning]
+        \u003e This attribute may contain sensitive information including user/PII data.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: opt_in
+      stability: development
+      type: any
+    - brief: The unique identifier of the memory store.
+      examples:
+      - ms_abc123
+      - user-preferences-store
+      key: gen_ai.memory.store.id
+      note: |
+        Semantic conventions for individual components SHOULD document what `gen_ai.memory.store.id` maps to within the implementation.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: if applicable
+      stability: development
+      type: string
+    - brief: The name of the operation being performed.
+      key: gen_ai.operation.name
+      note: |
+        If one of the predefined values applies, but specific system uses a different name it\u0027s RECOMMENDED to document it in the semantic conventions for specific GenAI system and use system-specific name in the instrumentation. If a different name is not documented, instrumentation libraries SHOULD use applicable predefined value.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: required
+      stability: development
+      type:
+        members:
+        - brief: Chat completion operation such as [OpenAI Chat API](https://platform.openai.com/docs/api-reference/chat)
+          id: chat
+          stability: development
+          value: chat
+        - brief: Multimodal content generation operation such as [Gemini Generate Content](https://ai.google.dev/api/generate-content)
+          id: generate_content
+          stability: development
+          value: generate_content
+        - brief: Text completions operation such as [OpenAI Completions API (Legacy)](https://platform.openai.com/docs/api-reference/completions)
+          id: text_completion
+          stability: development
+          value: text_completion
+        - brief: Embeddings operation such as [OpenAI Create embeddings API](https://platform.openai.com/docs/api-reference/embeddings/create)
+          id: embeddings
+          stability: development
+          value: embeddings
+        - brief: Retrieval operation such as [OpenAI Search Vector Store API](https://platform.openai.com/docs/api-reference/vector-stores/search)
+          id: retrieval
+          stability: development
+          value: retrieval
+        - brief: Create GenAI agent
+          id: create_agent
+          stability: development
+          value: create_agent
+        - brief: Invoke GenAI agent
+          id: invoke_agent
+          stability: development
+          value: invoke_agent
+        - brief: Execute a tool
+          id: execute_tool
+          stability: development
+          value: execute_tool
+        - brief: Invoke GenAI workflow
+          id: invoke_workflow
+          stability: development
+          value: invoke_workflow
+        - brief: Agent planning or task decomposition phase
+          id: plan
+          stability: development
+          value: plan
+        - brief: Search/query memories from a memory store
+          id: search_memory
+          stability: development
+          value: search_memory
+        - brief: Create new memory records
+          id: create_memory
+          stability: development
+          value: create_memory
+        - brief: Update existing memory records
+          id: update_memory
+          stability: development
+          value: update_memory
+        - brief: Create or update memory records without the caller choosing which
+          id: upsert_memory
+          stability: development
+          value: upsert_memory
+        - brief: Delete memory records
+          id: delete_memory
+          stability: development
+          value: delete_memory
+        - brief: Create or initialize a memory store
+          id: create_memory_store
+          stability: development
+          value: create_memory_store
+        - brief: Delete or deprovision a memory store
+          id: delete_memory_store
+          stability: development
+          value: delete_memory_store
+    - brief: The Generative AI provider as identified by the client or server instrumentation.
+      key: gen_ai.provider.name
+      note: |
+        The attribute SHOULD be set based on the instrumentation\u0027s best
+        knowledge and may differ from the actual model provider.
+
+        Multiple providers, including Azure OpenAI, Gemini, and AI hosting platforms
+        are accessible using the OpenAI REST API and corresponding client libraries,
+        but may proxy or host models from different providers.
+
+        The `gen_ai.request.model`, `gen_ai.response.model`, and `server.address`
+        attributes may help identify the actual system in use.
+
+        The `gen_ai.provider.name` attribute acts as a discriminator that
+        identifies the GenAI telemetry format flavor specific to that provider
+        within GenAI semantic conventions.
+        It SHOULD be set consistently with provider-specific attributes and signals.
+        For example, GenAI spans, metrics, and events related to AWS Bedrock
+        should have the `gen_ai.provider.name` set to `aws.bedrock` and include
+        applicable `aws.bedrock.*` attributes and are not expected to include
+        `openai.*` attributes.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: if the operation is handled by a named external GenAI provider or service
+      stability: development
+      type:
+        members:
+        - brief: \u0027[OpenAI](https://openai.com/)\u0027
+          id: openai
+          stability: development
+          value: openai
+        - brief: Any Google generative AI endpoint
+          id: gcp.gen_ai
+          note: |
+            May be used when specific backend is unknown.
+          stability: development
+          value: gcp.gen_ai
+        - brief: \u0027[Vertex AI](https://cloud.google.com/vertex-ai)\u0027
+          id: gcp.vertex_ai
+          note: |
+            Used when accessing the \u0027aiplatform.googleapis.com\u0027 endpoint.
+          stability: development
+          value: gcp.vertex_ai
+        - brief: \u0027[Gemini](https://cloud.google.com/products/gemini)\u0027
+          id: gcp.gemini
+          note: |
+            Used when accessing the \u0027generativelanguage.googleapis.com\u0027 endpoint. Also known as the AI Studio API.
+          stability: development
+          value: gcp.gemini
+        - brief: \u0027[Anthropic](https://www.anthropic.com/)\u0027
+          id: anthropic
+          stability: development
+          value: anthropic
+        - brief: \u0027[Cohere](https://cohere.com/)\u0027
+          id: cohere
+          stability: development
+          value: cohere
+        - brief: Azure AI Inference
+          id: azure.ai.inference
+          stability: development
+          value: azure.ai.inference
+        - brief: \u0027[Azure OpenAI](https://learn.microsoft.com/en-us/azure/ai-services/openai/overview)\u0027
+          id: azure.ai.openai
+          stability: development
+          value: azure.ai.openai
+        - brief: \u0027[IBM Watsonx AI](https://www.ibm.com/products/watsonx-ai)\u0027
+          id: ibm.watsonx.ai
+          stability: development
+          value: ibm.watsonx.ai
+        - brief: \u0027[AWS Bedrock](https://aws.amazon.com/bedrock)\u0027
+          id: aws.bedrock
+          stability: development
+          value: aws.bedrock
+        - brief: \u0027[Perplexity](https://www.perplexity.ai/)\u0027
+          id: perplexity
+          stability: development
+          value: perplexity
+        - brief: \u0027[xAI](https://x.ai/)\u0027
+          id: x_ai
+          stability: development
+          value: x_ai
+        - brief: \u0027[DeepSeek](https://www.deepseek.com/)\u0027
+          id: deepseek
+          stability: development
+          value: deepseek
+        - brief: \u0027[Groq](https://groq.com/)\u0027
+          id: groq
+          stability: development
+          value: groq
+        - brief: \u0027[Mistral AI](https://mistral.ai/)\u0027
+          id: mistral_ai
+          stability: development
+          value: mistral_ai
+    - brief: GenAI server address.
+      examples:
+      - example.com
+      - 10.1.2.80
+      - /tmp/my.sock
+      key: server.address
+      note: |
+        When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent the server address behind any intermediaries, for example proxies, if it\u0027s available.
+      requirement_level: recommended
+      stability: stable
+      type: string
+    - brief: GenAI server port.
+      examples:
+      - 80
+      - 8080
+      - 443
+      key: server.port
+      note: |
+        When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries, for example proxies, if it\u0027s available.
+      requirement_level:
+        conditionally_required: If `server.address` is set.
+      stability: stable
+      type: int
+    brief: |
+      Describes a memory operation, including memory store lifecycle operations and memory record operations.
+    id: gen_ai.memory.client
+    kind: client
+    name:
+      note: gen_ai.memory.client
+    note: |
+      The `gen_ai.operation.name` SHOULD be one of `create_memory_store`, `search_memory`, `create_memory`,
+      `update_memory`, `upsert_memory`, `delete_memory`, or `delete_memory_store`.
+
+      `create_memory_store` and `delete_memory_store` cover memory store lifecycle operations.
+      `create_memory`, `update_memory`, `upsert_memory`, `search_memory`, and `delete_memory`
+      cover memory record operations.
+
+      Use `create_memory` when the caller requests creation of new memory records.
+      Use `update_memory` when the caller requests modification of known existing memory records.
+      Use `upsert_memory` when the caller invokes a public API that may create, update, or consolidate
+      memory records without the caller choosing which.
+
+      **Span name** SHOULD be `{gen_ai.operation.name}`.
+
+      For `delete_memory`, lack of `gen_ai.memory.record.id` may indicate that
+      the operation intends to delete all memory records in the specified store.
+    provenance:
+      path: ./model/gen-ai/spans.yaml
+    stability: development
+    type: gen_ai.memory.client
+  - attributes:
+    - brief: |
+        Describes a class of error the operation ended with.
+      examples:
+      - timeout
+      - java.net.UnknownHostException
+      - server_certificate_invalid
+      - \u0027500\u0027
+      key: error.type
+      note: |
+        The `error.type` SHOULD match the error code returned by the Generative AI provider or the client library,
+        the canonical name of exception that occurred, or another low-cardinality error identifier.
+        Instrumentations SHOULD document the list of errors they report.
+      requirement_level:
+        conditionally_required: if the operation ended in an error
+      stability: stable
+      type:
+        members:
+        - brief: |
+            A fallback error value to be used when the instrumentation doesn\u0027t define a custom value.
+          id: other
+          stability: stable
+          value: _OTHER
     - brief: The unique identifier of the GenAI agent.
       examples:
       - asst_5j66UpCpwteGg4YSxUnt7lPY
@@ -10791,903 +10081,6 @@ refinements:
       path: ./model/gen-ai/spans.yaml
     stability: development
     type: gen_ai.retrieval.client
-  - attributes:
-    - brief: |
-        Describes a class of error the operation ended with.
-      examples:
-      - timeout
-      - java.net.UnknownHostException
-      - server_certificate_invalid
-      - \u0027500\u0027
-      key: error.type
-      note: |
-        The `error.type` SHOULD match the error code returned by the Generative AI provider or the client library,
-        the canonical name of exception that occurred, or another low-cardinality error identifier.
-        Instrumentations SHOULD document the list of errors they report.
-      requirement_level:
-        conditionally_required: if the operation ended in an error
-      stability: stable
-      type:
-        members:
-        - brief: |
-            A fallback error value to be used when the instrumentation doesn\u0027t define a custom value.
-          id: other
-          stability: stable
-          value: _OTHER
-    - brief: The search query used to retrieve memories.
-      examples:
-      - user dietary preferences
-      - past flight bookings
-      key: gen_ai.memory.query.text
-      note: |
-        Instrumentations SHOULD NOT capture this attribute by default. Capture SHOULD be gated
-        by an explicit user opt-in, for example `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT`.
-
-        \u003e [!Warning]
-        \u003e This attribute may contain sensitive information.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level: opt_in
-      stability: development
-      type: string
-    - brief: The number of memory records relevant to the operation.
-      examples:
-      - 3
-      key: gen_ai.memory.record.count
-      note: |
-        For `search_memory` operations, this is the number of memory records returned by the operation. For `create_memory` operations, this is the number of memory records the operation attempted to create. For `update_memory` operations, this is the number of memory records the operation attempted to modify. For `upsert_memory` operations, this is the number of memory records the operation attempted to create or update.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level: recommended
-      stability: development
-      type: int
-    - brief: The memory records stored or retrieved in a memory operation.
-      examples:
-      - |
-        [
-          {
-            "content": "User prefers dark mode",
-            "id": "mem_123",
-            "score": 0.95
-          },
-          {
-            "content": {
-              "preference": "vegetarian meals",
-              "confidence": 0.9
-            },
-            "metadata": {
-              "source": "profile"
-            }
-          }
-        ]
-      key: gen_ai.memory.records
-      note: |
-        Instrumentations MUST follow [Memory records JSON schema](/docs/gen-ai/gen-ai-memory-records.json).
-        When the attribute is recorded on events, it MUST be recorded in structured
-        form. When recorded on spans, it MAY be recorded as a JSON string if structured
-        format is not supported and SHOULD be recorded in structured form otherwise.
-
-        Instrumentations SHOULD NOT capture this attribute by default. Capture SHOULD be gated
-        by an explicit user opt-in, for example `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT`.
-
-        \u003e [!Warning]
-        \u003e This attribute may contain sensitive information including user/PII data.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level: opt_in
-      stability: development
-      type: any
-    - brief: The unique identifier of the memory store.
-      examples:
-      - ms_abc123
-      - user-preferences-store
-      key: gen_ai.memory.store.id
-      note: |
-        Semantic conventions for individual components SHOULD document what `gen_ai.memory.store.id` maps to within the implementation.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        conditionally_required: if applicable
-      stability: development
-      type: string
-    - brief: The name of the operation being performed.
-      key: gen_ai.operation.name
-      note: |
-        If one of the predefined values applies, but specific system uses a different name it\u0027s RECOMMENDED to document it in the semantic conventions for specific GenAI system and use system-specific name in the instrumentation. If a different name is not documented, instrumentation libraries SHOULD use applicable predefined value.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level: required
-      stability: development
-      type:
-        members:
-        - brief: Chat completion operation such as [OpenAI Chat API](https://platform.openai.com/docs/api-reference/chat)
-          id: chat
-          stability: development
-          value: chat
-        - brief: Multimodal content generation operation such as [Gemini Generate Content](https://ai.google.dev/api/generate-content)
-          id: generate_content
-          stability: development
-          value: generate_content
-        - brief: Text completions operation such as [OpenAI Completions API (Legacy)](https://platform.openai.com/docs/api-reference/completions)
-          id: text_completion
-          stability: development
-          value: text_completion
-        - brief: Embeddings operation such as [OpenAI Create embeddings API](https://platform.openai.com/docs/api-reference/embeddings/create)
-          id: embeddings
-          stability: development
-          value: embeddings
-        - brief: Retrieval operation such as [OpenAI Search Vector Store API](https://platform.openai.com/docs/api-reference/vector-stores/search)
-          id: retrieval
-          stability: development
-          value: retrieval
-        - brief: Create GenAI agent
-          id: create_agent
-          stability: development
-          value: create_agent
-        - brief: Invoke GenAI agent
-          id: invoke_agent
-          stability: development
-          value: invoke_agent
-        - brief: Execute a tool
-          id: execute_tool
-          stability: development
-          value: execute_tool
-        - brief: Invoke GenAI workflow
-          id: invoke_workflow
-          stability: development
-          value: invoke_workflow
-        - brief: Agent planning or task decomposition phase
-          id: plan
-          stability: development
-          value: plan
-        - brief: Search/query memories from a memory store
-          id: search_memory
-          stability: development
-          value: search_memory
-        - brief: Create new memory records
-          id: create_memory
-          stability: development
-          value: create_memory
-        - brief: Update existing memory records
-          id: update_memory
-          stability: development
-          value: update_memory
-        - brief: Create or update memory records without the caller choosing which
-          id: upsert_memory
-          stability: development
-          value: upsert_memory
-        - brief: Delete memory records
-          id: delete_memory
-          stability: development
-          value: delete_memory
-        - brief: Create or initialize a memory store
-          id: create_memory_store
-          stability: development
-          value: create_memory_store
-        - brief: Delete or deprovision a memory store
-          id: delete_memory_store
-          stability: development
-          value: delete_memory_store
-    - brief: The Generative AI provider as identified by the client or server instrumentation.
-      key: gen_ai.provider.name
-      note: |
-        The attribute SHOULD be set based on the instrumentation\u0027s best
-        knowledge and may differ from the actual model provider.
-
-        Multiple providers, including Azure OpenAI, Gemini, and AI hosting platforms
-        are accessible using the OpenAI REST API and corresponding client libraries,
-        but may proxy or host models from different providers.
-
-        The `gen_ai.request.model`, `gen_ai.response.model`, and `server.address`
-        attributes may help identify the actual system in use.
-
-        The `gen_ai.provider.name` attribute acts as a discriminator that
-        identifies the GenAI telemetry format flavor specific to that provider
-        within GenAI semantic conventions.
-        It SHOULD be set consistently with provider-specific attributes and signals.
-        For example, GenAI spans, metrics, and events related to AWS Bedrock
-        should have the `gen_ai.provider.name` set to `aws.bedrock` and include
-        applicable `aws.bedrock.*` attributes and are not expected to include
-        `openai.*` attributes.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        conditionally_required: if the operation is handled by a named external GenAI provider or service
-      stability: development
-      type:
-        members:
-        - brief: \u0027[OpenAI](https://openai.com/)\u0027
-          id: openai
-          stability: development
-          value: openai
-        - brief: Any Google generative AI endpoint
-          id: gcp.gen_ai
-          note: |
-            May be used when specific backend is unknown.
-          stability: development
-          value: gcp.gen_ai
-        - brief: \u0027[Vertex AI](https://cloud.google.com/vertex-ai)\u0027
-          id: gcp.vertex_ai
-          note: |
-            Used when accessing the \u0027aiplatform.googleapis.com\u0027 endpoint.
-          stability: development
-          value: gcp.vertex_ai
-        - brief: \u0027[Gemini](https://cloud.google.com/products/gemini)\u0027
-          id: gcp.gemini
-          note: |
-            Used when accessing the \u0027generativelanguage.googleapis.com\u0027 endpoint. Also known as the AI Studio API.
-          stability: development
-          value: gcp.gemini
-        - brief: \u0027[Anthropic](https://www.anthropic.com/)\u0027
-          id: anthropic
-          stability: development
-          value: anthropic
-        - brief: \u0027[Cohere](https://cohere.com/)\u0027
-          id: cohere
-          stability: development
-          value: cohere
-        - brief: Azure AI Inference
-          id: azure.ai.inference
-          stability: development
-          value: azure.ai.inference
-        - brief: \u0027[Azure OpenAI](https://learn.microsoft.com/en-us/azure/ai-services/openai/overview)\u0027
-          id: azure.ai.openai
-          stability: development
-          value: azure.ai.openai
-        - brief: \u0027[IBM Watsonx AI](https://www.ibm.com/products/watsonx-ai)\u0027
-          id: ibm.watsonx.ai
-          stability: development
-          value: ibm.watsonx.ai
-        - brief: \u0027[AWS Bedrock](https://aws.amazon.com/bedrock)\u0027
-          id: aws.bedrock
-          stability: development
-          value: aws.bedrock
-        - brief: \u0027[Perplexity](https://www.perplexity.ai/)\u0027
-          id: perplexity
-          stability: development
-          value: perplexity
-        - brief: \u0027[xAI](https://x.ai/)\u0027
-          id: x_ai
-          stability: development
-          value: x_ai
-        - brief: \u0027[DeepSeek](https://www.deepseek.com/)\u0027
-          id: deepseek
-          stability: development
-          value: deepseek
-        - brief: \u0027[Groq](https://groq.com/)\u0027
-          id: groq
-          stability: development
-          value: groq
-        - brief: \u0027[Mistral AI](https://mistral.ai/)\u0027
-          id: mistral_ai
-          stability: development
-          value: mistral_ai
-    - brief: GenAI server address.
-      examples:
-      - example.com
-      - 10.1.2.80
-      - /tmp/my.sock
-      key: server.address
-      note: |
-        When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent the server address behind any intermediaries, for example proxies, if it\u0027s available.
-      requirement_level: recommended
-      stability: stable
-      type: string
-    - brief: GenAI server port.
-      examples:
-      - 80
-      - 8080
-      - 443
-      key: server.port
-      note: |
-        When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries, for example proxies, if it\u0027s available.
-      requirement_level:
-        conditionally_required: If `server.address` is set.
-      stability: stable
-      type: int
-    brief: |
-      Describes a memory search operation that queries a memory store for relevant memories.
-    id: gen_ai.search_memory.client
-    kind: client
-    name:
-      note: gen_ai.search_memory.client
-    note: |
-      The `gen_ai.operation.name` SHOULD be `search_memory`.
-
-      **Span name** SHOULD be `search_memory`.
-    provenance:
-      path: ./model/gen-ai/spans.yaml
-    stability: development
-    type: gen_ai.search_memory.client
-  - attributes:
-    - brief: |
-        Describes a class of error the operation ended with.
-      examples:
-      - timeout
-      - java.net.UnknownHostException
-      - server_certificate_invalid
-      - \u0027500\u0027
-      key: error.type
-      note: |
-        The `error.type` SHOULD match the error code returned by the Generative AI provider or the client library,
-        the canonical name of exception that occurred, or another low-cardinality error identifier.
-        Instrumentations SHOULD document the list of errors they report.
-      requirement_level:
-        conditionally_required: if the operation ended in an error
-      stability: stable
-      type:
-        members:
-        - brief: |
-            A fallback error value to be used when the instrumentation doesn\u0027t define a custom value.
-          id: other
-          stability: stable
-          value: _OTHER
-    - brief: The number of memory records relevant to the operation.
-      examples:
-      - 3
-      key: gen_ai.memory.record.count
-      note: |
-        For `search_memory` operations, this is the number of memory records returned by the operation. For `create_memory` operations, this is the number of memory records the operation attempted to create. For `update_memory` operations, this is the number of memory records the operation attempted to modify. For `upsert_memory` operations, this is the number of memory records the operation attempted to create or update.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level: recommended
-      stability: development
-      type: int
-    - brief: The memory records stored or retrieved in a memory operation.
-      examples:
-      - |
-        [
-          {
-            "content": "User prefers dark mode",
-            "id": "mem_123",
-            "score": 0.95
-          },
-          {
-            "content": {
-              "preference": "vegetarian meals",
-              "confidence": 0.9
-            },
-            "metadata": {
-              "source": "profile"
-            }
-          }
-        ]
-      key: gen_ai.memory.records
-      note: |
-        Instrumentations MUST follow [Memory records JSON schema](/docs/gen-ai/gen-ai-memory-records.json).
-        When the attribute is recorded on events, it MUST be recorded in structured
-        form. When recorded on spans, it MAY be recorded as a JSON string if structured
-        format is not supported and SHOULD be recorded in structured form otherwise.
-
-        Instrumentations SHOULD NOT capture this attribute by default. Capture SHOULD be gated
-        by an explicit user opt-in, for example `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT`.
-
-        \u003e [!Warning]
-        \u003e This attribute may contain sensitive information including user/PII data.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level: opt_in
-      stability: development
-      type: any
-    - brief: The unique identifier of the memory store.
-      examples:
-      - ms_abc123
-      - user-preferences-store
-      key: gen_ai.memory.store.id
-      note: |
-        Semantic conventions for individual components SHOULD document what `gen_ai.memory.store.id` maps to within the implementation.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        conditionally_required: if applicable
-      stability: development
-      type: string
-    - brief: The name of the operation being performed.
-      key: gen_ai.operation.name
-      note: |
-        If one of the predefined values applies, but specific system uses a different name it\u0027s RECOMMENDED to document it in the semantic conventions for specific GenAI system and use system-specific name in the instrumentation. If a different name is not documented, instrumentation libraries SHOULD use applicable predefined value.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level: required
-      stability: development
-      type:
-        members:
-        - brief: Chat completion operation such as [OpenAI Chat API](https://platform.openai.com/docs/api-reference/chat)
-          id: chat
-          stability: development
-          value: chat
-        - brief: Multimodal content generation operation such as [Gemini Generate Content](https://ai.google.dev/api/generate-content)
-          id: generate_content
-          stability: development
-          value: generate_content
-        - brief: Text completions operation such as [OpenAI Completions API (Legacy)](https://platform.openai.com/docs/api-reference/completions)
-          id: text_completion
-          stability: development
-          value: text_completion
-        - brief: Embeddings operation such as [OpenAI Create embeddings API](https://platform.openai.com/docs/api-reference/embeddings/create)
-          id: embeddings
-          stability: development
-          value: embeddings
-        - brief: Retrieval operation such as [OpenAI Search Vector Store API](https://platform.openai.com/docs/api-reference/vector-stores/search)
-          id: retrieval
-          stability: development
-          value: retrieval
-        - brief: Create GenAI agent
-          id: create_agent
-          stability: development
-          value: create_agent
-        - brief: Invoke GenAI agent
-          id: invoke_agent
-          stability: development
-          value: invoke_agent
-        - brief: Execute a tool
-          id: execute_tool
-          stability: development
-          value: execute_tool
-        - brief: Invoke GenAI workflow
-          id: invoke_workflow
-          stability: development
-          value: invoke_workflow
-        - brief: Agent planning or task decomposition phase
-          id: plan
-          stability: development
-          value: plan
-        - brief: Search/query memories from a memory store
-          id: search_memory
-          stability: development
-          value: search_memory
-        - brief: Create new memory records
-          id: create_memory
-          stability: development
-          value: create_memory
-        - brief: Update existing memory records
-          id: update_memory
-          stability: development
-          value: update_memory
-        - brief: Create or update memory records without the caller choosing which
-          id: upsert_memory
-          stability: development
-          value: upsert_memory
-        - brief: Delete memory records
-          id: delete_memory
-          stability: development
-          value: delete_memory
-        - brief: Create or initialize a memory store
-          id: create_memory_store
-          stability: development
-          value: create_memory_store
-        - brief: Delete or deprovision a memory store
-          id: delete_memory_store
-          stability: development
-          value: delete_memory_store
-    - brief: The Generative AI provider as identified by the client or server instrumentation.
-      key: gen_ai.provider.name
-      note: |
-        The attribute SHOULD be set based on the instrumentation\u0027s best
-        knowledge and may differ from the actual model provider.
-
-        Multiple providers, including Azure OpenAI, Gemini, and AI hosting platforms
-        are accessible using the OpenAI REST API and corresponding client libraries,
-        but may proxy or host models from different providers.
-
-        The `gen_ai.request.model`, `gen_ai.response.model`, and `server.address`
-        attributes may help identify the actual system in use.
-
-        The `gen_ai.provider.name` attribute acts as a discriminator that
-        identifies the GenAI telemetry format flavor specific to that provider
-        within GenAI semantic conventions.
-        It SHOULD be set consistently with provider-specific attributes and signals.
-        For example, GenAI spans, metrics, and events related to AWS Bedrock
-        should have the `gen_ai.provider.name` set to `aws.bedrock` and include
-        applicable `aws.bedrock.*` attributes and are not expected to include
-        `openai.*` attributes.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        conditionally_required: if the operation is handled by a named external GenAI provider or service
-      stability: development
-      type:
-        members:
-        - brief: \u0027[OpenAI](https://openai.com/)\u0027
-          id: openai
-          stability: development
-          value: openai
-        - brief: Any Google generative AI endpoint
-          id: gcp.gen_ai
-          note: |
-            May be used when specific backend is unknown.
-          stability: development
-          value: gcp.gen_ai
-        - brief: \u0027[Vertex AI](https://cloud.google.com/vertex-ai)\u0027
-          id: gcp.vertex_ai
-          note: |
-            Used when accessing the \u0027aiplatform.googleapis.com\u0027 endpoint.
-          stability: development
-          value: gcp.vertex_ai
-        - brief: \u0027[Gemini](https://cloud.google.com/products/gemini)\u0027
-          id: gcp.gemini
-          note: |
-            Used when accessing the \u0027generativelanguage.googleapis.com\u0027 endpoint. Also known as the AI Studio API.
-          stability: development
-          value: gcp.gemini
-        - brief: \u0027[Anthropic](https://www.anthropic.com/)\u0027
-          id: anthropic
-          stability: development
-          value: anthropic
-        - brief: \u0027[Cohere](https://cohere.com/)\u0027
-          id: cohere
-          stability: development
-          value: cohere
-        - brief: Azure AI Inference
-          id: azure.ai.inference
-          stability: development
-          value: azure.ai.inference
-        - brief: \u0027[Azure OpenAI](https://learn.microsoft.com/en-us/azure/ai-services/openai/overview)\u0027
-          id: azure.ai.openai
-          stability: development
-          value: azure.ai.openai
-        - brief: \u0027[IBM Watsonx AI](https://www.ibm.com/products/watsonx-ai)\u0027
-          id: ibm.watsonx.ai
-          stability: development
-          value: ibm.watsonx.ai
-        - brief: \u0027[AWS Bedrock](https://aws.amazon.com/bedrock)\u0027
-          id: aws.bedrock
-          stability: development
-          value: aws.bedrock
-        - brief: \u0027[Perplexity](https://www.perplexity.ai/)\u0027
-          id: perplexity
-          stability: development
-          value: perplexity
-        - brief: \u0027[xAI](https://x.ai/)\u0027
-          id: x_ai
-          stability: development
-          value: x_ai
-        - brief: \u0027[DeepSeek](https://www.deepseek.com/)\u0027
-          id: deepseek
-          stability: development
-          value: deepseek
-        - brief: \u0027[Groq](https://groq.com/)\u0027
-          id: groq
-          stability: development
-          value: groq
-        - brief: \u0027[Mistral AI](https://mistral.ai/)\u0027
-          id: mistral_ai
-          stability: development
-          value: mistral_ai
-    - brief: GenAI server address.
-      examples:
-      - example.com
-      - 10.1.2.80
-      - /tmp/my.sock
-      key: server.address
-      note: |
-        When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent the server address behind any intermediaries, for example proxies, if it\u0027s available.
-      requirement_level: recommended
-      stability: stable
-      type: string
-    - brief: GenAI server port.
-      examples:
-      - 80
-      - 8080
-      - 443
-      key: server.port
-      note: |
-        When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries, for example proxies, if it\u0027s available.
-      requirement_level:
-        conditionally_required: If `server.address` is set.
-      stability: stable
-      type: int
-    brief: |
-      Describes a memory update operation that modifies existing memory records in a memory store.
-    id: gen_ai.update_memory.client
-    kind: client
-    name:
-      note: gen_ai.update_memory.client
-    note: |
-      The `gen_ai.operation.name` SHOULD be `update_memory`.
-
-      This operation SHOULD be used when the caller requests modification of known existing memory records.
-
-      **Span name** SHOULD be `update_memory`.
-    provenance:
-      path: ./model/gen-ai/spans.yaml
-    stability: development
-    type: gen_ai.update_memory.client
-  - attributes:
-    - brief: |
-        Describes a class of error the operation ended with.
-      examples:
-      - timeout
-      - java.net.UnknownHostException
-      - server_certificate_invalid
-      - \u0027500\u0027
-      key: error.type
-      note: |
-        The `error.type` SHOULD match the error code returned by the Generative AI provider or the client library,
-        the canonical name of exception that occurred, or another low-cardinality error identifier.
-        Instrumentations SHOULD document the list of errors they report.
-      requirement_level:
-        conditionally_required: if the operation ended in an error
-      stability: stable
-      type:
-        members:
-        - brief: |
-            A fallback error value to be used when the instrumentation doesn\u0027t define a custom value.
-          id: other
-          stability: stable
-          value: _OTHER
-    - brief: The number of memory records relevant to the operation.
-      examples:
-      - 3
-      key: gen_ai.memory.record.count
-      note: |
-        For `search_memory` operations, this is the number of memory records returned by the operation. For `create_memory` operations, this is the number of memory records the operation attempted to create. For `update_memory` operations, this is the number of memory records the operation attempted to modify. For `upsert_memory` operations, this is the number of memory records the operation attempted to create or update.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level: recommended
-      stability: development
-      type: int
-    - brief: The memory records stored or retrieved in a memory operation.
-      examples:
-      - |
-        [
-          {
-            "content": "User prefers dark mode",
-            "id": "mem_123",
-            "score": 0.95
-          },
-          {
-            "content": {
-              "preference": "vegetarian meals",
-              "confidence": 0.9
-            },
-            "metadata": {
-              "source": "profile"
-            }
-          }
-        ]
-      key: gen_ai.memory.records
-      note: |
-        Instrumentations MUST follow [Memory records JSON schema](/docs/gen-ai/gen-ai-memory-records.json).
-        When the attribute is recorded on events, it MUST be recorded in structured
-        form. When recorded on spans, it MAY be recorded as a JSON string if structured
-        format is not supported and SHOULD be recorded in structured form otherwise.
-
-        Instrumentations SHOULD NOT capture this attribute by default. Capture SHOULD be gated
-        by an explicit user opt-in, for example `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT`.
-
-        \u003e [!Warning]
-        \u003e This attribute may contain sensitive information including user/PII data.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level: opt_in
-      stability: development
-      type: any
-    - brief: The unique identifier of the memory store.
-      examples:
-      - ms_abc123
-      - user-preferences-store
-      key: gen_ai.memory.store.id
-      note: |
-        Semantic conventions for individual components SHOULD document what `gen_ai.memory.store.id` maps to within the implementation.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        conditionally_required: if applicable
-      stability: development
-      type: string
-    - brief: The name of the operation being performed.
-      key: gen_ai.operation.name
-      note: |
-        If one of the predefined values applies, but specific system uses a different name it\u0027s RECOMMENDED to document it in the semantic conventions for specific GenAI system and use system-specific name in the instrumentation. If a different name is not documented, instrumentation libraries SHOULD use applicable predefined value.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level: required
-      stability: development
-      type:
-        members:
-        - brief: Chat completion operation such as [OpenAI Chat API](https://platform.openai.com/docs/api-reference/chat)
-          id: chat
-          stability: development
-          value: chat
-        - brief: Multimodal content generation operation such as [Gemini Generate Content](https://ai.google.dev/api/generate-content)
-          id: generate_content
-          stability: development
-          value: generate_content
-        - brief: Text completions operation such as [OpenAI Completions API (Legacy)](https://platform.openai.com/docs/api-reference/completions)
-          id: text_completion
-          stability: development
-          value: text_completion
-        - brief: Embeddings operation such as [OpenAI Create embeddings API](https://platform.openai.com/docs/api-reference/embeddings/create)
-          id: embeddings
-          stability: development
-          value: embeddings
-        - brief: Retrieval operation such as [OpenAI Search Vector Store API](https://platform.openai.com/docs/api-reference/vector-stores/search)
-          id: retrieval
-          stability: development
-          value: retrieval
-        - brief: Create GenAI agent
-          id: create_agent
-          stability: development
-          value: create_agent
-        - brief: Invoke GenAI agent
-          id: invoke_agent
-          stability: development
-          value: invoke_agent
-        - brief: Execute a tool
-          id: execute_tool
-          stability: development
-          value: execute_tool
-        - brief: Invoke GenAI workflow
-          id: invoke_workflow
-          stability: development
-          value: invoke_workflow
-        - brief: Agent planning or task decomposition phase
-          id: plan
-          stability: development
-          value: plan
-        - brief: Search/query memories from a memory store
-          id: search_memory
-          stability: development
-          value: search_memory
-        - brief: Create new memory records
-          id: create_memory
-          stability: development
-          value: create_memory
-        - brief: Update existing memory records
-          id: update_memory
-          stability: development
-          value: update_memory
-        - brief: Create or update memory records without the caller choosing which
-          id: upsert_memory
-          stability: development
-          value: upsert_memory
-        - brief: Delete memory records
-          id: delete_memory
-          stability: development
-          value: delete_memory
-        - brief: Create or initialize a memory store
-          id: create_memory_store
-          stability: development
-          value: create_memory_store
-        - brief: Delete or deprovision a memory store
-          id: delete_memory_store
-          stability: development
-          value: delete_memory_store
-    - brief: The Generative AI provider as identified by the client or server instrumentation.
-      key: gen_ai.provider.name
-      note: |
-        The attribute SHOULD be set based on the instrumentation\u0027s best
-        knowledge and may differ from the actual model provider.
-
-        Multiple providers, including Azure OpenAI, Gemini, and AI hosting platforms
-        are accessible using the OpenAI REST API and corresponding client libraries,
-        but may proxy or host models from different providers.
-
-        The `gen_ai.request.model`, `gen_ai.response.model`, and `server.address`
-        attributes may help identify the actual system in use.
-
-        The `gen_ai.provider.name` attribute acts as a discriminator that
-        identifies the GenAI telemetry format flavor specific to that provider
-        within GenAI semantic conventions.
-        It SHOULD be set consistently with provider-specific attributes and signals.
-        For example, GenAI spans, metrics, and events related to AWS Bedrock
-        should have the `gen_ai.provider.name` set to `aws.bedrock` and include
-        applicable `aws.bedrock.*` attributes and are not expected to include
-        `openai.*` attributes.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        conditionally_required: if the operation is handled by a named external GenAI provider or service
-      stability: development
-      type:
-        members:
-        - brief: \u0027[OpenAI](https://openai.com/)\u0027
-          id: openai
-          stability: development
-          value: openai
-        - brief: Any Google generative AI endpoint
-          id: gcp.gen_ai
-          note: |
-            May be used when specific backend is unknown.
-          stability: development
-          value: gcp.gen_ai
-        - brief: \u0027[Vertex AI](https://cloud.google.com/vertex-ai)\u0027
-          id: gcp.vertex_ai
-          note: |
-            Used when accessing the \u0027aiplatform.googleapis.com\u0027 endpoint.
-          stability: development
-          value: gcp.vertex_ai
-        - brief: \u0027[Gemini](https://cloud.google.com/products/gemini)\u0027
-          id: gcp.gemini
-          note: |
-            Used when accessing the \u0027generativelanguage.googleapis.com\u0027 endpoint. Also known as the AI Studio API.
-          stability: development
-          value: gcp.gemini
-        - brief: \u0027[Anthropic](https://www.anthropic.com/)\u0027
-          id: anthropic
-          stability: development
-          value: anthropic
-        - brief: \u0027[Cohere](https://cohere.com/)\u0027
-          id: cohere
-          stability: development
-          value: cohere
-        - brief: Azure AI Inference
-          id: azure.ai.inference
-          stability: development
-          value: azure.ai.inference
-        - brief: \u0027[Azure OpenAI](https://learn.microsoft.com/en-us/azure/ai-services/openai/overview)\u0027
-          id: azure.ai.openai
-          stability: development
-          value: azure.ai.openai
-        - brief: \u0027[IBM Watsonx AI](https://www.ibm.com/products/watsonx-ai)\u0027
-          id: ibm.watsonx.ai
-          stability: development
-          value: ibm.watsonx.ai
-        - brief: \u0027[AWS Bedrock](https://aws.amazon.com/bedrock)\u0027
-          id: aws.bedrock
-          stability: development
-          value: aws.bedrock
-        - brief: \u0027[Perplexity](https://www.perplexity.ai/)\u0027
-          id: perplexity
-          stability: development
-          value: perplexity
-        - brief: \u0027[xAI](https://x.ai/)\u0027
-          id: x_ai
-          stability: development
-          value: x_ai
-        - brief: \u0027[DeepSeek](https://www.deepseek.com/)\u0027
-          id: deepseek
-          stability: development
-          value: deepseek
-        - brief: \u0027[Groq](https://groq.com/)\u0027
-          id: groq
-          stability: development
-          value: groq
-        - brief: \u0027[Mistral AI](https://mistral.ai/)\u0027
-          id: mistral_ai
-          stability: development
-          value: mistral_ai
-    - brief: GenAI server address.
-      examples:
-      - example.com
-      - 10.1.2.80
-      - /tmp/my.sock
-      key: server.address
-      note: |
-        When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent the server address behind any intermediaries, for example proxies, if it\u0027s available.
-      requirement_level: recommended
-      stability: stable
-      type: string
-    - brief: GenAI server port.
-      examples:
-      - 80
-      - 8080
-      - 443
-      key: server.port
-      note: |
-        When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries, for example proxies, if it\u0027s available.
-      requirement_level:
-        conditionally_required: If `server.address` is set.
-      stability: stable
-      type: int
-    brief: |
-      Describes a memory upsert operation that may create or update memory records in a memory store.
-    id: gen_ai.upsert_memory.client
-    kind: client
-    name:
-      note: gen_ai.upsert_memory.client
-    note: |
-      The `gen_ai.operation.name` SHOULD be `upsert_memory`.
-
-      This operation SHOULD be used when the caller invokes a public API that may create,
-      update, or consolidate memory records without the caller choosing which.
-
-      **Span name** SHOULD be `upsert_memory`.
-    provenance:
-      path: ./model/gen-ai/spans.yaml
-    stability: development
-    type: gen_ai.upsert_memory.client
   - attributes:
     - brief: |
         Describes a class of error the operation ended with.
@@ -18401,1044 +16794,6 @@ registry:
           id: other
           stability: stable
           value: _OTHER
-    - brief: The number of memory records relevant to the operation.
-      examples:
-      - 3
-      key: gen_ai.memory.record.count
-      note: |
-        For `search_memory` operations, this is the number of memory records returned by the operation. For `create_memory` operations, this is the number of memory records the operation attempted to create. For `update_memory` operations, this is the number of memory records the operation attempted to modify. For `upsert_memory` operations, this is the number of memory records the operation attempted to create or update.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level: recommended
-      stability: development
-      type: int
-    - brief: The memory records stored or retrieved in a memory operation.
-      examples:
-      - |
-        [
-          {
-            "content": "User prefers dark mode",
-            "id": "mem_123",
-            "score": 0.95
-          },
-          {
-            "content": {
-              "preference": "vegetarian meals",
-              "confidence": 0.9
-            },
-            "metadata": {
-              "source": "profile"
-            }
-          }
-        ]
-      key: gen_ai.memory.records
-      note: |
-        Instrumentations MUST follow [Memory records JSON schema](/docs/gen-ai/gen-ai-memory-records.json).
-        When the attribute is recorded on events, it MUST be recorded in structured
-        form. When recorded on spans, it MAY be recorded as a JSON string if structured
-        format is not supported and SHOULD be recorded in structured form otherwise.
-
-        Instrumentations SHOULD NOT capture this attribute by default. Capture SHOULD be gated
-        by an explicit user opt-in, for example `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT`.
-
-        \u003e [!Warning]
-        \u003e This attribute may contain sensitive information including user/PII data.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level: opt_in
-      stability: development
-      type: any
-    - brief: The unique identifier of the memory store.
-      examples:
-      - ms_abc123
-      - user-preferences-store
-      key: gen_ai.memory.store.id
-      note: |
-        Semantic conventions for individual components SHOULD document what `gen_ai.memory.store.id` maps to within the implementation.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        conditionally_required: if applicable
-      stability: development
-      type: string
-    - brief: The name of the operation being performed.
-      key: gen_ai.operation.name
-      note: |
-        If one of the predefined values applies, but specific system uses a different name it\u0027s RECOMMENDED to document it in the semantic conventions for specific GenAI system and use system-specific name in the instrumentation. If a different name is not documented, instrumentation libraries SHOULD use applicable predefined value.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level: required
-      stability: development
-      type:
-        members:
-        - brief: Chat completion operation such as [OpenAI Chat API](https://platform.openai.com/docs/api-reference/chat)
-          id: chat
-          stability: development
-          value: chat
-        - brief: Multimodal content generation operation such as [Gemini Generate Content](https://ai.google.dev/api/generate-content)
-          id: generate_content
-          stability: development
-          value: generate_content
-        - brief: Text completions operation such as [OpenAI Completions API (Legacy)](https://platform.openai.com/docs/api-reference/completions)
-          id: text_completion
-          stability: development
-          value: text_completion
-        - brief: Embeddings operation such as [OpenAI Create embeddings API](https://platform.openai.com/docs/api-reference/embeddings/create)
-          id: embeddings
-          stability: development
-          value: embeddings
-        - brief: Retrieval operation such as [OpenAI Search Vector Store API](https://platform.openai.com/docs/api-reference/vector-stores/search)
-          id: retrieval
-          stability: development
-          value: retrieval
-        - brief: Create GenAI agent
-          id: create_agent
-          stability: development
-          value: create_agent
-        - brief: Invoke GenAI agent
-          id: invoke_agent
-          stability: development
-          value: invoke_agent
-        - brief: Execute a tool
-          id: execute_tool
-          stability: development
-          value: execute_tool
-        - brief: Invoke GenAI workflow
-          id: invoke_workflow
-          stability: development
-          value: invoke_workflow
-        - brief: Agent planning or task decomposition phase
-          id: plan
-          stability: development
-          value: plan
-        - brief: Search/query memories from a memory store
-          id: search_memory
-          stability: development
-          value: search_memory
-        - brief: Create new memory records
-          id: create_memory
-          stability: development
-          value: create_memory
-        - brief: Update existing memory records
-          id: update_memory
-          stability: development
-          value: update_memory
-        - brief: Create or update memory records without the caller choosing which
-          id: upsert_memory
-          stability: development
-          value: upsert_memory
-        - brief: Delete memory records
-          id: delete_memory
-          stability: development
-          value: delete_memory
-        - brief: Create or initialize a memory store
-          id: create_memory_store
-          stability: development
-          value: create_memory_store
-        - brief: Delete or deprovision a memory store
-          id: delete_memory_store
-          stability: development
-          value: delete_memory_store
-    - brief: The Generative AI provider as identified by the client or server instrumentation.
-      key: gen_ai.provider.name
-      note: |
-        The attribute SHOULD be set based on the instrumentation\u0027s best
-        knowledge and may differ from the actual model provider.
-
-        Multiple providers, including Azure OpenAI, Gemini, and AI hosting platforms
-        are accessible using the OpenAI REST API and corresponding client libraries,
-        but may proxy or host models from different providers.
-
-        The `gen_ai.request.model`, `gen_ai.response.model`, and `server.address`
-        attributes may help identify the actual system in use.
-
-        The `gen_ai.provider.name` attribute acts as a discriminator that
-        identifies the GenAI telemetry format flavor specific to that provider
-        within GenAI semantic conventions.
-        It SHOULD be set consistently with provider-specific attributes and signals.
-        For example, GenAI spans, metrics, and events related to AWS Bedrock
-        should have the `gen_ai.provider.name` set to `aws.bedrock` and include
-        applicable `aws.bedrock.*` attributes and are not expected to include
-        `openai.*` attributes.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        conditionally_required: if the operation is handled by a named external GenAI provider or service
-      stability: development
-      type:
-        members:
-        - brief: \u0027[OpenAI](https://openai.com/)\u0027
-          id: openai
-          stability: development
-          value: openai
-        - brief: Any Google generative AI endpoint
-          id: gcp.gen_ai
-          note: |
-            May be used when specific backend is unknown.
-          stability: development
-          value: gcp.gen_ai
-        - brief: \u0027[Vertex AI](https://cloud.google.com/vertex-ai)\u0027
-          id: gcp.vertex_ai
-          note: |
-            Used when accessing the \u0027aiplatform.googleapis.com\u0027 endpoint.
-          stability: development
-          value: gcp.vertex_ai
-        - brief: \u0027[Gemini](https://cloud.google.com/products/gemini)\u0027
-          id: gcp.gemini
-          note: |
-            Used when accessing the \u0027generativelanguage.googleapis.com\u0027 endpoint. Also known as the AI Studio API.
-          stability: development
-          value: gcp.gemini
-        - brief: \u0027[Anthropic](https://www.anthropic.com/)\u0027
-          id: anthropic
-          stability: development
-          value: anthropic
-        - brief: \u0027[Cohere](https://cohere.com/)\u0027
-          id: cohere
-          stability: development
-          value: cohere
-        - brief: Azure AI Inference
-          id: azure.ai.inference
-          stability: development
-          value: azure.ai.inference
-        - brief: \u0027[Azure OpenAI](https://learn.microsoft.com/en-us/azure/ai-services/openai/overview)\u0027
-          id: azure.ai.openai
-          stability: development
-          value: azure.ai.openai
-        - brief: \u0027[IBM Watsonx AI](https://www.ibm.com/products/watsonx-ai)\u0027
-          id: ibm.watsonx.ai
-          stability: development
-          value: ibm.watsonx.ai
-        - brief: \u0027[AWS Bedrock](https://aws.amazon.com/bedrock)\u0027
-          id: aws.bedrock
-          stability: development
-          value: aws.bedrock
-        - brief: \u0027[Perplexity](https://www.perplexity.ai/)\u0027
-          id: perplexity
-          stability: development
-          value: perplexity
-        - brief: \u0027[xAI](https://x.ai/)\u0027
-          id: x_ai
-          stability: development
-          value: x_ai
-        - brief: \u0027[DeepSeek](https://www.deepseek.com/)\u0027
-          id: deepseek
-          stability: development
-          value: deepseek
-        - brief: \u0027[Groq](https://groq.com/)\u0027
-          id: groq
-          stability: development
-          value: groq
-        - brief: \u0027[Mistral AI](https://mistral.ai/)\u0027
-          id: mistral_ai
-          stability: development
-          value: mistral_ai
-    - brief: GenAI server address.
-      examples:
-      - example.com
-      - 10.1.2.80
-      - /tmp/my.sock
-      key: server.address
-      note: |
-        When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent the server address behind any intermediaries, for example proxies, if it\u0027s available.
-      requirement_level: recommended
-      stability: stable
-      type: string
-    - brief: GenAI server port.
-      examples:
-      - 80
-      - 8080
-      - 443
-      key: server.port
-      note: |
-        When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries, for example proxies, if it\u0027s available.
-      requirement_level:
-        conditionally_required: If `server.address` is set.
-      stability: stable
-      type: int
-    brief: |
-      Describes a memory create operation that creates new memory records in a memory store.
-    kind: client
-    name:
-      note: gen_ai.create_memory.client
-    note: |
-      The `gen_ai.operation.name` SHOULD be `create_memory`.
-
-      This operation SHOULD be used when the caller requests creation of new memory records.
-
-      **Span name** SHOULD be `create_memory`.
-    provenance:
-      path: ./model/gen-ai/spans.yaml
-    stability: development
-    type: gen_ai.create_memory.client
-  - attributes:
-    - brief: |
-        Describes a class of error the operation ended with.
-      examples:
-      - timeout
-      - java.net.UnknownHostException
-      - server_certificate_invalid
-      - \u0027500\u0027
-      key: error.type
-      note: |
-        The `error.type` SHOULD match the error code returned by the Generative AI provider or the client library,
-        the canonical name of exception that occurred, or another low-cardinality error identifier.
-        Instrumentations SHOULD document the list of errors they report.
-      requirement_level:
-        conditionally_required: if the operation ended in an error
-      stability: stable
-      type:
-        members:
-        - brief: |
-            A fallback error value to be used when the instrumentation doesn\u0027t define a custom value.
-          id: other
-          stability: stable
-          value: _OTHER
-    - brief: The unique identifier of the memory store.
-      examples:
-      - ms_abc123
-      - user-preferences-store
-      key: gen_ai.memory.store.id
-      note: |
-        Semantic conventions for individual components SHOULD document what `gen_ai.memory.store.id` maps to within the implementation.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        conditionally_required: if applicable
-      stability: development
-      type: string
-    - brief: The name of the operation being performed.
-      key: gen_ai.operation.name
-      note: |
-        If one of the predefined values applies, but specific system uses a different name it\u0027s RECOMMENDED to document it in the semantic conventions for specific GenAI system and use system-specific name in the instrumentation. If a different name is not documented, instrumentation libraries SHOULD use applicable predefined value.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level: required
-      stability: development
-      type:
-        members:
-        - brief: Chat completion operation such as [OpenAI Chat API](https://platform.openai.com/docs/api-reference/chat)
-          id: chat
-          stability: development
-          value: chat
-        - brief: Multimodal content generation operation such as [Gemini Generate Content](https://ai.google.dev/api/generate-content)
-          id: generate_content
-          stability: development
-          value: generate_content
-        - brief: Text completions operation such as [OpenAI Completions API (Legacy)](https://platform.openai.com/docs/api-reference/completions)
-          id: text_completion
-          stability: development
-          value: text_completion
-        - brief: Embeddings operation such as [OpenAI Create embeddings API](https://platform.openai.com/docs/api-reference/embeddings/create)
-          id: embeddings
-          stability: development
-          value: embeddings
-        - brief: Retrieval operation such as [OpenAI Search Vector Store API](https://platform.openai.com/docs/api-reference/vector-stores/search)
-          id: retrieval
-          stability: development
-          value: retrieval
-        - brief: Create GenAI agent
-          id: create_agent
-          stability: development
-          value: create_agent
-        - brief: Invoke GenAI agent
-          id: invoke_agent
-          stability: development
-          value: invoke_agent
-        - brief: Execute a tool
-          id: execute_tool
-          stability: development
-          value: execute_tool
-        - brief: Invoke GenAI workflow
-          id: invoke_workflow
-          stability: development
-          value: invoke_workflow
-        - brief: Agent planning or task decomposition phase
-          id: plan
-          stability: development
-          value: plan
-        - brief: Search/query memories from a memory store
-          id: search_memory
-          stability: development
-          value: search_memory
-        - brief: Create new memory records
-          id: create_memory
-          stability: development
-          value: create_memory
-        - brief: Update existing memory records
-          id: update_memory
-          stability: development
-          value: update_memory
-        - brief: Create or update memory records without the caller choosing which
-          id: upsert_memory
-          stability: development
-          value: upsert_memory
-        - brief: Delete memory records
-          id: delete_memory
-          stability: development
-          value: delete_memory
-        - brief: Create or initialize a memory store
-          id: create_memory_store
-          stability: development
-          value: create_memory_store
-        - brief: Delete or deprovision a memory store
-          id: delete_memory_store
-          stability: development
-          value: delete_memory_store
-    - brief: The Generative AI provider as identified by the client or server instrumentation.
-      key: gen_ai.provider.name
-      note: |
-        The attribute SHOULD be set based on the instrumentation\u0027s best
-        knowledge and may differ from the actual model provider.
-
-        Multiple providers, including Azure OpenAI, Gemini, and AI hosting platforms
-        are accessible using the OpenAI REST API and corresponding client libraries,
-        but may proxy or host models from different providers.
-
-        The `gen_ai.request.model`, `gen_ai.response.model`, and `server.address`
-        attributes may help identify the actual system in use.
-
-        The `gen_ai.provider.name` attribute acts as a discriminator that
-        identifies the GenAI telemetry format flavor specific to that provider
-        within GenAI semantic conventions.
-        It SHOULD be set consistently with provider-specific attributes and signals.
-        For example, GenAI spans, metrics, and events related to AWS Bedrock
-        should have the `gen_ai.provider.name` set to `aws.bedrock` and include
-        applicable `aws.bedrock.*` attributes and are not expected to include
-        `openai.*` attributes.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        conditionally_required: if the operation is handled by a named external GenAI provider or service
-      stability: development
-      type:
-        members:
-        - brief: \u0027[OpenAI](https://openai.com/)\u0027
-          id: openai
-          stability: development
-          value: openai
-        - brief: Any Google generative AI endpoint
-          id: gcp.gen_ai
-          note: |
-            May be used when specific backend is unknown.
-          stability: development
-          value: gcp.gen_ai
-        - brief: \u0027[Vertex AI](https://cloud.google.com/vertex-ai)\u0027
-          id: gcp.vertex_ai
-          note: |
-            Used when accessing the \u0027aiplatform.googleapis.com\u0027 endpoint.
-          stability: development
-          value: gcp.vertex_ai
-        - brief: \u0027[Gemini](https://cloud.google.com/products/gemini)\u0027
-          id: gcp.gemini
-          note: |
-            Used when accessing the \u0027generativelanguage.googleapis.com\u0027 endpoint. Also known as the AI Studio API.
-          stability: development
-          value: gcp.gemini
-        - brief: \u0027[Anthropic](https://www.anthropic.com/)\u0027
-          id: anthropic
-          stability: development
-          value: anthropic
-        - brief: \u0027[Cohere](https://cohere.com/)\u0027
-          id: cohere
-          stability: development
-          value: cohere
-        - brief: Azure AI Inference
-          id: azure.ai.inference
-          stability: development
-          value: azure.ai.inference
-        - brief: \u0027[Azure OpenAI](https://learn.microsoft.com/en-us/azure/ai-services/openai/overview)\u0027
-          id: azure.ai.openai
-          stability: development
-          value: azure.ai.openai
-        - brief: \u0027[IBM Watsonx AI](https://www.ibm.com/products/watsonx-ai)\u0027
-          id: ibm.watsonx.ai
-          stability: development
-          value: ibm.watsonx.ai
-        - brief: \u0027[AWS Bedrock](https://aws.amazon.com/bedrock)\u0027
-          id: aws.bedrock
-          stability: development
-          value: aws.bedrock
-        - brief: \u0027[Perplexity](https://www.perplexity.ai/)\u0027
-          id: perplexity
-          stability: development
-          value: perplexity
-        - brief: \u0027[xAI](https://x.ai/)\u0027
-          id: x_ai
-          stability: development
-          value: x_ai
-        - brief: \u0027[DeepSeek](https://www.deepseek.com/)\u0027
-          id: deepseek
-          stability: development
-          value: deepseek
-        - brief: \u0027[Groq](https://groq.com/)\u0027
-          id: groq
-          stability: development
-          value: groq
-        - brief: \u0027[Mistral AI](https://mistral.ai/)\u0027
-          id: mistral_ai
-          stability: development
-          value: mistral_ai
-    - brief: GenAI server address.
-      examples:
-      - example.com
-      - 10.1.2.80
-      - /tmp/my.sock
-      key: server.address
-      note: |
-        When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent the server address behind any intermediaries, for example proxies, if it\u0027s available.
-      requirement_level: recommended
-      stability: stable
-      type: string
-    - brief: GenAI server port.
-      examples:
-      - 80
-      - 8080
-      - 443
-      key: server.port
-      note: |
-        When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries, for example proxies, if it\u0027s available.
-      requirement_level:
-        conditionally_required: If `server.address` is set.
-      stability: stable
-      type: int
-    brief: |
-      Describes creation or initialization of a memory store.
-    kind: client
-    name:
-      note: gen_ai.create_memory_store.client
-    note: |
-      The `gen_ai.operation.name` SHOULD be `create_memory_store`.
-
-      **Span name** SHOULD be `create_memory_store`.
-    provenance:
-      path: ./model/gen-ai/spans.yaml
-    stability: development
-    type: gen_ai.create_memory_store.client
-  - attributes:
-    - brief: |
-        Describes a class of error the operation ended with.
-      examples:
-      - timeout
-      - java.net.UnknownHostException
-      - server_certificate_invalid
-      - \u0027500\u0027
-      key: error.type
-      note: |
-        The `error.type` SHOULD match the error code returned by the Generative AI provider or the client library,
-        the canonical name of exception that occurred, or another low-cardinality error identifier.
-        Instrumentations SHOULD document the list of errors they report.
-      requirement_level:
-        conditionally_required: if the operation ended in an error
-      stability: stable
-      type:
-        members:
-        - brief: |
-            A fallback error value to be used when the instrumentation doesn\u0027t define a custom value.
-          id: other
-          stability: stable
-          value: _OTHER
-    - brief: The unique identifier of the memory record.
-      examples:
-      - mem_5j66UpCpwteGg4YSxUnt7lPY
-      key: gen_ai.memory.record.id
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        conditionally_required: when deleting a specific memory record
-      stability: development
-      type: string
-    - brief: The unique identifier of the memory store.
-      examples:
-      - ms_abc123
-      - user-preferences-store
-      key: gen_ai.memory.store.id
-      note: |
-        Semantic conventions for individual components SHOULD document what `gen_ai.memory.store.id` maps to within the implementation.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        conditionally_required: if applicable
-      stability: development
-      type: string
-    - brief: The name of the operation being performed.
-      key: gen_ai.operation.name
-      note: |
-        If one of the predefined values applies, but specific system uses a different name it\u0027s RECOMMENDED to document it in the semantic conventions for specific GenAI system and use system-specific name in the instrumentation. If a different name is not documented, instrumentation libraries SHOULD use applicable predefined value.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level: required
-      stability: development
-      type:
-        members:
-        - brief: Chat completion operation such as [OpenAI Chat API](https://platform.openai.com/docs/api-reference/chat)
-          id: chat
-          stability: development
-          value: chat
-        - brief: Multimodal content generation operation such as [Gemini Generate Content](https://ai.google.dev/api/generate-content)
-          id: generate_content
-          stability: development
-          value: generate_content
-        - brief: Text completions operation such as [OpenAI Completions API (Legacy)](https://platform.openai.com/docs/api-reference/completions)
-          id: text_completion
-          stability: development
-          value: text_completion
-        - brief: Embeddings operation such as [OpenAI Create embeddings API](https://platform.openai.com/docs/api-reference/embeddings/create)
-          id: embeddings
-          stability: development
-          value: embeddings
-        - brief: Retrieval operation such as [OpenAI Search Vector Store API](https://platform.openai.com/docs/api-reference/vector-stores/search)
-          id: retrieval
-          stability: development
-          value: retrieval
-        - brief: Create GenAI agent
-          id: create_agent
-          stability: development
-          value: create_agent
-        - brief: Invoke GenAI agent
-          id: invoke_agent
-          stability: development
-          value: invoke_agent
-        - brief: Execute a tool
-          id: execute_tool
-          stability: development
-          value: execute_tool
-        - brief: Invoke GenAI workflow
-          id: invoke_workflow
-          stability: development
-          value: invoke_workflow
-        - brief: Agent planning or task decomposition phase
-          id: plan
-          stability: development
-          value: plan
-        - brief: Search/query memories from a memory store
-          id: search_memory
-          stability: development
-          value: search_memory
-        - brief: Create new memory records
-          id: create_memory
-          stability: development
-          value: create_memory
-        - brief: Update existing memory records
-          id: update_memory
-          stability: development
-          value: update_memory
-        - brief: Create or update memory records without the caller choosing which
-          id: upsert_memory
-          stability: development
-          value: upsert_memory
-        - brief: Delete memory records
-          id: delete_memory
-          stability: development
-          value: delete_memory
-        - brief: Create or initialize a memory store
-          id: create_memory_store
-          stability: development
-          value: create_memory_store
-        - brief: Delete or deprovision a memory store
-          id: delete_memory_store
-          stability: development
-          value: delete_memory_store
-    - brief: The Generative AI provider as identified by the client or server instrumentation.
-      key: gen_ai.provider.name
-      note: |
-        The attribute SHOULD be set based on the instrumentation\u0027s best
-        knowledge and may differ from the actual model provider.
-
-        Multiple providers, including Azure OpenAI, Gemini, and AI hosting platforms
-        are accessible using the OpenAI REST API and corresponding client libraries,
-        but may proxy or host models from different providers.
-
-        The `gen_ai.request.model`, `gen_ai.response.model`, and `server.address`
-        attributes may help identify the actual system in use.
-
-        The `gen_ai.provider.name` attribute acts as a discriminator that
-        identifies the GenAI telemetry format flavor specific to that provider
-        within GenAI semantic conventions.
-        It SHOULD be set consistently with provider-specific attributes and signals.
-        For example, GenAI spans, metrics, and events related to AWS Bedrock
-        should have the `gen_ai.provider.name` set to `aws.bedrock` and include
-        applicable `aws.bedrock.*` attributes and are not expected to include
-        `openai.*` attributes.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        conditionally_required: if the operation is handled by a named external GenAI provider or service
-      stability: development
-      type:
-        members:
-        - brief: \u0027[OpenAI](https://openai.com/)\u0027
-          id: openai
-          stability: development
-          value: openai
-        - brief: Any Google generative AI endpoint
-          id: gcp.gen_ai
-          note: |
-            May be used when specific backend is unknown.
-          stability: development
-          value: gcp.gen_ai
-        - brief: \u0027[Vertex AI](https://cloud.google.com/vertex-ai)\u0027
-          id: gcp.vertex_ai
-          note: |
-            Used when accessing the \u0027aiplatform.googleapis.com\u0027 endpoint.
-          stability: development
-          value: gcp.vertex_ai
-        - brief: \u0027[Gemini](https://cloud.google.com/products/gemini)\u0027
-          id: gcp.gemini
-          note: |
-            Used when accessing the \u0027generativelanguage.googleapis.com\u0027 endpoint. Also known as the AI Studio API.
-          stability: development
-          value: gcp.gemini
-        - brief: \u0027[Anthropic](https://www.anthropic.com/)\u0027
-          id: anthropic
-          stability: development
-          value: anthropic
-        - brief: \u0027[Cohere](https://cohere.com/)\u0027
-          id: cohere
-          stability: development
-          value: cohere
-        - brief: Azure AI Inference
-          id: azure.ai.inference
-          stability: development
-          value: azure.ai.inference
-        - brief: \u0027[Azure OpenAI](https://learn.microsoft.com/en-us/azure/ai-services/openai/overview)\u0027
-          id: azure.ai.openai
-          stability: development
-          value: azure.ai.openai
-        - brief: \u0027[IBM Watsonx AI](https://www.ibm.com/products/watsonx-ai)\u0027
-          id: ibm.watsonx.ai
-          stability: development
-          value: ibm.watsonx.ai
-        - brief: \u0027[AWS Bedrock](https://aws.amazon.com/bedrock)\u0027
-          id: aws.bedrock
-          stability: development
-          value: aws.bedrock
-        - brief: \u0027[Perplexity](https://www.perplexity.ai/)\u0027
-          id: perplexity
-          stability: development
-          value: perplexity
-        - brief: \u0027[xAI](https://x.ai/)\u0027
-          id: x_ai
-          stability: development
-          value: x_ai
-        - brief: \u0027[DeepSeek](https://www.deepseek.com/)\u0027
-          id: deepseek
-          stability: development
-          value: deepseek
-        - brief: \u0027[Groq](https://groq.com/)\u0027
-          id: groq
-          stability: development
-          value: groq
-        - brief: \u0027[Mistral AI](https://mistral.ai/)\u0027
-          id: mistral_ai
-          stability: development
-          value: mistral_ai
-    - brief: GenAI server address.
-      examples:
-      - example.com
-      - 10.1.2.80
-      - /tmp/my.sock
-      key: server.address
-      note: |
-        When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent the server address behind any intermediaries, for example proxies, if it\u0027s available.
-      requirement_level: recommended
-      stability: stable
-      type: string
-    - brief: GenAI server port.
-      examples:
-      - 80
-      - 8080
-      - 443
-      key: server.port
-      note: |
-        When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries, for example proxies, if it\u0027s available.
-      requirement_level:
-        conditionally_required: If `server.address` is set.
-      stability: stable
-      type: int
-    brief: |
-      Describes a memory deletion operation that removes one or more memory records.
-    kind: client
-    name:
-      note: gen_ai.delete_memory.client
-    note: |
-      The `gen_ai.operation.name` SHOULD be `delete_memory`.
-
-      **Span name** SHOULD be `delete_memory`.
-
-      Depending on the instrumented library, lack of `gen_ai.memory.record.id` may indicate that
-      the operation intends to delete all memory records in the specified store.
-    provenance:
-      path: ./model/gen-ai/spans.yaml
-    stability: development
-    type: gen_ai.delete_memory.client
-  - attributes:
-    - brief: |
-        Describes a class of error the operation ended with.
-      examples:
-      - timeout
-      - java.net.UnknownHostException
-      - server_certificate_invalid
-      - \u0027500\u0027
-      key: error.type
-      note: |
-        The `error.type` SHOULD match the error code returned by the Generative AI provider or the client library,
-        the canonical name of exception that occurred, or another low-cardinality error identifier.
-        Instrumentations SHOULD document the list of errors they report.
-      requirement_level:
-        conditionally_required: if the operation ended in an error
-      stability: stable
-      type:
-        members:
-        - brief: |
-            A fallback error value to be used when the instrumentation doesn\u0027t define a custom value.
-          id: other
-          stability: stable
-          value: _OTHER
-    - brief: The unique identifier of the memory store.
-      examples:
-      - ms_abc123
-      - user-preferences-store
-      key: gen_ai.memory.store.id
-      note: |
-        Semantic conventions for individual components SHOULD document what `gen_ai.memory.store.id` maps to within the implementation.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        conditionally_required: if applicable
-      stability: development
-      type: string
-    - brief: The name of the operation being performed.
-      key: gen_ai.operation.name
-      note: |
-        If one of the predefined values applies, but specific system uses a different name it\u0027s RECOMMENDED to document it in the semantic conventions for specific GenAI system and use system-specific name in the instrumentation. If a different name is not documented, instrumentation libraries SHOULD use applicable predefined value.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level: required
-      stability: development
-      type:
-        members:
-        - brief: Chat completion operation such as [OpenAI Chat API](https://platform.openai.com/docs/api-reference/chat)
-          id: chat
-          stability: development
-          value: chat
-        - brief: Multimodal content generation operation such as [Gemini Generate Content](https://ai.google.dev/api/generate-content)
-          id: generate_content
-          stability: development
-          value: generate_content
-        - brief: Text completions operation such as [OpenAI Completions API (Legacy)](https://platform.openai.com/docs/api-reference/completions)
-          id: text_completion
-          stability: development
-          value: text_completion
-        - brief: Embeddings operation such as [OpenAI Create embeddings API](https://platform.openai.com/docs/api-reference/embeddings/create)
-          id: embeddings
-          stability: development
-          value: embeddings
-        - brief: Retrieval operation such as [OpenAI Search Vector Store API](https://platform.openai.com/docs/api-reference/vector-stores/search)
-          id: retrieval
-          stability: development
-          value: retrieval
-        - brief: Create GenAI agent
-          id: create_agent
-          stability: development
-          value: create_agent
-        - brief: Invoke GenAI agent
-          id: invoke_agent
-          stability: development
-          value: invoke_agent
-        - brief: Execute a tool
-          id: execute_tool
-          stability: development
-          value: execute_tool
-        - brief: Invoke GenAI workflow
-          id: invoke_workflow
-          stability: development
-          value: invoke_workflow
-        - brief: Agent planning or task decomposition phase
-          id: plan
-          stability: development
-          value: plan
-        - brief: Search/query memories from a memory store
-          id: search_memory
-          stability: development
-          value: search_memory
-        - brief: Create new memory records
-          id: create_memory
-          stability: development
-          value: create_memory
-        - brief: Update existing memory records
-          id: update_memory
-          stability: development
-          value: update_memory
-        - brief: Create or update memory records without the caller choosing which
-          id: upsert_memory
-          stability: development
-          value: upsert_memory
-        - brief: Delete memory records
-          id: delete_memory
-          stability: development
-          value: delete_memory
-        - brief: Create or initialize a memory store
-          id: create_memory_store
-          stability: development
-          value: create_memory_store
-        - brief: Delete or deprovision a memory store
-          id: delete_memory_store
-          stability: development
-          value: delete_memory_store
-    - brief: The Generative AI provider as identified by the client or server instrumentation.
-      key: gen_ai.provider.name
-      note: |
-        The attribute SHOULD be set based on the instrumentation\u0027s best
-        knowledge and may differ from the actual model provider.
-
-        Multiple providers, including Azure OpenAI, Gemini, and AI hosting platforms
-        are accessible using the OpenAI REST API and corresponding client libraries,
-        but may proxy or host models from different providers.
-
-        The `gen_ai.request.model`, `gen_ai.response.model`, and `server.address`
-        attributes may help identify the actual system in use.
-
-        The `gen_ai.provider.name` attribute acts as a discriminator that
-        identifies the GenAI telemetry format flavor specific to that provider
-        within GenAI semantic conventions.
-        It SHOULD be set consistently with provider-specific attributes and signals.
-        For example, GenAI spans, metrics, and events related to AWS Bedrock
-        should have the `gen_ai.provider.name` set to `aws.bedrock` and include
-        applicable `aws.bedrock.*` attributes and are not expected to include
-        `openai.*` attributes.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        conditionally_required: if the operation is handled by a named external GenAI provider or service
-      stability: development
-      type:
-        members:
-        - brief: \u0027[OpenAI](https://openai.com/)\u0027
-          id: openai
-          stability: development
-          value: openai
-        - brief: Any Google generative AI endpoint
-          id: gcp.gen_ai
-          note: |
-            May be used when specific backend is unknown.
-          stability: development
-          value: gcp.gen_ai
-        - brief: \u0027[Vertex AI](https://cloud.google.com/vertex-ai)\u0027
-          id: gcp.vertex_ai
-          note: |
-            Used when accessing the \u0027aiplatform.googleapis.com\u0027 endpoint.
-          stability: development
-          value: gcp.vertex_ai
-        - brief: \u0027[Gemini](https://cloud.google.com/products/gemini)\u0027
-          id: gcp.gemini
-          note: |
-            Used when accessing the \u0027generativelanguage.googleapis.com\u0027 endpoint. Also known as the AI Studio API.
-          stability: development
-          value: gcp.gemini
-        - brief: \u0027[Anthropic](https://www.anthropic.com/)\u0027
-          id: anthropic
-          stability: development
-          value: anthropic
-        - brief: \u0027[Cohere](https://cohere.com/)\u0027
-          id: cohere
-          stability: development
-          value: cohere
-        - brief: Azure AI Inference
-          id: azure.ai.inference
-          stability: development
-          value: azure.ai.inference
-        - brief: \u0027[Azure OpenAI](https://learn.microsoft.com/en-us/azure/ai-services/openai/overview)\u0027
-          id: azure.ai.openai
-          stability: development
-          value: azure.ai.openai
-        - brief: \u0027[IBM Watsonx AI](https://www.ibm.com/products/watsonx-ai)\u0027
-          id: ibm.watsonx.ai
-          stability: development
-          value: ibm.watsonx.ai
-        - brief: \u0027[AWS Bedrock](https://aws.amazon.com/bedrock)\u0027
-          id: aws.bedrock
-          stability: development
-          value: aws.bedrock
-        - brief: \u0027[Perplexity](https://www.perplexity.ai/)\u0027
-          id: perplexity
-          stability: development
-          value: perplexity
-        - brief: \u0027[xAI](https://x.ai/)\u0027
-          id: x_ai
-          stability: development
-          value: x_ai
-        - brief: \u0027[DeepSeek](https://www.deepseek.com/)\u0027
-          id: deepseek
-          stability: development
-          value: deepseek
-        - brief: \u0027[Groq](https://groq.com/)\u0027
-          id: groq
-          stability: development
-          value: groq
-        - brief: \u0027[Mistral AI](https://mistral.ai/)\u0027
-          id: mistral_ai
-          stability: development
-          value: mistral_ai
-    - brief: GenAI server address.
-      examples:
-      - example.com
-      - 10.1.2.80
-      - /tmp/my.sock
-      key: server.address
-      note: |
-        When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent the server address behind any intermediaries, for example proxies, if it\u0027s available.
-      requirement_level: recommended
-      stability: stable
-      type: string
-    - brief: GenAI server port.
-      examples:
-      - 80
-      - 8080
-      - 443
-      key: server.port
-      note: |
-        When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries, for example proxies, if it\u0027s available.
-      requirement_level:
-        conditionally_required: If `server.address` is set.
-      stability: stable
-      type: int
-    brief: |
-      Describes deletion or deprovisioning of a memory store.
-    kind: client
-    name:
-      note: gen_ai.delete_memory_store.client
-    note: |
-      The `gen_ai.operation.name` SHOULD be `delete_memory_store`.
-
-      **Span name** SHOULD be `delete_memory_store`.
-    provenance:
-      path: ./model/gen-ai/spans.yaml
-    stability: development
-    type: gen_ai.delete_memory_store.client
-  - attributes:
-    - brief: |
-        Describes a class of error the operation ended with.
-      examples:
-      - timeout
-      - java.net.UnknownHostException
-      - server_certificate_invalid
-      - \u0027500\u0027
-      key: error.type
-      note: |
-        The `error.type` SHOULD match the error code returned by the Generative AI provider or the client library,
-        the canonical name of exception that occurred, or another low-cardinality error identifier.
-        Instrumentations SHOULD document the list of errors they report.
-      requirement_level:
-        conditionally_required: if the operation ended in an error
-      stability: stable
-      type:
-        members:
-        - brief: |
-            A fallback error value to be used when the instrumentation doesn\u0027t define a custom value.
-          id: other
-          stability: stable
-          value: _OTHER
     - brief: The number of dimensions the resulting output embeddings should have.
       examples:
       - 512
@@ -22214,6 +19569,337 @@ registry:
           id: other
           stability: stable
           value: _OTHER
+    - brief: The search query used to retrieve memories.
+      examples:
+      - user dietary preferences
+      - past flight bookings
+      key: gen_ai.memory.query.text
+      note: |
+        Instrumentations SHOULD NOT capture this attribute by default. Capture SHOULD be gated
+        by an explicit user opt-in, for example `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT`.
+
+        \u003e [!Warning]
+        \u003e This attribute may contain sensitive information.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: opt_in
+      stability: development
+      type: string
+    - brief: The number of memory records relevant to the operation.
+      examples:
+      - 3
+      key: gen_ai.memory.record.count
+      note: |
+        For `search_memory` operations, this is the number of memory records returned by the operation. For `create_memory` operations, this is the number of memory records the operation attempted to create. For `update_memory` operations, this is the number of memory records the operation attempted to modify. For `upsert_memory` operations, this is the number of memory records the operation attempted to create or update.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: if the operation involves memory records and the count is available
+      stability: development
+      type: int
+    - brief: The unique identifier of the memory record.
+      examples:
+      - mem_5j66UpCpwteGg4YSxUnt7lPY
+      key: gen_ai.memory.record.id
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: when the operation applies to a specific memory record
+      stability: development
+      type: string
+    - brief: The memory records stored or retrieved in a memory operation.
+      examples:
+      - |
+        [
+          {
+            "content": "User prefers dark mode",
+            "id": "mem_123",
+            "score": 0.95
+          },
+          {
+            "content": {
+              "preference": "vegetarian meals",
+              "confidence": 0.9
+            },
+            "metadata": {
+              "source": "profile"
+            }
+          }
+        ]
+      key: gen_ai.memory.records
+      note: |
+        Instrumentations MUST follow [Memory records JSON schema](/docs/gen-ai/gen-ai-memory-records.json).
+        When the attribute is recorded on events, it MUST be recorded in structured
+        form. When recorded on spans, it MAY be recorded as a JSON string if structured
+        format is not supported and SHOULD be recorded in structured form otherwise.
+
+        Instrumentations SHOULD NOT capture this attribute by default. Capture SHOULD be gated
+        by an explicit user opt-in, for example `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT`.
+
+        \u003e [!Warning]
+        \u003e This attribute may contain sensitive information including user/PII data.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: opt_in
+      stability: development
+      type: any
+    - brief: The unique identifier of the memory store.
+      examples:
+      - ms_abc123
+      - user-preferences-store
+      key: gen_ai.memory.store.id
+      note: |
+        Semantic conventions for individual components SHOULD document what `gen_ai.memory.store.id` maps to within the implementation.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: if applicable
+      stability: development
+      type: string
+    - brief: The name of the operation being performed.
+      key: gen_ai.operation.name
+      note: |
+        If one of the predefined values applies, but specific system uses a different name it\u0027s RECOMMENDED to document it in the semantic conventions for specific GenAI system and use system-specific name in the instrumentation. If a different name is not documented, instrumentation libraries SHOULD use applicable predefined value.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: required
+      stability: development
+      type:
+        members:
+        - brief: Chat completion operation such as [OpenAI Chat API](https://platform.openai.com/docs/api-reference/chat)
+          id: chat
+          stability: development
+          value: chat
+        - brief: Multimodal content generation operation such as [Gemini Generate Content](https://ai.google.dev/api/generate-content)
+          id: generate_content
+          stability: development
+          value: generate_content
+        - brief: Text completions operation such as [OpenAI Completions API (Legacy)](https://platform.openai.com/docs/api-reference/completions)
+          id: text_completion
+          stability: development
+          value: text_completion
+        - brief: Embeddings operation such as [OpenAI Create embeddings API](https://platform.openai.com/docs/api-reference/embeddings/create)
+          id: embeddings
+          stability: development
+          value: embeddings
+        - brief: Retrieval operation such as [OpenAI Search Vector Store API](https://platform.openai.com/docs/api-reference/vector-stores/search)
+          id: retrieval
+          stability: development
+          value: retrieval
+        - brief: Create GenAI agent
+          id: create_agent
+          stability: development
+          value: create_agent
+        - brief: Invoke GenAI agent
+          id: invoke_agent
+          stability: development
+          value: invoke_agent
+        - brief: Execute a tool
+          id: execute_tool
+          stability: development
+          value: execute_tool
+        - brief: Invoke GenAI workflow
+          id: invoke_workflow
+          stability: development
+          value: invoke_workflow
+        - brief: Agent planning or task decomposition phase
+          id: plan
+          stability: development
+          value: plan
+        - brief: Search/query memories from a memory store
+          id: search_memory
+          stability: development
+          value: search_memory
+        - brief: Create new memory records
+          id: create_memory
+          stability: development
+          value: create_memory
+        - brief: Update existing memory records
+          id: update_memory
+          stability: development
+          value: update_memory
+        - brief: Create or update memory records without the caller choosing which
+          id: upsert_memory
+          stability: development
+          value: upsert_memory
+        - brief: Delete memory records
+          id: delete_memory
+          stability: development
+          value: delete_memory
+        - brief: Create or initialize a memory store
+          id: create_memory_store
+          stability: development
+          value: create_memory_store
+        - brief: Delete or deprovision a memory store
+          id: delete_memory_store
+          stability: development
+          value: delete_memory_store
+    - brief: The Generative AI provider as identified by the client or server instrumentation.
+      key: gen_ai.provider.name
+      note: |
+        The attribute SHOULD be set based on the instrumentation\u0027s best
+        knowledge and may differ from the actual model provider.
+
+        Multiple providers, including Azure OpenAI, Gemini, and AI hosting platforms
+        are accessible using the OpenAI REST API and corresponding client libraries,
+        but may proxy or host models from different providers.
+
+        The `gen_ai.request.model`, `gen_ai.response.model`, and `server.address`
+        attributes may help identify the actual system in use.
+
+        The `gen_ai.provider.name` attribute acts as a discriminator that
+        identifies the GenAI telemetry format flavor specific to that provider
+        within GenAI semantic conventions.
+        It SHOULD be set consistently with provider-specific attributes and signals.
+        For example, GenAI spans, metrics, and events related to AWS Bedrock
+        should have the `gen_ai.provider.name` set to `aws.bedrock` and include
+        applicable `aws.bedrock.*` attributes and are not expected to include
+        `openai.*` attributes.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: if the operation is handled by a named external GenAI provider or service
+      stability: development
+      type:
+        members:
+        - brief: \u0027[OpenAI](https://openai.com/)\u0027
+          id: openai
+          stability: development
+          value: openai
+        - brief: Any Google generative AI endpoint
+          id: gcp.gen_ai
+          note: |
+            May be used when specific backend is unknown.
+          stability: development
+          value: gcp.gen_ai
+        - brief: \u0027[Vertex AI](https://cloud.google.com/vertex-ai)\u0027
+          id: gcp.vertex_ai
+          note: |
+            Used when accessing the \u0027aiplatform.googleapis.com\u0027 endpoint.
+          stability: development
+          value: gcp.vertex_ai
+        - brief: \u0027[Gemini](https://cloud.google.com/products/gemini)\u0027
+          id: gcp.gemini
+          note: |
+            Used when accessing the \u0027generativelanguage.googleapis.com\u0027 endpoint. Also known as the AI Studio API.
+          stability: development
+          value: gcp.gemini
+        - brief: \u0027[Anthropic](https://www.anthropic.com/)\u0027
+          id: anthropic
+          stability: development
+          value: anthropic
+        - brief: \u0027[Cohere](https://cohere.com/)\u0027
+          id: cohere
+          stability: development
+          value: cohere
+        - brief: Azure AI Inference
+          id: azure.ai.inference
+          stability: development
+          value: azure.ai.inference
+        - brief: \u0027[Azure OpenAI](https://learn.microsoft.com/en-us/azure/ai-services/openai/overview)\u0027
+          id: azure.ai.openai
+          stability: development
+          value: azure.ai.openai
+        - brief: \u0027[IBM Watsonx AI](https://www.ibm.com/products/watsonx-ai)\u0027
+          id: ibm.watsonx.ai
+          stability: development
+          value: ibm.watsonx.ai
+        - brief: \u0027[AWS Bedrock](https://aws.amazon.com/bedrock)\u0027
+          id: aws.bedrock
+          stability: development
+          value: aws.bedrock
+        - brief: \u0027[Perplexity](https://www.perplexity.ai/)\u0027
+          id: perplexity
+          stability: development
+          value: perplexity
+        - brief: \u0027[xAI](https://x.ai/)\u0027
+          id: x_ai
+          stability: development
+          value: x_ai
+        - brief: \u0027[DeepSeek](https://www.deepseek.com/)\u0027
+          id: deepseek
+          stability: development
+          value: deepseek
+        - brief: \u0027[Groq](https://groq.com/)\u0027
+          id: groq
+          stability: development
+          value: groq
+        - brief: \u0027[Mistral AI](https://mistral.ai/)\u0027
+          id: mistral_ai
+          stability: development
+          value: mistral_ai
+    - brief: GenAI server address.
+      examples:
+      - example.com
+      - 10.1.2.80
+      - /tmp/my.sock
+      key: server.address
+      note: |
+        When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent the server address behind any intermediaries, for example proxies, if it\u0027s available.
+      requirement_level: recommended
+      stability: stable
+      type: string
+    - brief: GenAI server port.
+      examples:
+      - 80
+      - 8080
+      - 443
+      key: server.port
+      note: |
+        When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries, for example proxies, if it\u0027s available.
+      requirement_level:
+        conditionally_required: If `server.address` is set.
+      stability: stable
+      type: int
+    brief: |
+      Describes a memory operation, including memory store lifecycle operations and memory record operations.
+    kind: client
+    name:
+      note: gen_ai.memory.client
+    note: |
+      The `gen_ai.operation.name` SHOULD be one of `create_memory_store`, `search_memory`, `create_memory`,
+      `update_memory`, `upsert_memory`, `delete_memory`, or `delete_memory_store`.
+
+      `create_memory_store` and `delete_memory_store` cover memory store lifecycle operations.
+      `create_memory`, `update_memory`, `upsert_memory`, `search_memory`, and `delete_memory`
+      cover memory record operations.
+
+      Use `create_memory` when the caller requests creation of new memory records.
+      Use `update_memory` when the caller requests modification of known existing memory records.
+      Use `upsert_memory` when the caller invokes a public API that may create, update, or consolidate
+      memory records without the caller choosing which.
+
+      **Span name** SHOULD be `{gen_ai.operation.name}`.
+
+      For `delete_memory`, lack of `gen_ai.memory.record.id` may indicate that
+      the operation intends to delete all memory records in the specified store.
+    provenance:
+      path: ./model/gen-ai/spans.yaml
+    stability: development
+    type: gen_ai.memory.client
+  - attributes:
+    - brief: |
+        Describes a class of error the operation ended with.
+      examples:
+      - timeout
+      - java.net.UnknownHostException
+      - server_certificate_invalid
+      - \u0027500\u0027
+      key: error.type
+      note: |
+        The `error.type` SHOULD match the error code returned by the Generative AI provider or the client library,
+        the canonical name of exception that occurred, or another low-cardinality error identifier.
+        Instrumentations SHOULD document the list of errors they report.
+      requirement_level:
+        conditionally_required: if the operation ended in an error
+      stability: stable
+      type:
+        members:
+        - brief: |
+            A fallback error value to be used when the instrumentation doesn\u0027t define a custom value.
+          id: other
+          stability: stable
+          value: _OTHER
     - brief: The unique identifier of the GenAI agent.
       examples:
       - asst_5j66UpCpwteGg4YSxUnt7lPY
@@ -22647,900 +20333,6 @@ registry:
       path: ./model/gen-ai/spans.yaml
     stability: development
     type: gen_ai.retrieval.client
-  - attributes:
-    - brief: |
-        Describes a class of error the operation ended with.
-      examples:
-      - timeout
-      - java.net.UnknownHostException
-      - server_certificate_invalid
-      - \u0027500\u0027
-      key: error.type
-      note: |
-        The `error.type` SHOULD match the error code returned by the Generative AI provider or the client library,
-        the canonical name of exception that occurred, or another low-cardinality error identifier.
-        Instrumentations SHOULD document the list of errors they report.
-      requirement_level:
-        conditionally_required: if the operation ended in an error
-      stability: stable
-      type:
-        members:
-        - brief: |
-            A fallback error value to be used when the instrumentation doesn\u0027t define a custom value.
-          id: other
-          stability: stable
-          value: _OTHER
-    - brief: The search query used to retrieve memories.
-      examples:
-      - user dietary preferences
-      - past flight bookings
-      key: gen_ai.memory.query.text
-      note: |
-        Instrumentations SHOULD NOT capture this attribute by default. Capture SHOULD be gated
-        by an explicit user opt-in, for example `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT`.
-
-        \u003e [!Warning]
-        \u003e This attribute may contain sensitive information.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level: opt_in
-      stability: development
-      type: string
-    - brief: The number of memory records relevant to the operation.
-      examples:
-      - 3
-      key: gen_ai.memory.record.count
-      note: |
-        For `search_memory` operations, this is the number of memory records returned by the operation. For `create_memory` operations, this is the number of memory records the operation attempted to create. For `update_memory` operations, this is the number of memory records the operation attempted to modify. For `upsert_memory` operations, this is the number of memory records the operation attempted to create or update.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level: recommended
-      stability: development
-      type: int
-    - brief: The memory records stored or retrieved in a memory operation.
-      examples:
-      - |
-        [
-          {
-            "content": "User prefers dark mode",
-            "id": "mem_123",
-            "score": 0.95
-          },
-          {
-            "content": {
-              "preference": "vegetarian meals",
-              "confidence": 0.9
-            },
-            "metadata": {
-              "source": "profile"
-            }
-          }
-        ]
-      key: gen_ai.memory.records
-      note: |
-        Instrumentations MUST follow [Memory records JSON schema](/docs/gen-ai/gen-ai-memory-records.json).
-        When the attribute is recorded on events, it MUST be recorded in structured
-        form. When recorded on spans, it MAY be recorded as a JSON string if structured
-        format is not supported and SHOULD be recorded in structured form otherwise.
-
-        Instrumentations SHOULD NOT capture this attribute by default. Capture SHOULD be gated
-        by an explicit user opt-in, for example `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT`.
-
-        \u003e [!Warning]
-        \u003e This attribute may contain sensitive information including user/PII data.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level: opt_in
-      stability: development
-      type: any
-    - brief: The unique identifier of the memory store.
-      examples:
-      - ms_abc123
-      - user-preferences-store
-      key: gen_ai.memory.store.id
-      note: |
-        Semantic conventions for individual components SHOULD document what `gen_ai.memory.store.id` maps to within the implementation.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        conditionally_required: if applicable
-      stability: development
-      type: string
-    - brief: The name of the operation being performed.
-      key: gen_ai.operation.name
-      note: |
-        If one of the predefined values applies, but specific system uses a different name it\u0027s RECOMMENDED to document it in the semantic conventions for specific GenAI system and use system-specific name in the instrumentation. If a different name is not documented, instrumentation libraries SHOULD use applicable predefined value.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level: required
-      stability: development
-      type:
-        members:
-        - brief: Chat completion operation such as [OpenAI Chat API](https://platform.openai.com/docs/api-reference/chat)
-          id: chat
-          stability: development
-          value: chat
-        - brief: Multimodal content generation operation such as [Gemini Generate Content](https://ai.google.dev/api/generate-content)
-          id: generate_content
-          stability: development
-          value: generate_content
-        - brief: Text completions operation such as [OpenAI Completions API (Legacy)](https://platform.openai.com/docs/api-reference/completions)
-          id: text_completion
-          stability: development
-          value: text_completion
-        - brief: Embeddings operation such as [OpenAI Create embeddings API](https://platform.openai.com/docs/api-reference/embeddings/create)
-          id: embeddings
-          stability: development
-          value: embeddings
-        - brief: Retrieval operation such as [OpenAI Search Vector Store API](https://platform.openai.com/docs/api-reference/vector-stores/search)
-          id: retrieval
-          stability: development
-          value: retrieval
-        - brief: Create GenAI agent
-          id: create_agent
-          stability: development
-          value: create_agent
-        - brief: Invoke GenAI agent
-          id: invoke_agent
-          stability: development
-          value: invoke_agent
-        - brief: Execute a tool
-          id: execute_tool
-          stability: development
-          value: execute_tool
-        - brief: Invoke GenAI workflow
-          id: invoke_workflow
-          stability: development
-          value: invoke_workflow
-        - brief: Agent planning or task decomposition phase
-          id: plan
-          stability: development
-          value: plan
-        - brief: Search/query memories from a memory store
-          id: search_memory
-          stability: development
-          value: search_memory
-        - brief: Create new memory records
-          id: create_memory
-          stability: development
-          value: create_memory
-        - brief: Update existing memory records
-          id: update_memory
-          stability: development
-          value: update_memory
-        - brief: Create or update memory records without the caller choosing which
-          id: upsert_memory
-          stability: development
-          value: upsert_memory
-        - brief: Delete memory records
-          id: delete_memory
-          stability: development
-          value: delete_memory
-        - brief: Create or initialize a memory store
-          id: create_memory_store
-          stability: development
-          value: create_memory_store
-        - brief: Delete or deprovision a memory store
-          id: delete_memory_store
-          stability: development
-          value: delete_memory_store
-    - brief: The Generative AI provider as identified by the client or server instrumentation.
-      key: gen_ai.provider.name
-      note: |
-        The attribute SHOULD be set based on the instrumentation\u0027s best
-        knowledge and may differ from the actual model provider.
-
-        Multiple providers, including Azure OpenAI, Gemini, and AI hosting platforms
-        are accessible using the OpenAI REST API and corresponding client libraries,
-        but may proxy or host models from different providers.
-
-        The `gen_ai.request.model`, `gen_ai.response.model`, and `server.address`
-        attributes may help identify the actual system in use.
-
-        The `gen_ai.provider.name` attribute acts as a discriminator that
-        identifies the GenAI telemetry format flavor specific to that provider
-        within GenAI semantic conventions.
-        It SHOULD be set consistently with provider-specific attributes and signals.
-        For example, GenAI spans, metrics, and events related to AWS Bedrock
-        should have the `gen_ai.provider.name` set to `aws.bedrock` and include
-        applicable `aws.bedrock.*` attributes and are not expected to include
-        `openai.*` attributes.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        conditionally_required: if the operation is handled by a named external GenAI provider or service
-      stability: development
-      type:
-        members:
-        - brief: \u0027[OpenAI](https://openai.com/)\u0027
-          id: openai
-          stability: development
-          value: openai
-        - brief: Any Google generative AI endpoint
-          id: gcp.gen_ai
-          note: |
-            May be used when specific backend is unknown.
-          stability: development
-          value: gcp.gen_ai
-        - brief: \u0027[Vertex AI](https://cloud.google.com/vertex-ai)\u0027
-          id: gcp.vertex_ai
-          note: |
-            Used when accessing the \u0027aiplatform.googleapis.com\u0027 endpoint.
-          stability: development
-          value: gcp.vertex_ai
-        - brief: \u0027[Gemini](https://cloud.google.com/products/gemini)\u0027
-          id: gcp.gemini
-          note: |
-            Used when accessing the \u0027generativelanguage.googleapis.com\u0027 endpoint. Also known as the AI Studio API.
-          stability: development
-          value: gcp.gemini
-        - brief: \u0027[Anthropic](https://www.anthropic.com/)\u0027
-          id: anthropic
-          stability: development
-          value: anthropic
-        - brief: \u0027[Cohere](https://cohere.com/)\u0027
-          id: cohere
-          stability: development
-          value: cohere
-        - brief: Azure AI Inference
-          id: azure.ai.inference
-          stability: development
-          value: azure.ai.inference
-        - brief: \u0027[Azure OpenAI](https://learn.microsoft.com/en-us/azure/ai-services/openai/overview)\u0027
-          id: azure.ai.openai
-          stability: development
-          value: azure.ai.openai
-        - brief: \u0027[IBM Watsonx AI](https://www.ibm.com/products/watsonx-ai)\u0027
-          id: ibm.watsonx.ai
-          stability: development
-          value: ibm.watsonx.ai
-        - brief: \u0027[AWS Bedrock](https://aws.amazon.com/bedrock)\u0027
-          id: aws.bedrock
-          stability: development
-          value: aws.bedrock
-        - brief: \u0027[Perplexity](https://www.perplexity.ai/)\u0027
-          id: perplexity
-          stability: development
-          value: perplexity
-        - brief: \u0027[xAI](https://x.ai/)\u0027
-          id: x_ai
-          stability: development
-          value: x_ai
-        - brief: \u0027[DeepSeek](https://www.deepseek.com/)\u0027
-          id: deepseek
-          stability: development
-          value: deepseek
-        - brief: \u0027[Groq](https://groq.com/)\u0027
-          id: groq
-          stability: development
-          value: groq
-        - brief: \u0027[Mistral AI](https://mistral.ai/)\u0027
-          id: mistral_ai
-          stability: development
-          value: mistral_ai
-    - brief: GenAI server address.
-      examples:
-      - example.com
-      - 10.1.2.80
-      - /tmp/my.sock
-      key: server.address
-      note: |
-        When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent the server address behind any intermediaries, for example proxies, if it\u0027s available.
-      requirement_level: recommended
-      stability: stable
-      type: string
-    - brief: GenAI server port.
-      examples:
-      - 80
-      - 8080
-      - 443
-      key: server.port
-      note: |
-        When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries, for example proxies, if it\u0027s available.
-      requirement_level:
-        conditionally_required: If `server.address` is set.
-      stability: stable
-      type: int
-    brief: |
-      Describes a memory search operation that queries a memory store for relevant memories.
-    kind: client
-    name:
-      note: gen_ai.search_memory.client
-    note: |
-      The `gen_ai.operation.name` SHOULD be `search_memory`.
-
-      **Span name** SHOULD be `search_memory`.
-    provenance:
-      path: ./model/gen-ai/spans.yaml
-    stability: development
-    type: gen_ai.search_memory.client
-  - attributes:
-    - brief: |
-        Describes a class of error the operation ended with.
-      examples:
-      - timeout
-      - java.net.UnknownHostException
-      - server_certificate_invalid
-      - \u0027500\u0027
-      key: error.type
-      note: |
-        The `error.type` SHOULD match the error code returned by the Generative AI provider or the client library,
-        the canonical name of exception that occurred, or another low-cardinality error identifier.
-        Instrumentations SHOULD document the list of errors they report.
-      requirement_level:
-        conditionally_required: if the operation ended in an error
-      stability: stable
-      type:
-        members:
-        - brief: |
-            A fallback error value to be used when the instrumentation doesn\u0027t define a custom value.
-          id: other
-          stability: stable
-          value: _OTHER
-    - brief: The number of memory records relevant to the operation.
-      examples:
-      - 3
-      key: gen_ai.memory.record.count
-      note: |
-        For `search_memory` operations, this is the number of memory records returned by the operation. For `create_memory` operations, this is the number of memory records the operation attempted to create. For `update_memory` operations, this is the number of memory records the operation attempted to modify. For `upsert_memory` operations, this is the number of memory records the operation attempted to create or update.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level: recommended
-      stability: development
-      type: int
-    - brief: The memory records stored or retrieved in a memory operation.
-      examples:
-      - |
-        [
-          {
-            "content": "User prefers dark mode",
-            "id": "mem_123",
-            "score": 0.95
-          },
-          {
-            "content": {
-              "preference": "vegetarian meals",
-              "confidence": 0.9
-            },
-            "metadata": {
-              "source": "profile"
-            }
-          }
-        ]
-      key: gen_ai.memory.records
-      note: |
-        Instrumentations MUST follow [Memory records JSON schema](/docs/gen-ai/gen-ai-memory-records.json).
-        When the attribute is recorded on events, it MUST be recorded in structured
-        form. When recorded on spans, it MAY be recorded as a JSON string if structured
-        format is not supported and SHOULD be recorded in structured form otherwise.
-
-        Instrumentations SHOULD NOT capture this attribute by default. Capture SHOULD be gated
-        by an explicit user opt-in, for example `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT`.
-
-        \u003e [!Warning]
-        \u003e This attribute may contain sensitive information including user/PII data.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level: opt_in
-      stability: development
-      type: any
-    - brief: The unique identifier of the memory store.
-      examples:
-      - ms_abc123
-      - user-preferences-store
-      key: gen_ai.memory.store.id
-      note: |
-        Semantic conventions for individual components SHOULD document what `gen_ai.memory.store.id` maps to within the implementation.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        conditionally_required: if applicable
-      stability: development
-      type: string
-    - brief: The name of the operation being performed.
-      key: gen_ai.operation.name
-      note: |
-        If one of the predefined values applies, but specific system uses a different name it\u0027s RECOMMENDED to document it in the semantic conventions for specific GenAI system and use system-specific name in the instrumentation. If a different name is not documented, instrumentation libraries SHOULD use applicable predefined value.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level: required
-      stability: development
-      type:
-        members:
-        - brief: Chat completion operation such as [OpenAI Chat API](https://platform.openai.com/docs/api-reference/chat)
-          id: chat
-          stability: development
-          value: chat
-        - brief: Multimodal content generation operation such as [Gemini Generate Content](https://ai.google.dev/api/generate-content)
-          id: generate_content
-          stability: development
-          value: generate_content
-        - brief: Text completions operation such as [OpenAI Completions API (Legacy)](https://platform.openai.com/docs/api-reference/completions)
-          id: text_completion
-          stability: development
-          value: text_completion
-        - brief: Embeddings operation such as [OpenAI Create embeddings API](https://platform.openai.com/docs/api-reference/embeddings/create)
-          id: embeddings
-          stability: development
-          value: embeddings
-        - brief: Retrieval operation such as [OpenAI Search Vector Store API](https://platform.openai.com/docs/api-reference/vector-stores/search)
-          id: retrieval
-          stability: development
-          value: retrieval
-        - brief: Create GenAI agent
-          id: create_agent
-          stability: development
-          value: create_agent
-        - brief: Invoke GenAI agent
-          id: invoke_agent
-          stability: development
-          value: invoke_agent
-        - brief: Execute a tool
-          id: execute_tool
-          stability: development
-          value: execute_tool
-        - brief: Invoke GenAI workflow
-          id: invoke_workflow
-          stability: development
-          value: invoke_workflow
-        - brief: Agent planning or task decomposition phase
-          id: plan
-          stability: development
-          value: plan
-        - brief: Search/query memories from a memory store
-          id: search_memory
-          stability: development
-          value: search_memory
-        - brief: Create new memory records
-          id: create_memory
-          stability: development
-          value: create_memory
-        - brief: Update existing memory records
-          id: update_memory
-          stability: development
-          value: update_memory
-        - brief: Create or update memory records without the caller choosing which
-          id: upsert_memory
-          stability: development
-          value: upsert_memory
-        - brief: Delete memory records
-          id: delete_memory
-          stability: development
-          value: delete_memory
-        - brief: Create or initialize a memory store
-          id: create_memory_store
-          stability: development
-          value: create_memory_store
-        - brief: Delete or deprovision a memory store
-          id: delete_memory_store
-          stability: development
-          value: delete_memory_store
-    - brief: The Generative AI provider as identified by the client or server instrumentation.
-      key: gen_ai.provider.name
-      note: |
-        The attribute SHOULD be set based on the instrumentation\u0027s best
-        knowledge and may differ from the actual model provider.
-
-        Multiple providers, including Azure OpenAI, Gemini, and AI hosting platforms
-        are accessible using the OpenAI REST API and corresponding client libraries,
-        but may proxy or host models from different providers.
-
-        The `gen_ai.request.model`, `gen_ai.response.model`, and `server.address`
-        attributes may help identify the actual system in use.
-
-        The `gen_ai.provider.name` attribute acts as a discriminator that
-        identifies the GenAI telemetry format flavor specific to that provider
-        within GenAI semantic conventions.
-        It SHOULD be set consistently with provider-specific attributes and signals.
-        For example, GenAI spans, metrics, and events related to AWS Bedrock
-        should have the `gen_ai.provider.name` set to `aws.bedrock` and include
-        applicable `aws.bedrock.*` attributes and are not expected to include
-        `openai.*` attributes.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        conditionally_required: if the operation is handled by a named external GenAI provider or service
-      stability: development
-      type:
-        members:
-        - brief: \u0027[OpenAI](https://openai.com/)\u0027
-          id: openai
-          stability: development
-          value: openai
-        - brief: Any Google generative AI endpoint
-          id: gcp.gen_ai
-          note: |
-            May be used when specific backend is unknown.
-          stability: development
-          value: gcp.gen_ai
-        - brief: \u0027[Vertex AI](https://cloud.google.com/vertex-ai)\u0027
-          id: gcp.vertex_ai
-          note: |
-            Used when accessing the \u0027aiplatform.googleapis.com\u0027 endpoint.
-          stability: development
-          value: gcp.vertex_ai
-        - brief: \u0027[Gemini](https://cloud.google.com/products/gemini)\u0027
-          id: gcp.gemini
-          note: |
-            Used when accessing the \u0027generativelanguage.googleapis.com\u0027 endpoint. Also known as the AI Studio API.
-          stability: development
-          value: gcp.gemini
-        - brief: \u0027[Anthropic](https://www.anthropic.com/)\u0027
-          id: anthropic
-          stability: development
-          value: anthropic
-        - brief: \u0027[Cohere](https://cohere.com/)\u0027
-          id: cohere
-          stability: development
-          value: cohere
-        - brief: Azure AI Inference
-          id: azure.ai.inference
-          stability: development
-          value: azure.ai.inference
-        - brief: \u0027[Azure OpenAI](https://learn.microsoft.com/en-us/azure/ai-services/openai/overview)\u0027
-          id: azure.ai.openai
-          stability: development
-          value: azure.ai.openai
-        - brief: \u0027[IBM Watsonx AI](https://www.ibm.com/products/watsonx-ai)\u0027
-          id: ibm.watsonx.ai
-          stability: development
-          value: ibm.watsonx.ai
-        - brief: \u0027[AWS Bedrock](https://aws.amazon.com/bedrock)\u0027
-          id: aws.bedrock
-          stability: development
-          value: aws.bedrock
-        - brief: \u0027[Perplexity](https://www.perplexity.ai/)\u0027
-          id: perplexity
-          stability: development
-          value: perplexity
-        - brief: \u0027[xAI](https://x.ai/)\u0027
-          id: x_ai
-          stability: development
-          value: x_ai
-        - brief: \u0027[DeepSeek](https://www.deepseek.com/)\u0027
-          id: deepseek
-          stability: development
-          value: deepseek
-        - brief: \u0027[Groq](https://groq.com/)\u0027
-          id: groq
-          stability: development
-          value: groq
-        - brief: \u0027[Mistral AI](https://mistral.ai/)\u0027
-          id: mistral_ai
-          stability: development
-          value: mistral_ai
-    - brief: GenAI server address.
-      examples:
-      - example.com
-      - 10.1.2.80
-      - /tmp/my.sock
-      key: server.address
-      note: |
-        When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent the server address behind any intermediaries, for example proxies, if it\u0027s available.
-      requirement_level: recommended
-      stability: stable
-      type: string
-    - brief: GenAI server port.
-      examples:
-      - 80
-      - 8080
-      - 443
-      key: server.port
-      note: |
-        When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries, for example proxies, if it\u0027s available.
-      requirement_level:
-        conditionally_required: If `server.address` is set.
-      stability: stable
-      type: int
-    brief: |
-      Describes a memory update operation that modifies existing memory records in a memory store.
-    kind: client
-    name:
-      note: gen_ai.update_memory.client
-    note: |
-      The `gen_ai.operation.name` SHOULD be `update_memory`.
-
-      This operation SHOULD be used when the caller requests modification of known existing memory records.
-
-      **Span name** SHOULD be `update_memory`.
-    provenance:
-      path: ./model/gen-ai/spans.yaml
-    stability: development
-    type: gen_ai.update_memory.client
-  - attributes:
-    - brief: |
-        Describes a class of error the operation ended with.
-      examples:
-      - timeout
-      - java.net.UnknownHostException
-      - server_certificate_invalid
-      - \u0027500\u0027
-      key: error.type
-      note: |
-        The `error.type` SHOULD match the error code returned by the Generative AI provider or the client library,
-        the canonical name of exception that occurred, or another low-cardinality error identifier.
-        Instrumentations SHOULD document the list of errors they report.
-      requirement_level:
-        conditionally_required: if the operation ended in an error
-      stability: stable
-      type:
-        members:
-        - brief: |
-            A fallback error value to be used when the instrumentation doesn\u0027t define a custom value.
-          id: other
-          stability: stable
-          value: _OTHER
-    - brief: The number of memory records relevant to the operation.
-      examples:
-      - 3
-      key: gen_ai.memory.record.count
-      note: |
-        For `search_memory` operations, this is the number of memory records returned by the operation. For `create_memory` operations, this is the number of memory records the operation attempted to create. For `update_memory` operations, this is the number of memory records the operation attempted to modify. For `upsert_memory` operations, this is the number of memory records the operation attempted to create or update.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level: recommended
-      stability: development
-      type: int
-    - brief: The memory records stored or retrieved in a memory operation.
-      examples:
-      - |
-        [
-          {
-            "content": "User prefers dark mode",
-            "id": "mem_123",
-            "score": 0.95
-          },
-          {
-            "content": {
-              "preference": "vegetarian meals",
-              "confidence": 0.9
-            },
-            "metadata": {
-              "source": "profile"
-            }
-          }
-        ]
-      key: gen_ai.memory.records
-      note: |
-        Instrumentations MUST follow [Memory records JSON schema](/docs/gen-ai/gen-ai-memory-records.json).
-        When the attribute is recorded on events, it MUST be recorded in structured
-        form. When recorded on spans, it MAY be recorded as a JSON string if structured
-        format is not supported and SHOULD be recorded in structured form otherwise.
-
-        Instrumentations SHOULD NOT capture this attribute by default. Capture SHOULD be gated
-        by an explicit user opt-in, for example `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT`.
-
-        \u003e [!Warning]
-        \u003e This attribute may contain sensitive information including user/PII data.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level: opt_in
-      stability: development
-      type: any
-    - brief: The unique identifier of the memory store.
-      examples:
-      - ms_abc123
-      - user-preferences-store
-      key: gen_ai.memory.store.id
-      note: |
-        Semantic conventions for individual components SHOULD document what `gen_ai.memory.store.id` maps to within the implementation.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        conditionally_required: if applicable
-      stability: development
-      type: string
-    - brief: The name of the operation being performed.
-      key: gen_ai.operation.name
-      note: |
-        If one of the predefined values applies, but specific system uses a different name it\u0027s RECOMMENDED to document it in the semantic conventions for specific GenAI system and use system-specific name in the instrumentation. If a different name is not documented, instrumentation libraries SHOULD use applicable predefined value.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level: required
-      stability: development
-      type:
-        members:
-        - brief: Chat completion operation such as [OpenAI Chat API](https://platform.openai.com/docs/api-reference/chat)
-          id: chat
-          stability: development
-          value: chat
-        - brief: Multimodal content generation operation such as [Gemini Generate Content](https://ai.google.dev/api/generate-content)
-          id: generate_content
-          stability: development
-          value: generate_content
-        - brief: Text completions operation such as [OpenAI Completions API (Legacy)](https://platform.openai.com/docs/api-reference/completions)
-          id: text_completion
-          stability: development
-          value: text_completion
-        - brief: Embeddings operation such as [OpenAI Create embeddings API](https://platform.openai.com/docs/api-reference/embeddings/create)
-          id: embeddings
-          stability: development
-          value: embeddings
-        - brief: Retrieval operation such as [OpenAI Search Vector Store API](https://platform.openai.com/docs/api-reference/vector-stores/search)
-          id: retrieval
-          stability: development
-          value: retrieval
-        - brief: Create GenAI agent
-          id: create_agent
-          stability: development
-          value: create_agent
-        - brief: Invoke GenAI agent
-          id: invoke_agent
-          stability: development
-          value: invoke_agent
-        - brief: Execute a tool
-          id: execute_tool
-          stability: development
-          value: execute_tool
-        - brief: Invoke GenAI workflow
-          id: invoke_workflow
-          stability: development
-          value: invoke_workflow
-        - brief: Agent planning or task decomposition phase
-          id: plan
-          stability: development
-          value: plan
-        - brief: Search/query memories from a memory store
-          id: search_memory
-          stability: development
-          value: search_memory
-        - brief: Create new memory records
-          id: create_memory
-          stability: development
-          value: create_memory
-        - brief: Update existing memory records
-          id: update_memory
-          stability: development
-          value: update_memory
-        - brief: Create or update memory records without the caller choosing which
-          id: upsert_memory
-          stability: development
-          value: upsert_memory
-        - brief: Delete memory records
-          id: delete_memory
-          stability: development
-          value: delete_memory
-        - brief: Create or initialize a memory store
-          id: create_memory_store
-          stability: development
-          value: create_memory_store
-        - brief: Delete or deprovision a memory store
-          id: delete_memory_store
-          stability: development
-          value: delete_memory_store
-    - brief: The Generative AI provider as identified by the client or server instrumentation.
-      key: gen_ai.provider.name
-      note: |
-        The attribute SHOULD be set based on the instrumentation\u0027s best
-        knowledge and may differ from the actual model provider.
-
-        Multiple providers, including Azure OpenAI, Gemini, and AI hosting platforms
-        are accessible using the OpenAI REST API and corresponding client libraries,
-        but may proxy or host models from different providers.
-
-        The `gen_ai.request.model`, `gen_ai.response.model`, and `server.address`
-        attributes may help identify the actual system in use.
-
-        The `gen_ai.provider.name` attribute acts as a discriminator that
-        identifies the GenAI telemetry format flavor specific to that provider
-        within GenAI semantic conventions.
-        It SHOULD be set consistently with provider-specific attributes and signals.
-        For example, GenAI spans, metrics, and events related to AWS Bedrock
-        should have the `gen_ai.provider.name` set to `aws.bedrock` and include
-        applicable `aws.bedrock.*` attributes and are not expected to include
-        `openai.*` attributes.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        conditionally_required: if the operation is handled by a named external GenAI provider or service
-      stability: development
-      type:
-        members:
-        - brief: \u0027[OpenAI](https://openai.com/)\u0027
-          id: openai
-          stability: development
-          value: openai
-        - brief: Any Google generative AI endpoint
-          id: gcp.gen_ai
-          note: |
-            May be used when specific backend is unknown.
-          stability: development
-          value: gcp.gen_ai
-        - brief: \u0027[Vertex AI](https://cloud.google.com/vertex-ai)\u0027
-          id: gcp.vertex_ai
-          note: |
-            Used when accessing the \u0027aiplatform.googleapis.com\u0027 endpoint.
-          stability: development
-          value: gcp.vertex_ai
-        - brief: \u0027[Gemini](https://cloud.google.com/products/gemini)\u0027
-          id: gcp.gemini
-          note: |
-            Used when accessing the \u0027generativelanguage.googleapis.com\u0027 endpoint. Also known as the AI Studio API.
-          stability: development
-          value: gcp.gemini
-        - brief: \u0027[Anthropic](https://www.anthropic.com/)\u0027
-          id: anthropic
-          stability: development
-          value: anthropic
-        - brief: \u0027[Cohere](https://cohere.com/)\u0027
-          id: cohere
-          stability: development
-          value: cohere
-        - brief: Azure AI Inference
-          id: azure.ai.inference
-          stability: development
-          value: azure.ai.inference
-        - brief: \u0027[Azure OpenAI](https://learn.microsoft.com/en-us/azure/ai-services/openai/overview)\u0027
-          id: azure.ai.openai
-          stability: development
-          value: azure.ai.openai
-        - brief: \u0027[IBM Watsonx AI](https://www.ibm.com/products/watsonx-ai)\u0027
-          id: ibm.watsonx.ai
-          stability: development
-          value: ibm.watsonx.ai
-        - brief: \u0027[AWS Bedrock](https://aws.amazon.com/bedrock)\u0027
-          id: aws.bedrock
-          stability: development
-          value: aws.bedrock
-        - brief: \u0027[Perplexity](https://www.perplexity.ai/)\u0027
-          id: perplexity
-          stability: development
-          value: perplexity
-        - brief: \u0027[xAI](https://x.ai/)\u0027
-          id: x_ai
-          stability: development
-          value: x_ai
-        - brief: \u0027[DeepSeek](https://www.deepseek.com/)\u0027
-          id: deepseek
-          stability: development
-          value: deepseek
-        - brief: \u0027[Groq](https://groq.com/)\u0027
-          id: groq
-          stability: development
-          value: groq
-        - brief: \u0027[Mistral AI](https://mistral.ai/)\u0027
-          id: mistral_ai
-          stability: development
-          value: mistral_ai
-    - brief: GenAI server address.
-      examples:
-      - example.com
-      - 10.1.2.80
-      - /tmp/my.sock
-      key: server.address
-      note: |
-        When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent the server address behind any intermediaries, for example proxies, if it\u0027s available.
-      requirement_level: recommended
-      stability: stable
-      type: string
-    - brief: GenAI server port.
-      examples:
-      - 80
-      - 8080
-      - 443
-      key: server.port
-      note: |
-        When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries, for example proxies, if it\u0027s available.
-      requirement_level:
-        conditionally_required: If `server.address` is set.
-      stability: stable
-      type: int
-    brief: |
-      Describes a memory upsert operation that may create or update memory records in a memory store.
-    kind: client
-    name:
-      note: gen_ai.upsert_memory.client
-    note: |
-      The `gen_ai.operation.name` SHOULD be `upsert_memory`.
-
-      This operation SHOULD be used when the caller invokes a public API that may create,
-      update, or consolidate memory records without the caller choosing which.
-
-      **Span name** SHOULD be `upsert_memory`.
-    provenance:
-      path: ./model/gen-ai/spans.yaml
-    stability: development
-    type: gen_ai.upsert_memory.client
   - attributes:
     - brief: |
         Describes a class of error the operation ended with.

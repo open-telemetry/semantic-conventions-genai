@@ -32,13 +32,7 @@ Run `uv run update-reports` to regenerate.
 | [Inference](reports/inference-span.md) | anthropic, autogen, aws-bedrock, azure-ai-inference, azure-openai, claude-agent-sdk, cohere, crewai, dspy, google-adk, google-genai, groq, instructor, langchain, litellm, llamaindex, mistralai, openai, openai-agents, pydantic-ai, vertexai |
 | [Embeddings](reports/embeddings-span.md) | aws-bedrock, azure-ai-inference, azure-openai, cohere, google-genai, litellm, llamaindex, mistralai, openai |
 | [Retrieval](reports/retrieval-span.md) | haystack, langchain, llamaindex |
-| [Create Memory Store](reports/create-memory-store-span.md) | aws-bedrock-agentcore, google-adk |
-| [Search Memory](reports/search-memory-span.md) | aws-bedrock-agentcore, google-adk |
-| [Create Memory](reports/create-memory-span.md) | aws-bedrock-agentcore |
-| [Update Memory](reports/update-memory-span.md) | aws-bedrock-agentcore |
-| [Upsert Memory](reports/upsert-memory-span.md) | google-adk |
-| [Delete Memory](reports/delete-memory-span.md) | aws-bedrock-agentcore |
-| [Delete Memory Store](reports/delete-memory-store-span.md) | aws-bedrock-agentcore |
+| [Memory](reports/memory-span.md) | aws-bedrock-agentcore, google-adk |
 | [Execute Tool](reports/execute-tool-span.md) | autogen, crewai, google-adk, groq, instructor, litellm, llamaindex, mistralai, openai, openai-agents, openai-assistants, pydantic-ai |
 
 ### Events

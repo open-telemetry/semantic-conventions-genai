@@ -136,47 +136,21 @@ SPAN_SPECS: dict[str, AttributeSpec] = {
         op_names=frozenset({"retrieval"}),
         discriminator_attrs=frozenset({"gen_ai.data_source.id"}),
     ),
-    "create_memory_store": _from_yaml(
+    "memory": _from_yaml(
         _groups,
-        "span.gen_ai.create_memory_store.client",
-        label="Create Memory Store",
-        op_names=frozenset({"create_memory_store"}),
-    ),
-    "search_memory": _from_yaml(
-        _groups,
-        "span.gen_ai.search_memory.client",
-        label="Search Memory",
-        op_names=frozenset({"search_memory"}),
-    ),
-    "create_memory": _from_yaml(
-        _groups,
-        "span.gen_ai.create_memory.client",
-        label="Create Memory",
-        op_names=frozenset({"create_memory"}),
-    ),
-    "update_memory": _from_yaml(
-        _groups,
-        "span.gen_ai.update_memory.client",
-        label="Update Memory",
-        op_names=frozenset({"update_memory"}),
-    ),
-    "upsert_memory": _from_yaml(
-        _groups,
-        "span.gen_ai.upsert_memory.client",
-        label="Upsert Memory",
-        op_names=frozenset({"upsert_memory"}),
-    ),
-    "delete_memory": _from_yaml(
-        _groups,
-        "span.gen_ai.delete_memory.client",
-        label="Delete Memory",
-        op_names=frozenset({"delete_memory"}),
-    ),
-    "delete_memory_store": _from_yaml(
-        _groups,
-        "span.gen_ai.delete_memory_store.client",
-        label="Delete Memory Store",
-        op_names=frozenset({"delete_memory_store"}),
+        "span.gen_ai.memory.client",
+        label="Memory",
+        op_names=frozenset(
+            {
+                "create_memory",
+                "create_memory_store",
+                "delete_memory",
+                "delete_memory_store",
+                "search_memory",
+                "update_memory",
+                "upsert_memory",
+            }
+        ),
     ),
     "execute_tool": _from_yaml(
         _groups,
