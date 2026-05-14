@@ -108,11 +108,13 @@ def batch_update_memory_records(memory_id):
 
 @bp.route("/memories/<memory_id>/retrieve", methods=["POST"])
 def retrieve_memory_records(memory_id):
+    if memory_id not in _MEMORIES:
+        return _json({"message": f"Memory {memory_id} not found"}, status=404)
     body = request.get_json(silent=True) or {}
     criteria = body.get("searchCriteria", {})
     top_k = criteria.get("topK", 5)
     namespace = body.get("namespace", "/")
-    store = _RECORDS.get(memory_id, [])
+    store = _RECORDS[memory_id]
     summaries = []
     for rec in store[-top_k:]:
         summaries.append({
