@@ -52,6 +52,8 @@ def create_memory():
 
 @bp.route("/memories/<memory_id>/delete", methods=["DELETE"])
 def delete_memory(memory_id):
+    if memory_id not in _MEMORIES:
+        return _json({"message": f"Memory {memory_id} not found"}, status=404)
     _MEMORIES.pop(memory_id, None)
     _RECORDS.pop(memory_id, None)
     return _json({"memoryId": memory_id, "status": "DELETING"})
@@ -62,9 +64,11 @@ def delete_memory(memory_id):
 
 @bp.route("/memories/<memory_id>/memoryRecords/batchCreate", methods=["POST"])
 def batch_create_memory_records(memory_id):
+    if memory_id not in _MEMORIES:
+        return _json({"message": f"Memory {memory_id} not found"}, status=404)
     body = request.get_json(silent=True) or {}
     records = body.get("records", [])
-    store = _RECORDS.setdefault(memory_id, [])
+    store = _RECORDS[memory_id]
     successful = []
     for rec in records:
         record_id = _next_record_id()
@@ -79,17 +83,27 @@ def batch_create_memory_records(memory_id):
 
 @bp.route("/memories/<memory_id>/memoryRecords/batchUpdate", methods=["POST"])
 def batch_update_memory_records(memory_id):
+    if memory_id not in _MEMORIES:
+        return _json({"message": f"Memory {memory_id} not found"}, status=404)
     body = request.get_json(silent=True) or {}
     records = body.get("records", [])
-    store = _RECORDS.setdefault(memory_id, [])
+    store = _RECORDS[memory_id]
     by_id = {r["memoryRecordId"]: r for r in store}
     successful = []
+    failed = []
     for rec in records:
         record_id = rec["memoryRecordId"]
         if record_id in by_id:
             by_id[record_id]["content"] = rec.get("content", by_id[record_id].get("content", {}))
-        successful.append({"memoryRecordId": record_id, "status": "SUCCEEDED"})
-    return _json({"successfulRecords": successful, "failedRecords": []})
+            successful.append({"memoryRecordId": record_id, "status": "SUCCEEDED"})
+        else:
+            failed.append({
+                "memoryRecordId": record_id,
+                "status": "FAILED",
+                "errorCode": 404,
+                "errorMessage": f"Memory record {record_id} not found",
+            })
+    return _json({"successfulRecords": successful, "failedRecords": failed})
 
 
 @bp.route("/memories/<memory_id>/retrieve", methods=["POST"])
@@ -115,6 +129,10 @@ def retrieve_memory_records(memory_id):
 
 @bp.route("/memories/<memory_id>/memoryRecords/<record_id>", methods=["DELETE"])
 def delete_memory_record(memory_id, record_id):
-    store = _RECORDS.get(memory_id, [])
+    if memory_id not in _MEMORIES:
+        return _json({"message": f"Memory {memory_id} not found"}, status=404)
+    store = _RECORDS[memory_id]
+    if not any(r["memoryRecordId"] == record_id for r in store):
+        return _json({"message": f"Memory record {record_id} not found"}, status=404)
     _RECORDS[memory_id] = [r for r in store if r["memoryRecordId"] != record_id]
     return _json({"memoryRecordId": record_id})
