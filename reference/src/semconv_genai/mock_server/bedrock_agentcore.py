@@ -73,11 +73,13 @@ def batch_create_memory_records(memory_id):
     for rec in records:
         record_id = _next_record_id()
         store.append({"memoryRecordId": record_id, "content": rec.get("content", {})})
-        successful.append({
-            "memoryRecordId": record_id,
-            "status": "SUCCEEDED",
-            "requestIdentifier": rec.get("requestIdentifier", ""),
-        })
+        successful.append(
+            {
+                "memoryRecordId": record_id,
+                "status": "SUCCEEDED",
+                "requestIdentifier": rec.get("requestIdentifier", ""),
+            }
+        )
     return _json({"successfulRecords": successful, "failedRecords": []}, status=201)
 
 
@@ -97,12 +99,14 @@ def batch_update_memory_records(memory_id):
             by_id[record_id]["content"] = rec.get("content", by_id[record_id].get("content", {}))
             successful.append({"memoryRecordId": record_id, "status": "SUCCEEDED"})
         else:
-            failed.append({
-                "memoryRecordId": record_id,
-                "status": "FAILED",
-                "errorCode": 404,
-                "errorMessage": f"Memory record {record_id} not found",
-            })
+            failed.append(
+                {
+                    "memoryRecordId": record_id,
+                    "status": "FAILED",
+                    "errorCode": 404,
+                    "errorMessage": f"Memory record {record_id} not found",
+                }
+            )
     return _json({"successfulRecords": successful, "failedRecords": failed})
 
 
@@ -117,15 +121,17 @@ def retrieve_memory_records(memory_id):
     store = _RECORDS[memory_id]
     summaries = []
     for rec in store[-top_k:]:
-        summaries.append({
-            "memoryRecordId": rec["memoryRecordId"],
-            "content": rec.get("content", {}),
-            "memoryStrategyId": criteria.get("memoryStrategyId", ""),
-            "namespaces": [namespace],
-            "createdAt": 1735689600.0,
-            "score": 0.93,
-            "metadata": rec.get("metadata", {"author": {"stringValue": "assistant"}}),
-        })
+        summaries.append(
+            {
+                "memoryRecordId": rec["memoryRecordId"],
+                "content": rec.get("content", {}),
+                "memoryStrategyId": criteria.get("memoryStrategyId", ""),
+                "namespaces": [namespace],
+                "createdAt": 1735689600.0,
+                "score": 0.93,
+                "metadata": rec.get("metadata", {"author": {"stringValue": "assistant"}}),
+            }
+        )
     return _json({"memoryRecordSummaries": summaries})
 
 
