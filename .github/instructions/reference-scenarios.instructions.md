@@ -10,15 +10,15 @@ GenAI conventions are capturable. They should be easy to scan: a reader
 should see, at the instrumentation site, exactly what attributes get emitted
 and where each value comes from.
 
-## Attribute and tag emission
+## Attribute emission
 
-- Set emitted attributes and tags inline at the instrumentation site. Do not
-  move emission into helper methods such as `setServerTags`,
-  `setServerAttributes`, `_set_server_attributes`, or similar wrappers.
+- Set emitted attributes inline at the instrumentation site. Do not move
+  emission into helper methods such as `_set_request_attributes`,
+  `_set_response_attributes`, or similar wrappers.
 - If a method owns its own span boundary, set that span's attributes inline
   in that method.
 - Keep base attributes, derived attributes, and result attributes together
-  in the same span or activity block.
+  in the same span.
 - Small local parsing or derivation that exists only to support nearby
   emitted attributes is fine; keep it next to the emission.
 
@@ -38,12 +38,13 @@ and where each value comes from.
 
 ## Span boundaries
 
-- The span must be open around the library invocation. `sampling_relevant`
-  request attributes go in the span-start arguments; response attributes are
-  set from the returned object inside the same `with` block.
-- Capturing the response and then replaying attributes onto a separately
-  opened or post-hoc span is a defect even if the final attribute set looks
-  correct.
+- The span must be open around the library invocation. Request attributes
+  that are known before the call are passed as the `attributes` argument to
+  `start_as_current_span`. Request attributes known only later, and all
+  response attributes set from the returned object, are set inline inside
+  the same `with` block.
+- Setting attributes on a separately opened or post-hoc span after the call
+  returns is a defect even if the final attribute set looks correct.
 
 ## Library entry points
 
@@ -56,3 +57,9 @@ and where each value comes from.
 - Library-native sibling spans, retries, converter spans, or extra LLM
   round-trips produced by invoking a library's public entry point. These
   are honest reference data, not noise.
+
+## After editing a scenario
+
+Regenerate the scenario's `data.json` and the affected `reference/reports/*.md`
+files per [reference/README.md](../../reference/README.md) before pushing. CI
+enforces that generated outputs match the scenario.

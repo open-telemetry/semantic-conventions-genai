@@ -1,0 +1,6 @@
+[settings]
+setup_migration_version = 2
+
+[checks.lychee]
+# Check all links in changed files, plus all local links in every file.
+check_all_local = true

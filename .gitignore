@@ -4,6 +4,7 @@ __pycache__/
 *.egg-info/
 .ruff_cache/
 .pytest_cache/
+.lycheecache
 .coverage
 
 # Reference scenario live output and per-scenario uv cache

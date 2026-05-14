@@ -2,7 +2,8 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "config:recommended",
-    "helpers:pinGitHubActionDigestsToSemver"
+    "helpers:pinGitHubActionDigestsToSemver",
+    "github>grafana/flint#v0.21.0",
   ],
   // Security updates are owned by Dependabot. See .github/DEPENDENCIES.md.
   "vulnerabilityAlerts": {
