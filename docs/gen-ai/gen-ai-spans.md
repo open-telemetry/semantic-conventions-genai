@@ -632,10 +632,13 @@ memory records without the caller choosing which.
 
 **Span name** SHOULD be `{gen_ai.operation.name}`.
 
+**Span kind** SHOULD be `CLIENT` and MAY be set to `INTERNAL` on spans representing
+calls to memory systems running in the same process. It's RECOMMENDED to use `CLIENT` kind
+when the memory system being instrumented usually runs in a different process than its
+client or when the memory call happens over instrumented protocol such as HTTP.
+
 For `delete_memory`, lack of `gen_ai.memory.record.id` may indicate that
 the operation intends to delete all memory records in the specified store.
-
-**Span kind** SHOULD be `CLIENT`.
 
 **Span status** SHOULD follow the [Recording Errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.41.1/docs/general/recording-errors.md) document.
 
