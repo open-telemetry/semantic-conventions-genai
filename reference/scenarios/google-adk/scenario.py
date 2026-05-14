@@ -300,16 +300,20 @@ def run_memory_reference():
     app_name = "test_app"
     user_id = "test_user"
     session_id = "session_memory_1"
+    # `derivable`: ADK's InMemoryMemoryService keys its internal store on
+    # (app_name, user_id), so this tuple is the library's own scope unit
+    # for memory storage and retrieval.
     store_id = f"{app_name}/{user_id}"
     memory_text = "User prefers vegetarian meals and dark mode."
     query_text = "vegetarian meals"
 
     async def _run():
-        create_span_attributes = {
-            "gen_ai.operation.name": "create_memory_store",
-        }
-        with _reference_tracer.start_as_current_span("create_memory_store", attributes=create_span_attributes):
-            memory_service = InMemoryMemoryService()
+        # ADK's InMemoryMemoryService has no public store-lifecycle API and
+        # produces no store identifier at construction, so create_memory_store
+        # is an honest capture gap for this library. The operation is covered
+        # by reference/scenarios/aws-bedrock-agentcore/ where the returned
+        # memoryId is captured directly.
+        memory_service = InMemoryMemoryService()
 
         event = Event(
             author="user",
