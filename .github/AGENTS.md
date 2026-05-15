@@ -6,7 +6,7 @@ command (equivalent to `python -m semconv_genai.run_scenario <library>`).
 
 For semantic-conventions PR work that needs repository-wide reference coverage, use the `reference` skill under `.github/skills/reference/`.
 
-For reviews of resulting reference coverage, capturability, and honest capture gaps, use the `evaluate-reference` skill under `.github/skills/evaluate-reference/`.
+For reviews of resulting reference coverage, capturability, and honest capture gaps, see the evaluation rubric in `.github/instructions/evaluate-reference.instructions.md`. It is an instruction file that applies automatically to model, docs, and scenario changes — not a skill to invoke.
 
 Optimize all code in this repository for readability and simplicity.
 

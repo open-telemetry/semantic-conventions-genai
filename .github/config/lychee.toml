@@ -1,0 +1,26 @@
+# Lychee configuration file
+# See https://lychee.cli.rs/guides/config/
+
+timeout = 20
+retry_wait_time = 2
+max_retries = 2
+max_concurrency = 8
+root_dir = "."
+accept = ["200..=299", "429"]
+cache = true
+
+# Check link anchors.
+include_fragments = "full"
+
+exclude = [
+  # Existing generated API-reference links are currently blocked or 404 for automated checks.
+  '^https://platform\.openai\.com/docs/api-reference/',
+  # Provider homepages that reject automated link-check requests.
+  '^https://openai\.com/$',
+  '^https://www\.deepseek\.com/$',
+  '^https://www\.perplexity\.ai/$',
+  # Tool homepages that are unreliable under automated link-check requests.
+  '^https://www\.gnu\.org/software/make/$',
+  # The README points at the current GenAI schema version before it is published.
+  '^https://opentelemetry\.io/schemas/gen-ai/',
+]

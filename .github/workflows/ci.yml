@@ -1,4 +1,4 @@
-name: GenAI Reference Implementation Tests
+name: CI
 
 on:
   push:
@@ -16,8 +16,85 @@ permissions:
   contents: read
 
 jobs:
+  # ── Link Check ─────────────────────────────────────────────────────
+  links:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0 # needed for merge-base used in modified-files mode
+
+      - uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
+
+      - name: Check links for pull requests
+        if: github.event_name == 'pull_request'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_BASE_REF: ${{ github.base_ref }}
+          GITHUB_HEAD_REF: ${{ github.head_ref }}
+          PR_HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+        run: mise run links
+
+      - name: Check links for pushes and merge queues
+        if: github.event_name != 'pull_request'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: mise run links
+
+  # ── Model Checks ───────────────────────────────────────────────────
+  policies:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Load shared version pins
+        id: versions
+        uses: ./.github/actions/load-version-pins
+
+      - name: Install Weaver
+        uses: open-telemetry/weaver/.github/actions/setup-weaver@f8e1b42fbd1e09df5263c26b7df6011eaafd454d
+        with:
+          version: '${{ steps.versions.outputs.weaver_version }}'
+
+      - name: Validate model
+        run: make check-policies
+
+  generated-docs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Load shared version pins
+        id: versions
+        uses: ./.github/actions/load-version-pins
+
+      - name: Install Weaver
+        uses: open-telemetry/weaver/.github/actions/setup-weaver@f8e1b42fbd1e09df5263c26b7df6011eaafd454d
+        with:
+          version: '${{ steps.versions.outputs.weaver_version }}'
+
+      - name: Regenerate and check committed outputs are in sync
+        run: |
+          make generate-all
+          if ! git diff --exit-code -- ./docs/registry ./schema-snapshot; then
+            echo "FAIL: committed generated outputs are out of sync!"
+            echo "Run 'make generate-all' and commit the changes."
+            exit 1
+          fi
+          untracked=$(git ls-files --others --exclude-standard -- ./docs/registry ./schema-snapshot)
+          if [ -n "$untracked" ]; then
+            echo "FAIL: untracked files under generated outputs:"
+            echo "$untracked"
+            exit 1
+          fi
+          echo "OK: committed generated outputs are up to date"
+
   # ── Lint / Format ──────────────────────────────────────────────────
-  lint:
+  reference-python-lint:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     defaults:
@@ -38,7 +115,7 @@ jobs:
         run: uv tool run --from ruff ruff format --check src scenarios
 
   # ── Discover scenario matrices ─────────────────────────────────────
-  discover-scenarios:
+  reference-scenario-matrix:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     outputs:
@@ -56,16 +133,16 @@ jobs:
         run: echo "matrix=$(uv run run-scenario --print-ci-matrix)" >> "$GITHUB_OUTPUT"
 
   # ── Scenario Tests ──────────────────────────────────────
-  scenarios:
+  reference-scenarios:
     runs-on: ubuntu-latest
-    needs: discover-scenarios
+    needs: reference-scenario-matrix
     timeout-minutes: 20
     defaults:
       run:
         working-directory: reference
     strategy:
       fail-fast: false
-      matrix: ${{ fromJson(needs.discover-scenarios.outputs.matrix) }}
+      matrix: ${{ fromJson(needs.reference-scenario-matrix.outputs.matrix) }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
@@ -85,7 +162,7 @@ jobs:
           if [ -n "$untracked" ]; then echo "Untracked data files: $untracked"; exit 1; fi
 
   # ── Status Report ───────────────────────────────────────────────────
-  status-report:
+  reference-status-report:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     defaults:
@@ -105,11 +182,18 @@ jobs:
   # ── Aggregate gate for branch protection ───────────────────────────
   required-status-check:
     if: always()
-    needs: [lint, discover-scenarios, scenarios, status-report]
+    needs:
+      - links
+      - policies
+      - generated-docs
+      - reference-python-lint
+      - reference-scenario-matrix
+      - reference-scenarios
+      - reference-status-report
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Fail if any dependency failed or was cancelled
+      - name: Fail if any dependency did not pass
         if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') || contains(needs.*.result, 'skipped')
         run: |
           exit 1

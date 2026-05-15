@@ -547,7 +547,7 @@ def utc_now() -> datetime:
 
 
 def empty_notification_state(loaded: bool = False) -> dict[str, Any]:
-    return {"version": 1, "prs": {}, "_loaded_from_dashboard": loaded}
+    return {"_loaded_from_dashboard": loaded}
 
 
 def notification_state_from_body(body: str) -> dict[str, Any]:
@@ -561,9 +561,10 @@ def notification_state_from_body(body: str) -> dict[str, Any]:
     if not isinstance(state, dict):
         return empty_notification_state()
     prs = state.get("prs")
-    if not isinstance(prs, dict):
-        state["prs"] = {}
-    state["version"] = 1
+    if isinstance(prs, dict):
+        state = dict(prs)
+    else:
+        state = {k: v for k, v in state.items() if isinstance(v, dict) and not k.startswith("_")}
     state["_loaded_from_dashboard"] = True
     return state
 
@@ -1051,13 +1052,12 @@ def post_slack_webhook(message: str, webhook_url: str) -> None:
 def slack_message(repo: str, result: dict[str, Any], assignee_mention: str, kind: str) -> str:
     facts = result.get("facts") or {}
     number = result.get("pr_num")
-    title = result.get("pr_title") or f"PR #{number}"
     url = result.get("pr_url") or f"https://github.com/{repo}/pull/{number}"
     if kind == "follow-up":
-        lead = f"PR #{number} is still waiting on approvers after {facts.get('waiting_age') or '24h'}"
+        lead = f"has been waiting on approvers for {facts.get('waiting_age') or '24h'}"
     else:
-        lead = f"PR #{number} is now waiting on approvers"
-    return f"{lead}, and {assignee_mention} is assigned on GitHub.\n{title}\n{url}"
+        lead = "moved to waiting on approvers"
+    return f"{assignee_mention} <{url}|PR #{number}> {lead}"
 
 
 def notification_due(
@@ -1074,12 +1074,17 @@ def notification_due(
     previous_waiting_since = parse_ts(previous_pr_state.get("waiting_since") or "")
     last_notified = parse_ts(previous_assignee_state.get("last_notified_at") or "")
     if last_notified is None:
+        is_same_waiting_period = previous_waiting_since == current_waiting_since
         is_seen_waiting_period = (
             previous_assignee_state
             and not previous_assignee_state.get("notification_pending")
-            and previous_waiting_since == current_waiting_since
+            and is_same_waiting_period
         )
-        return None if is_seen_waiting_period else "initial"
+        if is_seen_waiting_period:
+            return None
+        if previous_pr_state and not previous_assignee_state and is_same_waiting_period:
+            return None
+        return "initial"
     if current_waiting_since > last_notified:
         return "initial"
     if now.weekday() < 5 and (now - last_notified).total_seconds() >= APPROVER_FOLLOW_UP_SECONDS:
@@ -1113,7 +1118,7 @@ def update_notification_state(
     notify_slack: bool,
     now: datetime,
 ) -> dict[str, Any]:
-    previous_prs = previous_state.get("prs") or {}
+    previous_prs = {k: v for k, v in previous_state.items() if isinstance(v, dict) and not k.startswith("_")}
     previous_state_exists = bool(previous_state.get("_loaded_from_dashboard"))
     webhook_url = os.environ.get("SLACK_WEBHOOK_URL") or ""
     notification_errors: list[str] = []
@@ -1185,7 +1190,7 @@ def update_notification_state(
             current_pr_state["assignee_notifications"][assignee_key] = assignee_state
         if current_pr_state["assignee_notifications"]:
             new_prs[pr_key] = current_pr_state
-    return {"version": 1, "prs": new_prs, "_slack_notification_errors": notification_errors}
+    return {**new_prs, "_slack_notification_errors": notification_errors}
 
 
 def _md_escape(s: str) -> str:

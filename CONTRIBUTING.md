@@ -18,7 +18,7 @@ first — it covers the CLA, Code of Conduct, and other prerequisites.
 
 ## Code structure
 
-```
+```text
 ├── docs
 │   ├── gen-ai/            # hand-written docs with embedded generated tables
 │   └── registry/          # auto-generated attribute registry pages
@@ -66,6 +66,12 @@ make check-policies
 This validates the model against shared OpenTelemetry policies covering
 naming conventions, attribute type rules, stability requirements, and
 backwards compatibility.
+
+Run the link checks (optional, requires [mise](https://mise.jdx.dev/)):
+
+```bash
+mise run links
+```
 
 ### 4. Update reference scenarios
 
