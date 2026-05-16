@@ -95,13 +95,13 @@ for that type.
 Each partitioned metric attribute value corresponds to span attributes
 on the same request:
 
-| Metric attribute            | Equals (per request)                                              |
-|-----------------------------|-------------------------------------------------------------------|
-| cache=read                  | gen_ai.usage.cache_read.input_tokens                              |
-| cache=creation              | gen_ai.usage.cache_creation.input_tokens                          |
-| cache=uncached              | gen_ai.usage.input_tokens − cache_read − cache_creation           |
-| reasoning=true              | gen_ai.usage.reasoning.output_tokens                              |
-| reasoning=false             | gen_ai.usage.output_tokens − gen_ai.usage.reasoning.output_tokens |
+| Metric attribute              | Equals (per request)                                              |
+|-------------------------------|-------------------------------------------------------------------|
+| gen_ai.token.cache=read       | gen_ai.usage.cache_read.input_tokens                              |
+| gen_ai.token.cache=creation   | gen_ai.usage.cache_creation.input_tokens                          |
+| gen_ai.token.cache=uncached   | gen_ai.usage.input_tokens − cache_read − cache_creation           |
+| gen_ai.token.reasoning=true   | gen_ai.usage.reasoning.output_tokens                              |
+| gen_ai.token.reasoning=false  | gen_ai.usage.output_tokens − gen_ai.usage.reasoning.output_tokens |
 
 **Attributes:**
 
