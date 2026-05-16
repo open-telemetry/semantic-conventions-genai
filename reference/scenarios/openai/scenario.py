@@ -264,6 +264,90 @@ def run_chat_tool_call_reference(client):
             print(f"    -> {choice.message.content[:60]}")
 
 
+def run_chat_with_document_input_reference(client):
+    """Scenario: chat with an inline PDF document attachment (document modality).
+
+    Exercises the `document` value of the `Modality` enum on a `BlobPart`
+    in `gen_ai.input.messages`. Every emitted field on the BlobPart is
+    derivable directly from the OpenAI SDK call boundary:
+
+    - The SDK call passes a `{"type": "file", "file": {"file_data": "data:application/pdf;base64,..."}}`
+      content block. The `file_data` value is a data-URI a native
+      instrumentation can parse without a separate Files-API roundtrip.
+    - `mime_type` comes from the data-URI prefix (`application/pdf`).
+    - `content` is the base64 payload of the data-URI.
+    - `modality: "document"` is the classification of `application/pdf`
+      under the new enum value -- the whole point of this PR.
+    """
+    import base64
+
+    print("  [chat_document] chat with inline PDF document input (reference implementation)")
+    request_model = "gpt-4o-mini"
+    instruction = "Summarize the attached document in one sentence."
+    # Minimal valid-looking PDF bytes; the mock LLM does not parse this.
+    pdf_bytes = b"%PDF-1.4\n%mock pdf for reference scenario\n%%EOF\n"
+    pdf_b64 = base64.b64encode(pdf_bytes).decode("ascii")
+    mime_type = "application/pdf"
+    data_uri = f"data:{mime_type};base64,{pdf_b64}"
+    filename = "sample-kyc.pdf"
+
+    # SDK boundary: documented `file` content block with inline `file_data`.
+    user_content = [
+        {"type": "text", "text": instruction},
+        {"type": "file", "file": {"file_data": data_uri, "filename": filename}},
+    ]
+    messages = [{"role": "user", "content": user_content}]
+
+    # Canonical OTel parts: TextPart + BlobPart(modality="document"). Each
+    # field on the BlobPart traces back to the SDK arg above:
+    #   - mime_type: parsed from the data-URI prefix
+    #   - content:   the base64 portion of the data-URI
+    #   - modality:  derived classification of mime_type "application/pdf"
+    input_parts = [
+        {"type": "text", "content": instruction},
+        {
+            "type": "blob",
+            "modality": "document",
+            "mime_type": mime_type,
+            "content": pdf_b64,
+        },
+    ]
+    input_messages = json.dumps([{"role": "user", "parts": input_parts}])
+
+    host, port = mock_server_host_port(MOCK_BASE_URL)
+    span_attributes_doc = {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "openai",
+        "gen_ai.request.model": request_model,
+    }
+    if host:
+        span_attributes_doc["server.address"] = host
+    if port is not None:
+        span_attributes_doc["server.port"] = port
+    with _reference_tracer.start_as_current_span("chat gpt-4o-mini", attributes=span_attributes_doc) as span:
+        span.set_attribute("gen_ai.input.messages", input_messages)
+        resp = client.chat.completions.create(
+            model=request_model,
+            messages=messages,
+        )
+        span.set_attribute("gen_ai.response.model", resp.model)
+        span.set_attribute("gen_ai.response.id", resp.id)
+        span.set_attribute("gen_ai.response.finish_reasons", [c.finish_reason for c in resp.choices])
+        output_messages = [
+            {
+                "role": c.message.role,
+                "parts": [{"type": "text", "content": c.message.content}],
+                "finish_reason": c.finish_reason,
+            }
+            for c in resp.choices
+        ]
+        span.set_attribute("gen_ai.output.messages", json.dumps(output_messages))
+        if resp.usage:
+            span.set_attribute("gen_ai.usage.input_tokens", resp.usage.prompt_tokens)
+            span.set_attribute("gen_ai.usage.output_tokens", resp.usage.completion_tokens)
+        print(f"    -> {resp.choices[0].message.content[:60]}")
+
+
 def run_embeddings_reference(client):
     """Scenario: embedding generation with reference implementation."""
     print("  [embeddings] embedding generation (reference implementation)")
@@ -308,6 +392,7 @@ def main():
     run_chat_reference(client)
     run_chat_streaming_reference(client)
     run_chat_tool_call_reference(client)
+    run_chat_with_document_input_reference(client)
     run_embeddings_reference(client)
 
     flush_and_shutdown(tp, lp, mp)

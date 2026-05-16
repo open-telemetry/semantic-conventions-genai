@@ -38,11 +38,10 @@ and where each value comes from.
 
 ## Span boundaries
 
-- The span must be open around the library invocation. Request attributes
-  that are known before the call are passed as the `attributes` argument to
-  `start_as_current_span`. Request attributes known only later, and all
-  response attributes set from the returned object, are set inline inside
-  the same `with` block.
+- The span must be open around the library invocation. `sampling_relevant`
+  request attributes go in the span-start `attributes` argument to
+  `start_as_current_span`; other request attributes and response attributes
+  are set inline inside the same `with` block.
 - Setting attributes on a separately opened or post-hoc span after the call
   returns is a defect even if the final attribute set looks correct.
 
