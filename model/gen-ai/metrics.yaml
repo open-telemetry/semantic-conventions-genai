@@ -87,6 +87,23 @@ metrics:
         metric_value_type: double
     attributes:
       - ref_group: metric_attributes.gen_ai
+  - name: gen_ai.server.inter_token_latency
+    instrument: histogram
+    unit: "s"
+    brief: 'Time between consecutive output tokens during generation for successful responses.'
+    note: >
+      Inter token latency measures the actual elapsed time between the emission of
+      consecutive output tokens. Unlike `gen_ai.server.time_per_output_token` which
+      is a per-request average, this metric is recorded for each pair of consecutive
+      tokens and captures variability in token generation speed caused by batching,
+      preemption, or multi-token prediction. Inference engines such as vLLM, TGI,
+      and NIM report this metric natively.
+    stability: development
+    annotations:
+      code_generation:
+        metric_value_type: double
+    attributes:
+      - ref_group: metric_attributes.gen_ai
   - name: gen_ai.server.time_to_first_token
     instrument: histogram
     unit: "s"
