@@ -18,4 +18,5 @@ uses tags of the form `vX.Y.Z-dev`; the schema URL lives under
    - Description: copy the changelog entries for this version.
    - **Save as draft** — do not publish.
 4. Run the [Release (dev) workflow](https://github.com/open-telemetry/semantic-conventions-genai/actions/workflows/release-dev.yml).
-   It will attach resolved schema artifacts and publish the draft, creating the git tag at the workflow's commit.
+   It will attach resolved schema artifacts and publish the draft as a prerelease,
+   creating the git tag at the workflow's commit.

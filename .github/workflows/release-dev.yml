@@ -70,4 +70,5 @@ jobs:
         run: |
           gh release edit "$TAG" \
             --draft=false \
+            --prerelease \
             --target "${{ github.sha }}"
