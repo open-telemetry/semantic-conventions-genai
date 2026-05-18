@@ -162,7 +162,8 @@
             "enum": [
                 "image",
                 "video",
-                "audio"
+                "audio",
+                "document"
             ],
             "title": "Modality",
             "type": "string"

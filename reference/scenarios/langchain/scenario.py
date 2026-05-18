@@ -92,7 +92,7 @@ def run_plan_and_execute_reference():
 
     # langchain-experimental's LLMPlanner has no library-owned agent identity
     # or name (no .id, no .name) -- the planner is a thin wrapper over an
-    # LLMChain. Per evaluate-reference SKILL, omit gen_ai.agent.id /
+    # LLMChain. Per evaluate-reference rubric, omit gen_ai.agent.id /
     # gen_ai.agent.name rather than emitting opaque object addresses or the
     # implementation class name.
     with _reference_tracer.start_as_current_span("plan") as plan_span:

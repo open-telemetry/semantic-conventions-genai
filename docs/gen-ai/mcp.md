@@ -353,6 +353,8 @@ for more details.
 | [`network.protocol.name`](https://github.com/open-telemetry/semantic-conventions/blob/v1.41.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When applicable. | string | [OSI application layer](https://wikipedia.org/wiki/Application_layer) or non-OSI equivalent. [11] | `http`; `websocket` |
 | [`network.protocol.version`](https://github.com/open-telemetry/semantic-conventions/blob/v1.41.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When applicable. | string | The actual version of the protocol used for network communication. | `1.1`; `2` |
 | [`network.transport`](https://github.com/open-telemetry/semantic-conventions/blob/v1.41.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | The transport protocol used for the MCP session. [12] | `tcp`; `quic`; `pipe` |
+| [`gen_ai.tool.call.arguments`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | Parameters passed to the tool call. [13] | {<br>&nbsp;&nbsp;&nbsp;&nbsp;"location": "San Francisco?",<br>&nbsp;&nbsp;&nbsp;&nbsp;"date": "2025-10-01"<br>} |
+| [`gen_ai.tool.call.result`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | The result returned by the tool call (if any and if execution was successful). [14] | {<br>&nbsp;&nbsp;"temperature_range": {<br>&nbsp;&nbsp;&nbsp;&nbsp;"high": 75,<br>&nbsp;&nbsp;&nbsp;&nbsp;"low": 60<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;"conditions": "sunny"<br>} |
 
 **[1] `error.type`:** This attribute SHOULD be set to the string representation of the JSON-RPC
 error code, if one is returned.
@@ -388,6 +390,24 @@ Semantic conventions for individual RPC frameworks SHOULD document what `rpc.res
 
 **[12] `network.transport`:** This attribute SHOULD be set to `tcp` or `quic` if the transport protocol
 is HTTP. It SHOULD be set to `pipe` if the transport is stdio.
+
+**[13] `gen_ai.tool.call.arguments`:**
+
+> [!WARNING]
+> This attribute may contain sensitive information.
+
+It's expected to be an object - in case a serialized string is available
+to the instrumentation, the instrumentation SHOULD do the best effort to
+deserialize it to an object. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
+
+**[14] `gen_ai.tool.call.result`:**
+
+> [!WARNING]
+> This attribute may contain sensitive information.
+
+It's expected to be an object - in case a serialized string is available
+to the instrumentation, the instrumentation SHOULD do the best effort to
+deserialize it to an object. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
 
 ---
 

@@ -9652,6 +9652,49 @@ refinements:
         conditionally_required: When operation is related to a specific prompt.
       stability: development
       type: string
+    - brief: Parameters passed to the tool call.
+      examples:
+      - |
+        {
+            "location": "San Francisco?",
+            "date": "2025-10-01"
+        }
+      key: gen_ai.tool.call.arguments
+      note: |
+        \u003e [!WARNING]
+        \u003e This attribute may contain sensitive information.
+
+        It\u0027s expected to be an object - in case a serialized string is available
+        to the instrumentation, the instrumentation SHOULD do the best effort to
+        deserialize it to an object. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: opt_in
+      stability: development
+      type: any
+    - brief: The result returned by the tool call (if any and if execution was successful).
+      examples:
+      - |
+        {
+          "temperature_range": {
+            "high": 75,
+            "low": 60
+          },
+          "conditions": "sunny"
+        }
+      key: gen_ai.tool.call.result
+      note: |
+        \u003e [!WARNING]
+        \u003e This attribute may contain sensitive information.
+
+        It\u0027s expected to be an object - in case a serialized string is available
+        to the instrumentation, the instrumentation SHOULD do the best effort to
+        deserialize it to an object. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: opt_in
+      stability: development
+      type: any
     - brief: Name of the tool utilized by the agent.
       examples:
       - Flights
@@ -18849,6 +18892,49 @@ registry:
         conditionally_required: When operation is related to a specific prompt.
       stability: development
       type: string
+    - brief: Parameters passed to the tool call.
+      examples:
+      - |
+        {
+            "location": "San Francisco?",
+            "date": "2025-10-01"
+        }
+      key: gen_ai.tool.call.arguments
+      note: |
+        \u003e [!WARNING]
+        \u003e This attribute may contain sensitive information.
+
+        It\u0027s expected to be an object - in case a serialized string is available
+        to the instrumentation, the instrumentation SHOULD do the best effort to
+        deserialize it to an object. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: opt_in
+      stability: development
+      type: any
+    - brief: The result returned by the tool call (if any and if execution was successful).
+      examples:
+      - |
+        {
+          "temperature_range": {
+            "high": 75,
+            "low": 60
+          },
+          "conditions": "sunny"
+        }
+      key: gen_ai.tool.call.result
+      note: |
+        \u003e [!WARNING]
+        \u003e This attribute may contain sensitive information.
+
+        It\u0027s expected to be an object - in case a serialized string is available
+        to the instrumentation, the instrumentation SHOULD do the best effort to
+        deserialize it to an object. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: opt_in
+      stability: development
+      type: any
     - brief: Name of the tool utilized by the agent.
       examples:
       - Flights
