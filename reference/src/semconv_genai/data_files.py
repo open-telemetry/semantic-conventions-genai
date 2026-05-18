@@ -51,11 +51,6 @@ EVENT_TYPE_ORDER = [
     "gen_ai.evaluation.result",
 ]
 
-# Rendering-only: not part of the semconv spec definitions.
-DISPLAY_DEPRECATED_ATTRS = {
-    "gen_ai.provider.name": "gen_ai.system",
-}
-
 _REQUIREMENT_LEVELS = (
     RequirementLevel.REQUIRED,
     RequirementLevel.CONDITIONALLY_REQUIRED,
@@ -70,14 +65,8 @@ def _present_attributes(result: ScenarioResult) -> set[str]:
 
 
 def _display_attrs_for_level(spec: AttributeSpec, level: RequirementLevel) -> tuple[str, ...]:
-    """Return attrs for one requirement level, including deprecated predecessors."""
-    display_attrs: list[str] = []
-    for attr in sorted(spec.attrs_for_requirement_level(level)):
-        display_attrs.append(attr)
-        deprecated_attr = DISPLAY_DEPRECATED_ATTRS.get(attr)
-        if deprecated_attr is not None:
-            display_attrs.append(deprecated_attr)
-    return tuple(display_attrs)
+    """Return attrs for one requirement level."""
+    return tuple(sorted(spec.attrs_for_requirement_level(level)))
 
 
 def _attrs_by_level(spec: AttributeSpec) -> list[tuple[RequirementLevel, tuple[str, ...]]]:

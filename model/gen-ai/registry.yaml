@@ -225,14 +225,6 @@ attributes:
           stability: development
           value: "input"
           brief: 'Input tokens (prompt, input, etc.)'
-        - id: completion
-          stability: development
-          value: "output"
-          deprecated:
-            reason: renamed
-            renamed_to: "output"
-            note: Replaced by `output`.
-          brief: 'Output tokens (completion, response, etc.)'
         - id: output
           stability: development
           value: "output"

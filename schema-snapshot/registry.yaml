@@ -1591,14 +1591,6 @@ refinements:
           stability: development
           value: input
         - brief: Output tokens (completion, response, etc.)
-          deprecated:
-            note: Replaced by `output`.
-            reason: renamed
-            renamed_to: output
-          id: completion
-          stability: development
-          value: output
-        - brief: Output tokens (completion, response, etc.)
           id: output
           stability: development
           value: output
@@ -3704,14 +3696,6 @@ refinements:
           id: input
           stability: development
           value: input
-        - brief: Output tokens (completion, response, etc.)
-          deprecated:
-            note: Replaced by `output`.
-            reason: renamed
-            renamed_to: output
-          id: completion
-          stability: development
-          value: output
         - brief: Output tokens (completion, response, etc.)
           id: output
           stability: development
@@ -11338,14 +11322,6 @@ registry:
         stability: development
         value: input
       - brief: Output tokens (completion, response, etc.)
-        deprecated:
-          note: Replaced by `output`.
-          reason: renamed
-          renamed_to: output
-        id: completion
-        stability: development
-        value: output
-      - brief: Output tokens (completion, response, etc.)
         id: output
         stability: development
         value: output
@@ -13338,14 +13314,6 @@ registry:
           id: input
           stability: development
           value: input
-        - brief: Output tokens (completion, response, etc.)
-          deprecated:
-            note: Replaced by `output`.
-            reason: renamed
-            renamed_to: output
-          id: completion
-          stability: development
-          value: output
         - brief: Output tokens (completion, response, etc.)
           id: output
           stability: development

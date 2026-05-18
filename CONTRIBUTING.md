@@ -27,8 +27,7 @@ first — it covers the CLA, Code of Conduct, and other prerequisites.
 │       ├── registry.yaml  # attribute definitions
 │       ├── spans.yaml     # span conventions
 │       ├── metrics.yaml   # metric conventions
-│       ├── events.yaml    # event conventions
-│       └── deprecated/    # deprecated conventions
+│       └── events.yaml    # event conventions
 ```
 
 All attributes must be defined in `registry.yaml` files under the matching
