@@ -110,14 +110,12 @@ $(SC_UPSTREAM_STAMP): $(VERSION_PINS_FILE)
 filter-upstream: $(SC_UPSTREAM_STAMP)
 
 # Validate the model and run shared policies
-# After the first release from this repository establishes the new schema URL
-# baseline, enable baseline compatibility checking by adding a trailing `\` to
-# the --policy line and appending `--baseline-registry '$(BASELINE_REGISTRY)'`.
 check-policies: $(LOCAL_POLICY_STAMP) $(SC_UPSTREAM_STAMP)
 	$(WEAVER) registry check \
 		-r ./model \
 		--v2 \
 		--policy $(LOCAL_POLICIES)/policies/check
+		# --baseline-registry '$(BASELINE_REGISTRY)' \ uncomment after removing deprecated entries
 
 # Generate the attribute registry pages under docs/registry/ from local
 # templates that consume the v2 resolved registry.
