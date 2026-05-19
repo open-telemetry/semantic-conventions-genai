@@ -14,6 +14,9 @@ Save the Netlify project ID as a GitHub Actions variable named
 Save a Netlify personal access token as a GitHub Actions secret named
 `NETLIFY_AUTH_TOKEN`.
 
+Disable Deploy Previews and related PR comment notifications. PR preview
+deploys are unused and only add noise to PRs.
+
 ## 2. GitHub App
 
 Create a GitHub App:
@@ -64,7 +67,8 @@ Encode the private key as a single-line base64 string (Git Bash):
 base64 < /path/to/github-app-private-key.pem | tr -d '\n' | clip
 ```
 
-Add the following environment variables to the Netlify project.
+Add the following environment variables to the Netlify project for the
+Production deploy context.
 
 Secrets:
 
