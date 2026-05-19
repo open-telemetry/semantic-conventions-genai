@@ -57,11 +57,17 @@ SC_UPSTREAM_MIGRATED_DIRS := gen-ai mcp openai
 # same group id.
 SC_UPSTREAM_MIGRATED_GROUPS := aws/registry.yaml:registry.aws.bedrock
 
-.PHONY: check-policies schema-snapshot generate-registry generate-docs generate-all clean filter-upstream
+.PHONY: check-policies schema-snapshot generate-registry generate-docs generate-all clean filter-upstream package-dev
 
 # Pinned upstream GitHub URL base, passed to templates as `upstream_docs_base`
 # so cross-registry links to upstream pages resolve to the pinned version.
 UPSTREAM_DOCS_BASE := https://github.com/open-telemetry/semantic-conventions/blob/$(SEMCONV_VERSION)
+
+# Release version = last path segment of the top-level schema_url in
+# model/manifest.yaml. E.g. `gen-ai-dev/1.42.0-dev` -> `1.42.0-dev`.
+VERSION := $(shell awk '/^schema_url:/ { n = split($$2, parts, "/"); print parts[n]; exit }' model/manifest.yaml)
+RESOLVED_SCHEMA_URI := https://github.com/open-telemetry/semantic-conventions-genai/releases/download/v$(VERSION)/resolved.yaml
+PACKAGE_OUTPUT := .build/package
 
 # Work around a Weaver 0.23.0 panic when `registry check` fetches a pinned remote
 # policy pack by commit SHA. Keep the policy source pinned, but materialize it as
@@ -147,6 +153,18 @@ schema-snapshot: $(SC_UPSTREAM_STAMP)
 		-t ./templates/registry \
 		yaml \
 		./schema-snapshot
+
+# Package the registry into a publication artifact. The version comes from
+# model/manifest.yaml's schema_url; bump it there to cut a new release.
+package-dev: $(SC_UPSTREAM_STAMP)
+	@mkdir -p .build
+	rm -rf $(PACKAGE_OUTPUT)
+	$(WEAVER) registry package \
+		-r ./model \
+		--v2 \
+		--resolved-schema-uri '$(RESOLVED_SCHEMA_URI)' \
+		-o ./$(PACKAGE_OUTPUT)
+	@echo "Packaged version $(VERSION) -> $(PACKAGE_OUTPUT)"
 
 # Remove generated docs, the local .build/ tree (Weaver-fetched templates/policies
 # plus any hand-created weaver-min-repro* dirs), reference-project caches, and

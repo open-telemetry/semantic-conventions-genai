@@ -2,7 +2,7 @@
   "name": "copilot-cli-install",
   "version": "0.0.0",
   "private": true,
-  "description": "Pinned install of @github/copilot CLI used by .github/workflows/pr-review-dashboard.yml",
+  "description": "Pinned install of @github/copilot CLI used by .github/workflows/pull-request-dashboard.yml",
   "dependencies": {
     "@github/copilot": "1.0.43"
   }

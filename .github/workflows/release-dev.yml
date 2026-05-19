@@ -1,0 +1,74 @@
+name: Release (dev)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Compute tag from model/manifest.yaml
+        id: tag
+        run: |
+          version=$(awk '/^schema_url:/ { n = split($2, parts, "/"); print parts[n]; exit }' model/manifest.yaml)
+          if [ -z "$version" ]; then
+            echo "Could not parse version from model/manifest.yaml"
+            exit 1
+          fi
+          echo "tag=v${version}" >> "$GITHUB_OUTPUT"
+          echo "Tag: v${version}"
+
+      - name: Find draft release matching schema_url
+        id: draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          info=$(gh release view "$TAG" --json isDraft 2>/dev/null || true)
+          if [ -z "$info" ]; then
+            existing_drafts=$(gh release list --limit 20 --json tagName,isDraft \
+              --jq '[.[] | select(.isDraft) | .tagName] | join(", ")')
+            echo "Expected a draft release with tag '${TAG}' (derived from model/manifest.yaml schema_url)."
+            if [ -n "$existing_drafts" ]; then
+              echo "Existing draft tags: ${existing_drafts}"
+              echo "Either rename the draft to '${TAG}', or update model/manifest.yaml schema_url to match the draft's tag."
+            else
+              echo "No draft releases exist. See RELEASING.md."
+            fi
+            exit 1
+          fi
+          is_draft=$(echo "$info" | jq -r .isDraft)
+          if [ "$is_draft" != "true" ]; then
+            echo "Release '${TAG}' is already published; refusing to re-release."
+            exit 1
+          fi
+          echo "Draft release '${TAG}' matches model/manifest.yaml schema_url."
+
+      - name: Package registry
+        run: make package-dev
+
+      - name: Upload artifacts to draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          gh release upload "$TAG" \
+            .build/package/manifest.yaml \
+            .build/package/resolved.yaml \
+            --clobber
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          gh release edit "$TAG" \
+            --draft=false \
+            --prerelease \
+            --target "${{ github.sha }}"

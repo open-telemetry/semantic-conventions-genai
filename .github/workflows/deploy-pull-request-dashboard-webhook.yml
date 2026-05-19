@@ -1,0 +1,47 @@
+name: Deploy pull request dashboard webhook
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/scripts/pull-request-dashboard/netlify.toml
+      - .github/scripts/pull-request-dashboard/netlify/**
+      - .github/scripts/pull-request-dashboard/public/**
+      - .github/workflows/deploy-pull-request-dashboard-webhook.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-pull-request-dashboard-webhook
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.repository == 'open-telemetry/semantic-conventions-genai'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v6.0.0
+        with:
+          node-version: 22
+          package-manager-cache: false
+
+      - name: Deploy Netlify function
+        working-directory: .github/scripts/pull-request-dashboard
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ vars.NETLIFY_PR_DASHBOARD_PROJECT_ID }}
+        run: |
+          set -euo pipefail
+          npx --yes netlify-cli@26.0.2 deploy \
+            --prod \
+            --dir public \
+            --site "$NETLIFY_SITE_ID" \
+            --auth "$NETLIFY_AUTH_TOKEN" \
+            --message "${GITHUB_REPOSITORY}@${GITHUB_SHA}"

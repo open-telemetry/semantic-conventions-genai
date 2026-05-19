@@ -35,14 +35,6 @@ attribute_groups:
         requirement_level:
           conditionally_required: If `server.address` is set.
 
-  - id: attributes.gen_ai.memory.client
-    visibility: internal
-    attributes:
-      - ref: gen_ai.operation.name
-        requirement_level: required
-      - ref_group: attributes.gen_ai.address_and_port
-      - ref_group: attributes.gen_ai.error
-
   - id: attributes.gen_ai.usage
     visibility: internal
     attributes:
@@ -334,7 +326,10 @@ spans:
       the operation intends to delete all memory records in the specified store.
     stability: development
     attributes:
-      - ref_group: attributes.gen_ai.memory.client
+      - ref: gen_ai.operation.name
+        requirement_level: required
+      - ref_group: attributes.gen_ai.address_and_port
+      - ref_group: attributes.gen_ai.error
       - ref: gen_ai.provider.name
         requirement_level:
           conditionally_required: if the operation is handled by a named external GenAI provider or service

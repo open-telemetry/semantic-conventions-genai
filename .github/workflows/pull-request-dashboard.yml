@@ -1,0 +1,233 @@
+name: Pull request dashboard
+
+on:
+  schedule:
+    # hourly
+    - cron: "0 * * * *"
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: Pull request number to refresh. Empty means full rebuild.
+        required: false
+        type: string
+      trigger_event:
+        description: Event that requested the refresh.
+        required: false
+        type: string
+      trigger_action:
+        description: Event action that requested the refresh.
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+env:
+  DASHBOARD_STATE_BRANCH: otelbot/pull-request-dashboard-state
+
+jobs:
+  resolve-trigger:
+    if: github.repository == 'open-telemetry/semantic-conventions-genai'
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    outputs:
+      skip_dashboard: ${{ steps.trigger.outputs.skip_dashboard }}
+      pr_number: ${{ steps.trigger.outputs.pr_number }}
+    steps:
+      - name: Resolve trigger
+        id: trigger
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_FROM_INPUT: ${{ inputs.pr_number }}
+          TRIGGER_EVENT_FROM_INPUT: ${{ inputs.trigger_event }}
+          TRIGGER_ACTION_FROM_INPUT: ${{ inputs.trigger_action }}
+        run: |
+          set -euo pipefail
+          pr_number=""
+          trigger_event=""
+          trigger_action=""
+          skip_dashboard="false"
+
+          skip_event() {
+            echo "$1" >&2
+            skip_dashboard="true"
+            trigger_event=""
+            trigger_action=""
+          }
+
+          case "$EVENT_NAME" in
+            schedule)
+              trigger_event="$EVENT_NAME"
+              ;;
+            workflow_dispatch)
+              pr_number="$PR_FROM_INPUT"
+              trigger_event="${TRIGGER_EVENT_FROM_INPUT:-workflow_dispatch}"
+              trigger_action="$TRIGGER_ACTION_FROM_INPUT"
+              ;;
+          esac
+
+          # Re-validate bridge inputs before using them to select a targeted
+          # dashboard update.
+          if [[ -n "$pr_number" ]]; then
+            [[ "$pr_number" =~ ^[1-9][0-9]{0,6}$ ]] \
+              || { echo "bad PR number: $pr_number"; exit 1; }
+          fi
+          if [[ -n "$trigger_event" ]]; then
+            [[ "$trigger_event" =~ ^(schedule|workflow_dispatch|pull_request|issue_comment|pull_request_review|pull_request_review_comment|pull_request_review_thread)$ ]] \
+              || { skip_event "bad trigger event: $trigger_event"; }
+          fi
+          if [[ -n "$trigger_action" ]]; then
+            [[ "$trigger_action" =~ ^[a-z_]{1,32}$ ]] \
+              || { skip_event "bad trigger action: $trigger_action"; }
+          fi
+
+          {
+            echo "skip_dashboard=$skip_dashboard"
+            echo "pr_number=$pr_number"
+            echo "event=$trigger_event"
+            echo "action=$trigger_action"
+          } >> "$GITHUB_OUTPUT"
+
+          # Echo the resolved trigger to the job log for at-a-glance diagnostics.
+          echo "trigger: pr=${pr_number:--} event=${trigger_event:--} action=${trigger_action:--}"
+
+  update-dashboard:
+    needs: resolve-trigger
+    if: needs.resolve-trigger.outputs.skip_dashboard != 'true'
+    # Same-PR events are serialized together while unrelated PRs can update
+    # state concurrently. Full rebuilds use their own lane. The state branch
+    # push below still uses --force-with-lease as the durable CAS across lanes.
+    concurrency:
+      group: ${{ github.workflow }}-state-${{ github.repository }}-${{ needs.resolve-trigger.outputs.pr_number || 'full' }}
+      cancel-in-progress: false
+    permissions:
+      actions: read
+      checks: read
+      contents: write
+      issues: read
+      pull-requests: read
+    environment: protected
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: main
+          persist-credentials: false
+
+      - uses: actions/create-github-app-token@1b10c78c7865c340bc4f6099eb2f838309f1e8c3 # v3.1.1
+        id: otelbot-token
+        with:
+          app-id: ${{ vars.OTELBOT_APP_ID }}
+          private-key: ${{ secrets.OTELBOT_PRIVATE_KEY }}
+
+      - name: Restore per-PR classification cache
+        # Scoped to one PR so concurrent PR events don't overwrite each
+        # other's work. Cache entries are immutable, so the save key uses
+        # a rolling suffix and restore-keys picks the most recent snapshot.
+        if: needs.resolve-trigger.outputs.pr_number != ''
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: .cache/classifications
+          key: pull-request-dashboard-classifications-${{ needs.resolve-trigger.outputs.pr_number }}-${{ github.run_id }}
+          restore-keys: |
+            pull-request-dashboard-classifications-${{ needs.resolve-trigger.outputs.pr_number }}-
+
+      - name: Restore shared full-rebuild classification cache
+        # Single cache shared across the hourly schedule and manual full
+        # rebuilds, so only the few PRs that changed since the last
+        # rebuild pay the LLM cost. Same rolling-key pattern as above.
+        if: needs.resolve-trigger.outputs.pr_number == ''
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: .cache/classifications
+          key: pull-request-dashboard-classifications-all-${{ github.run_id }}
+          restore-keys: |
+            pull-request-dashboard-classifications-all-
+
+      - name: Install Copilot CLI
+        run: |
+          npm ci --prefix .github/scripts/copilot-cli
+          # expose the locally-installed `copilot` binary to subsequent steps
+          echo "$GITHUB_WORKSPACE/.github/scripts/copilot-cli/node_modules/.bin" >> "$GITHUB_PATH"
+
+      - name: Generate and update dashboard
+        env:
+          TRIGGER_PR_NUMBER: ${{ needs.resolve-trigger.outputs.pr_number }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # needed for reading approver team membership (org:read)
+          OTELBOT_TOKEN: ${{ steps.otelbot-token.outputs.token }}
+          COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          dashboard_args=(--state-branch "$DASHBOARD_STATE_BRANCH")
+          if [[ -n "${TRIGGER_PR_NUMBER:-}" ]]; then
+            dashboard_args+=(--pr-number "$TRIGGER_PR_NUMBER")
+          fi
+
+          python3 .github/scripts/pull-request-dashboard/dashboard.py "${dashboard_args[@]}"
+
+  notify-slack:
+    needs: update-dashboard
+    if: needs.update-dashboard.result == 'success'
+    # Slack sends are external side effects, so serialize notification
+    # processing while still allowing PR-specific dashboard computation to run
+    # concurrently. The notification ledger is pushed with the same state-branch
+    # CAS retry loop used by dashboard updates.
+    concurrency:
+      group: ${{ github.workflow }}-notify-${{ github.repository }}
+      cancel-in-progress: false
+    permissions:
+      contents: write
+      pull-requests: read
+    environment: protected
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: main
+          persist-credentials: false
+
+      - uses: actions/create-github-app-token@1b10c78c7865c340bc4f6099eb2f838309f1e8c3 # v3.1.1
+        id: otelbot-token
+        with:
+          app-id: ${{ vars.OTELBOT_APP_ID }}
+          private-key: ${{ secrets.OTELBOT_PRIVATE_KEY }}
+
+      - name: Send Slack notifications
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OTELBOT_TOKEN: ${{ steps.otelbot-token.outputs.token }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_USER_MAP_JSON: ${{ secrets.SLACK_USER_MAP_JSON }}
+        run: |
+          set -euo pipefail
+          python3 .github/scripts/pull-request-dashboard/notify_slack.py \
+            --state-branch "$DASHBOARD_STATE_BRANCH"
+
+  publish-dashboard:
+    needs: update-dashboard
+    if: needs.update-dashboard.result == 'success'
+    # The issue body is a single shared projection. Serialize publication,
+    # then fetch the latest accepted state branch while holding this slot so
+    # an older run cannot publish stale markdown after a newer state update
+    # has landed.
+    concurrency:
+      group: ${{ github.workflow }}-publish-${{ github.repository }}
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      issues: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: main
+          persist-credentials: false
+
+      - name: Publish dashboard issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python3 .github/scripts/pull-request-dashboard/publish_dashboard.py \
+            --state-branch "$DASHBOARD_STATE_BRANCH"
