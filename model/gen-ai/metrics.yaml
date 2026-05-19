@@ -19,7 +19,7 @@ attribute_groups:
         requirement_level: recommended
 metrics:
   - name: gen_ai.client.token.usage
-    instrument: histogram
+    instrument: counter
     unit: "{token}"
     brief: 'Number of input and output tokens used.'
     stability: development

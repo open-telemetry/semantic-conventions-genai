@@ -4,6 +4,15 @@
 
 ### 🛑 Breaking changes 🛑
 
+- Change `gen_ai.client.token.usage` instrument type from `Histogram` to `Counter`.
+  Splitting one logical token count across optional attributes such as
+  `gen_ai.token.cache` and `gen_ai.token.reasoning` is incompatible with the
+  histogram count/buckets/percentile views once those attributes are aggregated
+  away. A Counter aggregates correctly under that operation. Per-request token
+  distribution use cases should be served by a separate dedicated histogram in
+  a follow-up if needed.
+  ([#96](https://github.com/open-telemetry/semantic-conventions-genai/pull/96))
+
 ### 🚩 Deprecations 🚩
 
 ### 🚀 New components 🚀

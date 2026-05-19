@@ -1681,7 +1681,7 @@ refinements:
       type: int
     brief: Number of input and output tokens used.
     id: gen_ai.client.token.usage
-    instrument: histogram
+    instrument: counter
     name: gen_ai.client.token.usage
     note: |
       When the provider reports a detailed token breakdown for a given token
@@ -3892,7 +3892,7 @@ refinements:
     brief: |
       OpenAI-specific extension to `gen_ai.client.token.usage`. Adds `openai.response.service_tier` and `openai.response.system_fingerprint` when the provider is `openai`.
     id: openai.client.token.usage
-    instrument: histogram
+    instrument: counter
     name: gen_ai.client.token.usage
     note: |
       When the provider reports a detailed token breakdown for a given token
@@ -13632,7 +13632,7 @@ registry:
       stability: stable
       type: int
     brief: Number of input and output tokens used.
-    instrument: histogram
+    instrument: counter
     name: gen_ai.client.token.usage
     note: |
       When the provider reports a detailed token breakdown for a given token

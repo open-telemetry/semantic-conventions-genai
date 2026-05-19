@@ -311,7 +311,7 @@ Reports the usage of tokens following the common [gen_ai.client.token.usage](./g
 
 | Name | Instrument Type | Unit (UCUM) | Description | Stability | Entity Associations |
 | -------- | --------------- | ----------- | -------------- | --------- | ------ |
-| `gen_ai.client.token.usage` | Histogram | `{token}` | OpenAI-specific extension to `gen_ai.client.token.usage`. Adds `openai.response.service_tier` and `openai.response.system_fingerprint` when the provider is `openai`. [1] | ![Development](https://img.shields.io/badge/-development-blue) | |
+| `gen_ai.client.token.usage` | Counter | `{token}` | OpenAI-specific extension to `gen_ai.client.token.usage`. Adds `openai.response.service_tier` and `openai.response.system_fingerprint` when the provider is `openai`. [1] | ![Development](https://img.shields.io/badge/-development-blue) | |
 
 **[1]:** When the provider reports a detailed token breakdown for a given token
 type, instrumentations SHOULD partition the token count for that type
