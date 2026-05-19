@@ -554,14 +554,14 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "opentelemetry-api", specifier = "==1.41.1" },
-    { name = "opentelemetry-exporter-otlp-proto-grpc", specifier = "==1.41.1" },
-    { name = "opentelemetry-sdk", specifier = "==1.41.1" },
+    { name = "opentelemetry-api", specifier = "==1.42.0" },
+    { name = "opentelemetry-exporter-otlp-proto-grpc", specifier = "==1.42.0" },
+    { name = "opentelemetry-sdk", specifier = "==1.42.0" },
 ]
 
 [[package]]
 name = "google-adk"
-version = "1.32.0"
+version = "1.34.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiosqlite" },
@@ -610,9 +610,9 @@ dependencies = [
     { name = "watchdog" },
     { name = "websockets" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/0a/cb/6c5ad3f7135071ed6465494acb88084b071c750e2215a55c842649f353e4/google_adk-1.32.0.tar.gz", hash = "sha256:539df330a695d8ae5dc1bc3f1155ef03c6c620620cd0b690b8d47865e722e51c", size = 2424585, upload-time = "2026-05-01T00:20:47.888Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/bc/dc/1fec30bdc7b640087ee64dfc69bae4450ef43a1cba688bd9cb99dca6ba67/google_adk-1.34.0.tar.gz", hash = "sha256:bce56f6f8f400dcc83d633190f5f44d27fcb88a515a9556aeeb9ef9cbc896600", size = 2431386, upload-time = "2026-05-18T23:48:00.212Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/03/68/c02dee93b09c0af4cc68a6a4fdb330a8e4935ffa9c8ad9640590ca29cca4/google_adk-1.32.0-py3-none-any.whl", hash = "sha256:cee8e8bd1d869f7e01ba3e5aac44b255f70ee3f9bb78cb50b3253ce605703b0d", size = 2869333, upload-time = "2026-05-01T00:20:49.851Z" },
+    { url = "https://files.pythonhosted.org/packages/b1/86/7d9e222e1ee6dd9719844d5fad4ba25c9ec8c4191ee2644a81bd04749c6b/google_adk-1.34.0-py3-none-any.whl", hash = "sha256:928340bc4b6bd3de8bfa780d3971d4c1bb10e48a52fb66875f273ba42d72b669", size = 2876260, upload-time = "2026-05-18T23:48:02.296Z" },
 ]
 
 [[package]]
@@ -628,7 +628,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "genai-reference-shared", editable = "../../shared" },
-    { name = "google-adk", specifier = "==1.32.0" },
+    { name = "google-adk", specifier = "==1.34.0" },
     { name = "google-genai", specifier = "==1.75.0" },
 ]
 

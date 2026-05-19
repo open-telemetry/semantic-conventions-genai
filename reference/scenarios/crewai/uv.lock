@@ -483,7 +483,7 @@ wheels = [
 
 [[package]]
 name = "crewai"
-version = "1.14.4"
+version = "1.14.5"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiofiles" },
@@ -491,6 +491,8 @@ dependencies = [
     { name = "appdirs" },
     { name = "chromadb" },
     { name = "click" },
+    { name = "crewai-cli" },
+    { name = "crewai-core" },
     { name = "httpx" },
     { name = "instructor" },
     { name = "json-repair" },
@@ -511,15 +513,63 @@ dependencies = [
     { name = "python-dotenv" },
     { name = "pyyaml" },
     { name = "regex" },
-    { name = "textual" },
     { name = "tokenizers" },
+    { name = "tomli" },
+    { name = "tomli-w" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/26/12/b974c1b36af1d4a5928825f6ac7f7d34fc88b12e4715dcb43e119157663d/crewai-1.14.5.tar.gz", hash = "sha256:e64dfa4f309f94bbaacab0a4ca5d4f8e02b18c528b2876a390cd396135d46631", size = 7681243, upload-time = "2026-05-18T19:20:43.604Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/f4/5c/c274c1657d164ef170b70ee725e1b6164062440b8b47a96a104d12f5245c/crewai-1.14.5-py3-none-any.whl", hash = "sha256:be6580aab9d5ee2c73de5ed26cdd29c7d04d826e0d14e0a5ddd2e1e0742fa9f8", size = 976841, upload-time = "2026-05-18T19:20:41.437Z" },
+]
+
+[[package]]
+name = "crewai-cli"
+version = "1.14.5"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "appdirs" },
+    { name = "certifi" },
+    { name = "click" },
+    { name = "crewai-core" },
+    { name = "cryptography" },
+    { name = "httpx" },
+    { name = "packaging" },
+    { name = "pydantic" },
+    { name = "pydantic-settings" },
+    { name = "pyjwt" },
+    { name = "python-dotenv" },
+    { name = "rich" },
+    { name = "textual" },
     { name = "tomli" },
     { name = "tomli-w" },
     { name = "uv" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/d3/4b/7d99452533063c73701789bcc754185087c500a31b4007a30190c05b3cf3/crewai-1.14.4.tar.gz", hash = "sha256:384ac08cca3753ae27ad099ce629e4e8b783d72e364efa041121c7fed48be106", size = 7854110, upload-time = "2026-04-30T19:12:38.602Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/00/e2/5fec7c86f561be3cf6a1766939e4e6dc8592213fd1f3a3c2228f53cbf644/crewai_cli-1.14.5.tar.gz", hash = "sha256:faf05a8ce8ba655f49a1fc61473efc439a9ad70ce0329a768de265243726e0f0", size = 107149, upload-time = "2026-05-18T19:20:46.521Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/09/3a/2ec22e02bceae53153db2f3dd16e8a37c448d3b4a2d647a22bacb173e10c/crewai-1.14.4-py3-none-any.whl", hash = "sha256:a05f3cdcbcec624b532fe4acc601e553ef615dfd54f01d959f1cfeb1de718b0d", size = 1078973, upload-time = "2026-04-30T19:12:35.667Z" },
+    { url = "https://files.pythonhosted.org/packages/07/3e/a8e66982d3b5a9e98ccd66cd4516c184a37f94ccb2320e7ae1d3969ed9ac/crewai_cli-1.14.5-py3-none-any.whl", hash = "sha256:0e4811a093a95a9c7a177abfdac6cb90af806cf0850efddc42072739e0bdcac9", size = 108319, upload-time = "2026-05-18T19:20:45.436Z" },
+]
+
+[[package]]
+name = "crewai-core"
+version = "1.14.5"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "appdirs" },
+    { name = "cryptography" },
+    { name = "httpx" },
+    { name = "opentelemetry-api" },
+    { name = "opentelemetry-exporter-otlp-proto-http" },
+    { name = "opentelemetry-sdk" },
+    { name = "packaging" },
+    { name = "portalocker" },
+    { name = "pydantic" },
+    { name = "pyjwt" },
+    { name = "rich" },
+    { name = "tomli" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/28/1a/b3ce01f4d4b7773dbd2aa21bdda9d4d3d11778dde3e6b6f4a690f5cd89f8/crewai_core-1.14.5.tar.gz", hash = "sha256:b72c0cfb953bf934b252fa826cb71c80127ccc42f9a39feb2a7a97ee8272be82", size = 19168, upload-time = "2026-05-18T19:20:48.271Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/f5/52/05da585bdc287c7d9b368e6f58bf23d01a2bf20ba953370119e8cdc2d3ea/crewai_core-1.14.5-py3-none-any.whl", hash = "sha256:f2349160d10345e9096660c78ed6c5a6a9922033cd4c5e1b18dcbf8ea72a48b3", size = 27385, upload-time = "2026-05-18T19:20:47.325Z" },
 ]
 
 [[package]]
@@ -533,7 +583,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "crewai", specifier = "==1.14.4" },
+    { name = "crewai", specifier = "==1.14.5" },
     { name = "genai-reference-shared", editable = "../../shared" },
 ]
 
@@ -765,9 +815,9 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "opentelemetry-api", specifier = "==1.41.1" },
-    { name = "opentelemetry-exporter-otlp-proto-grpc", specifier = "==1.41.1" },
-    { name = "opentelemetry-sdk", specifier = "==1.41.1" },
+    { name = "opentelemetry-api", specifier = "==1.42.0" },
+    { name = "opentelemetry-exporter-otlp-proto-grpc", specifier = "==1.42.0" },
+    { name = "opentelemetry-sdk", specifier = "==1.42.0" },
 ]
 
 [[package]]
