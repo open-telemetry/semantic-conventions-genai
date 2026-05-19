@@ -149,7 +149,8 @@ def push_state_changes(
             return 1
 
         print(f"push rejected (attempt {attempt}); refetching and retrying", file=sys.stderr)
-        reset_state(state_dir, state_branch)
+        if not reset_state(state_dir, state_branch):
+            return 1
     return 1
 
 
