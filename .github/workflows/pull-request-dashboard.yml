@@ -104,7 +104,7 @@ jobs:
     permissions:
       actions: read
       checks: read
-      contents: read
+      contents: write
       issues: read
       pull-requests: read
     environment: protected
@@ -154,7 +154,7 @@ jobs:
       - name: Generate and update dashboard
         env:
           TRIGGER_PR_NUMBER: ${{ needs.resolve-trigger.outputs.pr_number }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # needed for reading approver team membership (org:read)
           OTELBOT_TOKEN: ${{ steps.otelbot-token.outputs.token }}
           COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
@@ -178,7 +178,7 @@ jobs:
       group: ${{ github.workflow }}-notify-${{ github.repository }}
       cancel-in-progress: false
     permissions:
-      contents: read
+      contents: write
       pull-requests: read
     environment: protected
     runs-on: ubuntu-latest
@@ -196,7 +196,7 @@ jobs:
 
       - name: Send Slack notifications
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           OTELBOT_TOKEN: ${{ steps.otelbot-token.outputs.token }}
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           SLACK_USER_MAP_JSON: ${{ secrets.SLACK_USER_MAP_JSON }}

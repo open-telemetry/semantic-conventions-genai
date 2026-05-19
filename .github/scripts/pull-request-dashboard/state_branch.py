@@ -92,7 +92,7 @@ def reset_state(state_dir: Path, state_branch: str) -> bool:
 
 def push_state(state_dir: Path, state_branch: str) -> bool:
     cmd = ["git"]
-    token = os.environ.get("OTELBOT_TOKEN")
+    token = os.environ.get("GITHUB_TOKEN")
     if token:
         credential = base64.b64encode(f"x-access-token:{token}".encode()).decode()
         cmd.extend(["-c", f"http.https://github.com/.extraheader=AUTHORIZATION: basic {credential}"])
