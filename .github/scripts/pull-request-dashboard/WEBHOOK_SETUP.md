@@ -32,10 +32,12 @@ Set repository permissions:
 
 - Pull requests: read-only (needed to subscribe to the events below)
 - Issues: read-only (needed to subscribe to the events below)
+- Checks: read-only (needed to subscribe to CI check events)
 - Actions: read and write
 
 Subscribe to events:
 
+- Check suite
 - Pull request
 - Issue comment
 - Pull request review

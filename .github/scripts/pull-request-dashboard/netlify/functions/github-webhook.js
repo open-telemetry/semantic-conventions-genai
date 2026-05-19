@@ -4,6 +4,7 @@ const GITHUB_API_VERSION = "2022-11-28";
 const MAX_WEBHOOK_BYTES = 1024 * 1024;
 
 const ALLOWED_ACTIONS = {
+  check_suite: new Set(["completed", "requested", "rerequested"]),
   pull_request: new Set([
     "assigned",
     "closed",
@@ -152,6 +153,13 @@ function extractPullRequestNumber(eventName, payload) {
     return payload.issue.number;
   }
 
+  const checkPullRequestNumber = extractPullRequestNumberFromPullRequests([
+    payload.check_suite && payload.check_suite.pull_requests,
+  ]);
+  if (checkPullRequestNumber) {
+    return checkPullRequestNumber;
+  }
+
   if (payload.pull_request && Number.isInteger(payload.pull_request.number)) {
     return payload.pull_request.number;
   }
@@ -161,6 +169,20 @@ function extractPullRequestNumber(eventName, payload) {
     payload.review_thread && payload.review_thread.pull_request_url,
     payload.thread && payload.thread.pull_request_url,
   ]);
+}
+
+function extractPullRequestNumberFromPullRequests(pullRequestLists) {
+  for (const pullRequests of pullRequestLists) {
+    if (!Array.isArray(pullRequests)) {
+      continue;
+    }
+    for (const pullRequest of pullRequests) {
+      if (pullRequest && Number.isInteger(pullRequest.number)) {
+        return pullRequest.number;
+      }
+    }
+  }
+  return undefined;
 }
 
 function extractPullRequestNumberFromUrls(urls) {

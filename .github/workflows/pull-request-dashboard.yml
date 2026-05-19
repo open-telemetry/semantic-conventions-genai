@@ -74,7 +74,7 @@ jobs:
               || { echo "bad PR number: $pr_number"; exit 1; }
           fi
           if [[ -n "$trigger_event" ]]; then
-            [[ "$trigger_event" =~ ^(schedule|workflow_dispatch|pull_request|issue_comment|pull_request_review|pull_request_review_comment|pull_request_review_thread)$ ]] \
+            [[ "$trigger_event" =~ ^(schedule|workflow_dispatch|check_suite|pull_request|issue_comment|pull_request_review|pull_request_review_comment|pull_request_review_thread)$ ]] \
               || { skip_event "bad trigger event: $trigger_event"; }
           fi
           if [[ -n "$trigger_action" ]]; then
