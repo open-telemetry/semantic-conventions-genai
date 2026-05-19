@@ -20,7 +20,7 @@
 | Attribute | Supporting Libraries |
 | --- | --- |
 | gen_ai.evaluation.explanation | [azure-ai-evaluation], [deepeval] |
-| gen_ai.response.id | (none) |
+| gen_ai.response.id | [deepeval] |
 
 [azure-ai-evaluation]: ../scenarios/azure-ai-evaluation/scenario.py
 [deepeval]: ../scenarios/deepeval/scenario.py
