@@ -18,6 +18,15 @@
 - Add GenAI memory operation span and attributes for memory store lifecycle (create/delete),
   memory record create/update/upsert/search/delete operations, and record counts.
   ([#140](https://github.com/open-telemetry/semantic-conventions-genai/pull/140))
+- Add `gen_ai.agent.handoff.source.name` and `gen_ai.agent.handoff.target.name`
+  attributes and model agent-to-agent handoffs as `execute_tool` spans. The
+  handoff tool call (e.g., `transfer_to_<agent>`) is emitted as a child
+  `execute_tool` span of the source agent's `invoke_agent` span, carrying the
+  source and target agent names. Demonstrated in the OpenAI Agents reference
+  scenario, which sources both values from the SDK's typed
+  `HandoffOutputItem.source_agent` / `HandoffOutputItem.target_agent`
+  references.
+  ([#98](https://github.com/open-telemetry/semantic-conventions-genai/pull/98))
 - Add `document` value to the `Modality` enum in the GenAI input/output/system-instructions
   message JSON schemas. Enables capturing PDF/DOCX (and similar) parts that today have to fall
   through to the free-form `string` branch of the modality `anyOf`.

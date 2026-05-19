@@ -508,6 +508,12 @@ spans:
         requirement_level: opt_in
       - ref: gen_ai.tool.call.result
         requirement_level: opt_in
+      - ref: gen_ai.agent.handoff.source.name
+        requirement_level:
+          recommended: when the tool call represents an agent-to-agent handoff and the framework exposes the source agent.
+      - ref: gen_ai.agent.handoff.target.name
+        requirement_level:
+          recommended: when the tool call represents an agent-to-agent handoff and the framework exposes the target agent.
 
   - type: gen_ai.invoke_workflow.internal
     kind: internal

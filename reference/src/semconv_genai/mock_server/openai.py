@@ -275,20 +275,42 @@ def chat_completions(deployment=None):
 
     # Tool-call detection: if tools are provided and no tool result yet,
     # return a tool call; otherwise return a normal response (completes the
-    # agent loop).
+    # agent loop). When the OpenAI Agents SDK exposes a Handoff (which is
+    # serialized as a ChatCompletionToolParam named "transfer_to_<agent>",
+    # see chatcmpl_converter.convert_handoff_tool), prefer that tool so the
+    # SDK's handoff machinery fires and produces a HandoffOutputItem with
+    # source_agent / target_agent populated.
     if body.get("tools"):
         messages = body.get("messages", [])
         has_tool_result = any(m.get("role") == "tool" for m in messages)
         if not has_tool_result:
             resp = copy.deepcopy(CHAT_TOOL_CALL_RESPONSE)
             resp["model"] = body.get("model", resp["model"])
-            tool = body.get("tools", [{}])[0]
+            tools = body.get("tools", [])
+            tool = next(
+                (t for t in tools if t.get("function", {}).get("name", "").startswith("transfer_to_")),
+                tools[0] if tools else {},
+            )
             tool_name = tool.get("function", {}).get("name")
             if tool_name:
                 resp["choices"][0]["message"]["tool_calls"][0]["function"]["name"] = tool_name
-            resp["choices"][0]["message"]["tool_calls"][0]["function"]["arguments"] = json.dumps(
-                mock_tool_arguments(tool)
+            # Handoff tools have an empty-strict schema (additionalProperties:
+            # false, properties: {}, required: []) -- the SDK validates the
+            # tool-call arguments against it, so we return "{}" rather than
+            # the default {"value": "mock-value"} which would violate
+            # additionalProperties=false.
+            tool_params = tool.get("function", {}).get("parameters", {}) or {}
+            is_empty_strict = (
+                not tool_params.get("properties")
+                and not tool_params.get("required")
+                and tool_params.get("additionalProperties") is False
             )
+            if is_empty_strict:
+                resp["choices"][0]["message"]["tool_calls"][0]["function"]["arguments"] = "{}"
+            else:
+                resp["choices"][0]["message"]["tool_calls"][0]["function"]["arguments"] = json.dumps(
+                    mock_tool_arguments(tool)
+                )
             return resp
 
     # CrewAI planner natural-retry path: when the planner agent's first call
