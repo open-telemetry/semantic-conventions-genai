@@ -1575,6 +1575,68 @@ refinements:
       requirement_level: recommended
       stability: development
       type: string
+    - brief: The cache classification for input tokens.
+      examples:
+      - read
+      - creation
+      - uncached
+      key: gen_ai.token.cache
+      note: |
+        This attribute MUST only be set when `gen_ai.token.type` is `input`.
+
+        When the provider reports a cache breakdown, instrumentations SHOULD
+        partition input tokens across values of this attribute so that they
+        sum to the total input token count. Instrumentations MUST NOT emit a
+        bare `gen_ai.token.type=input` data point alongside cache-partitioned
+        data points for the same request.
+
+        When the provider does not report a cache breakdown, omit this
+        attribute entirely and record a single `gen_ai.token.type=input`
+        data point with the total count.
+
+        Partition members with a value of zero MAY be omitted.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: when `gen_ai.token.type` is `input` and the provider reports a cache breakdown.
+      stability: development
+      type:
+        members:
+        - brief: Input tokens served from a provider-managed cache.
+          id: read
+          stability: development
+          value: read
+        - brief: Input tokens written to a provider-managed cache.
+          id: creation
+          stability: development
+          value: creation
+        - brief: Input tokens neither served from nor written to a provider-managed cache.
+          id: uncached
+          stability: development
+          value: uncached
+    - brief: Whether the output tokens were used for internal reasoning (e.g., chain-of-thought).
+      key: gen_ai.token.reasoning
+      note: |
+        This attribute MUST only be set when `gen_ai.token.type` is `output`.
+
+        When the provider reports a reasoning token breakdown, instrumentations
+        SHOULD partition output tokens by setting this attribute to `true`
+        (reasoning tokens) and `false` (non-reasoning tokens) so that they
+        sum to the total output token count. Instrumentations MUST NOT emit a
+        bare `gen_ai.token.type=output` data point alongside reasoning-partitioned
+        data points for the same request.
+
+        When the provider does not report a reasoning breakdown, omit this
+        attribute entirely and record a single `gen_ai.token.type=output`
+        data point with the total count.
+
+        Partition members with a value of zero MAY be omitted.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: when `gen_ai.token.type` is `output` and the provider reports a reasoning token breakdown.
+      stability: development
+      type: boolean
     - brief: The type of token being counted.
       examples:
       - input
@@ -1619,8 +1681,31 @@ refinements:
       type: int
     brief: Number of input and output tokens used.
     id: gen_ai.client.token.usage
-    instrument: histogram
+    instrument: counter
     name: gen_ai.client.token.usage
+    note: |
+      When the provider reports a detailed token breakdown for a given token
+      type, instrumentations SHOULD partition the token count for that type
+      across the relevant attribute values instead of emitting a separate
+      total. The partitioned data points MUST sum to the total token count
+      for that token type, and a bare data point with only
+      `gen_ai.token.type` set MUST NOT be emitted alongside the partitioned
+      data points for the same token type.
+
+      When no detailed breakdown is available for a given token type, a
+      single data point with only `gen_ai.token.type` set SHOULD be recorded
+      for that type.
+
+      Each partitioned metric attribute value corresponds to span attributes
+      on the same request:
+
+      | Metric attribute              | Equals (per request)                                              |
+      |-------------------------------|-------------------------------------------------------------------|
+      | gen_ai.token.cache=read       | gen_ai.usage.cache_read.input_tokens                              |
+      | gen_ai.token.cache=creation   | gen_ai.usage.cache_creation.input_tokens                          |
+      | gen_ai.token.cache=uncached   | gen_ai.usage.input_tokens − cache_read − cache_creation           |
+      | gen_ai.token.reasoning=true   | gen_ai.usage.reasoning.output_tokens                              |
+      | gen_ai.token.reasoning=false  | gen_ai.usage.output_tokens − gen_ai.usage.reasoning.output_tokens |
     provenance:
       path: ./model/gen-ai/metrics.yaml
     stability: development
@@ -3681,6 +3766,68 @@ refinements:
       requirement_level: recommended
       stability: development
       type: string
+    - brief: The cache classification for input tokens.
+      examples:
+      - read
+      - creation
+      - uncached
+      key: gen_ai.token.cache
+      note: |
+        This attribute MUST only be set when `gen_ai.token.type` is `input`.
+
+        When the provider reports a cache breakdown, instrumentations SHOULD
+        partition input tokens across values of this attribute so that they
+        sum to the total input token count. Instrumentations MUST NOT emit a
+        bare `gen_ai.token.type=input` data point alongside cache-partitioned
+        data points for the same request.
+
+        When the provider does not report a cache breakdown, omit this
+        attribute entirely and record a single `gen_ai.token.type=input`
+        data point with the total count.
+
+        Partition members with a value of zero MAY be omitted.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: when `gen_ai.token.type` is `input` and the provider reports a cache breakdown.
+      stability: development
+      type:
+        members:
+        - brief: Input tokens served from a provider-managed cache.
+          id: read
+          stability: development
+          value: read
+        - brief: Input tokens written to a provider-managed cache.
+          id: creation
+          stability: development
+          value: creation
+        - brief: Input tokens neither served from nor written to a provider-managed cache.
+          id: uncached
+          stability: development
+          value: uncached
+    - brief: Whether the output tokens were used for internal reasoning (e.g., chain-of-thought).
+      key: gen_ai.token.reasoning
+      note: |
+        This attribute MUST only be set when `gen_ai.token.type` is `output`.
+
+        When the provider reports a reasoning token breakdown, instrumentations
+        SHOULD partition output tokens by setting this attribute to `true`
+        (reasoning tokens) and `false` (non-reasoning tokens) so that they
+        sum to the total output token count. Instrumentations MUST NOT emit a
+        bare `gen_ai.token.type=output` data point alongside reasoning-partitioned
+        data points for the same request.
+
+        When the provider does not report a reasoning breakdown, omit this
+        attribute entirely and record a single `gen_ai.token.type=output`
+        data point with the total count.
+
+        Partition members with a value of zero MAY be omitted.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: when `gen_ai.token.type` is `output` and the provider reports a reasoning token breakdown.
+      stability: development
+      type: boolean
     - brief: The type of token being counted.
       examples:
       - input
@@ -3745,8 +3892,31 @@ refinements:
     brief: |
       OpenAI-specific extension to `gen_ai.client.token.usage`. Adds `openai.response.service_tier` and `openai.response.system_fingerprint` when the provider is `openai`.
     id: openai.client.token.usage
-    instrument: histogram
+    instrument: counter
     name: gen_ai.client.token.usage
+    note: |
+      When the provider reports a detailed token breakdown for a given token
+      type, instrumentations SHOULD partition the token count for that type
+      across the relevant attribute values instead of emitting a separate
+      total. The partitioned data points MUST sum to the total token count
+      for that token type, and a bare data point with only
+      `gen_ai.token.type` set MUST NOT be emitted alongside the partitioned
+      data points for the same token type.
+
+      When no detailed breakdown is available for a given token type, a
+      single data point with only `gen_ai.token.type` set SHOULD be recorded
+      for that type.
+
+      Each partitioned metric attribute value corresponds to span attributes
+      on the same request:
+
+      | Metric attribute              | Equals (per request)                                              |
+      |-------------------------------|-------------------------------------------------------------------|
+      | gen_ai.token.cache=read       | gen_ai.usage.cache_read.input_tokens                              |
+      | gen_ai.token.cache=creation   | gen_ai.usage.cache_creation.input_tokens                          |
+      | gen_ai.token.cache=uncached   | gen_ai.usage.input_tokens − cache_read − cache_creation           |
+      | gen_ai.token.reasoning=true   | gen_ai.usage.reasoning.output_tokens                              |
+      | gen_ai.token.reasoning=false  | gen_ai.usage.output_tokens − gen_ai.usage.reasoning.output_tokens |
     provenance:
       path: ./model/gen-ai/metrics.yaml
     stability: development
@@ -11307,6 +11477,64 @@ registry:
       path: ./model/gen-ai/registry.yaml
     stability: development
     type: any
+  - brief: The cache classification for input tokens.
+    examples:
+    - read
+    - creation
+    - uncached
+    key: gen_ai.token.cache
+    note: |
+      This attribute MUST only be set when `gen_ai.token.type` is `input`.
+
+      When the provider reports a cache breakdown, instrumentations SHOULD
+      partition input tokens across values of this attribute so that they
+      sum to the total input token count. Instrumentations MUST NOT emit a
+      bare `gen_ai.token.type=input` data point alongside cache-partitioned
+      data points for the same request.
+
+      When the provider does not report a cache breakdown, omit this
+      attribute entirely and record a single `gen_ai.token.type=input`
+      data point with the total count.
+
+      Partition members with a value of zero MAY be omitted.
+    provenance:
+      path: ./model/gen-ai/registry.yaml
+    stability: development
+    type:
+      members:
+      - brief: Input tokens served from a provider-managed cache.
+        id: read
+        stability: development
+        value: read
+      - brief: Input tokens written to a provider-managed cache.
+        id: creation
+        stability: development
+        value: creation
+      - brief: Input tokens neither served from nor written to a provider-managed cache.
+        id: uncached
+        stability: development
+        value: uncached
+  - brief: Whether the output tokens were used for internal reasoning (e.g., chain-of-thought).
+    key: gen_ai.token.reasoning
+    note: |
+      This attribute MUST only be set when `gen_ai.token.type` is `output`.
+
+      When the provider reports a reasoning token breakdown, instrumentations
+      SHOULD partition output tokens by setting this attribute to `true`
+      (reasoning tokens) and `false` (non-reasoning tokens) so that they
+      sum to the total output token count. Instrumentations MUST NOT emit a
+      bare `gen_ai.token.type=output` data point alongside reasoning-partitioned
+      data points for the same request.
+
+      When the provider does not report a reasoning breakdown, omit this
+      attribute entirely and record a single `gen_ai.token.type=output`
+      data point with the total count.
+
+      Partition members with a value of zero MAY be omitted.
+    provenance:
+      path: ./model/gen-ai/registry.yaml
+    stability: development
+    type: boolean
   - brief: The type of token being counted.
     examples:
     - input
@@ -13299,6 +13527,68 @@ registry:
       requirement_level: recommended
       stability: development
       type: string
+    - brief: The cache classification for input tokens.
+      examples:
+      - read
+      - creation
+      - uncached
+      key: gen_ai.token.cache
+      note: |
+        This attribute MUST only be set when `gen_ai.token.type` is `input`.
+
+        When the provider reports a cache breakdown, instrumentations SHOULD
+        partition input tokens across values of this attribute so that they
+        sum to the total input token count. Instrumentations MUST NOT emit a
+        bare `gen_ai.token.type=input` data point alongside cache-partitioned
+        data points for the same request.
+
+        When the provider does not report a cache breakdown, omit this
+        attribute entirely and record a single `gen_ai.token.type=input`
+        data point with the total count.
+
+        Partition members with a value of zero MAY be omitted.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: when `gen_ai.token.type` is `input` and the provider reports a cache breakdown.
+      stability: development
+      type:
+        members:
+        - brief: Input tokens served from a provider-managed cache.
+          id: read
+          stability: development
+          value: read
+        - brief: Input tokens written to a provider-managed cache.
+          id: creation
+          stability: development
+          value: creation
+        - brief: Input tokens neither served from nor written to a provider-managed cache.
+          id: uncached
+          stability: development
+          value: uncached
+    - brief: Whether the output tokens were used for internal reasoning (e.g., chain-of-thought).
+      key: gen_ai.token.reasoning
+      note: |
+        This attribute MUST only be set when `gen_ai.token.type` is `output`.
+
+        When the provider reports a reasoning token breakdown, instrumentations
+        SHOULD partition output tokens by setting this attribute to `true`
+        (reasoning tokens) and `false` (non-reasoning tokens) so that they
+        sum to the total output token count. Instrumentations MUST NOT emit a
+        bare `gen_ai.token.type=output` data point alongside reasoning-partitioned
+        data points for the same request.
+
+        When the provider does not report a reasoning breakdown, omit this
+        attribute entirely and record a single `gen_ai.token.type=output`
+        data point with the total count.
+
+        Partition members with a value of zero MAY be omitted.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: when `gen_ai.token.type` is `output` and the provider reports a reasoning token breakdown.
+      stability: development
+      type: boolean
     - brief: The type of token being counted.
       examples:
       - input
@@ -13342,8 +13632,31 @@ registry:
       stability: stable
       type: int
     brief: Number of input and output tokens used.
-    instrument: histogram
+    instrument: counter
     name: gen_ai.client.token.usage
+    note: |
+      When the provider reports a detailed token breakdown for a given token
+      type, instrumentations SHOULD partition the token count for that type
+      across the relevant attribute values instead of emitting a separate
+      total. The partitioned data points MUST sum to the total token count
+      for that token type, and a bare data point with only
+      `gen_ai.token.type` set MUST NOT be emitted alongside the partitioned
+      data points for the same token type.
+
+      When no detailed breakdown is available for a given token type, a
+      single data point with only `gen_ai.token.type` set SHOULD be recorded
+      for that type.
+
+      Each partitioned metric attribute value corresponds to span attributes
+      on the same request:
+
+      | Metric attribute              | Equals (per request)                                              |
+      |-------------------------------|-------------------------------------------------------------------|
+      | gen_ai.token.cache=read       | gen_ai.usage.cache_read.input_tokens                              |
+      | gen_ai.token.cache=creation   | gen_ai.usage.cache_creation.input_tokens                          |
+      | gen_ai.token.cache=uncached   | gen_ai.usage.input_tokens − cache_read − cache_creation           |
+      | gen_ai.token.reasoning=true   | gen_ai.usage.reasoning.output_tokens                              |
+      | gen_ai.token.reasoning=false  | gen_ai.usage.output_tokens − gen_ai.usage.reasoning.output_tokens |
     provenance:
       path: ./model/gen-ai/metrics.yaml
     stability: development
