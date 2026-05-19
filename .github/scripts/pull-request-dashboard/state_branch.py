@@ -83,8 +83,11 @@ def checkout_state(state_dir: Path, state_branch: str, require_existing: bool) -
     run(["git", "rm", "-rf", "."], cwd=state_dir, check=False)
 
 
-def reset_state(state_dir: Path, state_branch: str) -> None:
+def reset_state(state_dir: Path, state_branch: str) -> bool:
+    if not fetch_state_branch(state_branch, required=False):
+        return False
     run(["git", "reset", "--hard", f"origin/{state_branch}"], cwd=state_dir)
+    return True
 
 
 def push_state(state_dir: Path, state_branch: str) -> bool:
