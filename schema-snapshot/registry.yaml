@@ -253,6 +253,59 @@ refinements:
           id: speech
           stability: development
           value: speech
+    - brief: The name of the prompt that uniquely identifies it.
+      examples:
+      - analyze-code
+      key: gen_ai.prompt.name
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: when a named prompt template is used
+      stability: development
+      type: string
+    - brief: The variables supplied to the prompt template, the `\u003ckey\u003e` being the variable name, the value being the variable value.
+      examples:
+      - Alice
+      - French
+      key: gen_ai.prompt.variable
+      note: |
+        Prompt templates are parameterized with variables that are filled in
+        at runtime. This attribute records the variable values passed to the
+        template. The attribute name defines the variable name, and the
+        attribute value is the variable value serialized as a string.
+
+        Examples:
+
+        - A variable `user_name` with value `Alice` SHOULD be recorded as
+          the `gen_ai.prompt.variable.user_name` attribute with value `"Alice"`.
+        - A variable `language` with value `French` SHOULD be recorded as
+          the `gen_ai.prompt.variable.language` attribute with value `"French"`.
+
+        \u003e [!Warning]
+        \u003e This attribute may contain sensitive information.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: opt_in
+      stability: development
+      type: template[string]
+    - brief: The version of the prompt template used.
+      examples:
+      - 1.0.0
+      - 2025-05-01
+      - prod
+      - v2
+      key: gen_ai.prompt.version
+      note: |
+        The version string can follow any versioning scheme chosen by the
+        application (e.g., SemVer, date-based, or platform-specific tags).
+        When a prompt management system is in use, this SHOULD match the
+        version identifier used by that system.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: when `gen_ai.prompt.name` is set and a version is available
+      stability: development
+      type: string
     - brief: The Generative AI provider as identified by the client or server instrumentation.
       key: gen_ai.provider.name
       note: |
@@ -2641,6 +2694,49 @@ refinements:
         conditionally_required: When operation is related to a specific prompt.
       stability: development
       type: string
+    - brief: The variables supplied to the prompt template in the request.
+      examples:
+      - Alice
+      - French
+      key: gen_ai.prompt.variable
+      note: |
+        Prompt templates are parameterized with variables that are filled in
+        at runtime. This attribute records the variable values passed to the
+        template. The attribute name defines the variable name, and the
+        attribute value is the variable value serialized as a string.
+
+        Examples:
+
+        - A variable `user_name` with value `Alice` SHOULD be recorded as
+          the `gen_ai.prompt.variable.user_name` attribute with value `"Alice"`.
+        - A variable `language` with value `French` SHOULD be recorded as
+          the `gen_ai.prompt.variable.language` attribute with value `"French"`.
+
+        \u003e [!Warning]
+        \u003e This attribute may contain sensitive information.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: opt_in
+      stability: development
+      type: template[string]
+    - brief: The version of the prompt template provided in the request or response.
+      examples:
+      - 1.0.0
+      - 2025-05-01
+      - prod
+      - v2
+      key: gen_ai.prompt.version
+      note: |
+        The version string can follow any versioning scheme chosen by the
+        application (e.g., SemVer, date-based, or platform-specific tags).
+        When a prompt management system is in use, this SHOULD match the
+        version identifier used by that system.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: When `gen_ai.prompt.name` is set and a version is available.
+      stability: development
+      type: string
     - brief: Name of the tool utilized by the agent.
       examples:
       - Flights
@@ -3180,6 +3276,49 @@ refinements:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
         conditionally_required: When operation is related to a specific prompt.
+      stability: development
+      type: string
+    - brief: The variables supplied to the prompt template in the request.
+      examples:
+      - Alice
+      - French
+      key: gen_ai.prompt.variable
+      note: |
+        Prompt templates are parameterized with variables that are filled in
+        at runtime. This attribute records the variable values passed to the
+        template. The attribute name defines the variable name, and the
+        attribute value is the variable value serialized as a string.
+
+        Examples:
+
+        - A variable `user_name` with value `Alice` SHOULD be recorded as
+          the `gen_ai.prompt.variable.user_name` attribute with value `"Alice"`.
+        - A variable `language` with value `French` SHOULD be recorded as
+          the `gen_ai.prompt.variable.language` attribute with value `"French"`.
+
+        \u003e [!Warning]
+        \u003e This attribute may contain sensitive information.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: opt_in
+      stability: development
+      type: template[string]
+    - brief: The version of the prompt template provided in the request or response.
+      examples:
+      - 1.0.0
+      - 2025-05-01
+      - prod
+      - v2
+      key: gen_ai.prompt.version
+      note: |
+        The version string can follow any versioning scheme chosen by the
+        application (e.g., SemVer, date-based, or platform-specific tags).
+        When a prompt management system is in use, this SHOULD match the
+        version identifier used by that system.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: When `gen_ai.prompt.name` is set and a version is available.
       stability: development
       type: string
     - brief: Name of the tool utilized by the agent.
@@ -4342,6 +4481,59 @@ refinements:
           id: speech
           stability: development
           value: speech
+    - brief: The name of the prompt that uniquely identifies it.
+      examples:
+      - analyze-code
+      key: gen_ai.prompt.name
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: when a named prompt template is used
+      stability: development
+      type: string
+    - brief: The variables supplied to the prompt template, the `\u003ckey\u003e` being the variable name, the value being the variable value.
+      examples:
+      - Alice
+      - French
+      key: gen_ai.prompt.variable
+      note: |
+        Prompt templates are parameterized with variables that are filled in
+        at runtime. This attribute records the variable values passed to the
+        template. The attribute name defines the variable name, and the
+        attribute value is the variable value serialized as a string.
+
+        Examples:
+
+        - A variable `user_name` with value `Alice` SHOULD be recorded as
+          the `gen_ai.prompt.variable.user_name` attribute with value `"Alice"`.
+        - A variable `language` with value `French` SHOULD be recorded as
+          the `gen_ai.prompt.variable.language` attribute with value `"French"`.
+
+        \u003e [!Warning]
+        \u003e This attribute may contain sensitive information.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: opt_in
+      stability: development
+      type: template[string]
+    - brief: The version of the prompt template used.
+      examples:
+      - 1.0.0
+      - 2025-05-01
+      - prod
+      - v2
+      key: gen_ai.prompt.version
+      note: |
+        The version string can follow any versioning scheme chosen by the
+        application (e.g., SemVer, date-based, or platform-specific tags).
+        When a prompt management system is in use, this SHOULD match the
+        version identifier used by that system.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: when `gen_ai.prompt.name` is set and a version is available
+      stability: development
+      type: string
     - brief: The Generative AI provider as identified by the client or server instrumentation.
       key: gen_ai.provider.name
       note: |
@@ -5043,6 +5235,59 @@ refinements:
           id: speech
           stability: development
           value: speech
+    - brief: The name of the prompt that uniquely identifies it.
+      examples:
+      - analyze-code
+      key: gen_ai.prompt.name
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: when a named prompt template is used
+      stability: development
+      type: string
+    - brief: The variables supplied to the prompt template, the `\u003ckey\u003e` being the variable name, the value being the variable value.
+      examples:
+      - Alice
+      - French
+      key: gen_ai.prompt.variable
+      note: |
+        Prompt templates are parameterized with variables that are filled in
+        at runtime. This attribute records the variable values passed to the
+        template. The attribute name defines the variable name, and the
+        attribute value is the variable value serialized as a string.
+
+        Examples:
+
+        - A variable `user_name` with value `Alice` SHOULD be recorded as
+          the `gen_ai.prompt.variable.user_name` attribute with value `"Alice"`.
+        - A variable `language` with value `French` SHOULD be recorded as
+          the `gen_ai.prompt.variable.language` attribute with value `"French"`.
+
+        \u003e [!Warning]
+        \u003e This attribute may contain sensitive information.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: opt_in
+      stability: development
+      type: template[string]
+    - brief: The version of the prompt template used.
+      examples:
+      - 1.0.0
+      - 2025-05-01
+      - prod
+      - v2
+      key: gen_ai.prompt.version
+      note: |
+        The version string can follow any versioning scheme chosen by the
+        application (e.g., SemVer, date-based, or platform-specific tags).
+        When a prompt management system is in use, this SHOULD match the
+        version identifier used by that system.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: when `gen_ai.prompt.name` is set and a version is available
+      stability: development
+      type: string
     - brief: The Generative AI provider as identified by the client or server instrumentation.
       key: gen_ai.provider.name
       note: |
@@ -5745,6 +5990,59 @@ refinements:
           id: speech
           stability: development
           value: speech
+    - brief: The name of the prompt that uniquely identifies it.
+      examples:
+      - analyze-code
+      key: gen_ai.prompt.name
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: when a named prompt template is used
+      stability: development
+      type: string
+    - brief: The variables supplied to the prompt template, the `\u003ckey\u003e` being the variable name, the value being the variable value.
+      examples:
+      - Alice
+      - French
+      key: gen_ai.prompt.variable
+      note: |
+        Prompt templates are parameterized with variables that are filled in
+        at runtime. This attribute records the variable values passed to the
+        template. The attribute name defines the variable name, and the
+        attribute value is the variable value serialized as a string.
+
+        Examples:
+
+        - A variable `user_name` with value `Alice` SHOULD be recorded as
+          the `gen_ai.prompt.variable.user_name` attribute with value `"Alice"`.
+        - A variable `language` with value `French` SHOULD be recorded as
+          the `gen_ai.prompt.variable.language` attribute with value `"French"`.
+
+        \u003e [!Warning]
+        \u003e This attribute may contain sensitive information.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: opt_in
+      stability: development
+      type: template[string]
+    - brief: The version of the prompt template used.
+      examples:
+      - 1.0.0
+      - 2025-05-01
+      - prod
+      - v2
+      key: gen_ai.prompt.version
+      note: |
+        The version string can follow any versioning scheme chosen by the
+        application (e.g., SemVer, date-based, or platform-specific tags).
+        When a prompt management system is in use, this SHOULD match the
+        version identifier used by that system.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: when `gen_ai.prompt.name` is set and a version is available
+      stability: development
+      type: string
     - brief: The Generative AI provider as identified by the client or server instrumentation.
       key: gen_ai.provider.name
       note: |
@@ -7255,6 +7553,59 @@ refinements:
           id: speech
           stability: development
           value: speech
+    - brief: The name of the prompt that uniquely identifies it.
+      examples:
+      - analyze-code
+      key: gen_ai.prompt.name
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: when a named prompt template is used
+      stability: development
+      type: string
+    - brief: The variables supplied to the prompt template, the `\u003ckey\u003e` being the variable name, the value being the variable value.
+      examples:
+      - Alice
+      - French
+      key: gen_ai.prompt.variable
+      note: |
+        Prompt templates are parameterized with variables that are filled in
+        at runtime. This attribute records the variable values passed to the
+        template. The attribute name defines the variable name, and the
+        attribute value is the variable value serialized as a string.
+
+        Examples:
+
+        - A variable `user_name` with value `Alice` SHOULD be recorded as
+          the `gen_ai.prompt.variable.user_name` attribute with value `"Alice"`.
+        - A variable `language` with value `French` SHOULD be recorded as
+          the `gen_ai.prompt.variable.language` attribute with value `"French"`.
+
+        \u003e [!Warning]
+        \u003e This attribute may contain sensitive information.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: opt_in
+      stability: development
+      type: template[string]
+    - brief: The version of the prompt template used.
+      examples:
+      - 1.0.0
+      - 2025-05-01
+      - prod
+      - v2
+      key: gen_ai.prompt.version
+      note: |
+        The version string can follow any versioning scheme chosen by the
+        application (e.g., SemVer, date-based, or platform-specific tags).
+        When a prompt management system is in use, this SHOULD match the
+        version identifier used by that system.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: when `gen_ai.prompt.name` is set and a version is available
+      stability: development
+      type: string
     - brief: The Generative AI provider as identified by the client or server instrumentation.
       key: gen_ai.provider.name
       note: |
@@ -10191,6 +10542,49 @@ refinements:
         conditionally_required: When operation is related to a specific prompt.
       stability: development
       type: string
+    - brief: The variables supplied to the prompt template in the request.
+      examples:
+      - Alice
+      - French
+      key: gen_ai.prompt.variable
+      note: |
+        Prompt templates are parameterized with variables that are filled in
+        at runtime. This attribute records the variable values passed to the
+        template. The attribute name defines the variable name, and the
+        attribute value is the variable value serialized as a string.
+
+        Examples:
+
+        - A variable `user_name` with value `Alice` SHOULD be recorded as
+          the `gen_ai.prompt.variable.user_name` attribute with value `"Alice"`.
+        - A variable `language` with value `French` SHOULD be recorded as
+          the `gen_ai.prompt.variable.language` attribute with value `"French"`.
+
+        \u003e [!Warning]
+        \u003e This attribute may contain sensitive information.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: opt_in
+      stability: development
+      type: template[string]
+    - brief: The version of the prompt template provided in the request or response.
+      examples:
+      - 1.0.0
+      - 2025-05-01
+      - prod
+      - v2
+      key: gen_ai.prompt.version
+      note: |
+        The version string can follow any versioning scheme chosen by the
+        application (e.g., SemVer, date-based, or platform-specific tags).
+        When a prompt management system is in use, this SHOULD match the
+        version identifier used by that system.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: When `gen_ai.prompt.name` is set and a version is available.
+      stability: development
+      type: string
     - brief: Parameters passed to the tool call.
       examples:
       - |
@@ -10699,6 +11093,49 @@ refinements:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
         conditionally_required: When operation is related to a specific prompt.
+      stability: development
+      type: string
+    - brief: The variables supplied to the prompt template in the request.
+      examples:
+      - Alice
+      - French
+      key: gen_ai.prompt.variable
+      note: |
+        Prompt templates are parameterized with variables that are filled in
+        at runtime. This attribute records the variable values passed to the
+        template. The attribute name defines the variable name, and the
+        attribute value is the variable value serialized as a string.
+
+        Examples:
+
+        - A variable `user_name` with value `Alice` SHOULD be recorded as
+          the `gen_ai.prompt.variable.user_name` attribute with value `"Alice"`.
+        - A variable `language` with value `French` SHOULD be recorded as
+          the `gen_ai.prompt.variable.language` attribute with value `"French"`.
+
+        \u003e [!Warning]
+        \u003e This attribute may contain sensitive information.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: opt_in
+      stability: development
+      type: template[string]
+    - brief: The version of the prompt template provided in the request or response.
+      examples:
+      - 1.0.0
+      - 2025-05-01
+      - prod
+      - v2
+      key: gen_ai.prompt.version
+      note: |
+        The version string can follow any versioning scheme chosen by the
+        application (e.g., SemVer, date-based, or platform-specific tags).
+        When a prompt management system is in use, this SHOULD match the
+        version identifier used by that system.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: When `gen_ai.prompt.name` is set and a version is available.
       stability: development
       type: string
     - brief: Parameters passed to the tool call.
@@ -11298,6 +11735,59 @@ refinements:
           id: speech
           stability: development
           value: speech
+    - brief: The name of the prompt that uniquely identifies it.
+      examples:
+      - analyze-code
+      key: gen_ai.prompt.name
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: when a named prompt template is used
+      stability: development
+      type: string
+    - brief: The variables supplied to the prompt template, the `\u003ckey\u003e` being the variable name, the value being the variable value.
+      examples:
+      - Alice
+      - French
+      key: gen_ai.prompt.variable
+      note: |
+        Prompt templates are parameterized with variables that are filled in
+        at runtime. This attribute records the variable values passed to the
+        template. The attribute name defines the variable name, and the
+        attribute value is the variable value serialized as a string.
+
+        Examples:
+
+        - A variable `user_name` with value `Alice` SHOULD be recorded as
+          the `gen_ai.prompt.variable.user_name` attribute with value `"Alice"`.
+        - A variable `language` with value `French` SHOULD be recorded as
+          the `gen_ai.prompt.variable.language` attribute with value `"French"`.
+
+        \u003e [!Warning]
+        \u003e This attribute may contain sensitive information.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: opt_in
+      stability: development
+      type: template[string]
+    - brief: The version of the prompt template used.
+      examples:
+      - 1.0.0
+      - 2025-05-01
+      - prod
+      - v2
+      key: gen_ai.prompt.version
+      note: |
+        The version string can follow any versioning scheme chosen by the
+        application (e.g., SemVer, date-based, or platform-specific tags).
+        When a prompt management system is in use, this SHOULD match the
+        version identifier used by that system.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: when `gen_ai.prompt.name` is set and a version is available
+      stability: development
+      type: string
     - brief: The Generative AI provider as identified by the client or server instrumentation.
       key: gen_ai.provider.name
       note: |
@@ -12189,6 +12679,46 @@ registry:
     examples:
     - analyze-code
     key: gen_ai.prompt.name
+    provenance:
+      path: ./model/gen-ai/registry.yaml
+    stability: development
+    type: string
+  - brief: The variables supplied to the prompt template, the `\u003ckey\u003e` being the variable name, the value being the variable value.
+    examples:
+    - Alice
+    - French
+    key: gen_ai.prompt.variable
+    note: |
+      Prompt templates are parameterized with variables that are filled in
+      at runtime. This attribute records the variable values passed to the
+      template. The attribute name defines the variable name, and the
+      attribute value is the variable value serialized as a string.
+
+      Examples:
+
+      - A variable `user_name` with value `Alice` SHOULD be recorded as
+        the `gen_ai.prompt.variable.user_name` attribute with value `"Alice"`.
+      - A variable `language` with value `French` SHOULD be recorded as
+        the `gen_ai.prompt.variable.language` attribute with value `"French"`.
+
+      \u003e [!Warning]
+      \u003e This attribute may contain sensitive information.
+    provenance:
+      path: ./model/gen-ai/registry.yaml
+    stability: development
+    type: template[string]
+  - brief: The version of the prompt template used.
+    examples:
+    - 1.0.0
+    - 2025-05-01
+    - prod
+    - v2
+    key: gen_ai.prompt.version
+    note: |
+      The version string can follow any versioning scheme chosen by the
+      application (e.g., SemVer, date-based, or platform-specific tags).
+      When a prompt management system is in use, this SHOULD match the
+      version identifier used by that system.
     provenance:
       path: ./model/gen-ai/registry.yaml
     stability: development
@@ -13183,6 +13713,59 @@ registry:
           id: speech
           stability: development
           value: speech
+    - brief: The name of the prompt that uniquely identifies it.
+      examples:
+      - analyze-code
+      key: gen_ai.prompt.name
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: when a named prompt template is used
+      stability: development
+      type: string
+    - brief: The variables supplied to the prompt template, the `\u003ckey\u003e` being the variable name, the value being the variable value.
+      examples:
+      - Alice
+      - French
+      key: gen_ai.prompt.variable
+      note: |
+        Prompt templates are parameterized with variables that are filled in
+        at runtime. This attribute records the variable values passed to the
+        template. The attribute name defines the variable name, and the
+        attribute value is the variable value serialized as a string.
+
+        Examples:
+
+        - A variable `user_name` with value `Alice` SHOULD be recorded as
+          the `gen_ai.prompt.variable.user_name` attribute with value `"Alice"`.
+        - A variable `language` with value `French` SHOULD be recorded as
+          the `gen_ai.prompt.variable.language` attribute with value `"French"`.
+
+        \u003e [!Warning]
+        \u003e This attribute may contain sensitive information.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: opt_in
+      stability: development
+      type: template[string]
+    - brief: The version of the prompt template used.
+      examples:
+      - 1.0.0
+      - 2025-05-01
+      - prod
+      - v2
+      key: gen_ai.prompt.version
+      note: |
+        The version string can follow any versioning scheme chosen by the
+        application (e.g., SemVer, date-based, or platform-specific tags).
+        When a prompt management system is in use, this SHOULD match the
+        version identifier used by that system.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: when `gen_ai.prompt.name` is set and a version is available
+      stability: development
+      type: string
     - brief: The Generative AI provider as identified by the client or server instrumentation.
       key: gen_ai.provider.name
       note: |
@@ -15560,6 +16143,49 @@ registry:
         conditionally_required: When operation is related to a specific prompt.
       stability: development
       type: string
+    - brief: The variables supplied to the prompt template in the request.
+      examples:
+      - Alice
+      - French
+      key: gen_ai.prompt.variable
+      note: |
+        Prompt templates are parameterized with variables that are filled in
+        at runtime. This attribute records the variable values passed to the
+        template. The attribute name defines the variable name, and the
+        attribute value is the variable value serialized as a string.
+
+        Examples:
+
+        - A variable `user_name` with value `Alice` SHOULD be recorded as
+          the `gen_ai.prompt.variable.user_name` attribute with value `"Alice"`.
+        - A variable `language` with value `French` SHOULD be recorded as
+          the `gen_ai.prompt.variable.language` attribute with value `"French"`.
+
+        \u003e [!Warning]
+        \u003e This attribute may contain sensitive information.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: opt_in
+      stability: development
+      type: template[string]
+    - brief: The version of the prompt template provided in the request or response.
+      examples:
+      - 1.0.0
+      - 2025-05-01
+      - prod
+      - v2
+      key: gen_ai.prompt.version
+      note: |
+        The version string can follow any versioning scheme chosen by the
+        application (e.g., SemVer, date-based, or platform-specific tags).
+        When a prompt management system is in use, this SHOULD match the
+        version identifier used by that system.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: When `gen_ai.prompt.name` is set and a version is available.
+      stability: development
+      type: string
     - brief: Name of the tool utilized by the agent.
       examples:
       - Flights
@@ -16097,6 +16723,49 @@ registry:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
         conditionally_required: When operation is related to a specific prompt.
+      stability: development
+      type: string
+    - brief: The variables supplied to the prompt template in the request.
+      examples:
+      - Alice
+      - French
+      key: gen_ai.prompt.variable
+      note: |
+        Prompt templates are parameterized with variables that are filled in
+        at runtime. This attribute records the variable values passed to the
+        template. The attribute name defines the variable name, and the
+        attribute value is the variable value serialized as a string.
+
+        Examples:
+
+        - A variable `user_name` with value `Alice` SHOULD be recorded as
+          the `gen_ai.prompt.variable.user_name` attribute with value `"Alice"`.
+        - A variable `language` with value `French` SHOULD be recorded as
+          the `gen_ai.prompt.variable.language` attribute with value `"French"`.
+
+        \u003e [!Warning]
+        \u003e This attribute may contain sensitive information.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: opt_in
+      stability: development
+      type: template[string]
+    - brief: The version of the prompt template provided in the request or response.
+      examples:
+      - 1.0.0
+      - 2025-05-01
+      - prod
+      - v2
+      key: gen_ai.prompt.version
+      note: |
+        The version string can follow any versioning scheme chosen by the
+        application (e.g., SemVer, date-based, or platform-specific tags).
+        When a prompt management system is in use, this SHOULD match the
+        version identifier used by that system.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: When `gen_ai.prompt.name` is set and a version is available.
       stability: development
       type: string
     - brief: Name of the tool utilized by the agent.
@@ -17546,6 +18215,59 @@ registry:
           id: speech
           stability: development
           value: speech
+    - brief: The name of the prompt that uniquely identifies it.
+      examples:
+      - analyze-code
+      key: gen_ai.prompt.name
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: when a named prompt template is used
+      stability: development
+      type: string
+    - brief: The variables supplied to the prompt template, the `\u003ckey\u003e` being the variable name, the value being the variable value.
+      examples:
+      - Alice
+      - French
+      key: gen_ai.prompt.variable
+      note: |
+        Prompt templates are parameterized with variables that are filled in
+        at runtime. This attribute records the variable values passed to the
+        template. The attribute name defines the variable name, and the
+        attribute value is the variable value serialized as a string.
+
+        Examples:
+
+        - A variable `user_name` with value `Alice` SHOULD be recorded as
+          the `gen_ai.prompt.variable.user_name` attribute with value `"Alice"`.
+        - A variable `language` with value `French` SHOULD be recorded as
+          the `gen_ai.prompt.variable.language` attribute with value `"French"`.
+
+        \u003e [!Warning]
+        \u003e This attribute may contain sensitive information.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: opt_in
+      stability: development
+      type: template[string]
+    - brief: The version of the prompt template used.
+      examples:
+      - 1.0.0
+      - 2025-05-01
+      - prod
+      - v2
+      key: gen_ai.prompt.version
+      note: |
+        The version string can follow any versioning scheme chosen by the
+        application (e.g., SemVer, date-based, or platform-specific tags).
+        When a prompt management system is in use, this SHOULD match the
+        version identifier used by that system.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: when `gen_ai.prompt.name` is set and a version is available
+      stability: development
+      type: string
     - brief: The Generative AI provider as identified by the client or server instrumentation.
       key: gen_ai.provider.name
       note: |
@@ -20475,6 +21197,49 @@ registry:
         conditionally_required: When operation is related to a specific prompt.
       stability: development
       type: string
+    - brief: The variables supplied to the prompt template in the request.
+      examples:
+      - Alice
+      - French
+      key: gen_ai.prompt.variable
+      note: |
+        Prompt templates are parameterized with variables that are filled in
+        at runtime. This attribute records the variable values passed to the
+        template. The attribute name defines the variable name, and the
+        attribute value is the variable value serialized as a string.
+
+        Examples:
+
+        - A variable `user_name` with value `Alice` SHOULD be recorded as
+          the `gen_ai.prompt.variable.user_name` attribute with value `"Alice"`.
+        - A variable `language` with value `French` SHOULD be recorded as
+          the `gen_ai.prompt.variable.language` attribute with value `"French"`.
+
+        \u003e [!Warning]
+        \u003e This attribute may contain sensitive information.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: opt_in
+      stability: development
+      type: template[string]
+    - brief: The version of the prompt template provided in the request or response.
+      examples:
+      - 1.0.0
+      - 2025-05-01
+      - prod
+      - v2
+      key: gen_ai.prompt.version
+      note: |
+        The version string can follow any versioning scheme chosen by the
+        application (e.g., SemVer, date-based, or platform-specific tags).
+        When a prompt management system is in use, this SHOULD match the
+        version identifier used by that system.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: When `gen_ai.prompt.name` is set and a version is available.
+      stability: development
+      type: string
     - brief: Parameters passed to the tool call.
       examples:
       - |
@@ -20982,6 +21747,49 @@ registry:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
         conditionally_required: When operation is related to a specific prompt.
+      stability: development
+      type: string
+    - brief: The variables supplied to the prompt template in the request.
+      examples:
+      - Alice
+      - French
+      key: gen_ai.prompt.variable
+      note: |
+        Prompt templates are parameterized with variables that are filled in
+        at runtime. This attribute records the variable values passed to the
+        template. The attribute name defines the variable name, and the
+        attribute value is the variable value serialized as a string.
+
+        Examples:
+
+        - A variable `user_name` with value `Alice` SHOULD be recorded as
+          the `gen_ai.prompt.variable.user_name` attribute with value `"Alice"`.
+        - A variable `language` with value `French` SHOULD be recorded as
+          the `gen_ai.prompt.variable.language` attribute with value `"French"`.
+
+        \u003e [!Warning]
+        \u003e This attribute may contain sensitive information.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: opt_in
+      stability: development
+      type: template[string]
+    - brief: The version of the prompt template provided in the request or response.
+      examples:
+      - 1.0.0
+      - 2025-05-01
+      - prod
+      - v2
+      key: gen_ai.prompt.version
+      note: |
+        The version string can follow any versioning scheme chosen by the
+        application (e.g., SemVer, date-based, or platform-specific tags).
+        When a prompt management system is in use, this SHOULD match the
+        version identifier used by that system.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: When `gen_ai.prompt.name` is set and a version is available.
       stability: development
       type: string
     - brief: Parameters passed to the tool call.
