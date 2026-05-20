@@ -10,6 +10,9 @@
 
 ### 💡 Enhancements 💡
 
+- Add `gen_ai.prompt.version` and `gen_ai.prompt.variable` attributes to enhance prompt
+  tracking with version support and template variable recording.
+  ([#137](https://github.com/open-telemetry/semantic-conventions-genai/issues/137))
 - Add GenAI memory operation span and attributes for memory store lifecycle (create/delete),
   memory record create/update/upsert/search/delete operations, and record counts.
   ([#140](https://github.com/open-telemetry/semantic-conventions-genai/pull/140))
