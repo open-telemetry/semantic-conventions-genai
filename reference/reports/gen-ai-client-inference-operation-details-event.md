@@ -15,6 +15,8 @@
 | --- | --- |
 | gen_ai.conversation.id | (none) |
 | gen_ai.output.type | (none) |
+| gen_ai.prompt.name | (none) |
+| gen_ai.prompt.version | (none) |
 | gen_ai.request.choice.count | [llamaindex] |
 | gen_ai.request.model | [anthropic], [autogen], [aws-bedrock], [azure-ai-inference], [cohere], [dspy], [google-genai], [groq], [instructor], [litellm], [llamaindex], [mistralai], [openai], [pydantic-ai], [vertexai] |
 | gen_ai.request.seed | [pydantic-ai] |
@@ -49,6 +51,7 @@
 | --- | --- |
 | gen_ai.input.messages | [anthropic], [autogen], [aws-bedrock], [azure-ai-inference], [cohere], [google-genai], [groq], [instructor], [litellm], [llamaindex], [mistralai], [openai], [pydantic-ai], [vertexai] |
 | gen_ai.output.messages | [anthropic], [autogen], [aws-bedrock], [azure-ai-inference], [cohere], [dspy], [google-genai], [groq], [instructor], [litellm], [llamaindex], [mistralai], [openai], [pydantic-ai], [vertexai] |
+| gen_ai.prompt.variable | (none) |
 | gen_ai.system_instructions | [autogen], [pydantic-ai] |
 | gen_ai.tool.definitions | (none) |
 
