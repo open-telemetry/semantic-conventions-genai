@@ -447,6 +447,14 @@ attributes:
           value: "delete_memory_store"
           brief: 'Delete or deprovision a memory store'
           stability: development
+        - id: evaluation
+          value: "evaluation"
+          brief: 'Evaluation of GenAI output quality, accuracy, or other characteristics'
+          note: >
+            Used when the operation being instrumented is an evaluation step,
+            such as running an LLM-as-judge, a scoring metric, or a benchmark suite.
+            The span SHOULD carry one or more gen_ai.evaluation.result events.
+          stability: development
     brief: The name of the operation being performed.
     note: >
       If one of the predefined values applies, but specific system uses a different name it's RECOMMENDED to document it in the semantic

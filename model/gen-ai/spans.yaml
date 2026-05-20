@@ -572,6 +572,58 @@ spans:
         requirement_level:
           conditionally_required: when available
 
+  - type: gen_ai.evaluate.internal
+    kind: internal
+    name:
+      note: >
+        **Span name** SHOULD be `evaluate {gen_ai.evaluation.name}` when a
+        single named metric is being evaluated, or `evaluate` when multiple
+        metrics are evaluated within the same span.
+    brief: >
+      Represents an evaluation of GenAI output quality, accuracy, or other
+      characteristics. Carries one or more `gen_ai.evaluation.result` events.
+    note: |
+      The `gen_ai.operation.name` SHOULD be `evaluation`.
+
+      **Span name** SHOULD be `evaluate {gen_ai.evaluation.name}` when a
+      single named metric is being evaluated, or `evaluate` when multiple
+      metrics are evaluated within the same span.
+
+      This span SHOULD be the parent of `gen_ai.evaluation.result` events.
+      When evaluation is performed post-hoc (separate process from inference),
+      `gen_ai.response.id` on the event correlates the evaluation back to the
+      original inference span.
+
+      Instrumentations SHOULD report this span when they can reliably
+      determine that the operation being instrumented is an evaluation step,
+      and SHOULD NOT report it for generic inference spans that happen to
+      include self-evaluation logic.
+
+      Examples: DeepEval GEval, Azure AI Evaluation, DSPy Evaluate,
+      RAGAS, custom LLM-as-judge pipelines.
+    stability: development
+    attributes:
+      - ref_group: attributes.gen_ai.error
+      - ref: gen_ai.operation.name
+        requirement_level: required
+        sampling_relevant: true
+      - ref: gen_ai.evaluation.name
+        requirement_level:
+          conditionally_required: when a single named metric is being evaluated
+        sampling_relevant: true
+      - ref: gen_ai.provider.name
+        requirement_level:
+          conditionally_required: when the evaluation uses a GenAI judge model
+      - ref: gen_ai.request.model
+        requirement_level:
+          conditionally_required: when the evaluation uses a GenAI judge model
+      - ref: gen_ai.conversation.id
+        requirement_level:
+          conditionally_required: when available and the evaluation is scoped to a specific conversation
+      - ref: gen_ai.agent.name
+        requirement_level:
+          conditionally_required: when the evaluation is scoped to a specific agent
+
 span_refinements:
   - id: openai.inference.client
     ref: gen_ai.inference.client
