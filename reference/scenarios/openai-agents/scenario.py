@@ -5,9 +5,9 @@ against a mock OpenAI server, with manual OTel spans.
 """
 
 import asyncio
+import copy
 import json
 import os
-import time
 
 from reference_shared import flush_and_shutdown, mock_server_host_port, reference_tracer, setup_otel
 
@@ -176,48 +176,80 @@ def main():
 async def run_agent_with_handoff():
     """Two-agent run that exercises the SDK's library-native Handoff path.
 
+    Scenario shape and mock behavior
+    --------------------------------
     A triage agent owns one Handoff to a billing specialist. The mock server
     prefers ``transfer_to_*`` tools when present, so the SDK's handoff
     machinery fires: it constructs a ``HandoffCallItem`` carrying the
-    function tool call the model produced (``agents/items.py:266``) and a
+    function tool call the model produced (``agents/items.py``) and a
     ``HandoffOutputItem`` carrying library-owned ``source_agent`` /
-    ``target_agent`` references (``agents/items.py:276``). The SDK models
-    handoff as a function tool call --- ``convert_handoff_tool`` at
-    ``agents/models/chatcmpl_converter.py:864`` serializes each ``Handoff``
+    ``target_agent`` references (``agents/run_internal/turn_resolution.py:385``).
+    The SDK models handoff as a function tool call --- ``convert_handoff_tool``
+    at ``agents/models/chatcmpl_converter.py:864`` serializes each ``Handoff``
     as a ``ChatCompletionToolParam`` with ``"type": "function"``.
 
-    To model the handoff in telemetry, this scenario emits:
+    Telemetry shape
+    ---------------
+    The scenario emits three spans for one handoff:
 
     * one ``invoke_agent triage-agent`` span (the source agent),
     * one ``execute_tool transfer_to_billing_agent`` span as a child of the
       triage span, representing the handoff tool call,
     * one ``invoke_agent billing-agent`` span (the target agent).
 
-    The ``execute_tool`` span carries both
-    ``gen_ai.agent.handoff.source.name`` and
-    ``gen_ai.agent.handoff.target.name``, sourced from
-    ``HandoffOutputItem.source_agent.name`` and
-    ``HandoffOutputItem.target_agent.name`` respectively. The source name
-    is also derivable from the parent ``invoke_agent`` span's
-    ``gen_ai.agent.name``, so emitting it explicitly is a convenience for
-    queries that should not have to traverse parent-child links.
+    Instrumentation boundary
+    ------------------------
+    The ``execute_tool`` span wraps exactly the SDK's awaited handoff
+    invocation at ``agents/run_internal/turn_resolution.py:369``
+    (``await handoff.on_invoke_handoff(...)``). To install that span without
+    forking the SDK, the scenario monkey-patches
+    ``agents.run_internal.turn_resolution.execute_handoffs`` to a wrapper
+    that swaps ``actual_handoff.handoff`` for a shallow copy with a wrapped
+    ``on_invoke_handoff``. ``copy.copy`` is required (not
+    ``dataclasses.replace``) so that ``Handoff._agent_ref`` (an
+    ``init=False`` weakref set by the ``handoff()`` factory at
+    ``agents/handoffs/__init__.py:334``) survives the replacement. The
+    shared agent-owned ``Handoff`` object is never mutated;
+    ``ToolRunHandoff`` is constructed fresh per turn at
+    ``agents/run_internal/turn_resolution.py:1838``.
+
+    The user-facing entry point remains ``Runner.run(triage_agent, ...)``.
+    The patch is scenario-internal, applied before ``Runner.run`` and
+    restored in a ``finally`` block.
+
+    Value sources (all from typed SDK state at the call boundary)
+    -------------------------------------------------------------
+    * ``gen_ai.tool.name`` <- ``handoff_obj.tool_name`` (post-resolved per
+      ``agents/handoffs/__init__.py:307``; honors ``tool_name_override``)
+    * ``gen_ai.tool.call.id`` <- ``actual_handoff.tool_call.call_id``
+    * ``gen_ai.tool.call.arguments`` <- ``actual_handoff.tool_call.arguments``
+    * ``gen_ai.agent.handoff.source.name`` <- ``public_agent.name``
+    * ``gen_ai.agent.handoff.target.name`` <- ``new_agent.name``
+      (the return value of the wrapped ``on_invoke_handoff``)
+
+    Regression assertions
+    ---------------------
+    After ``Runner.run`` returns successfully, the scenario asserts (a) at
+    least one ``HandoffOutputItem`` appeared in ``result.new_items`` (mock-
+    server regression guard) and (b) the count of emitted ``execute_tool``
+    spans matches the ``HandoffOutputItem`` count (catches an SDK upgrade
+    that would break the monkey-patch silently).
 
     ``RunHooks`` callbacks (``on_agent_start`` / ``on_agent_end`` /
     ``on_handoff`` from ``agents/lifecycle.py``) open and close each
     agent's ``invoke_agent`` span around its real execution. ``on_handoff``
-    captures the parent-span context for the handoff event before closing
-    the source agent's span; after ``Runner.run`` returns, the matching
-    ``(HandoffCallItem, HandoffOutputItem)`` pair from ``result.new_items``
-    is used to emit the ``execute_tool`` span with explicit timestamps and
-    a parent context wrapping the source agent's ended span.
+    closes the source agent's ``invoke_agent`` span because the SDK skips
+    ``on_agent_end`` on the ``NextStepHandoff`` path
+    (``turn_resolution.py:513``).
     """
     import openai
     from agents import Agent, Runner, handoff
-    from agents.items import HandoffCallItem, HandoffOutputItem
+    from agents.items import HandoffOutputItem
     from agents.lifecycle import RunHooks
     from agents.models.openai_chatcompletions import OpenAIChatCompletionsModel
+    from agents.run_internal import turn_resolution as _turn_resolution
     from agents.tool import FunctionTool
-    from opentelemetry.trace import NonRecordingSpan, set_span_in_context
+    from opentelemetry.trace import set_span_in_context
 
     client = openai.AsyncOpenAI(base_url=MOCK_BASE_URL, api_key="mock-key")
     request_model = "gpt-4o-mini"
@@ -246,25 +278,10 @@ async def run_agent_with_handoff():
     # (matches the SDK's own context_wrapper.usage.add accumulation;
     # multi-turn agents would otherwise have only the last call's usage on
     # their span). finish_reasons_per_agent collects per-call finish
-    # reasons derived from response.output[].type. handoff_events records
-    # one entry per on_handoff firing, capturing the source span context
-    # and the timestamp at the handoff boundary so the execute_tool span
-    # can be emitted post-hoc with the correct parent and timing.
+    # reasons derived from response.output[].type.
     open_spans: dict[str, object] = {}
     usage_totals: dict[str, dict[str, int]] = {}
     finish_reasons_per_agent: dict[str, list[str]] = {}
-    handoff_events: list[dict] = []
-
-    def _flush_per_agent_attrs(agent_name, agent_span):
-        usage = usage_totals.pop(agent_name, None)
-        if usage:
-            if usage.get("input_tokens"):
-                agent_span.set_attribute("gen_ai.usage.input_tokens", usage["input_tokens"])
-            if usage.get("output_tokens"):
-                agent_span.set_attribute("gen_ai.usage.output_tokens", usage["output_tokens"])
-        finish_reasons = finish_reasons_per_agent.pop(agent_name, None)
-        if finish_reasons:
-            agent_span.set_attribute("gen_ai.response.finish_reasons", finish_reasons)
 
     class _SpanLifecycleHooks(RunHooks):
         async def on_agent_start(self_hooks, context, agent):
@@ -336,7 +353,15 @@ async def run_agent_with_handoff():
             agent_span = open_spans.pop(agent.name, None)
             if agent_span is None:
                 return
-            _flush_per_agent_attrs(agent.name, agent_span)
+            usage = usage_totals.pop(agent.name, None)
+            if usage:
+                if usage.get("input_tokens"):
+                    agent_span.set_attribute("gen_ai.usage.input_tokens", usage["input_tokens"])
+                if usage.get("output_tokens"):
+                    agent_span.set_attribute("gen_ai.usage.output_tokens", usage["output_tokens"])
+            finish_reasons = finish_reasons_per_agent.pop(agent.name, None)
+            if finish_reasons:
+                agent_span.set_attribute("gen_ai.response.finish_reasons", finish_reasons)
             if output is not None:
                 agent_span.set_attribute(
                     "gen_ai.output.messages",
@@ -395,47 +420,92 @@ async def run_agent_with_handoff():
             # Close the source agent's span here at the handoff boundary
             # so its duration honestly reflects the source agent's
             # execution time rather than the entire Runner.run lifetime.
-            #
-            # Before closing the source span, capture its SpanContext (the
-            # immutable trace/span id pair) and a wall-clock timestamp so
-            # the execute_tool span representing this handoff can be
-            # emitted after Runner.run returns with the correct parent
-            # span and accurate timing. Capturing here is necessary
-            # because by the time we walk result.new_items at the end of
-            # the run, both invoke_agent spans have ended; OpenTelemetry's
-            # NonRecordingSpan + set_span_in_context lets a span be
-            # attached to an already-closed parent via its SpanContext.
-            from_span = open_spans.get(from_agent.name)
-            captured_context = from_span.get_span_context() if from_span is not None else None
-            handoff_events.append(
-                {
-                    "to_agent_name": to_agent.name,
-                    "parent_span_context": captured_context,
-                    "start_time_ns": time.time_ns(),
-                }
-            )
             from_span = open_spans.pop(from_agent.name, None)
-            if from_span is not None:
-                _flush_per_agent_attrs(from_agent.name, from_span)
-                from_span.end()
+            if from_span is None:
+                return
+            usage = usage_totals.pop(from_agent.name, None)
+            if usage:
+                if usage.get("input_tokens"):
+                    from_span.set_attribute("gen_ai.usage.input_tokens", usage["input_tokens"])
+                if usage.get("output_tokens"):
+                    from_span.set_attribute("gen_ai.usage.output_tokens", usage["output_tokens"])
+            finish_reasons = finish_reasons_per_agent.pop(from_agent.name, None)
+            if finish_reasons:
+                from_span.set_attribute("gen_ai.response.finish_reasons", finish_reasons)
+            from_span.end()
 
     hooks = _SpanLifecycleHooks()
-    result = await Runner.run(triage_agent, input_text, hooks=hooks)
 
-    # Defensive: end any spans the SDK didn't close (shouldn't happen on
-    # the happy path but keeps the trace coherent if Runner.run raises).
-    while open_spans:
-        _, agent_span = open_spans.popitem()
-        agent_span.end()
+    # Install execute_tool span emission around the SDK's awaited handoff
+    # invocation at turn_resolution.py:369 (await handoff.on_invoke_handoff).
+    # See the function docstring for the full rationale.
+    _original_execute_handoffs = _turn_resolution.execute_handoffs
+    _handoff_spans_emitted: list[None] = []
 
-    # Walk result.new_items for (HandoffCallItem, HandoffOutputItem) pairs.
-    # Each HandoffCallItem.raw_item is the ResponseFunctionToolCall the
-    # model produced -- carries call_id, name (transfer_to_<agent>), and
-    # arguments. The HandoffOutputItem that follows carries the typed
-    # source_agent / target_agent references the SDK assigned. Pairing is
-    # positional: the SDK appends the call item at turn_resolution.py:1837
-    # and the matching output item at turn_resolution.py:385 in lockstep.
-    handoff_call_items = [item for item in result.new_items if isinstance(item, HandoffCallItem)]
+    async def _execute_handoffs_with_span(**kwargs):
+        actual_handoff = kwargs["run_handoffs"][0]
+        handoff_obj = actual_handoff.handoff
+        tool_call = actual_handoff.tool_call
+        public_agent = kwargs["public_agent"]
+        source_span = open_spans.get(public_agent.name)
+        if source_span is None:
+            raise AssertionError(
+                f"execute_handoffs fired for {public_agent.name} but its "
+                "invoke_agent span is not open; cannot emit execute_tool span"
+            )
+        parent_ctx = set_span_in_context(source_span)
+        original_on_invoke = handoff_obj.on_invoke_handoff
+
+        async def _on_invoke_with_span(ctx, args):
+            tool_span_attributes = {
+                "gen_ai.operation.name": "execute_tool",
+                "gen_ai.tool.name": handoff_obj.tool_name,
+            }
+            with _reference_tracer.start_as_current_span(
+                f"execute_tool {handoff_obj.tool_name}",
+                context=parent_ctx,
+                attributes=tool_span_attributes,
+            ) as tool_span:
+                tool_span.set_attribute("gen_ai.tool.call.id", tool_call.call_id)
+                tool_span.set_attribute("gen_ai.tool.call.arguments", tool_call.arguments)
+                tool_span.set_attribute("gen_ai.agent.handoff.source.name", public_agent.name)
+                new_agent = await original_on_invoke(ctx, args)
+                tool_span.set_attribute("gen_ai.agent.handoff.target.name", new_agent.name)
+                _handoff_spans_emitted.append(None)
+                return new_agent
+
+        # copy.copy preserves init=False fields (Handoff._agent_ref weakref
+        # set by the handoff() factory at agents/handoffs/__init__.py:334).
+        # dataclasses.replace would reset _agent_ref to None, breaking the
+        # run-state snapshot/restore path that reads it at run_state.py:2606.
+        # The shared agent-owned Handoff is never mutated; ToolRunHandoff is
+        # per-turn (agents/run_internal/run_steps.py:60).
+        wrapped = copy.copy(handoff_obj)
+        wrapped.on_invoke_handoff = _on_invoke_with_span
+        actual_handoff.handoff = wrapped
+        return await _original_execute_handoffs(**kwargs)
+
+    # The Runner.run call path re-reads `execute_handoffs` from this module
+    # on each call: turn_resolution.execute_tools_and_side_effects captures
+    # it locally at turn_resolution.py:573, and the post-interruption
+    # resume path does the same at :782. Monkey-patching the module
+    # attribute therefore takes effect on the next handoff.
+    # agents/run_internal/run_loop.py:187-196 imports and re-exports
+    # execute_handoffs at module import time but does not call it directly;
+    # the call path always goes through execute_tools_and_side_effects.
+    # Verified in openai-agents 0.4.x.
+    _turn_resolution.execute_handoffs = _execute_handoffs_with_span
+    try:
+        result = await Runner.run(triage_agent, input_text, hooks=hooks)
+    finally:
+        _turn_resolution.execute_handoffs = _original_execute_handoffs
+        # Defensive: end any spans the SDK didn't close (shouldn't happen
+        # on the happy path but keeps the trace coherent if Runner.run
+        # raised before our hooks closed everything).
+        while open_spans:
+            _, leftover_span = open_spans.popitem()
+            leftover_span.end()
+
     handoff_output_items = [item for item in result.new_items if isinstance(item, HandoffOutputItem)]
     if not handoff_output_items:
         # SDK behavior change, mock regression, or handoff not taken: fail
@@ -445,81 +515,19 @@ async def run_agent_with_handoff():
             "expected at least one HandoffOutputItem in result.new_items; "
             "scenario relies on the mock returning a transfer_to_* tool call"
         )
-
-    # Pair each HandoffOutputItem with its originating HandoffCallItem by
-    # call_id (HandoffOutputItem.raw_item is a tool-call-output keyed back
-    # to the original ResponseFunctionToolCall.call_id; see
-    # ItemHelpers.tool_call_output_item at
-    # agents/run_internal/turn_resolution.py:387). Positional pairing
-    # would mis-align in multi-handoffs-per-turn flows where the SDK
-    # discards extra HandoffCallItems as ToolCallOutputItem
-    # (turn_resolution.py:352-394), but only the first becomes a
-    # HandoffOutputItem.
-    call_items_by_id = {
-        item.raw_item.call_id: item for item in handoff_call_items if getattr(item.raw_item, "call_id", None)
-    }
-
-    # Emit one execute_tool span per handoff event captured during the
-    # run. Each execute_tool span is parented to the source agent's
-    # invoke_agent span via the captured SpanContext, even though that
-    # span has already ended. Per-handoff end_time captured inside the
-    # loop so each span has its own honest end time (forward-compatible
-    # with multi-handoff flows where spans should not all end at the
-    # same instant).
-    for idx, event in enumerate(handoff_events):
-        if event["parent_span_context"] is None:
-            # Reference demo: fail loudly rather than silently dropping
-            # the execute_tool span. Production instrumentation would
-            # likely fall back to the current OTel context, but in a
-            # reference scenario a missing parent indicates a bug.
-            raise AssertionError(
-                f"on_handoff fired for {event['to_agent_name']} but the source agent's "
-                "invoke_agent span was not open at that moment; cannot emit execute_tool span"
-            )
-        if idx >= len(handoff_output_items):
-            raise AssertionError(
-                f"more on_handoff events ({len(handoff_events)}) than HandoffOutputItems "
-                f"({len(handoff_output_items)}); SDK state is inconsistent"
-            )
-        output_item = handoff_output_items[idx]
-        output_call_id = (
-            output_item.raw_item.get("call_id")
-            if isinstance(output_item.raw_item, dict)
-            else getattr(output_item.raw_item, "call_id", None)
+    if len(_handoff_spans_emitted) != len(handoff_output_items):
+        raise AssertionError(
+            f"execute_tool span emission count ({len(_handoff_spans_emitted)}) "
+            f"does not match HandoffOutputItem count ({len(handoff_output_items)}) "
+            "on the fresh-Runner.run path used by this scenario; the "
+            "execute_handoffs monkey-patch may not have been applied -- verify "
+            "openai-agents SDK compatibility with execute_tools_and_side_effects "
+            "re-reading execute_handoffs per call (turn_resolution.py:573, also "
+            ":782 for the post-interruption resume path). Note: this 1:1 "
+            "invariant holds only for fresh Runner.run; run-state restore can "
+            "reconstruct HandoffOutputItem without invoking on_invoke_handoff "
+            "(run_state.py:3248-3255)."
         )
-        call_item = call_items_by_id.get(output_call_id) if output_call_id else None
-        if call_item is None:
-            # Defensive: if we can't locate the originating call item by
-            # call_id, fall back to positional pairing (matches single-
-            # handoff-per-run flows which is what this scenario produces).
-            if idx >= len(handoff_call_items):
-                raise AssertionError(
-                    f"no HandoffCallItem available for handoff event idx={idx} (call_id={output_call_id})"
-                )
-            call_item = handoff_call_items[idx]
-        tool_call = call_item.raw_item
-        parent_ctx = set_span_in_context(NonRecordingSpan(event["parent_span_context"]))
-        tool_span_attributes = {
-            "gen_ai.operation.name": "execute_tool",
-            "gen_ai.tool.name": tool_call.name,
-        }
-        tool_span = _reference_tracer.start_span(
-            f"execute_tool {tool_call.name}",
-            context=parent_ctx,
-            start_time=event["start_time_ns"],
-            attributes=tool_span_attributes,
-        )
-        # Library-owned values from the typed handoff items: call_id and
-        # arguments come from the ResponseFunctionToolCall the model
-        # produced; source.name / target.name come from the SDK-assigned
-        # source_agent / target_agent references on HandoffOutputItem.
-        if getattr(tool_call, "call_id", None):
-            tool_span.set_attribute("gen_ai.tool.call.id", tool_call.call_id)
-        if getattr(tool_call, "arguments", None) is not None:
-            tool_span.set_attribute("gen_ai.tool.call.arguments", tool_call.arguments)
-        tool_span.set_attribute("gen_ai.agent.handoff.source.name", output_item.source_agent.name)
-        tool_span.set_attribute("gen_ai.agent.handoff.target.name", output_item.target_agent.name)
-        tool_span.end(end_time=time.time_ns())
 
     target_name = handoff_output_items[0].target_agent.name
     print(f"    -> triage handed off to {target_name}, final output: {str(result.final_output)[:60]}")

@@ -23,9 +23,9 @@
   handoff tool call (e.g., `transfer_to_<agent>`) is emitted as a child
   `execute_tool` span of the source agent's `invoke_agent` span, carrying the
   source and target agent names. Demonstrated in the OpenAI Agents reference
-  scenario, which sources both values from the SDK's typed
-  `HandoffOutputItem.source_agent` / `HandoffOutputItem.target_agent`
-  references.
+  scenario, which emits the source from `public_agent.name` and the target
+  from the `on_invoke_handoff` return value at the SDK handoff invocation
+  boundary.
   ([#98](https://github.com/open-telemetry/semantic-conventions-genai/pull/98))
 - Add `document` value to the `Modality` enum in the GenAI input/output/system-instructions
   message JSON schemas. Enables capturing PDF/DOCX (and similar) parts that today have to fall
