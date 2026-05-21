@@ -229,6 +229,26 @@ metrics:
     attributes:
       - ref: gen_ai.agent.name
         requirement_level: recommended
+  - name: gen_ai.run_step.duration
+    requirement_level: recommended
+    annotations:
+      code_generation:
+        metric_value_type: double
+    brief: >
+      The duration of a single GenAI workflow step.
+    note: |
+      Recorded for the same units of work as the `gen_ai.run_step.internal`
+      span - steps that are not one of the known GenAI operations. When this
+      metric is reported alongside a `gen_ai.run_step.internal` span, the
+      metric value SHOULD be the same as the span duration.
+    instrument: histogram
+    unit: "s"
+    stability: development
+    attributes:
+      - ref_group: attributes.gen_ai.error
+      - ref: gen_ai.step.name
+        requirement_level:
+          conditionally_required: If available.
   - name: gen_ai.execute_tool.duration
     requirement_level: recommended
     annotations:

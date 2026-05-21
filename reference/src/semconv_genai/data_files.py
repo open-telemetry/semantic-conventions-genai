@@ -25,6 +25,7 @@ SPAN_TYPE_ORDER = [
     "invoke_agent_client",
     "invoke_agent_internal",
     "invoke_workflow",
+    "run_step",
     "plan",
     "inference",
     "embeddings",

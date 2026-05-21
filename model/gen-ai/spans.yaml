@@ -66,7 +66,7 @@ attribute_groups:
         brief: The human-readable name of the invoked GenAI agent.
         requirement_level:
           conditionally_required: When available.
-      # not including agent description since this group is shared between 
+      # not including agent description since this group is shared between
       # spans and metrics and description is not needed on metrics
       - ref: gen_ai.request.model
         brief: The name of the GenAI model configured for the agent.
@@ -625,6 +625,54 @@ spans:
         requirement_level: opt_in
       - ref: gen_ai.output.messages
         requirement_level: opt_in
+
+  - type: gen_ai.run_step.internal
+    requirement_level: recommended
+    kind: internal
+    name:
+      note: >
+        **Span name** SHOULD be `run_step {gen_ai.step.name}` if `gen_ai.step.name` is readily
+        available. When `gen_ai.step.name` is not available, it SHOULD be `run_step`.
+    brief: >
+      Represents a step of a GenAI workflow that is not one of the known operations
+      such as `invoke_workflow`, `invoke_agent`, inference or another documented operation.
+    note: |
+      The `gen_ai.operation.name` SHOULD be `run_step`.
+
+      **Span name** SHOULD be `run_step {gen_ai.step.name}` if `gen_ai.step.name` is readily
+      available, and `run_step` otherwise.
+
+      A step is a unit of a workflow that hands control to application- or
+      framework-defined code not already represented by another GenAI span (e.g. not an
+      `invoke_agent`, `execute_tool`, `chat`, `text_completion`, `embeddings`, `retrieval`,
+      `plan`, or memory operation). Frameworks name this concept differently - a node in
+      graph-based frameworks (LangGraph, ADK, pydantic-graph), a step in LlamaIndex
+      Workflows, CrewAI Flows, or Agno, a component in Haystack.
+
+      Whether to report `run_step` is decided by what the step *is*, not by what its code
+      does (which an instrumentation cannot know in advance). An instrumentation SHOULD report
+      `run_step` for every such step it executes.
+
+      An instrumentation SHOULD NOT report `run_step` for work already instrumented by
+      another GenAI span. When a GenAI primitive (agent, tool, retriever, ...) is registered
+      directly as a step, that primitive's own span is the step; wrapping it would
+      double-count.
+
+      Semantic conventions for individual GenAI frameworks SHOULD document which framework
+      constructs map to `run_step` and which do not.
+    stability: development
+    attributes:
+      - ref_group: attributes.gen_ai.error
+      - ref: gen_ai.operation.name
+        requirement_level: required
+        sampling_relevant: true
+      - ref: gen_ai.step.name
+        requirement_level:
+          conditionally_required: When available.
+        sampling_relevant: true
+      - ref: gen_ai.conversation.id
+        requirement_level:
+          conditionally_required: When available.
 
   - type: gen_ai.plan.internal
     requirement_level: recommended

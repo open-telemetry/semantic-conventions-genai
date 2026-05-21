@@ -420,6 +420,55 @@ def run_crew_planning_multi_call():
     )
 
 
+def run_flow_node_reference():
+    """Scenario: a CrewAI Flow step, reported as a run_step span.
+
+    CrewAI does not instrument `@start` / `@listen` steps, so a deterministic
+    one is invisible in the trace without run_step. A Flow step that calls an
+    LLM is covered by its own `chat` span and is not wrapped.
+    """
+    print("  [flow] application-emitted run_step inside a CrewAI Flow (reference implementation)")
+    os.environ["CREWAI_DISABLE_TELEMETRY"] = "true"
+    os.environ["CREWAI_DISABLE_TRACKING"] = "true"
+    os.environ["CREWAI_TRACING_ENABLED"] = "false"
+    from crewai.flow.flow import Flow, start
+
+    workflow_name = "weather_flow"
+
+    class WeatherFlow(Flow):
+        @start()
+        def normalize_query(self):
+            step_span_attributes = {
+                "gen_ai.operation.name": "run_step",
+                "gen_ai.step.name": "normalize_query",
+            }
+            with _reference_tracer.start_as_current_span("run_step normalize_query", attributes=step_span_attributes):
+                raw = "  Weather   in   Seattle?  "
+                return " ".join(raw.split())
+
+    workflow_span_attributes = {
+        "gen_ai.operation.name": "invoke_workflow",
+        "gen_ai.workflow.name": workflow_name,
+    }
+    with _reference_tracer.start_as_current_span(
+        f"invoke_workflow {workflow_name}", attributes=workflow_span_attributes
+    ) as workflow_span:
+        result = WeatherFlow().kickoff()
+        if result is not None:
+            workflow_span.set_attribute(
+                "gen_ai.output.messages",
+                json.dumps(
+                    [
+                        {
+                            "role": "assistant",
+                            "parts": [{"type": "text", "content": str(result)}],
+                        }
+                    ]
+                ),
+            )
+        print(f"    -> {str(result)[:60]}")
+
+
 def main():
     print("=== Reference Implementation: CrewAI Reference Implementation ===")
 
@@ -430,6 +479,7 @@ def main():
     run_agent()
     run_crew_planning()
     run_crew_planning_multi_call()
+    run_flow_node_reference()
 
     flush_and_shutdown(tp, lp, mp)
 

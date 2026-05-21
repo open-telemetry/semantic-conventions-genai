@@ -23,6 +23,8 @@ linkTitle: Metrics
   - [Metric: `gen_ai.invoke_agent.duration`](#metric-gen_aiinvoke_agentduration)
   - [Metric: `gen_ai.invoke_agent.inference_calls`](#metric-gen_aiinvoke_agentinference_calls)
   - [Metric: `gen_ai.invoke_agent.tool_calls`](#metric-gen_aiinvoke_agenttool_calls)
+- [Generative AI workflow step metrics](#generative-ai-workflow-step-metrics)
+  - [Metric: `gen_ai.run_step.duration`](#metric-gen_airun_stepduration)
 - [Generative AI tool metrics](#generative-ai-tool-metrics)
   - [Metric: `gen_ai.execute_tool.duration`](#metric-gen_aiexecute_toolduration)
 
@@ -122,6 +124,7 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 | `invoke_workflow` | Invoke GenAI workflow | ![Development](https://img.shields.io/badge/-development-blue) |
 | `plan` | Agent planning or task decomposition phase | ![Development](https://img.shields.io/badge/-development-blue) |
 | `retrieval` | Retrieval operation such as [OpenAI Search Vector Store API](https://platform.openai.com/docs/api-reference/vector-stores/search) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `run_step` | Run a step of a GenAI workflow that is not one of the known GenAI operations | ![Development](https://img.shields.io/badge/-development-blue) |
 | `search_memory` | Search/query memories from a memory store | ![Development](https://img.shields.io/badge/-development-blue) |
 | `text_completion` | Text completions operation such as [OpenAI Completions API (Legacy)](https://platform.openai.com/docs/api-reference/completions) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `update_memory` | Update existing memory records | ![Development](https://img.shields.io/badge/-development-blue) |
@@ -258,6 +261,7 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 | `invoke_workflow` | Invoke GenAI workflow | ![Development](https://img.shields.io/badge/-development-blue) |
 | `plan` | Agent planning or task decomposition phase | ![Development](https://img.shields.io/badge/-development-blue) |
 | `retrieval` | Retrieval operation such as [OpenAI Search Vector Store API](https://platform.openai.com/docs/api-reference/vector-stores/search) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `run_step` | Run a step of a GenAI workflow that is not one of the known GenAI operations | ![Development](https://img.shields.io/badge/-development-blue) |
 | `search_memory` | Search/query memories from a memory store | ![Development](https://img.shields.io/badge/-development-blue) |
 | `text_completion` | Text completions operation such as [OpenAI Completions API (Legacy)](https://platform.openai.com/docs/api-reference/completions) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `update_memory` | Update existing memory records | ![Development](https://img.shields.io/badge/-development-blue) |
@@ -372,6 +376,7 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 | `invoke_workflow` | Invoke GenAI workflow | ![Development](https://img.shields.io/badge/-development-blue) |
 | `plan` | Agent planning or task decomposition phase | ![Development](https://img.shields.io/badge/-development-blue) |
 | `retrieval` | Retrieval operation such as [OpenAI Search Vector Store API](https://platform.openai.com/docs/api-reference/vector-stores/search) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `run_step` | Run a step of a GenAI workflow that is not one of the known GenAI operations | ![Development](https://img.shields.io/badge/-development-blue) |
 | `search_memory` | Search/query memories from a memory store | ![Development](https://img.shields.io/badge/-development-blue) |
 | `text_completion` | Text completions operation such as [OpenAI Completions API (Legacy)](https://platform.openai.com/docs/api-reference/completions) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `update_memory` | Update existing memory records | ![Development](https://img.shields.io/badge/-development-blue) |
@@ -486,6 +491,7 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 | `invoke_workflow` | Invoke GenAI workflow | ![Development](https://img.shields.io/badge/-development-blue) |
 | `plan` | Agent planning or task decomposition phase | ![Development](https://img.shields.io/badge/-development-blue) |
 | `retrieval` | Retrieval operation such as [OpenAI Search Vector Store API](https://platform.openai.com/docs/api-reference/vector-stores/search) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `run_step` | Run a step of a GenAI workflow that is not one of the known GenAI operations | ![Development](https://img.shields.io/badge/-development-blue) |
 | `search_memory` | Search/query memories from a memory store | ![Development](https://img.shields.io/badge/-development-blue) |
 | `text_completion` | Text completions operation such as [OpenAI Completions API (Legacy)](https://platform.openai.com/docs/api-reference/completions) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `update_memory` | Update existing memory records | ![Development](https://img.shields.io/badge/-development-blue) |
@@ -620,6 +626,7 @@ Instrumentations SHOULD document the list of errors they report.
 | `invoke_workflow` | Invoke GenAI workflow | ![Development](https://img.shields.io/badge/-development-blue) |
 | `plan` | Agent planning or task decomposition phase | ![Development](https://img.shields.io/badge/-development-blue) |
 | `retrieval` | Retrieval operation such as [OpenAI Search Vector Store API](https://platform.openai.com/docs/api-reference/vector-stores/search) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `run_step` | Run a step of a GenAI workflow that is not one of the known GenAI operations | ![Development](https://img.shields.io/badge/-development-blue) |
 | `search_memory` | Search/query memories from a memory store | ![Development](https://img.shields.io/badge/-development-blue) |
 | `text_completion` | Text completions operation such as [OpenAI Completions API (Legacy)](https://platform.openai.com/docs/api-reference/completions) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `update_memory` | Update existing memory records | ![Development](https://img.shields.io/badge/-development-blue) |
@@ -741,6 +748,7 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 | `invoke_workflow` | Invoke GenAI workflow | ![Development](https://img.shields.io/badge/-development-blue) |
 | `plan` | Agent planning or task decomposition phase | ![Development](https://img.shields.io/badge/-development-blue) |
 | `retrieval` | Retrieval operation such as [OpenAI Search Vector Store API](https://platform.openai.com/docs/api-reference/vector-stores/search) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `run_step` | Run a step of a GenAI workflow that is not one of the known GenAI operations | ![Development](https://img.shields.io/badge/-development-blue) |
 | `search_memory` | Search/query memories from a memory store | ![Development](https://img.shields.io/badge/-development-blue) |
 | `text_completion` | Text completions operation such as [OpenAI Completions API (Legacy)](https://platform.openai.com/docs/api-reference/completions) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `update_memory` | Update existing memory records | ![Development](https://img.shields.io/badge/-development-blue) |
@@ -861,6 +869,7 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 | `invoke_workflow` | Invoke GenAI workflow | ![Development](https://img.shields.io/badge/-development-blue) |
 | `plan` | Agent planning or task decomposition phase | ![Development](https://img.shields.io/badge/-development-blue) |
 | `retrieval` | Retrieval operation such as [OpenAI Search Vector Store API](https://platform.openai.com/docs/api-reference/vector-stores/search) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `run_step` | Run a step of a GenAI workflow that is not one of the known GenAI operations | ![Development](https://img.shields.io/badge/-development-blue) |
 | `search_memory` | Search/query memories from a memory store | ![Development](https://img.shields.io/badge/-development-blue) |
 | `text_completion` | Text completions operation such as [OpenAI Completions API (Legacy)](https://platform.openai.com/docs/api-reference/completions) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `update_memory` | Update existing memory records | ![Development](https://img.shields.io/badge/-development-blue) |
@@ -1103,6 +1112,74 @@ This metric SHOULD be emitted together with the
 | Key | Stability | [Requirement Level](https://opentelemetry.io/docs/specs/semconv/general/attribute-requirement-level/) | Value Type | Description | Example Values |
 | --- | --- | --- | --- | --- | --- |
 | [`gen_ai.agent.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | Human-readable name of the GenAI agent provided by the application. | `Math Tutor`; `Fiction Writer` |
+
+<!-- prettier-ignore-end -->
+<!-- END AUTOGENERATED TEXT -->
+<!-- endweaver -->
+
+## Generative AI workflow step metrics
+
+### Metric: `gen_ai.run_step.duration`
+
+This metric is [recommended][MetricRecommended] for instrumentations that report
+`gen_ai.run_step.internal` spans.
+
+This metric SHOULD be specified with [ExplicitBucketBoundaries] of
+[0.1, 0.2, 0.4, 0.8, 1.6, 3.2, 6.4, 12.8, 25.6, 51.2, 102.4, 204.8, 409.6].
+
+<!-- weaver .registry.metrics[] | select(.name == "gen_ai.run_step.duration") -->
+<!-- NOTE: THIS TEXT IS AUTOGENERATED. DO NOT EDIT BY HAND. -->
+<!-- see templates/registry/markdown/snippet.md.j2 -->
+<!-- prettier-ignore-start -->
+
+| Name | Instrument Type | Unit (UCUM) | Description | Stability | Entity Associations |
+| -------- | --------------- | ----------- | -------------- | --------- | ------ |
+| `gen_ai.run_step.duration` | Histogram | `s` | The duration of a single GenAI workflow step. [1] | ![Development](https://img.shields.io/badge/-development-blue) | |
+
+**[1]:** Recorded for the same units of work as the `gen_ai.run_step.internal`
+span - steps that are not one of the known GenAI operations. When this
+metric is reported alongside a `gen_ai.run_step.internal` span, the
+metric value SHOULD be the same as the span duration.
+
+**Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/signal-requirement-level.md).
+
+**Attributes:**
+
+| Key | Stability | [Requirement Level](https://opentelemetry.io/docs/specs/semconv/general/attribute-requirement-level/) | Value Type | Description | Example Values |
+| --- | --- | --- | --- | --- | --- |
+| [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/error.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If the operation ended in an error. | string | Describes a class of error the operation ended with. [1] | `timeout`; `java.net.UnknownHostException`; `server_certificate_invalid`; `500` |
+| [`gen_ai.step.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If available. | string | Human-readable name of a step within a GenAI workflow. [2] | `validate_input`; `route_query`; `format_output` |
+
+**[1] `error.type`:** The `error.type` SHOULD match the error code returned by the Generative AI provider or the client library,
+the canonical name of exception that occurred, or another low-cardinality error identifier.
+Instrumentations SHOULD document the list of errors they report.
+
+**[2] `gen_ai.step.name`:** A step is a unit of a GenAI workflow that hands control to application- or
+framework-defined code. Frameworks name this concept differently - a node in
+graph-based frameworks (LangGraph, ADK, pydantic-graph), a step in
+LlamaIndex Workflows, CrewAI Flows, or Agno, a component in Haystack.
+Known operations (e.g., `invoke_workflow`, `execute_tool`, inference) use
+specific attributes like `gen_ai.workflow.name` to describe the step.
+
+This attribute along with the corresponding `run_step` operation SHOULD NOT
+be used for known operations. They SHOULD act only as a fallback for unknown
+step types.
+
+`gen_ai.step.name` SHOULD have low cardinality. It is usually a static name assigned by the
+application or framework when the workflow is defined and is expected to be unique
+within a given workflow.
+
+Semantic conventions for individual GenAI frameworks SHOULD document what `gen_ai.step.name`
+means in the context of that framework. If there is no low-cardinality step name available
+for a given framework, this attribute MUST NOT be captured by default.
+
+---
+
+`error.type` has the following list of well-known values. If one of them applies, then the respective value MUST be used; otherwise, a custom value MAY be used.
+
+| Value | Description | Stability |
+| --- | --- | --- |
+| `_OTHER` | A fallback error value to be used when the instrumentation doesn't define a custom value. | ![Stable](https://img.shields.io/badge/-stable-lightgreen) |
 
 <!-- prettier-ignore-end -->
 <!-- END AUTOGENERATED TEXT -->
