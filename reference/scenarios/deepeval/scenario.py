@@ -19,9 +19,10 @@ MOCK_BASE_URL = os.environ["MOCK_LLM_URL"] + "/v1"
 _reference_tracer = reference_tracer()
 
 # Simulates the response id from the upstream LLM call whose output is
-# being evaluated.  In production this would be captured from the inference
+# being evaluated. In production this would be captured from the inference
 # span (gen_ai.response.id) and passed into the evaluation step.
-_MOCK_RESPONSE_ID = "chatcmpl-mockEvalRef0001"
+# Override via MOCK_RESPONSE_ID env var when a specific value must be asserted.
+_MOCK_RESPONSE_ID = os.environ.get("MOCK_RESPONSE_ID", "chatcmpl-mockEvalRef0001")
 
 
 def run_evaluation():
@@ -71,7 +72,7 @@ def run_evaluation():
                 "gen_ai.evaluation.name": metric.name,
                 "gen_ai.evaluation.score.value": score,
                 # Correlates this evaluation back to the LLM completion being
-                # evaluated.  Populated when the response id is available from
+                # evaluated. Populated when the response id is available from
                 # the upstream inference call.
                 "gen_ai.response.id": _MOCK_RESPONSE_ID,
             }
