@@ -572,12 +572,12 @@ spans:
         requirement_level:
           conditionally_required: when available
 
-  - type: gen_ai.evaluate.internal
+  - type: gen_ai.evaluation.internal
     kind: internal
     name:
       note: >
-        **Span name** SHOULD be `evaluate {gen_ai.evaluation.name}` when a
-        single named metric is being evaluated, or `evaluate` when multiple
+        **Span name** SHOULD be `evaluation {gen_ai.evaluation.name}` when a
+        single named metric is being evaluated, or `evaluation` when multiple
         metrics are evaluated within the same span.
     brief: >
       Represents an evaluation of GenAI output quality, accuracy, or other
@@ -585,8 +585,8 @@ spans:
     note: |
       The `gen_ai.operation.name` SHOULD be `evaluation`.
 
-      **Span name** SHOULD be `evaluate {gen_ai.evaluation.name}` when a
-      single named metric is being evaluated, or `evaluate` when multiple
+      **Span name** SHOULD be `evaluation {gen_ai.evaluation.name}` when a
+      single named metric is being evaluated, or `evaluation` when multiple
       metrics are evaluated within the same span.
 
       This span SHOULD be the parent of `gen_ai.evaluation.result` events.

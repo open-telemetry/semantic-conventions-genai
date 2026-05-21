@@ -453,7 +453,7 @@ attributes:
           note: >
             Used when the operation being instrumented is an evaluation step,
             such as running an LLM-as-judge, a scoring metric, or a benchmark suite.
-            The span SHOULD carry one or more gen_ai.evaluation.result events.
+            The span SHOULD carry one or more `gen_ai.evaluation.result` events.
           stability: development
     brief: The name of the operation being performed.
     note: >
