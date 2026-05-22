@@ -492,6 +492,47 @@ attributes:
     brief: The number of dimensions the resulting output embeddings should have.
     examples: [512, 1024]
     stability: development
+  - key: gen_ai.context.selection.candidate.count
+    type: int
+    brief: The number of context inputs considered for possible delivery to a GenAI agent or model.
+    note: >
+      This count is intended to help operators detect over-selection without recording raw context content.
+      It SHOULD include inputs discovered before policy, budget, relevance, or deduplication filters are applied.
+    examples: [18]
+    stability: development
+  - key: gen_ai.context.selection.selected.count
+    type: int
+    brief: The number of context inputs selected for delivery to a GenAI agent or model.
+    note: >
+      This count SHOULD represent inputs selected after discovery and filtering, before or at delivery.
+      It does not imply that the selected inputs were decision-relevant.
+    examples: [5]
+    stability: development
+  - key: gen_ai.context.selection.suppressed.count
+    type: int
+    brief: The number of candidate context inputs intentionally not delivered to a GenAI agent or model.
+    note: >
+      Suppression may be caused by budget limits, deduplication, policy, target-agent mismatch, relevance filtering,
+      or another implementation-specific reason.
+    examples: [13]
+    stability: development
+  - key: gen_ai.context.selection.delivered_hash.count
+    type: int
+    brief: The number of distinct privacy-preserving delivered-context hashes produced for selected context inputs.
+    note: >
+      This count lets telemetry report how many delivered context identities are available for later correlation
+      without recording raw prompt text, tool output, memory bodies, or repository excerpts.
+    examples: [5]
+    stability: development
+  - key: gen_ai.context.selection.reason
+    type: string
+    brief: The implementation-specific reason or policy that selected and suppressed context inputs.
+    note: >
+      The value SHOULD have low cardinality. Examples include `budget`, `relevance`, `dedupe`,
+      `target_agent`, `policy`, and `unknown`.
+    examples: ["budget", "relevance"]
+    stability: development
+
   - key: gen_ai.retrieval.documents
     type: any
     brief: The documents retrieved.

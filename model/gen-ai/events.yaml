@@ -10,6 +10,34 @@ events:
     stability: development
     attributes:
       - ref_group: span.gen_ai.inference.client
+  - name: gen_ai.context.selection.evaluated
+    brief: >
+      Captures privacy-preserving counts for context inputs considered, selected,
+      suppressed, and delivered to a GenAI agent or model.
+    note: >
+      This event is intended to answer whether an agent run loaded too much context before
+      any later evaluator can determine which context was decision-relevant. It SHOULD NOT
+      record raw prompts, raw context text, tool outputs, memory bodies, or repository excerpts.
+    stability: development
+    attributes:
+      - ref: gen_ai.conversation.id
+        requirement_level:
+          recommended: when available
+      - ref: gen_ai.agent.id
+        requirement_level:
+          recommended: when available
+      - ref: gen_ai.context.selection.candidate.count
+        requirement_level: required
+      - ref: gen_ai.context.selection.selected.count
+        requirement_level: required
+      - ref: gen_ai.context.selection.suppressed.count
+        requirement_level: required
+      - ref: gen_ai.context.selection.delivered_hash.count
+        requirement_level:
+          recommended: when delivered hashes are available
+      - ref: gen_ai.context.selection.reason
+        requirement_level: recommended
+
   - name: gen_ai.evaluation.result
     brief: >
       This event captures the result of evaluating GenAI output for quality, accuracy, or other characteristics.

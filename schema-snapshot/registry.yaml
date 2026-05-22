@@ -725,6 +725,93 @@ refinements:
       path: ./model/gen-ai/events.yaml
     stability: development
   - attributes:
+    - brief: The unique identifier of the GenAI agent.
+      examples:
+      - asst_5j66UpCpwteGg4YSxUnt7lPY
+      key: gen_ai.agent.id
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: when available
+      stability: development
+      type: string
+    - brief: The number of context inputs considered for possible delivery to a GenAI agent or model.
+      examples:
+      - 18
+      key: gen_ai.context.selection.candidate.count
+      note: |
+        This count is intended to help operators detect over-selection without recording raw context content. It SHOULD include inputs discovered before policy, budget, relevance, or deduplication filters are applied.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: required
+      stability: development
+      type: int
+    - brief: The number of distinct privacy-preserving delivered-context hashes produced for selected context inputs.
+      examples:
+      - 5
+      key: gen_ai.context.selection.delivered_hash.count
+      note: |
+        This count lets telemetry report how many delivered context identities are available for later correlation without recording raw prompt text, tool output, memory bodies, or repository excerpts.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: when delivered hashes are available
+      stability: development
+      type: int
+    - brief: The implementation-specific reason or policy that selected and suppressed context inputs.
+      examples:
+      - budget
+      - relevance
+      key: gen_ai.context.selection.reason
+      note: |
+        The value SHOULD have low cardinality. Examples include `budget`, `relevance`, `dedupe`, `target_agent`, `policy`, and `unknown`.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: recommended
+      stability: development
+      type: string
+    - brief: The number of context inputs selected for delivery to a GenAI agent or model.
+      examples:
+      - 5
+      key: gen_ai.context.selection.selected.count
+      note: |
+        This count SHOULD represent inputs selected after discovery and filtering, before or at delivery. It does not imply that the selected inputs were decision-relevant.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: required
+      stability: development
+      type: int
+    - brief: The number of candidate context inputs intentionally not delivered to a GenAI agent or model.
+      examples:
+      - 13
+      key: gen_ai.context.selection.suppressed.count
+      note: |
+        Suppression may be caused by budget limits, deduplication, policy, target-agent mismatch, relevance filtering, or another implementation-specific reason.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: required
+      stability: development
+      type: int
+    - brief: The unique identifier for a conversation (session, thread), used to store and correlate messages within this conversation.
+      examples:
+      - conv_5j66UpCpwteGg4YSxUnt7lPY
+      key: gen_ai.conversation.id
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: when available
+      stability: development
+      type: string
+    brief: |
+      Captures privacy-preserving counts for context inputs considered, selected, suppressed, and delivered to a GenAI agent or model.
+    id: gen_ai.context.selection.evaluated
+    name: gen_ai.context.selection.evaluated
+    note: |
+      This event is intended to answer whether an agent run loaded too much context before any later evaluator can determine which context was decision-relevant. It SHOULD NOT record raw prompts, raw context text, tool outputs, memory bodies, or repository excerpts.
+    provenance:
+      path: ./model/gen-ai/events.yaml
+    stability: development
+  - attributes:
     - brief: |
         Describes a class of error the operation ended with.
       examples:
@@ -11837,6 +11924,57 @@ registry:
       path: ./model/gen-ai/registry.yaml
     stability: development
     type: string
+  - brief: The number of context inputs considered for possible delivery to a GenAI agent or model.
+    examples:
+    - 18
+    key: gen_ai.context.selection.candidate.count
+    note: |
+      This count is intended to help operators detect over-selection without recording raw context content. It SHOULD include inputs discovered before policy, budget, relevance, or deduplication filters are applied.
+    provenance:
+      path: ./model/gen-ai/registry.yaml
+    stability: development
+    type: int
+  - brief: The number of distinct privacy-preserving delivered-context hashes produced for selected context inputs.
+    examples:
+    - 5
+    key: gen_ai.context.selection.delivered_hash.count
+    note: |
+      This count lets telemetry report how many delivered context identities are available for later correlation without recording raw prompt text, tool output, memory bodies, or repository excerpts.
+    provenance:
+      path: ./model/gen-ai/registry.yaml
+    stability: development
+    type: int
+  - brief: The implementation-specific reason or policy that selected and suppressed context inputs.
+    examples:
+    - budget
+    - relevance
+    key: gen_ai.context.selection.reason
+    note: |
+      The value SHOULD have low cardinality. Examples include `budget`, `relevance`, `dedupe`, `target_agent`, `policy`, and `unknown`.
+    provenance:
+      path: ./model/gen-ai/registry.yaml
+    stability: development
+    type: string
+  - brief: The number of context inputs selected for delivery to a GenAI agent or model.
+    examples:
+    - 5
+    key: gen_ai.context.selection.selected.count
+    note: |
+      This count SHOULD represent inputs selected after discovery and filtering, before or at delivery. It does not imply that the selected inputs were decision-relevant.
+    provenance:
+      path: ./model/gen-ai/registry.yaml
+    stability: development
+    type: int
+  - brief: The number of candidate context inputs intentionally not delivered to a GenAI agent or model.
+    examples:
+    - 13
+    key: gen_ai.context.selection.suppressed.count
+    note: |
+      Suppression may be caused by budget limits, deduplication, policy, target-agent mismatch, relevance filtering, or another implementation-specific reason.
+    provenance:
+      path: ./model/gen-ai/registry.yaml
+    stability: development
+    type: int
   - brief: The unique identifier for a conversation (session, thread), used to store and correlate messages within this conversation.
     examples:
     - conv_5j66UpCpwteGg4YSxUnt7lPY
@@ -13649,6 +13787,92 @@ registry:
       This event SHOULD be recorded when an exception occurs during Generative AI client operations.
       Instrumentations SHOULD set the severity to WARN (severity number 13) when recording this event.
       Instrumentations MAY provide a configuration option to populate exception events with the attributes captured on the corresponding Generative AI client span.
+    provenance:
+      path: ./model/gen-ai/events.yaml
+    stability: development
+  - attributes:
+    - brief: The unique identifier of the GenAI agent.
+      examples:
+      - asst_5j66UpCpwteGg4YSxUnt7lPY
+      key: gen_ai.agent.id
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: when available
+      stability: development
+      type: string
+    - brief: The number of context inputs considered for possible delivery to a GenAI agent or model.
+      examples:
+      - 18
+      key: gen_ai.context.selection.candidate.count
+      note: |
+        This count is intended to help operators detect over-selection without recording raw context content. It SHOULD include inputs discovered before policy, budget, relevance, or deduplication filters are applied.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: required
+      stability: development
+      type: int
+    - brief: The number of distinct privacy-preserving delivered-context hashes produced for selected context inputs.
+      examples:
+      - 5
+      key: gen_ai.context.selection.delivered_hash.count
+      note: |
+        This count lets telemetry report how many delivered context identities are available for later correlation without recording raw prompt text, tool output, memory bodies, or repository excerpts.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: when delivered hashes are available
+      stability: development
+      type: int
+    - brief: The implementation-specific reason or policy that selected and suppressed context inputs.
+      examples:
+      - budget
+      - relevance
+      key: gen_ai.context.selection.reason
+      note: |
+        The value SHOULD have low cardinality. Examples include `budget`, `relevance`, `dedupe`, `target_agent`, `policy`, and `unknown`.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: recommended
+      stability: development
+      type: string
+    - brief: The number of context inputs selected for delivery to a GenAI agent or model.
+      examples:
+      - 5
+      key: gen_ai.context.selection.selected.count
+      note: |
+        This count SHOULD represent inputs selected after discovery and filtering, before or at delivery. It does not imply that the selected inputs were decision-relevant.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: required
+      stability: development
+      type: int
+    - brief: The number of candidate context inputs intentionally not delivered to a GenAI agent or model.
+      examples:
+      - 13
+      key: gen_ai.context.selection.suppressed.count
+      note: |
+        Suppression may be caused by budget limits, deduplication, policy, target-agent mismatch, relevance filtering, or another implementation-specific reason.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: required
+      stability: development
+      type: int
+    - brief: The unique identifier for a conversation (session, thread), used to store and correlate messages within this conversation.
+      examples:
+      - conv_5j66UpCpwteGg4YSxUnt7lPY
+      key: gen_ai.conversation.id
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: when available
+      stability: development
+      type: string
+    brief: |
+      Captures privacy-preserving counts for context inputs considered, selected, suppressed, and delivered to a GenAI agent or model.
+    name: gen_ai.context.selection.evaluated
+    note: |
+      This event is intended to answer whether an agent run loaded too much context before any later evaluator can determine which context was decision-relevant. It SHOULD NOT record raw prompts, raw context text, tool outputs, memory bodies, or repository excerpts.
     provenance:
       path: ./model/gen-ai/events.yaml
     stability: development
