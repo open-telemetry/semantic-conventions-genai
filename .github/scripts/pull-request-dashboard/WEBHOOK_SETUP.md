@@ -14,11 +14,10 @@ Save the Netlify project ID as a GitHub Actions variable named
 Save a Netlify personal access token as a GitHub Actions secret named
 `NETLIFY_AUTH_TOKEN`.
 
-Disable Deploy Previews and related PR comment notifications. PR preview
-deploys are unused and only add noise to PRs. In Netlify,
-open the site and go to **Site configuration** (or **Site settings**) →
-**Build & deploy** → **Deploy contexts** → **Deploy Previews**, then disable
-Deploy Previews for the site.
+Disable Deploy Previews. PR preview deploys are unused and only add noise to
+PRs. In Netlify, go to **Project configuration** → **Build & deploy** →
+**Continuous Deployment** → **Branches and deploy contexts**, select
+**Configure**, and disable Deploy Previews.
 
 ## 2. GitHub App
 
