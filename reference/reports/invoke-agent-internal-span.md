@@ -35,10 +35,18 @@
 | gen_ai.request.temperature | [autogen], [google-adk], [pydantic-ai] |
 | gen_ai.request.top_p | [autogen], [google-adk], [pydantic-ai] |
 | gen_ai.response.finish_reasons | [autogen], [google-adk], [pydantic-ai] |
+| gen_ai.usage.audio.input_tokens | (none) |
+| gen_ai.usage.audio.output_tokens | (none) |
 | gen_ai.usage.cache_creation.input_tokens | (none) |
 | gen_ai.usage.cache_read.input_tokens | (none) |
+| gen_ai.usage.image.input_tokens | (none) |
+| gen_ai.usage.image.output_tokens | (none) |
 | gen_ai.usage.input_tokens | [autogen], [google-adk], [pydantic-ai] |
 | gen_ai.usage.output_tokens | [autogen], [google-adk], [pydantic-ai] |
+| gen_ai.usage.text.input_tokens | (none) |
+| gen_ai.usage.text.output_tokens | (none) |
+| gen_ai.usage.video.input_tokens | (none) |
+| gen_ai.usage.video.output_tokens | (none) |
 
 ## Opt-In
 

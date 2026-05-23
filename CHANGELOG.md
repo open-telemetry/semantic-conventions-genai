@@ -4,6 +4,22 @@
 
 ### 🛑 Breaking changes 🛑
 
+- Restructure GenAI token usage attributes and metrics under a unified
+  `gen_ai.token.*` namespace.
+  - Added per-modality span attributes
+    `gen_ai.usage.{text,image,audio,video}.{input,output}_tokens`.
+  - Replaced the `gen_ai.client.token.usage` histogram with counters
+    `gen_ai.client.inference.tokens` (dimensioned by `gen_ai.token.type` and
+    `gen_ai.token.modality`), `gen_ai.client.inference.input_tokens_by_cache`
+    (dimensioned by `gen_ai.token.cache`), and
+    `gen_ai.client.inference.output_tokens_by_phase` (dimensioned by
+    `gen_ai.token.phase`). Added opt-in histograms
+    `gen_ai.client.inference.operation.{tokens,input_tokens,output_tokens}`.
+  - Added new enum attributes `gen_ai.token.modality`
+    (`text`/`image`/`audio`/`video`/`document`/`unknown`), `gen_ai.token.cache`
+    (`none`/`read`/`creation`), and `gen_ai.token.phase`
+    (`response`/`reasoning`).
+
 ### 🚩 Deprecations 🚩
 
 ### 🚀 New components 🚀

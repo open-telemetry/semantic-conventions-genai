@@ -215,7 +215,7 @@ EVENT_SPECS: dict[str, AttributeSpec] = {
 }
 
 # No METRIC_SPECS yet: gen_ai.* metrics are deliberately omitted from the reference
-# coverage matrix because the two non-streaming metrics
-# (`gen_ai.client.operation.duration`, `gen_ai.client.token.usage`) are
+# coverage matrix because the non-streaming metrics
+# (`gen_ai.client.operation.duration`, `gen_ai.client.inference.tokens`) are
 # derivable from data already present on inference spans (span start/end and
 # `gen_ai.usage.{input,output}_tokens`). Reference scenarios emit spans only.

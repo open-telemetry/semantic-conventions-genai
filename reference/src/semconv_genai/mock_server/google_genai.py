@@ -29,6 +29,52 @@ RESPONSE = {
     "modelVersion": "gemini-2.0-flash",
 }
 
+THINKING_RESPONSE = {
+    "candidates": [
+        {
+            "content": {
+                "role": "model",
+                "parts": [{"text": "This is a response from the mock server."}],
+            },
+            "finishReason": "STOP",
+            "index": 0,
+        }
+    ],
+    "usageMetadata": {
+        "promptTokenCount": 25,
+        "candidatesTokenCount": 12,
+        "thoughtsTokenCount": 8,
+        "totalTokenCount": 45,
+    },
+    "modelVersion": "gemini-2.5-flash",
+}
+
+MULTIMODAL_RESPONSE = {
+    "candidates": [
+        {
+            "content": {
+                "role": "model",
+                "parts": [{"text": "This is a response from the mock server."}],
+            },
+            "finishReason": "STOP",
+            "index": 0,
+        }
+    ],
+    "usageMetadata": {
+        "promptTokenCount": 30,
+        "candidatesTokenCount": 12,
+        "totalTokenCount": 42,
+        "promptTokensDetails": [
+            {"modality": "TEXT", "tokenCount": 20},
+            {"modality": "IMAGE", "tokenCount": 10},
+        ],
+        "candidatesTokensDetails": [
+            {"modality": "TEXT", "tokenCount": 12},
+        ],
+    },
+    "modelVersion": "gemini-2.0-flash",
+}
+
 FUNCTION_CALL_RESPONSE = {
     "candidates": [
         {
@@ -74,6 +120,15 @@ def _has_function_response(body):
     for content in contents:
         for part in content.get("parts") or []:
             if "functionResponse" in part or "function_response" in part:
+                return True
+    return False
+
+
+def _has_inline_data(body):
+    contents = body.get("contents") or []
+    for content in contents:
+        for part in content.get("parts") or []:
+            if "inlineData" in part or "inline_data" in part:
                 return True
     return False
 
@@ -172,6 +227,10 @@ def google_genai(model_action):
     # :generateContent or any other action
     if body.get("tools") and not _has_function_response(body):
         return _tool_response(body)
+    if _has_inline_data(body):
+        return MULTIMODAL_RESPONSE
+    if "2.5" in model_action:
+        return THINKING_RESPONSE
     return RESPONSE
 
 

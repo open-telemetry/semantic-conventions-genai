@@ -36,11 +36,19 @@
 | gen_ai.response.id | [anthropic], [azure-ai-inference], [cohere], [dspy], [groq], [instructor], [litellm], [llamaindex], [mistralai], [openai], [pydantic-ai] |
 | gen_ai.response.model | [anthropic], [azure-ai-inference], [dspy], [google-genai], [groq], [instructor], [litellm], [llamaindex], [mistralai], [openai], [pydantic-ai] |
 | gen_ai.response.time_to_first_chunk | (none) |
+| gen_ai.usage.audio.input_tokens | [openai] |
+| gen_ai.usage.audio.output_tokens | (none) |
 | gen_ai.usage.cache_creation.input_tokens | [anthropic] |
-| gen_ai.usage.cache_read.input_tokens | [anthropic] |
+| gen_ai.usage.cache_read.input_tokens | [anthropic], [openai] |
+| gen_ai.usage.image.input_tokens | [google-genai] |
+| gen_ai.usage.image.output_tokens | (none) |
 | gen_ai.usage.input_tokens | [anthropic], [autogen], [aws-bedrock], [azure-ai-inference], [cohere], [dspy], [google-genai], [groq], [instructor], [litellm], [llamaindex], [mistralai], [openai], [pydantic-ai], [vertexai] |
 | gen_ai.usage.output_tokens | [anthropic], [autogen], [aws-bedrock], [azure-ai-inference], [cohere], [dspy], [google-genai], [groq], [instructor], [litellm], [llamaindex], [mistralai], [openai], [pydantic-ai], [vertexai] |
-| gen_ai.usage.reasoning.output_tokens | (none) |
+| gen_ai.usage.reasoning.output_tokens | [google-genai], [openai] |
+| gen_ai.usage.text.input_tokens | [google-genai], [openai] |
+| gen_ai.usage.text.output_tokens | [google-genai] |
+| gen_ai.usage.video.input_tokens | (none) |
+| gen_ai.usage.video.output_tokens | (none) |
 | server.address | [anthropic], [autogen], [azure-ai-inference], [openai], [pydantic-ai] |
 
 ## Opt-In

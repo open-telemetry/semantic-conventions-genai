@@ -90,6 +90,208 @@ def run_chat():
         print(f"    -> {response.text[:60]}")
 
 
+def run_chat_thinking():
+    """Scenario: chat with a Gemini thinking model (2.5 series).
+
+    Exercises `gen_ai.usage.reasoning.output_tokens` capture from
+    `usage_metadata.thoughts_token_count`.
+    """
+    from google import genai
+    from google.genai import types
+
+    print("  [chat_thinking] thinking-model chat completion via Google GenAI (reference implementation)")
+    client = genai.Client(
+        api_key="mock-key",
+        http_options=types.HttpOptions(
+            base_url=MOCK_BASE_URL,
+            api_version="v1beta",
+        ),
+    )
+    request_model = "gemini-2.5-flash"
+    span_attributes = {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "gcp.gemini",
+        "gen_ai.request.model": request_model,
+    }
+    with _reference_tracer.start_as_current_span("chat gemini-2.5-flash", attributes=span_attributes) as span:
+        prompt_text = "Think briefly, then say hello."
+        response = client.models.generate_content(
+            model=request_model,
+            contents=prompt_text,
+        )
+        if response.model_version:
+            span.set_attribute("gen_ai.response.model", response.model_version)
+        if response.candidates and response.candidates[0].finish_reason:
+            span.set_attribute("gen_ai.response.finish_reasons", [str(response.candidates[0].finish_reason)])
+        if hasattr(response, "usage_metadata") and response.usage_metadata:
+            if response.usage_metadata.prompt_token_count:
+                span.set_attribute("gen_ai.usage.input_tokens", response.usage_metadata.prompt_token_count)
+            if response.usage_metadata.candidates_token_count:
+                span.set_attribute("gen_ai.usage.output_tokens", response.usage_metadata.candidates_token_count)
+            thoughts_token_count = getattr(response.usage_metadata, "thoughts_token_count", None)
+            if thoughts_token_count:
+                span.set_attribute("gen_ai.usage.reasoning.output_tokens", thoughts_token_count)
+
+        event_attrs = {
+            "gen_ai.operation.name": "chat",
+            "gen_ai.request.model": request_model,
+            "gen_ai.input.messages": json.dumps(
+                [{"role": "user", "parts": [{"type": "text", "content": prompt_text}]}]
+            ),
+            "gen_ai.output.messages": json.dumps(
+                [
+                    {
+                        "role": "assistant",
+                        "parts": [{"type": "text", "content": response.text}],
+                        "finish_reason": str(response.candidates[0].finish_reason) if response.candidates else None,
+                    }
+                ]
+            ),
+        }
+        if response.model_version:
+            event_attrs["gen_ai.response.model"] = response.model_version
+        if response.candidates and response.candidates[0].finish_reason:
+            event_attrs["gen_ai.response.finish_reasons"] = [str(response.candidates[0].finish_reason)]
+        if hasattr(response, "usage_metadata") and response.usage_metadata:
+            if response.usage_metadata.prompt_token_count:
+                event_attrs["gen_ai.usage.input_tokens"] = response.usage_metadata.prompt_token_count
+            if response.usage_metadata.candidates_token_count:
+                event_attrs["gen_ai.usage.output_tokens"] = response.usage_metadata.candidates_token_count
+            thoughts_token_count = getattr(response.usage_metadata, "thoughts_token_count", None)
+            if thoughts_token_count:
+                event_attrs["gen_ai.usage.reasoning.output_tokens"] = thoughts_token_count
+        reference_event_logger().emit(
+            event_name="gen_ai.client.inference.operation.details",
+            body="Inference operation details",
+            attributes=event_attrs,
+        )
+
+        print(f"    -> {response.text[:60]}")
+
+
+def run_chat_multimodal():
+    """Scenario: chat with text + image input (multimodal token reporting).
+
+    Exercises `gen_ai.usage.{text,image}_input_tokens` capture from
+    Gemini's `usage_metadata.prompt_tokens_details` per-modality breakdown.
+    """
+    from google import genai
+    from google.genai import types
+
+    print("  [chat_multimodal] multimodal chat completion via Google GenAI (reference implementation)")
+    client = genai.Client(
+        api_key="mock-key",
+        http_options=types.HttpOptions(
+            base_url=MOCK_BASE_URL,
+            api_version="v1beta",
+        ),
+    )
+    request_model = "gemini-2.0-flash"
+    span_attributes = {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "gcp.gemini",
+        "gen_ai.request.model": request_model,
+    }
+    # 1x1 transparent PNG, base64 (tiny inline image).
+    image_bytes = (
+        b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01"
+        b"\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\rIDATx\x9cc\x00\x01"
+        b"\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82"
+    )
+    with _reference_tracer.start_as_current_span("chat gemini-2.0-flash", attributes=span_attributes) as span:
+        prompt_text = "Describe this image."
+        response = client.models.generate_content(
+            model=request_model,
+            contents=[
+                types.Part.from_text(text=prompt_text),
+                types.Part.from_bytes(data=image_bytes, mime_type="image/png"),
+            ],
+        )
+        if response.model_version:
+            span.set_attribute("gen_ai.response.model", response.model_version)
+        if response.candidates and response.candidates[0].finish_reason:
+            span.set_attribute("gen_ai.response.finish_reasons", [str(response.candidates[0].finish_reason)])
+
+        def _modality_tokens(details, modality):
+            if not details:
+                return None
+            for entry in details:
+                if str(getattr(entry, "modality", "")).upper().endswith(modality):
+                    return entry.token_count
+            return None
+
+        if hasattr(response, "usage_metadata") and response.usage_metadata:
+            usage = response.usage_metadata
+            if usage.prompt_token_count:
+                span.set_attribute("gen_ai.usage.input_tokens", usage.prompt_token_count)
+            if usage.candidates_token_count:
+                span.set_attribute("gen_ai.usage.output_tokens", usage.candidates_token_count)
+            prompt_details = getattr(usage, "prompt_tokens_details", None)
+            text_input = _modality_tokens(prompt_details, "TEXT")
+            if text_input is not None:
+                span.set_attribute("gen_ai.usage.text.input_tokens", text_input)
+            image_input = _modality_tokens(prompt_details, "IMAGE")
+            if image_input is not None:
+                span.set_attribute("gen_ai.usage.image.input_tokens", image_input)
+            candidates_details = getattr(usage, "candidates_tokens_details", None)
+            text_output = _modality_tokens(candidates_details, "TEXT")
+            if text_output is not None:
+                span.set_attribute("gen_ai.usage.text.output_tokens", text_output)
+
+        event_attrs = {
+            "gen_ai.operation.name": "chat",
+            "gen_ai.request.model": request_model,
+            "gen_ai.input.messages": json.dumps(
+                [
+                    {
+                        "role": "user",
+                        "parts": [
+                            {"type": "text", "content": prompt_text},
+                            {"type": "blob", "mime_type": "image/png", "modality": "image"},
+                        ],
+                    }
+                ]
+            ),
+            "gen_ai.output.messages": json.dumps(
+                [
+                    {
+                        "role": "assistant",
+                        "parts": [{"type": "text", "content": response.text}],
+                        "finish_reason": str(response.candidates[0].finish_reason) if response.candidates else None,
+                    }
+                ]
+            ),
+        }
+        if response.model_version:
+            event_attrs["gen_ai.response.model"] = response.model_version
+        if response.candidates and response.candidates[0].finish_reason:
+            event_attrs["gen_ai.response.finish_reasons"] = [str(response.candidates[0].finish_reason)]
+        if hasattr(response, "usage_metadata") and response.usage_metadata:
+            usage = response.usage_metadata
+            if usage.prompt_token_count:
+                event_attrs["gen_ai.usage.input_tokens"] = usage.prompt_token_count
+            if usage.candidates_token_count:
+                event_attrs["gen_ai.usage.output_tokens"] = usage.candidates_token_count
+            prompt_details = getattr(usage, "prompt_tokens_details", None)
+            text_input = _modality_tokens(prompt_details, "TEXT")
+            if text_input is not None:
+                event_attrs["gen_ai.usage.text.input_tokens"] = text_input
+            image_input = _modality_tokens(prompt_details, "IMAGE")
+            if image_input is not None:
+                event_attrs["gen_ai.usage.image.input_tokens"] = image_input
+            candidates_details = getattr(usage, "candidates_tokens_details", None)
+            text_output = _modality_tokens(candidates_details, "TEXT")
+            if text_output is not None:
+                event_attrs["gen_ai.usage.text.output_tokens"] = text_output
+        reference_event_logger().emit(
+            event_name="gen_ai.client.inference.operation.details",
+            body="Inference operation details",
+            attributes=event_attrs,
+        )
+
+        print(f"    -> {response.text[:60]}")
+
+
 def run_chat_tool_call():
     """Scenario: chat with tool calling with reference implementation."""
     from google import genai
@@ -259,6 +461,8 @@ def main():
     run_chat_tool_call()
     run_chat_streaming()
     run_embeddings()
+    run_chat_thinking()
+    run_chat_multimodal()
 
     flush_and_shutdown(tp, lp, mp)
 

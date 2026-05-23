@@ -130,6 +130,213 @@ def run_chat_reference(client):
         print(f"    -> {resp.choices[0].message.content[:60]}")
 
 
+def run_chat_reasoning_reference(client):
+    """Scenario: chat completion with a reasoning model (e.g. o-series).
+
+    Exercises `gen_ai.usage.reasoning.output_tokens` capture from
+    `completion_tokens_details.reasoning_tokens`, alongside
+    `gen_ai.usage.cache_read.input_tokens` from
+    `prompt_tokens_details.cached_tokens`.
+    """
+    print("  [chat_reasoning] reasoning-model chat completion (reference implementation)")
+    request_model = "o4-mini"
+    messages = [{"role": "user", "content": "Think briefly, then say hello."}]
+    host, port = mock_server_host_port(MOCK_BASE_URL)
+    input_messages = json.dumps(
+        [{"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]} for m in messages]
+    )
+    span_attributes = {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "openai",
+        "gen_ai.request.model": request_model,
+    }
+    if host:
+        span_attributes["server.address"] = host
+    if port is not None:
+        span_attributes["server.port"] = port
+    with _reference_tracer.start_as_current_span("chat o4-mini", attributes=span_attributes) as span:
+        span.set_attribute("gen_ai.input.messages", input_messages)
+        resp = client.chat.completions.create(
+            model=request_model,
+            messages=messages,
+        )
+        span.set_attribute("gen_ai.response.model", resp.model)
+        span.set_attribute("gen_ai.response.id", resp.id)
+        span.set_attribute("gen_ai.response.finish_reasons", [c.finish_reason for c in resp.choices])
+        output_messages = [
+            {
+                "role": c.message.role,
+                "parts": [{"type": "text", "content": c.message.content}],
+                "finish_reason": c.finish_reason,
+            }
+            for c in resp.choices
+        ]
+        span.set_attribute("gen_ai.output.messages", json.dumps(output_messages))
+        if resp.usage:
+            span.set_attribute("gen_ai.usage.input_tokens", resp.usage.prompt_tokens)
+            span.set_attribute("gen_ai.usage.output_tokens", resp.usage.completion_tokens)
+            cached_tokens = getattr(
+                getattr(resp.usage, "prompt_tokens_details", None),
+                "cached_tokens",
+                None,
+            )
+            if cached_tokens is not None:
+                span.set_attribute("gen_ai.usage.cache_read.input_tokens", cached_tokens)
+            reasoning_tokens = getattr(
+                getattr(resp.usage, "completion_tokens_details", None),
+                "reasoning_tokens",
+                None,
+            )
+            if reasoning_tokens is not None:
+                span.set_attribute("gen_ai.usage.reasoning.output_tokens", reasoning_tokens)
+
+        event_attrs = {
+            "gen_ai.operation.name": "chat",
+            "gen_ai.request.model": request_model,
+            "gen_ai.response.id": resp.id,
+            "gen_ai.response.model": resp.model,
+            "gen_ai.response.finish_reasons": [c.finish_reason for c in resp.choices],
+            "gen_ai.input.messages": input_messages,
+            "gen_ai.output.messages": json.dumps(output_messages),
+        }
+        if resp.usage:
+            event_attrs["gen_ai.usage.input_tokens"] = resp.usage.prompt_tokens
+            event_attrs["gen_ai.usage.output_tokens"] = resp.usage.completion_tokens
+            cached_tokens = getattr(
+                getattr(resp.usage, "prompt_tokens_details", None),
+                "cached_tokens",
+                None,
+            )
+            if cached_tokens is not None:
+                event_attrs["gen_ai.usage.cache_read.input_tokens"] = cached_tokens
+            reasoning_tokens = getattr(
+                getattr(resp.usage, "completion_tokens_details", None),
+                "reasoning_tokens",
+                None,
+            )
+            if reasoning_tokens is not None:
+                event_attrs["gen_ai.usage.reasoning.output_tokens"] = reasoning_tokens
+        if host:
+            event_attrs["server.address"] = host
+        if port is not None:
+            event_attrs["server.port"] = port
+        reference_event_logger().emit(
+            event_name="gen_ai.client.inference.operation.details",
+            body="Inference operation details",
+            attributes=event_attrs,
+        )
+
+        print(f"    -> {resp.choices[0].message.content[:60]}")
+
+
+def run_chat_audio_reference(client):
+    """Scenario: chat completion with audio input modality.
+
+    Exercises `gen_ai.usage.{text,audio}_input_tokens` capture from
+    OpenAI's `prompt_tokens_details.{text_tokens,audio_tokens}` breakdown,
+    reported on the `gpt-4o-audio-preview` family.
+    """
+    import base64
+
+    print("  [chat_audio] audio-input chat completion (reference implementation)")
+    request_model = "gpt-4o-audio-preview"
+    # Tiny WAV header + silence (44-byte RIFF header, no PCM frames).
+    audio_bytes = (
+        b"RIFF$\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00"
+        b"\x40\x1f\x00\x00\x80>\x00\x00\x02\x00\x10\x00data\x00\x00\x00\x00"
+    )
+    audio_b64 = base64.b64encode(audio_bytes).decode("ascii")
+    messages = [
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": "What is in this recording?"},
+                {"type": "input_audio", "input_audio": {"data": audio_b64, "format": "wav"}},
+            ],
+        }
+    ]
+    host, port = mock_server_host_port(MOCK_BASE_URL)
+    input_messages = json.dumps(
+        [
+            {
+                "role": "user",
+                "parts": [
+                    {"type": "text", "content": "What is in this recording?"},
+                    {"type": "blob", "mime_type": "audio/wav", "modality": "audio"},
+                ],
+            }
+        ]
+    )
+    span_attributes = {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "openai",
+        "gen_ai.request.model": request_model,
+    }
+    if host:
+        span_attributes["server.address"] = host
+    if port is not None:
+        span_attributes["server.port"] = port
+    with _reference_tracer.start_as_current_span("chat gpt-4o-audio-preview", attributes=span_attributes) as span:
+        span.set_attribute("gen_ai.input.messages", input_messages)
+        resp = client.chat.completions.create(
+            model=request_model,
+            messages=messages,
+        )
+        span.set_attribute("gen_ai.response.model", resp.model)
+        span.set_attribute("gen_ai.response.id", resp.id)
+        span.set_attribute("gen_ai.response.finish_reasons", [c.finish_reason for c in resp.choices])
+        output_messages = [
+            {
+                "role": c.message.role,
+                "parts": [{"type": "text", "content": c.message.content}],
+                "finish_reason": c.finish_reason,
+            }
+            for c in resp.choices
+        ]
+        span.set_attribute("gen_ai.output.messages", json.dumps(output_messages))
+        if resp.usage:
+            span.set_attribute("gen_ai.usage.input_tokens", resp.usage.prompt_tokens)
+            span.set_attribute("gen_ai.usage.output_tokens", resp.usage.completion_tokens)
+            prompt_details = getattr(resp.usage, "prompt_tokens_details", None)
+            text_input = getattr(prompt_details, "text_tokens", None)
+            if text_input is not None:
+                span.set_attribute("gen_ai.usage.text.input_tokens", text_input)
+            audio_input = getattr(prompt_details, "audio_tokens", None)
+            if audio_input is not None:
+                span.set_attribute("gen_ai.usage.audio.input_tokens", audio_input)
+
+        event_attrs = {
+            "gen_ai.operation.name": "chat",
+            "gen_ai.request.model": request_model,
+            "gen_ai.response.id": resp.id,
+            "gen_ai.response.model": resp.model,
+            "gen_ai.response.finish_reasons": [c.finish_reason for c in resp.choices],
+            "gen_ai.input.messages": input_messages,
+            "gen_ai.output.messages": json.dumps(output_messages),
+        }
+        if resp.usage:
+            event_attrs["gen_ai.usage.input_tokens"] = resp.usage.prompt_tokens
+            event_attrs["gen_ai.usage.output_tokens"] = resp.usage.completion_tokens
+            prompt_details = getattr(resp.usage, "prompt_tokens_details", None)
+            text_input = getattr(prompt_details, "text_tokens", None)
+            if text_input is not None:
+                event_attrs["gen_ai.usage.text.input_tokens"] = text_input
+            audio_input = getattr(prompt_details, "audio_tokens", None)
+            if audio_input is not None:
+                event_attrs["gen_ai.usage.audio.input_tokens"] = audio_input
+        if host:
+            event_attrs["server.address"] = host
+        if port is not None:
+            event_attrs["server.port"] = port
+        reference_event_logger().emit(
+            event_name="gen_ai.client.inference.operation.details",
+            body="Inference operation details",
+            attributes=event_attrs,
+        )
+
+        print(f"    -> {resp.choices[0].message.content[:60]}")
+
+
 def run_chat_streaming_reference(client):
     """Scenario: streaming chat completion with reference implementation."""
     print("  [chat_streaming] streaming chat completion (reference implementation)")
@@ -395,6 +602,8 @@ def main():
     run_chat_tool_call_reference(client)
     run_chat_with_document_input_reference(client)
     run_embeddings_reference(client)
+    run_chat_reasoning_reference(client)
+    run_chat_audio_reference(client)
 
     flush_and_shutdown(tp, lp, mp)
 

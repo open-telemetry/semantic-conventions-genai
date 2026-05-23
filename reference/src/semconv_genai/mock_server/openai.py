@@ -53,6 +53,54 @@ CHAT_RESPONSE = {
         "prompt_tokens": 25,
         "completion_tokens": 12,
         "total_tokens": 37,
+        "prompt_tokens_details": {"cached_tokens": 10},
+    },
+}
+
+CHAT_REASONING_RESPONSE = {
+    "id": "chatcmpl-mock-reasoning-001",
+    "object": "chat.completion",
+    "created": 1700000000,
+    "model": "o4-mini",
+    "choices": [
+        {
+            "index": 0,
+            "message": {
+                "role": "assistant",
+                "content": "This is a response from the mock server.",
+            },
+            "finish_reason": "stop",
+        }
+    ],
+    "usage": {
+        "prompt_tokens": 25,
+        "completion_tokens": 20,
+        "total_tokens": 45,
+        "prompt_tokens_details": {"cached_tokens": 10},
+        "completion_tokens_details": {"reasoning_tokens": 8},
+    },
+}
+
+CHAT_AUDIO_RESPONSE = {
+    "id": "chatcmpl-mock-audio-001",
+    "object": "chat.completion",
+    "created": 1700000000,
+    "model": "gpt-4o-audio-preview",
+    "choices": [
+        {
+            "index": 0,
+            "message": {
+                "role": "assistant",
+                "content": "This is a response from the mock server.",
+            },
+            "finish_reason": "stop",
+        }
+    ],
+    "usage": {
+        "prompt_tokens": 30,
+        "completion_tokens": 12,
+        "total_tokens": 42,
+        "prompt_tokens_details": {"cached_tokens": 0, "text_tokens": 20, "audio_tokens": 10},
     },
 }
 
@@ -330,8 +378,14 @@ def chat_completions(deployment=None):
         resp["choices"][0]["message"]["content"] = "I drafted this plan but it is not in the requested schema."
         return resp
 
-    resp = dict(CHAT_RESPONSE)
-    resp["model"] = body.get("model", resp["model"])
+    model = body.get("model", CHAT_RESPONSE["model"])
+    if "audio" in model:
+        resp = copy.deepcopy(CHAT_AUDIO_RESPONSE)
+    elif model.startswith("o") and not model.startswith("openai"):
+        resp = copy.deepcopy(CHAT_REASONING_RESPONSE)
+    else:
+        resp = dict(CHAT_RESPONSE)
+    resp["model"] = model
     resp["choices"] = copy.deepcopy(resp["choices"])
     resp["choices"][0]["message"]["content"] = _mock_chat_content(body, message_text)
     return resp

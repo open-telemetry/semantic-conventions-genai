@@ -205,10 +205,42 @@ attributes:
     stability: development
   - key: gen_ai.usage.cache_creation.input_tokens
     type: int
-    brief: The number of input tokens written to a provider-managed cache.
+    brief: The number of input tokens written to a provider-managed cache this turn.
     note: >
       The value SHOULD be included in `gen_ai.usage.input_tokens`.
     examples: [25]
+    stability: development
+  - key: gen_ai.usage.text.input_tokens
+    type: int
+    brief: The number of input tokens that the provider reported as text modality.
+    note: >
+      The value is a subset of `gen_ai.usage.input_tokens`. Instrumentations MUST only
+      set this attribute when the provider reports the text-modality input token count.
+    examples: [90]
+    stability: development
+  - key: gen_ai.usage.image.input_tokens
+    type: int
+    brief: The number of input tokens that the provider reported as image modality.
+    note: >
+      The value is a subset of `gen_ai.usage.input_tokens`. Instrumentations MUST only
+      set this attribute when the provider reports the image-modality input token count.
+    examples: [40]
+    stability: development
+  - key: gen_ai.usage.audio.input_tokens
+    type: int
+    brief: The number of input tokens that the provider reported as audio modality.
+    note: >
+      The value is a subset of `gen_ai.usage.input_tokens`. Instrumentations MUST only
+      set this attribute when the provider reports the audio-modality input token count.
+    examples: [10]
+    stability: development
+  - key: gen_ai.usage.video.input_tokens
+    type: int
+    brief: The number of input tokens that the provider reported as video modality.
+    note: >
+      The value is a subset of `gen_ai.usage.input_tokens`. Instrumentations MUST only
+      set this attribute when the provider reports the video-modality input token count.
+    examples: [20]
     stability: development
   - key: gen_ai.usage.output_tokens
     type: int
@@ -221,6 +253,38 @@ attributes:
     note: >
       The value SHOULD be included in `gen_ai.usage.output_tokens`.
     examples: [50]
+    stability: development
+  - key: gen_ai.usage.text.output_tokens
+    type: int
+    brief: The number of output tokens that the provider reported as text modality.
+    note: >
+      The value is a subset of `gen_ai.usage.output_tokens`. Instrumentations MUST only
+      set this attribute when the provider reports the text-modality output token count.
+    examples: [180]
+    stability: development
+  - key: gen_ai.usage.image.output_tokens
+    type: int
+    brief: The number of output tokens that the provider reported as image modality.
+    note: >
+      The value is a subset of `gen_ai.usage.output_tokens`. Instrumentations MUST only
+      set this attribute when the provider reports the image-modality output token count.
+    examples: [40]
+    stability: development
+  - key: gen_ai.usage.audio.output_tokens
+    type: int
+    brief: The number of output tokens that the provider reported as audio modality.
+    note: >
+      The value is a subset of `gen_ai.usage.output_tokens`. Instrumentations MUST only
+      set this attribute when the provider reports the audio-modality output token count.
+    examples: [10]
+    stability: development
+  - key: gen_ai.usage.video.output_tokens
+    type: int
+    brief: The number of output tokens that the provider reported as video modality.
+    note: >
+      The value is a subset of `gen_ai.usage.output_tokens`. Instrumentations MUST only
+      set this attribute when the provider reports the video-modality output token count.
+    examples: [20]
     stability: development
   - key: gen_ai.token.type
     type:
@@ -235,6 +299,74 @@ attributes:
           brief: 'Output tokens (completion, response, etc.)'
     brief: The type of token being counted.
     examples: ['input', 'output']
+    stability: development
+  - key: gen_ai.token.modality
+    type:
+      members:
+        - id: text
+          stability: development
+          value: "text"
+          brief: 'Text tokens.'
+        - id: image
+          stability: development
+          value: "image"
+          brief: 'Image tokens.'
+        - id: audio
+          stability: development
+          value: "audio"
+          brief: 'Audio tokens.'
+        - id: video
+          stability: development
+          value: "video"
+          brief: 'Video tokens.'
+        - id: document
+          stability: development
+          value: "document"
+          brief: 'Document tokens.'
+        - id: unknown
+          stability: development
+          value: "unknown"
+          brief: 'Tokens of unknown or unreported modality.'
+    brief: The modality of the tokens being counted.
+    note: >
+      Use `unknown` when the provider does not report a modality breakdown.
+    examples: ['text', 'audio', 'unknown']
+    stability: development
+  - key: gen_ai.token.cache
+    type:
+      members:
+        - id: none
+          stability: development
+          value: "none"
+          brief: 'Tokens that did not interact with the cache (uncached input).'
+        - id: read
+          stability: development
+          value: "read"
+          brief: 'Tokens served from a provider-managed cache.'
+        - id: creation
+          stability: development
+          value: "creation"
+          brief: 'Tokens written to a provider-managed cache this turn.'
+    brief: The cache status of the input tokens being counted.
+    note: >
+      Applies only to input tokens.
+    examples: ['none', 'read', 'creation']
+    stability: development
+  - key: gen_ai.token.phase
+    type:
+      members:
+        - id: response
+          stability: development
+          value: "response"
+          brief: 'Final response tokens.'
+        - id: reasoning
+          stability: development
+          value: "reasoning"
+          brief: 'Tokens used for model reasoning (e.g. chain-of-thought).'
+    brief: The generation phase of the output tokens being counted.
+    note: >
+      Applies only to output tokens.
+    examples: ['response', 'reasoning']
     stability: development
   - key: gen_ai.conversation.id
     type: string
