@@ -47,19 +47,15 @@ def find_dashboard_issue(repo: str) -> int | None:
             _FIND_DASHBOARD_ISSUE_QUERY,
             {"owner": owner, "name": name, "label": DASHBOARD_LABEL, "after": after},
         )
-        connection = (((data.get("data") or {}).get("repository") or {}).get("issues") or {})
-        for node in connection.get("nodes") or []:
-            if not isinstance(node, dict):
+        connection = data["data"]["repository"]["issues"]
+        for node in connection["nodes"]:
+            if node["title"] != DASHBOARD_TITLE:
                 continue
-            if node.get("title") != DASHBOARD_TITLE:
-                continue
-            number = node.get("number")
-            if isinstance(number, int):
-                numbers.append(number)
-        page_info = connection.get("pageInfo") or {}
-        if not page_info.get("hasNextPage"):
+            numbers.append(node["number"])
+        page_info = connection["pageInfo"]
+        if not page_info["hasNextPage"]:
             break
-        after = page_info.get("endCursor") or None
+        after = page_info["endCursor"]
     return min(numbers) if numbers else None
 
 
