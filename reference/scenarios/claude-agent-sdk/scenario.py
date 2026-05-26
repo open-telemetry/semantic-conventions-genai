@@ -53,9 +53,6 @@ async def run_agent_query_reference():
         output_tokens = None
         async for message in query(prompt=prompt_text, options=options):
             if isinstance(message, AssistantMessage):
-                # claude-agent-sdk >=0.2 exposes fields directly on AssistantMessage
-                # (message.model, message.message_id, message.usage) rather than
-                # nesting them under message.message as in 0.1.x.
                 response_model = response_model or getattr(message, "model", None)
                 response_id = response_id or getattr(message, "message_id", None)
                 finish_reason = finish_reason or getattr(message, "stop_reason", None)
