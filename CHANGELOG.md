@@ -8,7 +8,7 @@
   `gen_ai.token.*` namespace.
   - Added per-modality span attributes
     `gen_ai.usage.{text,image,audio,video}.input_tokens` and
-    `gen_ai.usage.{text,audio}.output_tokens`.
+    `gen_ai.usage.{text,image,audio}.output_tokens`.
   - Replaced the `gen_ai.client.token.usage` histogram with counters
     `gen_ai.client.inference.tokens` (dimensioned by `gen_ai.token.type` and
     `gen_ai.token.modality`), `gen_ai.client.inference.input_tokens_by_cache`

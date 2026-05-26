@@ -180,6 +180,30 @@ RESPONSES_RESPONSE = {
 }
 
 
+# 1x1 transparent PNG, base64-encoded. Returned by the mock images endpoint
+# so the scenario can exercise the response shape end to end without a real
+# image render.
+_TINY_PNG_B64 = (
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
+)
+
+IMAGE_GEN_RESPONSE = {
+    "created": 1700000000,
+    "data": [{"b64_json": _TINY_PNG_B64}],
+    # GPT Image response shape: `output_tokens` are image-modality tokens
+    # (the generated image is tokenized and billed per token); the
+    # `input_tokens_details` breaks the prompt into text vs. reference-image
+    # tokens. See
+    # https://developers.openai.com/api/docs/guides/image-generation.
+    "usage": {
+        "input_tokens": 15,
+        "output_tokens": 1056,
+        "total_tokens": 1071,
+        "input_tokens_details": {"text_tokens": 15, "image_tokens": 0},
+    },
+}
+
+
 def _mock_chat_content(body, message_text):
     # CrewAI converter retry: when convert_with_instructions builds a
     # Converter and calls to_pydantic(), the LLM call carries CrewAI's
@@ -409,4 +433,13 @@ def responses():
     body = request.get_json(silent=True) or {}
     resp = dict(RESPONSES_RESPONSE)
     resp["model"] = body.get("model", resp["model"])
+    return resp
+
+
+@bp.route("/v1/images/generations", methods=["POST"])
+@bp.route("/openai/v1/images/generations", methods=["POST"])
+def images_generations():
+    body = request.get_json(silent=True) or {}
+    resp = copy.deepcopy(IMAGE_GEN_RESPONSE)
+    resp["model"] = body.get("model", "gpt-image-1")
     return resp

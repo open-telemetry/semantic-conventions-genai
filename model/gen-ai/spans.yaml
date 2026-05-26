@@ -61,6 +61,9 @@ attribute_groups:
       - ref: gen_ai.usage.text.output_tokens
         requirement_level:
           recommended: when the provider reports it
+      - ref: gen_ai.usage.image.output_tokens
+        requirement_level:
+          recommended: when the provider reports it
       - ref: gen_ai.usage.audio.output_tokens
         requirement_level:
           recommended: when the provider reports it

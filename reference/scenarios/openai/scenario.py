@@ -606,6 +606,100 @@ def run_embeddings_reference(client):
         print(f"    -> embedding dim: {len(resp.data[0].embedding)}")
 
 
+def run_image_generation_reference(client):
+    """Scenario: image generation with the OpenAI Image API.
+
+    Exercises `gen_ai.usage.image.output_tokens` and
+    `gen_ai.usage.text.input_tokens` capture from GPT Image's
+    `response.usage.{output_tokens,input_tokens_details.text_tokens}`.
+    GPT Image models tokenize the generated image and bill per token, so
+    `response.usage.output_tokens` is entirely image-modality output.
+    """
+    print("  [image_generation] image generation (reference implementation)")
+    request_model = "gpt-image-1"
+    prompt = "A cute otter holding a paintbrush, watercolor style."
+    request_size = "1024x1024"
+    host, port = mock_server_host_port(MOCK_BASE_URL)
+    input_messages = json.dumps(
+        [{"role": "user", "parts": [{"type": "text", "content": prompt}]}]
+    )
+    span_attributes_img = {
+        "gen_ai.operation.name": "generate_content",
+        "gen_ai.provider.name": "openai",
+        "gen_ai.request.model": request_model,
+    }
+    if host:
+        span_attributes_img["server.address"] = host
+    if port is not None:
+        span_attributes_img["server.port"] = port
+    with _reference_tracer.start_as_current_span(
+        "generate_content gpt-image-1", attributes=span_attributes_img
+    ) as span:
+        span.set_attribute("gen_ai.input.messages", input_messages)
+        resp = client.images.generate(
+            model=request_model,
+            prompt=prompt,
+            size=request_size,
+            n=1,
+        )
+        output_messages = [
+            {
+                "role": "assistant",
+                "parts": [
+                    {
+                        "type": "blob",
+                        "mime_type": "image/png",
+                        "modality": "image",
+                        "content": resp.data[0].b64_json,
+                    }
+                ],
+            }
+        ]
+        span.set_attribute("gen_ai.output.messages", json.dumps(output_messages))
+        if resp.usage:
+            span.set_attribute("gen_ai.usage.input_tokens", resp.usage.input_tokens)
+            span.set_attribute("gen_ai.usage.output_tokens", resp.usage.output_tokens)
+            input_details = getattr(resp.usage, "input_tokens_details", None)
+            text_input = getattr(input_details, "text_tokens", None)
+            if text_input is not None:
+                span.set_attribute("gen_ai.usage.text.input_tokens", text_input)
+            image_input = getattr(input_details, "image_tokens", None)
+            if image_input is not None and image_input > 0:
+                span.set_attribute("gen_ai.usage.image.input_tokens", image_input)
+            # GPT Image: output_tokens are entirely image-modality tokens
+            # (the generated image is tokenized for billing).
+            span.set_attribute("gen_ai.usage.image.output_tokens", resp.usage.output_tokens)
+
+        event_attrs = {
+            "gen_ai.operation.name": "generate_content",
+            "gen_ai.request.model": request_model,
+            "gen_ai.input.messages": input_messages,
+            "gen_ai.output.messages": json.dumps(output_messages),
+        }
+        if resp.usage:
+            event_attrs["gen_ai.usage.input_tokens"] = resp.usage.input_tokens
+            event_attrs["gen_ai.usage.output_tokens"] = resp.usage.output_tokens
+            input_details = getattr(resp.usage, "input_tokens_details", None)
+            text_input = getattr(input_details, "text_tokens", None)
+            if text_input is not None:
+                event_attrs["gen_ai.usage.text.input_tokens"] = text_input
+            image_input = getattr(input_details, "image_tokens", None)
+            if image_input is not None and image_input > 0:
+                event_attrs["gen_ai.usage.image.input_tokens"] = image_input
+            event_attrs["gen_ai.usage.image.output_tokens"] = resp.usage.output_tokens
+        if host:
+            event_attrs["server.address"] = host
+        if port is not None:
+            event_attrs["server.port"] = port
+        reference_event_logger().emit(
+            event_name="gen_ai.client.inference.operation.details",
+            body="Inference operation details",
+            attributes=event_attrs,
+        )
+
+        print(f"    -> image bytes: {len(resp.data[0].b64_json)} (b64)")
+
+
 def main():
     print("=== Reference Implementation: OpenAI Reference Implementation ===")
 
@@ -622,6 +716,7 @@ def main():
     run_embeddings_reference(client)
     run_chat_reasoning_reference(client)
     run_chat_audio_reference(client)
+    run_image_generation_reference(client)
 
     flush_and_shutdown(tp, lp, mp)
 

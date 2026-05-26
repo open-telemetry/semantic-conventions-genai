@@ -262,6 +262,14 @@ attributes:
       set this attribute when the provider reports the text-modality output token count.
     examples: [180]
     stability: development
+  - key: gen_ai.usage.image.output_tokens
+    type: int
+    brief: The number of output tokens that the provider reported as image modality.
+    note: >
+      The value is a subset of `gen_ai.usage.output_tokens`. Instrumentations MUST only
+      set this attribute when the provider reports the image-modality output token count.
+    examples: [1056]
+    stability: development
   - key: gen_ai.usage.audio.output_tokens
     type: int
     brief: The number of output tokens that the provider reported as audio modality.
