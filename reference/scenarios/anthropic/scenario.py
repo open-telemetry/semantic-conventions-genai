@@ -112,6 +112,28 @@ def run_chat():
         print(f"    -> {resp.content[0].text[:60]}")
 
 
+def run_context_selection_evaluation():
+    """Scenario: privacy-preserving context selection event for RAG-style agents.
+
+    Exercises the cross-cutting boundary where retrieved candidates become the
+    context actually delivered to an agent/model. The event deliberately emits
+    only counts and a low-cardinality policy name -- no raw document text,
+    queries, prompts, tool outputs, memory bodies, or repository excerpts.
+    """
+    print("  [context_selection] RAG candidates selected for delivery (reference implementation)")
+    reference_event_logger().emit(
+        event_name="gen_ai.context.selection.evaluated",
+        body="Context selection evaluated",
+        attributes={
+            "gen_ai.context.selection.candidate.count": 18,
+            "gen_ai.context.selection.selected.count": 5,
+            "gen_ai.context.selection.suppressed.count": 13,
+            "gen_ai.context.selection.delivered_hash.count": 5,
+            "gen_ai.context.selection.policy": "hybrid_bm25_dense",
+        },
+    )
+
+
 def run_chat_with_document_input():
     """Scenario: chat with a base64 document block (document modality).
 
@@ -213,6 +235,7 @@ def main():
     tp, lp, mp = setup_otel()
 
     run_chat()
+    run_context_selection_evaluation()
     run_chat_with_document_input()
 
     flush_and_shutdown(tp, lp, mp)

@@ -33,6 +33,13 @@
       "gen_ai.usage.output_tokens",
       "server.address",
       "server.port"
+    ],
+    "gen_ai.context.selection.evaluated": [
+      "gen_ai.context.selection.candidate.count",
+      "gen_ai.context.selection.delivered_hash.count",
+      "gen_ai.context.selection.policy",
+      "gen_ai.context.selection.selected.count",
+      "gen_ai.context.selection.suppressed.count"
     ]
   }
 }
