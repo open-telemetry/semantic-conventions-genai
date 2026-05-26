@@ -230,11 +230,13 @@ def run_chat_reasoning_reference(client):
 
 
 def run_chat_audio_reference(client):
-    """Scenario: chat completion with audio input modality.
+    """Scenario: chat completion with audio input and audio output.
 
-    Exercises `gen_ai.usage.{text,audio}_input_tokens` capture from
-    OpenAI's `prompt_tokens_details.{text_tokens,audio_tokens}` breakdown,
-    reported on the `gpt-4o-audio-preview` family.
+    Exercises `gen_ai.usage.{text,audio}.input_tokens` capture from OpenAI's
+    `prompt_tokens_details.{text_tokens,audio_tokens}` breakdown and
+    `gen_ai.usage.{text,audio}.output_tokens` capture from
+    `completion_tokens_details.{text_tokens,audio_tokens}`, reported on the
+    `gpt-4o-audio-preview` family.
     """
     import base64
 
@@ -281,6 +283,8 @@ def run_chat_audio_reference(client):
         resp = client.chat.completions.create(
             model=request_model,
             messages=messages,
+            modalities=["text", "audio"],
+            audio={"voice": "alloy", "format": "wav"},
         )
         span.set_attribute("gen_ai.response.model", resp.model)
         span.set_attribute("gen_ai.response.id", resp.id)
@@ -304,6 +308,13 @@ def run_chat_audio_reference(client):
             audio_input = getattr(prompt_details, "audio_tokens", None)
             if audio_input is not None:
                 span.set_attribute("gen_ai.usage.audio.input_tokens", audio_input)
+            completion_details = getattr(resp.usage, "completion_tokens_details", None)
+            text_output = getattr(completion_details, "text_tokens", None)
+            if text_output is not None:
+                span.set_attribute("gen_ai.usage.text.output_tokens", text_output)
+            audio_output = getattr(completion_details, "audio_tokens", None)
+            if audio_output is not None:
+                span.set_attribute("gen_ai.usage.audio.output_tokens", audio_output)
 
         event_attrs = {
             "gen_ai.operation.name": "chat",
@@ -324,6 +335,13 @@ def run_chat_audio_reference(client):
             audio_input = getattr(prompt_details, "audio_tokens", None)
             if audio_input is not None:
                 event_attrs["gen_ai.usage.audio.input_tokens"] = audio_input
+            completion_details = getattr(resp.usage, "completion_tokens_details", None)
+            text_output = getattr(completion_details, "text_tokens", None)
+            if text_output is not None:
+                event_attrs["gen_ai.usage.text.output_tokens"] = text_output
+            audio_output = getattr(completion_details, "audio_tokens", None)
+            if audio_output is not None:
+                event_attrs["gen_ai.usage.audio.output_tokens"] = audio_output
         if host:
             event_attrs["server.address"] = host
         if port is not None:

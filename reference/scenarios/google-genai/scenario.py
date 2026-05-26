@@ -170,9 +170,9 @@ def run_chat_thinking():
 
 
 def run_chat_multimodal():
-    """Scenario: chat with text + image input (multimodal token reporting).
+    """Scenario: chat with text + image + video input (multimodal token reporting).
 
-    Exercises `gen_ai.usage.{text,image}_input_tokens` capture from
+    Exercises `gen_ai.usage.{text,image,video}.input_tokens` capture from
     Gemini's `usage_metadata.prompt_tokens_details` per-modality breakdown.
     """
     from google import genai
@@ -198,13 +198,17 @@ def run_chat_multimodal():
         b"\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\rIDATx\x9cc\x00\x01"
         b"\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82"
     )
+    # Minimal MP4 ftyp box (no media data). The mock server doesn't parse it;
+    # the bytes only need to be a recognizable video payload for the request.
+    video_bytes = b"\x00\x00\x00\x18ftypmp42\x00\x00\x00\x00mp42isom"
     with _reference_tracer.start_as_current_span("chat gemini-2.0-flash", attributes=span_attributes) as span:
-        prompt_text = "Describe this image."
+        prompt_text = "Describe this image and video."
         response = client.models.generate_content(
             model=request_model,
             contents=[
                 types.Part.from_text(text=prompt_text),
                 types.Part.from_bytes(data=image_bytes, mime_type="image/png"),
+                types.Part.from_bytes(data=video_bytes, mime_type="video/mp4"),
             ],
         )
         if response.model_version:
@@ -233,6 +237,9 @@ def run_chat_multimodal():
             image_input = _modality_tokens(prompt_details, "IMAGE")
             if image_input is not None:
                 span.set_attribute("gen_ai.usage.image.input_tokens", image_input)
+            video_input = _modality_tokens(prompt_details, "VIDEO")
+            if video_input is not None:
+                span.set_attribute("gen_ai.usage.video.input_tokens", video_input)
             candidates_details = getattr(usage, "candidates_tokens_details", None)
             text_output = _modality_tokens(candidates_details, "TEXT")
             if text_output is not None:
@@ -248,6 +255,7 @@ def run_chat_multimodal():
                         "parts": [
                             {"type": "text", "content": prompt_text},
                             {"type": "blob", "mime_type": "image/png", "modality": "image"},
+                            {"type": "blob", "mime_type": "video/mp4", "modality": "video"},
                         ],
                     }
                 ]
@@ -279,6 +287,9 @@ def run_chat_multimodal():
             image_input = _modality_tokens(prompt_details, "IMAGE")
             if image_input is not None:
                 event_attrs["gen_ai.usage.image.input_tokens"] = image_input
+            video_input = _modality_tokens(prompt_details, "VIDEO")
+            if video_input is not None:
+                event_attrs["gen_ai.usage.video.input_tokens"] = video_input
             candidates_details = getattr(usage, "candidates_tokens_details", None)
             text_output = _modality_tokens(candidates_details, "TEXT")
             if text_output is not None:

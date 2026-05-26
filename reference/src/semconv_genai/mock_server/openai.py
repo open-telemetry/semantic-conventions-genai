@@ -101,6 +101,7 @@ CHAT_AUDIO_RESPONSE = {
         "completion_tokens": 12,
         "total_tokens": 42,
         "prompt_tokens_details": {"cached_tokens": 0, "text_tokens": 20, "audio_tokens": 10},
+        "completion_tokens_details": {"text_tokens": 4, "audio_tokens": 8},
     },
 }
 

@@ -12,7 +12,8 @@
       "gen_ai.usage.output_tokens",
       "gen_ai.usage.reasoning.output_tokens",
       "gen_ai.usage.text.input_tokens",
-      "gen_ai.usage.text.output_tokens"
+      "gen_ai.usage.text.output_tokens",
+      "gen_ai.usage.video.input_tokens"
     ],
     "embeddings": [
       "gen_ai.embeddings.dimension.count",
@@ -34,7 +35,8 @@
       "gen_ai.usage.output_tokens",
       "gen_ai.usage.reasoning.output_tokens",
       "gen_ai.usage.text.input_tokens",
-      "gen_ai.usage.text.output_tokens"
+      "gen_ai.usage.text.output_tokens",
+      "gen_ai.usage.video.input_tokens"
     ]
   }
 }

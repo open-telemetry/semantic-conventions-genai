@@ -61,12 +61,13 @@ MULTIMODAL_RESPONSE = {
         }
     ],
     "usageMetadata": {
-        "promptTokenCount": 30,
+        "promptTokenCount": 35,
         "candidatesTokenCount": 12,
-        "totalTokenCount": 42,
+        "totalTokenCount": 47,
         "promptTokensDetails": [
             {"modality": "TEXT", "tokenCount": 20},
             {"modality": "IMAGE", "tokenCount": 10},
+            {"modality": "VIDEO", "tokenCount": 5},
         ],
         "candidatesTokensDetails": [
             {"modality": "TEXT", "tokenCount": 12},
