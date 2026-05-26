@@ -58,12 +58,8 @@ async def run_agent_query_reference():
                 finish_reason = finish_reason or getattr(message, "stop_reason", None)
                 msg_usage = getattr(message, "usage", None)
                 if msg_usage is not None and input_tokens is None:
-                    input_tokens = getattr(msg_usage, "input_tokens", None) or (
-                        msg_usage.get("input_tokens") if isinstance(msg_usage, dict) else None
-                    )
-                    output_tokens = getattr(msg_usage, "output_tokens", None) or (
-                        msg_usage.get("output_tokens") if isinstance(msg_usage, dict) else None
-                    )
+                    input_tokens = msg_usage.get("input_tokens")
+                    output_tokens = msg_usage.get("output_tokens")
                 for block in message.content:
                     if isinstance(block, TextBlock):
                         output_text += block.text
@@ -72,8 +68,8 @@ async def run_agent_query_reference():
                 finish_reason = finish_reason or getattr(message, "stop_reason", None)
                 msg_usage = getattr(message, "usage", None)
                 if msg_usage is not None and input_tokens is None:
-                    input_tokens = getattr(msg_usage, "input_tokens", None)
-                    output_tokens = getattr(msg_usage, "output_tokens", None)
+                    input_tokens = msg_usage.get("input_tokens")
+                    output_tokens = msg_usage.get("output_tokens")
                 print(f"    -> result: turns={message.num_turns}")
         if response_model:
             span.set_attribute("gen_ai.response.model", response_model)
