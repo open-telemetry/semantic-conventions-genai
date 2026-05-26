@@ -6,9 +6,8 @@ from __future__ import annotations
 import argparse
 import sys
 from pathlib import Path
-from urllib.parse import quote
 
-from github_cli import detect_repo, gh_api, run_gh
+from github_cli import detect_repo, gh_graphql, run_gh
 from state import dashboard_markdown_path, set_state_dir
 import state_branch
 
@@ -17,18 +16,51 @@ DASHBOARD_TITLE = "Pull Request Dashboard"
 DASHBOARD_LABEL = "dashboard"
 
 
+# GraphQL is used instead of the REST `/repos/{repo}/issues` list endpoint
+# because that endpoint has been observed to omit pinned issues from its
+# results, which would cause this script to create a duplicate dashboard
+# issue instead of updating the existing one.
+_FIND_DASHBOARD_ISSUE_QUERY = """
+query ($owner: String!, $name: String!, $label: String!, $after: String) {
+  repository(owner: $owner, name: $name) {
+    issues(
+      first: 100
+      after: $after
+      states: OPEN
+      filterBy: { labels: [$label] }
+      orderBy: { field: CREATED_AT, direction: ASC }
+    ) {
+      pageInfo { hasNextPage endCursor }
+      nodes { number title }
+    }
+  }
+}
+"""
+
+
 def find_dashboard_issue(repo: str) -> int | None:
-    label = quote(DASHBOARD_LABEL, safe="")
-    issues = gh_api(f"/repos/{repo}/issues?state=open&labels={label}&per_page=100", paginate=True)
-    numbers = sorted(
-        issue["number"]
-        for issue in issues
-        if isinstance(issue, dict)
-        and issue.get("pull_request") is None
-        and issue.get("title") == DASHBOARD_TITLE
-        and isinstance(issue.get("number"), int)
-    )
-    return numbers[0] if numbers else None
+    owner, _, name = repo.partition("/")
+    numbers: list[int] = []
+    after: str | None = None
+    while True:
+        data = gh_graphql(
+            _FIND_DASHBOARD_ISSUE_QUERY,
+            {"owner": owner, "name": name, "label": DASHBOARD_LABEL, "after": after},
+        )
+        connection = (((data.get("data") or {}).get("repository") or {}).get("issues") or {})
+        for node in connection.get("nodes") or []:
+            if not isinstance(node, dict):
+                continue
+            if node.get("title") != DASHBOARD_TITLE:
+                continue
+            number = node.get("number")
+            if isinstance(number, int):
+                numbers.append(number)
+        page_info = connection.get("pageInfo") or {}
+        if not page_info.get("hasNextPage"):
+            break
+        after = page_info.get("endCursor") or None
+    return min(numbers) if numbers else None
 
 
 def publish_dashboard(repo: str, dashboard_body: Path) -> None:
