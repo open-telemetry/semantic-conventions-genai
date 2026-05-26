@@ -212,6 +212,11 @@ EVENT_SPECS: dict[str, AttributeSpec] = {
         "event.gen_ai.evaluation.result",
         label="Evaluation Result",
     ),
+    "gen_ai.context.selection.evaluated": _from_yaml(
+        _groups,
+        "event.gen_ai.context.selection.evaluated",
+        label="Context Selection Evaluated",
+    ),
 }
 
 # No METRIC_SPECS yet: gen_ai.* metrics are deliberately omitted from the reference

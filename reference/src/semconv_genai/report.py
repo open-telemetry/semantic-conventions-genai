@@ -79,6 +79,7 @@ SEMCONV_DOC_LINKS: dict[str, str] = {
     "execute_tool": "../../docs/gen-ai/gen-ai-spans.md#execute-tool-span",
     "gen_ai.client.inference.operation.details": "../../docs/gen-ai/gen-ai-events.md#event-gen_aiclientinferenceoperationdetails",
     "gen_ai.evaluation.result": "../../docs/gen-ai/gen-ai-events.md#event-gen_aievaluationresult",
+    "gen_ai.context.selection.evaluated": "../../docs/gen-ai/gen-ai-events.md#event-gen_aicontextselectionevaluated",
 }
 
 
