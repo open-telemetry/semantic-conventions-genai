@@ -35,7 +35,7 @@ events:
       - ref: gen_ai.context.selection.delivered_hash.count
         requirement_level:
           recommended: when delivered hashes are available
-      - ref: gen_ai.context.selection.reason
+      - ref: gen_ai.context.selection.policy
         requirement_level: recommended
 
   - name: gen_ai.evaluation.result

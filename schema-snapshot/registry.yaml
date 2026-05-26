@@ -746,25 +746,25 @@ refinements:
       requirement_level: required
       stability: development
       type: int
-    - brief: The number of distinct privacy-preserving delivered-context hashes produced for selected context inputs.
+    - brief: The number of unique privacy-preserving delivered-context hashes produced for selected context inputs.
       examples:
       - 5
       key: gen_ai.context.selection.delivered_hash.count
       note: |
-        This count lets telemetry report how many delivered context identities are available for later correlation without recording raw prompt text, tool output, memory bodies, or repository excerpts.
+        This count lets telemetry report how many distinct delivered context identities are available for later correlation without recording raw prompt text, tool output, memory bodies, or repository excerpts. It SHOULD count unique hashes, not total hash observations, so duplicate selected inputs can be detected by comparing this value with `gen_ai.context.selection.selected.count`.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
         recommended: when delivered hashes are available
       stability: development
       type: int
-    - brief: The implementation-specific reason or policy that selected and suppressed context inputs.
+    - brief: The implementation-specific top-level policy or strategy used to select and suppress context inputs.
       examples:
       - budget
       - relevance
-      key: gen_ai.context.selection.reason
+      key: gen_ai.context.selection.policy
       note: |
-        The value SHOULD have low cardinality. Examples include `budget`, `relevance`, `dedupe`, `target_agent`, `policy`, and `unknown`.
+        The value SHOULD have low cardinality and SHOULD describe the top-level selection policy rather than every internal retrieval stage. For hybrid or staged retrieval, use one stable name such as `hybrid_bm25_dense` or `rag_hybrid_v2`; detailed per-stage retrieval telemetry should be reported on retrieval spans or events. Examples include `budget`, `relevance`, `dedupe`, `target_agent`, `hybrid_bm25_dense`, and `unknown`.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level: recommended
@@ -11934,23 +11934,23 @@ registry:
       path: ./model/gen-ai/registry.yaml
     stability: development
     type: int
-  - brief: The number of distinct privacy-preserving delivered-context hashes produced for selected context inputs.
+  - brief: The number of unique privacy-preserving delivered-context hashes produced for selected context inputs.
     examples:
     - 5
     key: gen_ai.context.selection.delivered_hash.count
     note: |
-      This count lets telemetry report how many delivered context identities are available for later correlation without recording raw prompt text, tool output, memory bodies, or repository excerpts.
+      This count lets telemetry report how many distinct delivered context identities are available for later correlation without recording raw prompt text, tool output, memory bodies, or repository excerpts. It SHOULD count unique hashes, not total hash observations, so duplicate selected inputs can be detected by comparing this value with `gen_ai.context.selection.selected.count`.
     provenance:
       path: ./model/gen-ai/registry.yaml
     stability: development
     type: int
-  - brief: The implementation-specific reason or policy that selected and suppressed context inputs.
+  - brief: The implementation-specific top-level policy or strategy used to select and suppress context inputs.
     examples:
     - budget
     - relevance
-    key: gen_ai.context.selection.reason
+    key: gen_ai.context.selection.policy
     note: |
-      The value SHOULD have low cardinality. Examples include `budget`, `relevance`, `dedupe`, `target_agent`, `policy`, and `unknown`.
+      The value SHOULD have low cardinality and SHOULD describe the top-level selection policy rather than every internal retrieval stage. For hybrid or staged retrieval, use one stable name such as `hybrid_bm25_dense` or `rag_hybrid_v2`; detailed per-stage retrieval telemetry should be reported on retrieval spans or events. Examples include `budget`, `relevance`, `dedupe`, `target_agent`, `hybrid_bm25_dense`, and `unknown`.
     provenance:
       path: ./model/gen-ai/registry.yaml
     stability: development
@@ -13812,25 +13812,25 @@ registry:
       requirement_level: required
       stability: development
       type: int
-    - brief: The number of distinct privacy-preserving delivered-context hashes produced for selected context inputs.
+    - brief: The number of unique privacy-preserving delivered-context hashes produced for selected context inputs.
       examples:
       - 5
       key: gen_ai.context.selection.delivered_hash.count
       note: |
-        This count lets telemetry report how many delivered context identities are available for later correlation without recording raw prompt text, tool output, memory bodies, or repository excerpts.
+        This count lets telemetry report how many distinct delivered context identities are available for later correlation without recording raw prompt text, tool output, memory bodies, or repository excerpts. It SHOULD count unique hashes, not total hash observations, so duplicate selected inputs can be detected by comparing this value with `gen_ai.context.selection.selected.count`.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
         recommended: when delivered hashes are available
       stability: development
       type: int
-    - brief: The implementation-specific reason or policy that selected and suppressed context inputs.
+    - brief: The implementation-specific top-level policy or strategy used to select and suppress context inputs.
       examples:
       - budget
       - relevance
-      key: gen_ai.context.selection.reason
+      key: gen_ai.context.selection.policy
       note: |
-        The value SHOULD have low cardinality. Examples include `budget`, `relevance`, `dedupe`, `target_agent`, `policy`, and `unknown`.
+        The value SHOULD have low cardinality and SHOULD describe the top-level selection policy rather than every internal retrieval stage. For hybrid or staged retrieval, use one stable name such as `hybrid_bm25_dense` or `rag_hybrid_v2`; detailed per-stage retrieval telemetry should be reported on retrieval spans or events. Examples include `budget`, `relevance`, `dedupe`, `target_agent`, `hybrid_bm25_dense`, and `unknown`.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level: recommended
