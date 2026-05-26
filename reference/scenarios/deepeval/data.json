@@ -3,8 +3,7 @@
     "gen_ai.evaluation.result": [
       "gen_ai.evaluation.explanation",
       "gen_ai.evaluation.name",
-      "gen_ai.evaluation.score.value",
-      "gen_ai.response.id"
+      "gen_ai.evaluation.score.value"
     ]
   }
 }

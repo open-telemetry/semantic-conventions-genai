@@ -1,13 +1,4 @@
-"""Reference implementation for DeepEval.
-
-Changes vs upstream:
-- Added gen_ai.response.id to the evaluation result event.
-  This field correlates the evaluation back to the specific LLM completion
-  being evaluated, as required by the gen_ai.evaluation.result event spec.
-  In a real pipeline the response_id comes from the LLM call that produced
-  the output being evaluated; here we use a deterministic mock value so the
-  reference scenario stays self-contained and reproducible.
-"""
+"""Reference implementation for DeepEval."""
 
 import os
 
@@ -17,12 +8,6 @@ from reference_shared import flush_and_shutdown, reference_event_logger, referen
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"] + "/v1"
 
 _reference_tracer = reference_tracer()
-
-# Simulates the response id from the upstream LLM call whose output is
-# being evaluated. In production this would be captured from the inference
-# span (gen_ai.response.id) and passed into the evaluation step.
-# Override via MOCK_RESPONSE_ID env var when a specific value must be asserted.
-_MOCK_RESPONSE_ID = os.environ.get("MOCK_RESPONSE_ID", "chatcmpl-mockEvalRef0001")
 
 
 def run_evaluation():
@@ -71,10 +56,6 @@ def run_evaluation():
             attributes = {
                 "gen_ai.evaluation.name": metric.name,
                 "gen_ai.evaluation.score.value": score,
-                # Correlates this evaluation back to the LLM completion being
-                # evaluated. Populated when the response id is available from
-                # the upstream inference call.
-                "gen_ai.response.id": _MOCK_RESPONSE_ID,
             }
             if getattr(metric, "reason", None):
                 attributes["gen_ai.evaluation.explanation"] = metric.reason
