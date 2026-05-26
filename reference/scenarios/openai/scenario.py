@@ -620,9 +620,7 @@ def run_image_generation_reference(client):
     prompt = "A cute otter holding a paintbrush, watercolor style."
     request_size = "1024x1024"
     host, port = mock_server_host_port(MOCK_BASE_URL)
-    input_messages = json.dumps(
-        [{"role": "user", "parts": [{"type": "text", "content": prompt}]}]
-    )
+    input_messages = json.dumps([{"role": "user", "parts": [{"type": "text", "content": prompt}]}])
     span_attributes_img = {
         "gen_ai.operation.name": "generate_content",
         "gen_ai.provider.name": "openai",

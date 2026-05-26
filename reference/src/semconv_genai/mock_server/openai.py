@@ -183,9 +183,7 @@ RESPONSES_RESPONSE = {
 # 1x1 transparent PNG, base64-encoded. Returned by the mock images endpoint
 # so the scenario can exercise the response shape end to end without a real
 # image render.
-_TINY_PNG_B64 = (
-    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
-)
+_TINY_PNG_B64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
 
 IMAGE_GEN_RESPONSE = {
     "created": 1700000000,
