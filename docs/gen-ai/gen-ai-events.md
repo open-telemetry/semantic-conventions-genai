@@ -13,27 +13,6 @@ linkTitle: Events
 
 <!-- tocstop -->
 
-> [!IMPORTANT]
->
-> Existing GenAI instrumentations that are using
-> [v1.36.0 of this document](https://github.com/open-telemetry/semantic-conventions/blob/v1.36.0/docs/gen-ai/README.md)
-> (or prior):
->
-> * SHOULD NOT change the version of the GenAI conventions that they emit by default.
->   Conventions include, but are not limited to, attributes, metric, span and event names,
->   span kind and unit of measure.
-> * SHOULD introduce an environment variable `OTEL_SEMCONV_STABILITY_OPT_IN`
->   as a comma-separated list of category-specific values. The list of values
->   includes:
->   * `gen_ai_latest_experimental` - emit the latest experimental version of
->     GenAI conventions (supported by the instrumentation) and do not emit the
->     old one (v1.36.0 or prior).
->   * The default behavior is to continue emitting whatever version of the GenAI
->     conventions the instrumentation was emitting (1.36.0 or prior).
->
-> This transition plan will be updated to include stable version before the
-> GenAI conventions are marked as stable.
-
 GenAI instrumentations MAY capture user inputs sent to the model and responses received from it as [events](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.55.0/specification/logs/data-model.md#events).
 
 > [!Note]

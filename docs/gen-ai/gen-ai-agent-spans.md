@@ -8,36 +8,16 @@ linkTitle: Agent spans
 
 <!-- toc -->
 
-- [Spans](#spans)
-  - [Create agent span](#create-agent-span)
-  - [Invoke agent client span](#invoke-agent-client-span)
-  - [Invoke agent internal span](#invoke-agent-internal-span)
-  - [Invoke workflow span](#invoke-workflow-span)
-  - [Plan span](#plan-span)
-- [Execute tool span](#execute-tool-span)
+- [Semantic Conventions for GenAI agent and framework spans](#semantic-conventions-for-genai-agent-and-framework-spans)
+  - [Spans](#spans)
+    - [Create agent span](#create-agent-span)
+    - [Invoke agent client span](#invoke-agent-client-span)
+    - [Invoke agent internal span](#invoke-agent-internal-span)
+    - [Invoke workflow span](#invoke-workflow-span)
+    - [Plan span](#plan-span)
+  - [Execute tool span](#execute-tool-span)
 
 <!-- tocstop -->
-
-> [!IMPORTANT]
->
-> Existing GenAI instrumentations that are using
-> [v1.36.0 of this document](https://github.com/open-telemetry/semantic-conventions/blob/v1.36.0/docs/gen-ai/README.md)
-> (or prior):
->
-> * SHOULD NOT change the version of the GenAI conventions that they emit by default.
->   Conventions include, but are not limited to, attributes, metric, span and event names,
->   span kind and unit of measure.
-> * SHOULD introduce an environment variable `OTEL_SEMCONV_STABILITY_OPT_IN`
->   as a comma-separated list of category-specific values. The list of values
->   includes:
->   * `gen_ai_latest_experimental` - emit the latest experimental version of
->     GenAI conventions (supported by the instrumentation) and do not emit the
->     old one (v1.36.0 or prior).
->   * The default behavior is to continue emitting whatever version of the GenAI
->     conventions the instrumentation was emitting (1.34.0 or prior).
->
-> This transition plan will be updated to include stable version before the
-> GenAI conventions are marked as stable.
 
 Generative AI models can be trained to use tools to access real-time information or suggest a real-world action. For example, a model can leverage a database retrieval tool to access specific information, like a customer's purchase history, so it can generate tailored shopping recommendations. Alternatively, based on a user's query, a model can make various API calls to send an email response to a colleague or complete a financial transaction on your behalf. To do so, the model must not only have access to a set of external tools, it needs the ability to plan and execute any task in a self-directed fashion. This combination of reasoning, logic, and access to external information that are all connected to a Generative AI model invokes the concept of an agent.
 
