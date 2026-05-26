@@ -24,6 +24,8 @@
   ([#97](https://github.com/open-telemetry/semantic-conventions-genai/pull/97))
 - Add `gen_ai.workflow.duration` metric to track duration of a workflow.
   ([#126](https://github.com/open-telemetry/semantic-conventions-genai/pull/126))
+- Add `moonshot_ai` to `gen_ai.provider.name` well-known values.
+  ([#99](https://github.com/open-telemetry/semantic-conventions-genai/pull/99))
 
 ### 🧰 Bug fixes 🧰
 

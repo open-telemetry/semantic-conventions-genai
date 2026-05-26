@@ -5,7 +5,11 @@
       "gen_ai.operation.name",
       "gen_ai.output.messages",
       "gen_ai.provider.name",
-      "gen_ai.response.finish_reasons"
+      "gen_ai.response.finish_reasons",
+      "gen_ai.response.id",
+      "gen_ai.response.model",
+      "gen_ai.usage.input_tokens",
+      "gen_ai.usage.output_tokens"
     ]
   }
 }

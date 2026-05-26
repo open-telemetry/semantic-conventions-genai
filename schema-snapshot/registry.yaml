@@ -346,6 +346,10 @@ refinements:
           id: mistral_ai
           stability: development
           value: mistral_ai
+        - brief: \u0027[Moonshot AI](https://www.moonshot.ai/)\u0027
+          id: moonshot_ai
+          stability: development
+          value: moonshot_ai
     - brief: The target number of candidate completions to return.
       examples:
       - 3
@@ -1099,6 +1103,10 @@ refinements:
           id: mistral_ai
           stability: development
           value: mistral_ai
+        - brief: \u0027[Moonshot AI](https://www.moonshot.ai/)\u0027
+          id: moonshot_ai
+          stability: development
+          value: moonshot_ai
     - brief: The name of the GenAI model a request is being made to.
       examples: gpt-4
       key: gen_ai.request.model
@@ -1325,6 +1333,10 @@ refinements:
           id: mistral_ai
           stability: development
           value: mistral_ai
+        - brief: \u0027[Moonshot AI](https://www.moonshot.ai/)\u0027
+          id: moonshot_ai
+          stability: development
+          value: moonshot_ai
     - brief: The name of the GenAI model a request is being made to.
       examples: gpt-4
       key: gen_ai.request.model
@@ -1554,6 +1566,10 @@ refinements:
           id: mistral_ai
           stability: development
           value: mistral_ai
+        - brief: \u0027[Moonshot AI](https://www.moonshot.ai/)\u0027
+          id: moonshot_ai
+          stability: development
+          value: moonshot_ai
     - brief: The name of the GenAI model a request is being made to.
       examples: gpt-4
       key: gen_ai.request.model
@@ -1782,6 +1798,10 @@ refinements:
           id: mistral_ai
           stability: development
           value: mistral_ai
+        - brief: \u0027[Moonshot AI](https://www.moonshot.ai/)\u0027
+          id: moonshot_ai
+          stability: development
+          value: moonshot_ai
     - brief: The name of the GenAI model a request is being made to.
       examples: gpt-4
       key: gen_ai.request.model
@@ -2049,6 +2069,10 @@ refinements:
           id: mistral_ai
           stability: development
           value: mistral_ai
+        - brief: \u0027[Moonshot AI](https://www.moonshot.ai/)\u0027
+          id: moonshot_ai
+          stability: development
+          value: moonshot_ai
     - brief: The name of the GenAI model a request is being made to.
       examples: gpt-4
       key: gen_ai.request.model
@@ -2275,6 +2299,10 @@ refinements:
           id: mistral_ai
           stability: development
           value: mistral_ai
+        - brief: \u0027[Moonshot AI](https://www.moonshot.ai/)\u0027
+          id: moonshot_ai
+          stability: development
+          value: moonshot_ai
     - brief: The name of the GenAI model a request is being made to.
       examples: gpt-4
       key: gen_ai.request.model
@@ -2501,6 +2529,10 @@ refinements:
           id: mistral_ai
           stability: development
           value: mistral_ai
+        - brief: \u0027[Moonshot AI](https://www.moonshot.ai/)\u0027
+          id: moonshot_ai
+          stability: development
+          value: moonshot_ai
     - brief: The name of the GenAI model a request is being made to.
       examples: gpt-4
       key: gen_ai.request.model
@@ -3838,6 +3870,10 @@ refinements:
           id: mistral_ai
           stability: development
           value: mistral_ai
+        - brief: \u0027[Moonshot AI](https://www.moonshot.ai/)\u0027
+          id: moonshot_ai
+          stability: development
+          value: moonshot_ai
     - brief: The name of the GenAI model a request is being made to.
       examples: gpt-4
       key: gen_ai.request.model
@@ -4084,6 +4120,10 @@ refinements:
           id: mistral_ai
           stability: development
           value: mistral_ai
+        - brief: \u0027[Moonshot AI](https://www.moonshot.ai/)\u0027
+          id: moonshot_ai
+          stability: development
+          value: moonshot_ai
     - brief: The name of the GenAI model a request is being made to.
       examples: gpt-4
       key: gen_ai.request.model
@@ -4523,6 +4563,10 @@ refinements:
           id: mistral_ai
           stability: development
           value: mistral_ai
+        - brief: \u0027[Moonshot AI](https://www.moonshot.ai/)\u0027
+          id: moonshot_ai
+          stability: development
+          value: moonshot_ai
     - brief: The target number of candidate completions to return.
       examples:
       - 3
@@ -5224,6 +5268,10 @@ refinements:
           id: mistral_ai
           stability: development
           value: mistral_ai
+        - brief: \u0027[Moonshot AI](https://www.moonshot.ai/)\u0027
+          id: moonshot_ai
+          stability: development
+          value: moonshot_ai
     - brief: The target number of candidate completions to return.
       examples:
       - 3
@@ -5926,6 +5974,10 @@ refinements:
           id: mistral_ai
           stability: development
           value: mistral_ai
+        - brief: \u0027[Moonshot AI](https://www.moonshot.ai/)\u0027
+          id: moonshot_ai
+          stability: development
+          value: moonshot_ai
     - brief: The target number of candidate completions to return.
       examples:
       - 3
@@ -6503,6 +6555,10 @@ refinements:
           id: mistral_ai
           stability: development
           value: mistral_ai
+        - brief: \u0027[Moonshot AI](https://www.moonshot.ai/)\u0027
+          id: moonshot_ai
+          stability: development
+          value: moonshot_ai
     - brief: The name of the GenAI model a request is being made to.
       examples: gpt-4
       key: gen_ai.request.model
@@ -6787,6 +6843,10 @@ refinements:
           id: mistral_ai
           stability: development
           value: mistral_ai
+        - brief: \u0027[Moonshot AI](https://www.moonshot.ai/)\u0027
+          id: moonshot_ai
+          stability: development
+          value: moonshot_ai
     - brief: The encoding formats requested in an embeddings operation, if specified.
       examples:
       - - base64
@@ -7436,6 +7496,10 @@ refinements:
           id: mistral_ai
           stability: development
           value: mistral_ai
+        - brief: \u0027[Moonshot AI](https://www.moonshot.ai/)\u0027
+          id: moonshot_ai
+          stability: development
+          value: moonshot_ai
     - brief: The target number of candidate completions to return.
       examples:
       - 3
@@ -8182,6 +8246,10 @@ refinements:
           id: mistral_ai
           stability: development
           value: mistral_ai
+        - brief: \u0027[Moonshot AI](https://www.moonshot.ai/)\u0027
+          id: moonshot_ai
+          stability: development
+          value: moonshot_ai
     - brief: The target number of candidate completions to return.
       examples:
       - 3
@@ -8865,6 +8933,10 @@ refinements:
           id: mistral_ai
           stability: development
           value: mistral_ai
+        - brief: \u0027[Moonshot AI](https://www.moonshot.ai/)\u0027
+          id: moonshot_ai
+          stability: development
+          value: moonshot_ai
     - brief: The target number of candidate completions to return.
       examples:
       - 3
@@ -9644,6 +9716,10 @@ refinements:
           id: mistral_ai
           stability: development
           value: mistral_ai
+        - brief: \u0027[Moonshot AI](https://www.moonshot.ai/)\u0027
+          id: moonshot_ai
+          stability: development
+          value: moonshot_ai
     - brief: GenAI server address.
       examples:
       - example.com
@@ -10055,6 +10131,10 @@ refinements:
           id: mistral_ai
           stability: development
           value: mistral_ai
+        - brief: \u0027[Moonshot AI](https://www.moonshot.ai/)\u0027
+          id: moonshot_ai
+          stability: development
+          value: moonshot_ai
     - brief: The name of the GenAI model a request is being made to.
       examples: gpt-4
       key: gen_ai.request.model
@@ -11479,6 +11559,10 @@ refinements:
           id: mistral_ai
           stability: development
           value: mistral_ai
+        - brief: \u0027[Moonshot AI](https://www.moonshot.ai/)\u0027
+          id: moonshot_ai
+          stability: development
+          value: moonshot_ai
     - brief: The target number of candidate completions to return.
       examples:
       - 3
@@ -12423,6 +12507,10 @@ registry:
         id: mistral_ai
         stability: development
         value: mistral_ai
+      - brief: \u0027[Moonshot AI](https://www.moonshot.ai/)\u0027
+        id: moonshot_ai
+        stability: development
+        value: moonshot_ai
   - brief: The target number of candidate completions to return.
     examples:
     - 3
@@ -13414,6 +13502,10 @@ registry:
           id: mistral_ai
           stability: development
           value: mistral_ai
+        - brief: \u0027[Moonshot AI](https://www.moonshot.ai/)\u0027
+          id: moonshot_ai
+          stability: development
+          value: moonshot_ai
     - brief: The target number of candidate completions to return.
       examples:
       - 3
@@ -14163,6 +14255,10 @@ registry:
           id: mistral_ai
           stability: development
           value: mistral_ai
+        - brief: \u0027[Moonshot AI](https://www.moonshot.ai/)\u0027
+          id: moonshot_ai
+          stability: development
+          value: moonshot_ai
     - brief: The name of the GenAI model a request is being made to.
       examples: gpt-4
       key: gen_ai.request.model
@@ -14388,6 +14484,10 @@ registry:
           id: mistral_ai
           stability: development
           value: mistral_ai
+        - brief: \u0027[Moonshot AI](https://www.moonshot.ai/)\u0027
+          id: moonshot_ai
+          stability: development
+          value: moonshot_ai
     - brief: The name of the GenAI model a request is being made to.
       examples: gpt-4
       key: gen_ai.request.model
@@ -14616,6 +14716,10 @@ registry:
           id: mistral_ai
           stability: development
           value: mistral_ai
+        - brief: \u0027[Moonshot AI](https://www.moonshot.ai/)\u0027
+          id: moonshot_ai
+          stability: development
+          value: moonshot_ai
     - brief: The name of the GenAI model a request is being made to.
       examples: gpt-4
       key: gen_ai.request.model
@@ -14843,6 +14947,10 @@ registry:
           id: mistral_ai
           stability: development
           value: mistral_ai
+        - brief: \u0027[Moonshot AI](https://www.moonshot.ai/)\u0027
+          id: moonshot_ai
+          stability: development
+          value: moonshot_ai
     - brief: The name of the GenAI model a request is being made to.
       examples: gpt-4
       key: gen_ai.request.model
@@ -15109,6 +15217,10 @@ registry:
           id: mistral_ai
           stability: development
           value: mistral_ai
+        - brief: \u0027[Moonshot AI](https://www.moonshot.ai/)\u0027
+          id: moonshot_ai
+          stability: development
+          value: moonshot_ai
     - brief: The name of the GenAI model a request is being made to.
       examples: gpt-4
       key: gen_ai.request.model
@@ -15334,6 +15446,10 @@ registry:
           id: mistral_ai
           stability: development
           value: mistral_ai
+        - brief: \u0027[Moonshot AI](https://www.moonshot.ai/)\u0027
+          id: moonshot_ai
+          stability: development
+          value: moonshot_ai
     - brief: The name of the GenAI model a request is being made to.
       examples: gpt-4
       key: gen_ai.request.model
@@ -15559,6 +15675,10 @@ registry:
           id: mistral_ai
           stability: development
           value: mistral_ai
+        - brief: \u0027[Moonshot AI](https://www.moonshot.ai/)\u0027
+          id: moonshot_ai
+          stability: development
+          value: moonshot_ai
     - brief: The name of the GenAI model a request is being made to.
       examples: gpt-4
       key: gen_ai.request.model
@@ -16934,6 +17054,10 @@ registry:
           id: mistral_ai
           stability: development
           value: mistral_ai
+        - brief: \u0027[Moonshot AI](https://www.moonshot.ai/)\u0027
+          id: moonshot_ai
+          stability: development
+          value: moonshot_ai
     - brief: The name of the GenAI model a request is being made to.
       examples: gpt-4
       key: gen_ai.request.model
@@ -17217,6 +17341,10 @@ registry:
           id: mistral_ai
           stability: development
           value: mistral_ai
+        - brief: \u0027[Moonshot AI](https://www.moonshot.ai/)\u0027
+          id: moonshot_ai
+          stability: development
+          value: moonshot_ai
     - brief: The encoding formats requested in an embeddings operation, if specified.
       examples:
       - - base64
@@ -17864,6 +17992,10 @@ registry:
           id: mistral_ai
           stability: development
           value: mistral_ai
+        - brief: \u0027[Moonshot AI](https://www.moonshot.ai/)\u0027
+          id: moonshot_ai
+          stability: development
+          value: moonshot_ai
     - brief: The target number of candidate completions to return.
       examples:
       - 3
@@ -18609,6 +18741,10 @@ registry:
           id: mistral_ai
           stability: development
           value: mistral_ai
+        - brief: \u0027[Moonshot AI](https://www.moonshot.ai/)\u0027
+          id: moonshot_ai
+          stability: development
+          value: moonshot_ai
     - brief: The target number of candidate completions to return.
       examples:
       - 3
@@ -19291,6 +19427,10 @@ registry:
           id: mistral_ai
           stability: development
           value: mistral_ai
+        - brief: \u0027[Moonshot AI](https://www.moonshot.ai/)\u0027
+          id: moonshot_ai
+          stability: development
+          value: moonshot_ai
     - brief: The target number of candidate completions to return.
       examples:
       - 3
@@ -20068,6 +20208,10 @@ registry:
           id: mistral_ai
           stability: development
           value: mistral_ai
+        - brief: \u0027[Moonshot AI](https://www.moonshot.ai/)\u0027
+          id: moonshot_ai
+          stability: development
+          value: moonshot_ai
     - brief: GenAI server address.
       examples:
       - example.com
@@ -20477,6 +20621,10 @@ registry:
           id: mistral_ai
           stability: development
           value: mistral_ai
+        - brief: \u0027[Moonshot AI](https://www.moonshot.ai/)\u0027
+          id: moonshot_ai
+          stability: development
+          value: moonshot_ai
     - brief: The name of the GenAI model a request is being made to.
       examples: gpt-4
       key: gen_ai.request.model

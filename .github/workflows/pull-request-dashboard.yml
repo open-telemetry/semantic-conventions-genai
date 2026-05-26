@@ -18,6 +18,10 @@ on:
         description: Event action that requested the refresh.
         required: false
         type: string
+      trigger_actor:
+        description: Actor that requested the refresh.
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -34,6 +38,9 @@ jobs:
     outputs:
       skip_dashboard: ${{ steps.trigger.outputs.skip_dashboard }}
       pr_number: ${{ steps.trigger.outputs.pr_number }}
+      trigger_event: ${{ steps.trigger.outputs.event }}
+      trigger_action: ${{ steps.trigger.outputs.action }}
+      trigger_actor: ${{ steps.trigger.outputs.actor }}
     steps:
       - name: Resolve trigger
         id: trigger
@@ -42,11 +49,13 @@ jobs:
           PR_FROM_INPUT: ${{ inputs.pr_number }}
           TRIGGER_EVENT_FROM_INPUT: ${{ inputs.trigger_event }}
           TRIGGER_ACTION_FROM_INPUT: ${{ inputs.trigger_action }}
+          TRIGGER_ACTOR_FROM_INPUT: ${{ inputs.trigger_actor }}
         run: |
           set -euo pipefail
           pr_number=""
           trigger_event=""
           trigger_action=""
+          trigger_actor=""
           skip_dashboard="false"
 
           skip_event() {
@@ -54,6 +63,7 @@ jobs:
             skip_dashboard="true"
             trigger_event=""
             trigger_action=""
+            trigger_actor=""
           }
 
           case "$EVENT_NAME" in
@@ -64,6 +74,7 @@ jobs:
               pr_number="$PR_FROM_INPUT"
               trigger_event="${TRIGGER_EVENT_FROM_INPUT:-workflow_dispatch}"
               trigger_action="$TRIGGER_ACTION_FROM_INPUT"
+              trigger_actor="$TRIGGER_ACTOR_FROM_INPUT"
               ;;
           esac
 
@@ -81,16 +92,21 @@ jobs:
             [[ "$trigger_action" =~ ^[a-z_]{1,32}$ ]] \
               || { skip_event "bad trigger action: $trigger_action"; }
           fi
+          if [[ -n "$trigger_actor" ]]; then
+            [[ "$trigger_actor" =~ ^[A-Za-z0-9_.\[\]-]{1,100}$ ]] \
+              || { skip_event "bad trigger actor: $trigger_actor"; }
+          fi
 
           {
             echo "skip_dashboard=$skip_dashboard"
             echo "pr_number=$pr_number"
             echo "event=$trigger_event"
             echo "action=$trigger_action"
+            echo "actor=$trigger_actor"
           } >> "$GITHUB_OUTPUT"
 
           # Echo the resolved trigger to the job log for at-a-glance diagnostics.
-          echo "trigger: pr=${pr_number:--} event=${trigger_event:--} action=${trigger_action:--}"
+          echo "trigger: pr=${pr_number:--} event=${trigger_event:--} action=${trigger_action:--} actor=${trigger_actor:--}"
 
   update-dashboard:
     needs: resolve-trigger
@@ -120,6 +136,50 @@ jobs:
         with:
           app-id: ${{ vars.OTELBOT_APP_ID }}
           private-key: ${{ secrets.OTELBOT_PRIVATE_KEY }}
+
+      - name: Post Copilot review guidance
+        if: >-
+          needs.resolve-trigger.outputs.pr_number != '' &&
+          needs.resolve-trigger.outputs.trigger_event == 'pull_request_review' &&
+          needs.resolve-trigger.outputs.trigger_action == 'submitted' &&
+          needs.resolve-trigger.outputs.trigger_actor == 'copilot-pull-request-reviewer[bot]'
+        env:
+          GH_TOKEN: ${{ steps.otelbot-token.outputs.token }}
+          PR_NUMBER: ${{ needs.resolve-trigger.outputs.pr_number }}
+          REPO: ${{ github.repository }}
+          # Hidden HTML marker used to detect whether the guidance comment
+          # has already been posted on this PR.
+          MARKER: <!-- copilot-review-guidance -->
+        run: |
+          set -euo pipefail
+
+          if gh api \
+            --paginate \
+            "repos/${REPO}/issues/${PR_NUMBER}/comments" \
+            --jq '.[] | select(.body | contains("'"${MARKER}"'")) | .id' \
+            | grep -q .; then
+            echo "Guidance comment already posted on PR #${PR_NUMBER}; skipping."
+            exit 0
+          fi
+
+          body=$(cat <<EOF
+          ${MARKER}
+          Copilot has reviewed this PR. Copilot's suggestions aren't always correct or applicable, so please evaluate each comment on its merits and then handle it in one of these ways:
+
+          - click GitHub's "Apply suggestion" button (auto-resolves the thread);
+          - reply that it was **applied** (ideally linking to the commit); or
+          - reply that it was **not applied**, with the reason.
+
+          Approvers rely on automation that flags a PR for human review once every Copilot comment has been replied to or marked as resolved, so keeping these threads up to date is what tells reviewers the PR is ready for another look.
+
+          Status across open PRs is visible on the [pull request dashboard](https://github.com/open-telemetry/semantic-conventions-genai/issues/102).
+          EOF
+          )
+
+          gh api \
+            --method POST \
+            "repos/${REPO}/issues/${PR_NUMBER}/comments" \
+            -f body="${body}"
 
       - name: Restore per-PR classification cache
         # Scoped to one PR so concurrent PR events don't overwrite each

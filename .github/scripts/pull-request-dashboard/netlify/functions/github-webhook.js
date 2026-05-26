@@ -73,12 +73,14 @@ async function handle(event) {
   if (!Number.isInteger(prNumber) || prNumber <= 0) {
     return response(202, { status: "ignored", reason: "no pull request number found" });
   }
+  const triggerActor = extractTriggerActor(payload);
 
   const installationToken = await createInstallationToken(config);
   await dispatchWorkflow(config, installationToken, repository.fullName, {
     pr_number: String(prNumber),
     trigger_event: eventName,
     trigger_action: action,
+    trigger_actor: triggerActor || "",
   });
 
   return response(202, {
@@ -87,6 +89,7 @@ async function handle(event) {
     pr_number: prNumber,
     trigger_event: eventName,
     trigger_action: action,
+    trigger_actor: triggerActor,
   });
 }
 
@@ -117,6 +120,10 @@ function readRepository(payload) {
     fullName: repository.full_name,
     owner: repository.owner && repository.owner.login,
   };
+}
+
+function extractTriggerActor(payload) {
+  return payload.sender && payload.sender.login;
 }
 
 function readRawBody(event) {
