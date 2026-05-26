@@ -11947,7 +11947,7 @@ registry:
   - brief: The implementation-specific top-level policy or strategy used to select and suppress context inputs.
     examples:
     - budget
-    - relevance
+    - hybrid_bm25_dense
     key: gen_ai.context.selection.policy
     note: |
       The value SHOULD have low cardinality and SHOULD describe the top-level selection policy rather than every internal retrieval stage. For hybrid or staged retrieval, use one stable name such as `hybrid_bm25_dense` or `rag_hybrid_v2`; detailed per-stage retrieval telemetry should be reported on retrieval spans or events. Examples include `budget`, `relevance`, `dedupe`, `target_agent`, `hybrid_bm25_dense`, and `unknown`.
