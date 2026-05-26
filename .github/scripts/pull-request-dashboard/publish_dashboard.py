@@ -40,7 +40,6 @@ query ($owner: String!, $name: String!, $label: String!, $after: String) {
 
 def find_dashboard_issue(repo: str) -> int | None:
     owner, _, name = repo.partition("/")
-    numbers: list[int] = []
     after: str | None = None
     while True:
         data = gh_graphql(
@@ -49,14 +48,12 @@ def find_dashboard_issue(repo: str) -> int | None:
         )
         connection = data["data"]["repository"]["issues"]
         for node in connection["nodes"]:
-            if node["title"] != DASHBOARD_TITLE:
-                continue
-            numbers.append(node["number"])
+            if node["title"] == DASHBOARD_TITLE:
+                return node["number"]
         page_info = connection["pageInfo"]
         if not page_info["hasNextPage"]:
-            break
+            return None
         after = page_info["endCursor"]
-    return min(numbers) if numbers else None
 
 
 def publish_dashboard(repo: str, dashboard_body: Path) -> None:
