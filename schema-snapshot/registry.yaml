@@ -648,18 +648,6 @@ refinements:
         recommended: when the provider reports it
       stability: development
       type: int
-    - brief: The number of output tokens that the provider reported as image modality.
-      examples:
-      - 40
-      key: gen_ai.usage.image.output_tokens
-      note: |
-        The value is a subset of `gen_ai.usage.output_tokens`. Instrumentations MUST only set this attribute when the provider reports the image-modality output token count.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        recommended: when the provider reports it
-      stability: development
-      type: int
     - brief: The number of tokens used in the GenAI input (prompt).
       examples:
       - 100
@@ -725,18 +713,6 @@ refinements:
       key: gen_ai.usage.video.input_tokens
       note: |
         The value is a subset of `gen_ai.usage.input_tokens`. Instrumentations MUST only set this attribute when the provider reports the video-modality input token count.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        recommended: when the provider reports it
-      stability: development
-      type: int
-    - brief: The number of output tokens that the provider reported as video modality.
-      examples:
-      - 20
-      key: gen_ai.usage.video.output_tokens
-      note: |
-        The value is a subset of `gen_ai.usage.output_tokens`. Instrumentations MUST only set this attribute when the provider reports the video-modality output token count.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
@@ -6172,18 +6148,6 @@ refinements:
         recommended: when the provider reports it
       stability: development
       type: int
-    - brief: The number of output tokens that the provider reported as image modality.
-      examples:
-      - 40
-      key: gen_ai.usage.image.output_tokens
-      note: |
-        The value is a subset of `gen_ai.usage.output_tokens`. Instrumentations MUST only set this attribute when the provider reports the image-modality output token count.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        recommended: when the provider reports it
-      stability: development
-      type: int
     - brief: The number of tokens used in the GenAI input (prompt).
       examples:
       - 100
@@ -6246,18 +6210,6 @@ refinements:
       key: gen_ai.usage.video.input_tokens
       note: |
         The value is a subset of `gen_ai.usage.input_tokens`. Instrumentations MUST only set this attribute when the provider reports the video-modality input token count.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        recommended: when the provider reports it
-      stability: development
-      type: int
-    - brief: The number of output tokens that the provider reported as video modality.
-      examples:
-      - 20
-      key: gen_ai.usage.video.output_tokens
-      note: |
-        The value is a subset of `gen_ai.usage.output_tokens`. Instrumentations MUST only set this attribute when the provider reports the video-modality output token count.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
@@ -6973,18 +6925,6 @@ refinements:
         recommended: when the provider reports it
       stability: development
       type: int
-    - brief: The number of output tokens that the provider reported as image modality.
-      examples:
-      - 40
-      key: gen_ai.usage.image.output_tokens
-      note: |
-        The value is a subset of `gen_ai.usage.output_tokens`. Instrumentations MUST only set this attribute when the provider reports the image-modality output token count.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        recommended: when the provider reports it
-      stability: development
-      type: int
     - brief: The number of tokens used in the GenAI input (prompt).
       examples:
       - 100
@@ -7050,18 +6990,6 @@ refinements:
       key: gen_ai.usage.video.input_tokens
       note: |
         The value is a subset of `gen_ai.usage.input_tokens`. Instrumentations MUST only set this attribute when the provider reports the video-modality input token count.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        recommended: when the provider reports it
-      stability: development
-      type: int
-    - brief: The number of output tokens that the provider reported as video modality.
-      examples:
-      - 20
-      key: gen_ai.usage.video.output_tokens
-      note: |
-        The value is a subset of `gen_ai.usage.output_tokens`. Instrumentations MUST only set this attribute when the provider reports the video-modality output token count.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
@@ -7776,18 +7704,6 @@ refinements:
         recommended: when the provider reports it
       stability: development
       type: int
-    - brief: The number of output tokens that the provider reported as image modality.
-      examples:
-      - 40
-      key: gen_ai.usage.image.output_tokens
-      note: |
-        The value is a subset of `gen_ai.usage.output_tokens`. Instrumentations MUST only set this attribute when the provider reports the image-modality output token count.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        recommended: when the provider reports it
-      stability: development
-      type: int
     - brief: |
         The number of prompt tokens as reported in the usage prompt_tokens property of the response.
       examples:
@@ -7855,18 +7771,6 @@ refinements:
       key: gen_ai.usage.video.input_tokens
       note: |
         The value is a subset of `gen_ai.usage.input_tokens`. Instrumentations MUST only set this attribute when the provider reports the video-modality input token count.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        recommended: when the provider reports it
-      stability: development
-      type: int
-    - brief: The number of output tokens that the provider reported as video modality.
-      examples:
-      - 20
-      key: gen_ai.usage.video.output_tokens
-      note: |
-        The value is a subset of `gen_ai.usage.output_tokens`. Instrumentations MUST only set this attribute when the provider reports the video-modality output token count.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
@@ -9394,18 +9298,6 @@ refinements:
         recommended: when the provider reports it
       stability: development
       type: int
-    - brief: The number of output tokens that the provider reported as image modality.
-      examples:
-      - 40
-      key: gen_ai.usage.image.output_tokens
-      note: |
-        The value is a subset of `gen_ai.usage.output_tokens`. Instrumentations MUST only set this attribute when the provider reports the image-modality output token count.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        recommended: when the provider reports it
-      stability: development
-      type: int
     - brief: The number of tokens used in the GenAI input (prompt).
       examples:
       - 100
@@ -9471,18 +9363,6 @@ refinements:
       key: gen_ai.usage.video.input_tokens
       note: |
         The value is a subset of `gen_ai.usage.input_tokens`. Instrumentations MUST only set this attribute when the provider reports the video-modality input token count.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        recommended: when the provider reports it
-      stability: development
-      type: int
-    - brief: The number of output tokens that the provider reported as video modality.
-      examples:
-      - 20
-      key: gen_ai.usage.video.output_tokens
-      note: |
-        The value is a subset of `gen_ai.usage.output_tokens`. Instrumentations MUST only set this attribute when the provider reports the video-modality output token count.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
@@ -10190,18 +10070,6 @@ refinements:
         recommended: when the provider reports it
       stability: development
       type: int
-    - brief: The number of output tokens that the provider reported as image modality.
-      examples:
-      - 40
-      key: gen_ai.usage.image.output_tokens
-      note: |
-        The value is a subset of `gen_ai.usage.output_tokens`. Instrumentations MUST only set this attribute when the provider reports the image-modality output token count.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        recommended: when the provider reports it
-      stability: development
-      type: int
     - brief: The number of tokens used in the GenAI input (prompt).
       examples:
       - 100
@@ -10255,18 +10123,6 @@ refinements:
       key: gen_ai.usage.video.input_tokens
       note: |
         The value is a subset of `gen_ai.usage.input_tokens`. Instrumentations MUST only set this attribute when the provider reports the video-modality input token count.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        recommended: when the provider reports it
-      stability: development
-      type: int
-    - brief: The number of output tokens that the provider reported as video modality.
-      examples:
-      - 20
-      key: gen_ai.usage.video.output_tokens
-      note: |
-        The value is a subset of `gen_ai.usage.output_tokens`. Instrumentations MUST only set this attribute when the provider reports the video-modality output token count.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
@@ -10973,18 +10829,6 @@ refinements:
         recommended: when the provider reports it
       stability: development
       type: int
-    - brief: The number of output tokens that the provider reported as image modality.
-      examples:
-      - 40
-      key: gen_ai.usage.image.output_tokens
-      note: |
-        The value is a subset of `gen_ai.usage.output_tokens`. Instrumentations MUST only set this attribute when the provider reports the image-modality output token count.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        recommended: when the provider reports it
-      stability: development
-      type: int
     - brief: The number of tokens used in the GenAI input (prompt).
       examples:
       - 100
@@ -11038,18 +10882,6 @@ refinements:
       key: gen_ai.usage.video.input_tokens
       note: |
         The value is a subset of `gen_ai.usage.input_tokens`. Instrumentations MUST only set this attribute when the provider reports the video-modality input token count.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        recommended: when the provider reports it
-      stability: development
-      type: int
-    - brief: The number of output tokens that the provider reported as video modality.
-      examples:
-      - 20
-      key: gen_ai.usage.video.output_tokens
-      note: |
-        The value is a subset of `gen_ai.usage.output_tokens`. Instrumentations MUST only set this attribute when the provider reports the video-modality output token count.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
@@ -13744,18 +13576,6 @@ refinements:
         recommended: when the provider reports it
       stability: development
       type: int
-    - brief: The number of output tokens that the provider reported as image modality.
-      examples:
-      - 40
-      key: gen_ai.usage.image.output_tokens
-      note: |
-        The value is a subset of `gen_ai.usage.output_tokens`. Instrumentations MUST only set this attribute when the provider reports the image-modality output token count.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        recommended: when the provider reports it
-      stability: development
-      type: int
     - brief: The number of tokens used in the GenAI input (prompt).
       examples:
       - 100
@@ -13818,18 +13638,6 @@ refinements:
       key: gen_ai.usage.video.input_tokens
       note: |
         The value is a subset of `gen_ai.usage.input_tokens`. Instrumentations MUST only set this attribute when the provider reports the video-modality input token count.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        recommended: when the provider reports it
-      stability: development
-      type: int
-    - brief: The number of output tokens that the provider reported as video modality.
-      examples:
-      - 20
-      key: gen_ai.usage.video.output_tokens
-      note: |
-        The value is a subset of `gen_ai.usage.output_tokens`. Instrumentations MUST only set this attribute when the provider reports the video-modality output token count.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
@@ -14937,16 +14745,6 @@ registry:
       path: ./model/gen-ai/registry.yaml
     stability: development
     type: int
-  - brief: The number of output tokens that the provider reported as image modality.
-    examples:
-    - 40
-    key: gen_ai.usage.image.output_tokens
-    note: |
-      The value is a subset of `gen_ai.usage.output_tokens`. Instrumentations MUST only set this attribute when the provider reports the image-modality output token count.
-    provenance:
-      path: ./model/gen-ai/registry.yaml
-    stability: development
-    type: int
   - brief: The number of tokens used in the GenAI input (prompt).
     examples:
     - 100
@@ -15004,16 +14802,6 @@ registry:
     key: gen_ai.usage.video.input_tokens
     note: |
       The value is a subset of `gen_ai.usage.input_tokens`. Instrumentations MUST only set this attribute when the provider reports the video-modality input token count.
-    provenance:
-      path: ./model/gen-ai/registry.yaml
-    stability: development
-    type: int
-  - brief: The number of output tokens that the provider reported as video modality.
-    examples:
-    - 20
-    key: gen_ai.usage.video.output_tokens
-    note: |
-      The value is a subset of `gen_ai.usage.output_tokens`. Instrumentations MUST only set this attribute when the provider reports the video-modality output token count.
     provenance:
       path: ./model/gen-ai/registry.yaml
     stability: development
@@ -15894,18 +15682,6 @@ registry:
         recommended: when the provider reports it
       stability: development
       type: int
-    - brief: The number of output tokens that the provider reported as image modality.
-      examples:
-      - 40
-      key: gen_ai.usage.image.output_tokens
-      note: |
-        The value is a subset of `gen_ai.usage.output_tokens`. Instrumentations MUST only set this attribute when the provider reports the image-modality output token count.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        recommended: when the provider reports it
-      stability: development
-      type: int
     - brief: The number of tokens used in the GenAI input (prompt).
       examples:
       - 100
@@ -15971,18 +15747,6 @@ registry:
       key: gen_ai.usage.video.input_tokens
       note: |
         The value is a subset of `gen_ai.usage.input_tokens`. Instrumentations MUST only set this attribute when the provider reports the video-modality input token count.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        recommended: when the provider reports it
-      stability: development
-      type: int
-    - brief: The number of output tokens that the provider reported as video modality.
-      examples:
-      - 20
-      key: gen_ai.usage.video.output_tokens
-      note: |
-        The value is a subset of `gen_ai.usage.output_tokens`. Instrumentations MUST only set this attribute when the provider reports the video-modality output token count.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
@@ -21645,18 +21409,6 @@ registry:
         recommended: when the provider reports it
       stability: development
       type: int
-    - brief: The number of output tokens that the provider reported as image modality.
-      examples:
-      - 40
-      key: gen_ai.usage.image.output_tokens
-      note: |
-        The value is a subset of `gen_ai.usage.output_tokens`. Instrumentations MUST only set this attribute when the provider reports the image-modality output token count.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        recommended: when the provider reports it
-      stability: development
-      type: int
     - brief: The number of tokens used in the GenAI input (prompt).
       examples:
       - 100
@@ -21722,18 +21474,6 @@ registry:
       key: gen_ai.usage.video.input_tokens
       note: |
         The value is a subset of `gen_ai.usage.input_tokens`. Instrumentations MUST only set this attribute when the provider reports the video-modality input token count.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        recommended: when the provider reports it
-      stability: development
-      type: int
-    - brief: The number of output tokens that the provider reported as video modality.
-      examples:
-      - 20
-      key: gen_ai.usage.video.output_tokens
-      note: |
-        The value is a subset of `gen_ai.usage.output_tokens`. Instrumentations MUST only set this attribute when the provider reports the video-modality output token count.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
@@ -22440,18 +22180,6 @@ registry:
         recommended: when the provider reports it
       stability: development
       type: int
-    - brief: The number of output tokens that the provider reported as image modality.
-      examples:
-      - 40
-      key: gen_ai.usage.image.output_tokens
-      note: |
-        The value is a subset of `gen_ai.usage.output_tokens`. Instrumentations MUST only set this attribute when the provider reports the image-modality output token count.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        recommended: when the provider reports it
-      stability: development
-      type: int
     - brief: The number of tokens used in the GenAI input (prompt).
       examples:
       - 100
@@ -22505,18 +22233,6 @@ registry:
       key: gen_ai.usage.video.input_tokens
       note: |
         The value is a subset of `gen_ai.usage.input_tokens`. Instrumentations MUST only set this attribute when the provider reports the video-modality input token count.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        recommended: when the provider reports it
-      stability: development
-      type: int
-    - brief: The number of output tokens that the provider reported as video modality.
-      examples:
-      - 20
-      key: gen_ai.usage.video.output_tokens
-      note: |
-        The value is a subset of `gen_ai.usage.output_tokens`. Instrumentations MUST only set this attribute when the provider reports the video-modality output token count.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
@@ -23222,18 +22938,6 @@ registry:
         recommended: when the provider reports it
       stability: development
       type: int
-    - brief: The number of output tokens that the provider reported as image modality.
-      examples:
-      - 40
-      key: gen_ai.usage.image.output_tokens
-      note: |
-        The value is a subset of `gen_ai.usage.output_tokens`. Instrumentations MUST only set this attribute when the provider reports the image-modality output token count.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        recommended: when the provider reports it
-      stability: development
-      type: int
     - brief: The number of tokens used in the GenAI input (prompt).
       examples:
       - 100
@@ -23287,18 +22991,6 @@ registry:
       key: gen_ai.usage.video.input_tokens
       note: |
         The value is a subset of `gen_ai.usage.input_tokens`. Instrumentations MUST only set this attribute when the provider reports the video-modality input token count.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        recommended: when the provider reports it
-      stability: development
-      type: int
-    - brief: The number of output tokens that the provider reported as video modality.
-      examples:
-      - 20
-      key: gen_ai.usage.video.output_tokens
-      note: |
-        The value is a subset of `gen_ai.usage.output_tokens`. Instrumentations MUST only set this attribute when the provider reports the video-modality output token count.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
