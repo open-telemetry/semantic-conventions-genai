@@ -223,6 +223,10 @@ usage for the inference call.
 **[1]:** When the provider reports no cache fields, instrumentations MUST
 report the full input total under `gen_ai.token.cache=none`.
 
+Per inference call, the total tokens reported on this counter MUST
+equal the total reported on `gen_ai.client.inference.tokens` with
+`gen_ai.token.type=input`.
+
 **Attributes:**
 
 | Key | Stability | [Requirement Level](https://opentelemetry.io/docs/specs/semconv/general/attribute-requirement-level/) | Value Type | Description | Example Values |
@@ -348,6 +352,10 @@ usage for the inference call.
 **[1]:** When the provider does not separately report reasoning tokens,
 instrumentations MUST report the full output total under
 `gen_ai.token.phase=response`.
+
+Per inference call, the total tokens reported on this counter MUST
+equal the total reported on `gen_ai.client.inference.tokens` with
+`gen_ai.token.type=output`.
 
 **Attributes:**
 

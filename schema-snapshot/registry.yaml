@@ -1170,6 +1170,10 @@ refinements:
     note: |
       When the provider reports no cache fields, instrumentations MUST
       report the full input total under `gen_ai.token.cache=none`.
+
+      Per inference call, the total tokens reported on this counter MUST
+      equal the total reported on `gen_ai.client.inference.tokens` with
+      `gen_ai.token.type=input`.
     provenance:
       path: ./model/gen-ai/metrics.yaml
     stability: development
@@ -2115,6 +2119,10 @@ refinements:
       When the provider does not separately report reasoning tokens,
       instrumentations MUST report the full output total under
       `gen_ai.token.phase=response`.
+
+      Per inference call, the total tokens reported on this counter MUST
+      equal the total reported on `gen_ai.client.inference.tokens` with
+      `gen_ai.token.type=output`.
     provenance:
       path: ./model/gen-ai/metrics.yaml
     stability: development
@@ -16404,6 +16412,10 @@ registry:
     note: |
       When the provider reports no cache fields, instrumentations MUST
       report the full input total under `gen_ai.token.cache=none`.
+
+      Per inference call, the total tokens reported on this counter MUST
+      equal the total reported on `gen_ai.client.inference.tokens` with
+      `gen_ai.token.type=input`.
     provenance:
       path: ./model/gen-ai/metrics.yaml
     stability: development
@@ -17345,6 +17357,10 @@ registry:
       When the provider does not separately report reasoning tokens,
       instrumentations MUST report the full output total under
       `gen_ai.token.phase=response`.
+
+      Per inference call, the total tokens reported on this counter MUST
+      equal the total reported on `gen_ai.client.inference.tokens` with
+      `gen_ai.token.type=output`.
     provenance:
       path: ./model/gen-ai/metrics.yaml
     stability: development
