@@ -124,12 +124,12 @@ def run_chat_thinking():
         if response.candidates and response.candidates[0].finish_reason:
             span.set_attribute("gen_ai.response.finish_reasons", [str(response.candidates[0].finish_reason)])
         if hasattr(response, "usage_metadata") and response.usage_metadata:
-            if response.usage_metadata.prompt_token_count:
+            if response.usage_metadata.prompt_token_count is not None:
                 span.set_attribute("gen_ai.usage.input_tokens", response.usage_metadata.prompt_token_count)
-            if response.usage_metadata.candidates_token_count:
+            if response.usage_metadata.candidates_token_count is not None:
                 span.set_attribute("gen_ai.usage.output_tokens", response.usage_metadata.candidates_token_count)
             thoughts_token_count = getattr(response.usage_metadata, "thoughts_token_count", None)
-            if thoughts_token_count:
+            if thoughts_token_count is not None:
                 span.set_attribute("gen_ai.usage.reasoning.output_tokens", thoughts_token_count)
 
         event_attrs = {
@@ -153,12 +153,12 @@ def run_chat_thinking():
         if response.candidates and response.candidates[0].finish_reason:
             event_attrs["gen_ai.response.finish_reasons"] = [str(response.candidates[0].finish_reason)]
         if hasattr(response, "usage_metadata") and response.usage_metadata:
-            if response.usage_metadata.prompt_token_count:
+            if response.usage_metadata.prompt_token_count is not None:
                 event_attrs["gen_ai.usage.input_tokens"] = response.usage_metadata.prompt_token_count
-            if response.usage_metadata.candidates_token_count:
+            if response.usage_metadata.candidates_token_count is not None:
                 event_attrs["gen_ai.usage.output_tokens"] = response.usage_metadata.candidates_token_count
             thoughts_token_count = getattr(response.usage_metadata, "thoughts_token_count", None)
-            if thoughts_token_count:
+            if thoughts_token_count is not None:
                 event_attrs["gen_ai.usage.reasoning.output_tokens"] = thoughts_token_count
         reference_event_logger().emit(
             event_name="gen_ai.client.inference.operation.details",
@@ -222,9 +222,9 @@ def run_chat_multimodal():
 
         if hasattr(response, "usage_metadata") and response.usage_metadata:
             usage = response.usage_metadata
-            if usage.prompt_token_count:
+            if usage.prompt_token_count is not None:
                 span.set_attribute("gen_ai.usage.input_tokens", usage.prompt_token_count)
-            if usage.candidates_token_count:
+            if usage.candidates_token_count is not None:
                 span.set_attribute("gen_ai.usage.output_tokens", usage.candidates_token_count)
             prompt_details = getattr(usage, "prompt_tokens_details", None)
             text_input = _modality_tokens(prompt_details, "TEXT")
@@ -268,9 +268,9 @@ def run_chat_multimodal():
             event_attrs["gen_ai.response.finish_reasons"] = [str(response.candidates[0].finish_reason)]
         if hasattr(response, "usage_metadata") and response.usage_metadata:
             usage = response.usage_metadata
-            if usage.prompt_token_count:
+            if usage.prompt_token_count is not None:
                 event_attrs["gen_ai.usage.input_tokens"] = usage.prompt_token_count
-            if usage.candidates_token_count:
+            if usage.candidates_token_count is not None:
                 event_attrs["gen_ai.usage.output_tokens"] = usage.candidates_token_count
             prompt_details = getattr(usage, "prompt_tokens_details", None)
             text_input = _modality_tokens(prompt_details, "TEXT")
