@@ -6,6 +6,9 @@
 
 - Restructure GenAI token usage attributes and metrics under a unified
   `gen_ai.token.*` namespace.
+  - Renamed span attribute `gen_ai.usage.cache_creation.input_tokens` to
+    `gen_ai.usage.cache_write.input_tokens` for symmetry with
+    `gen_ai.usage.cache_read.input_tokens`.
   - Added per-modality span attributes
     `gen_ai.usage.{text,image,audio,video}.input_tokens` and
     `gen_ai.usage.{text,image,audio}.output_tokens`.
@@ -18,7 +21,7 @@
     `gen_ai.client.inference.operation.{tokens,input_tokens,output_tokens}`.
   - Added new enum attributes `gen_ai.token.modality`
     (`text`/`image`/`audio`/`video`/`document`/`unknown`), `gen_ai.token.cache`
-    (`none`/`read`/`creation`), and `gen_ai.token.phase`
+    (`none`/`read`/`write`), and `gen_ai.token.phase`
     (`response`/`reasoning`).
 
 ### 🚩 Deprecations 🚩

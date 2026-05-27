@@ -203,7 +203,7 @@ attributes:
       The value SHOULD be included in `gen_ai.usage.input_tokens`.
     examples: [50]
     stability: development
-  - key: gen_ai.usage.cache_creation.input_tokens
+  - key: gen_ai.usage.cache_write.input_tokens
     type: int
     brief: The number of input tokens written to a provider-managed cache this turn.
     note: >
@@ -335,14 +335,14 @@ attributes:
           stability: development
           value: "read"
           brief: 'Tokens served from a provider-managed cache.'
-        - id: creation
+        - id: write
           stability: development
-          value: "creation"
+          value: "write"
           brief: 'Tokens written to a provider-managed cache this turn.'
     brief: The cache status of the input tokens being counted.
     note: >
       Applies only to input tokens.
-    examples: ['none', 'read', 'creation']
+    examples: ['none', 'read', 'write']
     stability: development
   - key: gen_ai.token.phase
     type:

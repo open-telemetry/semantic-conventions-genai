@@ -61,7 +61,7 @@ def run_chat():
             span.set_attribute("gen_ai.usage.input_tokens", total_input)
             span.set_attribute("gen_ai.usage.output_tokens", resp.usage.output_tokens)
             if cache_creation:
-                span.set_attribute("gen_ai.usage.cache_creation.input_tokens", cache_creation)
+                span.set_attribute("gen_ai.usage.cache_write.input_tokens", cache_creation)
             if cache_read:
                 span.set_attribute("gen_ai.usage.cache_read.input_tokens", cache_read)
         output_messages = json.dumps(
@@ -96,7 +96,7 @@ def run_chat():
             event_attrs["gen_ai.usage.input_tokens"] = total_input
             event_attrs["gen_ai.usage.output_tokens"] = resp.usage.output_tokens
             if cache_creation:
-                event_attrs["gen_ai.usage.cache_creation.input_tokens"] = cache_creation
+                event_attrs["gen_ai.usage.cache_write.input_tokens"] = cache_creation
             if cache_read:
                 event_attrs["gen_ai.usage.cache_read.input_tokens"] = cache_read
         if host:

@@ -38,8 +38,8 @@
 | gen_ai.response.time_to_first_chunk | (none) |
 | gen_ai.usage.audio.input_tokens | [openai] |
 | gen_ai.usage.audio.output_tokens | [openai] |
-| gen_ai.usage.cache_creation.input_tokens | [anthropic] |
 | gen_ai.usage.cache_read.input_tokens | [anthropic], [openai] |
+| gen_ai.usage.cache_write.input_tokens | [anthropic] |
 | gen_ai.usage.image.input_tokens | [google-genai], [openai] |
 | gen_ai.usage.image.output_tokens | [openai] |
 | gen_ai.usage.input_tokens | [anthropic], [autogen], [aws-bedrock], [azure-ai-inference], [cohere], [dspy], [google-genai], [groq], [instructor], [litellm], [llamaindex], [mistralai], [openai], [pydantic-ai], [vertexai] |

@@ -42,7 +42,7 @@ attribute_groups:
         requirement_level: recommended
       - ref: gen_ai.usage.cache_read.input_tokens
         requirement_level: recommended
-      - ref: gen_ai.usage.cache_creation.input_tokens
+      - ref: gen_ai.usage.cache_write.input_tokens
         requirement_level: recommended
       - ref: gen_ai.usage.text.input_tokens
         requirement_level:
@@ -704,7 +704,7 @@ span_refinements:
         note: >
           Anthropic reports this separately from `input_tokens`.
           This value MUST be added to the Anthropic `input_tokens` to compute `gen_ai.usage.input_tokens`.
-      - ref: gen_ai.usage.cache_creation.input_tokens
+      - ref: gen_ai.usage.cache_write.input_tokens
         note: >
           Anthropic reports this as `cache_creation_input_tokens`, separately from `input_tokens`.
           This value MUST be added to the Anthropic `input_tokens` to compute `gen_ai.usage.input_tokens`.

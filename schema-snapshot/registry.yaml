@@ -614,10 +614,10 @@ refinements:
         recommended: when the provider reports it
       stability: development
       type: int
-    - brief: The number of input tokens written to a provider-managed cache this turn.
+    - brief: The number of input tokens served from a provider-managed cache.
       examples:
-      - 25
-      key: gen_ai.usage.cache_creation.input_tokens
+      - 50
+      key: gen_ai.usage.cache_read.input_tokens
       note: |
         The value SHOULD be included in `gen_ai.usage.input_tokens`.
       provenance:
@@ -625,10 +625,10 @@ refinements:
       requirement_level: recommended
       stability: development
       type: int
-    - brief: The number of input tokens served from a provider-managed cache.
+    - brief: The number of input tokens written to a provider-managed cache this turn.
       examples:
-      - 50
-      key: gen_ai.usage.cache_read.input_tokens
+      - 25
+      key: gen_ai.usage.cache_write.input_tokens
       note: |
         The value SHOULD be included in `gen_ai.usage.input_tokens`.
       provenance:
@@ -1106,7 +1106,7 @@ refinements:
       examples:
       - none
       - read
-      - creation
+      - write
       key: gen_ai.token.cache
       note: |
         Applies only to input tokens.
@@ -1125,9 +1125,9 @@ refinements:
           stability: development
           value: read
         - brief: Tokens written to a provider-managed cache this turn.
-          id: creation
+          id: write
           stability: development
-          value: creation
+          value: write
     - brief: GenAI server address.
       examples:
       - example.com
@@ -6126,23 +6126,23 @@ refinements:
         recommended: when the provider reports it
       stability: development
       type: int
-    - brief: The number of input tokens written to a provider-managed cache this turn.
-      examples:
-      - 25
-      key: gen_ai.usage.cache_creation.input_tokens
-      note: |
-        Anthropic reports this as `cache_creation_input_tokens`, separately from `input_tokens`. This value MUST be added to the Anthropic `input_tokens` to compute `gen_ai.usage.input_tokens`.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level: recommended
-      stability: development
-      type: int
     - brief: The number of input tokens served from a provider-managed cache.
       examples:
       - 50
       key: gen_ai.usage.cache_read.input_tokens
       note: |
         Anthropic reports this separately from `input_tokens`. This value MUST be added to the Anthropic `input_tokens` to compute `gen_ai.usage.input_tokens`.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: recommended
+      stability: development
+      type: int
+    - brief: The number of input tokens written to a provider-managed cache this turn.
+      examples:
+      - 25
+      key: gen_ai.usage.cache_write.input_tokens
+      note: |
+        Anthropic reports this as `cache_creation_input_tokens`, separately from `input_tokens`. This value MUST be added to the Anthropic `input_tokens` to compute `gen_ai.usage.input_tokens`.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level: recommended
@@ -6915,10 +6915,10 @@ refinements:
         recommended: when the provider reports it
       stability: development
       type: int
-    - brief: The number of input tokens written to a provider-managed cache this turn.
+    - brief: The number of input tokens served from a provider-managed cache.
       examples:
-      - 25
-      key: gen_ai.usage.cache_creation.input_tokens
+      - 50
+      key: gen_ai.usage.cache_read.input_tokens
       note: |
         The value SHOULD be included in `gen_ai.usage.input_tokens`.
       provenance:
@@ -6926,10 +6926,10 @@ refinements:
       requirement_level: recommended
       stability: development
       type: int
-    - brief: The number of input tokens served from a provider-managed cache.
+    - brief: The number of input tokens written to a provider-managed cache this turn.
       examples:
-      - 50
-      key: gen_ai.usage.cache_read.input_tokens
+      - 25
+      key: gen_ai.usage.cache_write.input_tokens
       note: |
         The value SHOULD be included in `gen_ai.usage.input_tokens`.
       provenance:
@@ -7706,10 +7706,10 @@ refinements:
         recommended: when the provider reports it
       stability: development
       type: int
-    - brief: The number of input tokens written to a provider-managed cache this turn.
+    - brief: The number of input tokens served from a provider-managed cache.
       examples:
-      - 25
-      key: gen_ai.usage.cache_creation.input_tokens
+      - 50
+      key: gen_ai.usage.cache_read.input_tokens
       note: |
         The value SHOULD be included in `gen_ai.usage.input_tokens`.
       provenance:
@@ -7717,10 +7717,10 @@ refinements:
       requirement_level: recommended
       stability: development
       type: int
-    - brief: The number of input tokens served from a provider-managed cache.
+    - brief: The number of input tokens written to a provider-managed cache this turn.
       examples:
-      - 50
-      key: gen_ai.usage.cache_read.input_tokens
+      - 25
+      key: gen_ai.usage.cache_write.input_tokens
       note: |
         The value SHOULD be included in `gen_ai.usage.input_tokens`.
       provenance:
@@ -9312,10 +9312,10 @@ refinements:
         recommended: when the provider reports it
       stability: development
       type: int
-    - brief: The number of input tokens written to a provider-managed cache this turn.
+    - brief: The number of input tokens served from a provider-managed cache.
       examples:
-      - 25
-      key: gen_ai.usage.cache_creation.input_tokens
+      - 50
+      key: gen_ai.usage.cache_read.input_tokens
       note: |
         The value SHOULD be included in `gen_ai.usage.input_tokens`.
       provenance:
@@ -9323,10 +9323,10 @@ refinements:
       requirement_level: recommended
       stability: development
       type: int
-    - brief: The number of input tokens served from a provider-managed cache.
+    - brief: The number of input tokens written to a provider-managed cache this turn.
       examples:
-      - 50
-      key: gen_ai.usage.cache_read.input_tokens
+      - 25
+      key: gen_ai.usage.cache_write.input_tokens
       note: |
         The value SHOULD be included in `gen_ai.usage.input_tokens`.
       provenance:
@@ -10096,10 +10096,10 @@ refinements:
         recommended: when the provider reports it
       stability: development
       type: int
-    - brief: The number of input tokens written to a provider-managed cache this turn.
+    - brief: The number of input tokens served from a provider-managed cache.
       examples:
-      - 25
-      key: gen_ai.usage.cache_creation.input_tokens
+      - 50
+      key: gen_ai.usage.cache_read.input_tokens
       note: |
         The value SHOULD be included in `gen_ai.usage.input_tokens`.
       provenance:
@@ -10107,10 +10107,10 @@ refinements:
       requirement_level: recommended
       stability: development
       type: int
-    - brief: The number of input tokens served from a provider-managed cache.
+    - brief: The number of input tokens written to a provider-managed cache this turn.
       examples:
-      - 50
-      key: gen_ai.usage.cache_read.input_tokens
+      - 25
+      key: gen_ai.usage.cache_write.input_tokens
       note: |
         The value SHOULD be included in `gen_ai.usage.input_tokens`.
       provenance:
@@ -10867,10 +10867,10 @@ refinements:
         recommended: when the provider reports it
       stability: development
       type: int
-    - brief: The number of input tokens written to a provider-managed cache this turn.
+    - brief: The number of input tokens served from a provider-managed cache.
       examples:
-      - 25
-      key: gen_ai.usage.cache_creation.input_tokens
+      - 50
+      key: gen_ai.usage.cache_read.input_tokens
       note: |
         The value SHOULD be included in `gen_ai.usage.input_tokens`.
       provenance:
@@ -10878,10 +10878,10 @@ refinements:
       requirement_level: recommended
       stability: development
       type: int
-    - brief: The number of input tokens served from a provider-managed cache.
+    - brief: The number of input tokens written to a provider-managed cache this turn.
       examples:
-      - 50
-      key: gen_ai.usage.cache_read.input_tokens
+      - 25
+      key: gen_ai.usage.cache_write.input_tokens
       note: |
         The value SHOULD be included in `gen_ai.usage.input_tokens`.
       provenance:
@@ -13626,23 +13626,23 @@ refinements:
         recommended: when the provider reports it
       stability: development
       type: int
-    - brief: The number of input tokens written to a provider-managed cache this turn.
-      examples:
-      - 25
-      key: gen_ai.usage.cache_creation.input_tokens
-      note: |
-        The value SHOULD be included in `gen_ai.usage.input_tokens`.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level: recommended
-      stability: development
-      type: int
     - brief: The number of input tokens served from a provider-managed cache.
       examples:
       - 50
       key: gen_ai.usage.cache_read.input_tokens
       note: |
         Corresponds to `usage.input_tokens_details.cached_tokens` or a similar property in the model response.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: recommended
+      stability: development
+      type: int
+    - brief: The number of input tokens written to a provider-managed cache this turn.
+      examples:
+      - 25
+      key: gen_ai.usage.cache_write.input_tokens
+      note: |
+        The value SHOULD be included in `gen_ai.usage.input_tokens`.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level: recommended
@@ -14569,7 +14569,7 @@ registry:
     examples:
     - none
     - read
-    - creation
+    - write
     key: gen_ai.token.cache
     note: |
       Applies only to input tokens.
@@ -14587,9 +14587,9 @@ registry:
         stability: development
         value: read
       - brief: Tokens written to a provider-managed cache this turn.
-        id: creation
+        id: write
         stability: development
-        value: creation
+        value: write
   - brief: The modality of the tokens being counted.
     examples:
     - text
@@ -14811,20 +14811,20 @@ registry:
       path: ./model/gen-ai/registry.yaml
     stability: development
     type: int
-  - brief: The number of input tokens written to a provider-managed cache this turn.
+  - brief: The number of input tokens served from a provider-managed cache.
     examples:
-    - 25
-    key: gen_ai.usage.cache_creation.input_tokens
+    - 50
+    key: gen_ai.usage.cache_read.input_tokens
     note: |
       The value SHOULD be included in `gen_ai.usage.input_tokens`.
     provenance:
       path: ./model/gen-ai/registry.yaml
     stability: development
     type: int
-  - brief: The number of input tokens served from a provider-managed cache.
+  - brief: The number of input tokens written to a provider-managed cache this turn.
     examples:
-    - 50
-    key: gen_ai.usage.cache_read.input_tokens
+    - 25
+    key: gen_ai.usage.cache_write.input_tokens
     note: |
       The value SHOULD be included in `gen_ai.usage.input_tokens`.
     provenance:
@@ -15754,10 +15754,10 @@ registry:
         recommended: when the provider reports it
       stability: development
       type: int
-    - brief: The number of input tokens written to a provider-managed cache this turn.
+    - brief: The number of input tokens served from a provider-managed cache.
       examples:
-      - 25
-      key: gen_ai.usage.cache_creation.input_tokens
+      - 50
+      key: gen_ai.usage.cache_read.input_tokens
       note: |
         The value SHOULD be included in `gen_ai.usage.input_tokens`.
       provenance:
@@ -15765,10 +15765,10 @@ registry:
       requirement_level: recommended
       stability: development
       type: int
-    - brief: The number of input tokens served from a provider-managed cache.
+    - brief: The number of input tokens written to a provider-managed cache this turn.
       examples:
-      - 50
-      key: gen_ai.usage.cache_read.input_tokens
+      - 25
+      key: gen_ai.usage.cache_write.input_tokens
       note: |
         The value SHOULD be included in `gen_ai.usage.input_tokens`.
       provenance:
@@ -16243,7 +16243,7 @@ registry:
       examples:
       - none
       - read
-      - creation
+      - write
       key: gen_ai.token.cache
       note: |
         Applies only to input tokens.
@@ -16262,9 +16262,9 @@ registry:
           stability: development
           value: read
         - brief: Tokens written to a provider-managed cache this turn.
-          id: creation
+          id: write
           stability: development
-          value: creation
+          value: write
     - brief: GenAI server address.
       examples:
       - example.com
@@ -21493,10 +21493,10 @@ registry:
         recommended: when the provider reports it
       stability: development
       type: int
-    - brief: The number of input tokens written to a provider-managed cache this turn.
+    - brief: The number of input tokens served from a provider-managed cache.
       examples:
-      - 25
-      key: gen_ai.usage.cache_creation.input_tokens
+      - 50
+      key: gen_ai.usage.cache_read.input_tokens
       note: |
         The value SHOULD be included in `gen_ai.usage.input_tokens`.
       provenance:
@@ -21504,10 +21504,10 @@ registry:
       requirement_level: recommended
       stability: development
       type: int
-    - brief: The number of input tokens served from a provider-managed cache.
+    - brief: The number of input tokens written to a provider-managed cache this turn.
       examples:
-      - 50
-      key: gen_ai.usage.cache_read.input_tokens
+      - 25
+      key: gen_ai.usage.cache_write.input_tokens
       note: |
         The value SHOULD be included in `gen_ai.usage.input_tokens`.
       provenance:
@@ -22276,10 +22276,10 @@ registry:
         recommended: when the provider reports it
       stability: development
       type: int
-    - brief: The number of input tokens written to a provider-managed cache this turn.
+    - brief: The number of input tokens served from a provider-managed cache.
       examples:
-      - 25
-      key: gen_ai.usage.cache_creation.input_tokens
+      - 50
+      key: gen_ai.usage.cache_read.input_tokens
       note: |
         The value SHOULD be included in `gen_ai.usage.input_tokens`.
       provenance:
@@ -22287,10 +22287,10 @@ registry:
       requirement_level: recommended
       stability: development
       type: int
-    - brief: The number of input tokens served from a provider-managed cache.
+    - brief: The number of input tokens written to a provider-managed cache this turn.
       examples:
-      - 50
-      key: gen_ai.usage.cache_read.input_tokens
+      - 25
+      key: gen_ai.usage.cache_write.input_tokens
       note: |
         The value SHOULD be included in `gen_ai.usage.input_tokens`.
       provenance:
@@ -23046,10 +23046,10 @@ registry:
         recommended: when the provider reports it
       stability: development
       type: int
-    - brief: The number of input tokens written to a provider-managed cache this turn.
+    - brief: The number of input tokens served from a provider-managed cache.
       examples:
-      - 25
-      key: gen_ai.usage.cache_creation.input_tokens
+      - 50
+      key: gen_ai.usage.cache_read.input_tokens
       note: |
         The value SHOULD be included in `gen_ai.usage.input_tokens`.
       provenance:
@@ -23057,10 +23057,10 @@ registry:
       requirement_level: recommended
       stability: development
       type: int
-    - brief: The number of input tokens served from a provider-managed cache.
+    - brief: The number of input tokens written to a provider-managed cache this turn.
       examples:
-      - 50
-      key: gen_ai.usage.cache_read.input_tokens
+      - 25
+      key: gen_ai.usage.cache_write.input_tokens
       note: |
         The value SHOULD be included in `gen_ai.usage.input_tokens`.
       provenance:
