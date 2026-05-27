@@ -662,7 +662,7 @@ def run_image_generation_reference(client):
             if text_input is not None:
                 span.set_attribute("gen_ai.usage.text.input_tokens", text_input)
             image_input = getattr(input_details, "image_tokens", None)
-            if image_input is not None and image_input > 0:
+            if image_input is not None:
                 span.set_attribute("gen_ai.usage.image.input_tokens", image_input)
             # GPT Image: output_tokens are entirely image-modality tokens
             # (the generated image is tokenized for billing).
@@ -682,7 +682,7 @@ def run_image_generation_reference(client):
             if text_input is not None:
                 event_attrs["gen_ai.usage.text.input_tokens"] = text_input
             image_input = getattr(input_details, "image_tokens", None)
-            if image_input is not None and image_input > 0:
+            if image_input is not None:
                 event_attrs["gen_ai.usage.image.input_tokens"] = image_input
             event_attrs["gen_ai.usage.image.output_tokens"] = resp.usage.output_tokens
         if host:

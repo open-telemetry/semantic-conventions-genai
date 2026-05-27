@@ -40,7 +40,7 @@
 | gen_ai.usage.audio.output_tokens | [openai] |
 | gen_ai.usage.cache_creation.input_tokens | [anthropic] |
 | gen_ai.usage.cache_read.input_tokens | [anthropic], [openai] |
-| gen_ai.usage.image.input_tokens | [google-genai] |
+| gen_ai.usage.image.input_tokens | [google-genai], [openai] |
 | gen_ai.usage.image.output_tokens | [openai] |
 | gen_ai.usage.input_tokens | [anthropic], [autogen], [aws-bedrock], [azure-ai-inference], [azure-openai], [claude-agent-sdk], [cohere], [crewai], [dspy], [google-adk], [google-genai], [groq], [instructor], [langchain], [litellm], [llamaindex], [mistralai], [openai], [openai-agents], [pydantic-ai], [vertexai] |
 | gen_ai.usage.output_tokens | [anthropic], [autogen], [aws-bedrock], [azure-ai-inference], [azure-openai], [claude-agent-sdk], [cohere], [crewai], [dspy], [google-adk], [google-genai], [groq], [instructor], [langchain], [litellm], [llamaindex], [mistralai], [openai], [openai-agents], [pydantic-ai], [vertexai] |
