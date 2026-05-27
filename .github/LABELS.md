@@ -49,10 +49,9 @@ semantics; apply both when both apply.
 
 ### `area:messages`
 
-Shape and content of input and output messages: message and message-
-part structure, system instructions, content modalities (text, image,
-audio, video, file), citations, reasoning content, and prompt
-templates.
+Shape and content of input and output messages: message and message-part
+structure, system instructions, content modalities (text, image,
+audio, video, file), citations, reasoning content, and prompt templates.
 
 ### `area:retrieval`
 
