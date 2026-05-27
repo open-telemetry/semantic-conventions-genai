@@ -17,9 +17,12 @@ DASHBOARD_LABEL = "dashboard"
 
 
 # GraphQL is used instead of the REST `/repos/{repo}/issues` list endpoint
-# because that endpoint has been observed to omit pinned issues from its
-# results, which would cause this script to create a duplicate dashboard
-# issue instead of updating the existing one.
+# because that endpoint has been observed to sometimes omit the existing
+# open, `dashboard`-labeled issue from its results (across every sort, page
+# size, and `since` variant), even though `GET /repos/{repo}/issues/<n>` and
+# the GraphQL `repository.issues` connection both still return it. When that
+# happens via REST, this script would create a duplicate dashboard issue
+# instead of updating the existing one.
 _FIND_DASHBOARD_ISSUE_QUERY = """
 query ($owner: String!, $name: String!, $label: String!, $after: String) {
   repository(owner: $owner, name: $name) {
