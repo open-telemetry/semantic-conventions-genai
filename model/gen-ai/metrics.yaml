@@ -116,6 +116,61 @@ metrics:
       - ref: gen_ai.workflow.name
         requirement_level:
           conditionally_required: If available.
+  - name: gen_ai.agent.request.size
+    annotations:
+      code_generation:
+        metric_value_type: int
+    brief: 'GenAI agent request size.'
+    note: |
+      This metric measures the size, in bytes, of the input payload provided to
+      a GenAI agent at invocation time (for example, the user message that
+      triggered the agent).
+
+      Instrumentations SHOULD compute the size as the byte length of the
+      serialized request content as the agent receives it. For multi-part
+      content (for example, text plus inline binary data), the size SHOULD be
+      the sum of the byte lengths of each part.
+
+      This metric is intended for instrumentations of agent frameworks that
+      can reliably observe an agent's input payload (for example, ADK,
+      LangChain agents, CrewAI agents).
+    instrument: histogram
+    unit: "By"
+    stability: development
+    attributes:
+      - ref: gen_ai.agent.name
+        requirement_level:
+          conditionally_required: when available
+      - ref: gen_ai.agent.version
+        requirement_level:
+          conditionally_required: when available
+  - name: gen_ai.agent.response.size
+    annotations:
+      code_generation:
+        metric_value_type: int
+    brief: 'GenAI agent response size.'
+    note: |
+      This metric measures the size, in bytes, of the final response payload
+      produced by a GenAI agent for a single invocation.
+
+      Instrumentations SHOULD compute the size as the byte length of the
+      serialized response content as it leaves the agent. For multi-part
+      content (for example, text plus inline binary data), the size SHOULD be
+      the sum of the byte lengths of each part.
+
+      This metric is intended for instrumentations of agent frameworks that
+      can reliably observe an agent's final response (for example, ADK,
+      LangChain agents, CrewAI agents).
+    instrument: histogram
+    unit: "By"
+    stability: development
+    attributes:
+      - ref: gen_ai.agent.name
+        requirement_level:
+          conditionally_required: when available
+      - ref: gen_ai.agent.version
+        requirement_level:
+          conditionally_required: when available
 
 metric_refinements:
   - id: openai.client.token.usage
