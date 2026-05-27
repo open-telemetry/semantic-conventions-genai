@@ -31,6 +31,9 @@
   ([#126](https://github.com/open-telemetry/semantic-conventions-genai/pull/126))
 - Add `moonshot_ai` to `gen_ai.provider.name` well-known values.
   ([#99](https://github.com/open-telemetry/semantic-conventions-genai/pull/99))
+- Add `gen_ai.workflow.steps` metric to track the number of discrete steps
+  observed within a single GenAI workflow.
+  ([#203](https://github.com/open-telemetry/semantic-conventions-genai/pull/203))
 
 ### 🧰 Bug fixes 🧰
 

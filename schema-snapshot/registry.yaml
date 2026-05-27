@@ -2562,6 +2562,75 @@ refinements:
       path: ./model/gen-ai/metrics.yaml
     stability: development
     unit: s
+  - annotations:
+      code_generation:
+        metric_value_type: int
+    attributes:
+    - brief: Human-readable name of the GenAI agent provided by the application.
+      examples:
+      - Math Tutor
+      - Fiction Writer
+      key: gen_ai.agent.name
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: when available
+      stability: development
+      type: string
+    - brief: The version of the GenAI agent.
+      examples:
+      - 1.0.0
+      - 2025-05-01
+      key: gen_ai.agent.version
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: when available
+      stability: development
+      type: string
+    - brief: Human-readable name of the GenAI workflow provided by the application.
+      examples:
+      - multi_agent_rag
+      - customer_support_pipeline
+      key: gen_ai.workflow.name
+      note: |
+        This attribute can be populated in different frameworks; for example, as the name of the first chain in LangChain or the name of the crew in CrewAI.
+        The workflow name is usually provided by the application in a way that is specific to the generative AI framework or library that orchestrates the workflow.
+        It is usually a static name that is expected to be unique within an application.
+
+        `gen_ai.workflow.name` MUST have low cardinality.
+        Semantic conventions for individual Generative AI frameworks SHOULD document what `gen_ai.workflow.name` means in the context of that framework.
+        If there is no low-cardinality workflow name available for a given framework, this attribute MUST NOT be captured by default.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: If available.
+      stability: development
+      type: string
+    brief: Number of steps in a single GenAI workflow.
+    id: gen_ai.workflow.steps
+    instrument: histogram
+    name: gen_ai.workflow.steps
+    note: |
+      This metric measures the number of discrete steps observed within a
+      single GenAI workflow. A "step" is intentionally framework-defined: it
+      typically corresponds to a single observable event emitted within the
+      workflow (for example, a tool call, a tool result, or a model response
+      in ADK; a node execution in LangGraph).
+
+      When the `gen_ai.agent.name` dimension is set, instrumentations SHOULD
+      only count steps attributed to that agent (for example, events
+      authored by that agent); events attributed to sub-agents or to a
+      parent workflow SHOULD NOT be counted.
+
+      This metric complements `gen_ai.workflow.duration` by giving operators
+      visibility into how "chatty" or compute-intensive a workflow is, and
+      is useful for capacity planning and regression detection across
+      versions.
+    provenance:
+      path: ./model/gen-ai/metrics.yaml
+    stability: development
+    unit: \u0027{step}\u0027
   - attributes:
     - brief: |
         Describes a class of error the operation ended with.
@@ -15692,6 +15761,74 @@ registry:
       path: ./model/gen-ai/metrics.yaml
     stability: development
     unit: s
+  - annotations:
+      code_generation:
+        metric_value_type: int
+    attributes:
+    - brief: Human-readable name of the GenAI agent provided by the application.
+      examples:
+      - Math Tutor
+      - Fiction Writer
+      key: gen_ai.agent.name
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: when available
+      stability: development
+      type: string
+    - brief: The version of the GenAI agent.
+      examples:
+      - 1.0.0
+      - 2025-05-01
+      key: gen_ai.agent.version
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: when available
+      stability: development
+      type: string
+    - brief: Human-readable name of the GenAI workflow provided by the application.
+      examples:
+      - multi_agent_rag
+      - customer_support_pipeline
+      key: gen_ai.workflow.name
+      note: |
+        This attribute can be populated in different frameworks; for example, as the name of the first chain in LangChain or the name of the crew in CrewAI.
+        The workflow name is usually provided by the application in a way that is specific to the generative AI framework or library that orchestrates the workflow.
+        It is usually a static name that is expected to be unique within an application.
+
+        `gen_ai.workflow.name` MUST have low cardinality.
+        Semantic conventions for individual Generative AI frameworks SHOULD document what `gen_ai.workflow.name` means in the context of that framework.
+        If there is no low-cardinality workflow name available for a given framework, this attribute MUST NOT be captured by default.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: If available.
+      stability: development
+      type: string
+    brief: Number of steps in a single GenAI workflow.
+    instrument: histogram
+    name: gen_ai.workflow.steps
+    note: |
+      This metric measures the number of discrete steps observed within a
+      single GenAI workflow. A "step" is intentionally framework-defined: it
+      typically corresponds to a single observable event emitted within the
+      workflow (for example, a tool call, a tool result, or a model response
+      in ADK; a node execution in LangGraph).
+
+      When the `gen_ai.agent.name` dimension is set, instrumentations SHOULD
+      only count steps attributed to that agent (for example, events
+      authored by that agent); events attributed to sub-agents or to a
+      parent workflow SHOULD NOT be counted.
+
+      This metric complements `gen_ai.workflow.duration` by giving operators
+      visibility into how "chatty" or compute-intensive a workflow is, and
+      is useful for capacity planning and regression detection across
+      versions.
+    provenance:
+      path: ./model/gen-ai/metrics.yaml
+    stability: development
+    unit: \u0027{step}\u0027
   - attributes:
     - brief: |
         Describes a class of error the operation ended with.

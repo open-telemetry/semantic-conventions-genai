@@ -116,6 +116,40 @@ metrics:
       - ref: gen_ai.workflow.name
         requirement_level:
           conditionally_required: If available.
+  - name: gen_ai.workflow.steps
+    annotations:
+      code_generation:
+        metric_value_type: int
+    brief: 'Number of steps in a single GenAI workflow.'
+    note: |
+      This metric measures the number of discrete steps observed within a
+      single GenAI workflow. A "step" is intentionally framework-defined: it
+      typically corresponds to a single observable event emitted within the
+      workflow (for example, a tool call, a tool result, or a model response
+      in ADK; a node execution in LangGraph).
+
+      When the `gen_ai.agent.name` dimension is set, instrumentations SHOULD
+      only count steps attributed to that agent (for example, events
+      authored by that agent); events attributed to sub-agents or to a
+      parent workflow SHOULD NOT be counted.
+
+      This metric complements `gen_ai.workflow.duration` by giving operators
+      visibility into how "chatty" or compute-intensive a workflow is, and
+      is useful for capacity planning and regression detection across
+      versions.
+    instrument: histogram
+    unit: "{step}"
+    stability: development
+    attributes:
+      - ref: gen_ai.workflow.name
+        requirement_level:
+          conditionally_required: If available.
+      - ref: gen_ai.agent.name
+        requirement_level:
+          conditionally_required: when available
+      - ref: gen_ai.agent.version
+        requirement_level:
+          conditionally_required: when available
 
 metric_refinements:
   - id: openai.client.token.usage
