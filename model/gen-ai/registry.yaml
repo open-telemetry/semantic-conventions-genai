@@ -311,6 +311,17 @@ attributes:
     brief: Name of the tool utilized by the agent.
     examples: ["Flights"]
     stability: development
+  - key: gen_ai.tool.version
+    type: string
+    brief: The version of the tool utilized by the agent.
+    note: |
+      The tool version is usually provided by the application that defines the
+      tool. It is typically a static value (for example, a release tag of the
+      tool's package) and is expected to have low cardinality.
+
+      `gen_ai.tool.version` MUST have low cardinality.
+    examples: ["1.0.0", "2025-05-01"]
+    stability: development
   - key: gen_ai.tool.call.id
     type: string
     brief: The tool call identifier.

@@ -116,6 +116,56 @@ metrics:
       - ref: gen_ai.workflow.name
         requirement_level:
           conditionally_required: If available.
+  - name: gen_ai.agent.invocation.duration
+    annotations:
+      code_generation:
+        metric_value_type: double
+    brief: 'GenAI agent invocation duration.'
+    note: >
+      This metric measures the end-to-end duration of a single agent invocation,
+      from the moment the agent is invoked to the moment it produces its final
+      response (or terminates with an error).
+
+      When this metric is reported alongside a `gen_ai.invoke_agent` span, the
+      metric value SHOULD be the same as the span duration.
+    instrument: histogram
+    unit: "s"
+    stability: development
+    attributes:
+      - ref_group: attributes.gen_ai.error
+      - ref: gen_ai.agent.name
+        requirement_level:
+          conditionally_required: when available
+      - ref: gen_ai.agent.version
+        requirement_level:
+          conditionally_required: when available
+  - name: gen_ai.tool.execution.duration
+    annotations:
+      code_generation:
+        metric_value_type: double
+    brief: 'GenAI tool execution duration.'
+    note: >
+      This metric measures the duration of a single tool execution performed by
+      or on behalf of a GenAI agent.
+
+      When this metric is reported alongside a `gen_ai.execute_tool` span, the
+      metric value SHOULD be the same as the span duration.
+    instrument: histogram
+    unit: "s"
+    stability: development
+    attributes:
+      - ref_group: attributes.gen_ai.error
+      - ref: gen_ai.tool.name
+        requirement_level: required
+      - ref: gen_ai.tool.version
+        requirement_level:
+          conditionally_required: when available
+      - ref: gen_ai.agent.name
+        requirement_level:
+          conditionally_required: when available
+      - ref: gen_ai.agent.version
+        requirement_level:
+          conditionally_required: when available
 
 metric_refinements:
   - id: openai.client.token.usage

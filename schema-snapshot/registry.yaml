@@ -892,6 +892,65 @@ refinements:
           id: other
           stability: stable
           value: _OTHER
+    - brief: Human-readable name of the GenAI agent provided by the application.
+      examples:
+      - Math Tutor
+      - Fiction Writer
+      key: gen_ai.agent.name
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: when available
+      stability: development
+      type: string
+    - brief: The version of the GenAI agent.
+      examples:
+      - 1.0.0
+      - 2025-05-01
+      key: gen_ai.agent.version
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: when available
+      stability: development
+      type: string
+    brief: GenAI agent invocation duration.
+    id: gen_ai.agent.invocation.duration
+    instrument: histogram
+    name: gen_ai.agent.invocation.duration
+    note: |
+      This metric measures the end-to-end duration of a single agent invocation, from the moment the agent is invoked to the moment it produces its final response (or terminates with an error).
+      When this metric is reported alongside a `gen_ai.invoke_agent` span, the metric value SHOULD be the same as the span duration.
+    provenance:
+      path: ./model/gen-ai/metrics.yaml
+    stability: development
+    unit: s
+  - annotations:
+      code_generation:
+        metric_value_type: double
+    attributes:
+    - brief: |
+        Describes a class of error the operation ended with.
+      examples:
+      - timeout
+      - java.net.UnknownHostException
+      - server_certificate_invalid
+      - \u0027500\u0027
+      key: error.type
+      note: |
+        The `error.type` SHOULD match the error code returned by the Generative AI provider or the client library,
+        the canonical name of exception that occurred, or another low-cardinality error identifier.
+        Instrumentations SHOULD document the list of errors they report.
+      requirement_level:
+        conditionally_required: if the operation ended in an error
+      stability: stable
+      type:
+        members:
+        - brief: |
+            A fallback error value to be used when the instrumentation doesn\u0027t define a custom value.
+          id: other
+          stability: stable
+          value: _OTHER
     - brief: The name of the operation being performed.
       key: gen_ai.operation.name
       note: |
@@ -2556,6 +2615,91 @@ refinements:
         Instrumentations SHOULD document the list of errors they report.
       requirement_level:
         conditionally_required: If the operation ended in an error.
+      stability: stable
+      type:
+        members:
+        - brief: |
+            A fallback error value to be used when the instrumentation doesn\u0027t define a custom value.
+          id: other
+          stability: stable
+          value: _OTHER
+    - brief: Human-readable name of the GenAI agent provided by the application.
+      examples:
+      - Math Tutor
+      - Fiction Writer
+      key: gen_ai.agent.name
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: when available
+      stability: development
+      type: string
+    - brief: The version of the GenAI agent.
+      examples:
+      - 1.0.0
+      - 2025-05-01
+      key: gen_ai.agent.version
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: when available
+      stability: development
+      type: string
+    - brief: Name of the tool utilized by the agent.
+      examples:
+      - Flights
+      key: gen_ai.tool.name
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: required
+      stability: development
+      type: string
+    - brief: The version of the tool utilized by the agent.
+      examples:
+      - 1.0.0
+      - 2025-05-01
+      key: gen_ai.tool.version
+      note: |
+        The tool version is usually provided by the application that defines the
+        tool. It is typically a static value (for example, a release tag of the
+        tool\u0027s package) and is expected to have low cardinality.
+
+        `gen_ai.tool.version` MUST have low cardinality.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: when available
+      stability: development
+      type: string
+    brief: GenAI tool execution duration.
+    id: gen_ai.tool.execution.duration
+    instrument: histogram
+    name: gen_ai.tool.execution.duration
+    note: |
+      This metric measures the duration of a single tool execution performed by or on behalf of a GenAI agent.
+      When this metric is reported alongside a `gen_ai.execute_tool` span, the metric value SHOULD be the same as the span duration.
+    provenance:
+      path: ./model/gen-ai/metrics.yaml
+    stability: development
+    unit: s
+  - annotations:
+      code_generation:
+        metric_value_type: double
+    attributes:
+    - brief: |
+        Describes a class of error the operation ended with.
+      examples:
+      - timeout
+      - java.net.UnknownHostException
+      - server_certificate_invalid
+      - \u0027500\u0027
+      key: error.type
+      note: |
+        The `error.type` SHOULD match the error code returned by the Generative AI provider or the client library,
+        the canonical name of exception that occurred, or another low-cardinality error identifier.
+        Instrumentations SHOULD document the list of errors they report.
+      requirement_level:
+        conditionally_required: if the operation ended in an error
       stability: stable
       type:
         members:
@@ -12966,6 +13110,21 @@ registry:
       path: ./model/gen-ai/registry.yaml
     stability: development
     type: string
+  - brief: The version of the tool utilized by the agent.
+    examples:
+    - 1.0.0
+    - 2025-05-01
+    key: gen_ai.tool.version
+    note: |
+      The tool version is usually provided by the application that defines the
+      tool. It is typically a static value (for example, a release tag of the
+      tool\u0027s package) and is expected to have low cardinality.
+
+      `gen_ai.tool.version` MUST have low cardinality.
+    provenance:
+      path: ./model/gen-ai/registry.yaml
+    stability: development
+    type: string
   - brief: The number of input tokens written to a provider-managed cache.
     examples:
     - 25
@@ -14136,6 +14295,64 @@ registry:
         Instrumentations SHOULD document the list of errors they report.
       requirement_level:
         conditionally_required: If the operation ended in an error.
+      stability: stable
+      type:
+        members:
+        - brief: |
+            A fallback error value to be used when the instrumentation doesn\u0027t define a custom value.
+          id: other
+          stability: stable
+          value: _OTHER
+    - brief: Human-readable name of the GenAI agent provided by the application.
+      examples:
+      - Math Tutor
+      - Fiction Writer
+      key: gen_ai.agent.name
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: when available
+      stability: development
+      type: string
+    - brief: The version of the GenAI agent.
+      examples:
+      - 1.0.0
+      - 2025-05-01
+      key: gen_ai.agent.version
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: when available
+      stability: development
+      type: string
+    brief: GenAI agent invocation duration.
+    instrument: histogram
+    name: gen_ai.agent.invocation.duration
+    note: |
+      This metric measures the end-to-end duration of a single agent invocation, from the moment the agent is invoked to the moment it produces its final response (or terminates with an error).
+      When this metric is reported alongside a `gen_ai.invoke_agent` span, the metric value SHOULD be the same as the span duration.
+    provenance:
+      path: ./model/gen-ai/metrics.yaml
+    stability: development
+    unit: s
+  - annotations:
+      code_generation:
+        metric_value_type: double
+    attributes:
+    - brief: |
+        Describes a class of error the operation ended with.
+      examples:
+      - timeout
+      - java.net.UnknownHostException
+      - server_certificate_invalid
+      - \u0027500\u0027
+      key: error.type
+      note: |
+        The `error.type` SHOULD match the error code returned by the Generative AI provider or the client library,
+        the canonical name of exception that occurred, or another low-cardinality error identifier.
+        Instrumentations SHOULD document the list of errors they report.
+      requirement_level:
+        conditionally_required: if the operation ended in an error
       stability: stable
       type:
         members:
@@ -15801,6 +16018,90 @@ registry:
         Instrumentations SHOULD document the list of errors they report.
       requirement_level:
         conditionally_required: If the operation ended in an error.
+      stability: stable
+      type:
+        members:
+        - brief: |
+            A fallback error value to be used when the instrumentation doesn\u0027t define a custom value.
+          id: other
+          stability: stable
+          value: _OTHER
+    - brief: Human-readable name of the GenAI agent provided by the application.
+      examples:
+      - Math Tutor
+      - Fiction Writer
+      key: gen_ai.agent.name
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: when available
+      stability: development
+      type: string
+    - brief: The version of the GenAI agent.
+      examples:
+      - 1.0.0
+      - 2025-05-01
+      key: gen_ai.agent.version
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: when available
+      stability: development
+      type: string
+    - brief: Name of the tool utilized by the agent.
+      examples:
+      - Flights
+      key: gen_ai.tool.name
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: required
+      stability: development
+      type: string
+    - brief: The version of the tool utilized by the agent.
+      examples:
+      - 1.0.0
+      - 2025-05-01
+      key: gen_ai.tool.version
+      note: |
+        The tool version is usually provided by the application that defines the
+        tool. It is typically a static value (for example, a release tag of the
+        tool\u0027s package) and is expected to have low cardinality.
+
+        `gen_ai.tool.version` MUST have low cardinality.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: when available
+      stability: development
+      type: string
+    brief: GenAI tool execution duration.
+    instrument: histogram
+    name: gen_ai.tool.execution.duration
+    note: |
+      This metric measures the duration of a single tool execution performed by or on behalf of a GenAI agent.
+      When this metric is reported alongside a `gen_ai.execute_tool` span, the metric value SHOULD be the same as the span duration.
+    provenance:
+      path: ./model/gen-ai/metrics.yaml
+    stability: development
+    unit: s
+  - annotations:
+      code_generation:
+        metric_value_type: double
+    attributes:
+    - brief: |
+        Describes a class of error the operation ended with.
+      examples:
+      - timeout
+      - java.net.UnknownHostException
+      - server_certificate_invalid
+      - \u0027500\u0027
+      key: error.type
+      note: |
+        The `error.type` SHOULD match the error code returned by the Generative AI provider or the client library,
+        the canonical name of exception that occurred, or another low-cardinality error identifier.
+        Instrumentations SHOULD document the list of errors they report.
+      requirement_level:
+        conditionally_required: if the operation ended in an error
       stability: stable
       type:
         members:
