@@ -486,8 +486,7 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 
 ### Metric: `gen_ai.client.inference.operation.tokens`
 
-This metric is [recommended][MetricRecommended] when the provider reports token
-usage for the inference call.
+This metric is [Opt-In][MetricOptIn].
 
 This metric SHOULD be specified with [ExplicitBucketBoundaries] of [1, 4, 16, 64, 256, 1024, 4096, 16384, 65536, 262144, 1048576, 4194304, 16777216, 67108864].
 
