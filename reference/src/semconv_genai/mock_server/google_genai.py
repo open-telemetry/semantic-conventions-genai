@@ -64,10 +64,16 @@ MULTIMODAL_RESPONSE = {
         "promptTokenCount": 35,
         "candidatesTokenCount": 12,
         "totalTokenCount": 47,
+        "cachedContentTokenCount": 15,
         "promptTokensDetails": [
             {"modality": "TEXT", "tokenCount": 20},
             {"modality": "IMAGE", "tokenCount": 10},
             {"modality": "VIDEO", "tokenCount": 5},
+        ],
+        "cacheTokensDetails": [
+            {"modality": "TEXT", "tokenCount": 8},
+            {"modality": "IMAGE", "tokenCount": 4},
+            {"modality": "VIDEO", "tokenCount": 3},
         ],
         "candidatesTokensDetails": [
             {"modality": "TEXT", "tokenCount": 12},

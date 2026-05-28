@@ -590,6 +590,18 @@ refinements:
       requirement_level: opt_in
       stability: development
       type: any
+    - brief: The number of audio-modality input tokens served from a provider-managed cache.
+      examples:
+      - 20
+      key: gen_ai.usage.audio.cache_read.input_tokens
+      note: |
+        The value is a subset of both `gen_ai.usage.audio.input_tokens` and `gen_ai.usage.cache_read.input_tokens`. Instrumentations MUST only set this attribute when the provider reports the audio-modality cached input token count.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: when the provider reports it
+      stability: development
+      type: int
     - brief: The number of input tokens that the provider reported as audio modality.
       examples:
       - 10
@@ -634,6 +646,18 @@ refinements:
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level: recommended
+      stability: development
+      type: int
+    - brief: The number of image-modality input tokens served from a provider-managed cache.
+      examples:
+      - 10
+      key: gen_ai.usage.image.cache_read.input_tokens
+      note: |
+        The value is a subset of both `gen_ai.usage.image.input_tokens` and `gen_ai.usage.cache_read.input_tokens`. Instrumentations MUST only set this attribute when the provider reports the image-modality cached input token count.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: when the provider reports it
       stability: development
       type: int
     - brief: The number of input tokens that the provider reported as image modality.
@@ -695,6 +719,18 @@ refinements:
         recommended: when applicable
       stability: development
       type: int
+    - brief: The number of text-modality input tokens served from a provider-managed cache.
+      examples:
+      - 30
+      key: gen_ai.usage.text.cache_read.input_tokens
+      note: |
+        The value is a subset of both `gen_ai.usage.text.input_tokens` and `gen_ai.usage.cache_read.input_tokens`. Instrumentations MUST only set this attribute when the provider reports the text-modality cached input token count.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: when the provider reports it
+      stability: development
+      type: int
     - brief: The number of input tokens that the provider reported as text modality.
       examples:
       - 90
@@ -713,6 +749,18 @@ refinements:
       key: gen_ai.usage.text.output_tokens
       note: |
         The value is a subset of `gen_ai.usage.output_tokens`. Instrumentations MUST only set this attribute when the provider reports the text-modality output token count.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: when the provider reports it
+      stability: development
+      type: int
+    - brief: The number of video-modality input tokens served from a provider-managed cache.
+      examples:
+      - 10
+      key: gen_ai.usage.video.cache_read.input_tokens
+      note: |
+        The value is a subset of both `gen_ai.usage.video.input_tokens` and `gen_ai.usage.cache_read.input_tokens`. Instrumentations MUST only set this attribute when the provider reports the video-modality cached input token count.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
@@ -1128,6 +1176,44 @@ refinements:
           id: write
           stability: development
           value: write
+    - brief: The modality of the tokens being counted.
+      examples:
+      - text
+      - audio
+      - unknown
+      key: gen_ai.token.modality
+      note: |
+        Use `unknown` when the provider does not report a modality breakdown.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: required
+      stability: development
+      type:
+        members:
+        - brief: Text tokens.
+          id: text
+          stability: development
+          value: text
+        - brief: Image tokens.
+          id: image
+          stability: development
+          value: image
+        - brief: Audio tokens.
+          id: audio
+          stability: development
+          value: audio
+        - brief: Video tokens.
+          id: video
+          stability: development
+          value: video
+        - brief: Document tokens.
+          id: document
+          stability: development
+          value: document
+        - brief: Tokens of unknown or unreported modality.
+          id: unknown
+          stability: development
+          value: unknown
     - brief: GenAI server address.
       examples:
       - example.com
@@ -1151,17 +1237,21 @@ refinements:
         conditionally_required: If `server.address` is set.
       stability: stable
       type: int
-    brief: Number of input tokens used in client inference operations, partitioned by cache status.
+    brief: Number of input tokens used in client inference operations, partitioned by cache status and modality.
     id: gen_ai.client.inference.input_tokens_by_cache
     instrument: counter
     name: gen_ai.client.inference.input_tokens_by_cache
     note: |
-      When the provider reports no cache fields, instrumentations MUST
-      report the full input total under `gen_ai.token.cache=uncached`.
-
       Per inference call, the total tokens reported on this counter MUST
       equal the total reported on `gen_ai.client.inference.tokens` with
       `gen_ai.token.type=input`.
+
+      When the provider reports no cache fields, instrumentations MUST
+      report the full input total under `gen_ai.token.cache=uncached`.
+
+      When the provider does not report token modality broken down by
+      cache state, instrumentations MUST set
+      `gen_ai.token.modality=unknown` on the cache cells.
     provenance:
       path: ./model/gen-ai/metrics.yaml
     stability: development
@@ -6102,6 +6192,18 @@ refinements:
       requirement_level: opt_in
       stability: development
       type: any
+    - brief: The number of audio-modality input tokens served from a provider-managed cache.
+      examples:
+      - 20
+      key: gen_ai.usage.audio.cache_read.input_tokens
+      note: |
+        The value is a subset of both `gen_ai.usage.audio.input_tokens` and `gen_ai.usage.cache_read.input_tokens`. Instrumentations MUST only set this attribute when the provider reports the audio-modality cached input token count.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: when the provider reports it
+      stability: development
+      type: int
     - brief: The number of input tokens that the provider reported as audio modality.
       examples:
       - 10
@@ -6146,6 +6248,18 @@ refinements:
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level: recommended
+      stability: development
+      type: int
+    - brief: The number of image-modality input tokens served from a provider-managed cache.
+      examples:
+      - 10
+      key: gen_ai.usage.image.cache_read.input_tokens
+      note: |
+        The value is a subset of both `gen_ai.usage.image.input_tokens` and `gen_ai.usage.cache_read.input_tokens`. Instrumentations MUST only set this attribute when the provider reports the image-modality cached input token count.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: when the provider reports it
       stability: development
       type: int
     - brief: The number of input tokens that the provider reported as image modality.
@@ -6204,6 +6318,18 @@ refinements:
         recommended: when applicable
       stability: development
       type: int
+    - brief: The number of text-modality input tokens served from a provider-managed cache.
+      examples:
+      - 30
+      key: gen_ai.usage.text.cache_read.input_tokens
+      note: |
+        The value is a subset of both `gen_ai.usage.text.input_tokens` and `gen_ai.usage.cache_read.input_tokens`. Instrumentations MUST only set this attribute when the provider reports the text-modality cached input token count.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: when the provider reports it
+      stability: development
+      type: int
     - brief: The number of input tokens that the provider reported as text modality.
       examples:
       - 90
@@ -6222,6 +6348,18 @@ refinements:
       key: gen_ai.usage.text.output_tokens
       note: |
         The value is a subset of `gen_ai.usage.output_tokens`. Instrumentations MUST only set this attribute when the provider reports the text-modality output token count.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: when the provider reports it
+      stability: development
+      type: int
+    - brief: The number of video-modality input tokens served from a provider-managed cache.
+      examples:
+      - 10
+      key: gen_ai.usage.video.cache_read.input_tokens
+      note: |
+        The value is a subset of both `gen_ai.usage.video.input_tokens` and `gen_ai.usage.cache_read.input_tokens`. Instrumentations MUST only set this attribute when the provider reports the video-modality cached input token count.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
@@ -6891,6 +7029,18 @@ refinements:
       requirement_level: opt_in
       stability: development
       type: any
+    - brief: The number of audio-modality input tokens served from a provider-managed cache.
+      examples:
+      - 20
+      key: gen_ai.usage.audio.cache_read.input_tokens
+      note: |
+        The value is a subset of both `gen_ai.usage.audio.input_tokens` and `gen_ai.usage.cache_read.input_tokens`. Instrumentations MUST only set this attribute when the provider reports the audio-modality cached input token count.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: when the provider reports it
+      stability: development
+      type: int
     - brief: The number of input tokens that the provider reported as audio modality.
       examples:
       - 10
@@ -6935,6 +7085,18 @@ refinements:
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level: recommended
+      stability: development
+      type: int
+    - brief: The number of image-modality input tokens served from a provider-managed cache.
+      examples:
+      - 10
+      key: gen_ai.usage.image.cache_read.input_tokens
+      note: |
+        The value is a subset of both `gen_ai.usage.image.input_tokens` and `gen_ai.usage.cache_read.input_tokens`. Instrumentations MUST only set this attribute when the provider reports the image-modality cached input token count.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: when the provider reports it
       stability: development
       type: int
     - brief: The number of input tokens that the provider reported as image modality.
@@ -6996,6 +7158,18 @@ refinements:
         recommended: when applicable
       stability: development
       type: int
+    - brief: The number of text-modality input tokens served from a provider-managed cache.
+      examples:
+      - 30
+      key: gen_ai.usage.text.cache_read.input_tokens
+      note: |
+        The value is a subset of both `gen_ai.usage.text.input_tokens` and `gen_ai.usage.cache_read.input_tokens`. Instrumentations MUST only set this attribute when the provider reports the text-modality cached input token count.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: when the provider reports it
+      stability: development
+      type: int
     - brief: The number of input tokens that the provider reported as text modality.
       examples:
       - 90
@@ -7014,6 +7188,18 @@ refinements:
       key: gen_ai.usage.text.output_tokens
       note: |
         The value is a subset of `gen_ai.usage.output_tokens`. Instrumentations MUST only set this attribute when the provider reports the text-modality output token count.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: when the provider reports it
+      stability: development
+      type: int
+    - brief: The number of video-modality input tokens served from a provider-managed cache.
+      examples:
+      - 10
+      key: gen_ai.usage.video.cache_read.input_tokens
+      note: |
+        The value is a subset of both `gen_ai.usage.video.input_tokens` and `gen_ai.usage.cache_read.input_tokens`. Instrumentations MUST only set this attribute when the provider reports the video-modality cached input token count.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
@@ -7682,6 +7868,18 @@ refinements:
       requirement_level: opt_in
       stability: development
       type: any
+    - brief: The number of audio-modality input tokens served from a provider-managed cache.
+      examples:
+      - 20
+      key: gen_ai.usage.audio.cache_read.input_tokens
+      note: |
+        The value is a subset of both `gen_ai.usage.audio.input_tokens` and `gen_ai.usage.cache_read.input_tokens`. Instrumentations MUST only set this attribute when the provider reports the audio-modality cached input token count.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: when the provider reports it
+      stability: development
+      type: int
     - brief: The number of input tokens that the provider reported as audio modality.
       examples:
       - 10
@@ -7726,6 +7924,18 @@ refinements:
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level: recommended
+      stability: development
+      type: int
+    - brief: The number of image-modality input tokens served from a provider-managed cache.
+      examples:
+      - 10
+      key: gen_ai.usage.image.cache_read.input_tokens
+      note: |
+        The value is a subset of both `gen_ai.usage.image.input_tokens` and `gen_ai.usage.cache_read.input_tokens`. Instrumentations MUST only set this attribute when the provider reports the image-modality cached input token count.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: when the provider reports it
       stability: development
       type: int
     - brief: The number of input tokens that the provider reported as image modality.
@@ -7789,6 +7999,18 @@ refinements:
         recommended: when applicable
       stability: development
       type: int
+    - brief: The number of text-modality input tokens served from a provider-managed cache.
+      examples:
+      - 30
+      key: gen_ai.usage.text.cache_read.input_tokens
+      note: |
+        The value is a subset of both `gen_ai.usage.text.input_tokens` and `gen_ai.usage.cache_read.input_tokens`. Instrumentations MUST only set this attribute when the provider reports the text-modality cached input token count.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: when the provider reports it
+      stability: development
+      type: int
     - brief: The number of input tokens that the provider reported as text modality.
       examples:
       - 90
@@ -7807,6 +8029,18 @@ refinements:
       key: gen_ai.usage.text.output_tokens
       note: |
         The value is a subset of `gen_ai.usage.output_tokens`. Instrumentations MUST only set this attribute when the provider reports the text-modality output token count.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: when the provider reports it
+      stability: development
+      type: int
+    - brief: The number of video-modality input tokens served from a provider-managed cache.
+      examples:
+      - 10
+      key: gen_ai.usage.video.cache_read.input_tokens
+      note: |
+        The value is a subset of both `gen_ai.usage.video.input_tokens` and `gen_ai.usage.cache_read.input_tokens`. Instrumentations MUST only set this attribute when the provider reports the video-modality cached input token count.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
@@ -9288,6 +9522,18 @@ refinements:
       requirement_level: opt_in
       stability: development
       type: any
+    - brief: The number of audio-modality input tokens served from a provider-managed cache.
+      examples:
+      - 20
+      key: gen_ai.usage.audio.cache_read.input_tokens
+      note: |
+        The value is a subset of both `gen_ai.usage.audio.input_tokens` and `gen_ai.usage.cache_read.input_tokens`. Instrumentations MUST only set this attribute when the provider reports the audio-modality cached input token count.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: when the provider reports it
+      stability: development
+      type: int
     - brief: The number of input tokens that the provider reported as audio modality.
       examples:
       - 10
@@ -9332,6 +9578,18 @@ refinements:
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level: recommended
+      stability: development
+      type: int
+    - brief: The number of image-modality input tokens served from a provider-managed cache.
+      examples:
+      - 10
+      key: gen_ai.usage.image.cache_read.input_tokens
+      note: |
+        The value is a subset of both `gen_ai.usage.image.input_tokens` and `gen_ai.usage.cache_read.input_tokens`. Instrumentations MUST only set this attribute when the provider reports the image-modality cached input token count.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: when the provider reports it
       stability: development
       type: int
     - brief: The number of input tokens that the provider reported as image modality.
@@ -9393,6 +9651,18 @@ refinements:
         recommended: when applicable
       stability: development
       type: int
+    - brief: The number of text-modality input tokens served from a provider-managed cache.
+      examples:
+      - 30
+      key: gen_ai.usage.text.cache_read.input_tokens
+      note: |
+        The value is a subset of both `gen_ai.usage.text.input_tokens` and `gen_ai.usage.cache_read.input_tokens`. Instrumentations MUST only set this attribute when the provider reports the text-modality cached input token count.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: when the provider reports it
+      stability: development
+      type: int
     - brief: The number of input tokens that the provider reported as text modality.
       examples:
       - 90
@@ -9411,6 +9681,18 @@ refinements:
       key: gen_ai.usage.text.output_tokens
       note: |
         The value is a subset of `gen_ai.usage.output_tokens`. Instrumentations MUST only set this attribute when the provider reports the text-modality output token count.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: when the provider reports it
+      stability: development
+      type: int
+    - brief: The number of video-modality input tokens served from a provider-managed cache.
+      examples:
+      - 10
+      key: gen_ai.usage.video.cache_read.input_tokens
+      note: |
+        The value is a subset of both `gen_ai.usage.video.input_tokens` and `gen_ai.usage.cache_read.input_tokens`. Instrumentations MUST only set this attribute when the provider reports the video-modality cached input token count.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
@@ -10072,6 +10354,18 @@ refinements:
       requirement_level: opt_in
       stability: development
       type: any
+    - brief: The number of audio-modality input tokens served from a provider-managed cache.
+      examples:
+      - 20
+      key: gen_ai.usage.audio.cache_read.input_tokens
+      note: |
+        The value is a subset of both `gen_ai.usage.audio.input_tokens` and `gen_ai.usage.cache_read.input_tokens`. Instrumentations MUST only set this attribute when the provider reports the audio-modality cached input token count.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: when the provider reports it
+      stability: development
+      type: int
     - brief: The number of input tokens that the provider reported as audio modality.
       examples:
       - 10
@@ -10116,6 +10410,18 @@ refinements:
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level: recommended
+      stability: development
+      type: int
+    - brief: The number of image-modality input tokens served from a provider-managed cache.
+      examples:
+      - 10
+      key: gen_ai.usage.image.cache_read.input_tokens
+      note: |
+        The value is a subset of both `gen_ai.usage.image.input_tokens` and `gen_ai.usage.cache_read.input_tokens`. Instrumentations MUST only set this attribute when the provider reports the image-modality cached input token count.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: when the provider reports it
       stability: development
       type: int
     - brief: The number of input tokens that the provider reported as image modality.
@@ -10165,6 +10471,18 @@ refinements:
       requirement_level: recommended
       stability: development
       type: int
+    - brief: The number of text-modality input tokens served from a provider-managed cache.
+      examples:
+      - 30
+      key: gen_ai.usage.text.cache_read.input_tokens
+      note: |
+        The value is a subset of both `gen_ai.usage.text.input_tokens` and `gen_ai.usage.cache_read.input_tokens`. Instrumentations MUST only set this attribute when the provider reports the text-modality cached input token count.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: when the provider reports it
+      stability: development
+      type: int
     - brief: The number of input tokens that the provider reported as text modality.
       examples:
       - 90
@@ -10183,6 +10501,18 @@ refinements:
       key: gen_ai.usage.text.output_tokens
       note: |
         The value is a subset of `gen_ai.usage.output_tokens`. Instrumentations MUST only set this attribute when the provider reports the text-modality output token count.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: when the provider reports it
+      stability: development
+      type: int
+    - brief: The number of video-modality input tokens served from a provider-managed cache.
+      examples:
+      - 10
+      key: gen_ai.usage.video.cache_read.input_tokens
+      note: |
+        The value is a subset of both `gen_ai.usage.video.input_tokens` and `gen_ai.usage.cache_read.input_tokens`. Instrumentations MUST only set this attribute when the provider reports the video-modality cached input token count.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
@@ -10843,6 +11173,18 @@ refinements:
       requirement_level: opt_in
       stability: development
       type: any
+    - brief: The number of audio-modality input tokens served from a provider-managed cache.
+      examples:
+      - 20
+      key: gen_ai.usage.audio.cache_read.input_tokens
+      note: |
+        The value is a subset of both `gen_ai.usage.audio.input_tokens` and `gen_ai.usage.cache_read.input_tokens`. Instrumentations MUST only set this attribute when the provider reports the audio-modality cached input token count.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: when the provider reports it
+      stability: development
+      type: int
     - brief: The number of input tokens that the provider reported as audio modality.
       examples:
       - 10
@@ -10887,6 +11229,18 @@ refinements:
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level: recommended
+      stability: development
+      type: int
+    - brief: The number of image-modality input tokens served from a provider-managed cache.
+      examples:
+      - 10
+      key: gen_ai.usage.image.cache_read.input_tokens
+      note: |
+        The value is a subset of both `gen_ai.usage.image.input_tokens` and `gen_ai.usage.cache_read.input_tokens`. Instrumentations MUST only set this attribute when the provider reports the image-modality cached input token count.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: when the provider reports it
       stability: development
       type: int
     - brief: The number of input tokens that the provider reported as image modality.
@@ -10936,6 +11290,18 @@ refinements:
       requirement_level: recommended
       stability: development
       type: int
+    - brief: The number of text-modality input tokens served from a provider-managed cache.
+      examples:
+      - 30
+      key: gen_ai.usage.text.cache_read.input_tokens
+      note: |
+        The value is a subset of both `gen_ai.usage.text.input_tokens` and `gen_ai.usage.cache_read.input_tokens`. Instrumentations MUST only set this attribute when the provider reports the text-modality cached input token count.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: when the provider reports it
+      stability: development
+      type: int
     - brief: The number of input tokens that the provider reported as text modality.
       examples:
       - 90
@@ -10954,6 +11320,18 @@ refinements:
       key: gen_ai.usage.text.output_tokens
       note: |
         The value is a subset of `gen_ai.usage.output_tokens`. Instrumentations MUST only set this attribute when the provider reports the text-modality output token count.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: when the provider reports it
+      stability: development
+      type: int
+    - brief: The number of video-modality input tokens served from a provider-managed cache.
+      examples:
+      - 10
+      key: gen_ai.usage.video.cache_read.input_tokens
+      note: |
+        The value is a subset of both `gen_ai.usage.video.input_tokens` and `gen_ai.usage.cache_read.input_tokens`. Instrumentations MUST only set this attribute when the provider reports the video-modality cached input token count.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
@@ -13602,6 +13980,18 @@ refinements:
       requirement_level: opt_in
       stability: development
       type: any
+    - brief: The number of audio-modality input tokens served from a provider-managed cache.
+      examples:
+      - 20
+      key: gen_ai.usage.audio.cache_read.input_tokens
+      note: |
+        The value is a subset of both `gen_ai.usage.audio.input_tokens` and `gen_ai.usage.cache_read.input_tokens`. Instrumentations MUST only set this attribute when the provider reports the audio-modality cached input token count.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: when the provider reports it
+      stability: development
+      type: int
     - brief: The number of input tokens that the provider reported as audio modality.
       examples:
       - 10
@@ -13646,6 +14036,18 @@ refinements:
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level: recommended
+      stability: development
+      type: int
+    - brief: The number of image-modality input tokens served from a provider-managed cache.
+      examples:
+      - 10
+      key: gen_ai.usage.image.cache_read.input_tokens
+      note: |
+        The value is a subset of both `gen_ai.usage.image.input_tokens` and `gen_ai.usage.cache_read.input_tokens`. Instrumentations MUST only set this attribute when the provider reports the image-modality cached input token count.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: when the provider reports it
       stability: development
       type: int
     - brief: The number of input tokens that the provider reported as image modality.
@@ -13704,6 +14106,18 @@ refinements:
         recommended: when applicable
       stability: development
       type: int
+    - brief: The number of text-modality input tokens served from a provider-managed cache.
+      examples:
+      - 30
+      key: gen_ai.usage.text.cache_read.input_tokens
+      note: |
+        The value is a subset of both `gen_ai.usage.text.input_tokens` and `gen_ai.usage.cache_read.input_tokens`. Instrumentations MUST only set this attribute when the provider reports the text-modality cached input token count.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: when the provider reports it
+      stability: development
+      type: int
     - brief: The number of input tokens that the provider reported as text modality.
       examples:
       - 90
@@ -13722,6 +14136,18 @@ refinements:
       key: gen_ai.usage.text.output_tokens
       note: |
         The value is a subset of `gen_ai.usage.output_tokens`. Instrumentations MUST only set this attribute when the provider reports the text-modality output token count.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: when the provider reports it
+      stability: development
+      type: int
+    - brief: The number of video-modality input tokens served from a provider-managed cache.
+      examples:
+      - 10
+      key: gen_ai.usage.video.cache_read.input_tokens
+      note: |
+        The value is a subset of both `gen_ai.usage.video.input_tokens` and `gen_ai.usage.cache_read.input_tokens`. Instrumentations MUST only set this attribute when the provider reports the video-modality cached input token count.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
@@ -14791,6 +15217,16 @@ registry:
       path: ./model/gen-ai/registry.yaml
     stability: development
     type: string
+  - brief: The number of audio-modality input tokens served from a provider-managed cache.
+    examples:
+    - 20
+    key: gen_ai.usage.audio.cache_read.input_tokens
+    note: |
+      The value is a subset of both `gen_ai.usage.audio.input_tokens` and `gen_ai.usage.cache_read.input_tokens`. Instrumentations MUST only set this attribute when the provider reports the audio-modality cached input token count.
+    provenance:
+      path: ./model/gen-ai/registry.yaml
+    stability: development
+    type: int
   - brief: The number of input tokens that the provider reported as audio modality.
     examples:
     - 10
@@ -14827,6 +15263,16 @@ registry:
     key: gen_ai.usage.cache_write.input_tokens
     note: |
       The value SHOULD be included in `gen_ai.usage.input_tokens`.
+    provenance:
+      path: ./model/gen-ai/registry.yaml
+    stability: development
+    type: int
+  - brief: The number of image-modality input tokens served from a provider-managed cache.
+    examples:
+    - 10
+    key: gen_ai.usage.image.cache_read.input_tokens
+    note: |
+      The value is a subset of both `gen_ai.usage.image.input_tokens` and `gen_ai.usage.cache_read.input_tokens`. Instrumentations MUST only set this attribute when the provider reports the image-modality cached input token count.
     provenance:
       path: ./model/gen-ai/registry.yaml
     stability: development
@@ -14882,6 +15328,16 @@ registry:
       path: ./model/gen-ai/registry.yaml
     stability: development
     type: int
+  - brief: The number of text-modality input tokens served from a provider-managed cache.
+    examples:
+    - 30
+    key: gen_ai.usage.text.cache_read.input_tokens
+    note: |
+      The value is a subset of both `gen_ai.usage.text.input_tokens` and `gen_ai.usage.cache_read.input_tokens`. Instrumentations MUST only set this attribute when the provider reports the text-modality cached input token count.
+    provenance:
+      path: ./model/gen-ai/registry.yaml
+    stability: development
+    type: int
   - brief: The number of input tokens that the provider reported as text modality.
     examples:
     - 90
@@ -14898,6 +15354,16 @@ registry:
     key: gen_ai.usage.text.output_tokens
     note: |
       The value is a subset of `gen_ai.usage.output_tokens`. Instrumentations MUST only set this attribute when the provider reports the text-modality output token count.
+    provenance:
+      path: ./model/gen-ai/registry.yaml
+    stability: development
+    type: int
+  - brief: The number of video-modality input tokens served from a provider-managed cache.
+    examples:
+    - 10
+    key: gen_ai.usage.video.cache_read.input_tokens
+    note: |
+      The value is a subset of both `gen_ai.usage.video.input_tokens` and `gen_ai.usage.cache_read.input_tokens`. Instrumentations MUST only set this attribute when the provider reports the video-modality cached input token count.
     provenance:
       path: ./model/gen-ai/registry.yaml
     stability: development
@@ -15730,6 +16196,18 @@ registry:
       requirement_level: opt_in
       stability: development
       type: any
+    - brief: The number of audio-modality input tokens served from a provider-managed cache.
+      examples:
+      - 20
+      key: gen_ai.usage.audio.cache_read.input_tokens
+      note: |
+        The value is a subset of both `gen_ai.usage.audio.input_tokens` and `gen_ai.usage.cache_read.input_tokens`. Instrumentations MUST only set this attribute when the provider reports the audio-modality cached input token count.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: when the provider reports it
+      stability: development
+      type: int
     - brief: The number of input tokens that the provider reported as audio modality.
       examples:
       - 10
@@ -15774,6 +16252,18 @@ registry:
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level: recommended
+      stability: development
+      type: int
+    - brief: The number of image-modality input tokens served from a provider-managed cache.
+      examples:
+      - 10
+      key: gen_ai.usage.image.cache_read.input_tokens
+      note: |
+        The value is a subset of both `gen_ai.usage.image.input_tokens` and `gen_ai.usage.cache_read.input_tokens`. Instrumentations MUST only set this attribute when the provider reports the image-modality cached input token count.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: when the provider reports it
       stability: development
       type: int
     - brief: The number of input tokens that the provider reported as image modality.
@@ -15835,6 +16325,18 @@ registry:
         recommended: when applicable
       stability: development
       type: int
+    - brief: The number of text-modality input tokens served from a provider-managed cache.
+      examples:
+      - 30
+      key: gen_ai.usage.text.cache_read.input_tokens
+      note: |
+        The value is a subset of both `gen_ai.usage.text.input_tokens` and `gen_ai.usage.cache_read.input_tokens`. Instrumentations MUST only set this attribute when the provider reports the text-modality cached input token count.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: when the provider reports it
+      stability: development
+      type: int
     - brief: The number of input tokens that the provider reported as text modality.
       examples:
       - 90
@@ -15853,6 +16355,18 @@ registry:
       key: gen_ai.usage.text.output_tokens
       note: |
         The value is a subset of `gen_ai.usage.output_tokens`. Instrumentations MUST only set this attribute when the provider reports the text-modality output token count.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: when the provider reports it
+      stability: development
+      type: int
+    - brief: The number of video-modality input tokens served from a provider-managed cache.
+      examples:
+      - 10
+      key: gen_ai.usage.video.cache_read.input_tokens
+      note: |
+        The value is a subset of both `gen_ai.usage.video.input_tokens` and `gen_ai.usage.cache_read.input_tokens`. Instrumentations MUST only set this attribute when the provider reports the video-modality cached input token count.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
@@ -16265,6 +16779,44 @@ registry:
           id: write
           stability: development
           value: write
+    - brief: The modality of the tokens being counted.
+      examples:
+      - text
+      - audio
+      - unknown
+      key: gen_ai.token.modality
+      note: |
+        Use `unknown` when the provider does not report a modality breakdown.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: required
+      stability: development
+      type:
+        members:
+        - brief: Text tokens.
+          id: text
+          stability: development
+          value: text
+        - brief: Image tokens.
+          id: image
+          stability: development
+          value: image
+        - brief: Audio tokens.
+          id: audio
+          stability: development
+          value: audio
+        - brief: Video tokens.
+          id: video
+          stability: development
+          value: video
+        - brief: Document tokens.
+          id: document
+          stability: development
+          value: document
+        - brief: Tokens of unknown or unreported modality.
+          id: unknown
+          stability: development
+          value: unknown
     - brief: GenAI server address.
       examples:
       - example.com
@@ -16288,16 +16840,20 @@ registry:
         conditionally_required: If `server.address` is set.
       stability: stable
       type: int
-    brief: Number of input tokens used in client inference operations, partitioned by cache status.
+    brief: Number of input tokens used in client inference operations, partitioned by cache status and modality.
     instrument: counter
     name: gen_ai.client.inference.input_tokens_by_cache
     note: |
-      When the provider reports no cache fields, instrumentations MUST
-      report the full input total under `gen_ai.token.cache=uncached`.
-
       Per inference call, the total tokens reported on this counter MUST
       equal the total reported on `gen_ai.client.inference.tokens` with
       `gen_ai.token.type=input`.
+
+      When the provider reports no cache fields, instrumentations MUST
+      report the full input total under `gen_ai.token.cache=uncached`.
+
+      When the provider does not report token modality broken down by
+      cache state, instrumentations MUST set
+      `gen_ai.token.modality=unknown` on the cache cells.
     provenance:
       path: ./model/gen-ai/metrics.yaml
     stability: development
@@ -21469,6 +22025,18 @@ registry:
       requirement_level: opt_in
       stability: development
       type: any
+    - brief: The number of audio-modality input tokens served from a provider-managed cache.
+      examples:
+      - 20
+      key: gen_ai.usage.audio.cache_read.input_tokens
+      note: |
+        The value is a subset of both `gen_ai.usage.audio.input_tokens` and `gen_ai.usage.cache_read.input_tokens`. Instrumentations MUST only set this attribute when the provider reports the audio-modality cached input token count.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: when the provider reports it
+      stability: development
+      type: int
     - brief: The number of input tokens that the provider reported as audio modality.
       examples:
       - 10
@@ -21513,6 +22081,18 @@ registry:
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level: recommended
+      stability: development
+      type: int
+    - brief: The number of image-modality input tokens served from a provider-managed cache.
+      examples:
+      - 10
+      key: gen_ai.usage.image.cache_read.input_tokens
+      note: |
+        The value is a subset of both `gen_ai.usage.image.input_tokens` and `gen_ai.usage.cache_read.input_tokens`. Instrumentations MUST only set this attribute when the provider reports the image-modality cached input token count.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: when the provider reports it
       stability: development
       type: int
     - brief: The number of input tokens that the provider reported as image modality.
@@ -21574,6 +22154,18 @@ registry:
         recommended: when applicable
       stability: development
       type: int
+    - brief: The number of text-modality input tokens served from a provider-managed cache.
+      examples:
+      - 30
+      key: gen_ai.usage.text.cache_read.input_tokens
+      note: |
+        The value is a subset of both `gen_ai.usage.text.input_tokens` and `gen_ai.usage.cache_read.input_tokens`. Instrumentations MUST only set this attribute when the provider reports the text-modality cached input token count.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: when the provider reports it
+      stability: development
+      type: int
     - brief: The number of input tokens that the provider reported as text modality.
       examples:
       - 90
@@ -21592,6 +22184,18 @@ registry:
       key: gen_ai.usage.text.output_tokens
       note: |
         The value is a subset of `gen_ai.usage.output_tokens`. Instrumentations MUST only set this attribute when the provider reports the text-modality output token count.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: when the provider reports it
+      stability: development
+      type: int
+    - brief: The number of video-modality input tokens served from a provider-managed cache.
+      examples:
+      - 10
+      key: gen_ai.usage.video.cache_read.input_tokens
+      note: |
+        The value is a subset of both `gen_ai.usage.video.input_tokens` and `gen_ai.usage.cache_read.input_tokens`. Instrumentations MUST only set this attribute when the provider reports the video-modality cached input token count.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
@@ -22252,6 +22856,18 @@ registry:
       requirement_level: opt_in
       stability: development
       type: any
+    - brief: The number of audio-modality input tokens served from a provider-managed cache.
+      examples:
+      - 20
+      key: gen_ai.usage.audio.cache_read.input_tokens
+      note: |
+        The value is a subset of both `gen_ai.usage.audio.input_tokens` and `gen_ai.usage.cache_read.input_tokens`. Instrumentations MUST only set this attribute when the provider reports the audio-modality cached input token count.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: when the provider reports it
+      stability: development
+      type: int
     - brief: The number of input tokens that the provider reported as audio modality.
       examples:
       - 10
@@ -22296,6 +22912,18 @@ registry:
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level: recommended
+      stability: development
+      type: int
+    - brief: The number of image-modality input tokens served from a provider-managed cache.
+      examples:
+      - 10
+      key: gen_ai.usage.image.cache_read.input_tokens
+      note: |
+        The value is a subset of both `gen_ai.usage.image.input_tokens` and `gen_ai.usage.cache_read.input_tokens`. Instrumentations MUST only set this attribute when the provider reports the image-modality cached input token count.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: when the provider reports it
       stability: development
       type: int
     - brief: The number of input tokens that the provider reported as image modality.
@@ -22345,6 +22973,18 @@ registry:
       requirement_level: recommended
       stability: development
       type: int
+    - brief: The number of text-modality input tokens served from a provider-managed cache.
+      examples:
+      - 30
+      key: gen_ai.usage.text.cache_read.input_tokens
+      note: |
+        The value is a subset of both `gen_ai.usage.text.input_tokens` and `gen_ai.usage.cache_read.input_tokens`. Instrumentations MUST only set this attribute when the provider reports the text-modality cached input token count.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: when the provider reports it
+      stability: development
+      type: int
     - brief: The number of input tokens that the provider reported as text modality.
       examples:
       - 90
@@ -22363,6 +23003,18 @@ registry:
       key: gen_ai.usage.text.output_tokens
       note: |
         The value is a subset of `gen_ai.usage.output_tokens`. Instrumentations MUST only set this attribute when the provider reports the text-modality output token count.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: when the provider reports it
+      stability: development
+      type: int
+    - brief: The number of video-modality input tokens served from a provider-managed cache.
+      examples:
+      - 10
+      key: gen_ai.usage.video.cache_read.input_tokens
+      note: |
+        The value is a subset of both `gen_ai.usage.video.input_tokens` and `gen_ai.usage.cache_read.input_tokens`. Instrumentations MUST only set this attribute when the provider reports the video-modality cached input token count.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
@@ -23022,6 +23674,18 @@ registry:
       requirement_level: opt_in
       stability: development
       type: any
+    - brief: The number of audio-modality input tokens served from a provider-managed cache.
+      examples:
+      - 20
+      key: gen_ai.usage.audio.cache_read.input_tokens
+      note: |
+        The value is a subset of both `gen_ai.usage.audio.input_tokens` and `gen_ai.usage.cache_read.input_tokens`. Instrumentations MUST only set this attribute when the provider reports the audio-modality cached input token count.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: when the provider reports it
+      stability: development
+      type: int
     - brief: The number of input tokens that the provider reported as audio modality.
       examples:
       - 10
@@ -23066,6 +23730,18 @@ registry:
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level: recommended
+      stability: development
+      type: int
+    - brief: The number of image-modality input tokens served from a provider-managed cache.
+      examples:
+      - 10
+      key: gen_ai.usage.image.cache_read.input_tokens
+      note: |
+        The value is a subset of both `gen_ai.usage.image.input_tokens` and `gen_ai.usage.cache_read.input_tokens`. Instrumentations MUST only set this attribute when the provider reports the image-modality cached input token count.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: when the provider reports it
       stability: development
       type: int
     - brief: The number of input tokens that the provider reported as image modality.
@@ -23115,6 +23791,18 @@ registry:
       requirement_level: recommended
       stability: development
       type: int
+    - brief: The number of text-modality input tokens served from a provider-managed cache.
+      examples:
+      - 30
+      key: gen_ai.usage.text.cache_read.input_tokens
+      note: |
+        The value is a subset of both `gen_ai.usage.text.input_tokens` and `gen_ai.usage.cache_read.input_tokens`. Instrumentations MUST only set this attribute when the provider reports the text-modality cached input token count.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: when the provider reports it
+      stability: development
+      type: int
     - brief: The number of input tokens that the provider reported as text modality.
       examples:
       - 90
@@ -23133,6 +23821,18 @@ registry:
       key: gen_ai.usage.text.output_tokens
       note: |
         The value is a subset of `gen_ai.usage.output_tokens`. Instrumentations MUST only set this attribute when the provider reports the text-modality output token count.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: when the provider reports it
+      stability: development
+      type: int
+    - brief: The number of video-modality input tokens served from a provider-managed cache.
+      examples:
+      - 10
+      key: gen_ai.usage.video.cache_read.input_tokens
+      note: |
+        The value is a subset of both `gen_ai.usage.video.input_tokens` and `gen_ai.usage.cache_read.input_tokens`. Instrumentations MUST only set this attribute when the provider reports the video-modality cached input token count.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:

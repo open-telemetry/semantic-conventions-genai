@@ -56,6 +56,18 @@ attribute_groups:
       - ref: gen_ai.usage.video.input_tokens
         requirement_level:
           recommended: when the provider reports it
+      - ref: gen_ai.usage.text.cache_read.input_tokens
+        requirement_level:
+          recommended: when the provider reports it
+      - ref: gen_ai.usage.image.cache_read.input_tokens
+        requirement_level:
+          recommended: when the provider reports it
+      - ref: gen_ai.usage.audio.cache_read.input_tokens
+        requirement_level:
+          recommended: when the provider reports it
+      - ref: gen_ai.usage.video.cache_read.input_tokens
+        requirement_level:
+          recommended: when the provider reports it
       - ref: gen_ai.usage.output_tokens
         requirement_level: recommended
       - ref: gen_ai.usage.text.output_tokens

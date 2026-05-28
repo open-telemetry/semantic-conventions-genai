@@ -12,10 +12,13 @@
   - Added per-modality span attributes
     `gen_ai.usage.{text,image,audio,video}.input_tokens` and
     `gen_ai.usage.{text,image,audio}.output_tokens`.
+  - Added per-modality cache-read span attributes
+    `gen_ai.usage.{text,image,audio,video}.cache_read.input_tokens` for
+    providers that report per-modality cached-token breakdowns.
   - Replaced the `gen_ai.client.token.usage` histogram with counters
     `gen_ai.client.inference.tokens` (dimensioned by `gen_ai.token.type` and
     `gen_ai.token.modality`), `gen_ai.client.inference.input_tokens_by_cache`
-    (dimensioned by `gen_ai.token.cache`), and
+    (dimensioned by `gen_ai.token.cache` and `gen_ai.token.modality`), and
     `gen_ai.client.inference.output_tokens_by_phase` (dimensioned by
     `gen_ai.token.phase`). Added opt-in histograms
     `gen_ai.client.inference.operation.{tokens,input_tokens,output_tokens}`.

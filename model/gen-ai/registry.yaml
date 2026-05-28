@@ -242,6 +242,42 @@ attributes:
       set this attribute when the provider reports the video-modality input token count.
     examples: [20]
     stability: development
+  - key: gen_ai.usage.text.cache_read.input_tokens
+    type: int
+    brief: The number of text-modality input tokens served from a provider-managed cache.
+    note: >
+      The value is a subset of both `gen_ai.usage.text.input_tokens` and
+      `gen_ai.usage.cache_read.input_tokens`. Instrumentations MUST only set this attribute
+      when the provider reports the text-modality cached input token count.
+    examples: [30]
+    stability: development
+  - key: gen_ai.usage.image.cache_read.input_tokens
+    type: int
+    brief: The number of image-modality input tokens served from a provider-managed cache.
+    note: >
+      The value is a subset of both `gen_ai.usage.image.input_tokens` and
+      `gen_ai.usage.cache_read.input_tokens`. Instrumentations MUST only set this attribute
+      when the provider reports the image-modality cached input token count.
+    examples: [10]
+    stability: development
+  - key: gen_ai.usage.audio.cache_read.input_tokens
+    type: int
+    brief: The number of audio-modality input tokens served from a provider-managed cache.
+    note: >
+      The value is a subset of both `gen_ai.usage.audio.input_tokens` and
+      `gen_ai.usage.cache_read.input_tokens`. Instrumentations MUST only set this attribute
+      when the provider reports the audio-modality cached input token count.
+    examples: [20]
+    stability: development
+  - key: gen_ai.usage.video.cache_read.input_tokens
+    type: int
+    brief: The number of video-modality input tokens served from a provider-managed cache.
+    note: >
+      The value is a subset of both `gen_ai.usage.video.input_tokens` and
+      `gen_ai.usage.cache_read.input_tokens`. Instrumentations MUST only set this attribute
+      when the provider reports the video-modality cached input token count.
+    examples: [10]
+    stability: development
   - key: gen_ai.usage.output_tokens
     type: int
     brief: The number of tokens used in the GenAI response (completion).

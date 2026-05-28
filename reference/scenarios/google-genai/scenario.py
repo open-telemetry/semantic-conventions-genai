@@ -240,6 +240,22 @@ def run_chat_multimodal():
             video_input = _modality_tokens(prompt_details, "VIDEO")
             if video_input is not None:
                 span.set_attribute("gen_ai.usage.video.input_tokens", video_input)
+            cached_total = getattr(usage, "cached_content_token_count", None)
+            if cached_total is not None:
+                span.set_attribute("gen_ai.usage.cache_read.input_tokens", cached_total)
+            cache_details = getattr(usage, "cache_tokens_details", None)
+            text_cached = _modality_tokens(cache_details, "TEXT")
+            if text_cached is not None:
+                span.set_attribute("gen_ai.usage.text.cache_read.input_tokens", text_cached)
+            image_cached = _modality_tokens(cache_details, "IMAGE")
+            if image_cached is not None:
+                span.set_attribute("gen_ai.usage.image.cache_read.input_tokens", image_cached)
+            audio_cached = _modality_tokens(cache_details, "AUDIO")
+            if audio_cached is not None:
+                span.set_attribute("gen_ai.usage.audio.cache_read.input_tokens", audio_cached)
+            video_cached = _modality_tokens(cache_details, "VIDEO")
+            if video_cached is not None:
+                span.set_attribute("gen_ai.usage.video.cache_read.input_tokens", video_cached)
             candidates_details = getattr(usage, "candidates_tokens_details", None)
             text_output = _modality_tokens(candidates_details, "TEXT")
             if text_output is not None:
@@ -290,6 +306,22 @@ def run_chat_multimodal():
             video_input = _modality_tokens(prompt_details, "VIDEO")
             if video_input is not None:
                 event_attrs["gen_ai.usage.video.input_tokens"] = video_input
+            cached_total = getattr(usage, "cached_content_token_count", None)
+            if cached_total is not None:
+                event_attrs["gen_ai.usage.cache_read.input_tokens"] = cached_total
+            cache_details = getattr(usage, "cache_tokens_details", None)
+            text_cached = _modality_tokens(cache_details, "TEXT")
+            if text_cached is not None:
+                event_attrs["gen_ai.usage.text.cache_read.input_tokens"] = text_cached
+            image_cached = _modality_tokens(cache_details, "IMAGE")
+            if image_cached is not None:
+                event_attrs["gen_ai.usage.image.cache_read.input_tokens"] = image_cached
+            audio_cached = _modality_tokens(cache_details, "AUDIO")
+            if audio_cached is not None:
+                event_attrs["gen_ai.usage.audio.cache_read.input_tokens"] = audio_cached
+            video_cached = _modality_tokens(cache_details, "VIDEO")
+            if video_cached is not None:
+                event_attrs["gen_ai.usage.video.cache_read.input_tokens"] = video_cached
             candidates_details = getattr(usage, "candidates_tokens_details", None)
             text_output = _modality_tokens(candidates_details, "TEXT")
             if text_output is not None:

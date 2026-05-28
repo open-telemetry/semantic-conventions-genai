@@ -36,17 +36,21 @@
 | gen_ai.response.id | [anthropic], [autogen], [azure-ai-inference], [azure-openai], [claude-agent-sdk], [cohere], [crewai], [dspy], [groq], [instructor], [langchain], [litellm], [llamaindex], [mistralai], [openai], [openai-agents], [pydantic-ai] |
 | gen_ai.response.model | [anthropic], [autogen], [azure-ai-inference], [azure-openai], [claude-agent-sdk], [crewai], [dspy], [google-genai], [groq], [instructor], [langchain], [litellm], [llamaindex], [mistralai], [openai], [openai-agents], [pydantic-ai] |
 | gen_ai.response.time_to_first_chunk | (none) |
+| gen_ai.usage.audio.cache_read.input_tokens | (none) |
 | gen_ai.usage.audio.input_tokens | [openai] |
 | gen_ai.usage.audio.output_tokens | [openai] |
-| gen_ai.usage.cache_read.input_tokens | [anthropic], [openai] |
+| gen_ai.usage.cache_read.input_tokens | [anthropic], [google-genai], [openai] |
 | gen_ai.usage.cache_write.input_tokens | [anthropic] |
+| gen_ai.usage.image.cache_read.input_tokens | [google-genai] |
 | gen_ai.usage.image.input_tokens | [google-genai], [openai] |
 | gen_ai.usage.image.output_tokens | [openai] |
 | gen_ai.usage.input_tokens | [anthropic], [autogen], [aws-bedrock], [azure-ai-inference], [azure-openai], [claude-agent-sdk], [cohere], [crewai], [dspy], [google-adk], [google-genai], [groq], [instructor], [langchain], [litellm], [llamaindex], [mistralai], [openai], [openai-agents], [pydantic-ai], [vertexai] |
 | gen_ai.usage.output_tokens | [anthropic], [autogen], [aws-bedrock], [azure-ai-inference], [azure-openai], [claude-agent-sdk], [cohere], [crewai], [dspy], [google-adk], [google-genai], [groq], [instructor], [langchain], [litellm], [llamaindex], [mistralai], [openai], [openai-agents], [pydantic-ai], [vertexai] |
 | gen_ai.usage.reasoning.output_tokens | [google-genai], [openai] |
+| gen_ai.usage.text.cache_read.input_tokens | [google-genai] |
 | gen_ai.usage.text.input_tokens | [google-genai], [openai] |
 | gen_ai.usage.text.output_tokens | [google-genai], [openai] |
+| gen_ai.usage.video.cache_read.input_tokens | [google-genai] |
 | gen_ai.usage.video.input_tokens | [google-genai] |
 | server.address | [anthropic], [autogen], [aws-bedrock], [azure-ai-inference], [azure-openai], [cohere], [crewai], [google-adk], [langchain], [llamaindex], [mistralai], [openai], [openai-agents], [pydantic-ai] |
 

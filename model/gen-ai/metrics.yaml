@@ -40,14 +40,18 @@ metrics:
   - name: gen_ai.client.inference.input_tokens_by_cache
     instrument: counter
     unit: "{token}"
-    brief: 'Number of input tokens used in client inference operations, partitioned by cache status.'
+    brief: 'Number of input tokens used in client inference operations, partitioned by cache status and modality.'
     note: |
-      When the provider reports no cache fields, instrumentations MUST
-      report the full input total under `gen_ai.token.cache=uncached`.
-
       Per inference call, the total tokens reported on this counter MUST
       equal the total reported on `gen_ai.client.inference.tokens` with
       `gen_ai.token.type=input`.
+
+      When the provider reports no cache fields, instrumentations MUST
+      report the full input total under `gen_ai.token.cache=uncached`.
+
+      When the provider does not report token modality broken down by
+      cache state, instrumentations MUST set
+      `gen_ai.token.modality=unknown` on the cache cells.
     stability: development
     annotations:
       code_generation:
@@ -55,6 +59,8 @@ metrics:
     attributes:
       - ref_group: metric_attributes.gen_ai
       - ref: gen_ai.token.cache
+        requirement_level: required
+      - ref: gen_ai.token.modality
         requirement_level: required
   - name: gen_ai.client.inference.output_tokens_by_phase
     instrument: counter
