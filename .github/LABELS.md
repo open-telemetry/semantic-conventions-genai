@@ -65,7 +65,7 @@ Telemetry that exists only for streamed responses: time-to-first-token
 partial-stream events. Non-streaming latency belongs under the
 relevant area, not here.
 
-### `area:tokens`
+### `area:token-counts`
 
 Token usage: input and output token counts, breakdowns (e.g. cached,
 reasoning), per-modality splits, and total-token aggregation.
