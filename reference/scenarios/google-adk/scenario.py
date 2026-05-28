@@ -288,6 +288,89 @@ def run_agent_reference():
         asyncio.run(_run())
 
 
+def run_memory_reference():
+    """Scenario: Google ADK memory add/search with reference implementation."""
+    from google.adk.events.event import Event
+    from google.adk.memory.in_memory_memory_service import InMemoryMemoryService
+    from google.adk.sessions.session import Session
+    from google.genai import types
+
+    print("  [memory] ADK in-memory memory service (reference implementation)")
+
+    app_name = "test_app"
+    user_id = "test_user"
+    session_id = "session_memory_1"
+    # `derivable`: ADK's InMemoryMemoryService keys its internal store on
+    # (app_name, user_id), so this tuple is the library's own scope unit
+    # for memory storage and retrieval.
+    store_id = f"{app_name}/{user_id}"
+    memory_text = "User prefers vegetarian meals and dark mode."
+    query_text = "vegetarian meals"
+
+    async def _run():
+        # ADK's InMemoryMemoryService has no public store-lifecycle API and
+        # produces no store identifier at construction, so create_memory_store
+        # is an honest capture gap for this library. The operation is covered
+        # by reference/scenarios/aws-bedrock-agentcore/ where the returned
+        # memoryId is captured directly.
+        memory_service = InMemoryMemoryService()
+
+        event = Event(
+            author="user",
+            content=types.Content(role="user", parts=[types.Part(text=memory_text)]),
+        )
+        session = Session(
+            id=session_id,
+            app_name=app_name,
+            user_id=user_id,
+            events=[event],
+        )
+        memory_records = json.dumps(
+            [
+                {
+                    "content": memory_text,
+                    "id": event.id,
+                    "metadata": {"author": event.author, "session_id": session.id},
+                }
+            ]
+        )
+
+        upsert_span_attributes = {
+            "gen_ai.operation.name": "upsert_memory",
+            "gen_ai.memory.store.id": store_id,
+        }
+        with _reference_tracer.start_as_current_span("upsert_memory", attributes=upsert_span_attributes) as upsert_span:
+            upsert_span.set_attribute("gen_ai.memory.record.count", len(session.events))
+            upsert_span.set_attribute("gen_ai.memory.records", memory_records)
+            await memory_service.add_session_to_memory(session)
+
+        search_span_attributes = {
+            "gen_ai.operation.name": "search_memory",
+            "gen_ai.memory.store.id": store_id,
+        }
+        with _reference_tracer.start_as_current_span("search_memory", attributes=search_span_attributes) as search_span:
+            search_span.set_attribute("gen_ai.memory.query.text", query_text)
+            response = await memory_service.search_memory(
+                app_name=app_name,
+                user_id=user_id,
+                query=query_text,
+            )
+            search_records = []
+            for memory in response.memories:
+                content_text = " ".join(part.text for part in memory.content.parts if part.text)
+                search_record = {
+                    "content": content_text,
+                    "metadata": {"author": memory.author},
+                }
+                if memory.id:
+                    search_record["id"] = memory.id
+                search_records.append(search_record)
+            search_span.set_attribute("gen_ai.memory.record.count", len(search_records))
+            search_span.set_attribute("gen_ai.memory.records", json.dumps(search_records))
+
+    asyncio.run(_run())
+
+
 def main():
     print("=== Reference Implementation: Google ADK Reference Implementation ===")
 
@@ -297,6 +380,7 @@ def main():
     tp.add_span_processor(span_counter)
 
     run_agent_reference()
+    run_memory_reference()
 
     print(f"\n  [diagnostic] Spans generated: {span_counter.count}")
 

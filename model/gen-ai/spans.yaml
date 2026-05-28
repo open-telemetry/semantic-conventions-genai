@@ -295,6 +295,58 @@ spans:
         requirement_level:
           conditionally_required: when applicable
 
+  - type: gen_ai.memory.client
+    kind: client
+    name:
+      note: |
+        **Span name** SHOULD be `{gen_ai.operation.name}`.
+    brief: >
+      Describes a memory operation, including memory store lifecycle operations and memory record operations.
+    note: |
+      The `gen_ai.operation.name` SHOULD be one of `create_memory_store`, `search_memory`, `create_memory`,
+      `update_memory`, `upsert_memory`, `delete_memory`, or `delete_memory_store`.
+
+      `create_memory_store` and `delete_memory_store` cover memory store lifecycle operations.
+      `create_memory`, `update_memory`, `upsert_memory`, `search_memory`, and `delete_memory`
+      cover memory record operations.
+
+      Use `create_memory` when the caller requests creation of new memory records.
+      Use `update_memory` when the caller requests modification of known existing memory records.
+      Use `upsert_memory` when the caller invokes a public API that may create, update, or consolidate
+      memory records without the caller choosing which.
+
+      **Span name** SHOULD be `{gen_ai.operation.name}`.
+
+      **Span kind** SHOULD be `CLIENT` and MAY be set to `INTERNAL` on spans representing
+      calls to memory systems running in the same process. It's RECOMMENDED to use `CLIENT` kind
+      when the memory system being instrumented usually runs in a different process than its
+      client or when the memory call happens over instrumented protocol such as HTTP.
+
+      For `delete_memory`, lack of `gen_ai.memory.record.id` may indicate that
+      the operation intends to delete all memory records in the specified store.
+    stability: development
+    attributes:
+      - ref: gen_ai.operation.name
+        requirement_level: required
+      - ref_group: attributes.gen_ai.address_and_port
+      - ref_group: attributes.gen_ai.error
+      - ref: gen_ai.provider.name
+        requirement_level:
+          conditionally_required: if the operation is handled by a named external GenAI provider or service
+      - ref: gen_ai.memory.store.id
+        requirement_level:
+          conditionally_required: if applicable
+      - ref: gen_ai.memory.record.id
+        requirement_level:
+          conditionally_required: when the operation applies to a specific memory record
+      - ref: gen_ai.memory.record.count
+        requirement_level:
+          recommended: if the operation involves memory records and the count is available
+      - ref: gen_ai.memory.query.text
+        requirement_level: opt_in
+      - ref: gen_ai.memory.records
+        requirement_level: opt_in
+
   - type: gen_ai.create_agent.client
     kind: client
     name:

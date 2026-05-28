@@ -140,6 +140,7 @@ def run_chat_streaming_reference(client):
         "gen_ai.operation.name": "chat",
         "gen_ai.provider.name": "openai",
         "gen_ai.request.model": request_model,
+        "gen_ai.request.stream": True,
     }
     if host:
         span_attributes_2["server.address"] = host

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import base64
 from collections.abc import Callable
 from collections.abc import Iterator
 from contextlib import contextmanager
@@ -82,16 +83,19 @@ def checkout_state(state_dir: Path, state_branch: str, require_existing: bool) -
     run(["git", "rm", "-rf", "."], cwd=state_dir, check=False)
 
 
-def reset_state(state_dir: Path, state_branch: str) -> None:
-    fetch_state_branch(state_branch, required=True)
+def reset_state(state_dir: Path, state_branch: str) -> bool:
+    if not fetch_state_branch(state_branch, required=False):
+        return False
     run(["git", "reset", "--hard", f"origin/{state_branch}"], cwd=state_dir)
+    return True
 
 
 def push_state(state_dir: Path, state_branch: str) -> bool:
     cmd = ["git"]
-    token = os.environ.get("OTELBOT_TOKEN")
+    token = os.environ.get("GITHUB_TOKEN")
     if token:
-        cmd.extend(["-c", f"http.https://github.com/.extraheader=AUTHORIZATION: bearer {token}"])
+        credential = base64.b64encode(f"x-access-token:{token}".encode()).decode()
+        cmd.extend(["-c", f"http.https://github.com/.extraheader=AUTHORIZATION: basic {credential}"])
     cmd.extend(["push", "--force-with-lease", "origin", state_branch])
     return run(cmd, cwd=state_dir, check=False).returncode == 0
 
@@ -145,7 +149,8 @@ def push_state_changes(
             return 1
 
         print(f"push rejected (attempt {attempt}); refetching and retrying", file=sys.stderr)
-        reset_state(state_dir, state_branch)
+        if not reset_state(state_dir, state_branch):
+            return 1
     return 1
 
 

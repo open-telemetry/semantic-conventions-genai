@@ -1,9 +1,9 @@
 [project]
-name = "litellm-reference-test"
+name = "aws-bedrock-agentcore-reference-test"
 version = "0.0.0"
 requires-python = ">=3.12"
 dependencies = [
-    "litellm==1.86.1",
+    "boto3==1.43.14",
     "genai-reference-shared",
 ]
 

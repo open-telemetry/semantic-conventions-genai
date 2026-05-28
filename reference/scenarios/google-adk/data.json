@@ -50,6 +50,13 @@
       "server.address",
       "server.port"
     ],
+    "memory": [
+      "gen_ai.memory.query.text",
+      "gen_ai.memory.record.count",
+      "gen_ai.memory.records",
+      "gen_ai.memory.store.id",
+      "gen_ai.operation.name"
+    ],
     "execute_tool": [
       "gen_ai.operation.name",
       "gen_ai.tool.call.arguments",
