@@ -7,8 +7,8 @@ on:
   workflow_dispatch:
 
 concurrency:
-   group: ${{ github.workflow }}
-   cancel-in-progress: false
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
 
 permissions:
   contents: read
