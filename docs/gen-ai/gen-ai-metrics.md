@@ -221,7 +221,7 @@ usage for the inference call.
 | `gen_ai.client.inference.input_tokens_by_cache` | Counter | `{token}` | Number of input tokens used in client inference operations, partitioned by cache status. [1] | ![Development](https://img.shields.io/badge/-development-blue) | |
 
 **[1]:** When the provider reports no cache fields, instrumentations MUST
-report the full input total under `gen_ai.token.cache=none`.
+report the full input total under `gen_ai.token.cache=uncached`.
 
 Per inference call, the total tokens reported on this counter MUST
 equal the total reported on `gen_ai.client.inference.tokens` with
@@ -233,7 +233,7 @@ equal the total reported on `gen_ai.client.inference.tokens` with
 | --- | --- | --- | --- | --- | --- |
 | [`gen_ai.operation.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Required` | string | The name of the operation being performed. [1] | `chat`; `generate_content`; `text_completion` |
 | [`gen_ai.provider.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Required` | string | The Generative AI provider as identified by the client or server instrumentation. [2] | `openai`; `gcp.gen_ai`; `gcp.vertex_ai` |
-| [`gen_ai.token.cache`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Required` | string | The cache status of the input tokens being counted. [3] | `none`; `read`; `write` |
+| [`gen_ai.token.cache`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Required` | string | The cache status of the input tokens being counted. [3] | `uncached`; `read`; `write` |
 | [`gen_ai.request.model`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If available. | string | The name of the GenAI model a request is being made to. [4] | `gpt-4` |
 | [`server.port`](https://github.com/open-telemetry/semantic-conventions/blob/v1.41.1/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If `server.address` is set. | int | GenAI server port. [5] | `80`; `8080`; `443` |
 | [`gen_ai.response.model`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The name of the model that generated the response. | `gpt-4-0613` |
@@ -327,8 +327,8 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 
 | Value | Description | Stability |
 | --- | --- | --- |
-| `none` | Tokens that did not interact with the cache (uncached input). | ![Development](https://img.shields.io/badge/-development-blue) |
 | `read` | Tokens served from a provider-managed cache. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `uncached` | Tokens that did not interact with the cache. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `write` | Tokens written to a provider-managed cache this turn. | ![Development](https://img.shields.io/badge/-development-blue) |
 
 <!-- prettier-ignore-end -->

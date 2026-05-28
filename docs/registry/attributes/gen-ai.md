@@ -48,7 +48,7 @@
 | <a id="gen-ai-retrieval-documents" href="#gen-ai-retrieval-documents">`gen_ai.retrieval.documents`</a> | ![Development](https://img.shields.io/badge/-development-blue) | any | The documents retrieved. [13] | [<br>&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;"id": "doc_123",<br>&nbsp;&nbsp;&nbsp;&nbsp;"score": 0.95<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;"id": "doc_456",<br>&nbsp;&nbsp;&nbsp;&nbsp;"score": 0.87<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;"id": "doc_789",<br>&nbsp;&nbsp;&nbsp;&nbsp;"score": 0.82<br>&nbsp;&nbsp;}<br>] |
 | <a id="gen-ai-retrieval-query-text" href="#gen-ai-retrieval-query-text">`gen_ai.retrieval.query.text`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The query text used for retrieval. [14] | `What is the capital of France?`; `weather in Paris` |
 | <a id="gen-ai-system-instructions" href="#gen-ai-system-instructions">`gen_ai.system_instructions`</a> | ![Development](https://img.shields.io/badge/-development-blue) | any | The system message or instructions provided to the GenAI model separately from the chat history. [15] | [<br>&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;"type": "text",<br>&nbsp;&nbsp;&nbsp;&nbsp;"content": "You are an Agent that greet users, always use greetings tool to respond"<br>&nbsp;&nbsp;}<br>]; [<br>&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;"type": "text",<br>&nbsp;&nbsp;&nbsp;&nbsp;"content": "You are a language translator."<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;"type": "text",<br>&nbsp;&nbsp;&nbsp;&nbsp;"content": "Your mission is to translate text in English to French."<br>&nbsp;&nbsp;}<br>] |
-| <a id="gen-ai-token-cache" href="#gen-ai-token-cache">`gen_ai.token.cache`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The cache status of the input tokens being counted. [16] | `none`; `read`; `write` |
+| <a id="gen-ai-token-cache" href="#gen-ai-token-cache">`gen_ai.token.cache`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The cache status of the input tokens being counted. [16] | `uncached`; `read`; `write` |
 | <a id="gen-ai-token-modality" href="#gen-ai-token-modality">`gen_ai.token.modality`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The modality of the tokens being counted. [17] | `text`; `audio`; `unknown` |
 | <a id="gen-ai-token-phase" href="#gen-ai-token-phase">`gen_ai.token.phase`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The generation phase of the output tokens being counted. [18] | `response`; `reasoning` |
 | <a id="gen-ai-token-type" href="#gen-ai-token-type">`gen_ai.token.type`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The type of token being counted. | `input`; `output` |
@@ -338,8 +338,8 @@ If there is no low-cardinality workflow name available for a given framework, th
 
 | Value | Description | Stability |
 | --- | --- | --- |
-| `none` | Tokens that did not interact with the cache (uncached input). | ![Development](https://img.shields.io/badge/-development-blue) |
 | `read` | Tokens served from a provider-managed cache. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `uncached` | Tokens that did not interact with the cache. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `write` | Tokens written to a provider-managed cache this turn. | ![Development](https://img.shields.io/badge/-development-blue) |
 
 ---

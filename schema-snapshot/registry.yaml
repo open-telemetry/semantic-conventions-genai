@@ -1104,7 +1104,7 @@ refinements:
       type: string
     - brief: The cache status of the input tokens being counted.
       examples:
-      - none
+      - uncached
       - read
       - write
       key: gen_ai.token.cache
@@ -1116,10 +1116,10 @@ refinements:
       stability: development
       type:
         members:
-        - brief: Tokens that did not interact with the cache (uncached input).
-          id: none
+        - brief: Tokens that did not interact with the cache.
+          id: uncached
           stability: development
-          value: none
+          value: uncached
         - brief: Tokens served from a provider-managed cache.
           id: read
           stability: development
@@ -1157,7 +1157,7 @@ refinements:
     name: gen_ai.client.inference.input_tokens_by_cache
     note: |
       When the provider reports no cache fields, instrumentations MUST
-      report the full input total under `gen_ai.token.cache=none`.
+      report the full input total under `gen_ai.token.cache=uncached`.
 
       Per inference call, the total tokens reported on this counter MUST
       equal the total reported on `gen_ai.client.inference.tokens` with
@@ -14567,7 +14567,7 @@ registry:
     type: any
   - brief: The cache status of the input tokens being counted.
     examples:
-    - none
+    - uncached
     - read
     - write
     key: gen_ai.token.cache
@@ -14578,10 +14578,10 @@ registry:
     stability: development
     type:
       members:
-      - brief: Tokens that did not interact with the cache (uncached input).
-        id: none
+      - brief: Tokens that did not interact with the cache.
+        id: uncached
         stability: development
-        value: none
+        value: uncached
       - brief: Tokens served from a provider-managed cache.
         id: read
         stability: development
@@ -16241,7 +16241,7 @@ registry:
       type: string
     - brief: The cache status of the input tokens being counted.
       examples:
-      - none
+      - uncached
       - read
       - write
       key: gen_ai.token.cache
@@ -16253,10 +16253,10 @@ registry:
       stability: development
       type:
         members:
-        - brief: Tokens that did not interact with the cache (uncached input).
-          id: none
+        - brief: Tokens that did not interact with the cache.
+          id: uncached
           stability: development
-          value: none
+          value: uncached
         - brief: Tokens served from a provider-managed cache.
           id: read
           stability: development
@@ -16293,7 +16293,7 @@ registry:
     name: gen_ai.client.inference.input_tokens_by_cache
     note: |
       When the provider reports no cache fields, instrumentations MUST
-      report the full input total under `gen_ai.token.cache=none`.
+      report the full input total under `gen_ai.token.cache=uncached`.
 
       Per inference call, the total tokens reported on this counter MUST
       equal the total reported on `gen_ai.client.inference.tokens` with

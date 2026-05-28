@@ -327,10 +327,10 @@ attributes:
   - key: gen_ai.token.cache
     type:
       members:
-        - id: none
+        - id: uncached
           stability: development
-          value: "none"
-          brief: 'Tokens that did not interact with the cache (uncached input).'
+          value: "uncached"
+          brief: 'Tokens that did not interact with the cache.'
         - id: read
           stability: development
           value: "read"
@@ -342,7 +342,7 @@ attributes:
     brief: The cache status of the input tokens being counted.
     note: >
       Applies only to input tokens.
-    examples: ['none', 'read', 'write']
+    examples: ['uncached', 'read', 'write']
     stability: development
   - key: gen_ai.token.phase
     type:

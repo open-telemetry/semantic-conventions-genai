@@ -21,7 +21,7 @@
     `gen_ai.client.inference.operation.{tokens,input_tokens,output_tokens}`.
   - Added new enum attributes `gen_ai.token.modality`
     (`text`/`image`/`audio`/`video`/`document`/`unknown`), `gen_ai.token.cache`
-    (`none`/`read`/`write`), and `gen_ai.token.phase`
+    (`uncached`/`read`/`write`), and `gen_ai.token.phase`
     (`response`/`reasoning`).
 
 ### 🚩 Deprecations 🚩

@@ -43,7 +43,7 @@ metrics:
     brief: 'Number of input tokens used in client inference operations, partitioned by cache status.'
     note: |
       When the provider reports no cache fields, instrumentations MUST
-      report the full input total under `gen_ai.token.cache=none`.
+      report the full input total under `gen_ai.token.cache=uncached`.
 
       Per inference call, the total tokens reported on this counter MUST
       equal the total reported on `gen_ai.client.inference.tokens` with
