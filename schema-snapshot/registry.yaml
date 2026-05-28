@@ -621,6 +621,11 @@ refinements:
         Instrumentations SHOULD make a best effort to populate this value, using a total
         provided by the provider when available or, depending on the provider API,
         by summing different token types parsed from the provider output.
+
+        When the provider reports both billed token counts and model-consumed
+        token counts (for example, Cohere exposes both `usage.billed_units` and
+        `usage.tokens`), instrumentations SHOULD report the billed count so the
+        value matches the units the customer is charged for.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level: recommended
@@ -630,6 +635,11 @@ refinements:
       examples:
       - 180
       key: gen_ai.usage.output_tokens
+      note: |
+        When the provider reports both billed token counts and model-consumed
+        token counts (for example, Cohere exposes both `usage.billed_units` and
+        `usage.tokens`), instrumentations SHOULD report the billed count so the
+        value matches the units the customer is charged for.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level: recommended
@@ -4757,6 +4767,11 @@ refinements:
       examples:
       - 180
       key: gen_ai.usage.output_tokens
+      note: |
+        When the provider reports both billed token counts and model-consumed
+        token counts (for example, Cohere exposes both `usage.billed_units` and
+        `usage.tokens`), instrumentations SHOULD report the billed count so the
+        value matches the units the customer is charged for.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level: recommended
@@ -5456,6 +5471,11 @@ refinements:
         Instrumentations SHOULD make a best effort to populate this value, using a total
         provided by the provider when available or, depending on the provider API,
         by summing different token types parsed from the provider output.
+
+        When the provider reports both billed token counts and model-consumed
+        token counts (for example, Cohere exposes both `usage.billed_units` and
+        `usage.tokens`), instrumentations SHOULD report the billed count so the
+        value matches the units the customer is charged for.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level: recommended
@@ -5465,6 +5485,11 @@ refinements:
       examples:
       - 180
       key: gen_ai.usage.output_tokens
+      note: |
+        When the provider reports both billed token counts and model-consumed
+        token counts (for example, Cohere exposes both `usage.billed_units` and
+        `usage.tokens`), instrumentations SHOULD report the billed count so the
+        value matches the units the customer is charged for.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level: recommended
@@ -6164,6 +6189,11 @@ refinements:
         Instrumentations SHOULD make a best effort to populate this value, using a total
         provided by the provider when available or, depending on the provider API,
         by summing different token types parsed from the provider output.
+
+        When the provider reports both billed token counts and model-consumed
+        token counts (for example, Cohere exposes both `usage.billed_units` and
+        `usage.tokens`), instrumentations SHOULD report the billed count so the
+        value matches the units the customer is charged for.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level: recommended
@@ -6174,6 +6204,11 @@ refinements:
       examples:
       - 180
       key: gen_ai.usage.output_tokens
+      note: |
+        When the provider reports both billed token counts and model-consumed
+        token counts (for example, Cohere exposes both `usage.billed_units` and
+        `usage.tokens`), instrumentations SHOULD report the billed count so the
+        value matches the units the customer is charged for.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level: recommended
@@ -6803,6 +6838,11 @@ refinements:
         Instrumentations SHOULD make a best effort to populate this value, using a total
         provided by the provider when available or, depending on the provider API,
         by summing different token types parsed from the provider output.
+
+        When the provider reports both billed token counts and model-consumed
+        token counts (for example, Cohere exposes both `usage.billed_units` and
+        `usage.tokens`), instrumentations SHOULD report the billed count so the
+        value matches the units the customer is charged for.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level: recommended
@@ -7685,6 +7725,11 @@ refinements:
         Instrumentations SHOULD make a best effort to populate this value, using a total
         provided by the provider when available or, depending on the provider API,
         by summing different token types parsed from the provider output.
+
+        When the provider reports both billed token counts and model-consumed
+        token counts (for example, Cohere exposes both `usage.billed_units` and
+        `usage.tokens`), instrumentations SHOULD report the billed count so the
+        value matches the units the customer is charged for.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level: recommended
@@ -7694,6 +7739,11 @@ refinements:
       examples:
       - 180
       key: gen_ai.usage.output_tokens
+      note: |
+        When the provider reports both billed token counts and model-consumed
+        token counts (for example, Cohere exposes both `usage.billed_units` and
+        `usage.tokens`), instrumentations SHOULD report the billed count so the
+        value matches the units the customer is charged for.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level: recommended
@@ -8385,6 +8435,11 @@ refinements:
         Instrumentations SHOULD make a best effort to populate this value, using a total
         provided by the provider when available or, depending on the provider API,
         by summing different token types parsed from the provider output.
+
+        When the provider reports both billed token counts and model-consumed
+        token counts (for example, Cohere exposes both `usage.billed_units` and
+        `usage.tokens`), instrumentations SHOULD report the billed count so the
+        value matches the units the customer is charged for.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level: recommended
@@ -8394,6 +8449,11 @@ refinements:
       examples:
       - 180
       key: gen_ai.usage.output_tokens
+      note: |
+        When the provider reports both billed token counts and model-consumed
+        token counts (for example, Cohere exposes both `usage.billed_units` and
+        `usage.tokens`), instrumentations SHOULD report the billed count so the
+        value matches the units the customer is charged for.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level: recommended
@@ -9072,6 +9132,11 @@ refinements:
         Instrumentations SHOULD make a best effort to populate this value, using a total
         provided by the provider when available or, depending on the provider API,
         by summing different token types parsed from the provider output.
+
+        When the provider reports both billed token counts and model-consumed
+        token counts (for example, Cohere exposes both `usage.billed_units` and
+        `usage.tokens`), instrumentations SHOULD report the billed count so the
+        value matches the units the customer is charged for.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level: recommended
@@ -9081,6 +9146,11 @@ refinements:
       examples:
       - 180
       key: gen_ai.usage.output_tokens
+      note: |
+        When the provider reports both billed token counts and model-consumed
+        token counts (for example, Cohere exposes both `usage.billed_units` and
+        `usage.tokens`), instrumentations SHOULD report the billed count so the
+        value matches the units the customer is charged for.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level: recommended
@@ -11753,6 +11823,11 @@ refinements:
       examples:
       - 180
       key: gen_ai.usage.output_tokens
+      note: |
+        When the provider reports both billed token counts and model-consumed
+        token counts (for example, Cohere exposes both `usage.billed_units` and
+        `usage.tokens`), instrumentations SHOULD report the billed count so the
+        value matches the units the customer is charged for.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level: recommended
@@ -12768,6 +12843,11 @@ registry:
       Instrumentations SHOULD make a best effort to populate this value, using a total
       provided by the provider when available or, depending on the provider API,
       by summing different token types parsed from the provider output.
+
+      When the provider reports both billed token counts and model-consumed
+      token counts (for example, Cohere exposes both `usage.billed_units` and
+      `usage.tokens`), instrumentations SHOULD report the billed count so the
+      value matches the units the customer is charged for.
     provenance:
       path: ./model/gen-ai/registry.yaml
     stability: development
@@ -12776,6 +12856,11 @@ registry:
     examples:
     - 180
     key: gen_ai.usage.output_tokens
+    note: |
+      When the provider reports both billed token counts and model-consumed
+      token counts (for example, Cohere exposes both `usage.billed_units` and
+      `usage.tokens`), instrumentations SHOULD report the billed count so the
+      value matches the units the customer is charged for.
     provenance:
       path: ./model/gen-ai/registry.yaml
     stability: development
@@ -13639,6 +13724,11 @@ registry:
         Instrumentations SHOULD make a best effort to populate this value, using a total
         provided by the provider when available or, depending on the provider API,
         by summing different token types parsed from the provider output.
+
+        When the provider reports both billed token counts and model-consumed
+        token counts (for example, Cohere exposes both `usage.billed_units` and
+        `usage.tokens`), instrumentations SHOULD report the billed count so the
+        value matches the units the customer is charged for.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level: recommended
@@ -13648,6 +13738,11 @@ registry:
       examples:
       - 180
       key: gen_ai.usage.output_tokens
+      note: |
+        When the provider reports both billed token counts and model-consumed
+        token counts (for example, Cohere exposes both `usage.billed_units` and
+        `usage.tokens`), instrumentations SHOULD report the billed count so the
+        value matches the units the customer is charged for.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level: recommended
@@ -17164,6 +17259,11 @@ registry:
         Instrumentations SHOULD make a best effort to populate this value, using a total
         provided by the provider when available or, depending on the provider API,
         by summing different token types parsed from the provider output.
+
+        When the provider reports both billed token counts and model-consumed
+        token counts (for example, Cohere exposes both `usage.billed_units` and
+        `usage.tokens`), instrumentations SHOULD report the billed count so the
+        value matches the units the customer is charged for.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level: recommended
@@ -18044,6 +18144,11 @@ registry:
         Instrumentations SHOULD make a best effort to populate this value, using a total
         provided by the provider when available or, depending on the provider API,
         by summing different token types parsed from the provider output.
+
+        When the provider reports both billed token counts and model-consumed
+        token counts (for example, Cohere exposes both `usage.billed_units` and
+        `usage.tokens`), instrumentations SHOULD report the billed count so the
+        value matches the units the customer is charged for.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level: recommended
@@ -18053,6 +18158,11 @@ registry:
       examples:
       - 180
       key: gen_ai.usage.output_tokens
+      note: |
+        When the provider reports both billed token counts and model-consumed
+        token counts (for example, Cohere exposes both `usage.billed_units` and
+        `usage.tokens`), instrumentations SHOULD report the billed count so the
+        value matches the units the customer is charged for.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level: recommended
@@ -18743,6 +18853,11 @@ registry:
         Instrumentations SHOULD make a best effort to populate this value, using a total
         provided by the provider when available or, depending on the provider API,
         by summing different token types parsed from the provider output.
+
+        When the provider reports both billed token counts and model-consumed
+        token counts (for example, Cohere exposes both `usage.billed_units` and
+        `usage.tokens`), instrumentations SHOULD report the billed count so the
+        value matches the units the customer is charged for.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level: recommended
@@ -18752,6 +18867,11 @@ registry:
       examples:
       - 180
       key: gen_ai.usage.output_tokens
+      note: |
+        When the provider reports both billed token counts and model-consumed
+        token counts (for example, Cohere exposes both `usage.billed_units` and
+        `usage.tokens`), instrumentations SHOULD report the billed count so the
+        value matches the units the customer is charged for.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level: recommended
@@ -19429,6 +19549,11 @@ registry:
         Instrumentations SHOULD make a best effort to populate this value, using a total
         provided by the provider when available or, depending on the provider API,
         by summing different token types parsed from the provider output.
+
+        When the provider reports both billed token counts and model-consumed
+        token counts (for example, Cohere exposes both `usage.billed_units` and
+        `usage.tokens`), instrumentations SHOULD report the billed count so the
+        value matches the units the customer is charged for.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level: recommended
@@ -19438,6 +19563,11 @@ registry:
       examples:
       - 180
       key: gen_ai.usage.output_tokens
+      note: |
+        When the provider reports both billed token counts and model-consumed
+        token counts (for example, Cohere exposes both `usage.billed_units` and
+        `usage.tokens`), instrumentations SHOULD report the billed count so the
+        value matches the units the customer is charged for.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level: recommended
