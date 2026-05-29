@@ -438,7 +438,7 @@ refinements:
     - brief: |
         The top-K sampling setting for the GenAI request: restricts token generation at each step to the K most likely next tokens.
       examples:
-      - 1.0
+      - 40
       key: gen_ai.request.top_k
       note: |
         This is a decoding/sampling parameter (e.g., Anthropic `top_k`, Cohere `k`, Google `topK`), not an output-shaping parameter. In particular, OpenAI\u0027s `top_logprobs` controls how many per-token log-probabilities are returned in the response and does not change generation; it MUST NOT be reported as `gen_ai.request.top_k`.
@@ -447,7 +447,7 @@ refinements:
       requirement_level:
         conditionally_required: if applicable
       stability: development
-      type: double
+      type: int
     - brief: The top_p sampling setting for the GenAI request.
       examples:
       - 1.0
@@ -4572,7 +4572,7 @@ refinements:
     - brief: |
         The top-K sampling setting for the GenAI request: restricts token generation at each step to the K most likely next tokens.
       examples:
-      - 1.0
+      - 40
       key: gen_ai.request.top_k
       note: |
         This is a decoding/sampling parameter (e.g., Anthropic `top_k`, Cohere `k`, Google `topK`), not an output-shaping parameter. In particular, OpenAI\u0027s `top_logprobs` controls how many per-token log-probabilities are returned in the response and does not change generation; it MUST NOT be reported as `gen_ai.request.top_k`.
@@ -4580,7 +4580,7 @@ refinements:
         path: ./model/gen-ai/registry.yaml
       requirement_level: recommended
       stability: development
-      type: double
+      type: int
     - brief: The top_p sampling setting for the GenAI request.
       examples:
       - 1.0
@@ -5280,7 +5280,7 @@ refinements:
     - brief: |
         The top-K sampling setting for the GenAI request: restricts token generation at each step to the K most likely next tokens.
       examples:
-      - 1.0
+      - 40
       key: gen_ai.request.top_k
       note: |
         This is a decoding/sampling parameter (e.g., Anthropic `top_k`, Cohere `k`, Google `topK`), not an output-shaping parameter. In particular, OpenAI\u0027s `top_logprobs` controls how many per-token log-probabilities are returned in the response and does not change generation; it MUST NOT be reported as `gen_ai.request.top_k`.
@@ -5288,7 +5288,7 @@ refinements:
         path: ./model/gen-ai/registry.yaml
       requirement_level: recommended
       stability: development
-      type: double
+      type: int
     - brief: The top_p sampling setting for the GenAI request.
       examples:
       - 1.0
@@ -5989,7 +5989,7 @@ refinements:
     - brief: |
         The top-K sampling setting for the GenAI request: restricts token generation at each step to the K most likely next tokens.
       examples:
-      - 1.0
+      - 40
       key: gen_ai.request.top_k
       note: |
         This is a decoding/sampling parameter (e.g., Anthropic `top_k`, Cohere `k`, Google `topK`), not an output-shaping parameter. In particular, OpenAI\u0027s `top_logprobs` controls how many per-token log-probabilities are returned in the response and does not change generation; it MUST NOT be reported as `gen_ai.request.top_k`.
@@ -5998,7 +5998,7 @@ refinements:
       requirement_level:
         conditionally_required: if applicable
       stability: development
-      type: double
+      type: int
     - brief: The top_p sampling setting for the GenAI request.
       examples:
       - 1.0
@@ -7514,7 +7514,7 @@ refinements:
     - brief: |
         The top-K sampling setting for the GenAI request: restricts token generation at each step to the K most likely next tokens.
       examples:
-      - 1.0
+      - 40
       key: gen_ai.request.top_k
       note: |
         This is a decoding/sampling parameter (e.g., Anthropic `top_k`, Cohere `k`, Google `topK`), not an output-shaping parameter. In particular, OpenAI\u0027s `top_logprobs` controls how many per-token log-probabilities are returned in the response and does not change generation; it MUST NOT be reported as `gen_ai.request.top_k`.
@@ -7523,7 +7523,7 @@ refinements:
       requirement_level:
         conditionally_required: if applicable
       stability: development
-      type: double
+      type: int
     - brief: The top_p sampling setting for the GenAI request.
       examples:
       - 1.0
@@ -10074,18 +10074,6 @@ refinements:
         conditionally_required: If available.
       stability: development
       type: string
-    - brief: |
-        The top-K sampling setting for the GenAI request: restricts token generation at each step to the K most likely next tokens.
-      examples:
-      - 1.0
-      key: gen_ai.request.top_k
-      note: |
-        This is a decoding/sampling parameter (e.g., Anthropic `top_k`, Cohere `k`, Google `topK`), not an output-shaping parameter. In particular, OpenAI\u0027s `top_logprobs` controls how many per-token log-probabilities are returned in the response and does not change generation; it MUST NOT be reported as `gen_ai.request.top_k`.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level: recommended
-      stability: development
-      type: double
     - brief: The documents retrieved.
       examples:
       - |
@@ -10130,6 +10118,16 @@ refinements:
       requirement_level: opt_in
       stability: development
       type: string
+    - brief: |
+        The maximum number of documents the retriever was asked to return for the query (also known as `k`, `limit`, or `max_num_results`).
+      examples:
+      - 5
+      key: gen_ai.retrieval.top_k
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: recommended
+      stability: development
+      type: int
     - brief: GenAI server address.
       examples:
       - example.com
@@ -11582,7 +11580,7 @@ refinements:
     - brief: |
         The top-K sampling setting for the GenAI request: restricts token generation at each step to the K most likely next tokens.
       examples:
-      - 1.0
+      - 40
       key: gen_ai.request.top_k
       note: |
         This is a decoding/sampling parameter (e.g., Anthropic `top_k`, Cohere `k`, Google `topK`), not an output-shaping parameter. In particular, OpenAI\u0027s `top_logprobs` controls how many per-token log-probabilities are returned in the response and does not change generation; it MUST NOT be reported as `gen_ai.request.top_k`.
@@ -11591,7 +11589,7 @@ refinements:
       requirement_level:
         conditionally_required: if applicable
       stability: development
-      type: double
+      type: int
     - brief: The top_p sampling setting for the GenAI request.
       examples:
       - 1.0
@@ -12479,14 +12477,14 @@ registry:
   - brief: |
       The top-K sampling setting for the GenAI request: restricts token generation at each step to the K most likely next tokens.
     examples:
-    - 1.0
+    - 40
     key: gen_ai.request.top_k
     note: |
       This is a decoding/sampling parameter (e.g., Anthropic `top_k`, Cohere `k`, Google `topK`), not an output-shaping parameter. In particular, OpenAI\u0027s `top_logprobs` controls how many per-token log-probabilities are returned in the response and does not change generation; it MUST NOT be reported as `gen_ai.request.top_k`.
     provenance:
       path: ./model/gen-ai/registry.yaml
     stability: development
-    type: double
+    type: int
   - brief: The top_p sampling setting for the GenAI request.
     examples:
     - 1.0
@@ -12573,6 +12571,15 @@ registry:
       path: ./model/gen-ai/registry.yaml
     stability: development
     type: string
+  - brief: |
+      The maximum number of documents the retriever was asked to return for the query (also known as `k`, `limit`, or `max_num_results`).
+    examples:
+    - 5
+    key: gen_ai.retrieval.top_k
+    provenance:
+      path: ./model/gen-ai/registry.yaml
+    stability: development
+    type: int
   - brief: The system message or instructions provided to the GenAI model separately from the chat history.
     examples:
     - |
@@ -13480,7 +13487,7 @@ registry:
     - brief: |
         The top-K sampling setting for the GenAI request: restricts token generation at each step to the K most likely next tokens.
       examples:
-      - 1.0
+      - 40
       key: gen_ai.request.top_k
       note: |
         This is a decoding/sampling parameter (e.g., Anthropic `top_k`, Cohere `k`, Google `topK`), not an output-shaping parameter. In particular, OpenAI\u0027s `top_logprobs` controls how many per-token log-probabilities are returned in the response and does not change generation; it MUST NOT be reported as `gen_ai.request.top_k`.
@@ -13489,7 +13496,7 @@ registry:
       requirement_level:
         conditionally_required: if applicable
       stability: development
-      type: double
+      type: int
     - brief: The top_p sampling setting for the GenAI request.
       examples:
       - 1.0
@@ -17888,7 +17895,7 @@ registry:
     - brief: |
         The top-K sampling setting for the GenAI request: restricts token generation at each step to the K most likely next tokens.
       examples:
-      - 1.0
+      - 40
       key: gen_ai.request.top_k
       note: |
         This is a decoding/sampling parameter (e.g., Anthropic `top_k`, Cohere `k`, Google `topK`), not an output-shaping parameter. In particular, OpenAI\u0027s `top_logprobs` controls how many per-token log-probabilities are returned in the response and does not change generation; it MUST NOT be reported as `gen_ai.request.top_k`.
@@ -17897,7 +17904,7 @@ registry:
       requirement_level:
         conditionally_required: if applicable
       stability: development
-      type: double
+      type: int
     - brief: The top_p sampling setting for the GenAI request.
       examples:
       - 1.0
@@ -20442,18 +20449,6 @@ registry:
         conditionally_required: If available.
       stability: development
       type: string
-    - brief: |
-        The top-K sampling setting for the GenAI request: restricts token generation at each step to the K most likely next tokens.
-      examples:
-      - 1.0
-      key: gen_ai.request.top_k
-      note: |
-        This is a decoding/sampling parameter (e.g., Anthropic `top_k`, Cohere `k`, Google `topK`), not an output-shaping parameter. In particular, OpenAI\u0027s `top_logprobs` controls how many per-token log-probabilities are returned in the response and does not change generation; it MUST NOT be reported as `gen_ai.request.top_k`.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level: recommended
-      stability: development
-      type: double
     - brief: The documents retrieved.
       examples:
       - |
@@ -20498,6 +20493,16 @@ registry:
       requirement_level: opt_in
       stability: development
       type: string
+    - brief: |
+        The maximum number of documents the retriever was asked to return for the query (also known as `k`, `limit`, or `max_num_results`).
+      examples:
+      - 5
+      key: gen_ai.retrieval.top_k
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: recommended
+      stability: development
+      type: int
     - brief: GenAI server address.
       examples:
       - example.com

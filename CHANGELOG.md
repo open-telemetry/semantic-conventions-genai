@@ -4,6 +4,11 @@
 
 ### 🛑 Breaking changes 🛑
 
+- Change `gen_ai.request.top_k` type from `double` to `int` and scope it to
+  decoding only. Retrieval spans now use the new
+  `gen_ai.retrieval.top_k` attribute instead of `gen_ai.request.top_k`.
+  ([#217](https://github.com/open-telemetry/semantic-conventions-genai/pull/217))
+
 ### 🚩 Deprecations 🚩
 
 ### 🚀 New components 🚀
