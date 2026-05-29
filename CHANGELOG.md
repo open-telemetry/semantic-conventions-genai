@@ -31,3 +31,9 @@
   ([#136](https://github.com/open-telemetry/semantic-conventions-genai/pull/136))
 
 ### 📚 Clarifications 📚
+
+- Clarify the boundary between `gen_ai.memory.records` and `gen_ai.retrieval.documents`:
+  the attribute follows the operation the caller invoked, not the backing store, so
+  `search_memory` spans use `gen_ai.memory.records` even when the memory store is
+  backed by a vector database.
+  ([#139](https://github.com/open-telemetry/semantic-conventions-genai/issues/139))

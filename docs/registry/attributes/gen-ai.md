@@ -96,6 +96,9 @@ When the attribute is recorded on events, it MUST be recorded in structured
 form. When recorded on spans, it MAY be recorded as a JSON string if structured
 format is not supported and SHOULD be recorded in structured form otherwise.
 
+The choice between this attribute and `gen_ai.retrieval.documents` follows the
+operation the caller invoked, not the backing store.
+
 Instrumentations SHOULD NOT capture this attribute by default. Capture SHOULD be gated
 by an explicit user opt-in, for example `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT`.
 
@@ -158,6 +161,9 @@ format is not supported and SHOULD be recorded in structured form otherwise.
 
 Each document object SHOULD contain at least the following properties:
 `id` (string): A unique identifier for the document, `score` (double): The relevance score of the document
+
+The choice between this attribute and `gen_ai.memory.records` follows the
+operation the caller invoked, not the backing store.
 
 **[14] `gen_ai.retrieval.query.text`:**
 
