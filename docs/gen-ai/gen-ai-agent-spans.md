@@ -67,15 +67,14 @@ Semantic conventions for individual GenAI systems and frameworks MAY specify dif
 
 **[1] `gen_ai.operation.name`:** If one of the predefined values applies, but specific system uses a different name it's RECOMMENDED to document it in the semantic conventions for specific GenAI system and use system-specific name in the instrumentation. If a different name is not documented, instrumentation libraries SHOULD use applicable predefined value.
 
-**[2] `gen_ai.provider.name`:** The attribute SHOULD be set based on the instrumentation's best
-knowledge and may differ from the actual model provider.
+**[2] `gen_ai.provider.name`:** Semantic conventions for individual GenAI operations SHOULD clarify which
+kinds of providers (e.g. inference, embeddings, retrieval, memory, hosted
+agent providers) apply when it is not clear from context.
 
-Multiple providers, including Azure OpenAI, Gemini, and AI hosting platforms
-are accessible using the OpenAI REST API and corresponding client libraries,
-but may proxy or host models from different providers.
-
-The `gen_ai.request.model`, `gen_ai.response.model`, and `server.address`
-attributes may help identify the actual system in use.
+The attribute SHOULD be set based on the instrumentation's best knowledge
+and may differ from the actual upstream provider. For example, a client SDK
+may be configured against a proxy or hosting platform that transparently
+relays requests to a different provider.
 
 The `gen_ai.provider.name` attribute acts as a discriminator that
 identifies the GenAI telemetry format flavor specific to that provider
@@ -231,15 +230,14 @@ Examples: OpenAI Assistants API, AWS Bedrock Agents.
 
 **[1] `gen_ai.operation.name`:** If one of the predefined values applies, but specific system uses a different name it's RECOMMENDED to document it in the semantic conventions for specific GenAI system and use system-specific name in the instrumentation. If a different name is not documented, instrumentation libraries SHOULD use applicable predefined value.
 
-**[2] `gen_ai.provider.name`:** The attribute SHOULD be set based on the instrumentation's best
-knowledge and may differ from the actual model provider.
+**[2] `gen_ai.provider.name`:** Semantic conventions for individual GenAI operations SHOULD clarify which
+kinds of providers (e.g. inference, embeddings, retrieval, memory, hosted
+agent providers) apply when it is not clear from context.
 
-Multiple providers, including Azure OpenAI, Gemini, and AI hosting platforms
-are accessible using the OpenAI REST API and corresponding client libraries,
-but may proxy or host models from different providers.
-
-The `gen_ai.request.model`, `gen_ai.response.model`, and `server.address`
-attributes may help identify the actual system in use.
+The attribute SHOULD be set based on the instrumentation's best knowledge
+and may differ from the actual upstream provider. For example, a client SDK
+may be configured against a proxy or hosting platform that transparently
+relays requests to a different provider.
 
 The `gen_ai.provider.name` attribute acts as a discriminator that
 identifies the GenAI telemetry format flavor specific to that provider
@@ -500,15 +498,14 @@ Examples: LangChain agents, CrewAI agents.
 
 **[1] `gen_ai.operation.name`:** If one of the predefined values applies, but specific system uses a different name it's RECOMMENDED to document it in the semantic conventions for specific GenAI system and use system-specific name in the instrumentation. If a different name is not documented, instrumentation libraries SHOULD use applicable predefined value.
 
-**[2] `gen_ai.provider.name`:** The attribute SHOULD be set based on the instrumentation's best
-knowledge and may differ from the actual model provider.
+**[2] `gen_ai.provider.name`:** Semantic conventions for individual GenAI operations SHOULD clarify which
+kinds of providers (e.g. inference, embeddings, retrieval, memory, hosted
+agent providers) apply when it is not clear from context.
 
-Multiple providers, including Azure OpenAI, Gemini, and AI hosting platforms
-are accessible using the OpenAI REST API and corresponding client libraries,
-but may proxy or host models from different providers.
-
-The `gen_ai.request.model`, `gen_ai.response.model`, and `server.address`
-attributes may help identify the actual system in use.
+The attribute SHOULD be set based on the instrumentation's best knowledge
+and may differ from the actual upstream provider. For example, a client SDK
+may be configured against a proxy or hosting platform that transparently
+relays requests to a different provider.
 
 The `gen_ai.provider.name` attribute acts as a discriminator that
 identifies the GenAI telemetry format flavor specific to that provider
