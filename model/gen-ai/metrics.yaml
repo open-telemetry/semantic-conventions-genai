@@ -33,7 +33,12 @@ metrics:
   - name: gen_ai.client.operation.duration
     instrument: histogram
     unit: "s"
-    brief: 'GenAI operation duration.'
+    brief: 'GenAI client operation duration.'
+    note: >
+      This metric covers GenAI client operations such as inference, embeddings, retrieval,
+      memory, agent creation, and remote agent invocation. It SHOULD NOT be recorded for
+      internal operations such as tool execution, workflow invocation, planning, or
+      in-process agent invocation.
     stability: development
     annotations:
       code_generation:

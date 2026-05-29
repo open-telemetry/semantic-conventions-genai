@@ -1063,10 +1063,12 @@ refinements:
         conditionally_required: If `server.address` is set.
       stability: stable
       type: int
-    brief: GenAI operation duration.
+    brief: GenAI client operation duration.
     id: gen_ai.client.operation.duration
     instrument: histogram
     name: gen_ai.client.operation.duration
+    note: |
+      This metric covers GenAI client operations such as inference, embeddings, retrieval, memory, agent creation, and remote agent invocation. It SHOULD NOT be recorded for internal operations such as tool execution, workflow invocation, planning, or in-process agent invocation.
     provenance:
       path: ./model/gen-ai/metrics.yaml
     stability: development
@@ -3854,6 +3856,8 @@ refinements:
     id: openai.client.operation.duration
     instrument: histogram
     name: gen_ai.client.operation.duration
+    note: |
+      This metric covers GenAI client operations such as inference, embeddings, retrieval, memory, agent creation, and remote agent invocation. It SHOULD NOT be recorded for internal operations such as tool execution, workflow invocation, planning, or in-process agent invocation.
     provenance:
       path: ./model/gen-ai/metrics.yaml
     stability: development
@@ -14078,9 +14082,11 @@ registry:
         conditionally_required: If `server.address` is set.
       stability: stable
       type: int
-    brief: GenAI operation duration.
+    brief: GenAI client operation duration.
     instrument: histogram
     name: gen_ai.client.operation.duration
+    note: |
+      This metric covers GenAI client operations such as inference, embeddings, retrieval, memory, agent creation, and remote agent invocation. It SHOULD NOT be recorded for internal operations such as tool execution, workflow invocation, planning, or in-process agent invocation.
     provenance:
       path: ./model/gen-ai/metrics.yaml
     stability: development

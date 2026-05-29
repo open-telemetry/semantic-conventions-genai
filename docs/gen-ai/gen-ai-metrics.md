@@ -177,7 +177,9 @@ This metric SHOULD be specified with [ExplicitBucketBoundaries] of [0.01, 0.02, 
 
 | Name | Instrument Type | Unit (UCUM) | Description | Stability | Entity Associations |
 | -------- | --------------- | ----------- | -------------- | --------- | ------ |
-| `gen_ai.client.operation.duration` | Histogram | `s` | GenAI operation duration. | ![Development](https://img.shields.io/badge/-development-blue) | |
+| `gen_ai.client.operation.duration` | Histogram | `s` | GenAI client operation duration. [1] | ![Development](https://img.shields.io/badge/-development-blue) | |
+
+**[1]:** This metric covers GenAI client operations such as inference, embeddings, retrieval, memory, agent creation, and remote agent invocation. It SHOULD NOT be recorded for internal operations such as tool execution, workflow invocation, planning, or in-process agent invocation.
 
 **Attributes:**
 

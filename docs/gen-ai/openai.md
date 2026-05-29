@@ -417,7 +417,9 @@ Measures the to complete an operation following the common [gen_ai.client.operat
 
 | Name | Instrument Type | Unit (UCUM) | Description | Stability | Entity Associations |
 | -------- | --------------- | ----------- | -------------- | --------- | ------ |
-| `gen_ai.client.operation.duration` | Histogram | `s` | OpenAI-specific extension to `gen_ai.client.operation.duration`. Adds `openai.response.service_tier` and `openai.response.system_fingerprint` when the provider is `openai`. | ![Development](https://img.shields.io/badge/-development-blue) | |
+| `gen_ai.client.operation.duration` | Histogram | `s` | OpenAI-specific extension to `gen_ai.client.operation.duration`. Adds `openai.response.service_tier` and `openai.response.system_fingerprint` when the provider is `openai`. [1] | ![Development](https://img.shields.io/badge/-development-blue) | |
+
+**[1]:** This metric covers GenAI client operations such as inference, embeddings, retrieval, memory, agent creation, and remote agent invocation. It SHOULD NOT be recorded for internal operations such as tool execution, workflow invocation, planning, or in-process agent invocation.
 
 **Attributes:**
 

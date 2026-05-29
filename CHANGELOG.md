@@ -31,3 +31,8 @@
   ([#136](https://github.com/open-telemetry/semantic-conventions-genai/pull/136))
 
 ### 📚 Clarifications 📚
+
+- Clarify that `gen_ai.client.operation.duration` covers GenAI client operations such as
+  inference, embeddings, retrieval, memory, agent creation, and remote agent invocation,
+  and should not be recorded for internal operations such as tool execution, workflow
+  invocation, planning, or in-process agent invocation.
