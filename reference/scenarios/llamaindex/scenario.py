@@ -290,8 +290,8 @@ def run_retrieval_reference():
         api_key="mock-key",
     )
     index = VectorStoreIndex.from_documents(documents, embed_model=embed_model)
-    request_top_k = 1.0
-    retriever = index.as_retriever(similarity_top_k=int(request_top_k))
+    top_k = 1
+    retriever = index.as_retriever(similarity_top_k=top_k)
     query_text = "Seattle weather"
 
     with _reference_tracer.start_as_current_span("retrieval weather-knowledge-base") as span:
@@ -299,7 +299,7 @@ def run_retrieval_reference():
         span.set_attribute("gen_ai.data_source.id", data_source_id)
         span.set_attribute("gen_ai.provider.name", "openai")
         span.set_attribute("gen_ai.request.model", request_model)
-        span.set_attribute("gen_ai.request.top_k", request_top_k)
+        span.set_attribute("gen_ai.retrieval.top_k", top_k)
         span.set_attribute("gen_ai.retrieval.query.text", query_text)
         if host:
             span.set_attribute("server.address", host)

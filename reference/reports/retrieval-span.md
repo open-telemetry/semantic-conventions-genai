@@ -21,7 +21,7 @@
 
 | Attribute | Supporting Libraries |
 | --- | --- |
-| gen_ai.request.top_k | [haystack], [langchain], [llamaindex] |
+| gen_ai.retrieval.top_k | [haystack], [langchain], [llamaindex] |
 | server.address | [llamaindex] |
 
 ## Opt-In
