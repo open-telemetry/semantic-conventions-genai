@@ -122,9 +122,9 @@ attributes:
     examples: [1.0]
     stability: development
   - key: gen_ai.request.top_k
-    type: double
+    type: int
     brief: The top_k sampling setting for the GenAI request.
-    examples: [1.0]
+    examples: [40]
     stability: development
   - key: gen_ai.request.stop_sequences
     type: string[]

@@ -27,7 +27,7 @@ def run_retrieval_reference():
 
     data_source_id = "weather-knowledge-base"
     query_text = "Seattle weather"
-    request_top_k = 2.0
+    request_top_k = 2
     retriever = WeatherRetriever(
         docs=[
             Document(page_content="Seattle weather is rainy and cool.", metadata={"source_id": data_source_id}),

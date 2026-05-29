@@ -4,6 +4,8 @@
 
 ### 🛑 Breaking changes 🛑
 
+- Change `gen_ai.request.top_k` from `double` to `int`.
+
 ### 🚩 Deprecations 🚩
 
 ### 🚀 New components 🚀

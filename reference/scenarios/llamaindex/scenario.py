@@ -290,8 +290,8 @@ def run_retrieval_reference():
         api_key="mock-key",
     )
     index = VectorStoreIndex.from_documents(documents, embed_model=embed_model)
-    request_top_k = 1.0
-    retriever = index.as_retriever(similarity_top_k=int(request_top_k))
+    request_top_k = 1
+    retriever = index.as_retriever(similarity_top_k=request_top_k)
     query_text = "Seattle weather"
 
     with _reference_tracer.start_as_current_span("retrieval weather-knowledge-base") as span:

@@ -437,14 +437,14 @@ refinements:
       type: double
     - brief: The top_k sampling setting for the GenAI request.
       examples:
-      - 1.0
+      - 40
       key: gen_ai.request.top_k
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
         conditionally_required: if applicable
       stability: development
-      type: double
+      type: int
     - brief: The top_p sampling setting for the GenAI request.
       examples:
       - 1.0
@@ -4568,13 +4568,13 @@ refinements:
       type: double
     - brief: The top_k sampling setting for the GenAI request.
       examples:
-      - 1.0
+      - 40
       key: gen_ai.request.top_k
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level: recommended
       stability: development
-      type: double
+      type: int
     - brief: The top_p sampling setting for the GenAI request.
       examples:
       - 1.0
@@ -5273,13 +5273,13 @@ refinements:
       type: double
     - brief: The top_k sampling setting for the GenAI request.
       examples:
-      - 1.0
+      - 40
       key: gen_ai.request.top_k
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level: recommended
       stability: development
-      type: double
+      type: int
     - brief: The top_p sampling setting for the GenAI request.
       examples:
       - 1.0
@@ -5979,14 +5979,14 @@ refinements:
       type: double
     - brief: The top_k sampling setting for the GenAI request.
       examples:
-      - 1.0
+      - 40
       key: gen_ai.request.top_k
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
         conditionally_required: if applicable
       stability: development
-      type: double
+      type: int
     - brief: The top_p sampling setting for the GenAI request.
       examples:
       - 1.0
@@ -7501,14 +7501,14 @@ refinements:
       type: double
     - brief: The top_k sampling setting for the GenAI request.
       examples:
-      - 1.0
+      - 40
       key: gen_ai.request.top_k
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
         conditionally_required: if applicable
       stability: development
-      type: double
+      type: int
     - brief: The top_p sampling setting for the GenAI request.
       examples:
       - 1.0
@@ -10061,13 +10061,13 @@ refinements:
       type: string
     - brief: The top_k sampling setting for the GenAI request.
       examples:
-      - 1.0
+      - 40
       key: gen_ai.request.top_k
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level: recommended
       stability: development
-      type: double
+      type: int
     - brief: The documents retrieved.
       examples:
       - |
@@ -11563,14 +11563,14 @@ refinements:
       type: double
     - brief: The top_k sampling setting for the GenAI request.
       examples:
-      - 1.0
+      - 40
       key: gen_ai.request.top_k
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
         conditionally_required: if applicable
       stability: development
-      type: double
+      type: int
     - brief: The top_p sampling setting for the GenAI request.
       examples:
       - 1.0
@@ -12457,12 +12457,12 @@ registry:
     type: double
   - brief: The top_k sampling setting for the GenAI request.
     examples:
-    - 1.0
+    - 40
     key: gen_ai.request.top_k
     provenance:
       path: ./model/gen-ai/registry.yaml
     stability: development
-    type: double
+    type: int
   - brief: The top_p sampling setting for the GenAI request.
     examples:
     - 1.0
@@ -13455,14 +13455,14 @@ registry:
       type: double
     - brief: The top_k sampling setting for the GenAI request.
       examples:
-      - 1.0
+      - 40
       key: gen_ai.request.top_k
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
         conditionally_required: if applicable
       stability: development
-      type: double
+      type: int
     - brief: The top_p sampling setting for the GenAI request.
       examples:
       - 1.0
@@ -17860,14 +17860,14 @@ registry:
       type: double
     - brief: The top_k sampling setting for the GenAI request.
       examples:
-      - 1.0
+      - 40
       key: gen_ai.request.top_k
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
         conditionally_required: if applicable
       stability: development
-      type: double
+      type: int
     - brief: The top_p sampling setting for the GenAI request.
       examples:
       - 1.0
@@ -20414,13 +20414,13 @@ registry:
       type: string
     - brief: The top_k sampling setting for the GenAI request.
       examples:
-      - 1.0
+      - 40
       key: gen_ai.request.top_k
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level: recommended
       stability: development
-      type: double
+      type: int
     - brief: The documents retrieved.
       examples:
       - |
