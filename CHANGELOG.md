@@ -32,6 +32,6 @@
 
 ### 📚 Clarifications 📚
 
-- Clarify that a GenAI span SHOULD cover the duration of the corresponding call
-  as if it was observed by the caller, including any retries.
+- Clarify that a GenAI span SHOULD cover the duration of the operation
+  as observed by the caller, including any retries.
   ([#216](https://github.com/open-telemetry/semantic-conventions-genai/pull/216))
