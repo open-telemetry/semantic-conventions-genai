@@ -29,5 +29,9 @@
 
 - Add missing `gen_ai.tool.call.arguments` and `gen_ai.tool.call.result` opt-in attributes to MCP server span.
   ([#136](https://github.com/open-telemetry/semantic-conventions-genai/pull/136))
+- Relax `gen_ai.provider.name` on `gen_ai.client.operation.duration` to `Conditionally Required`,
+  to align with the `gen_ai.retrieval.client` and `gen_ai.memory.client` spans which already
+  allow omitting `gen_ai.provider.name`.
+  ([#214](https://github.com/open-telemetry/semantic-conventions-genai/pull/214))
 
 ### 📚 Clarifications 📚
