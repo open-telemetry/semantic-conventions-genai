@@ -32,7 +32,8 @@
 
 ### 📚 Clarifications 📚
 
-- Clarify that `gen_ai.client.operation.duration` covers GenAI client operations such as
-  inference, embeddings, retrieval, memory, agent creation, and remote agent invocation,
-  and should not be recorded for internal operations such as tool execution, workflow
-  invocation, planning, or in-process agent invocation.
+- Clarify that `gen_ai.client.operation.duration` corresponds to the GenAI inference,
+  embeddings, retrieval, memory, create agent, and invoke agent client spans, and that
+  when the metric is reported alongside one of these spans its value should be the same
+  as the span duration.
+  ([#215](https://github.com/open-telemetry/semantic-conventions-genai/pull/215))
