@@ -42,24 +42,23 @@ HTTP request in the corresponding request and response streams.
 
 ### Context propagation
 
-Model Context Protocol works on top of JSON-RPC and does not define a standard
-Trace Context propagation mechanism. MCP is transport independent and works across different transports. The specification expects clients to implement at least stdio or Streamable HTTP.
+Model Context Protocol works on top of JSON-RPC. MCP is transport independent
+and works across different transports. The specification expects clients to
+implement at least stdio or Streamable HTTP.
 
 HTTP trace context propagation only covers the HTTP request, but not the individual
 messages client and server exchange within the request/response streams.
 
-Instrumentations SHOULD propagate trace context inside MCP request [`params._meta`](https://modelcontextprotocol.io/specification/2025-11-25/basic#_meta)
-property bag.
+Instrumentations SHOULD propagate trace context inside the MCP request
+[`params._meta`](https://modelcontextprotocol.io/specification/2025-11-25/basic#_meta)
+property bag as described by
+[SEP-414](https://modelcontextprotocol.io/community/seps/414-request-meta).
 
 > [!NOTE]
-> The propagation format defined here is likely to change. Please check out
-> context propagation discussions in MCP repository:
-> [modelcontextprotocol#246](https://github.com/modelcontextprotocol/modelcontextprotocol/issues/246)
-> and
-> [modelcontextprotocol#414](https://github.com/modelcontextprotocol/modelcontextprotocol/pull/414).
->
-> If the MCP or JSON-RPC specifications provide official guidance, instrumentations
-> SHOULD prioritize that over the recommendation provided in this section.
+> MCP defines an exception to the `params._meta` DNS-prefixing convention for
+> the W3C Trace Context and Baggage keys. Instrumentations SHOULD use the
+> unprefixed `traceparent`, `tracestate`, and `baggage` keys when propagating
+> OpenTelemetry context in MCP messages.
 
 For example, when using [W3C Trace Context](https://www.w3.org/TR/trace-context/) propagation,
 inject `traceparent` and `tracestate` to the MCP message `params._meta` when creating request

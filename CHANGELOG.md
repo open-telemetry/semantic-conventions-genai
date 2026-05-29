@@ -31,3 +31,7 @@
   ([#136](https://github.com/open-telemetry/semantic-conventions-genai/pull/136))
 
 ### 📚 Clarifications 📚
+
+- Clarify MCP context propagation now that SEP-414 defines `traceparent`,
+  `tracestate`, and `baggage` as unprefixed `params._meta` keys.
+  ([#220](https://github.com/open-telemetry/semantic-conventions-genai/pull/220))
