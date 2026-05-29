@@ -31,3 +31,6 @@
   ([#136](https://github.com/open-telemetry/semantic-conventions-genai/pull/136))
 
 ### 📚 Clarifications 📚
+
+- Clarify that `gen_ai.conversation.id` should only be populated from an available conversation identifier,
+  and that instrumentations should not use fallback values such as generated UUIDs, trace IDs, or request-content hashes.
