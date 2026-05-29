@@ -29,9 +29,9 @@ They SHOULD cover the duration of the operation, starting when it is
 initiated and ending when the response is fully received or the operation
 is terminated due to an error or cancellation.
 
-If a transient issue happened and was retried within the operation, the
-corresponding span SHOULD cover the duration of the logical operation with
-all retries.
+If a transient issue happened and the request was retried automatically, the
+corresponding span SHOULD cover the duration of the logical operation with all
+retries.
 
 ### Inference
 
