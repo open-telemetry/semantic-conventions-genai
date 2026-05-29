@@ -132,7 +132,7 @@ attributes:
       particular, OpenAI's `top_logprobs` controls how many per-token
       log-probabilities are returned in the response and does not change
       generation; it MUST NOT be reported as `gen_ai.request.top_k`.
-    examples: [40]
+    examples: [1.0]
     stability: development
   - key: gen_ai.request.stop_sequences
     type: string[]
