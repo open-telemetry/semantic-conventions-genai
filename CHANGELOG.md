@@ -31,3 +31,8 @@
   ([#136](https://github.com/open-telemetry/semantic-conventions-genai/pull/136))
 
 ### 📚 Clarifications 📚
+
+- Clarify that `gen_ai.request.top_k` is the top-K sampling/decoding parameter
+  (e.g., Anthropic `top_k`, Cohere `k`) and not OpenAI's `top_logprobs`
+  output-shaping parameter.
+  ([#217](https://github.com/open-telemetry/semantic-conventions-genai/pull/217))
