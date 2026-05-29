@@ -29,6 +29,7 @@
     (`text`/`image`/`audio`/`video`/`document`/`unknown`), `gen_ai.token.cache`
     (`uncached`/`read`/`write`), and `gen_ai.token.phase`
     (`response`/`reasoning`).
+  ([#197](https://github.com/open-telemetry/semantic-conventions-genai/pull/197))
 
 ### 🚩 Deprecations 🚩
 
