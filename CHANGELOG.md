@@ -22,6 +22,9 @@
     `gen_ai.client.inference.output_tokens_by_phase` (dimensioned by
     `gen_ai.token.phase`). Added opt-in histograms
     `gen_ai.client.inference.operation.{tokens,input_tokens,output_tokens}`.
+  - Added counter `gen_ai.client.embeddings.tokens` for the input tokens
+    consumed by embeddings operations, which the removed
+    `gen_ai.client.token.usage` histogram previously covered.
   - Added new enum attributes `gen_ai.token.modality`
     (`text`/`image`/`audio`/`video`/`document`/`unknown`), `gen_ai.token.cache`
     (`uncached`/`read`/`write`), and `gen_ai.token.phase`

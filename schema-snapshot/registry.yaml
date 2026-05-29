@@ -1150,6 +1150,239 @@ refinements:
       requirement_level: recommended
       stability: development
       type: string
+    - brief: GenAI server address.
+      examples:
+      - example.com
+      - 10.1.2.80
+      - /tmp/my.sock
+      key: server.address
+      note: |
+        When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent the server address behind any intermediaries, for example proxies, if it\u0027s available.
+      requirement_level: recommended
+      stability: stable
+      type: string
+    - brief: GenAI server port.
+      examples:
+      - 80
+      - 8080
+      - 443
+      key: server.port
+      note: |
+        When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries, for example proxies, if it\u0027s available.
+      requirement_level:
+        conditionally_required: If `server.address` is set.
+      stability: stable
+      type: int
+    brief: Number of input tokens used in client embeddings operations.
+    id: gen_ai.client.embeddings.tokens
+    instrument: counter
+    name: gen_ai.client.embeddings.tokens
+    note: |
+      Embeddings operations consume input tokens only and produce no output
+      tokens, so this counter records input tokens exclusively.
+    provenance:
+      path: ./model/gen-ai/metrics.yaml
+    stability: development
+    unit: \u0027{token}\u0027
+  - annotations:
+      code_generation:
+        metric_value_type: int
+    attributes:
+    - brief: The name of the operation being performed.
+      key: gen_ai.operation.name
+      note: |
+        If one of the predefined values applies, but specific system uses a different name it\u0027s RECOMMENDED to document it in the semantic conventions for specific GenAI system and use system-specific name in the instrumentation. If a different name is not documented, instrumentation libraries SHOULD use applicable predefined value.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: required
+      stability: development
+      type:
+        members:
+        - brief: Chat completion operation such as [OpenAI Chat API](https://platform.openai.com/docs/api-reference/chat)
+          id: chat
+          stability: development
+          value: chat
+        - brief: Multimodal content generation operation such as [Gemini Generate Content](https://ai.google.dev/api/generate-content)
+          id: generate_content
+          stability: development
+          value: generate_content
+        - brief: Text completions operation such as [OpenAI Completions API (Legacy)](https://platform.openai.com/docs/api-reference/completions)
+          id: text_completion
+          stability: development
+          value: text_completion
+        - brief: Embeddings operation such as [OpenAI Create embeddings API](https://platform.openai.com/docs/api-reference/embeddings/create)
+          id: embeddings
+          stability: development
+          value: embeddings
+        - brief: Retrieval operation such as [OpenAI Search Vector Store API](https://platform.openai.com/docs/api-reference/vector-stores/search)
+          id: retrieval
+          stability: development
+          value: retrieval
+        - brief: Create GenAI agent
+          id: create_agent
+          stability: development
+          value: create_agent
+        - brief: Invoke GenAI agent
+          id: invoke_agent
+          stability: development
+          value: invoke_agent
+        - brief: Execute a tool
+          id: execute_tool
+          stability: development
+          value: execute_tool
+        - brief: Invoke GenAI workflow
+          id: invoke_workflow
+          stability: development
+          value: invoke_workflow
+        - brief: Agent planning or task decomposition phase
+          id: plan
+          stability: development
+          value: plan
+        - brief: Search/query memories from a memory store
+          id: search_memory
+          stability: development
+          value: search_memory
+        - brief: Create new memory records
+          id: create_memory
+          stability: development
+          value: create_memory
+        - brief: Update existing memory records
+          id: update_memory
+          stability: development
+          value: update_memory
+        - brief: Create or update memory records without the caller choosing which
+          id: upsert_memory
+          stability: development
+          value: upsert_memory
+        - brief: Delete memory records
+          id: delete_memory
+          stability: development
+          value: delete_memory
+        - brief: Create or initialize a memory store
+          id: create_memory_store
+          stability: development
+          value: create_memory_store
+        - brief: Delete or deprovision a memory store
+          id: delete_memory_store
+          stability: development
+          value: delete_memory_store
+    - brief: The Generative AI provider as identified by the client or server instrumentation.
+      key: gen_ai.provider.name
+      note: |
+        The attribute SHOULD be set based on the instrumentation\u0027s best
+        knowledge and may differ from the actual model provider.
+
+        Multiple providers, including Azure OpenAI, Gemini, and AI hosting platforms
+        are accessible using the OpenAI REST API and corresponding client libraries,
+        but may proxy or host models from different providers.
+
+        The `gen_ai.request.model`, `gen_ai.response.model`, and `server.address`
+        attributes may help identify the actual system in use.
+
+        The `gen_ai.provider.name` attribute acts as a discriminator that
+        identifies the GenAI telemetry format flavor specific to that provider
+        within GenAI semantic conventions.
+        It SHOULD be set consistently with provider-specific attributes and signals.
+        For example, GenAI spans, metrics, and events related to AWS Bedrock
+        should have the `gen_ai.provider.name` set to `aws.bedrock` and include
+        applicable `aws.bedrock.*` attributes and are not expected to include
+        `openai.*` attributes.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: required
+      stability: development
+      type:
+        members:
+        - brief: \u0027[OpenAI](https://openai.com/)\u0027
+          id: openai
+          stability: development
+          value: openai
+        - brief: Any Google generative AI endpoint
+          id: gcp.gen_ai
+          note: |
+            May be used when specific backend is unknown.
+          stability: development
+          value: gcp.gen_ai
+        - brief: \u0027[Vertex AI](https://cloud.google.com/vertex-ai)\u0027
+          id: gcp.vertex_ai
+          note: |
+            Used when accessing the \u0027aiplatform.googleapis.com\u0027 endpoint.
+          stability: development
+          value: gcp.vertex_ai
+        - brief: \u0027[Gemini](https://cloud.google.com/products/gemini)\u0027
+          id: gcp.gemini
+          note: |
+            Used when accessing the \u0027generativelanguage.googleapis.com\u0027 endpoint. Also known as the AI Studio API.
+          stability: development
+          value: gcp.gemini
+        - brief: \u0027[Anthropic](https://www.anthropic.com/)\u0027
+          id: anthropic
+          stability: development
+          value: anthropic
+        - brief: \u0027[Cohere](https://cohere.com/)\u0027
+          id: cohere
+          stability: development
+          value: cohere
+        - brief: Azure AI Inference
+          id: azure.ai.inference
+          stability: development
+          value: azure.ai.inference
+        - brief: \u0027[Azure OpenAI](https://learn.microsoft.com/en-us/azure/ai-services/openai/overview)\u0027
+          id: azure.ai.openai
+          stability: development
+          value: azure.ai.openai
+        - brief: \u0027[IBM Watsonx AI](https://www.ibm.com/products/watsonx-ai)\u0027
+          id: ibm.watsonx.ai
+          stability: development
+          value: ibm.watsonx.ai
+        - brief: \u0027[AWS Bedrock](https://aws.amazon.com/bedrock)\u0027
+          id: aws.bedrock
+          stability: development
+          value: aws.bedrock
+        - brief: \u0027[Perplexity](https://www.perplexity.ai/)\u0027
+          id: perplexity
+          stability: development
+          value: perplexity
+        - brief: \u0027[xAI](https://x.ai/)\u0027
+          id: x_ai
+          stability: development
+          value: x_ai
+        - brief: \u0027[DeepSeek](https://www.deepseek.com/)\u0027
+          id: deepseek
+          stability: development
+          value: deepseek
+        - brief: \u0027[Groq](https://groq.com/)\u0027
+          id: groq
+          stability: development
+          value: groq
+        - brief: \u0027[Mistral AI](https://mistral.ai/)\u0027
+          id: mistral_ai
+          stability: development
+          value: mistral_ai
+        - brief: \u0027[Moonshot AI](https://www.moonshot.ai/)\u0027
+          id: moonshot_ai
+          stability: development
+          value: moonshot_ai
+    - brief: The name of the GenAI model a request is being made to.
+      examples: gpt-4
+      key: gen_ai.request.model
+      note: |
+        The name of the GenAI model a request is being made to. If the model is supplied by a vendor, then the value must be the exact name of the model requested. If the model is a fine-tuned custom model, the value should have a more specific name than the base model that\u0027s been fine-tuned.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: If available.
+      stability: development
+      type: string
+    - brief: The name of the model that generated the response.
+      examples:
+      - gpt-4-0613
+      key: gen_ai.response.model
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: recommended
+      stability: development
+      type: string
     - brief: The cache status of the input tokens being counted.
       examples:
       - uncached
@@ -16554,6 +16787,238 @@ registry:
       path: ./model/gen-ai/events.yaml
     stability: development
   metrics:
+  - annotations:
+      code_generation:
+        metric_value_type: int
+    attributes:
+    - brief: The name of the operation being performed.
+      key: gen_ai.operation.name
+      note: |
+        If one of the predefined values applies, but specific system uses a different name it\u0027s RECOMMENDED to document it in the semantic conventions for specific GenAI system and use system-specific name in the instrumentation. If a different name is not documented, instrumentation libraries SHOULD use applicable predefined value.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: required
+      stability: development
+      type:
+        members:
+        - brief: Chat completion operation such as [OpenAI Chat API](https://platform.openai.com/docs/api-reference/chat)
+          id: chat
+          stability: development
+          value: chat
+        - brief: Multimodal content generation operation such as [Gemini Generate Content](https://ai.google.dev/api/generate-content)
+          id: generate_content
+          stability: development
+          value: generate_content
+        - brief: Text completions operation such as [OpenAI Completions API (Legacy)](https://platform.openai.com/docs/api-reference/completions)
+          id: text_completion
+          stability: development
+          value: text_completion
+        - brief: Embeddings operation such as [OpenAI Create embeddings API](https://platform.openai.com/docs/api-reference/embeddings/create)
+          id: embeddings
+          stability: development
+          value: embeddings
+        - brief: Retrieval operation such as [OpenAI Search Vector Store API](https://platform.openai.com/docs/api-reference/vector-stores/search)
+          id: retrieval
+          stability: development
+          value: retrieval
+        - brief: Create GenAI agent
+          id: create_agent
+          stability: development
+          value: create_agent
+        - brief: Invoke GenAI agent
+          id: invoke_agent
+          stability: development
+          value: invoke_agent
+        - brief: Execute a tool
+          id: execute_tool
+          stability: development
+          value: execute_tool
+        - brief: Invoke GenAI workflow
+          id: invoke_workflow
+          stability: development
+          value: invoke_workflow
+        - brief: Agent planning or task decomposition phase
+          id: plan
+          stability: development
+          value: plan
+        - brief: Search/query memories from a memory store
+          id: search_memory
+          stability: development
+          value: search_memory
+        - brief: Create new memory records
+          id: create_memory
+          stability: development
+          value: create_memory
+        - brief: Update existing memory records
+          id: update_memory
+          stability: development
+          value: update_memory
+        - brief: Create or update memory records without the caller choosing which
+          id: upsert_memory
+          stability: development
+          value: upsert_memory
+        - brief: Delete memory records
+          id: delete_memory
+          stability: development
+          value: delete_memory
+        - brief: Create or initialize a memory store
+          id: create_memory_store
+          stability: development
+          value: create_memory_store
+        - brief: Delete or deprovision a memory store
+          id: delete_memory_store
+          stability: development
+          value: delete_memory_store
+    - brief: The Generative AI provider as identified by the client or server instrumentation.
+      key: gen_ai.provider.name
+      note: |
+        The attribute SHOULD be set based on the instrumentation\u0027s best
+        knowledge and may differ from the actual model provider.
+
+        Multiple providers, including Azure OpenAI, Gemini, and AI hosting platforms
+        are accessible using the OpenAI REST API and corresponding client libraries,
+        but may proxy or host models from different providers.
+
+        The `gen_ai.request.model`, `gen_ai.response.model`, and `server.address`
+        attributes may help identify the actual system in use.
+
+        The `gen_ai.provider.name` attribute acts as a discriminator that
+        identifies the GenAI telemetry format flavor specific to that provider
+        within GenAI semantic conventions.
+        It SHOULD be set consistently with provider-specific attributes and signals.
+        For example, GenAI spans, metrics, and events related to AWS Bedrock
+        should have the `gen_ai.provider.name` set to `aws.bedrock` and include
+        applicable `aws.bedrock.*` attributes and are not expected to include
+        `openai.*` attributes.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: required
+      stability: development
+      type:
+        members:
+        - brief: \u0027[OpenAI](https://openai.com/)\u0027
+          id: openai
+          stability: development
+          value: openai
+        - brief: Any Google generative AI endpoint
+          id: gcp.gen_ai
+          note: |
+            May be used when specific backend is unknown.
+          stability: development
+          value: gcp.gen_ai
+        - brief: \u0027[Vertex AI](https://cloud.google.com/vertex-ai)\u0027
+          id: gcp.vertex_ai
+          note: |
+            Used when accessing the \u0027aiplatform.googleapis.com\u0027 endpoint.
+          stability: development
+          value: gcp.vertex_ai
+        - brief: \u0027[Gemini](https://cloud.google.com/products/gemini)\u0027
+          id: gcp.gemini
+          note: |
+            Used when accessing the \u0027generativelanguage.googleapis.com\u0027 endpoint. Also known as the AI Studio API.
+          stability: development
+          value: gcp.gemini
+        - brief: \u0027[Anthropic](https://www.anthropic.com/)\u0027
+          id: anthropic
+          stability: development
+          value: anthropic
+        - brief: \u0027[Cohere](https://cohere.com/)\u0027
+          id: cohere
+          stability: development
+          value: cohere
+        - brief: Azure AI Inference
+          id: azure.ai.inference
+          stability: development
+          value: azure.ai.inference
+        - brief: \u0027[Azure OpenAI](https://learn.microsoft.com/en-us/azure/ai-services/openai/overview)\u0027
+          id: azure.ai.openai
+          stability: development
+          value: azure.ai.openai
+        - brief: \u0027[IBM Watsonx AI](https://www.ibm.com/products/watsonx-ai)\u0027
+          id: ibm.watsonx.ai
+          stability: development
+          value: ibm.watsonx.ai
+        - brief: \u0027[AWS Bedrock](https://aws.amazon.com/bedrock)\u0027
+          id: aws.bedrock
+          stability: development
+          value: aws.bedrock
+        - brief: \u0027[Perplexity](https://www.perplexity.ai/)\u0027
+          id: perplexity
+          stability: development
+          value: perplexity
+        - brief: \u0027[xAI](https://x.ai/)\u0027
+          id: x_ai
+          stability: development
+          value: x_ai
+        - brief: \u0027[DeepSeek](https://www.deepseek.com/)\u0027
+          id: deepseek
+          stability: development
+          value: deepseek
+        - brief: \u0027[Groq](https://groq.com/)\u0027
+          id: groq
+          stability: development
+          value: groq
+        - brief: \u0027[Mistral AI](https://mistral.ai/)\u0027
+          id: mistral_ai
+          stability: development
+          value: mistral_ai
+        - brief: \u0027[Moonshot AI](https://www.moonshot.ai/)\u0027
+          id: moonshot_ai
+          stability: development
+          value: moonshot_ai
+    - brief: The name of the GenAI model a request is being made to.
+      examples: gpt-4
+      key: gen_ai.request.model
+      note: |
+        The name of the GenAI model a request is being made to. If the model is supplied by a vendor, then the value must be the exact name of the model requested. If the model is a fine-tuned custom model, the value should have a more specific name than the base model that\u0027s been fine-tuned.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: If available.
+      stability: development
+      type: string
+    - brief: The name of the model that generated the response.
+      examples:
+      - gpt-4-0613
+      key: gen_ai.response.model
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: recommended
+      stability: development
+      type: string
+    - brief: GenAI server address.
+      examples:
+      - example.com
+      - 10.1.2.80
+      - /tmp/my.sock
+      key: server.address
+      note: |
+        When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent the server address behind any intermediaries, for example proxies, if it\u0027s available.
+      requirement_level: recommended
+      stability: stable
+      type: string
+    - brief: GenAI server port.
+      examples:
+      - 80
+      - 8080
+      - 443
+      key: server.port
+      note: |
+        When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries, for example proxies, if it\u0027s available.
+      requirement_level:
+        conditionally_required: If `server.address` is set.
+      stability: stable
+      type: int
+    brief: Number of input tokens used in client embeddings operations.
+    instrument: counter
+    name: gen_ai.client.embeddings.tokens
+    note: |
+      Embeddings operations consume input tokens only and produce no output
+      tokens, so this counter records input tokens exclusively.
+    provenance:
+      path: ./model/gen-ai/metrics.yaml
+    stability: development
+    unit: \u0027{token}\u0027
   - annotations:
       code_generation:
         metric_value_type: int

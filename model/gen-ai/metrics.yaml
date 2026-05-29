@@ -112,6 +112,19 @@ metrics:
         metric_value_type: int
     attributes:
       - ref_group: metric_attributes.gen_ai
+  - name: gen_ai.client.embeddings.tokens
+    instrument: counter
+    unit: "{token}"
+    brief: 'Number of input tokens used in client embeddings operations.'
+    note: |
+      Embeddings operations consume input tokens only and produce no output
+      tokens, so this counter records input tokens exclusively.
+    stability: development
+    annotations:
+      code_generation:
+        metric_value_type: int
+    attributes:
+      - ref_group: metric_attributes.gen_ai
   - name: gen_ai.client.operation.duration
     instrument: histogram
     unit: "s"
