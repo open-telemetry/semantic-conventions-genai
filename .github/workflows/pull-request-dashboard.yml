@@ -93,7 +93,7 @@ jobs:
               || { skip_event "bad trigger action: $trigger_action"; }
           fi
           if [[ -n "$trigger_actor" ]]; then
-            [[ "$trigger_actor" =~ ^[A-Za-z0-9_.\[\]-]{1,100}$ ]] \
+            [[ "$trigger_actor" =~ ^[A-Za-z0-9_.-]{1,100}(\[bot\])?$ ]] \
               || { skip_event "bad trigger actor: $trigger_actor"; }
           fi
 
