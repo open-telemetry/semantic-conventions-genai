@@ -423,6 +423,10 @@ def group_review_threads(
 ) -> list[dict[str, Any]]:
     threads: list[dict[str, Any]] = []
     for thread in raw["review_threads"]:
+        # Skip outdated threads: GitHub marks a thread outdated when its
+        # anchor lines no longer exist, which typically means the author
+        # pushed a fix, so surfacing them would treat addressed feedback
+        # as live.
         if thread.get("isResolved") or thread.get("isOutdated"):
             continue
         comments = []
@@ -476,13 +480,29 @@ def group_pr_conversation(
         comment = thread_comment(c.get("updated_at") or c.get("created_at") or "", actor, author, reviewers, c.get("body") or "")
         if comment["timestamp"] and comment["actor_role"] != "bot" and comment["body"]:
             comments.append(comment)
+    # GitHub renders top-level review bodies inline in the PR conversation,
+    # so include non-COMMENTED reviews with text (APPROVED with a note,
+    # CHANGES_REQUESTED, DISMISSED) alongside issue comments.
+    for r in raw["reviews"]:
+        state = r.get("state") or ""
+        if state == "COMMENTED":
+            continue
+        body = (r.get("body") or "").strip()
+        if not body:
+            continue
+        actor = actor_login(r.get("user") or {})
+        comment = thread_comment(
+            r.get("submitted_at") or "", actor, author, reviewers, f"[review: {state}] {body}",
+        )
+        if comment["timestamp"] and comment["actor_role"] != "bot":
+            comments.append(comment)
     comments.sort(key=lambda c: c["timestamp"])
     if not comments:
         return []
 
     latest_review_ts = latest_approver_review_event(events)
     if latest_review_ts:
-        selected = [c for c in comments if c["timestamp"] > latest_review_ts]
+        selected = [c for c in comments if c["timestamp"] >= latest_review_ts]
         if not selected and review_threads:
             return []
     elif review_threads:
