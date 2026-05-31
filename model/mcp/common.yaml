@@ -21,12 +21,10 @@ attribute_groups:
         brief: The name of the prompt or prompt template provided in the request or response.
         requirement_level:
           conditionally_required: When operation is related to a specific prompt.
-      - ref: gen_ai.prompt.version
-        brief: The version of the prompt template provided in the request or response.
-        requirement_level:
-          conditionally_required: When `gen_ai.prompt.name` is set and a version is available.
       - ref: gen_ai.prompt.variable
-        brief: The variables supplied to the prompt template in the request.
+        brief: >
+          The variables supplied to the prompt template in the request.
+          In MCP, prompt arguments map to prompt variables.
         requirement_level: opt_in
       - ref: error.type
         requirement_level:

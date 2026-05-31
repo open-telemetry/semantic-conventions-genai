@@ -2694,7 +2694,8 @@ refinements:
         conditionally_required: When operation is related to a specific prompt.
       stability: development
       type: string
-    - brief: The variables supplied to the prompt template in the request.
+    - brief: |
+        The variables supplied to the prompt template in the request. In MCP, prompt arguments map to prompt variables.
       examples:
       - Alice
       - French
@@ -2719,24 +2720,6 @@ refinements:
       requirement_level: opt_in
       stability: development
       type: template[string]
-    - brief: The version of the prompt template provided in the request or response.
-      examples:
-      - 1.0.0
-      - 2025-05-01
-      - prod
-      - v2
-      key: gen_ai.prompt.version
-      note: |
-        The version string can follow any versioning scheme chosen by the
-        application (e.g., SemVer, date-based, or platform-specific tags).
-        When a prompt management system is in use, this SHOULD match the
-        version identifier used by that system.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        conditionally_required: When `gen_ai.prompt.name` is set and a version is available.
-      stability: development
-      type: string
     - brief: Name of the tool utilized by the agent.
       examples:
       - Flights
@@ -3278,7 +3261,8 @@ refinements:
         conditionally_required: When operation is related to a specific prompt.
       stability: development
       type: string
-    - brief: The variables supplied to the prompt template in the request.
+    - brief: |
+        The variables supplied to the prompt template in the request. In MCP, prompt arguments map to prompt variables.
       examples:
       - Alice
       - French
@@ -3303,24 +3287,6 @@ refinements:
       requirement_level: opt_in
       stability: development
       type: template[string]
-    - brief: The version of the prompt template provided in the request or response.
-      examples:
-      - 1.0.0
-      - 2025-05-01
-      - prod
-      - v2
-      key: gen_ai.prompt.version
-      note: |
-        The version string can follow any versioning scheme chosen by the
-        application (e.g., SemVer, date-based, or platform-specific tags).
-        When a prompt management system is in use, this SHOULD match the
-        version identifier used by that system.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        conditionally_required: When `gen_ai.prompt.name` is set and a version is available.
-      stability: development
-      type: string
     - brief: Name of the tool utilized by the agent.
       examples:
       - Flights
@@ -10542,7 +10508,8 @@ refinements:
         conditionally_required: When operation is related to a specific prompt.
       stability: development
       type: string
-    - brief: The variables supplied to the prompt template in the request.
+    - brief: |
+        The variables supplied to the prompt template in the request. In MCP, prompt arguments map to prompt variables.
       examples:
       - Alice
       - French
@@ -10567,24 +10534,6 @@ refinements:
       requirement_level: opt_in
       stability: development
       type: template[string]
-    - brief: The version of the prompt template provided in the request or response.
-      examples:
-      - 1.0.0
-      - 2025-05-01
-      - prod
-      - v2
-      key: gen_ai.prompt.version
-      note: |
-        The version string can follow any versioning scheme chosen by the
-        application (e.g., SemVer, date-based, or platform-specific tags).
-        When a prompt management system is in use, this SHOULD match the
-        version identifier used by that system.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        conditionally_required: When `gen_ai.prompt.name` is set and a version is available.
-      stability: development
-      type: string
     - brief: Parameters passed to the tool call.
       examples:
       - |
@@ -11095,7 +11044,8 @@ refinements:
         conditionally_required: When operation is related to a specific prompt.
       stability: development
       type: string
-    - brief: The variables supplied to the prompt template in the request.
+    - brief: |
+        The variables supplied to the prompt template in the request. In MCP, prompt arguments map to prompt variables.
       examples:
       - Alice
       - French
@@ -11120,24 +11070,6 @@ refinements:
       requirement_level: opt_in
       stability: development
       type: template[string]
-    - brief: The version of the prompt template provided in the request or response.
-      examples:
-      - 1.0.0
-      - 2025-05-01
-      - prod
-      - v2
-      key: gen_ai.prompt.version
-      note: |
-        The version string can follow any versioning scheme chosen by the
-        application (e.g., SemVer, date-based, or platform-specific tags).
-        When a prompt management system is in use, this SHOULD match the
-        version identifier used by that system.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        conditionally_required: When `gen_ai.prompt.name` is set and a version is available.
-      stability: development
-      type: string
     - brief: Parameters passed to the tool call.
       examples:
       - |
@@ -16143,7 +16075,8 @@ registry:
         conditionally_required: When operation is related to a specific prompt.
       stability: development
       type: string
-    - brief: The variables supplied to the prompt template in the request.
+    - brief: |
+        The variables supplied to the prompt template in the request. In MCP, prompt arguments map to prompt variables.
       examples:
       - Alice
       - French
@@ -16168,24 +16101,6 @@ registry:
       requirement_level: opt_in
       stability: development
       type: template[string]
-    - brief: The version of the prompt template provided in the request or response.
-      examples:
-      - 1.0.0
-      - 2025-05-01
-      - prod
-      - v2
-      key: gen_ai.prompt.version
-      note: |
-        The version string can follow any versioning scheme chosen by the
-        application (e.g., SemVer, date-based, or platform-specific tags).
-        When a prompt management system is in use, this SHOULD match the
-        version identifier used by that system.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        conditionally_required: When `gen_ai.prompt.name` is set and a version is available.
-      stability: development
-      type: string
     - brief: Name of the tool utilized by the agent.
       examples:
       - Flights
@@ -16725,7 +16640,8 @@ registry:
         conditionally_required: When operation is related to a specific prompt.
       stability: development
       type: string
-    - brief: The variables supplied to the prompt template in the request.
+    - brief: |
+        The variables supplied to the prompt template in the request. In MCP, prompt arguments map to prompt variables.
       examples:
       - Alice
       - French
@@ -16750,24 +16666,6 @@ registry:
       requirement_level: opt_in
       stability: development
       type: template[string]
-    - brief: The version of the prompt template provided in the request or response.
-      examples:
-      - 1.0.0
-      - 2025-05-01
-      - prod
-      - v2
-      key: gen_ai.prompt.version
-      note: |
-        The version string can follow any versioning scheme chosen by the
-        application (e.g., SemVer, date-based, or platform-specific tags).
-        When a prompt management system is in use, this SHOULD match the
-        version identifier used by that system.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        conditionally_required: When `gen_ai.prompt.name` is set and a version is available.
-      stability: development
-      type: string
     - brief: Name of the tool utilized by the agent.
       examples:
       - Flights
@@ -21197,7 +21095,8 @@ registry:
         conditionally_required: When operation is related to a specific prompt.
       stability: development
       type: string
-    - brief: The variables supplied to the prompt template in the request.
+    - brief: |
+        The variables supplied to the prompt template in the request. In MCP, prompt arguments map to prompt variables.
       examples:
       - Alice
       - French
@@ -21222,24 +21121,6 @@ registry:
       requirement_level: opt_in
       stability: development
       type: template[string]
-    - brief: The version of the prompt template provided in the request or response.
-      examples:
-      - 1.0.0
-      - 2025-05-01
-      - prod
-      - v2
-      key: gen_ai.prompt.version
-      note: |
-        The version string can follow any versioning scheme chosen by the
-        application (e.g., SemVer, date-based, or platform-specific tags).
-        When a prompt management system is in use, this SHOULD match the
-        version identifier used by that system.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        conditionally_required: When `gen_ai.prompt.name` is set and a version is available.
-      stability: development
-      type: string
     - brief: Parameters passed to the tool call.
       examples:
       - |
@@ -21749,7 +21630,8 @@ registry:
         conditionally_required: When operation is related to a specific prompt.
       stability: development
       type: string
-    - brief: The variables supplied to the prompt template in the request.
+    - brief: |
+        The variables supplied to the prompt template in the request. In MCP, prompt arguments map to prompt variables.
       examples:
       - Alice
       - French
@@ -21774,24 +21656,6 @@ registry:
       requirement_level: opt_in
       stability: development
       type: template[string]
-    - brief: The version of the prompt template provided in the request or response.
-      examples:
-      - 1.0.0
-      - 2025-05-01
-      - prod
-      - v2
-      key: gen_ai.prompt.version
-      note: |
-        The version string can follow any versioning scheme chosen by the
-        application (e.g., SemVer, date-based, or platform-specific tags).
-        When a prompt management system is in use, this SHOULD match the
-        version identifier used by that system.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        conditionally_required: When `gen_ai.prompt.name` is set and a version is available.
-      stability: development
-      type: string
     - brief: Parameters passed to the tool call.
       examples:
       - |
