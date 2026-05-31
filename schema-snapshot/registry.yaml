@@ -2654,6 +2654,23 @@ refinements:
       requirement_level: required
       stability: development
       type: string
+    - brief: Type of the tool utilized by the agent
+      examples:
+      - function
+      - extension
+      - datastore
+      key: gen_ai.tool.type
+      note: |
+        Extension: A tool executed on the agent-side to directly call external APIs, bridging the gap between the agent and real-world systems.
+          Agent-side operations involve actions that are performed by the agent on the server or within the agent\u0027s controlled environment.
+        Function: A tool executed on the client-side, where the agent generates parameters for a predefined function, and the client executes the logic.
+          Client-side operations are actions taken on the user\u0027s end or within the client application.
+        Datastore: A tool used by the agent to access and query structured or unstructured external data for retrieval-augmented tasks or knowledge updates.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: recommended
+      stability: development
+      type: string
     - brief: The version of the tool utilized by the agent.
       examples:
       - 1.0.0
@@ -16055,6 +16072,23 @@ registry:
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level: required
+      stability: development
+      type: string
+    - brief: Type of the tool utilized by the agent
+      examples:
+      - function
+      - extension
+      - datastore
+      key: gen_ai.tool.type
+      note: |
+        Extension: A tool executed on the agent-side to directly call external APIs, bridging the gap between the agent and real-world systems.
+          Agent-side operations involve actions that are performed by the agent on the server or within the agent\u0027s controlled environment.
+        Function: A tool executed on the client-side, where the agent generates parameters for a predefined function, and the client executes the logic.
+          Client-side operations are actions taken on the user\u0027s end or within the client application.
+        Datastore: A tool used by the agent to access and query structured or unstructured external data for retrieval-augmented tasks or knowledge updates.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: recommended
       stability: development
       type: string
     - brief: The version of the tool utilized by the agent.

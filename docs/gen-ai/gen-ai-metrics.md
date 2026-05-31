@@ -1016,6 +1016,13 @@ tools on behalf of an agent) that can reliably bound a single tool call.
 This metric is [recommended][MetricRecommended] for instrumentations that can
 observe tool executions performed by or on behalf of a GenAI agent.
 
+Unlike `gen_ai.agent.invocation.duration` (which is required), this metric is
+only recommended because tools may be executed through paths that the agent
+framework does not observe, such as external MCP servers or
+application-managed dispatch. Instrumentations SHOULD record this metric for
+every tool execution they observe, but are not required to capture all tool
+calls across the agentic system.
+
 When this metric is reported alongside a `gen_ai.execute_tool` span, the
 metric value SHOULD be the same as the span duration.
 
@@ -1043,6 +1050,7 @@ When this metric is reported alongside a `gen_ai.execute_tool` span, the metric 
 | [`gen_ai.agent.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` when available | string | Human-readable name of the GenAI agent provided by the application. | `Math Tutor`; `Fiction Writer` |
 | [`gen_ai.agent.version`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` when available | string | The version of the GenAI agent. | `1.0.0`; `2025-05-01` |
 | [`gen_ai.tool.version`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` when available | string | The version of the tool utilized by the agent. [2] | `1.0.0`; `2025-05-01` |
+| [`gen_ai.tool.type`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | Type of the tool utilized by the agent [3] | `function`; `extension`; `datastore` |
 
 **[1] `error.type`:** The `error.type` SHOULD match the error code returned by the Generative AI provider or the client library,
 the canonical name of exception that occurred, or another low-cardinality error identifier.
@@ -1053,6 +1061,12 @@ tool. It is typically a static value (for example, a release tag of the
 tool's package) and is expected to have low cardinality.
 
 `gen_ai.tool.version` MUST have low cardinality.
+
+**[3] `gen_ai.tool.type`:** Extension: A tool executed on the agent-side to directly call external APIs, bridging the gap between the agent and real-world systems.
+  Agent-side operations involve actions that are performed by the agent on the server or within the agent's controlled environment.
+Function: A tool executed on the client-side, where the agent generates parameters for a predefined function, and the client executes the logic.
+  Client-side operations are actions taken on the user's end or within the client application.
+Datastore: A tool used by the agent to access and query structured or unstructured external data for retrieval-augmented tasks or knowledge updates.
 
 ---
 

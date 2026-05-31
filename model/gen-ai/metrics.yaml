@@ -157,6 +157,8 @@ metrics:
       - ref_group: attributes.gen_ai.error
       - ref: gen_ai.tool.name
         requirement_level: required
+      - ref: gen_ai.tool.type
+        requirement_level: recommended
       - ref: gen_ai.tool.version
         requirement_level:
           conditionally_required: when available
