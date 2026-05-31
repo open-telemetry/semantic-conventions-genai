@@ -921,7 +921,7 @@ observability backend limits for telemetry envelopes or attribute values.
 The inputs and outputs attributes follow common structure
 formally defined in [inputs JSON schema](./gen-ai-input-messages.json) and
 [outputs JSON schema](./gen-ai-output-messages.json). See also their representation
-in [Python code](./non-normative/models.ipynb).
+in [Python code](./non-normative/models.py).
 
 > [!NOTE]
 >
