@@ -1,6 +1,9 @@
 # /// script
 # requires-python = ">=3.11"
-# dependencies = ["pydantic~=2.0"]
+# dependencies = [
+#   # renovate: datasource=pypi depName=pydantic
+#   "pydantic==2.13.4",
+# ]
 # ///
 """
 GenAI messages Python models.
@@ -25,7 +28,7 @@ from enum import StrEnum
 from pathlib import Path
 from typing import Annotated, Any, List, Literal, Optional, Union
 
-from pydantic import BaseModel, Field, GetCoreSchemaHandler, GetJsonSchemaHandler, RootModel
+from pydantic import BaseModel, ConfigDict, Field, GetCoreSchemaHandler, GetJsonSchemaHandler, RootModel
 from pydantic_core import core_schema
 
 
@@ -40,8 +43,7 @@ class TextPart(BaseModel):
     type: Literal['text'] = Field(description="The type of the content captured in this part.")
     content: str = Field(description="Text content sent to or received from the model.")
 
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(extra="allow")
 
 class ToolCallRequestPart(BaseModel):
     """
@@ -52,8 +54,7 @@ class ToolCallRequestPart(BaseModel):
     name: str = Field(description="Name of the tool.")
     arguments: Any = Field(default=None, description="Arguments for the tool call.")
 
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(extra="allow")
 
 class ToolCallResponsePart(BaseModel):
     """
@@ -63,8 +64,7 @@ class ToolCallResponsePart(BaseModel):
     id: Optional[str] = Field(default=None, description="Unique tool call identifier.")
     response: Any = Field(description="Tool call response.")
 
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(extra="allow")
 
 class GenericServerToolCall(BaseModel):
     """
@@ -73,8 +73,7 @@ class GenericServerToolCall(BaseModel):
     """
     type: str = Field(description="Type identifier for the server tool call.")
 
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(extra="allow")
 
 class GenericServerToolCallResponse(BaseModel):
     """
@@ -83,8 +82,7 @@ class GenericServerToolCallResponse(BaseModel):
     """
     type: str = Field(description="Type identifier for the server tool call response.")
 
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(extra="allow")
 
 
 # Polymorphic server tool call / response unions. The catch-all Generic*
@@ -108,8 +106,7 @@ class ServerToolCallPart(BaseModel):
         description="Polymorphic server tool call details with type discriminator. The structure varies based on the tool type.",
     )
 
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(extra="allow")
 
 class ServerToolCallResponsePart(BaseModel):
     """Represents a server-side tool call response. Contains the outcome and details of a server tool execution. Provider-specific tools (e.g., code_interpreter, web_search) can have well-defined response schemas defined by the respective providers."""
@@ -119,8 +116,7 @@ class ServerToolCallResponsePart(BaseModel):
         description="Polymorphic server tool call response with type discriminator. The structure varies based on the tool type.",
     )
 
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(extra="allow")
 
 
 class Modality(StrEnum):
@@ -137,8 +133,7 @@ class ReasoningPart(BaseModel):
     type: Literal['reasoning'] = Field(description="The type of the content captured in this part.")
     content: str = Field(description="Reasoning/thinking content received from the model.")
 
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(extra="allow")
 
 class BlobPart(BaseModel):
     """Represents blob binary data sent inline to the model"""
@@ -158,8 +153,7 @@ class FilePart(BaseModel):
     )
     file_id: str = Field(description="An identifier referencing a file that was pre-uploaded to the provider.")
 
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(extra="allow")
 
 class UriPart(BaseModel):
     """Represents an external referenced file sent to the model by URI"""
@@ -176,8 +170,7 @@ class UriPart(BaseModel):
         )
     )
 
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(extra="allow")
 
 class GenericPart(BaseModel):
     """
@@ -186,8 +179,7 @@ class GenericPart(BaseModel):
     """
     type: str = Field(description="The type of the content captured in this part.")
 
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(extra="allow")
 
 # This Union without discriminator will generate anyOf in JSON schema
 MessagePart = Union[
@@ -218,8 +210,7 @@ class ChatMessage(BaseModel):
         description="List of message parts that make up the message content.")
     name: Optional[str] = Field(default=None, description="The name of the participant.")
 
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(extra="allow")
 
 
 # --------------------------------------------------------------------------
@@ -301,8 +292,7 @@ class GenericToolDefinition(BaseModel):
     type: str = Field(description="The type of the tool.")
     name: str = Field(description="The name of the tool.")
 
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(extra="allow")
 
 class FunctionToolDefinition(GenericToolDefinition):
     """
@@ -327,8 +317,7 @@ class FunctionToolDefinition(GenericToolDefinition):
         )
     )
 
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(extra="allow")
 
 ToolDefinition = Union[
     FunctionToolDefinition,
@@ -355,8 +344,7 @@ class RetrievalDocument(BaseModel):
     id: str = Field(description="A unique identifier for the document.")
     score: float = Field(description="The relevance score of the document.")
 
-    class Config:
-        extra = "allow"  # Allows additional properties like content, metadata, title, uri, etc.
+    model_config = ConfigDict(extra="allow")  # Allows additional properties like content, metadata, title, uri, etc.
 
 class RetrievalDocuments(RootModel[List[RetrievalDocument]]):
     """
@@ -374,18 +362,17 @@ class MemoryRecord(BaseModel):
     Represents a single memory record stored in or retrieved from a memory store.
     """
     content: Any = Field(description="The content of the memory record.")
-    id: str = Field(default=None, description="A unique identifier for the memory record.")
-    metadata: dict[str, Any] = Field(
+    id: Optional[str] = Field(default=None, description="A unique identifier for the memory record.")
+    metadata: Optional[dict[str, Any]] = Field(
         default=None,
         description="Provider-specific metadata associated with the memory record.",
     )
-    score: float = Field(
+    score: Optional[float] = Field(
         default=None,
         description="The relevance score of the memory record when populated on search results.",
     )
 
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(extra="allow")
 
 class MemoryRecords(RootModel[List[MemoryRecord]]):
     """
@@ -414,8 +401,9 @@ def main() -> None:
     output_dir = Path(__file__).resolve().parent.parent
     for filename, model in SCHEMAS.items():
         target = output_dir / filename
-        with target.open("w") as f:
-            print(json.dumps(model.model_json_schema(), indent=4), file=f)
+        with target.open("w", encoding="utf-8", newline="\n") as f:
+            json.dump(model.model_json_schema(), f, indent=4)
+            f.write("\n")
         print(f"wrote {target.relative_to(output_dir.parent.parent)}")
 
 
