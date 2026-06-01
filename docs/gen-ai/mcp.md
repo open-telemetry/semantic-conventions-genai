@@ -54,19 +54,22 @@ Instrumentations SHOULD propagate trace context inside the MCP request
 property bag as described by
 [SEP-414](https://modelcontextprotocol.io/community/seps/414-request-meta).
 
+Because SEP-414 defines the carrier in terms of the W3C Trace Context and
+Baggage keys, MCP instrumentation SHOULD use the W3C propagator regardless of
+any other propagator the user has configured.
+
 > [!NOTE]
-> MCP convention expects keys in `params._meta` to be DNS-prefixed.
+> MCP convention expects keys in `params._meta` to be DNS-prefixed, but
 > [SEP-414](https://modelcontextprotocol.io/community/seps/414-request-meta)
 > defines an exception for the W3C Trace Context and Baggage keys
-> `traceparent`, `tracestate`, and `baggage`: these are written into
-> `params._meta` without a DNS prefix. All other keys in `params._meta`
-> follow the usual DNS-prefixing convention.
+> `traceparent`, `tracestate`, and `baggage`, which are written to
+> `params._meta` unprefixed.
 
-For example, when using [W3C Trace Context](https://www.w3.org/TR/trace-context/) propagation,
-inject `traceparent` and `tracestate` to the MCP message `params._meta` when creating request
-or notification and extract them on the receiver side to use as the remote parent.
+Inject `traceparent` and `tracestate` into the MCP message's `params._meta` when
+creating a request or notification, and extract them on the receiver side to use
+as the remote parent.
 
-Here's an example of tool call request with injected trace context.
+Here's an example of a tool call request with injected trace context.
 
 ```json
 {
@@ -83,9 +86,9 @@ Here's an example of tool call request with injected trace context.
 }
 ```
 
-Or, if user application uses [W3C Baggage](https://www.w3.org/TR/baggage/) in addition
-to the Trace-Context, `baggage` should be propagated in the same `params._meta`
-property bag similarly to the following example:
+If the application also uses [W3C Baggage](https://www.w3.org/TR/baggage/),
+propagate `baggage` in the same `params._meta` property bag, as in the following
+example:
 
 ```json
 {
