@@ -55,10 +55,12 @@ property bag as described by
 [SEP-414](https://modelcontextprotocol.io/community/seps/414-request-meta).
 
 > [!NOTE]
-> MCP defines an exception to the `params._meta` DNS-prefixing convention for
-> the W3C Trace Context and Baggage keys. Instrumentations SHOULD use the
-> unprefixed `traceparent`, `tracestate`, and `baggage` keys when propagating
-> OpenTelemetry context in MCP messages.
+> MCP convention expects keys in `params._meta` to be DNS-prefixed.
+> [SEP-414](https://modelcontextprotocol.io/community/seps/414-request-meta)
+> defines an exception for the W3C Trace Context and Baggage keys
+> `traceparent`, `tracestate`, and `baggage`: these are written into
+> `params._meta` without a DNS prefix. All other keys in `params._meta`
+> follow the usual DNS-prefixing convention.
 
 For example, when using [W3C Trace Context](https://www.w3.org/TR/trace-context/) propagation,
 inject `traceparent` and `tracestate` to the MCP message `params._meta` when creating request
