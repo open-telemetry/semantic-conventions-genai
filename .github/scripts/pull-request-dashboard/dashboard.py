@@ -89,7 +89,8 @@ survive into the cached dashboard state (see ``stored_result``).
     assignees                       list[str]     PR assignees.
     is_otelbot_author               bool          PR opened by app/otelbot.
     is_draft                        bool
-    approved                        bool          reviewDecision == APPROVED.
+    approval_count                  int           Current unique APPROVED reviews
+                                                  from approver-team members.
     ci_failing_count                int           Absent when checks could not
                                                   be fetched.
     ci_pending_count                int           Absent when checks could not
@@ -362,7 +363,27 @@ def latest_substantive_activity(events: list[dict[str, Any]], actor_roles: set[s
     return max(timestamps) if timestamps else None
 
 
-def compute_facts(raw: dict[str, Any], author: str, events: list[dict[str, Any]]) -> dict[str, Any]:
+def current_approval_count(events: list[dict[str, Any]]) -> int:
+    latest_by_reviewer: dict[str, tuple[str, str]] = {}
+    for event in events:
+        if event.get("kind") != "review-state" or event.get("actor_role") != "approver":
+            continue
+        reviewer = event.get("actor") or ""
+        submitted_at = event.get("timestamp") or ""
+        state = event.get("state") or ""
+        if not reviewer or not submitted_at or state == "COMMENTED":
+            continue
+        previous = latest_by_reviewer.get(reviewer)
+        if previous is None or submitted_at >= previous[0]:
+            latest_by_reviewer[reviewer] = (submitted_at, state)
+    return sum(1 for _, state in latest_by_reviewer.values() if state == "APPROVED")
+
+
+def compute_facts(
+    raw: dict[str, Any],
+    author: str,
+    events: list[dict[str, Any]],
+) -> dict[str, Any]:
     pr = raw["pr"]
     checks = raw["checks"]
     failing = [c for c in checks or [] if (c.get("state") or "").upper() in ("FAILURE", "ERROR")]
@@ -380,7 +401,7 @@ def compute_facts(raw: dict[str, Any], author: str, events: list[dict[str, Any]]
         "assignees": assignees,
         "is_otelbot_author": api_author.lower() == "app/otelbot",
         "is_draft": bool(pr.get("isDraft")),
-        "approved": pr.get("reviewDecision") == "APPROVED",
+        "approval_count": current_approval_count(events),
         "conflicts": compute_conflicts(pr),
         "created_at": format_ts(created_ts),
         "last_activity_at": format_ts(last_activity_ts),
@@ -563,8 +584,8 @@ def route_pr(facts: dict[str, Any], classifications: list[dict[str, Any]]) -> st
     #      route to.
     #   2. Any single thread waiting on the author -> "author".
     #   3. Otherwise any thread waiting on something external -> "external".
-    #   4. Otherwise the PR's approval status decides: approved -> ready for
-    #      a maintainer to merge; not approved -> still waiting on approvers
+    #   4. Otherwise the current approval count decides: at least two approvals
+    #      -> ready for a maintainer to merge; fewer -> still waiting on approvers
     #      (whether or not a thread is currently pending on a reviewer).
     if facts.get("is_otelbot_author"):
         return "external" if counts["external"] else "approver"
@@ -572,7 +593,7 @@ def route_pr(facts: dict[str, Any], classifications: list[dict[str, Any]]) -> st
         return "author"
     if counts["external"]:
         return "external"
-    if facts.get("approved"):
+    if facts.get("approval_count", 0) >= 2:
         return "maintainer"
     return "approver"
 
