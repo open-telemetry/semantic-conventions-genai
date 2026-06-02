@@ -50,8 +50,9 @@
         ".github/**"
       ],
       "schedule": [
-        "* * 2 * *"
-      ]
+        "* 0-3 2 * *" // 2nd of the month, midnight–4am
+      ],
+      "timezone": "America/Los_Angeles"
     }
   ],
   "labels": [
