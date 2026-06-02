@@ -15,8 +15,8 @@
 | --- | --- |
 | gen_ai.conversation.id | [google-adk] |
 | gen_ai.output.type | (none) |
-| gen_ai.prompt.name | (none) |
-| gen_ai.prompt.version | (none) |
+| gen_ai.prompt.name | [aws-bedrock], [openai] |
+| gen_ai.prompt.version | [aws-bedrock], [openai] |
 | gen_ai.request.choice.count | [crewai], [google-adk], [llamaindex], [openai] |
 | gen_ai.request.model | [anthropic], [autogen], [aws-bedrock], [azure-ai-inference], [azure-openai], [cohere], [crewai], [dspy], [google-adk], [google-genai], [groq], [instructor], [langchain], [litellm], [llamaindex], [mistralai], [openai], [openai-agents], [pydantic-ai], [vertexai] |
 | gen_ai.request.seed | [autogen], [crewai], [openai], [pydantic-ai] |

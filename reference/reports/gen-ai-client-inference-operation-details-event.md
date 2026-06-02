@@ -15,8 +15,8 @@
 | --- | --- |
 | gen_ai.conversation.id | (none) |
 | gen_ai.output.type | (none) |
-| gen_ai.prompt.name | (none) |
-| gen_ai.prompt.version | (none) |
+| gen_ai.prompt.name | [aws-bedrock], [openai] |
+| gen_ai.prompt.version | [aws-bedrock], [openai] |
 | gen_ai.request.choice.count | [llamaindex] |
 | gen_ai.request.model | [anthropic], [autogen], [aws-bedrock], [azure-ai-inference], [cohere], [dspy], [google-genai], [groq], [instructor], [litellm], [llamaindex], [mistralai], [openai], [pydantic-ai], [vertexai] |
 | gen_ai.request.seed | [pydantic-ai] |
