@@ -940,15 +940,24 @@ Individual systems may include additional system-specific attributes.
 It is recommended to check system-specific documentation, if available.
 
 `gen_ai.agent.request.size` and `gen_ai.agent.response.size` measure the
-serialized byte size of the input and output payloads of a single GenAI agent
-invocation. They are intended for instrumentations of agent frameworks (for
-example, ADK, LangChain agents, CrewAI agents) that can reliably observe the
-agent's input and final output.
+serialized byte size of the **per-invocation** input and output of a single
+GenAI agent invocation:
+
+* `gen_ai.agent.request.size` is the byte size of the new content provided to
+  the agent for this invocation (typically the latest user message), not the
+  cumulative chat history that might be assembled into a model call.
+* `gen_ai.agent.response.size` is the byte size of the final response the
+  agent produces for this invocation, excluding intermediate tool calls or
+  reasoning steps.
+
+They are intended for instrumentations of agent frameworks (for example,
+ADK, LangChain agents, CrewAI agents) that can reliably observe the agent's
+input and final output.
 
 These metrics complement `gen_ai.agent.invocation.duration` by giving
 operators visibility into payload volume — useful for capacity planning,
-identifying unusually large requests or responses, and correlating size with
-latency or error rate.
+spotting unusually large per-turn requests or responses, and correlating
+size with latency or error rate.
 
 ### Metric: `gen_ai.agent.request.size`
 
