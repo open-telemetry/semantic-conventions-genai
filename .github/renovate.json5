@@ -39,7 +39,7 @@
       "groupName": "reference implementation dependencies (non-major)",
       "commitMessageTopic": "reference implementation dependencies (non-major)",
       "schedule": [
-        "* 0-3 * * 2" // Tuesdays, midnight–4am
+        "* 0-3 * * 2" // Tuesdays, 00:00–03:59 America/Los_Angeles
       ],
       "timezone": "America/Los_Angeles"
     },
@@ -50,7 +50,7 @@
         ".github/**"
       ],
       "schedule": [
-        "* 0-3 2 * *" // 2nd of the month, midnight–4am
+        "* 0-3 2 * *" // 2nd of the month, 00:00–03:59 America/Los_Angeles
       ],
       "timezone": "America/Los_Angeles"
     }
