@@ -963,10 +963,18 @@ This metric SHOULD be specified with [ExplicitBucketBoundaries] of
 | `gen_ai.workflow.steps` | Histogram | `{step}` | Number of steps in a single GenAI workflow. [1] | ![Development](https://img.shields.io/badge/-development-blue) | |
 
 **[1]:** This metric measures the number of discrete steps observed within a
-single GenAI workflow. A "step" is intentionally framework-defined: it
-typically corresponds to a single observable event emitted within the
-workflow (for example, a tool call, a tool result, or a model response
-in ADK; a node execution in LangGraph).
+single GenAI workflow. A "step" is a framework-defined unit of
+execution that corresponds to a single observable event within the
+workflow. Common framework-specific definitions:
+
+- **ADK**: each event in the agent's invocation context (model
+  response, tool call, tool result, agent transfer).
+- **LangGraph**: each node execution in the workflow graph.
+- **LangChain agents**: each `AgentAction` or `AgentFinish` step.
+- **CrewAI**: each agent turn within a task.
+
+Instrumentations MUST document what counts as a step for their
+framework.
 
 When the `gen_ai.agent.name` dimension is set, instrumentations SHOULD
 only count steps attributed to that agent (for example, events
@@ -982,8 +990,8 @@ versions.
 
 | Key | Stability | [Requirement Level](https://opentelemetry.io/docs/specs/semconv/general/attribute-requirement-level/) | Value Type | Description | Example Values |
 | --- | --- | --- | --- | --- | --- |
-| [`gen_ai.agent.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` when available | string | Human-readable name of the GenAI agent provided by the application. | `Math Tutor`; `Fiction Writer` |
-| [`gen_ai.agent.version`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` when available | string | The version of the GenAI agent. | `1.0.0`; `2025-05-01` |
+| [`gen_ai.agent.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If available. | string | Human-readable name of the GenAI agent provided by the application. | `Math Tutor`; `Fiction Writer` |
+| [`gen_ai.agent.version`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If available. | string | The version of the GenAI agent. | `1.0.0`; `2025-05-01` |
 | [`gen_ai.workflow.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If available. | string | Human-readable name of the GenAI workflow provided by the application. [1] | `multi_agent_rag`; `customer_support_pipeline` |
 
 **[1] `gen_ai.workflow.name`:** This attribute can be populated in different frameworks; for example, as the name of the first chain in LangChain or the name of the crew in CrewAI.
