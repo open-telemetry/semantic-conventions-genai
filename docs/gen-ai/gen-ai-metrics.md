@@ -177,7 +177,18 @@ This metric SHOULD be specified with [ExplicitBucketBoundaries] of [0.01, 0.02, 
 
 | Name | Instrument Type | Unit (UCUM) | Description | Stability | Entity Associations |
 | -------- | --------------- | ----------- | -------------- | --------- | ------ |
-| `gen_ai.client.operation.duration` | Histogram | `s` | GenAI operation duration. | ![Development](https://img.shields.io/badge/-development-blue) | |
+| `gen_ai.client.operation.duration` | Histogram | `s` | GenAI client operation duration. [1] | ![Development](https://img.shields.io/badge/-development-blue) | |
+
+**[1]:** This metric corresponds to the GenAI client spans:
+[Inference](/docs/gen-ai/gen-ai-spans.md#inference),
+[Embeddings](/docs/gen-ai/gen-ai-spans.md#embeddings),
+[Retrieval](/docs/gen-ai/gen-ai-spans.md#retrievals),
+[Memory](/docs/gen-ai/gen-ai-spans.md#memory),
+[Create Agent](/docs/gen-ai/gen-ai-agent-spans.md#create-agent-span),
+and [Invoke Agent Client](/docs/gen-ai/gen-ai-agent-spans.md#invoke-agent-client-span).
+
+When this metric is reported alongside one of these spans, the metric value
+SHOULD be the same as the span duration.
 
 **Attributes:**
 

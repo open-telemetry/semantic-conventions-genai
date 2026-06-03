@@ -31,3 +31,9 @@
   ([#136](https://github.com/open-telemetry/semantic-conventions-genai/pull/136))
 
 ### 📚 Clarifications 📚
+
+- Clarify that `gen_ai.client.operation.duration` corresponds to the GenAI inference,
+  embeddings, retrieval, memory, create agent, and invoke agent client spans, and that
+  when the metric is reported alongside one of these spans its value should be the same
+  as the span duration.
+  ([#215](https://github.com/open-telemetry/semantic-conventions-genai/pull/215))
