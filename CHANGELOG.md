@@ -15,6 +15,11 @@
 
 ### 💡 Enhancements 💡
 
+- Add `gen_ai.agent.finish_reason` attribute on agent invocation spans
+  (`invoke_agent.client`, `invoke_agent.internal`) with initial enum values
+  `completed`, `guardrail`, and `max_iterations`. Records why the agent loop
+  terminated; complements per-LLM-call `gen_ai.response.finish_reasons`.
+  ([#171](https://github.com/open-telemetry/semantic-conventions-genai/issues/171))
 - Add GenAI memory operation span and attributes for memory store lifecycle (create/delete),
   memory record create/update/upsert/search/delete operations, and record counts.
   ([#140](https://github.com/open-telemetry/semantic-conventions-genai/pull/140))

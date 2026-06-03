@@ -346,6 +346,7 @@ def run_tool_call():
                 agent_span.set_attribute("gen_ai.usage.input_tokens", usage.input_tokens)
                 agent_span.set_attribute("gen_ai.usage.output_tokens", usage.output_tokens)
             print(f"    -> {str(result.response)[:60]}")
+        agent_span.set_attribute("gen_ai.agent.finish_reason", "completed")
 
 
 def main():

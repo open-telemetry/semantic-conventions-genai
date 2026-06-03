@@ -14,6 +14,7 @@
 | Attribute | Supporting Libraries |
 | --- | --- |
 | gen_ai.agent.description | [openai-assistants] |
+| gen_ai.agent.finish_reason | [azure-ai-foundry], [openai-agents] |
 | gen_ai.agent.id | [aws-bedrock-agent], [openai-assistants] |
 | gen_ai.agent.name | [azure-ai-foundry], [openai-agents], [openai-assistants] |
 | gen_ai.agent.version | [aws-bedrock-agent] |

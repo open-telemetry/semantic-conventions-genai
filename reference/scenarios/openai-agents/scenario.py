@@ -1,7 +1,8 @@
 """Reference implementation for OpenAI Agents.
 
-Exercises: agent run with tool calling
-against a mock OpenAI server, with manual OTel spans.
+Exercises: agent run with tool calling against a mock OpenAI server, with
+manual OTel spans. Covers both the normal `completed` termination path and
+the `max_iterations` termination path (Runner.run with `max_turns=1`).
 """
 
 import asyncio
@@ -158,7 +159,121 @@ async def run_agent():
                         ]
                     ),
                 )
+            agent_span.set_attribute("gen_ai.agent.finish_reason", "completed")
             print(f"    -> {str(result.final_output)[:60]}")
+
+
+async def run_agent_max_iterations():
+    """Run the same agent with max_turns=1 so the loop trips MaxTurnsExceeded.
+
+    Exercises the `max_iterations` value of `gen_ai.agent.finish_reason`. The
+    mock server returns a tool call on turn 1; the Runner needs a second turn
+    to feed the tool result back to the model, which exceeds the configured
+    budget and raises `MaxTurnsExceeded`.
+    """
+    import openai
+    from agents import Agent, Runner, function_tool
+    from agents.exceptions import MaxTurnsExceeded
+    from agents.models.openai_chatcompletions import OpenAIChatCompletionsModel
+    from agents.tool import FunctionTool, ToolContext
+
+    @function_tool
+    def get_weather(ctx: ToolContext[None], location: str) -> str:
+        """Get the current weather for a location."""
+        tool_span_attributes = {
+            "gen_ai.operation.name": "execute_tool",
+        }
+        with _reference_tracer.start_as_current_span(
+            "execute_tool get_weather", attributes=tool_span_attributes
+        ) as tool_span:
+            tool_span.set_attribute("gen_ai.tool.name", "get_weather")
+            tool_span.set_attribute("gen_ai.tool.description", get_weather.description)
+            tool_span.set_attribute("gen_ai.tool.type", "function")
+            tool_span.set_attribute("gen_ai.tool.call.id", ctx.tool_call_id)
+            tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps({"location": location}))
+            result = "Sunny, 72F"
+            tool_span.set_attribute("gen_ai.tool.call.result", result)
+            return result
+
+    client = openai.AsyncOpenAI(base_url=MOCK_BASE_URL, api_key="mock-key")
+    request_model = "gpt-4o-mini"
+    model = OpenAIChatCompletionsModel(model=request_model, openai_client=client)
+
+    tools = [get_weather]
+    host, port = mock_server_host_port(MOCK_BASE_URL)
+    agent = Agent(
+        name="test-agent",
+        instructions="You are a helpful assistant.",
+        model=model,
+        tools=tools,
+    )
+    input_text = "What's the weather in Seattle?"
+
+    print("  [agent_run] agent with max_turns=1 (reference implementation)")
+    agent_span_attributes = {
+        "gen_ai.operation.name": "invoke_agent",
+        "gen_ai.provider.name": "openai",
+        "gen_ai.request.model": request_model,
+        "gen_ai.agent.name": agent.name,
+    }
+    if host:
+        agent_span_attributes["server.address"] = host
+    if port is not None:
+        agent_span_attributes["server.port"] = port
+    with _reference_tracer.start_as_current_span(
+        "invoke_agent test-agent", attributes=agent_span_attributes
+    ) as agent_span:
+        agent_span.set_attribute(
+            "gen_ai.system_instructions", json.dumps([{"parts": [{"type": "text", "content": agent.instructions}]}])
+        )
+        agent_span.set_attribute(
+            "gen_ai.input.messages", json.dumps([{"role": "user", "parts": [{"type": "text", "content": input_text}]}])
+        )
+        agent_span.set_attribute(
+            "gen_ai.tool.definitions",
+            json.dumps(
+                [
+                    {
+                        "type": "function",
+                        "function": {"name": t.name, "description": t.description, "parameters": t.params_json_schema},
+                    }
+                    for t in tools
+                    if isinstance(t, FunctionTool)
+                ]
+            ),
+        )
+        span_attributes = {
+            "gen_ai.operation.name": "chat",
+            "gen_ai.provider.name": "openai",
+            "gen_ai.request.model": request_model,
+        }
+        if host:
+            span_attributes["server.address"] = host
+        if port is not None:
+            span_attributes["server.port"] = port
+        with _reference_tracer.start_as_current_span("chat gpt-4o-mini", attributes=span_attributes) as span:
+            span.set_attribute(
+                "gen_ai.tool.definitions",
+                json.dumps(
+                    [
+                        {
+                            "type": "function",
+                            "function": {
+                                "name": t.name,
+                                "description": t.description,
+                                "parameters": t.params_json_schema,
+                            },
+                        }
+                        for t in tools
+                        if isinstance(t, FunctionTool)
+                    ]
+                ),
+            )
+            try:
+                await Runner.run(agent, input_text, max_turns=1)
+            except MaxTurnsExceeded:
+                agent_span.set_attribute("gen_ai.agent.finish_reason", "max_iterations")
+                print("    -> max_iterations (Runner.run raised MaxTurnsExceeded)")
 
 
 def main():
@@ -167,6 +282,7 @@ def main():
     tp, lp, mp = setup_otel()
 
     asyncio.run(run_agent())
+    asyncio.run(run_agent_max_iterations())
 
     flush_and_shutdown(tp, lp, mp)
 

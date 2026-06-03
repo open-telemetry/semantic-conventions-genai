@@ -14,6 +14,7 @@
 | Attribute | Supporting Libraries |
 | --- | --- |
 | gen_ai.agent.description | [autogen] |
+| gen_ai.agent.finish_reason | [pydantic-ai] |
 | gen_ai.agent.id | (none) |
 | gen_ai.agent.name | [autogen], [google-adk], [pydantic-ai] |
 | gen_ai.agent.version | (none) |

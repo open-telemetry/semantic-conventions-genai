@@ -278,6 +278,40 @@ attributes:
     brief: The version of the GenAI agent.
     examples: ["1.0.0", "2025-05-01"]
     stability: development
+  - key: gen_ai.agent.finish_reason
+    type:
+      members:
+        - id: completed
+          stability: development
+          value: "completed"
+          brief: 'The agent loop terminated normally.'
+        - id: guardrail
+          stability: development
+          value: "guardrail"
+          brief: 'The agent loop terminated because a guardrail or safety policy stopped the invocation.'
+        - id: max_iterations
+          stability: development
+          value: "max_iterations"
+          brief: 'The agent loop terminated because an implementation-defined iteration (turn) limit was reached.'
+    brief: The reason an agent invocation loop terminated.
+    note: |
+      This is the agent-loop equivalent of `gen_ai.response.finish_reasons`, which
+      records why a single LLM call stopped generating. `gen_ai.agent.finish_reason`
+      records why the surrounding agent loop exited.
+
+      It MUST only be set when the agent invocation has terminated; in-flight spans
+      MUST NOT set it. Instrumentations MAY emit framework-specific values not in
+      the list above when no listed value applies.
+
+      Detection is framework-specific. For example, instrumentations can set:
+
+      - `completed` when the framework reaches its normal exit path.
+      - `guardrail` when the framework terminates because a guardrail or safety
+        policy stops the agent invocation.
+      - `max_iterations` when the framework terminates because an iteration or
+        turn limit is reached.
+    examples: ['completed', 'guardrail', 'max_iterations']
+    stability: development
   - key: gen_ai.tool.name
     type: string
     brief: Name of the tool utilized by the agent.

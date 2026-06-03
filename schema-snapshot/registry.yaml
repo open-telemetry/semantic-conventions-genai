@@ -7860,6 +7860,47 @@ refinements:
         conditionally_required: When available.
       stability: development
       type: string
+    - brief: The reason an agent invocation loop terminated.
+      examples:
+      - completed
+      - guardrail
+      - max_iterations
+      key: gen_ai.agent.finish_reason
+      note: |
+        This is the agent-loop equivalent of `gen_ai.response.finish_reasons`, which
+        records why a single LLM call stopped generating. `gen_ai.agent.finish_reason`
+        records why the surrounding agent loop exited.
+
+        It MUST only be set when the agent invocation has terminated; in-flight spans
+        MUST NOT set it. Instrumentations MAY emit framework-specific values not in
+        the list above when no listed value applies.
+
+        Detection is framework-specific. For example, instrumentations can set:
+
+        - `completed` when the framework reaches its normal exit path.
+        - `guardrail` when the framework terminates because a guardrail or safety
+          policy stops the agent invocation.
+        - `max_iterations` when the framework terminates because an iteration or
+          turn limit is reached.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: when the agent loop has terminated and the termination reason is known
+      stability: development
+      type:
+        members:
+        - brief: The agent loop terminated normally.
+          id: completed
+          stability: development
+          value: completed
+        - brief: The agent loop terminated because a guardrail or safety policy stopped the invocation.
+          id: guardrail
+          stability: development
+          value: guardrail
+        - brief: The agent loop terminated because an implementation-defined iteration (turn) limit was reached.
+          id: max_iterations
+          stability: development
+          value: max_iterations
     - brief: The unique identifier of the GenAI agent.
       examples:
       - asst_5j66UpCpwteGg4YSxUnt7lPY
@@ -8560,6 +8601,47 @@ refinements:
         conditionally_required: When available.
       stability: development
       type: string
+    - brief: The reason an agent invocation loop terminated.
+      examples:
+      - completed
+      - guardrail
+      - max_iterations
+      key: gen_ai.agent.finish_reason
+      note: |
+        This is the agent-loop equivalent of `gen_ai.response.finish_reasons`, which
+        records why a single LLM call stopped generating. `gen_ai.agent.finish_reason`
+        records why the surrounding agent loop exited.
+
+        It MUST only be set when the agent invocation has terminated; in-flight spans
+        MUST NOT set it. Instrumentations MAY emit framework-specific values not in
+        the list above when no listed value applies.
+
+        Detection is framework-specific. For example, instrumentations can set:
+
+        - `completed` when the framework reaches its normal exit path.
+        - `guardrail` when the framework terminates because a guardrail or safety
+          policy stops the agent invocation.
+        - `max_iterations` when the framework terminates because an iteration or
+          turn limit is reached.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: when the agent loop has terminated and the termination reason is known
+      stability: development
+      type:
+        members:
+        - brief: The agent loop terminated normally.
+          id: completed
+          stability: development
+          value: completed
+        - brief: The agent loop terminated because a guardrail or safety policy stopped the invocation.
+          id: guardrail
+          stability: development
+          value: guardrail
+        - brief: The agent loop terminated because an implementation-defined iteration (turn) limit was reached.
+          id: max_iterations
+          stability: development
+          value: max_iterations
     - brief: The unique identifier of the GenAI agent.
       examples:
       - asst_5j66UpCpwteGg4YSxUnt7lPY
@@ -12002,6 +12084,45 @@ registry:
       path: ./model/gen-ai/registry.yaml
     stability: development
     type: string
+  - brief: The reason an agent invocation loop terminated.
+    examples:
+    - completed
+    - guardrail
+    - max_iterations
+    key: gen_ai.agent.finish_reason
+    note: |
+      This is the agent-loop equivalent of `gen_ai.response.finish_reasons`, which
+      records why a single LLM call stopped generating. `gen_ai.agent.finish_reason`
+      records why the surrounding agent loop exited.
+
+      It MUST only be set when the agent invocation has terminated; in-flight spans
+      MUST NOT set it. Instrumentations MAY emit framework-specific values not in
+      the list above when no listed value applies.
+
+      Detection is framework-specific. For example, instrumentations can set:
+
+      - `completed` when the framework reaches its normal exit path.
+      - `guardrail` when the framework terminates because a guardrail or safety
+        policy stops the agent invocation.
+      - `max_iterations` when the framework terminates because an iteration or
+        turn limit is reached.
+    provenance:
+      path: ./model/gen-ai/registry.yaml
+    stability: development
+    type:
+      members:
+      - brief: The agent loop terminated normally.
+        id: completed
+        stability: development
+        value: completed
+      - brief: The agent loop terminated because a guardrail or safety policy stopped the invocation.
+        id: guardrail
+        stability: development
+        value: guardrail
+      - brief: The agent loop terminated because an implementation-defined iteration (turn) limit was reached.
+        id: max_iterations
+        stability: development
+        value: max_iterations
   - brief: The unique identifier of the GenAI agent.
     examples:
     - asst_5j66UpCpwteGg4YSxUnt7lPY
@@ -18304,6 +18425,47 @@ registry:
         conditionally_required: When available.
       stability: development
       type: string
+    - brief: The reason an agent invocation loop terminated.
+      examples:
+      - completed
+      - guardrail
+      - max_iterations
+      key: gen_ai.agent.finish_reason
+      note: |
+        This is the agent-loop equivalent of `gen_ai.response.finish_reasons`, which
+        records why a single LLM call stopped generating. `gen_ai.agent.finish_reason`
+        records why the surrounding agent loop exited.
+
+        It MUST only be set when the agent invocation has terminated; in-flight spans
+        MUST NOT set it. Instrumentations MAY emit framework-specific values not in
+        the list above when no listed value applies.
+
+        Detection is framework-specific. For example, instrumentations can set:
+
+        - `completed` when the framework reaches its normal exit path.
+        - `guardrail` when the framework terminates because a guardrail or safety
+          policy stops the agent invocation.
+        - `max_iterations` when the framework terminates because an iteration or
+          turn limit is reached.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: when the agent loop has terminated and the termination reason is known
+      stability: development
+      type:
+        members:
+        - brief: The agent loop terminated normally.
+          id: completed
+          stability: development
+          value: completed
+        - brief: The agent loop terminated because a guardrail or safety policy stopped the invocation.
+          id: guardrail
+          stability: development
+          value: guardrail
+        - brief: The agent loop terminated because an implementation-defined iteration (turn) limit was reached.
+          id: max_iterations
+          stability: development
+          value: max_iterations
     - brief: The unique identifier of the GenAI agent.
       examples:
       - asst_5j66UpCpwteGg4YSxUnt7lPY
@@ -19003,6 +19165,47 @@ registry:
         conditionally_required: When available.
       stability: development
       type: string
+    - brief: The reason an agent invocation loop terminated.
+      examples:
+      - completed
+      - guardrail
+      - max_iterations
+      key: gen_ai.agent.finish_reason
+      note: |
+        This is the agent-loop equivalent of `gen_ai.response.finish_reasons`, which
+        records why a single LLM call stopped generating. `gen_ai.agent.finish_reason`
+        records why the surrounding agent loop exited.
+
+        It MUST only be set when the agent invocation has terminated; in-flight spans
+        MUST NOT set it. Instrumentations MAY emit framework-specific values not in
+        the list above when no listed value applies.
+
+        Detection is framework-specific. For example, instrumentations can set:
+
+        - `completed` when the framework reaches its normal exit path.
+        - `guardrail` when the framework terminates because a guardrail or safety
+          policy stops the agent invocation.
+        - `max_iterations` when the framework terminates because an iteration or
+          turn limit is reached.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: when the agent loop has terminated and the termination reason is known
+      stability: development
+      type:
+        members:
+        - brief: The agent loop terminated normally.
+          id: completed
+          stability: development
+          value: completed
+        - brief: The agent loop terminated because a guardrail or safety policy stopped the invocation.
+          id: guardrail
+          stability: development
+          value: guardrail
+        - brief: The agent loop terminated because an implementation-defined iteration (turn) limit was reached.
+          id: max_iterations
+          stability: development
+          value: max_iterations
     - brief: The unique identifier of the GenAI agent.
       examples:
       - asst_5j66UpCpwteGg4YSxUnt7lPY
