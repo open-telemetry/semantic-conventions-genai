@@ -53,6 +53,55 @@ CHAT_RESPONSE = {
         "prompt_tokens": 25,
         "completion_tokens": 12,
         "total_tokens": 37,
+        "prompt_tokens_details": {"cached_tokens": 10},
+    },
+}
+
+CHAT_REASONING_RESPONSE = {
+    "id": "chatcmpl-mock-reasoning-001",
+    "object": "chat.completion",
+    "created": 1700000000,
+    "model": "o4-mini",
+    "choices": [
+        {
+            "index": 0,
+            "message": {
+                "role": "assistant",
+                "content": "This is a response from the mock server.",
+            },
+            "finish_reason": "stop",
+        }
+    ],
+    "usage": {
+        "prompt_tokens": 25,
+        "completion_tokens": 20,
+        "total_tokens": 45,
+        "prompt_tokens_details": {"cached_tokens": 10},
+        "completion_tokens_details": {"reasoning_tokens": 8},
+    },
+}
+
+CHAT_AUDIO_RESPONSE = {
+    "id": "chatcmpl-mock-audio-001",
+    "object": "chat.completion",
+    "created": 1700000000,
+    "model": "gpt-4o-audio-preview",
+    "choices": [
+        {
+            "index": 0,
+            "message": {
+                "role": "assistant",
+                "content": "This is a response from the mock server.",
+            },
+            "finish_reason": "stop",
+        }
+    ],
+    "usage": {
+        "prompt_tokens": 30,
+        "completion_tokens": 12,
+        "total_tokens": 42,
+        "prompt_tokens_details": {"cached_tokens": 0, "text_tokens": 20, "audio_tokens": 10},
+        "completion_tokens_details": {"text_tokens": 4, "audio_tokens": 8},
     },
 }
 
@@ -127,6 +176,28 @@ RESPONSES_RESPONSE = {
         "input_tokens": 25,
         "output_tokens": 12,
         "total_tokens": 37,
+    },
+}
+
+
+# 1x1 transparent PNG, base64-encoded. Returned by the mock images endpoint
+# so the scenario can exercise the response shape end to end without a real
+# image render.
+_TINY_PNG_B64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
+
+IMAGE_GEN_RESPONSE = {
+    "created": 1700000000,
+    "data": [{"b64_json": _TINY_PNG_B64}],
+    # GPT Image response shape: `output_tokens` are image-modality tokens
+    # (the generated image is tokenized and billed per token); the
+    # `input_tokens_details` breaks the prompt into text vs. reference-image
+    # tokens. See
+    # https://developers.openai.com/api/docs/guides/image-generation.
+    "usage": {
+        "input_tokens": 15,
+        "output_tokens": 1056,
+        "total_tokens": 1071,
+        "input_tokens_details": {"text_tokens": 15, "image_tokens": 0},
     },
 }
 
@@ -330,8 +401,14 @@ def chat_completions(deployment=None):
         resp["choices"][0]["message"]["content"] = "I drafted this plan but it is not in the requested schema."
         return resp
 
-    resp = dict(CHAT_RESPONSE)
-    resp["model"] = body.get("model", resp["model"])
+    model = body.get("model", CHAT_RESPONSE["model"])
+    if "audio" in model:
+        resp = copy.deepcopy(CHAT_AUDIO_RESPONSE)
+    elif model.startswith("o") and not model.startswith("openai"):
+        resp = copy.deepcopy(CHAT_REASONING_RESPONSE)
+    else:
+        resp = dict(CHAT_RESPONSE)
+    resp["model"] = model
     resp["choices"] = copy.deepcopy(resp["choices"])
     resp["choices"][0]["message"]["content"] = _mock_chat_content(body, message_text)
     return resp
@@ -354,4 +431,13 @@ def responses():
     body = request.get_json(silent=True) or {}
     resp = dict(RESPONSES_RESPONSE)
     resp["model"] = body.get("model", resp["model"])
+    return resp
+
+
+@bp.route("/v1/images/generations", methods=["POST"])
+@bp.route("/openai/v1/images/generations", methods=["POST"])
+def images_generations():
+    body = request.get_json(silent=True) or {}
+    resp = copy.deepcopy(IMAGE_GEN_RESPONSE)
+    resp["model"] = body.get("model", "gpt-image-1")
     return resp

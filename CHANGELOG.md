@@ -4,6 +4,33 @@
 
 ### 🛑 Breaking changes 🛑
 
+- Restructure GenAI token usage attributes and metrics under a unified
+  `gen_ai.token.*` namespace.
+  - Renamed span attribute `gen_ai.usage.cache_creation.input_tokens` to
+    `gen_ai.usage.cache_write.input_tokens` for symmetry with
+    `gen_ai.usage.cache_read.input_tokens`.
+  - Added per-modality span attributes
+    `gen_ai.usage.{text,image,audio,video}.input_tokens` and
+    `gen_ai.usage.{text,image,audio}.output_tokens`.
+  - Added per-modality cache-read span attributes
+    `gen_ai.usage.{text,image,audio,video}.cache_read.input_tokens` for
+    providers that report per-modality cached-token breakdowns.
+  - Replaced the `gen_ai.client.token.usage` histogram with counters
+    `gen_ai.client.inference.tokens` (dimensioned by `gen_ai.token.type` and
+    `gen_ai.token.modality`), `gen_ai.client.inference.input_tokens_by_cache`
+    (dimensioned by `gen_ai.token.cache` and `gen_ai.token.modality`), and
+    `gen_ai.client.inference.output_tokens_by_phase` (dimensioned by
+    `gen_ai.token.phase`). Added opt-in histograms
+    `gen_ai.client.inference.operation.{tokens,input_tokens,output_tokens}`.
+  - Added counter `gen_ai.client.embeddings.tokens` for the input tokens
+    consumed by embeddings operations, which the removed
+    `gen_ai.client.token.usage` histogram previously covered.
+  - Added new enum attributes `gen_ai.token.modality`
+    (`text`/`image`/`audio`/`video`/`document`/`unknown`), `gen_ai.token.cache`
+    (`uncached`/`read`/`write`), and `gen_ai.token.phase`
+    (`response`/`reasoning`).
+  ([#197](https://github.com/open-telemetry/semantic-conventions-genai/pull/197))
+
 ### 🚩 Deprecations 🚩
 
 ### 🚀 New components 🚀

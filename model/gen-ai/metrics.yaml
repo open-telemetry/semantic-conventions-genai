@@ -18,10 +18,15 @@ attribute_groups:
       - ref: openai.response.system_fingerprint
         requirement_level: recommended
 metrics:
-  - name: gen_ai.client.token.usage
-    instrument: histogram
+  - name: gen_ai.client.inference.tokens
+    instrument: counter
     unit: "{token}"
-    brief: 'Number of input and output tokens used.'
+    brief: 'Number of input and output tokens used in client inference operations.'
+    note: |
+      Instrumentations that don't know the token modality MUST set
+      `gen_ai.token.modality=unknown`. Instrumentations with partial
+      modality information MUST report the known portions under their
+      actual modality and the remainder under `unknown`.
     stability: development
     annotations:
       code_generation:
@@ -30,6 +35,96 @@ metrics:
       - ref_group: metric_attributes.gen_ai
       - ref: gen_ai.token.type
         requirement_level: required
+      - ref: gen_ai.token.modality
+        requirement_level: required
+  - name: gen_ai.client.inference.input_tokens_by_cache
+    instrument: counter
+    unit: "{token}"
+    brief: 'Number of input tokens used in client inference operations, partitioned by cache status and modality.'
+    note: |
+      Per inference call, the total tokens reported on this counter MUST
+      equal the total reported on `gen_ai.client.inference.tokens` with
+      `gen_ai.token.type=input`.
+
+      When the provider reports no cache fields, instrumentations MUST
+      report the full input total under `gen_ai.token.cache=uncached`.
+
+      When the provider does not report token modality broken down by
+      cache state, instrumentations MUST set
+      `gen_ai.token.modality=unknown` on the cache cells.
+    stability: development
+    annotations:
+      code_generation:
+        metric_value_type: int
+    attributes:
+      - ref_group: metric_attributes.gen_ai
+      - ref: gen_ai.token.cache
+        requirement_level: required
+      - ref: gen_ai.token.modality
+        requirement_level: required
+  - name: gen_ai.client.inference.output_tokens_by_phase
+    instrument: counter
+    unit: "{token}"
+    brief: 'Number of output tokens used in client inference operations, partitioned by generation phase.'
+    note: |
+      When the provider does not separately report reasoning tokens,
+      instrumentations MUST report the full output total under
+      `gen_ai.token.phase=response`.
+
+      Per inference call, the total tokens reported on this counter MUST
+      equal the total reported on `gen_ai.client.inference.tokens` with
+      `gen_ai.token.type=output`.
+    stability: development
+    annotations:
+      code_generation:
+        metric_value_type: int
+    attributes:
+      - ref_group: metric_attributes.gen_ai
+      - ref: gen_ai.token.phase
+        requirement_level: required
+  - name: gen_ai.client.inference.operation.tokens
+    instrument: histogram
+    unit: "{token}"
+    brief: 'Per-operation distribution of total tokens (input + output) used by a single client inference call.'
+    stability: development
+    annotations:
+      code_generation:
+        metric_value_type: int
+    attributes:
+      - ref_group: metric_attributes.gen_ai
+  - name: gen_ai.client.inference.operation.input_tokens
+    instrument: histogram
+    unit: "{token}"
+    brief: 'Per-operation distribution of input tokens used by a single client inference call.'
+    stability: development
+    annotations:
+      code_generation:
+        metric_value_type: int
+    attributes:
+      - ref_group: metric_attributes.gen_ai
+  - name: gen_ai.client.inference.operation.output_tokens
+    instrument: histogram
+    unit: "{token}"
+    brief: 'Per-operation distribution of output tokens used by a single client inference call.'
+    stability: development
+    annotations:
+      code_generation:
+        metric_value_type: int
+    attributes:
+      - ref_group: metric_attributes.gen_ai
+  - name: gen_ai.client.embeddings.tokens
+    instrument: counter
+    unit: "{token}"
+    brief: 'Number of input tokens used in client embeddings operations.'
+    note: |
+      Embeddings operations consume input tokens only and produce no output
+      tokens, so this counter records input tokens exclusively.
+    stability: development
+    annotations:
+      code_generation:
+        metric_value_type: int
+    attributes:
+      - ref_group: metric_attributes.gen_ai
   - name: gen_ai.client.operation.duration
     instrument: histogram
     unit: "s"
@@ -115,10 +210,10 @@ metrics:
           conditionally_required: If available.
 
 metric_refinements:
-  - id: openai.client.token.usage
-    ref: gen_ai.client.token.usage
+  - id: openai.client.inference.tokens
+    ref: gen_ai.client.inference.tokens
     brief: >
-      OpenAI-specific extension to `gen_ai.client.token.usage`. Adds
+      OpenAI-specific extension to `gen_ai.client.inference.tokens`. Adds
       `openai.response.service_tier` and `openai.response.system_fingerprint`
       when the provider is `openai`.
     stability: development
