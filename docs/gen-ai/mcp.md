@@ -49,27 +49,21 @@ implement at least stdio or Streamable HTTP.
 HTTP trace context propagation only covers the HTTP request, but not the individual
 messages client and server exchange within the request/response streams.
 
-Instrumentations SHOULD propagate trace context inside the MCP request
+Instrumentations SHOULD propagate context using the configured
+[OpenTelemetry propagators](https://opentelemetry.io/docs/specs/otel/context/api-propagators/)
+by injecting it into the MCP request
 [`params._meta`](https://modelcontextprotocol.io/specification/2025-11-25/basic#_meta)
-property bag as described by
-[SEP-414](https://modelcontextprotocol.io/community/seps/414-request-meta).
+property bag when creating a request or notification. The receiver extracts the
+context from `params._meta` and uses it as the remote parent.
 
-Because SEP-414 defines the carrier in terms of the W3C Trace Context and
-Baggage keys, MCP instrumentation SHOULD use the W3C propagator regardless of
-any other propagator the user has configured.
+Although the MCP convention expects keys in `params._meta` to be DNS-prefixed,
+the context propagation keys SHOULD be written unprefixed.
+[SEP-414](https://modelcontextprotocol.io/community/seps/414-request-meta)
+defines this explicit handling for the W3C Trace Context and Baggage keys
+(`traceparent`, `tracestate`, and `baggage`).
 
-> [!NOTE]
-> MCP convention expects keys in `params._meta` to be DNS-prefixed, but
-> [SEP-414](https://modelcontextprotocol.io/community/seps/414-request-meta)
-> defines an exception for the W3C Trace Context and Baggage keys
-> `traceparent`, `tracestate`, and `baggage`, which are written to
-> `params._meta` unprefixed.
-
-Inject `traceparent` and `tracestate` into the MCP message's `params._meta` when
-creating a request or notification, and extract them on the receiver side to use
-as the remote parent.
-
-Here's an example of a tool call request with injected trace context.
+Here's an example of a tool call request with injected
+[W3C Trace Context](https://www.w3.org/TR/trace-context/).
 
 ```json
 {
