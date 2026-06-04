@@ -110,15 +110,19 @@ attribute_groups:
           spans or logs using custom span or log record processors or hooks provided by instrumentation
           libraries.
       - ref: gen_ai.agent.id
+        brief: The unique identifier of the invoked GenAI agent.
         requirement_level:
           conditionally_required: If applicable.
       - ref: gen_ai.agent.name
+        brief: The human-readable name of the invoked GenAI agent.
         requirement_level:
           conditionally_required: When available.
       - ref: gen_ai.agent.description
+        brief: The free-form description of the invoked GenAI agent.
         requirement_level:
           conditionally_required: When available.
       - ref: gen_ai.agent.version
+        brief: The version of the invoked GenAI agent.  
         requirement_level:
           conditionally_required: When available.
       - ref: gen_ai.data_source.id
@@ -386,16 +390,20 @@ spans:
       - ref: gen_ai.request.model
         sampling_relevant: true
       - ref: gen_ai.agent.id
+        brief: The unique identifier of the GenAI agent created during this operation.
         requirement_level:
           conditionally_required: If applicable.
       - ref: gen_ai.agent.name
+        brief: The human-readable name of the GenAI agent created during this operation.
         requirement_level:
           conditionally_required: If provided by the application.
         sampling_relevant: true
       - ref: gen_ai.agent.description
+        brief: The free-form description of the GenAI agent created during this operation.
         requirement_level:
           conditionally_required: If provided by the application.
       - ref: gen_ai.agent.version
+        brief: The version of the GenAI agent created during this operation.
         requirement_level:
           conditionally_required: If provided by the application.
       - ref: gen_ai.system_instructions
@@ -574,9 +582,11 @@ spans:
         requirement_level: required
         sampling_relevant: true
       - ref: gen_ai.agent.id
+        brief: The unique identifier of the agent performing the planning.
         requirement_level:
           conditionally_required: If applicable.
       - ref: gen_ai.agent.name
+        brief: The human-readable name of the agent performing the planning.
         requirement_level:
           conditionally_required: When available.
 
