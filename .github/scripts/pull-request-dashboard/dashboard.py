@@ -578,27 +578,27 @@ def action_counts(classifications: list[dict[str, Any]]) -> dict[str, int]:
 
 def route_pr(facts: dict[str, Any], classifications: list[dict[str, Any]]) -> str:
     counts = action_counts(classifications)
+    # otelbot PRs have no human author, so an author-owed thread points at
+    # nobody who can act; skip that check for them. They also reach merge-ready
+    # on a single approval (these are low-risk dependency-bump PRs).
+    is_otelbot = facts.get("is_otelbot_author")
     # Precedence:
-    #   1. otelbot PRs are always either "external" (if any thread points
-    #      outside the repo) or "approver" — they have no human author to
-    #      route to.
-    #   2. Any single thread waiting on the author -> "author".
-    #   3. Otherwise any thread waiting on something external -> "external".
-    #   4. Otherwise any thread pending on a reviewer -> "approver". An open
+    #   1. A thread waiting on the author -> "author".
+    #   2. Otherwise a thread waiting on something external -> "external".
+    #   3. Otherwise a thread pending on a reviewer -> "approver". An open
     #      reviewer-owed thread outranks the approval count: even an approved PR
     #      is not merge-ready while an approver still owes a follow-up, because
     #      that response may change their stance.
-    #   5. Otherwise the current approval count decides: at least two approvals
-    #      -> ready for a maintainer to merge; fewer -> still waiting on approvers.
-    if facts.get("is_otelbot_author"):
-        return "external" if counts["external"] else "approver"
-    if counts["author"]:
+    #   4. Otherwise the approval count decides: enough approvals -> ready for a
+    #      maintainer to merge (two normally, one for low-risk otelbot PRs);
+    #      fewer -> still waiting on approvers.
+    if counts["author"] and not is_otelbot:
         return "author"
     if counts["external"]:
         return "external"
     if counts["reviewer"]:
         return "approver"
-    if facts.get("approval_count", 0) >= 2:
+    if facts.get("approval_count", 0) >= (1 if is_otelbot else 2):
         return "maintainer"
     return "approver"
 
