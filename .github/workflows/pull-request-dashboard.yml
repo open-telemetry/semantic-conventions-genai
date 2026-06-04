@@ -122,29 +122,33 @@ jobs:
           # Echo the resolved trigger to the job log for at-a-glance diagnostics.
           echo "trigger: pr=${pr_number:--} event=${trigger_event:--} action=${trigger_action:--} actor=${trigger_actor:--} review=${trigger_review_id:--}"
 
-  update-dashboard:
+  post-review-guidance:
     needs: resolve-trigger
-    if: needs.resolve-trigger.outputs.skip_dashboard != 'true'
-    # Same-PR events are serialized together while unrelated PRs can update
-    # state concurrently. Full rebuilds use their own lane. The state branch
-    # push below still uses --force-with-lease as the durable CAS across lanes.
+    # Copilot submits a review together with its inline review comments, so the
+    # bridge fires a pull_request_review event plus several
+    # pull_request_review_comment events for the same PR within the same second.
+    # The webhook forwards the review's `sender.login`, which for Copilot is
+    # `Copilot` (the bot's review identity is copilot-pull-request-reviewer, but
+    # that is not the webhook sender).
+    if: >-
+      needs.resolve-trigger.outputs.pr_number != '' &&
+      needs.resolve-trigger.outputs.trigger_event == 'pull_request_review' &&
+      needs.resolve-trigger.outputs.trigger_action == 'submitted' &&
+      needs.resolve-trigger.outputs.trigger_actor == 'Copilot' &&
+      needs.resolve-trigger.outputs.trigger_review_id != ''
+    # Keyed by the review id, not the PR, so the near-simultaneous
+    # pull_request_review_comment events (which share the per-PR dashboard state
+    # group) cannot supersede and cancel this guidance post.
     concurrency:
-      group: ${{ github.workflow }}-state-${{ github.repository }}-${{ needs.resolve-trigger.outputs.pr_number || 'full' }}
+      group: ${{ github.workflow }}-guidance-${{ github.repository }}-${{ needs.resolve-trigger.outputs.trigger_review_id }}
       cancel-in-progress: false
     permissions:
-      actions: read
-      checks: read
-      contents: write
-      issues: read
+      contents: read
+      issues: write
       pull-requests: read
     environment: protected
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
-        with:
-          ref: main
-          persist-credentials: false
-
       - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         id: otelbot-token
         with:
@@ -152,12 +156,6 @@ jobs:
           private-key: ${{ secrets.OTELBOT_PRIVATE_KEY }}
 
       - name: Post Copilot review guidance
-        if: >-
-          needs.resolve-trigger.outputs.pr_number != '' &&
-          needs.resolve-trigger.outputs.trigger_event == 'pull_request_review' &&
-          needs.resolve-trigger.outputs.trigger_action == 'submitted' &&
-          needs.resolve-trigger.outputs.trigger_actor == 'copilot-pull-request-reviewer[bot]' &&
-          needs.resolve-trigger.outputs.trigger_review_id != ''
         env:
           GH_TOKEN: ${{ steps.otelbot-token.outputs.token }}
           PR_NUMBER: ${{ needs.resolve-trigger.outputs.pr_number }}
@@ -207,6 +205,35 @@ jobs:
             --method POST \
             "repos/${REPO}/issues/${PR_NUMBER}/comments" \
             -f body="${body}"
+
+  update-dashboard:
+    needs: resolve-trigger
+    if: needs.resolve-trigger.outputs.skip_dashboard != 'true'
+    # Same-PR events are serialized together while unrelated PRs can update
+    # state concurrently. Full rebuilds use their own lane. The state branch
+    # push below still uses --force-with-lease as the durable CAS across lanes.
+    concurrency:
+      group: ${{ github.workflow }}-state-${{ github.repository }}-${{ needs.resolve-trigger.outputs.pr_number || 'full' }}
+      cancel-in-progress: false
+    permissions:
+      actions: read
+      checks: read
+      contents: write
+      issues: read
+      pull-requests: read
+    environment: protected
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          ref: main
+          persist-credentials: false
+
+      - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        id: otelbot-token
+        with:
+          app-id: ${{ vars.OTELBOT_APP_ID }}
+          private-key: ${{ secrets.OTELBOT_PRIVATE_KEY }}
 
       - name: Restore per-PR classification cache
         # Scoped to one PR so concurrent PR events don't overwrite each
