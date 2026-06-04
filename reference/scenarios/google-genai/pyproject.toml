@@ -3,7 +3,7 @@ name = "google-genai-reference-test"
 version = "0.0.0"
 requires-python = ">=3.12"
 dependencies = [
-    "google-genai==2.6.0",
+    "google-genai==2.7.0",
     "genai-reference-shared",
 ]
 

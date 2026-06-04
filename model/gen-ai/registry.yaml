@@ -122,9 +122,17 @@ attributes:
     examples: [1.0]
     stability: development
   - key: gen_ai.request.top_k
-    type: double
-    brief: The top_k sampling setting for the GenAI request.
-    examples: [1.0]
+    type: int
+    brief: >
+      The top-K sampling setting for the GenAI request: restricts token
+      generation at each step to the K most likely next tokens.
+    note: >
+      This is a decoding/sampling parameter (e.g., Anthropic `top_k`,
+      Cohere `k`, Google `topK`), not an output-shaping parameter. In
+      particular, OpenAI's `top_logprobs` controls how many per-token
+      log-probabilities are returned in the response and does not change
+      generation; it MUST NOT be reported as `gen_ai.request.top_k`.
+    examples: [40]
     stability: development
   - key: gen_ai.request.stop_sequences
     type: string[]
@@ -531,6 +539,13 @@ attributes:
       > [!Warning]
       > This attribute may contain sensitive information.
     examples: ["What is the capital of France?", "weather in Paris"]
+    stability: development
+  - key: gen_ai.retrieval.top_k
+    type: int
+    brief: >
+      The maximum number of documents the retriever was asked to return
+      for the query (also known as `k`, `limit`, or `max_num_results`).
+    examples: [5]
     stability: development
   - key: gen_ai.memory.store.id
     type: string
