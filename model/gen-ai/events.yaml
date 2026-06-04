@@ -22,15 +22,15 @@ events:
         requirement_level: required
       - ref: gen_ai.evaluation.score.value
         requirement_level:
-          conditionally_required: if applicable
+          conditionally_required: If applicable.
       - ref: gen_ai.evaluation.score.label
         requirement_level:
-          conditionally_required: if applicable
+          conditionally_required: If applicable.
       - ref: gen_ai.evaluation.explanation
         requirement_level: recommended
       - ref: gen_ai.response.id
         requirement_level:
-          recommended: when available
+          recommended: When available.
         note: |
           The unique identifier assigned to the specific
           completion being evaluated. This attribute helps correlate the evaluation
