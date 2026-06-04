@@ -118,7 +118,7 @@ attribute_groups:
         requirement_level:
           conditionally_required: When available.
       - ref: gen_ai.agent.version
-        brief: The version of the invoked GenAI agent.  
+        brief: The version of the invoked GenAI agent.
         requirement_level:
           conditionally_required: When available.
       - ref: gen_ai.data_source.id
