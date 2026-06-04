@@ -73,32 +73,15 @@ def run_crew():
     tools = [get_weather]
 
     researcher_role = "Researcher"
-    create_agent_span_attributes = {
-        "gen_ai.operation.name": "create_agent",
-        "gen_ai.provider.name": "openai",
-        "gen_ai.request.model": request_model,
-        "gen_ai.agent.name": researcher_role,
-    }
-    if host:
-        create_agent_span_attributes["server.address"] = host
-    if port is not None:
-        create_agent_span_attributes["server.port"] = port
-    with _reference_tracer.start_as_current_span(
-        "create_agent Researcher", attributes=create_agent_span_attributes
-    ) as create_agent_span:
-        create_agent_span.set_attribute(
-            "gen_ai.system_instructions", json.dumps([{"parts": [{"type": "text", "content": system_prompt}]}])
-        )
-        researcher = Agent(
-            role=researcher_role,
-            goal="Find information",
-            backstory=system_prompt,
-            tools=tools,
-            llm=llm,
-            verbose=False,
-            allow_delegation=False,
-        )
-        create_agent_span.set_attribute("gen_ai.agent.id", str(researcher.id))
+    researcher = Agent(
+        role=researcher_role,
+        goal="Find information",
+        backstory=system_prompt,
+        tools=tools,
+        llm=llm,
+        verbose=False,
+        allow_delegation=False,
+    )
 
     task = Task(
         description="Use the get_weather tool to report the weather in Seattle.",
@@ -208,6 +191,149 @@ def run_crew():
                 ),
             )
             print(f"    -> {str(result)[:60]}")
+
+
+def run_agent():
+    """Scenario: basic agent task execution without crew with reference implementation."""
+    print("  [agent] basic agent task execution (reference implementation)")
+    os.environ["CREWAI_DISABLE_TELEMETRY"] = "true"
+    os.environ["CREWAI_DISABLE_TRACKING"] = "true"
+    os.environ["CREWAI_TRACING_ENABLED"] = "false"
+    from crewai import LLM, Agent
+    from crewai.tools import tool
+
+    request_model = "gpt-4o-mini"
+    request_choice_count = 2
+    request_temperature = 0.2
+    request_top_p = 0.9
+    request_max_tokens = 64
+    request_seed = 7
+    request_stop_sequences = ["<END>"]
+    request_frequency_penalty = 0.1
+    request_presence_penalty = 0.2
+    system_prompt = "You are a helpful research assistant."
+    host, port = mock_server_host_port(MOCK_BASE_URL)
+    os.environ["OPENAI_API_KEY"] = "mock-key"
+    os.environ["OPENAI_API_BASE"] = MOCK_BASE_URL
+    os.environ["OPENAI_MODEL_NAME"] = request_model
+    llm = LLM(
+        model=request_model,
+        provider="openai",
+        base_url=MOCK_BASE_URL,
+        api_key="mock-key",
+        temperature=request_temperature,
+        top_p=request_top_p,
+        n=request_choice_count,
+        max_completion_tokens=request_max_tokens,
+        seed=request_seed,
+        stop=request_stop_sequences,
+        frequency_penalty=request_frequency_penalty,
+        presence_penalty=request_presence_penalty,
+    )
+    captured_completion = None
+
+    @tool
+    def get_weather(location: str) -> str:
+        """Get the current weather for a location."""
+        tool_span_attributes = {
+            "gen_ai.operation.name": "execute_tool",
+        }
+        with _reference_tracer.start_as_current_span(
+            "execute_tool get_weather", attributes=tool_span_attributes
+        ) as tool_span:
+            tool_span.set_attribute("gen_ai.tool.name", "get_weather")
+            tool_span.set_attribute("gen_ai.tool.description", get_weather.func.__doc__ or "")
+            tool_span.set_attribute("gen_ai.tool.type", "function")
+            tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps({"location": location}))
+            result = "Sunny, 72°F"
+            tool_span.set_attribute("gen_ai.tool.call.result", result)
+            return result
+
+    tools = [get_weather]
+
+    researcher_role = "Researcher"
+    researcher = Agent(
+        role=researcher_role,
+        goal="Find information",
+        backstory=system_prompt,
+        tools=tools,
+        llm=llm,
+        verbose=False,
+        allow_delegation=False,
+    )
+
+    task_description = "Use the get_weather tool to report the weather in Seattle."
+
+    agent_span_attributes = {
+        "gen_ai.operation.name": "invoke_agent",
+        "gen_ai.request.model": request_model,
+        "gen_ai.agent.name": researcher_role,
+    }
+
+    with _reference_tracer.start_as_current_span(
+        f"invoke_agent {researcher_role}", attributes=agent_span_attributes
+    ) as agent_span:
+        agent_span.set_attribute("gen_ai.agent.id", str(researcher.id))
+        agent_span.set_attribute(
+            "gen_ai.system_instructions", json.dumps([{"parts": [{"type": "text", "content": system_prompt}]}])
+        )
+        agent_span.set_attribute(
+            "gen_ai.input.messages",
+            json.dumps([{"role": "user", "parts": [{"type": "text", "content": task_description}]}]),
+        )
+        agent_span.set_attribute(
+            "gen_ai.tool.definitions",
+            json.dumps(
+                [
+                    {
+                        "type": "function",
+                        "function": {
+                            "name": t.name,
+                            "description": t.func.__doc__,
+                            "parameters": t.args_schema.model_json_schema(),
+                        },
+                    }
+                    for t in researcher.tools
+                ]
+            ),
+        )
+        original_create = researcher.llm._client.chat.completions.create
+
+        def _capture_completion(*args, **kwargs):
+            nonlocal captured_completion
+            response = original_create(*args, **kwargs)
+            captured_completion = response
+            return response
+
+        researcher.llm._client.chat.completions.create = _capture_completion
+        try:
+            result = researcher.kickoff(task_description)
+        finally:
+            researcher.llm._client.chat.completions.create = original_create
+
+        if captured_completion is not None:
+            agent_span.set_attribute("gen_ai.response.model", captured_completion.model)
+            agent_span.set_attribute("gen_ai.response.id", captured_completion.id)
+            agent_span.set_attribute(
+                "gen_ai.response.finish_reasons",
+                [choice.finish_reason for choice in captured_completion.choices if choice.finish_reason],
+            )
+            if captured_completion.usage:
+                agent_span.set_attribute("gen_ai.usage.input_tokens", captured_completion.usage.prompt_tokens)
+                agent_span.set_attribute("gen_ai.usage.output_tokens", captured_completion.usage.completion_tokens)
+
+        agent_span.set_attribute(
+            "gen_ai.output.messages",
+            json.dumps(
+                [
+                    {
+                        "role": "assistant",
+                        "parts": [{"type": "text", "content": str(result)}],
+                    }
+                ]
+            ),
+        )
+        print(f"    -> {str(result)[:60]}")
 
 
 def _run_crew_planning_scenario(*, header, task_description):
@@ -449,6 +575,7 @@ def main():
     # NO instrument() call - reference implementation only
 
     run_crew()
+    run_agent()
     run_crew_planning()
     run_crew_planning_multi_call()
 
