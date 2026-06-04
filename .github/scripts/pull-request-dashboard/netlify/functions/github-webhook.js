@@ -74,6 +74,7 @@ async function handle(event) {
     return response(202, { status: "ignored", reason: "no pull request number found" });
   }
   const triggerActor = extractTriggerActor(payload);
+  const triggerReviewId = extractTriggerReviewId(payload);
 
   const installationToken = await createInstallationToken(config);
   await dispatchWorkflow(config, installationToken, repository.fullName, {
@@ -81,6 +82,7 @@ async function handle(event) {
     trigger_event: eventName,
     trigger_action: action,
     trigger_actor: triggerActor || "",
+    trigger_review_id: triggerReviewId ? String(triggerReviewId) : "",
   });
 
   return response(202, {
@@ -90,6 +92,7 @@ async function handle(event) {
     trigger_event: eventName,
     trigger_action: action,
     trigger_actor: triggerActor,
+    trigger_review_id: triggerReviewId,
   });
 }
 
@@ -124,6 +127,10 @@ function readRepository(payload) {
 
 function extractTriggerActor(payload) {
   return payload.sender && payload.sender.login;
+}
+
+function extractTriggerReviewId(payload) {
+  return payload.review && payload.review.id;
 }
 
 function readRawBody(event) {

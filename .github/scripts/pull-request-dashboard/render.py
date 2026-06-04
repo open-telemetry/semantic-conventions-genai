@@ -80,6 +80,11 @@ def age_cell(facts: dict[str, Any]) -> str:
     return activity_age(_age_ts(facts))
 
 
+def approval_marks(facts: dict[str, Any]) -> str:
+    count = facts.get("approval_count", 0)
+    return "" if count <= 0 else " " + "✅" * count
+
+
 def _neutralize_code_fence(s: str) -> str:
     return (s or "").replace("```", "`\u200d`\u200d`")
 
@@ -162,8 +167,7 @@ def render_pr_tables(prs: list[dict[str, Any]], results: dict[int, dict[str, Any
             assignees_cell = _md_escape(", ".join(a for a in assignees if a))
             activity_cell = age_cell(facts)
             pr_cell = f"[{title} (#{number})]({url})"
-            if facts.get("approved"):
-                pr_cell += " ✅"
+            pr_cell += approval_marks(facts)
             out.append(
                 f"| {pr_cell} | {author} | {assignees_cell} | {ci_cell(facts)} | "
                 f"{conflicts_cell(facts)} | {activity_cell} |"

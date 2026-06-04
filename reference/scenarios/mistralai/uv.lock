@@ -192,7 +192,7 @@ wheels = [
 
 [[package]]
 name = "mistralai"
-version = "2.4.7"
+version = "2.4.8"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "eval-type-backport" },
@@ -204,9 +204,9 @@ dependencies = [
     { name = "python-dateutil" },
     { name = "typing-inspection" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/82/94/353793e3a2352d78a12bf38c539ae9f32640892be769cb1df7f6889df1e2/mistralai-2.4.7.tar.gz", hash = "sha256:5ecbe67d3c0c0268c465bf1f2ae7fe1e43549735975e40fb511df7f40d492aa7", size = 453502, upload-time = "2026-05-25T08:19:41.706Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/55/1c/04119828a3da3be8c79efbe59035a621ae22af873c1ee5a4200355025aa6/mistralai-2.4.8.tar.gz", hash = "sha256:4f27b9b7dfd564ae111d3d9992d2a8ad1454aaf3e7675554c686aa3bb89617e2", size = 464443, upload-time = "2026-05-28T10:00:45.72Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/52/d8/0e47dbbdac3fb45713411b93731d5e42f2806d789d30758d1c9468fc267e/mistralai-2.4.7-py3-none-any.whl", hash = "sha256:1639cbd2d8f18c722a7e6d859783c201d5240baebc31491d2715b36bca3d80af", size = 1093954, upload-time = "2026-05-25T08:19:39.557Z" },
+    { url = "https://files.pythonhosted.org/packages/74/2a/d9952a97596ff9570ff7f486084ebfc5637b1bcf62084b97c0f8415713fc/mistralai-2.4.8-py3-none-any.whl", hash = "sha256:edc445c8b5edf332d45db6c708cd1e4d3f62e6eba5d2e8bf3969bdc5117f6472", size = 1110598, upload-time = "2026-05-28T10:00:43.939Z" },
 ]
 
 [[package]]
@@ -221,7 +221,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "genai-reference-shared", editable = "../../shared" },
-    { name = "mistralai", specifier = "==2.4.7" },
+    { name = "mistralai", specifier = "==2.4.8" },
 ]
 
 [[package]]

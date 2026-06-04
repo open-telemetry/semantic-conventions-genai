@@ -41,6 +41,9 @@ metrics:
     attributes:
       - ref_group: metric_attributes.gen_ai
       - ref_group: attributes.gen_ai.error
+      - ref: gen_ai.provider.name
+        requirement_level:
+          conditionally_required: If the operation involves a call to a GenAI provider.
   - name: gen_ai.client.operation.time_to_first_chunk
     instrument: histogram
     unit: "s"

@@ -28,14 +28,18 @@ refinements:
       - conv_5j66UpCpwteGg4YSxUnt7lPY
       key: gen_ai.conversation.id
       note: |
-        Instrumentations SHOULD populate conversation id when they have it readily available
-        for a given operation, for example:
+        Instrumentations SHOULD populate conversation id when they have an identifier
+        for the conversation readily available for a given operation, for example:
 
         - when client framework being instrumented manages conversation history
         (see [LlamaIndex chat store](https://docs.llamaindex.ai/en/stable/module_guides/storing/chat_stores/))
         - when instrumenting GenAI client libraries that maintain conversation on the backend side
         (see [AWS Bedrock agent sessions](https://docs.aws.amazon.com/bedrock/latest/userguide/agents-session-state.html),
         [OpenAI Assistant threads](https://platform.openai.com/docs/api-reference/threads))
+
+        When no identifier for the conversation is available, instrumentations SHOULD NOT
+        populate conversation id. For example, a new UUID, a trace identifier, or a hash
+        of request content SHOULD NOT be used as a fallback value.
 
         Application developers that manage conversation history MAY add conversation id to GenAI and other
         spans or logs using custom span or log record processors or hooks provided by instrumentation
@@ -435,16 +439,19 @@ refinements:
       requirement_level: recommended
       stability: development
       type: double
-    - brief: The top_k sampling setting for the GenAI request.
+    - brief: |
+        The top-K sampling setting for the GenAI request: restricts token generation at each step to the K most likely next tokens.
       examples:
-      - 1.0
+      - 40
       key: gen_ai.request.top_k
+      note: |
+        This is a decoding/sampling parameter (e.g., Anthropic `top_k`, Cohere `k`, Google `topK`), not an output-shaping parameter. In particular, OpenAI\u0027s `top_logprobs` controls how many per-token log-probabilities are returned in the response and does not change generation; it MUST NOT be reported as `gen_ai.request.top_k`.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
         conditionally_required: if applicable
       stability: development
-      type: double
+      type: int
     - brief: The top_p sampling setting for the GenAI request.
       examples:
       - 1.0
@@ -956,7 +963,8 @@ refinements:
         `openai.*` attributes.
       provenance:
         path: ./model/gen-ai/registry.yaml
-      requirement_level: required
+      requirement_level:
+        conditionally_required: If the operation involves a call to a GenAI provider.
       stability: development
       type:
         members:
@@ -3723,7 +3731,8 @@ refinements:
         `openai.*` attributes.
       provenance:
         path: ./model/gen-ai/registry.yaml
-      requirement_level: required
+      requirement_level:
+        conditionally_required: If the operation involves a call to a GenAI provider.
       stability: development
       type:
         members:
@@ -4166,14 +4175,18 @@ refinements:
       - conv_5j66UpCpwteGg4YSxUnt7lPY
       key: gen_ai.conversation.id
       note: |
-        Instrumentations SHOULD populate conversation id when they have it readily available
-        for a given operation, for example:
+        Instrumentations SHOULD populate conversation id when they have an identifier
+        for the conversation readily available for a given operation, for example:
 
         - when client framework being instrumented manages conversation history
         (see [LlamaIndex chat store](https://docs.llamaindex.ai/en/stable/module_guides/storing/chat_stores/))
         - when instrumenting GenAI client libraries that maintain conversation on the backend side
         (see [AWS Bedrock agent sessions](https://docs.aws.amazon.com/bedrock/latest/userguide/agents-session-state.html),
         [OpenAI Assistant threads](https://platform.openai.com/docs/api-reference/threads))
+
+        When no identifier for the conversation is available, instrumentations SHOULD NOT
+        populate conversation id. For example, a new UUID, a trace identifier, or a hash
+        of request content SHOULD NOT be used as a fallback value.
 
         Application developers that manage conversation history MAY add conversation id to GenAI and other
         spans or logs using custom span or log record processors or hooks provided by instrumentation
@@ -4576,15 +4589,18 @@ refinements:
       requirement_level: recommended
       stability: development
       type: double
-    - brief: The top_k sampling setting for the GenAI request.
+    - brief: |
+        The top-K sampling setting for the GenAI request: restricts token generation at each step to the K most likely next tokens.
       examples:
-      - 1.0
+      - 40
       key: gen_ai.request.top_k
+      note: |
+        This is a decoding/sampling parameter (e.g., Anthropic `top_k`, Cohere `k`, Google `topK`), not an output-shaping parameter. In particular, OpenAI\u0027s `top_logprobs` controls how many per-token log-probabilities are returned in the response and does not change generation; it MUST NOT be reported as `gen_ai.request.top_k`.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level: recommended
       stability: development
-      type: double
+      type: int
     - brief: The top_p sampling setting for the GenAI request.
       examples:
       - 1.0
@@ -4876,14 +4892,18 @@ refinements:
       - conv_5j66UpCpwteGg4YSxUnt7lPY
       key: gen_ai.conversation.id
       note: |
-        Instrumentations SHOULD populate conversation id when they have it readily available
-        for a given operation, for example:
+        Instrumentations SHOULD populate conversation id when they have an identifier
+        for the conversation readily available for a given operation, for example:
 
         - when client framework being instrumented manages conversation history
         (see [LlamaIndex chat store](https://docs.llamaindex.ai/en/stable/module_guides/storing/chat_stores/))
         - when instrumenting GenAI client libraries that maintain conversation on the backend side
         (see [AWS Bedrock agent sessions](https://docs.aws.amazon.com/bedrock/latest/userguide/agents-session-state.html),
         [OpenAI Assistant threads](https://platform.openai.com/docs/api-reference/threads))
+
+        When no identifier for the conversation is available, instrumentations SHOULD NOT
+        populate conversation id. For example, a new UUID, a trace identifier, or a hash
+        of request content SHOULD NOT be used as a fallback value.
 
         Application developers that manage conversation history MAY add conversation id to GenAI and other
         spans or logs using custom span or log record processors or hooks provided by instrumentation
@@ -5286,15 +5306,18 @@ refinements:
       requirement_level: recommended
       stability: development
       type: double
-    - brief: The top_k sampling setting for the GenAI request.
+    - brief: |
+        The top-K sampling setting for the GenAI request: restricts token generation at each step to the K most likely next tokens.
       examples:
-      - 1.0
+      - 40
       key: gen_ai.request.top_k
+      note: |
+        This is a decoding/sampling parameter (e.g., Anthropic `top_k`, Cohere `k`, Google `topK`), not an output-shaping parameter. In particular, OpenAI\u0027s `top_logprobs` controls how many per-token log-probabilities are returned in the response and does not change generation; it MUST NOT be reported as `gen_ai.request.top_k`.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level: recommended
       stability: development
-      type: double
+      type: int
     - brief: The top_p sampling setting for the GenAI request.
       examples:
       - 1.0
@@ -5582,14 +5605,18 @@ refinements:
       - conv_5j66UpCpwteGg4YSxUnt7lPY
       key: gen_ai.conversation.id
       note: |
-        Instrumentations SHOULD populate conversation id when they have it readily available
-        for a given operation, for example:
+        Instrumentations SHOULD populate conversation id when they have an identifier
+        for the conversation readily available for a given operation, for example:
 
         - when client framework being instrumented manages conversation history
         (see [LlamaIndex chat store](https://docs.llamaindex.ai/en/stable/module_guides/storing/chat_stores/))
         - when instrumenting GenAI client libraries that maintain conversation on the backend side
         (see [AWS Bedrock agent sessions](https://docs.aws.amazon.com/bedrock/latest/userguide/agents-session-state.html),
         [OpenAI Assistant threads](https://platform.openai.com/docs/api-reference/threads))
+
+        When no identifier for the conversation is available, instrumentations SHOULD NOT
+        populate conversation id. For example, a new UUID, a trace identifier, or a hash
+        of request content SHOULD NOT be used as a fallback value.
 
         Application developers that manage conversation history MAY add conversation id to GenAI and other
         spans or logs using custom span or log record processors or hooks provided by instrumentation
@@ -6002,16 +6029,19 @@ refinements:
       requirement_level: recommended
       stability: development
       type: double
-    - brief: The top_k sampling setting for the GenAI request.
+    - brief: |
+        The top-K sampling setting for the GenAI request: restricts token generation at each step to the K most likely next tokens.
       examples:
-      - 1.0
+      - 40
       key: gen_ai.request.top_k
+      note: |
+        This is a decoding/sampling parameter (e.g., Anthropic `top_k`, Cohere `k`, Google `topK`), not an output-shaping parameter. In particular, OpenAI\u0027s `top_logprobs` controls how many per-token log-probabilities are returned in the response and does not change generation; it MUST NOT be reported as `gen_ai.request.top_k`.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
         conditionally_required: if applicable
       stability: development
-      type: double
+      type: int
     - brief: The top_p sampling setting for the GenAI request.
       examples:
       - 1.0
@@ -7129,14 +7159,18 @@ refinements:
       - conv_5j66UpCpwteGg4YSxUnt7lPY
       key: gen_ai.conversation.id
       note: |
-        Instrumentations SHOULD populate conversation id when they have it readily available
-        for a given operation, for example:
+        Instrumentations SHOULD populate conversation id when they have an identifier
+        for the conversation readily available for a given operation, for example:
 
         - when client framework being instrumented manages conversation history
         (see [LlamaIndex chat store](https://docs.llamaindex.ai/en/stable/module_guides/storing/chat_stores/))
         - when instrumenting GenAI client libraries that maintain conversation on the backend side
         (see [AWS Bedrock agent sessions](https://docs.aws.amazon.com/bedrock/latest/userguide/agents-session-state.html),
         [OpenAI Assistant threads](https://platform.openai.com/docs/api-reference/threads))
+
+        When no identifier for the conversation is available, instrumentations SHOULD NOT
+        populate conversation id. For example, a new UUID, a trace identifier, or a hash
+        of request content SHOULD NOT be used as a fallback value.
 
         Application developers that manage conversation history MAY add conversation id to GenAI and other
         spans or logs using custom span or log record processors or hooks provided by instrumentation
@@ -7539,16 +7573,19 @@ refinements:
       requirement_level: recommended
       stability: development
       type: double
-    - brief: The top_k sampling setting for the GenAI request.
+    - brief: |
+        The top-K sampling setting for the GenAI request: restricts token generation at each step to the K most likely next tokens.
       examples:
-      - 1.0
+      - 40
       key: gen_ai.request.top_k
+      note: |
+        This is a decoding/sampling parameter (e.g., Anthropic `top_k`, Cohere `k`, Google `topK`), not an output-shaping parameter. In particular, OpenAI\u0027s `top_logprobs` controls how many per-token log-probabilities are returned in the response and does not change generation; it MUST NOT be reported as `gen_ai.request.top_k`.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
         conditionally_required: if applicable
       stability: development
-      type: double
+      type: int
     - brief: The top_p sampling setting for the GenAI request.
       examples:
       - 1.0
@@ -7877,14 +7914,18 @@ refinements:
       - conv_5j66UpCpwteGg4YSxUnt7lPY
       key: gen_ai.conversation.id
       note: |
-        Instrumentations SHOULD populate conversation id when they have it readily available
-        for a given operation, for example:
+        Instrumentations SHOULD populate conversation id when they have an identifier
+        for the conversation readily available for a given operation, for example:
 
         - when client framework being instrumented manages conversation history
         (see [LlamaIndex chat store](https://docs.llamaindex.ai/en/stable/module_guides/storing/chat_stores/))
         - when instrumenting GenAI client libraries that maintain conversation on the backend side
         (see [AWS Bedrock agent sessions](https://docs.aws.amazon.com/bedrock/latest/userguide/agents-session-state.html),
         [OpenAI Assistant threads](https://platform.openai.com/docs/api-reference/threads))
+
+        When no identifier for the conversation is available, instrumentations SHOULD NOT
+        populate conversation id. For example, a new UUID, a trace identifier, or a hash
+        of request content SHOULD NOT be used as a fallback value.
 
         Application developers that manage conversation history MAY add conversation id to GenAI and other
         spans or logs using custom span or log record processors or hooks provided by instrumentation
@@ -8574,14 +8615,18 @@ refinements:
       - conv_5j66UpCpwteGg4YSxUnt7lPY
       key: gen_ai.conversation.id
       note: |
-        Instrumentations SHOULD populate conversation id when they have it readily available
-        for a given operation, for example:
+        Instrumentations SHOULD populate conversation id when they have an identifier
+        for the conversation readily available for a given operation, for example:
 
         - when client framework being instrumented manages conversation history
         (see [LlamaIndex chat store](https://docs.llamaindex.ai/en/stable/module_guides/storing/chat_stores/))
         - when instrumenting GenAI client libraries that maintain conversation on the backend side
         (see [AWS Bedrock agent sessions](https://docs.aws.amazon.com/bedrock/latest/userguide/agents-session-state.html),
         [OpenAI Assistant threads](https://platform.openai.com/docs/api-reference/threads))
+
+        When no identifier for the conversation is available, instrumentations SHOULD NOT
+        populate conversation id. For example, a new UUID, a trace identifier, or a hash
+        of request content SHOULD NOT be used as a fallback value.
 
         Application developers that manage conversation history MAY add conversation id to GenAI and other
         spans or logs using custom span or log record processors or hooks provided by instrumentation
@@ -10129,15 +10174,6 @@ refinements:
         conditionally_required: If available.
       stability: development
       type: string
-    - brief: The top_k sampling setting for the GenAI request.
-      examples:
-      - 1.0
-      key: gen_ai.request.top_k
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level: recommended
-      stability: development
-      type: double
     - brief: The documents retrieved.
       examples:
       - |
@@ -10182,6 +10218,16 @@ refinements:
       requirement_level: opt_in
       stability: development
       type: string
+    - brief: |
+        The maximum number of documents the retriever was asked to return for the query (also known as `k`, `limit`, or `max_num_results`).
+      examples:
+      - 5
+      key: gen_ai.retrieval.top_k
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: recommended
+      stability: development
+      type: int
     - brief: GenAI server address.
       examples:
       - example.com
@@ -11212,14 +11258,18 @@ refinements:
       - conv_5j66UpCpwteGg4YSxUnt7lPY
       key: gen_ai.conversation.id
       note: |
-        Instrumentations SHOULD populate conversation id when they have it readily available
-        for a given operation, for example:
+        Instrumentations SHOULD populate conversation id when they have an identifier
+        for the conversation readily available for a given operation, for example:
 
         - when client framework being instrumented manages conversation history
         (see [LlamaIndex chat store](https://docs.llamaindex.ai/en/stable/module_guides/storing/chat_stores/))
         - when instrumenting GenAI client libraries that maintain conversation on the backend side
         (see [AWS Bedrock agent sessions](https://docs.aws.amazon.com/bedrock/latest/userguide/agents-session-state.html),
         [OpenAI Assistant threads](https://platform.openai.com/docs/api-reference/threads))
+
+        When no identifier for the conversation is available, instrumentations SHOULD NOT
+        populate conversation id. For example, a new UUID, a trace identifier, or a hash
+        of request content SHOULD NOT be used as a fallback value.
 
         Application developers that manage conversation history MAY add conversation id to GenAI and other
         spans or logs using custom span or log record processors or hooks provided by instrumentation
@@ -11631,16 +11681,19 @@ refinements:
       requirement_level: recommended
       stability: development
       type: double
-    - brief: The top_k sampling setting for the GenAI request.
+    - brief: |
+        The top-K sampling setting for the GenAI request: restricts token generation at each step to the K most likely next tokens.
       examples:
-      - 1.0
+      - 40
       key: gen_ai.request.top_k
+      note: |
+        This is a decoding/sampling parameter (e.g., Anthropic `top_k`, Cohere `k`, Google `topK`), not an output-shaping parameter. In particular, OpenAI\u0027s `top_logprobs` controls how many per-token log-probabilities are returned in the response and does not change generation; it MUST NOT be reported as `gen_ai.request.top_k`.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
         conditionally_required: if applicable
       stability: development
-      type: double
+      type: int
     - brief: The top_p sampling setting for the GenAI request.
       examples:
       - 1.0
@@ -12530,14 +12583,17 @@ registry:
       path: ./model/gen-ai/registry.yaml
     stability: development
     type: double
-  - brief: The top_k sampling setting for the GenAI request.
+  - brief: |
+      The top-K sampling setting for the GenAI request: restricts token generation at each step to the K most likely next tokens.
     examples:
-    - 1.0
+    - 40
     key: gen_ai.request.top_k
+    note: |
+      This is a decoding/sampling parameter (e.g., Anthropic `top_k`, Cohere `k`, Google `topK`), not an output-shaping parameter. In particular, OpenAI\u0027s `top_logprobs` controls how many per-token log-probabilities are returned in the response and does not change generation; it MUST NOT be reported as `gen_ai.request.top_k`.
     provenance:
       path: ./model/gen-ai/registry.yaml
     stability: development
-    type: double
+    type: int
   - brief: The top_p sampling setting for the GenAI request.
     examples:
     - 1.0
@@ -12624,6 +12680,15 @@ registry:
       path: ./model/gen-ai/registry.yaml
     stability: development
     type: string
+  - brief: |
+      The maximum number of documents the retriever was asked to return for the query (also known as `k`, `limit`, or `max_num_results`).
+    examples:
+    - 5
+    key: gen_ai.retrieval.top_k
+    provenance:
+      path: ./model/gen-ai/registry.yaml
+    stability: development
+    type: int
   - brief: The system message or instructions provided to the GenAI model separately from the chat history.
     examples:
     - |
@@ -13131,14 +13196,18 @@ registry:
       - conv_5j66UpCpwteGg4YSxUnt7lPY
       key: gen_ai.conversation.id
       note: |
-        Instrumentations SHOULD populate conversation id when they have it readily available
-        for a given operation, for example:
+        Instrumentations SHOULD populate conversation id when they have an identifier
+        for the conversation readily available for a given operation, for example:
 
         - when client framework being instrumented manages conversation history
         (see [LlamaIndex chat store](https://docs.llamaindex.ai/en/stable/module_guides/storing/chat_stores/))
         - when instrumenting GenAI client libraries that maintain conversation on the backend side
         (see [AWS Bedrock agent sessions](https://docs.aws.amazon.com/bedrock/latest/userguide/agents-session-state.html),
         [OpenAI Assistant threads](https://platform.openai.com/docs/api-reference/threads))
+
+        When no identifier for the conversation is available, instrumentations SHOULD NOT
+        populate conversation id. For example, a new UUID, a trace identifier, or a hash
+        of request content SHOULD NOT be used as a fallback value.
 
         Application developers that manage conversation history MAY add conversation id to GenAI and other
         spans or logs using custom span or log record processors or hooks provided by instrumentation
@@ -13538,16 +13607,19 @@ registry:
       requirement_level: recommended
       stability: development
       type: double
-    - brief: The top_k sampling setting for the GenAI request.
+    - brief: |
+        The top-K sampling setting for the GenAI request: restricts token generation at each step to the K most likely next tokens.
       examples:
-      - 1.0
+      - 40
       key: gen_ai.request.top_k
+      note: |
+        This is a decoding/sampling parameter (e.g., Anthropic `top_k`, Cohere `k`, Google `topK`), not an output-shaping parameter. In particular, OpenAI\u0027s `top_logprobs` controls how many per-token log-probabilities are returned in the response and does not change generation; it MUST NOT be reported as `gen_ai.request.top_k`.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
         conditionally_required: if applicable
       stability: development
-      type: double
+      type: int
     - brief: The top_p sampling setting for the GenAI request.
       examples:
       - 1.0
@@ -14056,7 +14128,8 @@ registry:
         `openai.*` attributes.
       provenance:
         path: ./model/gen-ai/registry.yaml
-      requirement_level: required
+      requirement_level:
+        conditionally_required: If the operation involves a call to a GenAI provider.
       stability: development
       type:
         members:
@@ -17548,14 +17621,18 @@ registry:
       - conv_5j66UpCpwteGg4YSxUnt7lPY
       key: gen_ai.conversation.id
       note: |
-        Instrumentations SHOULD populate conversation id when they have it readily available
-        for a given operation, for example:
+        Instrumentations SHOULD populate conversation id when they have an identifier
+        for the conversation readily available for a given operation, for example:
 
         - when client framework being instrumented manages conversation history
         (see [LlamaIndex chat store](https://docs.llamaindex.ai/en/stable/module_guides/storing/chat_stores/))
         - when instrumenting GenAI client libraries that maintain conversation on the backend side
         (see [AWS Bedrock agent sessions](https://docs.aws.amazon.com/bedrock/latest/userguide/agents-session-state.html),
         [OpenAI Assistant threads](https://platform.openai.com/docs/api-reference/threads))
+
+        When no identifier for the conversation is available, instrumentations SHOULD NOT
+        populate conversation id. For example, a new UUID, a trace identifier, or a hash
+        of request content SHOULD NOT be used as a fallback value.
 
         Application developers that manage conversation history MAY add conversation id to GenAI and other
         spans or logs using custom span or log record processors or hooks provided by instrumentation
@@ -17958,16 +18035,19 @@ registry:
       requirement_level: recommended
       stability: development
       type: double
-    - brief: The top_k sampling setting for the GenAI request.
+    - brief: |
+        The top-K sampling setting for the GenAI request: restricts token generation at each step to the K most likely next tokens.
       examples:
-      - 1.0
+      - 40
       key: gen_ai.request.top_k
+      note: |
+        This is a decoding/sampling parameter (e.g., Anthropic `top_k`, Cohere `k`, Google `topK`), not an output-shaping parameter. In particular, OpenAI\u0027s `top_logprobs` controls how many per-token log-probabilities are returned in the response and does not change generation; it MUST NOT be reported as `gen_ai.request.top_k`.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
         conditionally_required: if applicable
       stability: development
-      type: double
+      type: int
     - brief: The top_p sampling setting for the GenAI request.
       examples:
       - 1.0
@@ -18295,14 +18375,18 @@ registry:
       - conv_5j66UpCpwteGg4YSxUnt7lPY
       key: gen_ai.conversation.id
       note: |
-        Instrumentations SHOULD populate conversation id when they have it readily available
-        for a given operation, for example:
+        Instrumentations SHOULD populate conversation id when they have an identifier
+        for the conversation readily available for a given operation, for example:
 
         - when client framework being instrumented manages conversation history
         (see [LlamaIndex chat store](https://docs.llamaindex.ai/en/stable/module_guides/storing/chat_stores/))
         - when instrumenting GenAI client libraries that maintain conversation on the backend side
         (see [AWS Bedrock agent sessions](https://docs.aws.amazon.com/bedrock/latest/userguide/agents-session-state.html),
         [OpenAI Assistant threads](https://platform.openai.com/docs/api-reference/threads))
+
+        When no identifier for the conversation is available, instrumentations SHOULD NOT
+        populate conversation id. For example, a new UUID, a trace identifier, or a hash
+        of request content SHOULD NOT be used as a fallback value.
 
         Application developers that manage conversation history MAY add conversation id to GenAI and other
         spans or logs using custom span or log record processors or hooks provided by instrumentation
@@ -18991,14 +19075,18 @@ registry:
       - conv_5j66UpCpwteGg4YSxUnt7lPY
       key: gen_ai.conversation.id
       note: |
-        Instrumentations SHOULD populate conversation id when they have it readily available
-        for a given operation, for example:
+        Instrumentations SHOULD populate conversation id when they have an identifier
+        for the conversation readily available for a given operation, for example:
 
         - when client framework being instrumented manages conversation history
         (see [LlamaIndex chat store](https://docs.llamaindex.ai/en/stable/module_guides/storing/chat_stores/))
         - when instrumenting GenAI client libraries that maintain conversation on the backend side
         (see [AWS Bedrock agent sessions](https://docs.aws.amazon.com/bedrock/latest/userguide/agents-session-state.html),
         [OpenAI Assistant threads](https://platform.openai.com/docs/api-reference/threads))
+
+        When no identifier for the conversation is available, instrumentations SHOULD NOT
+        populate conversation id. For example, a new UUID, a trace identifier, or a hash
+        of request content SHOULD NOT be used as a fallback value.
 
         Application developers that manage conversation history MAY add conversation id to GenAI and other
         spans or logs using custom span or log record processors or hooks provided by instrumentation
@@ -20542,15 +20630,6 @@ registry:
         conditionally_required: If available.
       stability: development
       type: string
-    - brief: The top_k sampling setting for the GenAI request.
-      examples:
-      - 1.0
-      key: gen_ai.request.top_k
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level: recommended
-      stability: development
-      type: double
     - brief: The documents retrieved.
       examples:
       - |
@@ -20595,6 +20674,16 @@ registry:
       requirement_level: opt_in
       stability: development
       type: string
+    - brief: |
+        The maximum number of documents the retriever was asked to return for the query (also known as `k`, `limit`, or `max_num_results`).
+      examples:
+      - 5
+      key: gen_ai.retrieval.top_k
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: recommended
+      stability: development
+      type: int
     - brief: GenAI server address.
       examples:
       - example.com
