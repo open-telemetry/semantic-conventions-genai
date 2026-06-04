@@ -109,10 +109,6 @@ attribute_groups:
           Application developers that manage conversation history MAY add conversation id to GenAI and other
           spans or logs using custom span or log record processors or hooks provided by instrumentation
           libraries.
-      - ref: gen_ai.agent.id
-        brief: The unique identifier of the invoked GenAI agent.
-        requirement_level:
-          conditionally_required: If applicable.
       - ref: gen_ai.agent.name
         brief: The human-readable name of the invoked GenAI agent.
         requirement_level:
@@ -444,6 +440,10 @@ spans:
         sampling_relevant: true
       - ref: server.port
         sampling_relevant: true
+      - ref: gen_ai.agent.id
+        brief: The unique identifier of the invoked GenAI agent.
+        requirement_level:
+          conditionally_required: if applicable.
 
   - type: gen_ai.invoke_agent.internal
     kind: internal
@@ -581,10 +581,6 @@ spans:
       - ref: gen_ai.operation.name
         requirement_level: required
         sampling_relevant: true
-      - ref: gen_ai.agent.id
-        brief: The unique identifier of the agent performing the planning.
-        requirement_level:
-          conditionally_required: If applicable.
       - ref: gen_ai.agent.name
         brief: The human-readable name of the agent performing the planning.
         requirement_level:

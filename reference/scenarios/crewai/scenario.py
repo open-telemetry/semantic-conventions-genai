@@ -268,12 +268,24 @@ def run_agent():
         "gen_ai.operation.name": "invoke_agent",
         "gen_ai.request.model": request_model,
         "gen_ai.agent.name": researcher_role,
+        "gen_ai.provider.name": "openai",
     }
 
+    if host:
+        agent_span_attributes["server.address"] = host
+    if port is not None:
+        agent_span_attributes["server.port"] = port
     with _reference_tracer.start_as_current_span(
         f"invoke_agent {researcher_role}", attributes=agent_span_attributes
     ) as agent_span:
-        agent_span.set_attribute("gen_ai.agent.id", str(researcher.id))
+        agent_span.set_attribute("gen_ai.request.choice.count", request_choice_count)
+        agent_span.set_attribute("gen_ai.request.max_tokens", request_max_tokens)
+        agent_span.set_attribute("gen_ai.request.temperature", request_temperature)
+        agent_span.set_attribute("gen_ai.request.seed", request_seed)
+        agent_span.set_attribute("gen_ai.request.stop_sequences", request_stop_sequences)
+        agent_span.set_attribute("gen_ai.request.frequency_penalty", request_frequency_penalty)
+        agent_span.set_attribute("gen_ai.request.presence_penalty", request_presence_penalty)
+        agent_span.set_attribute("gen_ai.request.top_p", request_top_p)
         agent_span.set_attribute(
             "gen_ai.system_instructions", json.dumps([{"parts": [{"type": "text", "content": system_prompt}]}])
         )
@@ -408,7 +420,6 @@ def _run_crew_planning_scenario(*, header, task_description):
         planner_agent = original_create_planning_agent(self)
         with _reference_tracer.start_as_current_span(f"plan {planner_agent.role}") as plan_span:
             plan_span.set_attribute("gen_ai.operation.name", "plan")
-            plan_span.set_attribute("gen_ai.agent.id", str(planner_agent.id))
             plan_span.set_attribute("gen_ai.agent.name", planner_agent.role)
             self._create_planning_agent = lambda: planner_agent
             try:

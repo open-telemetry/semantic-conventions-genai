@@ -12,7 +12,6 @@
 
 | Attribute | Supporting Libraries |
 | --- | --- |
-| gen_ai.agent.id | [crewai] |
 | gen_ai.agent.name | [crewai] |
 
 [crewai]: ../scenarios/crewai/scenario.py

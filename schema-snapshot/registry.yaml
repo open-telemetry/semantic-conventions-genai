@@ -6287,7 +6287,7 @@ refinements:
       key: gen_ai.agent.id
       note: |
         For hosted agents, this SHOULD be the provider-assigned stable identifier of the agent resource such as [AWS Bedrock agent ARN](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_Agent.html)  or [GCP Agent Registry identifier](https://docs.cloud.google.com/agent-registry/concepts#agent-identifier).
-        Semantic conventions for individual providers SHOULD document what `gen_ai.agent.id`  maps to within their system.
+        It\u0027s NOT RECOMMENDED to record in-memory agent instance ids on this attribute due to their transient nature.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
@@ -7823,11 +7823,11 @@ refinements:
       key: gen_ai.agent.id
       note: |
         For hosted agents, this SHOULD be the provider-assigned stable identifier of the agent resource such as [AWS Bedrock agent ARN](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_Agent.html)  or [GCP Agent Registry identifier](https://docs.cloud.google.com/agent-registry/concepts#agent-identifier).
-        Semantic conventions for individual providers SHOULD document what `gen_ai.agent.id`  maps to within their system.
+        It\u0027s NOT RECOMMENDED to record in-memory agent instance ids on this attribute due to their transient nature.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
-        conditionally_required: If applicable.
+        conditionally_required: if applicable.
       stability: development
       type: string
     - brief: The human-readable name of the invoked GenAI agent.
@@ -8508,21 +8508,6 @@ refinements:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
         conditionally_required: When available.
-      stability: development
-      type: string
-    - brief: The unique identifier of the invoked GenAI agent.
-      examples:
-      - asst_5j66UpCpwteGg4YSxUnt7lPY
-      - arn:aws:bedrock:us-east-1:123:agent/42
-      - urn:agent:projects-123:projects:123:locations:us-east1:aiplatform:reasoningEngines:456
-      key: gen_ai.agent.id
-      note: |
-        For hosted agents, this SHOULD be the provider-assigned stable identifier of the agent resource such as [AWS Bedrock agent ARN](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_Agent.html)  or [GCP Agent Registry identifier](https://docs.cloud.google.com/agent-registry/concepts#agent-identifier).
-        Semantic conventions for individual providers SHOULD document what `gen_ai.agent.id`  maps to within their system.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        conditionally_required: If applicable.
       stability: development
       type: string
     - brief: The human-readable name of the invoked GenAI agent.
@@ -9752,21 +9737,6 @@ refinements:
           id: other
           stability: stable
           value: _OTHER
-    - brief: The unique identifier of the agent performing the planning.
-      examples:
-      - asst_5j66UpCpwteGg4YSxUnt7lPY
-      - arn:aws:bedrock:us-east-1:123:agent/42
-      - urn:agent:projects-123:projects:123:locations:us-east1:aiplatform:reasoningEngines:456
-      key: gen_ai.agent.id
-      note: |
-        For hosted agents, this SHOULD be the provider-assigned stable identifier of the agent resource such as [AWS Bedrock agent ARN](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_Agent.html)  or [GCP Agent Registry identifier](https://docs.cloud.google.com/agent-registry/concepts#agent-identifier).
-        Semantic conventions for individual providers SHOULD document what `gen_ai.agent.id`  maps to within their system.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        conditionally_required: If applicable.
-      stability: development
-      type: string
     - brief: The human-readable name of the agent performing the planning.
       examples:
       - Math Tutor
@@ -11947,7 +11917,7 @@ registry:
       path: ./model/gen-ai/registry.yaml
     stability: development
     type: string
-  - brief: The unique identifier of the GenAI agent.
+  - brief: The unique and stable identifier of the GenAI hosted agent resource.
     examples:
     - asst_5j66UpCpwteGg4YSxUnt7lPY
     - arn:aws:bedrock:us-east-1:123:agent/42
@@ -11955,7 +11925,7 @@ registry:
     key: gen_ai.agent.id
     note: |
       For hosted agents, this SHOULD be the provider-assigned stable identifier of the agent resource such as [AWS Bedrock agent ARN](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_Agent.html)  or [GCP Agent Registry identifier](https://docs.cloud.google.com/agent-registry/concepts#agent-identifier).
-      Semantic conventions for individual providers SHOULD document what `gen_ai.agent.id`  maps to within their system.
+      It\u0027s NOT RECOMMENDED to record in-memory agent instance ids on this attribute due to their transient nature.
     provenance:
       path: ./model/gen-ai/registry.yaml
     stability: development
@@ -16700,7 +16670,7 @@ registry:
       key: gen_ai.agent.id
       note: |
         For hosted agents, this SHOULD be the provider-assigned stable identifier of the agent resource such as [AWS Bedrock agent ARN](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_Agent.html)  or [GCP Agent Registry identifier](https://docs.cloud.google.com/agent-registry/concepts#agent-identifier).
-        Semantic conventions for individual providers SHOULD document what `gen_ai.agent.id`  maps to within their system.
+        It\u0027s NOT RECOMMENDED to record in-memory agent instance ids on this attribute due to their transient nature.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
@@ -18232,11 +18202,11 @@ registry:
       key: gen_ai.agent.id
       note: |
         For hosted agents, this SHOULD be the provider-assigned stable identifier of the agent resource such as [AWS Bedrock agent ARN](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_Agent.html)  or [GCP Agent Registry identifier](https://docs.cloud.google.com/agent-registry/concepts#agent-identifier).
-        Semantic conventions for individual providers SHOULD document what `gen_ai.agent.id`  maps to within their system.
+        It\u0027s NOT RECOMMENDED to record in-memory agent instance ids on this attribute due to their transient nature.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
-        conditionally_required: If applicable.
+        conditionally_required: if applicable.
       stability: development
       type: string
     - brief: The human-readable name of the invoked GenAI agent.
@@ -18916,21 +18886,6 @@ registry:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
         conditionally_required: When available.
-      stability: development
-      type: string
-    - brief: The unique identifier of the invoked GenAI agent.
-      examples:
-      - asst_5j66UpCpwteGg4YSxUnt7lPY
-      - arn:aws:bedrock:us-east-1:123:agent/42
-      - urn:agent:projects-123:projects:123:locations:us-east1:aiplatform:reasoningEngines:456
-      key: gen_ai.agent.id
-      note: |
-        For hosted agents, this SHOULD be the provider-assigned stable identifier of the agent resource such as [AWS Bedrock agent ARN](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_Agent.html)  or [GCP Agent Registry identifier](https://docs.cloud.google.com/agent-registry/concepts#agent-identifier).
-        Semantic conventions for individual providers SHOULD document what `gen_ai.agent.id`  maps to within their system.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        conditionally_required: If applicable.
       stability: development
       type: string
     - brief: The human-readable name of the invoked GenAI agent.
@@ -20157,21 +20112,6 @@ registry:
           id: other
           stability: stable
           value: _OTHER
-    - brief: The unique identifier of the agent performing the planning.
-      examples:
-      - asst_5j66UpCpwteGg4YSxUnt7lPY
-      - arn:aws:bedrock:us-east-1:123:agent/42
-      - urn:agent:projects-123:projects:123:locations:us-east1:aiplatform:reasoningEngines:456
-      key: gen_ai.agent.id
-      note: |
-        For hosted agents, this SHOULD be the provider-assigned stable identifier of the agent resource such as [AWS Bedrock agent ARN](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_Agent.html)  or [GCP Agent Registry identifier](https://docs.cloud.google.com/agent-registry/concepts#agent-identifier).
-        Semantic conventions for individual providers SHOULD document what `gen_ai.agent.id`  maps to within their system.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        conditionally_required: If applicable.
-      stability: development
-      type: string
     - brief: The human-readable name of the agent performing the planning.
       examples:
       - Math Tutor
