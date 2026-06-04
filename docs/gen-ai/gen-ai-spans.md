@@ -24,6 +24,15 @@ linkTitle: Spans
 
 ## Spans
 
+GenAI spans represent logical operations as observed by the caller.
+They SHOULD cover the duration of the operation, starting when it is
+initiated and ending when the response is fully received or the operation
+is terminated due to an error or cancellation.
+
+If a transient issue happened and the request was retried automatically, the
+corresponding span SHOULD cover the duration of the logical operation with all
+retries.
+
 ### Inference
 
 <!-- weaver .registry.spans[] | select(.type == "gen_ai.inference.client") -->
@@ -107,14 +116,18 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 the canonical name of exception that occurred, or another low-cardinality error identifier.
 Instrumentations SHOULD document the list of errors they report.
 
-**[4] `gen_ai.conversation.id`:** Instrumentations SHOULD populate conversation id when they have it readily available
-for a given operation, for example:
+**[4] `gen_ai.conversation.id`:** Instrumentations SHOULD populate conversation id when they have an identifier
+for the conversation readily available for a given operation, for example:
 
 - when client framework being instrumented manages conversation history
 (see [LlamaIndex chat store](https://docs.llamaindex.ai/en/stable/module_guides/storing/chat_stores/))
 - when instrumenting GenAI client libraries that maintain conversation on the backend side
 (see [AWS Bedrock agent sessions](https://docs.aws.amazon.com/bedrock/latest/userguide/agents-session-state.html),
 [OpenAI Assistant threads](https://platform.openai.com/docs/api-reference/threads))
+
+When no identifier for the conversation is available, instrumentations SHOULD NOT
+populate conversation id. For example, a new UUID, a trace identifier, or a hash
+of request content SHOULD NOT be used as a fallback value.
 
 Application developers that manage conversation history MAY add conversation id to GenAI and other
 spans or logs using custom span or log record processors or hooks provided by instrumentation
