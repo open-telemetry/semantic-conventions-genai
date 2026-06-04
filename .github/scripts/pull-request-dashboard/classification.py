@@ -52,9 +52,12 @@ Guidance:
     - The reviewer's last comment is a clear acknowledgement of the author's
       previous reply ("sounds good", "ok thanks") that closes the thread.
   - Exception that keeps the ball with the author: if the author's latest
-    comment is a self-deferral ("still working on it", "WIP", "I'll get to
-    this", "will fix") rather than a question or completed reply, classify as
-    author — they have not yet handed the ball back.
+    comment is a self-deferral about work still required in this PR ("still
+    working on it", "WIP", "I'll update this PR", "will fix this") rather
+    than a question or completed reply, classify as author — they have not yet
+    handed the ball back. If the author answers the thread while mentioning
+    separate follow-up work, treat that as a completed reply unless they say
+    the current PR is still waiting on that work.
 
 Respond with a single JSON object and nothing else:
 {{"thread_action": "author" | "reviewer" | "external" | "none" | "unclear", "reason": "short explanation grounded in this thread"}}
