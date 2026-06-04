@@ -57,5 +57,6 @@ def bedrock_agent_invoke(agent_id, alias_id, session_id):
         headers={
             "x-amzn-bedrock-agent-session-id": session_id,
             "x-amz-bedrock-agent-content-type": "application/json",
+            "x-amzn-requestid": "mock-invocation-id-123",
         },
     )

@@ -15,6 +15,9 @@
 
 ### 💡 Enhancements 💡
 
+- Add `gen_ai.agent.invocation.id` attribute to identify an agent invocation
+  operation, distinct from `gen_ai.response.id` which identifies individual
+  model inference responses.
 - Add GenAI memory operation span and attributes for memory store lifecycle (create/delete),
   memory record create/update/upsert/search/delete operations, and record counts.
   ([#140](https://github.com/open-telemetry/semantic-conventions-genai/pull/140))

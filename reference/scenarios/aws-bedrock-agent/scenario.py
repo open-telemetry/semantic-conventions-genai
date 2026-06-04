@@ -55,6 +55,9 @@ def run_invoke_agent(client):
             )
             # Consume the event stream
             text = ""
+            invocation_id = response.get("ResponseMetadata", {}).get("RequestId")
+            if invocation_id:
+                span.set_attribute("gen_ai.agent.invocation.id", invocation_id)
             for event in response["completion"]:
                 if "chunk" in event:
                     text += event["chunk"].get("bytes", b"").decode("utf-8")

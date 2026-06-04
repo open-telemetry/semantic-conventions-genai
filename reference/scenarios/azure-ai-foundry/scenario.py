@@ -130,6 +130,7 @@ def run_invoke_agent(client):
                     }
                 },
             )
+            span.set_attribute("gen_ai.agent.invocation.id", response.id)
 
             if getattr(response, "assistant_id", None):
                 span.set_attribute("gen_ai.agent.id", response.assistant_id)

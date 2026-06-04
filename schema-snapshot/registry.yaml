@@ -7836,6 +7836,19 @@ refinements:
         conditionally_required: if applicable.
       stability: development
       type: string
+    - brief: The unique identifier for the agent invocation.
+      examples:
+      - run_abc123
+      - 12345678-1234-1234-1234-123456789012
+      key: gen_ai.agent.invocation.id
+      note: |
+        This attribute captures the provider-assigned identifier for the agent invocation operation as a whole, distinct from `gen_ai.response.id` which identifies individual model inference responses. Examples include OpenAI Assistants run IDs, AWS Bedrock Agent invocation IDs, and Azure AI Foundry response IDs.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: when available
+      stability: development
+      type: string
     - brief: Human-readable name of the GenAI agent provided by the application.
       examples:
       - Math Tutor
@@ -8525,6 +8538,19 @@ refinements:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
         conditionally_required: if applicable.
+      stability: development
+      type: string
+    - brief: The unique identifier for the agent invocation.
+      examples:
+      - run_abc123
+      - 12345678-1234-1234-1234-123456789012
+      key: gen_ai.agent.invocation.id
+      note: |
+        This attribute captures the provider-assigned identifier for the agent invocation operation as a whole, distinct from `gen_ai.response.id` which identifies individual model inference responses. Examples include OpenAI Assistants run IDs, AWS Bedrock Agent invocation IDs, and Azure AI Foundry response IDs.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: when available
       stability: development
       type: string
     - brief: Human-readable name of the GenAI agent provided by the application.
@@ -11952,6 +11978,17 @@ registry:
     examples:
     - asst_5j66UpCpwteGg4YSxUnt7lPY
     key: gen_ai.agent.id
+    provenance:
+      path: ./model/gen-ai/registry.yaml
+    stability: development
+    type: string
+  - brief: The unique identifier for the agent invocation.
+    examples:
+    - run_abc123
+    - 12345678-1234-1234-1234-123456789012
+    key: gen_ai.agent.invocation.id
+    note: |
+      This attribute captures the provider-assigned identifier for the agent invocation operation as a whole, distinct from `gen_ai.response.id` which identifies individual model inference responses. Examples include OpenAI Assistants run IDs, AWS Bedrock Agent invocation IDs, and Azure AI Foundry response IDs.
     provenance:
       path: ./model/gen-ai/registry.yaml
     stability: development
@@ -18237,6 +18274,19 @@ registry:
         conditionally_required: if applicable.
       stability: development
       type: string
+    - brief: The unique identifier for the agent invocation.
+      examples:
+      - run_abc123
+      - 12345678-1234-1234-1234-123456789012
+      key: gen_ai.agent.invocation.id
+      note: |
+        This attribute captures the provider-assigned identifier for the agent invocation operation as a whole, distinct from `gen_ai.response.id` which identifies individual model inference responses. Examples include OpenAI Assistants run IDs, AWS Bedrock Agent invocation IDs, and Azure AI Foundry response IDs.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: when available
+      stability: development
+      type: string
     - brief: Human-readable name of the GenAI agent provided by the application.
       examples:
       - Math Tutor
@@ -18925,6 +18975,19 @@ registry:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
         conditionally_required: if applicable.
+      stability: development
+      type: string
+    - brief: The unique identifier for the agent invocation.
+      examples:
+      - run_abc123
+      - 12345678-1234-1234-1234-123456789012
+      key: gen_ai.agent.invocation.id
+      note: |
+        This attribute captures the provider-assigned identifier for the agent invocation operation as a whole, distinct from `gen_ai.response.id` which identifies individual model inference responses. Examples include OpenAI Assistants run IDs, AWS Bedrock Agent invocation IDs, and Azure AI Foundry response IDs.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: when available
       stability: development
       type: string
     - brief: Human-readable name of the GenAI agent provided by the application.

@@ -89,6 +89,9 @@ attribute_groups:
           conditionally_required: when applicable and if the request includes an output format.
       - ref: gen_ai.response.finish_reasons
         requirement_level: recommended
+      - ref: gen_ai.agent.invocation.id
+        requirement_level:
+          recommended: when available
       - ref: gen_ai.conversation.id
         requirement_level:
           conditionally_required: when available

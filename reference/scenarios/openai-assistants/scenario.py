@@ -127,6 +127,7 @@ def run_invoke_agent(client):
                 temperature=request_temperature,
                 top_p=request_top_p,
             )
+            span.set_attribute("gen_ai.agent.invocation.id", run.id)
 
             if run.status == "requires_action":
                 tool_outputs = []

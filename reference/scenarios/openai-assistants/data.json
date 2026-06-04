@@ -14,6 +14,7 @@
     "invoke_agent_client": [
       "gen_ai.agent.description",
       "gen_ai.agent.id",
+      "gen_ai.agent.invocation.id",
       "gen_ai.agent.name",
       "gen_ai.conversation.id",
       "gen_ai.input.messages",
