@@ -29,8 +29,15 @@
 
 - Add missing `gen_ai.tool.call.arguments` and `gen_ai.tool.call.result` opt-in attributes to MCP server span.
   ([#136](https://github.com/open-telemetry/semantic-conventions-genai/pull/136))
+- Relax `gen_ai.provider.name` on `gen_ai.client.operation.duration` to `Conditionally Required`,
+  to align with the `gen_ai.retrieval.client` and `gen_ai.memory.client` spans which already
+  allow omitting `gen_ai.provider.name`.
+  ([#214](https://github.com/open-telemetry/semantic-conventions-genai/pull/214))
 
 ### 📚 Clarifications 📚
 
+- Clarify that a GenAI span SHOULD cover the duration of the operation
+  as observed by the caller, including any retries.
+  ([#216](https://github.com/open-telemetry/semantic-conventions-genai/pull/216))
 - Clarify that `gen_ai.conversation.id` should only be populated from an available conversation identifier,
   and that instrumentations should not use fallback values such as generated UUIDs, trace IDs, or request-content hashes.

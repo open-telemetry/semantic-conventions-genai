@@ -24,6 +24,15 @@ linkTitle: Spans
 
 ## Spans
 
+GenAI spans represent logical operations as observed by the caller.
+They SHOULD cover the duration of the operation, starting when it is
+initiated and ending when the response is fully received or the operation
+is terminated due to an error or cancellation.
+
+If a transient issue happened and the request was retried automatically, the
+corresponding span SHOULD cover the duration of the logical operation with all
+retries.
+
 ### Inference
 
 <!-- weaver .registry.spans[] | select(.type == "gen_ai.inference.client") -->

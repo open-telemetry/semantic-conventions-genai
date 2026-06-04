@@ -3,7 +3,7 @@ name = "azure-ai-foundry-reference-test"
 version = "0.0.0"
 requires-python = ">=3.12"
 dependencies = [
-    "azure-ai-projects==2.1.0",
+    "azure-ai-projects==2.2.0",
     "azure-identity==1.25.3",
     "genai-reference-shared",
 ]

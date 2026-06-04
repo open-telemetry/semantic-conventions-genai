@@ -950,7 +950,8 @@ refinements:
         `openai.*` attributes.
       provenance:
         path: ./model/gen-ai/registry.yaml
-      requirement_level: required
+      requirement_level:
+        conditionally_required: If the operation involves a call to a GenAI provider.
       stability: development
       type:
         members:
@@ -3717,7 +3718,8 @@ refinements:
         `openai.*` attributes.
       provenance:
         path: ./model/gen-ai/registry.yaml
-      requirement_level: required
+      requirement_level:
+        conditionally_required: If the operation involves a call to a GenAI provider.
       stability: development
       type:
         members:
@@ -13997,7 +13999,8 @@ registry:
         `openai.*` attributes.
       provenance:
         path: ./model/gen-ai/registry.yaml
-      requirement_level: required
+      requirement_level:
+        conditionally_required: If the operation involves a call to a GenAI provider.
       stability: development
       type:
         members:
