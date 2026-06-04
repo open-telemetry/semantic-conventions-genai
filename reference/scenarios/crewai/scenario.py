@@ -212,7 +212,6 @@ def run_agent():
     request_frequency_penalty = 0.1
     request_presence_penalty = 0.2
     system_prompt = "You are a helpful research assistant."
-    host, port = mock_server_host_port(MOCK_BASE_URL)
     os.environ["OPENAI_API_KEY"] = "mock-key"
     os.environ["OPENAI_API_BASE"] = MOCK_BASE_URL
     os.environ["OPENAI_MODEL_NAME"] = request_model
@@ -271,10 +270,6 @@ def run_agent():
         "gen_ai.provider.name": "openai",
     }
 
-    if host:
-        agent_span_attributes["server.address"] = host
-    if port is not None:
-        agent_span_attributes["server.port"] = port
     with _reference_tracer.start_as_current_span(
         f"invoke_agent {researcher_role}", attributes=agent_span_attributes
     ) as agent_span:

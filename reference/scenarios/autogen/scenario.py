@@ -135,6 +135,7 @@ def run_agent_reference():
                 tools=[get_weather],
                 max_tool_iterations=2,
             )
+
         async def _run():
             from autogen_agentchat.messages import TextMessage
             from autogen_core import CancellationToken
