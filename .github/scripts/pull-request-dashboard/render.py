@@ -163,7 +163,7 @@ def render_pr_tables(prs: list[dict[str, Any]], results: dict[int, dict[str, Any
         f"partly performed by an LLM ([source]({source_url})) and could contain mistakes.",
         ">",
         "> Reviewers column: ✅ approved · ✔️ approved (non-code-owner) · "
-        "💬 open thread · 🔴 changes requested.",
+        "> 💬 open thread · 🔴 changes requested.",
         "",
     ]
 
