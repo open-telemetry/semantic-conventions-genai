@@ -187,17 +187,20 @@ jobs:
             exit 0
           fi
 
+          dashboard_url=$(python3 .github/scripts/pull-request-dashboard/publish_dashboard.py --print-dashboard-url)
+
           body=$(cat <<EOF
           ${MARKER}
           Copilot has reviewed this PR. Copilot's suggestions aren't always correct or applicable, so please evaluate each comment on its merits and then handle it in one of these ways:
 
           - click GitHub's "Apply suggestion" button (auto-resolves the thread);
           - reply that it was **applied** (ideally linking to the commit); or
-          - reply that it was **not applied**, with the reason.
+          - reply that it was **not applied**, with the reason; or
+          - reply with a question for reviewers.
 
-          Approvers rely on automation that flags a PR for human review once every Copilot comment has been replied to or marked as resolved, so keeping these threads up to date is what tells reviewers the PR is ready for another look.
+          Automation flags a PR for human review once every Copilot comment has a reply or is marked as resolved, so keeping these threads up to date helps reviewers know when the PR is ready.
 
-          Status across open PRs is visible on the [pull request dashboard](https://github.com/open-telemetry/semantic-conventions-genai/issues/102).
+          Status across open PRs is visible on the [pull request dashboard](${dashboard_url}).
           EOF
           )
 
