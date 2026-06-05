@@ -156,14 +156,20 @@ def render_diagnostics_section(results: dict[int, dict[str, Any]]) -> list[str]:
 def render_pr_tables(prs: list[dict[str, Any]], results: dict[int, dict[str, Any]], repo: str) -> str:
     source_url = f"https://github.com/{repo}/blob/main/.github/scripts/pull-request-dashboard/dashboard.py"
     refresh_url = f"https://github.com/{repo}/actions/workflows/pull-request-dashboard.yml"
+    grouping_note = (
+        "Open non-draft PRs grouped by who is expected to act next. Draft PRs are "
+        "listed separately. The grouping is "
+        f"partly performed by an LLM ([source]({source_url})) and could contain mistakes."
+    )
+    reviewers_note = (
+        "Reviewers column: ✅ approved · ✔️ approved (non-code-owner) · "
+        "💬 open thread · 🔴 changes requested."
+    )
     out: list[str] = [
         "> [!NOTE]",
-        "> Open non-draft PRs grouped by who is expected to act next. Draft PRs are "
-        "listed separately. The grouping is "
-        f"partly performed by an LLM ([source]({source_url})) and could contain mistakes.",
+        f"> {grouping_note}",
         ">",
-        "> Reviewers column: ✅ approved · ✔️ approved (non-code-owner) · "
-        "> 💬 open thread · 🔴 changes requested.",
+        f"> {reviewers_note}",
         "",
     ]
 

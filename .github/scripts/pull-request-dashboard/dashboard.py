@@ -87,7 +87,8 @@ survive into the cached dashboard state (see ``stored_result``).
     author                          str           Effective author (human, after
                                                   bot-delegation resolution).
     assignees                       list[str]     PR assignees.
-    is_otelbot_author               bool          PR opened by app/otelbot.
+    is_maintenance_bot              bool          PR is authored by a
+                                                  maintenance bot.
     is_draft                        bool
     approval_count                  int           Current unique APPROVED reviews
                                                   from approver-team members.
@@ -195,32 +196,24 @@ def role_for(login: str, author: str, reviewers: set[str]) -> str:
     return "outsider"
 
 
-# Bot logins appear in two shapes depending on the API:
-#   - `gh pr view`'s `author` field uses the `app/<slug>` form (e.g.
-#     `app/copilot-swe-agent`), which is what `_DELEGATING_BOT_AUTHORS`
-#     matches against in `effective_author`.
-#   - The Pulls/commits endpoint's `committer.login` field returns the bare
-#     slug (e.g. `copilot`), which is what `_BOT_COMMITTER_LOGINS` matches
-#     against in `detect_human_delegator`.
-# Both sets contain `copilot` because the slug shows up in both contexts.
-_BOT_COMMITTER_LOGINS = {"copilot"}
-_DELEGATING_BOT_AUTHORS = {"app/copilot-swe-agent", "copilot"}
+# Copilot appears in two API shapes: `gh pr view`'s `author` field uses the
+# `app/<slug>` form, while the Pulls/commits endpoint's `committer.login`
+# field can return the bare `copilot` slug. Do not treat either form as the
+# human author behind a Copilot-authored PR.
+_COPILOT_COMMITTER_LOGINS = {"copilot"}
+_COPILOT_PR_AUTHORS = {"app/copilot-swe-agent", "copilot"}
+_MAINTENANCE_BOT_PR_AUTHORS = {"app/otelbot", "app/renovate"}
 
 
-def is_bot_login(login: str) -> bool:
-    if not login:
-        return True
-    low = login.lower()
-    if low in _BOT_COMMITTER_LOGINS:
-        return True
-    return low.startswith("app/") or low.endswith("[bot]")
+def is_copilot_committer_login(login: str) -> bool:
+    return login.lower() in _COPILOT_COMMITTER_LOGINS
 
 
 def detect_human_delegator(commits: list[dict[str, Any]]) -> str:
     if not commits:
         return ""
     login = actor_login(commits[0].get("committer") or {})
-    return "" if is_bot_login(login) else login
+    return "" if is_copilot_committer_login(login) else login
 
 
 def fetch_pr_raw(
@@ -270,7 +263,7 @@ def effective_author(raw: dict[str, Any]) -> str:
     pr = raw["pr"]
     summary = raw["summary"]
     author = actor_login(pr.get("author") or {}) or actor_login(summary.get("author") or {})
-    if author.lower() in _DELEGATING_BOT_AUTHORS:
+    if author.lower() in _COPILOT_PR_AUTHORS:
         delegator = detect_human_delegator(raw["commits"])
         if delegator:
             return delegator
@@ -445,7 +438,7 @@ def compute_facts(
     facts = {
         "author": author,
         "assignees": assignees,
-        "is_otelbot_author": api_author.lower() == "app/otelbot",
+        "is_maintenance_bot": api_author.lower() in _MAINTENANCE_BOT_PR_AUTHORS,
         "is_draft": bool(pr.get("isDraft")),
         "approval_count": current_approval_count(events),
         "conflicts": compute_conflicts(pr),
@@ -624,10 +617,10 @@ def action_counts(classifications: list[dict[str, Any]]) -> dict[str, int]:
 
 def route_pr(facts: dict[str, Any], classifications: list[dict[str, Any]]) -> str:
     counts = action_counts(classifications)
-    # otelbot PRs have no human author, so an author-owed thread points at
-    # nobody who can act; skip that check for them. They also reach merge-ready
-    # on a single approval (these are low-risk dependency-bump PRs).
-    is_otelbot = facts.get("is_otelbot_author")
+    # Copilot PRs are mapped back to a human author when possible. Maintenance
+    # bot PRs have no useful author route and need only one approval.
+    is_maintenance_bot = facts.get("is_maintenance_bot")
+    required_approvals = 1 if is_maintenance_bot else 2
     # Precedence:
     #   1. A thread waiting on the author -> "author".
     #   2. Otherwise a thread waiting on something external -> "external".
@@ -636,15 +629,16 @@ def route_pr(facts: dict[str, Any], classifications: list[dict[str, Any]]) -> st
     #      is not merge-ready while an approver still owes a follow-up, because
     #      that response may change their stance.
     #   4. Otherwise the approval count decides: enough approvals -> ready for a
-    #      maintainer to merge (two normally, one for low-risk otelbot PRs);
+    #      maintainer to merge (two normally, one when the author route does
+    #      not apply);
     #      fewer -> still waiting on approvers.
-    if counts["author"] and not is_otelbot:
+    if counts["author"] and not is_maintenance_bot:
         return "author"
     if counts["external"]:
         return "external"
     if counts["reviewer"]:
         return "approver"
-    if facts.get("approval_count", 0) >= (1 if is_otelbot else 2):
+    if facts.get("approval_count", 0) >= required_approvals:
         return "maintainer"
     return "approver"
 
