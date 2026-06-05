@@ -404,10 +404,10 @@ def _run_crew_planning_scenario(*, header, task_description):
     # Crew(...planning=True).kickoff() below.
     #
     # We pre-build the planner agent (CrewPlanner._create_planning_agent
-    # is deterministic and arg-less) so we can record gen_ai.agent.{id,
-    # name} on the plan span at creation time, then inject the same
+    # is deterministic and arg-less) so we can record gen_ai.agent.name
+    # on the plan span at creation time, then inject the same
     # instance back via an instance-level override so CrewAI uses the
-    # agent whose id we just recorded.
+    # agent whose name we just recorded.
     original_handle = CrewPlanner._handle_crew_planning
     original_create_planning_agent = CrewPlanner._create_planning_agent
 
