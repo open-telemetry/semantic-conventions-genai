@@ -7,6 +7,7 @@ from typing import Any
 
 
 DASHBOARD_MARKDOWN_FILE = "pull-request-dashboard.md"
+STATE_VERSION = 2
 _state_dir: Path | None = None
 
 
@@ -34,7 +35,7 @@ def dashboard_markdown_path() -> Path:
 
 
 def empty_state() -> dict[str, Any]:
-    return {"version": 1, "prs": {}, "_loaded_from_dashboard": False}
+    return {"version": STATE_VERSION, "prs": {}, "_loaded_from_dashboard": False}
 
 
 def load_state_file(path: Path) -> dict[str, Any]:
@@ -50,9 +51,11 @@ def load_state_file(path: Path) -> dict[str, Any]:
         return empty_state()
     if not isinstance(data, dict):
         return empty_state()
+    if data.get("version") != STATE_VERSION:
+        return empty_state()
     if not isinstance(data.get("prs"), dict):
         data["prs"] = {}
-    data["version"] = 1
+    data["version"] = STATE_VERSION
     data["_loaded_from_dashboard"] = True
     return data
 
@@ -60,7 +63,7 @@ def load_state_file(path: Path) -> dict[str, Any]:
 def save_state_file(path: Path, state: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     stored = {k: v for k, v in state.items() if not k.startswith("_")}
-    stored.setdefault("version", 1)
+    stored["version"] = STATE_VERSION
     stored.setdefault("prs", {})
     path.write_text(json.dumps(stored, sort_keys=True, indent=2), encoding="utf-8")
 
@@ -133,7 +136,7 @@ def results_from_dashboard_state(state: dict[str, Any], open_pr_numbers: set[int
 
 def dashboard_state_from_results(results: dict[int, dict[str, Any]]) -> dict[str, Any]:
     return {
-        "version": 1,
+        "version": STATE_VERSION,
         "prs": {str(number): stored_result(result) for number, result in sorted(results.items())},
         "_loaded_from_dashboard": True,
     }
@@ -151,7 +154,7 @@ def update_dashboard_state_for_pr(
     else:
         prs[key] = stored_result(result)
     return {
-        "version": 1,
+        "version": STATE_VERSION,
         "prs": prs,
         "_loaded_from_dashboard": bool(state.get("_loaded_from_dashboard")),
     }
