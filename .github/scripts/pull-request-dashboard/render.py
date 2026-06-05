@@ -8,7 +8,7 @@ from utils import actor_login, activity_age, parse_ts, seconds_since
 
 ROUTE_LABELS = {
     "maintainer": "Waiting on maintainers",
-    "approver": "Waiting on approvers",
+    "approver": "Waiting on reviewers",
     "author": "Waiting on authors",
     "external": "Waiting on external",
     "transient-failure": "Transient GitHub failure retrieving PR data",
@@ -80,9 +80,55 @@ def age_cell(facts: dict[str, Any]) -> str:
     return activity_age(_age_ts(facts))
 
 
-def approval_marks(facts: dict[str, Any]) -> str:
-    count = facts.get("approval_count", 0)
-    return "" if count <= 0 else " " + "✅" * count
+def reviewer_icon(reviewer: dict[str, Any]) -> str:
+    if reviewer.get("changes_requested"):
+        return "🔴"
+    if reviewer.get("approved"):
+        # Word joiner (U+2060) keeps the two emoji on the same line.
+        return "💬⁠✅" if reviewer.get("open_thread") else "✅"
+    if reviewer.get("approved_non_team"):
+        # A black/gray check distinguishes a non-code-owner approval from a
+        # code-owner approval; only code-owner approvals count toward merge.
+        return "💬⁠✔️" if reviewer.get("open_thread") else "✔️"
+    if reviewer.get("open_thread"):
+        return "💬"
+    return ""
+
+
+# Friendlier display names for bot reviewers whose login is verbose.
+REVIEWER_DISPLAY_NAMES = {
+    "copilot-pull-request-reviewer": "Copilot",
+}
+
+
+def reviewer_display_name(login: str) -> str:
+    return REVIEWER_DISPLAY_NAMES.get(login, login)
+
+
+def reviewers_cell_text(facts: dict[str, Any], pr: dict[str, Any]) -> str:
+    reviewers = facts.get("reviewers")
+    if reviewers is None:
+        # Failed builds have no classifications; fall back to bare assignees.
+        assignees = facts.get("assignees") or [actor_login(a) for a in (pr.get("assignees") or [])]
+        reviewers = [
+            {
+                "login": a,
+                "approved": False,
+                "approved_non_team": False,
+                "changes_requested": False,
+                "open_thread": False,
+            }
+            for a in assignees
+        ]
+    parts = []
+    for reviewer in reviewers:
+        login = _md_escape(reviewer_display_name(reviewer.get("login") or ""))
+        if not login:
+            continue
+        icon = reviewer_icon(reviewer)
+        # Join name and icon with a non-breaking space so they never wrap apart.
+        parts.append(f"{login}&nbsp;{icon}" if icon else login)
+    return "<br>".join(parts)
 
 
 def _neutralize_code_fence(s: str) -> str:
@@ -126,6 +172,9 @@ def render_pr_tables(prs: list[dict[str, Any]], results: dict[int, dict[str, Any
         "> Open non-draft PRs grouped by who is expected to act next. Draft PRs are "
         "listed separately. The grouping is "
         f"partly performed by an LLM ([source]({source_url})) and could contain mistakes.",
+        ">",
+        "> Reviewers column: ✅ approved · ✔️ approved (non-code-owner) · "
+        "💬 open thread · 🔴 changes requested.",
         "",
     ]
 
@@ -152,7 +201,7 @@ def render_pr_tables(prs: list[dict[str, Any]], results: dict[int, dict[str, Any
         rows.sort(key=row_sort_key, reverse=True)
         out.append(f"## {ROUTE_LABELS.get(route, route)}")
         out.append("")
-        out.append("| PR | Author | Assignees | CI | Conflicts | Age |")
+        out.append("| PR | Author | Reviewers | CI | Conflicts | Age |")
         out.append("|---|---|---|:---:|:---:|:---:|")
         for pr in rows:
             number = pr["number"]
@@ -161,15 +210,11 @@ def render_pr_tables(prs: list[dict[str, Any]], results: dict[int, dict[str, Any
             res = results.get(number) or {}
             facts = res.get("facts") or {}
             author = facts.get("author") or actor_login(pr.get("author") or {})
-            assignees = facts.get("assignees") or [
-                actor_login(a) for a in (pr.get("assignees") or [])
-            ]
-            assignees_cell = _md_escape(", ".join(a for a in assignees if a))
+            reviewers_cell = reviewers_cell_text(facts, pr)
             activity_cell = age_cell(facts)
             pr_cell = f"[{title} (#{number})]({url})"
-            pr_cell += approval_marks(facts)
             out.append(
-                f"| {pr_cell} | {author} | {assignees_cell} | {ci_cell(facts)} | "
+                f"| {pr_cell} | {author} | {reviewers_cell} | {ci_cell(facts)} | "
                 f"{conflicts_cell(facts)} | {activity_cell} |"
             )
         out.append("")

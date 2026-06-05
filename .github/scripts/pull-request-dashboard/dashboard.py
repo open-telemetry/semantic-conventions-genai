@@ -108,6 +108,21 @@ survive into the cached dashboard state (see ``stored_result``).
                                                   or PR creation time.
     waiting_age_basis               str           Which heuristic chose
                                                   waiting_since.
+    reviewers                       list[dict]    Reviewers to display (added by
+                                                  add_reviewers). Each entry is
+                                                  {"login": str, "approved": bool,
+                                                  "approved_non_team": bool,
+                                                  "changes_requested": bool,
+                                                  "open_thread": bool}; approved
+                                                  means an approver-team member
+                                                  is in the APPROVED state,
+                                                  approved_non_team means someone
+                                                  outside the team approved,
+                                                  changes_requested means an
+                                                  approver-team member's latest
+                                                  review is CHANGES_REQUESTED,
+                                                  open_thread means they own an
+                                                  unresolved discussion thread.
 
 Stage-2 fields are absent on failure paths (failed is True). Human-readable
 ``age`` strings (e.g. ``3h``) are derived at render time from these
@@ -364,9 +379,22 @@ def latest_substantive_activity(events: list[dict[str, Any]], actor_roles: set[s
 
 
 def current_approval_count(events: list[dict[str, Any]]) -> int:
+    approvers = approver_logins(events)
+    return sum(
+        1
+        for reviewer, state in latest_review_states(events).items()
+        if state == "APPROVED" and reviewer in approvers
+    )
+
+
+def approver_logins(events: list[dict[str, Any]]) -> set[str]:
+    return {event["actor"] for event in events if event.get("actor_role") == "approver" and event.get("actor")}
+
+
+def latest_review_states(events: list[dict[str, Any]]) -> dict[str, str]:
     latest_by_reviewer: dict[str, tuple[str, str]] = {}
     for event in events:
-        if event.get("kind") != "review-state" or event.get("actor_role") != "approver":
+        if event.get("kind") != "review-state":
             continue
         reviewer = event.get("actor") or ""
         submitted_at = event.get("timestamp") or ""
@@ -376,7 +404,21 @@ def current_approval_count(events: list[dict[str, Any]]) -> int:
         previous = latest_by_reviewer.get(reviewer)
         if previous is None or submitted_at >= previous[0]:
             latest_by_reviewer[reviewer] = (submitted_at, state)
-    return sum(1 for _, state in latest_by_reviewer.values() if state == "APPROVED")
+    return {reviewer: state for reviewer, (_, state) in latest_by_reviewer.items()}
+
+
+def commenting_reviewers(events: list[dict[str, Any]]) -> set[str]:
+    # Approver-team members who have participated on the PR in any way: an
+    # issue comment, an inline review comment, or a submitted review. This
+    # surfaces engaged reviewers even when they have neither approved nor own
+    # an open thread.
+    return {
+        event["actor"]
+        for event in events
+        if event.get("actor_role") == "approver"
+        and event.get("kind") in ("issue-comment", "review-comment", "review-state")
+        and event.get("actor")
+    }
 
 
 def compute_facts(
@@ -657,6 +699,71 @@ def add_wait_age_facts(
     facts["waiting_age_basis"] = basis
 
 
+# Thread actions that count as an open, unresolved discussion. A reviewer who
+# commented in such a thread is not yet satisfied, even if they have approved.
+# "none" means no follow-up is needed, so it does not block a clear check.
+OPEN_THREAD_ACTIONS = {"author", "reviewer", "external", "unclear"}
+
+
+def reviewers_with_open_threads(
+    threads: list[dict[str, Any]],
+    classifications: list[dict[str, Any]],
+) -> set[str]:
+    by_id = threads_by_id(threads)
+    logins: set[str] = set()
+    for c in classifications:
+        action = normalize_thread_action((c.get("decision") or {}).get("thread_action") or "")
+        if action not in OPEN_THREAD_ACTIONS:
+            continue
+        thread = by_id.get(c.get("thread_id") or "")
+        if not thread:
+            continue
+        for comment in thread.get("comments") or []:
+            if comment.get("actor_role") in ("approver", "outsider") and comment.get("actor"):
+                logins.add(comment["actor"])
+    return logins
+
+
+def add_reviewers(
+    facts: dict[str, Any],
+    events: list[dict[str, Any]],
+    threads: list[dict[str, Any]],
+    classifications: list[dict[str, Any]],
+) -> None:
+    # Reviewers to display in the dashboard, each flagged with their review
+    # stance: approved (by an approver-team member), approved_non_team (an
+    # approval from someone outside the team), changes_requested (an
+    # approver-team member's latest review blocks), and open_thread (they own
+    # an unresolved discussion thread). The renderer turns these into icons.
+    # Reviewers are everyone who reviewed, owns an open thread, otherwise
+    # commented, or is a PR assignee, sorted alphabetically (case-insensitive).
+    states = latest_review_states(events)
+    approvers = approver_logins(events)
+    approved = {r for r, s in states.items() if s == "APPROVED" and r in approvers}
+    approved_non_team = {r for r, s in states.items() if s == "APPROVED" and r not in approvers}
+    changes_requested = {r for r, s in states.items() if s == "CHANGES_REQUESTED" and r in approvers}
+    with_open = reviewers_with_open_threads(threads, classifications)
+    candidates = (
+        approved
+        | approved_non_team
+        | changes_requested
+        | with_open
+        | commenting_reviewers(events)
+        | set(facts.get("assignees") or [])
+    )
+    candidates.discard("")
+    facts["reviewers"] = [
+        {
+            "login": login,
+            "approved": login in approved,
+            "approved_non_team": login in approved_non_team,
+            "changes_requested": login in changes_requested,
+            "open_thread": login in with_open,
+        }
+        for login in sorted(candidates, key=str.lower)
+    ]
+
+
 # ---------------------------------------------------------------- main
 
 
@@ -693,6 +800,7 @@ def build_pr_result(
             }
         route = route_pr(facts, classifications)
         add_wait_age_facts(facts, route, threads, classifications)
+        add_reviewers(facts, events, threads, classifications)
         return {
             "pr_number": number,
             "pr_title": raw["pr"].get("title") or "",
