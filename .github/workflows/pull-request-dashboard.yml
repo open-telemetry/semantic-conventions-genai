@@ -321,7 +321,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           OTELBOT_TOKEN: ${{ steps.otelbot-token.outputs.token }}
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          SLACK_USER_MAP_JSON: ${{ secrets.SLACK_USER_MAP_JSON }}
+          SLACK_USER_MAP_JSON: ${{ vars.SLACK_USER_MAP_JSON }}
         run: |
           set -euo pipefail
           python3 .github/scripts/pull-request-dashboard/notify_slack.py \
