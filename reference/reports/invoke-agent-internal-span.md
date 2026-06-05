@@ -28,7 +28,6 @@
 
 | Attribute | Supporting Libraries |
 | --- | --- |
-| gen_ai.agent.invocation.id | (none) |
 | gen_ai.request.frequency_penalty | [autogen], [google-adk], [pydantic-ai] |
 | gen_ai.request.max_tokens | [autogen], [google-adk], [pydantic-ai] |
 | gen_ai.request.presence_penalty | [autogen], [google-adk], [pydantic-ai] |
