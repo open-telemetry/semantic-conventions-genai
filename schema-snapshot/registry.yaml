@@ -7827,7 +7827,7 @@ refinements:
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
-        conditionally_required: if applicable.
+        conditionally_required: If applicable.
       stability: development
       type: string
     - brief: The human-readable name of the invoked GenAI agent.
@@ -18206,7 +18206,7 @@ registry:
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
-        conditionally_required: if applicable.
+        conditionally_required: If applicable.
       stability: development
       type: string
     - brief: The human-readable name of the invoked GenAI agent.
