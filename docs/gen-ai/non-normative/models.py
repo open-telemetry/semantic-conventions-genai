@@ -1,10 +1,3 @@
-# /// script
-# requires-python = ">=3.11"
-# dependencies = [
-#   # renovate: datasource=pypi depName=pydantic
-#   "pydantic==2.13.4",
-# ]
-# ///
 """
 GenAI messages Python models.
 
@@ -16,9 +9,14 @@ Running this script regenerates the JSON schemas committed under
 `docs/gen-ai/gen-ai-*.json`. The output is sibling to this file's parent
 directory (i.e. `docs/gen-ai/`).
 
+Dependencies and their locked versions are declared in the sibling
+`pyproject.toml` / `uv.lock`, so the generation is reproducible.
+
 Run with:
 
-    uv run docs/gen-ai/non-normative/models.py
+    cd docs/gen-ai/non-normative && uv run models.py
+
+or, from the repo root, `make generate-json-schemas`.
 """
 
 from __future__ import annotations

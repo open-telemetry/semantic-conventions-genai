@@ -22,15 +22,6 @@
         "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+) versioning=(?<versioning>\\S+)\\s+SEMCONV_VERSION=(?<currentValue>\\S+)",
         "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+) versioning=(?<versioning>\\S+)\\s+POLICY_REPO_URL=(?<packageName>\\S+)\\s+POLICY_REPO_REF=(?<currentValue>\\S+)"
       ]
-    },
-    {
-      "customType": "regex",
-      "managerFilePatterns": [
-        "/^docs/gen-ai/non-normative/models\\.py$/"
-      ],
-      "matchStrings": [
-        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\s+#\\s+\"\\S+==(?<currentValue>[^\"]+)\""
-      ]
     }
   ],
   "packageRules": [

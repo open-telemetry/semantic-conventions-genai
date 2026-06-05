@@ -141,10 +141,11 @@ generate-docs: $(SC_UPSTREAM_STAMP)
 		docs
 
 # Regenerate the JSON schemas under docs/gen-ai/ from the pydantic models in
-# docs/gen-ai/non-normative/models.py. Uses `uv run` with PEP 723 inline
-# script metadata so no separate Python project setup is required.
+# docs/gen-ai/non-normative/models.py. Dependencies are pinned in the sibling
+# pyproject.toml and locked in uv.lock, so `uv run` reproduces the exact
+# environment (and renovate keeps both up to date, like the reference projects).
 generate-json-schemas:
-	uv run docs/gen-ai/non-normative/models.py
+	cd docs/gen-ai/non-normative && uv run models.py
 
 # Run every regeneration the repo owns (weaver-driven + pydantic-driven).
 # CI runs this and fails if any committed output is out of sync.

@@ -82,44 +82,18 @@ jobs:
       - name: Regenerate and check committed outputs are in sync
         run: |
           make generate-all
-          if ! git diff --exit-code -- ./docs/registry ./schema-snapshot; then
+          if ! git diff --exit-code -- ./docs/registry ./schema-snapshot 'docs/gen-ai/gen-ai-*.json'; then
             echo "FAIL: committed generated outputs are out of sync!"
             echo "Run 'make generate-all' and commit the changes."
             exit 1
           fi
-          untracked=$(git ls-files --others --exclude-standard -- ./docs/registry ./schema-snapshot)
+          untracked=$(git ls-files --others --exclude-standard -- ./docs/registry ./schema-snapshot 'docs/gen-ai/gen-ai-*.json')
           if [ -n "$untracked" ]; then
             echo "FAIL: untracked files under generated outputs:"
             echo "$untracked"
             exit 1
           fi
           echo "OK: committed generated outputs are up to date"
-
-  generated-schemas:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-
-      - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
-
-      - name: Regenerate JSON schemas
-        run: make generate-json-schemas
-
-      - name: Check committed JSON schemas are in sync
-        run: |
-          if ! git diff --exit-code -- 'docs/gen-ai/gen-ai-*.json'; then
-            echo "FAIL: committed JSON schemas are out of sync!"
-            echo "Run 'make generate-json-schemas' and commit the changes."
-            exit 1
-          fi
-          untracked=$(git ls-files --others --exclude-standard -- 'docs/gen-ai/gen-ai-*.json')
-          if [ -n "$untracked" ]; then
-            echo "FAIL: untracked JSON schema files:"
-            echo "$untracked"
-            exit 1
-          fi
-          echo "OK: committed JSON schemas are up to date"
 
   # ── Lint / Format ──────────────────────────────────────────────────
   reference-python-lint:
@@ -214,7 +188,6 @@ jobs:
       - links
       - policies
       - generated-docs
-      - generated-schemas
       - reference-python-lint
       - reference-scenario-matrix
       - reference-scenarios
