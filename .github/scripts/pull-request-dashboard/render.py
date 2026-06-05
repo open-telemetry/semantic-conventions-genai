@@ -105,21 +105,8 @@ def reviewer_display_name(login: str) -> str:
     return REVIEWER_DISPLAY_NAMES.get(login, login)
 
 
-def reviewers_cell_text(facts: dict[str, Any], pr: dict[str, Any]) -> str:
-    reviewers = facts.get("reviewers")
-    if reviewers is None:
-        # Failed builds have no classifications; fall back to bare assignees.
-        assignees = facts.get("assignees") or [actor_login(a) for a in (pr.get("assignees") or [])]
-        reviewers = [
-            {
-                "login": a,
-                "approved": False,
-                "approved_non_team": False,
-                "changes_requested": False,
-                "open_thread": False,
-            }
-            for a in assignees
-        ]
+def reviewers_cell_text(facts: dict[str, Any]) -> str:
+    reviewers = facts.get("reviewers") or []
     parts = []
     for reviewer in reviewers:
         login = _md_escape(reviewer_display_name(reviewer.get("login") or ""))
@@ -210,7 +197,7 @@ def render_pr_tables(prs: list[dict[str, Any]], results: dict[int, dict[str, Any
             res = results.get(number) or {}
             facts = res.get("facts") or {}
             author = facts.get("author") or actor_login(pr.get("author") or {})
-            reviewers_cell = reviewers_cell_text(facts, pr)
+            reviewers_cell = reviewers_cell_text(facts)
             activity_cell = age_cell(facts)
             pr_cell = f"[{title} (#{number})]({url})"
             out.append(
