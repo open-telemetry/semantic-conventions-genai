@@ -386,7 +386,7 @@ spans:
       - ref: gen_ai.request.model
         sampling_relevant: true
       - ref: gen_ai.agent.id
-        brief: The unique identifier of the GenAI agent created during this operation.
+        brief: The stable unique identifier of the GenAI agent created during this operation.
         requirement_level:
           conditionally_required: If applicable.
       - ref: gen_ai.agent.name
@@ -441,7 +441,7 @@ spans:
       - ref: server.port
         sampling_relevant: true
       - ref: gen_ai.agent.id
-        brief: The unique identifier of the invoked GenAI agent.
+        brief: The stable unique identifier of the invoked GenAI agent.
         requirement_level:
           conditionally_required: if applicable.
 
