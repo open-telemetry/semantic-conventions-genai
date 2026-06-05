@@ -388,7 +388,11 @@ def current_approval_count(events: list[dict[str, Any]]) -> int:
 
 
 def approver_logins(events: list[dict[str, Any]]) -> set[str]:
-    return {event["actor"] for event in events if event.get("actor_role") == "approver" and event.get("actor")}
+    return {
+        event["actor"]
+        for event in events
+        if event.get("actor_role") == "approver" and event.get("actor")
+    }
 
 
 def latest_review_states(events: list[dict[str, Any]]) -> dict[str, str]:
