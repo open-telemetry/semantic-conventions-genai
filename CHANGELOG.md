@@ -45,6 +45,10 @@
   (for example, Cohere), `gen_ai.usage.input_tokens` and
   `gen_ai.usage.output_tokens` SHOULD report the billed counts.
   ([#211](https://github.com/open-telemetry/semantic-conventions-genai/pull/211))
+- Generalize the `gen_ai.provider.name` description: remove inference-centric
+  paragraphs, and add guidance for per-operation semantic conventions to
+  clarify which kinds of providers apply when it is not clear from context.
+  ([#212](https://github.com/open-telemetry/semantic-conventions-genai/pull/212))
 - Clarify that a GenAI span SHOULD cover the duration of the operation
   as observed by the caller, including any retries.
   ([#216](https://github.com/open-telemetry/semantic-conventions-genai/pull/216))
@@ -54,3 +58,6 @@
   (e.g., Anthropic `top_k`, Cohere `k`) and not OpenAI's `top_logprobs`
   output-shaping parameter.
   ([#217](https://github.com/open-telemetry/semantic-conventions-genai/pull/217))
+- Clarify MCP context propagation now that SEP-414 defines `traceparent`,
+  `tracestate`, and `baggage` as unprefixed `params._meta` keys.
+  ([#220](https://github.com/open-telemetry/semantic-conventions-genai/pull/220))
