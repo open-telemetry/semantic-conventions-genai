@@ -91,7 +91,7 @@ def reviewer_icon(reviewer: dict[str, Any]) -> str:
     if reviewer.get("approved_non_team"):
         # A black/gray check distinguishes a non-code-owner approval from a
         # code-owner approval; only code-owner approvals count toward merge.
-        return "💬⁠✔️" if reviewer.get("open_thread") else "✔️"
+        return f"💬{WORD_JOINER}✔️" if reviewer.get("open_thread") else "✔️"
     if reviewer.get("open_thread"):
         return "💬"
     return ""
