@@ -7836,13 +7836,13 @@ refinements:
         conditionally_required: if applicable.
       stability: development
       type: string
-    - brief: The unique identifier for the agent invocation.
+    - brief: The unique identifier of the remote agent invocation.
       examples:
       - run_abc123
       - 12345678-1234-1234-1234-123456789012
       key: gen_ai.agent.invocation.id
       note: |
-        This attribute captures the provider-assigned identifier for the agent invocation operation as a whole, distinct from `gen_ai.response.id` which identifies individual model inference responses. Examples include OpenAI Assistants run IDs, AWS Bedrock Agent invocation IDs, and Azure AI Foundry response IDs.
+        This attribute captures the identifier of the agent invocation operation. Examples include [OpenAI Assistants run IDs](https://platform.openai.com/docs/api-reference/runs/object#runs/object-id), [AWS Bedrock Agent invocation IDs](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent-runtime_InvokeAgent.html), and [Azure AI Foundry Agent invocation IDs](https://ai.azure.com/api-reference/agent-invocations/create-agent-invocation/).
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
@@ -8540,13 +8540,13 @@ refinements:
         conditionally_required: if applicable.
       stability: development
       type: string
-    - brief: The unique identifier for the agent invocation.
+    - brief: The unique identifier of the remote agent invocation.
       examples:
       - run_abc123
       - 12345678-1234-1234-1234-123456789012
       key: gen_ai.agent.invocation.id
       note: |
-        This attribute captures the provider-assigned identifier for the agent invocation operation as a whole, distinct from `gen_ai.response.id` which identifies individual model inference responses. Examples include OpenAI Assistants run IDs, AWS Bedrock Agent invocation IDs, and Azure AI Foundry response IDs.
+        This attribute captures the identifier of the agent invocation operation. Examples include [OpenAI Assistants run IDs](https://platform.openai.com/docs/api-reference/runs/object#runs/object-id), [AWS Bedrock Agent invocation IDs](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent-runtime_InvokeAgent.html), and [Azure AI Foundry Agent invocation IDs](https://ai.azure.com/api-reference/agent-invocations/create-agent-invocation/).
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
@@ -11982,13 +11982,13 @@ registry:
       path: ./model/gen-ai/registry.yaml
     stability: development
     type: string
-  - brief: The unique identifier for the agent invocation.
+  - brief: The unique identifier of the remote agent invocation.
     examples:
     - run_abc123
     - 12345678-1234-1234-1234-123456789012
     key: gen_ai.agent.invocation.id
     note: |
-      This attribute captures the provider-assigned identifier for the agent invocation operation as a whole, distinct from `gen_ai.response.id` which identifies individual model inference responses. Examples include OpenAI Assistants run IDs, AWS Bedrock Agent invocation IDs, and Azure AI Foundry response IDs.
+      This attribute captures the identifier of the agent invocation operation. Examples include [OpenAI Assistants run IDs](https://platform.openai.com/docs/api-reference/runs/object#runs/object-id), [AWS Bedrock Agent invocation IDs](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent-runtime_InvokeAgent.html), and [Azure AI Foundry Agent invocation IDs](https://ai.azure.com/api-reference/agent-invocations/create-agent-invocation/).
     provenance:
       path: ./model/gen-ai/registry.yaml
     stability: development
@@ -18274,13 +18274,13 @@ registry:
         conditionally_required: if applicable.
       stability: development
       type: string
-    - brief: The unique identifier for the agent invocation.
+    - brief: The unique identifier of the remote agent invocation.
       examples:
       - run_abc123
       - 12345678-1234-1234-1234-123456789012
       key: gen_ai.agent.invocation.id
       note: |
-        This attribute captures the provider-assigned identifier for the agent invocation operation as a whole, distinct from `gen_ai.response.id` which identifies individual model inference responses. Examples include OpenAI Assistants run IDs, AWS Bedrock Agent invocation IDs, and Azure AI Foundry response IDs.
+        This attribute captures the identifier of the agent invocation operation. Examples include [OpenAI Assistants run IDs](https://platform.openai.com/docs/api-reference/runs/object#runs/object-id), [AWS Bedrock Agent invocation IDs](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent-runtime_InvokeAgent.html), and [Azure AI Foundry Agent invocation IDs](https://ai.azure.com/api-reference/agent-invocations/create-agent-invocation/).
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
@@ -18977,13 +18977,13 @@ registry:
         conditionally_required: if applicable.
       stability: development
       type: string
-    - brief: The unique identifier for the agent invocation.
+    - brief: The unique identifier of the remote agent invocation.
       examples:
       - run_abc123
       - 12345678-1234-1234-1234-123456789012
       key: gen_ai.agent.invocation.id
       note: |
-        This attribute captures the provider-assigned identifier for the agent invocation operation as a whole, distinct from `gen_ai.response.id` which identifies individual model inference responses. Examples include OpenAI Assistants run IDs, AWS Bedrock Agent invocation IDs, and Azure AI Foundry response IDs.
+        This attribute captures the identifier of the agent invocation operation. Examples include [OpenAI Assistants run IDs](https://platform.openai.com/docs/api-reference/runs/object#runs/object-id), [AWS Bedrock Agent invocation IDs](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent-runtime_InvokeAgent.html), and [Azure AI Foundry Agent invocation IDs](https://ai.azure.com/api-reference/agent-invocations/create-agent-invocation/).
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:

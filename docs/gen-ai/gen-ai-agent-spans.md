@@ -212,7 +212,7 @@ Examples: OpenAI Assistants API, AWS Bedrock Agents.
 | [`gen_ai.request.model`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If available. | string | The name of the GenAI model a request is being made to. [8] | `gpt-4` |
 | [`gen_ai.request.seed`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` if applicable and if the request includes a seed | int | Requests with same seed value more likely to return same result. | `100` |
 | [`server.port`](https://github.com/open-telemetry/semantic-conventions/blob/v1.41.1/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If `server.address` is set. | int | GenAI server port. [9] | `80`; `8080`; `443` |
-| [`gen_ai.agent.invocation.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` when available | string | The unique identifier for the agent invocation. [10] | `run_abc123`; `12345678-1234-1234-1234-123456789012` |
+| [`gen_ai.agent.invocation.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` when available | string | The unique identifier of the remote agent invocation. [10] | `run_abc123`; `12345678-1234-1234-1234-123456789012` |
 | [`gen_ai.request.frequency_penalty`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | double | The frequency penalty setting for the GenAI request. | `0.1` |
 | [`gen_ai.request.max_tokens`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | int | The maximum number of tokens the model generates for a request. | `100` |
 | [`gen_ai.request.presence_penalty`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | double | The presence penalty setting for the GenAI request. | `0.1` |
@@ -284,7 +284,7 @@ Additional output format details may be recorded in the future in the `gen_ai.ou
 
 **[9] `server.port`:** When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries, for example proxies, if it's available.
 
-**[10] `gen_ai.agent.invocation.id`:** This attribute captures the provider-assigned identifier for the agent invocation operation as a whole, distinct from `gen_ai.response.id` which identifies individual model inference responses. Examples include OpenAI Assistants run IDs, AWS Bedrock Agent invocation IDs, and Azure AI Foundry response IDs.
+**[10] `gen_ai.agent.invocation.id`:** This attribute captures the identifier of the agent invocation operation. Examples include [OpenAI Assistants run IDs](https://platform.openai.com/docs/api-reference/runs/object#runs/object-id), [AWS Bedrock Agent invocation IDs](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent-runtime_InvokeAgent.html), and [Azure AI Foundry Agent invocation IDs](https://ai.azure.com/api-reference/agent-invocations/create-agent-invocation/).
 
 **[11] `gen_ai.usage.cache_creation.input_tokens`:** The value SHOULD be included in `gen_ai.usage.input_tokens`.
 
@@ -489,7 +489,7 @@ Examples: LangChain agents, CrewAI agents.
 | [`gen_ai.request.choice.count`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` if available, in the request, and !=1 | int | The target number of candidate completions to return. | `3` |
 | [`gen_ai.request.model`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If available. | string | The name of the GenAI model a request is being made to. [8] | `gpt-4` |
 | [`gen_ai.request.seed`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` if applicable and if the request includes a seed | int | Requests with same seed value more likely to return same result. | `100` |
-| [`gen_ai.agent.invocation.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` when available | string | The unique identifier for the agent invocation. [9] | `run_abc123`; `12345678-1234-1234-1234-123456789012` |
+| [`gen_ai.agent.invocation.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` when available | string | The unique identifier of the remote agent invocation. [9] | `run_abc123`; `12345678-1234-1234-1234-123456789012` |
 | [`gen_ai.request.frequency_penalty`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | double | The frequency penalty setting for the GenAI request. | `0.1` |
 | [`gen_ai.request.max_tokens`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | int | The maximum number of tokens the model generates for a request. | `100` |
 | [`gen_ai.request.presence_penalty`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | double | The presence penalty setting for the GenAI request. | `0.1` |
@@ -558,7 +558,7 @@ Additional output format details may be recorded in the future in the `gen_ai.ou
 
 **[8] `gen_ai.request.model`:** The name of the GenAI model a request is being made to. If the model is supplied by a vendor, then the value must be the exact name of the model requested. If the model is a fine-tuned custom model, the value should have a more specific name than the base model that's been fine-tuned.
 
-**[9] `gen_ai.agent.invocation.id`:** This attribute captures the provider-assigned identifier for the agent invocation operation as a whole, distinct from `gen_ai.response.id` which identifies individual model inference responses. Examples include OpenAI Assistants run IDs, AWS Bedrock Agent invocation IDs, and Azure AI Foundry response IDs.
+**[9] `gen_ai.agent.invocation.id`:** This attribute captures the identifier of the agent invocation operation. Examples include [OpenAI Assistants run IDs](https://platform.openai.com/docs/api-reference/runs/object#runs/object-id), [AWS Bedrock Agent invocation IDs](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent-runtime_InvokeAgent.html), and [Azure AI Foundry Agent invocation IDs](https://ai.azure.com/api-reference/agent-invocations/create-agent-invocation/).
 
 **[10] `gen_ai.usage.cache_creation.input_tokens`:** The value SHOULD be included in `gen_ai.usage.input_tokens`.
 
