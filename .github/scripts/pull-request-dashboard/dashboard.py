@@ -205,18 +205,16 @@ _COPILOT_PR_AUTHORS = {"app/copilot-swe-agent", "copilot"}
 _MAINTENANCE_BOT_PR_AUTHORS = {"app/otelbot", "app/renovate"}
 
 
-def is_human_login(login: str) -> bool:
-    if not login:
-        return False
-    low = login.lower()
-    return low not in _COPILOT_COMMITTER_LOGINS and not low.startswith("app/") and not low.endswith("[bot]")
-
-
-def first_human_committer_login(commits: list[dict[str, Any]]) -> str:
+def human_author_for_copilot_pr(raw: dict[str, Any]) -> str:
+    commits = raw["commits"]
     if not commits:
         return ""
-    login = actor_login(commits[0].get("committer") or {})
-    return login if is_human_login(login) else ""
+    first_commit = commits[0]
+    login = actor_login(first_commit.get("committer") or {})
+    low = login.lower()
+    if not login or low in _COPILOT_COMMITTER_LOGINS:
+        return ""
+    return login
 
 
 def fetch_pr_raw(
@@ -267,9 +265,9 @@ def effective_author(raw: dict[str, Any]) -> str:
     summary = raw["summary"]
     author = actor_login(pr.get("author") or {}) or actor_login(summary.get("author") or {})
     if author.lower() in _COPILOT_PR_AUTHORS:
-        human_committer = first_human_committer_login(raw["commits"])
-        if human_committer:
-            return human_committer
+        human_author = human_author_for_copilot_pr(raw)
+        if human_author:
+            return human_author
     return author
 
 
