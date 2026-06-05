@@ -80,12 +80,14 @@ def age_cell(facts: dict[str, Any]) -> str:
     return activity_age(_age_ts(facts))
 
 
+WORD_JOINER = "\u2060"
+
+
 def reviewer_icon(reviewer: dict[str, Any]) -> str:
     if reviewer.get("changes_requested"):
         return "🔴"
     if reviewer.get("approved"):
-        # Word joiner (U+2060) keeps the two emoji on the same line.
-        return "💬⁠✅" if reviewer.get("open_thread") else "✅"
+        return f"💬{WORD_JOINER}✅" if reviewer.get("open_thread") else "✅"
     if reviewer.get("approved_non_team"):
         # A black/gray check distinguishes a non-code-owner approval from a
         # code-owner approval; only code-owner approvals count toward merge.
