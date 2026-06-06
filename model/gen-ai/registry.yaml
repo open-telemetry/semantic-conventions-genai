@@ -168,6 +168,19 @@ attributes:
     type: boolean
     brief: Indicates whether the GenAI request was made in streaming mode.
     stability: development
+  - key: gen_ai.request.reasoning_effort
+    type: string
+    brief: >
+      The reasoning or thinking effort level requested for a GenAI model,
+      reflecting the provider-specific value sent in the request.
+    note: >
+      The value SHOULD be the exact string value sent to the provider
+      (e.g., `low`, `medium`, `high`). When a provider uses a different
+      parameter name for the same concept (such as OpenAI `reasoning.effort`,
+      Google Gemini `thinking_level`, or Anthropic `effort`), the value
+      SHOULD still be recorded under this common attribute.
+    examples: ['low', 'medium', 'high']
+    stability: development
   - key: gen_ai.response.id
     type: string
     brief: The unique identifier for the completion.

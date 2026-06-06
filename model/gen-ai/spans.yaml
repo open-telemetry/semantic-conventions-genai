@@ -81,6 +81,9 @@ attribute_groups:
         requirement_level: recommended
       - ref: gen_ai.request.presence_penalty
         requirement_level: recommended
+      - ref: gen_ai.request.reasoning_effort
+        requirement_level:
+          recommended: When applicable.
       - ref: gen_ai.request.seed
         requirement_level:
           conditionally_required: If applicable and if the request includes a seed.
@@ -184,6 +187,9 @@ spans:
       - ref: gen_ai.request.stream
         requirement_level:
           conditionally_required: If and only if the request is streaming. If unset, the request is assumed to be non-streaming.
+      - ref: gen_ai.request.reasoning_effort
+        requirement_level:
+          recommended: When applicable.
       - ref: gen_ai.response.id
         requirement_level: recommended
       - ref: gen_ai.response.model
