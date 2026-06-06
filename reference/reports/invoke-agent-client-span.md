@@ -32,6 +32,7 @@
 | gen_ai.request.frequency_penalty | (none) |
 | gen_ai.request.max_tokens | [azure-ai-foundry], [openai-assistants] |
 | gen_ai.request.presence_penalty | (none) |
+| gen_ai.request.reasoning_effort | (none) |
 | gen_ai.request.stop_sequences | (none) |
 | gen_ai.request.temperature | [azure-ai-foundry], [openai-assistants] |
 | gen_ai.request.top_p | [azure-ai-foundry], [openai-assistants] |

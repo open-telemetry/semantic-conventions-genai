@@ -31,6 +31,7 @@
 | gen_ai.request.frequency_penalty | [autogen], [google-adk], [pydantic-ai] |
 | gen_ai.request.max_tokens | [autogen], [google-adk], [pydantic-ai] |
 | gen_ai.request.presence_penalty | [autogen], [google-adk], [pydantic-ai] |
+| gen_ai.request.reasoning_effort | (none) |
 | gen_ai.request.stop_sequences | [autogen], [google-adk], [pydantic-ai] |
 | gen_ai.request.temperature | [autogen], [google-adk], [pydantic-ai] |
 | gen_ai.request.top_p | [autogen], [google-adk], [pydantic-ai] |
