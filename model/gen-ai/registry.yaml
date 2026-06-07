@@ -171,8 +171,7 @@ attributes:
   - key: gen_ai.request.reasoning_effort
     type: string
     brief: >
-      The reasoning or thinking effort level requested for a GenAI model,
-      reflecting the provider-specific value sent in the request.
+      The reasoning or thinking effort level requested for a GenAI model.
     note: >
       The value SHOULD be the exact string value sent to the provider
       (e.g., `low`, `medium`, `high`). When a provider uses a different
