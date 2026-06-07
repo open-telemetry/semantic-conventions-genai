@@ -173,11 +173,10 @@ attributes:
     brief: >
       The reasoning or thinking effort level requested for a GenAI model.
     note: >
-      The value SHOULD be the exact string value sent to the provider
-      (e.g., `low`, `medium`, `high`). When a provider uses a different
-      parameter name for the same concept (such as OpenAI `reasoning.effort`,
-      Google Gemini `thinking_level`, or Anthropic `effort`), the value
-      SHOULD still be recorded under this common attribute.
+      The value SHOULD be the exact string value sent to the provider.
+      
+      Semantic conventions for individual providers SHOULD document
+      which input parameter maps to this attribute.
     examples: ['low', 'medium', 'high']
     stability: development
   - key: gen_ai.response.id
