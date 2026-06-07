@@ -402,14 +402,15 @@ refinements:
       stability: development
       type: double
     - brief: |
-        The reasoning or thinking effort level requested for a GenAI model, reflecting the provider-specific value sent in the request.
+        The reasoning or thinking effort level requested for a GenAI model.
       examples:
       - low
       - medium
       - high
-      key: gen_ai.request.reasoning_effort
+      key: gen_ai.request.reasoning.level
       note: |
-        The value SHOULD be the exact string value sent to the provider (e.g., `low`, `medium`, `high`). When a provider uses a different parameter name for the same concept (such as OpenAI `reasoning.effort`, Google Gemini `thinking_level`, or Anthropic `effort`), the value SHOULD still be recorded under this common attribute.
+        The value SHOULD be the exact string value sent to the provider.
+        Semantic conventions for individual providers SHOULD document which input parameter maps to this attribute.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
@@ -4547,14 +4548,14 @@ refinements:
       stability: development
       type: double
     - brief: |
-        The reasoning or thinking effort level requested for a GenAI model, reflecting the provider-specific value sent in the request.
+        The reasoning or thinking effort level requested for a GenAI model.
       examples:
       - low
       - medium
       - high
-      key: gen_ai.request.reasoning_effort
+      key: gen_ai.request.reasoning.level
       note: |
-        The value SHOULD be the exact string value sent to the provider (e.g., `low`, `medium`, `high`). When a provider uses a different parameter name for the same concept (such as OpenAI `reasoning.effort`, Google Gemini `thinking_level`, or Anthropic `effort`), the value SHOULD still be recorded under this common attribute.
+        Corresponds to the `thinking.effort` request parameter.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
@@ -5273,14 +5274,15 @@ refinements:
       stability: development
       type: double
     - brief: |
-        The reasoning or thinking effort level requested for a GenAI model, reflecting the provider-specific value sent in the request.
+        The reasoning or thinking effort level requested for a GenAI model.
       examples:
       - low
       - medium
       - high
-      key: gen_ai.request.reasoning_effort
+      key: gen_ai.request.reasoning.level
       note: |
-        The value SHOULD be the exact string value sent to the provider (e.g., `low`, `medium`, `high`). When a provider uses a different parameter name for the same concept (such as OpenAI `reasoning.effort`, Google Gemini `thinking_level`, or Anthropic `effort`), the value SHOULD still be recorded under this common attribute.
+        The value SHOULD be the exact string value sent to the provider.
+        Semantic conventions for individual providers SHOULD document which input parameter maps to this attribute.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
@@ -6000,14 +6002,15 @@ refinements:
       stability: development
       type: double
     - brief: |
-        The reasoning or thinking effort level requested for a GenAI model, reflecting the provider-specific value sent in the request.
+        The reasoning or thinking effort level requested for a GenAI model.
       examples:
       - low
       - medium
       - high
-      key: gen_ai.request.reasoning_effort
+      key: gen_ai.request.reasoning.level
       note: |
-        The value SHOULD be the exact string value sent to the provider (e.g., `low`, `medium`, `high`). When a provider uses a different parameter name for the same concept (such as OpenAI `reasoning.effort`, Google Gemini `thinking_level`, or Anthropic `effort`), the value SHOULD still be recorded under this common attribute.
+        The value SHOULD be the exact string value sent to the provider.
+        Semantic conventions for individual providers SHOULD document which input parameter maps to this attribute.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
@@ -7541,14 +7544,15 @@ refinements:
       stability: development
       type: double
     - brief: |
-        The reasoning or thinking effort level requested for a GenAI model, reflecting the provider-specific value sent in the request.
+        The reasoning or thinking effort level requested for a GenAI model.
       examples:
       - low
       - medium
       - high
-      key: gen_ai.request.reasoning_effort
+      key: gen_ai.request.reasoning.level
       note: |
-        The value SHOULD be the exact string value sent to the provider (e.g., `low`, `medium`, `high`). When a provider uses a different parameter name for the same concept (such as OpenAI `reasoning.effort`, Google Gemini `thinking_level`, or Anthropic `effort`), the value SHOULD still be recorded under this common attribute.
+        The value SHOULD be the exact string value sent to the provider.
+        Semantic conventions for individual providers SHOULD document which input parameter maps to this attribute.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
@@ -8312,14 +8316,15 @@ refinements:
       stability: development
       type: double
     - brief: |
-        The reasoning or thinking effort level requested for a GenAI model, reflecting the provider-specific value sent in the request.
+        The reasoning or thinking effort level requested for a GenAI model.
       examples:
       - low
       - medium
       - high
-      key: gen_ai.request.reasoning_effort
+      key: gen_ai.request.reasoning.level
       note: |
-        The value SHOULD be the exact string value sent to the provider (e.g., `low`, `medium`, `high`). When a provider uses a different parameter name for the same concept (such as OpenAI `reasoning.effort`, Google Gemini `thinking_level`, or Anthropic `effort`), the value SHOULD still be recorded under this common attribute.
+        The value SHOULD be the exact string value sent to the provider.
+        Semantic conventions for individual providers SHOULD document which input parameter maps to this attribute.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
@@ -9017,14 +9022,15 @@ refinements:
       stability: development
       type: double
     - brief: |
-        The reasoning or thinking effort level requested for a GenAI model, reflecting the provider-specific value sent in the request.
+        The reasoning or thinking effort level requested for a GenAI model.
       examples:
       - low
       - medium
       - high
-      key: gen_ai.request.reasoning_effort
+      key: gen_ai.request.reasoning.level
       note: |
-        The value SHOULD be the exact string value sent to the provider (e.g., `low`, `medium`, `high`). When a provider uses a different parameter name for the same concept (such as OpenAI `reasoning.effort`, Google Gemini `thinking_level`, or Anthropic `effort`), the value SHOULD still be recorded under this common attribute.
+        The value SHOULD be the exact string value sent to the provider.
+        Semantic conventions for individual providers SHOULD document which input parameter maps to this attribute.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
@@ -11659,14 +11665,14 @@ refinements:
       stability: development
       type: double
     - brief: |
-        The reasoning or thinking effort level requested for a GenAI model, reflecting the provider-specific value sent in the request.
+        The reasoning or thinking effort level requested for a GenAI model.
       examples:
       - low
       - medium
       - high
-      key: gen_ai.request.reasoning_effort
+      key: gen_ai.request.reasoning.level
       note: |
-        The value SHOULD be the exact string value sent to the provider (e.g., `low`, `medium`, `high`). When a provider uses a different parameter name for the same concept (such as OpenAI `reasoning.effort`, Google Gemini `thinking_level`, or Anthropic `effort`), the value SHOULD still be recorded under this common attribute.
+        Corresponds to the `reasoning.effort` request parameter.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
@@ -12576,14 +12582,15 @@ registry:
     stability: development
     type: double
   - brief: |
-      The reasoning or thinking effort level requested for a GenAI model, reflecting the provider-specific value sent in the request.
+      The reasoning or thinking effort level requested for a GenAI model.
     examples:
     - low
     - medium
     - high
-    key: gen_ai.request.reasoning_effort
+    key: gen_ai.request.reasoning.level
     note: |
-      The value SHOULD be the exact string value sent to the provider (e.g., `low`, `medium`, `high`). When a provider uses a different parameter name for the same concept (such as OpenAI `reasoning.effort`, Google Gemini `thinking_level`, or Anthropic `effort`), the value SHOULD still be recorded under this common attribute.
+      The value SHOULD be the exact string value sent to the provider.
+      Semantic conventions for individual providers SHOULD document which input parameter maps to this attribute.
     provenance:
       path: ./model/gen-ai/registry.yaml
     stability: development
@@ -13596,14 +13603,15 @@ registry:
       stability: development
       type: double
     - brief: |
-        The reasoning or thinking effort level requested for a GenAI model, reflecting the provider-specific value sent in the request.
+        The reasoning or thinking effort level requested for a GenAI model.
       examples:
       - low
       - medium
       - high
-      key: gen_ai.request.reasoning_effort
+      key: gen_ai.request.reasoning.level
       note: |
-        The value SHOULD be the exact string value sent to the provider (e.g., `low`, `medium`, `high`). When a provider uses a different parameter name for the same concept (such as OpenAI `reasoning.effort`, Google Gemini `thinking_level`, or Anthropic `effort`), the value SHOULD still be recorded under this common attribute.
+        The value SHOULD be the exact string value sent to the provider.
+        Semantic conventions for individual providers SHOULD document which input parameter maps to this attribute.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
@@ -18014,14 +18022,15 @@ registry:
       stability: development
       type: double
     - brief: |
-        The reasoning or thinking effort level requested for a GenAI model, reflecting the provider-specific value sent in the request.
+        The reasoning or thinking effort level requested for a GenAI model.
       examples:
       - low
       - medium
       - high
-      key: gen_ai.request.reasoning_effort
+      key: gen_ai.request.reasoning.level
       note: |
-        The value SHOULD be the exact string value sent to the provider (e.g., `low`, `medium`, `high`). When a provider uses a different parameter name for the same concept (such as OpenAI `reasoning.effort`, Google Gemini `thinking_level`, or Anthropic `effort`), the value SHOULD still be recorded under this common attribute.
+        The value SHOULD be the exact string value sent to the provider.
+        Semantic conventions for individual providers SHOULD document which input parameter maps to this attribute.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
@@ -18784,14 +18793,15 @@ registry:
       stability: development
       type: double
     - brief: |
-        The reasoning or thinking effort level requested for a GenAI model, reflecting the provider-specific value sent in the request.
+        The reasoning or thinking effort level requested for a GenAI model.
       examples:
       - low
       - medium
       - high
-      key: gen_ai.request.reasoning_effort
+      key: gen_ai.request.reasoning.level
       note: |
-        The value SHOULD be the exact string value sent to the provider (e.g., `low`, `medium`, `high`). When a provider uses a different parameter name for the same concept (such as OpenAI `reasoning.effort`, Google Gemini `thinking_level`, or Anthropic `effort`), the value SHOULD still be recorded under this common attribute.
+        The value SHOULD be the exact string value sent to the provider.
+        Semantic conventions for individual providers SHOULD document which input parameter maps to this attribute.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
@@ -19488,14 +19498,15 @@ registry:
       stability: development
       type: double
     - brief: |
-        The reasoning or thinking effort level requested for a GenAI model, reflecting the provider-specific value sent in the request.
+        The reasoning or thinking effort level requested for a GenAI model.
       examples:
       - low
       - medium
       - high
-      key: gen_ai.request.reasoning_effort
+      key: gen_ai.request.reasoning.level
       note: |
-        The value SHOULD be the exact string value sent to the provider (e.g., `low`, `medium`, `high`). When a provider uses a different parameter name for the same concept (such as OpenAI `reasoning.effort`, Google Gemini `thinking_level`, or Anthropic `effort`), the value SHOULD still be recorded under this common attribute.
+        The value SHOULD be the exact string value sent to the provider.
+        Semantic conventions for individual providers SHOULD document which input parameter maps to this attribute.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
