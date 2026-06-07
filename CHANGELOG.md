@@ -15,7 +15,7 @@
 
 ### 💡 Enhancements 💡
 
-- Add `gen_ai.request.reasoning_effort` attribute to record the requested
+- Add `gen_ai.request.reasoning.level` attribute to record the requested
   reasoning/thinking effort level for inference and agent invocation spans.
   ([#189](https://github.com/open-telemetry/semantic-conventions-genai/issues/189))
 - Add GenAI memory operation span and attributes for memory store lifecycle (create/delete),

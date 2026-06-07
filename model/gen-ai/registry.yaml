@@ -168,7 +168,7 @@ attributes:
     type: boolean
     brief: Indicates whether the GenAI request was made in streaming mode.
     stability: development
-  - key: gen_ai.request.reasoning_effort
+  - key: gen_ai.request.reasoning.level
     type: string
     brief: >
       The reasoning or thinking effort level requested for a GenAI model.

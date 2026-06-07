@@ -59,6 +59,7 @@ def run_chat_reference(client):
         span.set_attribute("gen_ai.request.frequency_penalty", request_frequency_penalty)
         span.set_attribute("gen_ai.request.presence_penalty", request_presence_penalty)
         span.set_attribute("gen_ai.request.top_p", request_top_p)
+        span.set_attribute("gen_ai.request.reasoning.level", "medium")
         span.set_attribute("gen_ai.input.messages", input_messages)
         if system_instructions:
             span.set_attribute("gen_ai.system_instructions", json.dumps(system_instructions))
