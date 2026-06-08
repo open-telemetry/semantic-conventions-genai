@@ -66,7 +66,7 @@
 | <a id="gen-ai-workflow-name" href="#gen-ai-workflow-name">`gen_ai.workflow.name`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | Human-readable name of the GenAI workflow provided by the application. [26] | `multi_agent_rag`; `customer_support_pipeline` |
 
 
-**[1] `gen_ai.agent.invocation.id`:** This attribute captures the identifier of the agent invocation operation. Examples include [OpenAI Assistants run IDs](https://platform.openai.com/docs/api-reference/runs/object#runs/object-id), [AWS Bedrock Agent invocation IDs](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent-runtime_InvokeAgent.html), and [Azure AI Foundry Agent invocation IDs](https://ai.azure.com/api-reference/agent-invocations/create-agent-invocation/).
+**[1] `gen_ai.agent.invocation.id`:** This attribute captures the provider-assigned identifier of the agent invocation operation. Examples include [OpenAI Assistants run IDs](https://platform.openai.com/docs/api-reference/runs/object#runs/object-id) and [Azure AI Foundry Agent invocation IDs](https://ai.azure.com/api-reference/agent-invocations/create-agent-invocation/).
 
 **[2] `gen_ai.data_source.id`:** Data sources are used by AI agents and RAG applications to store grounding data. A data source may be an external database, object store, document collection, website, or any other storage system used by the GenAI agent or application. The `gen_ai.data_source.id` SHOULD match the identifier used by the GenAI system rather than a name specific to the external storage, such as a database or object store. Semantic conventions referencing `gen_ai.data_source.id` MAY also leverage additional attributes, such as `db.*`, to further identify and describe the data source.
 

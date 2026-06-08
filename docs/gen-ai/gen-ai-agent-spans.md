@@ -284,7 +284,7 @@ Additional output format details may be recorded in the future in the `gen_ai.ou
 
 **[9] `server.port`:** When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries, for example proxies, if it's available.
 
-**[10] `gen_ai.agent.invocation.id`:** This attribute captures the identifier of the agent invocation operation. Examples include [OpenAI Assistants run IDs](https://platform.openai.com/docs/api-reference/runs/object#runs/object-id), [AWS Bedrock Agent invocation IDs](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent-runtime_InvokeAgent.html), and [Azure AI Foundry Agent invocation IDs](https://ai.azure.com/api-reference/agent-invocations/create-agent-invocation/).
+**[10] `gen_ai.agent.invocation.id`:** This attribute captures the provider-assigned identifier of the agent invocation operation. Examples include [OpenAI Assistants run IDs](https://platform.openai.com/docs/api-reference/runs/object#runs/object-id) and [Azure AI Foundry Agent invocation IDs](https://ai.azure.com/api-reference/agent-invocations/create-agent-invocation/).
 
 **[11] `gen_ai.usage.cache_creation.input_tokens`:** The value SHOULD be included in `gen_ai.usage.input_tokens`.
 
