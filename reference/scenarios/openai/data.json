@@ -45,7 +45,7 @@
       "gen_ai.tool.name",
       "gen_ai.tool.type"
     ],
-    "apply_guardrail_client": [
+    "run_guardrail_client": [
       "gen_ai.operation.name",
       "gen_ai.security.action.type",
       "gen_ai.security.guardrail.id",
@@ -61,13 +61,13 @@
       "server.address",
       "server.port"
     ],
-    "apply_guardrail_internal": [
+    "run_guardrail_internal": [
       "gen_ai.conversation.id",
       "gen_ai.operation.name",
       "gen_ai.security.action.type",
       "gen_ai.security.content.input.hash",
       "gen_ai.security.content.modified",
-      "gen_ai.security.external_event_id",
+      "gen_ai.security.external_finding_id",
       "gen_ai.security.finding.evidence",
       "gen_ai.security.guardrail.id",
       "gen_ai.security.guardrail.name",
@@ -77,7 +77,7 @@
       "gen_ai.security.policy.name",
       "gen_ai.security.policy.rule.id",
       "gen_ai.security.policy.version",
-      "gen_ai.security.risk.category",
+      "gen_ai.security.risk.finding",
       "gen_ai.security.risk.score",
       "gen_ai.security.target.id",
       "gen_ai.security.target.type",
@@ -102,7 +102,7 @@
     ],
     "gen_ai.security.finding": [
       "gen_ai.security.action.type",
-      "gen_ai.security.external_event_id",
+      "gen_ai.security.external_finding_id",
       "gen_ai.security.finding.evidence",
       "gen_ai.security.guardrail.id",
       "gen_ai.security.guardrail.name",
@@ -111,7 +111,7 @@
       "gen_ai.security.policy.name",
       "gen_ai.security.policy.rule.id",
       "gen_ai.security.policy.version",
-      "gen_ai.security.risk.category",
+      "gen_ai.security.risk.finding",
       "gen_ai.security.risk.score",
       "gen_ai.security.target.id",
       "gen_ai.security.target.type",

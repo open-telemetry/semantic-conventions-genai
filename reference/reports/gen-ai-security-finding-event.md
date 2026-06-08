@@ -1,20 +1,20 @@
 # Security Finding Event
 
-> **[Semantic Convention](../../docs/gen-ai/gen-ai-security.md#event-gen_aisecurityfinding)**
+> **[Semantic Convention](../../docs/gen-ai/gen-ai-security.md#finding-gen_aisecurityfinding)**
 
 ## Required
 
 | Attribute | Supporting Libraries |
 | --- | --- |
-| gen_ai.security.risk.category | [openai] |
+| gen_ai.security.policy.id | [openai] |
+| gen_ai.security.risk.finding | [openai] |
 | gen_ai.security.target.type | [openai] |
 
 ## Conditionally Required
 
 | Attribute | Supporting Libraries |
 | --- | --- |
-| gen_ai.security.external_event_id | [openai] |
-| gen_ai.security.policy.id | [openai] |
+| gen_ai.security.external_finding_id | [openai] |
 | gen_ai.security.target.id | [openai] |
 
 ## Recommended

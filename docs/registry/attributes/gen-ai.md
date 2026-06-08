@@ -53,7 +53,7 @@
 | <a id="gen-ai-security-content-input-value" href="#gen-ai-security-content-input-value">`gen_ai.security.content.input.value`</a> | ![Development](https://img.shields.io/badge/-development-blue) | any | The input content that was evaluated by the guardrail. [18] | `Send an email to customer@example.com` |
 | <a id="gen-ai-security-content-modified" href="#gen-ai-security-content-modified">`gen_ai.security.content.modified`</a> | ![Development](https://img.shields.io/badge/-development-blue) | boolean | Whether the content was redacted or otherwise modified by the guardrail. | `true`; `false` |
 | <a id="gen-ai-security-content-output-value" href="#gen-ai-security-content-output-value">`gen_ai.security.content.output.value`</a> | ![Development](https://img.shields.io/badge/-development-blue) | any | The output content after guardrail processing, if modified. [19] | `Send an email to [REDACTED]` |
-| <a id="gen-ai-security-external-event-id" href="#gen-ai-security-external-event-id">`gen_ai.security.external_event_id`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | External correlation identifier for a security event. [20] | `evt_abc123`; `incident-2024-001`; `sec-finding-xyz` |
+| <a id="gen-ai-security-external-finding-id" href="#gen-ai-security-external-finding-id">`gen_ai.security.external_finding_id`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | External correlation identifier for a security finding. [20] | `finding_abc123`; `incident-2024-001`; `sec-finding-xyz` |
 | <a id="gen-ai-security-finding-evidence" href="#gen-ai-security-finding-evidence">`gen_ai.security.finding.evidence`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string[] | Non-content evidence descriptors for a security finding. [21] | `["field:bcc", "pattern:email"]`; `["count:2", "position:output.content"]` |
 | <a id="gen-ai-security-guardrail-id" href="#gen-ai-security-guardrail-id">`gen_ai.security.guardrail.id`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The unique identifier of the security guardrail service or component. [22] | `content-safety`; `pii-filter-v3`; `custom-guardrail-001` |
 | <a id="gen-ai-security-guardrail-name" href="#gen-ai-security-guardrail-name">`gen_ai.security.guardrail.name`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | Human-readable name of the security guardrail service or component. [23] | `Azure Content Safety`; `Bedrock Guardrails`; `Custom PII Filter` |
@@ -63,7 +63,7 @@
 | <a id="gen-ai-security-policy-name" href="#gen-ai-security-policy-name">`gen_ai.security.policy.name`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | Human-readable name of the policy that produced the verdict. | `PII Protection Policy`; `Financial Advice Restriction` |
 | <a id="gen-ai-security-policy-rule-id" href="#gen-ai-security-policy-rule-id">`gen_ai.security.policy.rule.id`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | Identifier of the policy rule, section, or control that produced the verdict. [26] | `rule-pii-email`; `section-4.2`; `detector-jailbreak` |
 | <a id="gen-ai-security-policy-version" href="#gen-ai-security-policy-version">`gen_ai.security.policy.version`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | Version of the policy that produced the verdict. | `1.0`; `2024-05-01` |
-| <a id="gen-ai-security-risk-category" href="#gen-ai-security-risk-category">`gen_ai.security.risk.category`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The category of security risk detected. [27] | `prompt_injection`; `sensitive_info_disclosure`; `jailbreak`; `custom:financial_advice_violation` |
+| <a id="gen-ai-security-risk-finding" href="#gen-ai-security-risk-finding">`gen_ai.security.risk.finding`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The security risk finding detected. [27] | `prompt_injection`; `sensitive_info_disclosure`; `jailbreak`; `custom:financial_advice_violation` |
 | <a id="gen-ai-security-risk-score" href="#gen-ai-security-risk-score">`gen_ai.security.risk.score`</a> | ![Development](https://img.shields.io/badge/-development-blue) | double | Numeric risk or confidence score. [28] | `0.85`; `0.95`; `0.42` |
 | <a id="gen-ai-security-target-id" href="#gen-ai-security-target-id">`gen_ai.security.target.id`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | Identifier of the specific target the guardrail is applied to. [29] | `call_xyz789`; `msg_abc123`; `mem_abc456` |
 | <a id="gen-ai-security-target-type" href="#gen-ai-security-target-type">`gen_ai.security.target.type`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The type of content or action the guardrail is applied to. [30] | `llm_input`; `llm_output`; `tool_call_input`; `tool_call_output`; `tool_definition` |
@@ -211,7 +211,7 @@ consider `gen_ai.security.content.input.hash`.
 
 For `modify` actions, this MAY contain the sanitized or redacted result.
 
-**[20] `gen_ai.security.external_event_id`:** This attribute links telemetry to an external security event record in
+**[20] `gen_ai.security.external_finding_id`:** This attribute links telemetry to an external security finding record in
 systems such as SIEM, incident management, or security dashboards.
 
 The value typically comes from the response of an external security
@@ -252,8 +252,8 @@ be used. Otherwise, a custom value MAY be used.
 
 **[26] `gen_ai.security.policy.rule.id`:** Use this when `gen_ai.security.policy.id` identifies a broader policy and the guardrail reports a more specific rule, section, control, or detector within that policy.
 
-**[27] `gen_ai.security.risk.category`:** This attribute is free-form to accommodate provider-specific,
-organization-specific, and emerging risk categories.
+**[27] `gen_ai.security.risk.finding`:** This attribute is free-form to accommodate provider-specific,
+organization-specific, and emerging risk finding types.
 
 Suggested values aligned with OWASP LLM Top 10 2025 include:
 
@@ -361,7 +361,6 @@ If there is no low-cardinality workflow name available for a given framework, th
 
 | Value | Description | Stability |
 | --- | --- | --- |
-| `apply_guardrail` | Apply a security guardrail to content or an action | ![Development](https://img.shields.io/badge/-development-blue) |
 | `chat` | Chat completion operation such as [OpenAI Chat API](https://platform.openai.com/docs/api-reference/chat) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `create_agent` | Create GenAI agent | ![Development](https://img.shields.io/badge/-development-blue) |
 | `create_memory` | Create new memory records | ![Development](https://img.shields.io/badge/-development-blue) |
@@ -375,6 +374,7 @@ If there is no low-cardinality workflow name available for a given framework, th
 | `invoke_workflow` | Invoke GenAI workflow | ![Development](https://img.shields.io/badge/-development-blue) |
 | `plan` | Agent planning or task decomposition phase | ![Development](https://img.shields.io/badge/-development-blue) |
 | `retrieval` | Retrieval operation such as [OpenAI Search Vector Store API](https://platform.openai.com/docs/api-reference/vector-stores/search) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `run_guardrail` | Run a security guardrail for content or an action | ![Development](https://img.shields.io/badge/-development-blue) |
 | `search_memory` | Search/query memories from a memory store | ![Development](https://img.shields.io/badge/-development-blue) |
 | `text_completion` | Text completions operation such as [OpenAI Completions API (Legacy)](https://platform.openai.com/docs/api-reference/completions) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `update_memory` | Update existing memory records | ![Development](https://img.shields.io/badge/-development-blue) |

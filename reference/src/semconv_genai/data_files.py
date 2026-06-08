@@ -44,8 +44,8 @@ SPAN_TYPE_ORDER = [
     "retrieval",
     "memory",
     "execute_tool",
-    "apply_guardrail_client",
-    "apply_guardrail_internal",
+    "run_guardrail_client",
+    "run_guardrail_internal",
 ]
 
 # Display order for event types in reports.

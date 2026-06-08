@@ -42,11 +42,11 @@ events:
     note: |
       Multiple findings MAY be emitted for a single guardrail span.
 
-      Events SHOULD be parented to a `gen_ai.apply_guardrail.client` or
-      `gen_ai.apply_guardrail.internal` span when possible.
+      Findings SHOULD be emitted under a `gen_ai.run_guardrail.client` or
+      `gen_ai.run_guardrail.internal` span when possible.
     stability: development
     attributes:
-      - ref: gen_ai.security.risk.category
+      - ref: gen_ai.security.risk.finding
         requirement_level: required
       - ref: gen_ai.security.target.type
         requirement_level: required
@@ -71,8 +71,7 @@ events:
         requirement_level:
           recommended: If non-content evidence descriptors are available.
       - ref: gen_ai.security.policy.id
-        requirement_level:
-          conditionally_required: If a policy produced the verdict.
+        requirement_level: required
       - ref: gen_ai.security.policy.rule.id
         requirement_level:
           recommended: If available.
@@ -89,7 +88,7 @@ events:
       - ref: gen_ai.security.guardrail.provider.name
         requirement_level:
           recommended: If available and not already present on the parent span.
-      - ref: gen_ai.security.external_event_id
+      - ref: gen_ai.security.external_finding_id
         requirement_level:
           conditionally_required: If correlation with external security systems is needed.
 

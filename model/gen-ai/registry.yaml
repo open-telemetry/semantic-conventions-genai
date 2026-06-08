@@ -571,12 +571,12 @@ attributes:
       identifier, or message identifier, if applicable.
     examples: ['call_xyz789', 'msg_abc123', 'mem_abc456']
     stability: development
-  - key: gen_ai.security.risk.category
+  - key: gen_ai.security.risk.finding
     type: string
-    brief: The category of security risk detected.
+    brief: The security risk finding detected.
     note: |
       This attribute is free-form to accommodate provider-specific,
-      organization-specific, and emerging risk categories.
+      organization-specific, and emerging risk finding types.
 
       Suggested values aligned with OWASP LLM Top 10 2025 include:
 
@@ -695,17 +695,17 @@ attributes:
     brief: Whether the content was redacted or otherwise modified by the guardrail.
     examples: [true, false]
     stability: development
-  - key: gen_ai.security.external_event_id
+  - key: gen_ai.security.external_finding_id
     type: string
-    brief: External correlation identifier for a security event.
+    brief: External correlation identifier for a security finding.
     note: |
-      This attribute links telemetry to an external security event record in
+      This attribute links telemetry to an external security finding record in
       systems such as SIEM, incident management, or security dashboards.
 
       The value typically comes from the response of an external security
       inspection service or may be included in response headers when inspection
       happens alongside the LLM call.
-    examples: ['evt_abc123', 'incident-2024-001', 'sec-finding-xyz']
+    examples: ['finding_abc123', 'incident-2024-001', 'sec-finding-xyz']
     stability: development
   - key: gen_ai.data_source.id
     type: string
@@ -752,9 +752,9 @@ attributes:
           value: "execute_tool"
           brief: 'Execute a tool'
           stability: development
-        - id: apply_guardrail
-          value: "apply_guardrail"
-          brief: 'Apply a security guardrail to content or an action'
+        - id: run_guardrail
+          value: "run_guardrail"
+          brief: 'Run a security guardrail for content or an action'
           stability: development
         - id: invoke_workflow
           value: "invoke_workflow"

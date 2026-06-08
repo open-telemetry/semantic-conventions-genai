@@ -164,11 +164,11 @@ SPAN_SPECS: dict[str, AttributeSpec] = {
             }
         ),
     ),
-    "apply_guardrail_client": _from_yaml(
+    "run_guardrail_client": _from_yaml(
         _groups,
-        "span.gen_ai.apply_guardrail.client",
-        label="Apply Guardrail Client",
-        op_names=frozenset({"apply_guardrail"}),
+        "span.gen_ai.run_guardrail.client",
+        label="Run Guardrail Client",
+        op_names=frozenset({"run_guardrail"}),
         discriminator_attrs=frozenset(
             {
                 "gen_ai.security.guardrail.id",
@@ -177,11 +177,11 @@ SPAN_SPECS: dict[str, AttributeSpec] = {
             }
         ),
     ),
-    "apply_guardrail_internal": _from_yaml(
+    "run_guardrail_internal": _from_yaml(
         _groups,
-        "span.gen_ai.apply_guardrail.internal",
-        label="Apply Guardrail Internal",
-        op_names=frozenset({"apply_guardrail"}),
+        "span.gen_ai.run_guardrail.internal",
+        label="Run Guardrail Internal",
+        op_names=frozenset({"run_guardrail"}),
         discriminator_attrs=frozenset(
             {
                 "gen_ai.security.guardrail.id",

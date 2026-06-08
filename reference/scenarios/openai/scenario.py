@@ -282,11 +282,11 @@ def run_security_guardrail_reference():
             json.dumps([{"role": "user", "parts": [{"type": "text", "content": sanitized_text}]}]),
         )
         guardrail_attrs = {
-            "gen_ai.operation.name": "apply_guardrail",
+            "gen_ai.operation.name": "run_guardrail",
             "gen_ai.security.action.type": "modify",
             "gen_ai.security.content.input.hash": "sha256:2d711642b726b04401627ca9fbac32f5c8530fb1903cc4db02258717921a4881",
             "gen_ai.security.content.modified": True,
-            "gen_ai.security.external_event_id": "evt_pii_001",
+            "gen_ai.security.external_finding_id": "finding_pii_001",
             "gen_ai.security.finding.evidence": ["pattern:email", "position:input.messages[0].content"],
             "gen_ai.security.guardrail.id": "pii-filter-v3",
             "gen_ai.security.guardrail.name": "Custom PII Filter",
@@ -296,7 +296,7 @@ def run_security_guardrail_reference():
             "gen_ai.security.policy.name": "PII Protection Policy",
             "gen_ai.security.policy.rule.id": "rule-email",
             "gen_ai.security.policy.version": "2.0",
-            "gen_ai.security.risk.category": "sensitive_info_disclosure",
+            "gen_ai.security.risk.finding": "sensitive_info_disclosure",
             "gen_ai.security.risk.score": 0.92,
             "gen_ai.security.target.id": "msg_user_1",
             "gen_ai.security.target.type": "llm_input",
@@ -305,10 +305,10 @@ def run_security_guardrail_reference():
             "gen_ai.security.verdict.type": "warn",
             "gen_ai.conversation.id": "conv_security_reference",
         }
-        with _reference_tracer.start_as_current_span("apply_guardrail Custom PII Filter", attributes=guardrail_attrs):
+        with _reference_tracer.start_as_current_span("run_guardrail Custom PII Filter", attributes=guardrail_attrs):
             finding_attrs = {
                 "gen_ai.security.action.type": "modify",
-                "gen_ai.security.external_event_id": "evt_pii_001",
+                "gen_ai.security.external_finding_id": "finding_pii_001",
                 "gen_ai.security.finding.evidence": ["pattern:email", "position:input.messages[0].content"],
                 "gen_ai.security.guardrail.id": "pii-filter-v3",
                 "gen_ai.security.guardrail.name": "Custom PII Filter",
@@ -317,7 +317,7 @@ def run_security_guardrail_reference():
                 "gen_ai.security.policy.name": "PII Protection Policy",
                 "gen_ai.security.policy.rule.id": "rule-email",
                 "gen_ai.security.policy.version": "2.0",
-                "gen_ai.security.risk.category": "sensitive_info_disclosure",
+                "gen_ai.security.risk.finding": "sensitive_info_disclosure",
                 "gen_ai.security.risk.score": 0.92,
                 "gen_ai.security.target.id": "msg_user_1",
                 "gen_ai.security.target.type": "llm_input",
@@ -340,7 +340,7 @@ def run_remote_security_guardrail_reference():
     print("  [remote_security_guardrail] remote input guardrail (reference implementation)")
     host, port = mock_server_host_port(MOCK_BASE_URL)
     guardrail_attrs = {
-        "gen_ai.operation.name": "apply_guardrail",
+        "gen_ai.operation.name": "run_guardrail",
         "gen_ai.security.action.type": "allow",
         "gen_ai.security.guardrail.id": "content-safety",
         "gen_ai.security.guardrail.name": "Azure Content Safety",
@@ -357,7 +357,7 @@ def run_remote_security_guardrail_reference():
         guardrail_attrs["server.address"] = host
     if port is not None:
         guardrail_attrs["server.port"] = port
-    with _reference_tracer.start_as_current_span("apply_guardrail Azure Content Safety", attributes=guardrail_attrs):
+    with _reference_tracer.start_as_current_span("run_guardrail Azure Content Safety", attributes=guardrail_attrs):
         with urlopen(os.environ["MOCK_LLM_URL"] + "/health", timeout=5) as response:
             response.read()
         print("    -> remote guardrail allowed request")

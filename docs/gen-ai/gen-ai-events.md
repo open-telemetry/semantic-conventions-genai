@@ -220,7 +220,6 @@ to enable populating optional properties.
 
 | Value | Description | Stability |
 | --- | --- | --- |
-| `apply_guardrail` | Apply a security guardrail to content or an action | ![Development](https://img.shields.io/badge/-development-blue) |
 | `chat` | Chat completion operation such as [OpenAI Chat API](https://platform.openai.com/docs/api-reference/chat) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `create_agent` | Create GenAI agent | ![Development](https://img.shields.io/badge/-development-blue) |
 | `create_memory` | Create new memory records | ![Development](https://img.shields.io/badge/-development-blue) |
@@ -234,6 +233,7 @@ to enable populating optional properties.
 | `invoke_workflow` | Invoke GenAI workflow | ![Development](https://img.shields.io/badge/-development-blue) |
 | `plan` | Agent planning or task decomposition phase | ![Development](https://img.shields.io/badge/-development-blue) |
 | `retrieval` | Retrieval operation such as [OpenAI Search Vector Store API](https://platform.openai.com/docs/api-reference/vector-stores/search) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `run_guardrail` | Run a security guardrail for content or an action | ![Development](https://img.shields.io/badge/-development-blue) |
 | `search_memory` | Search/query memories from a memory store | ![Development](https://img.shields.io/badge/-development-blue) |
 | `text_completion` | Text completions operation such as [OpenAI Completions API (Legacy)](https://platform.openai.com/docs/api-reference/completions) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `update_memory` | Update existing memory records | ![Development](https://img.shields.io/badge/-development-blue) |
@@ -344,17 +344,17 @@ Reports a specific security finding detected during guardrail evaluation.
 
 Multiple findings MAY be emitted for a single guardrail span.
 
-Events SHOULD be parented to a `gen_ai.apply_guardrail.client` or
-`gen_ai.apply_guardrail.internal` span when possible.
+Findings SHOULD be emitted under a `gen_ai.run_guardrail.client` or
+`gen_ai.run_guardrail.internal` span when possible.
 
 **Attributes:**
 
 | Key | Stability | [Requirement Level](https://opentelemetry.io/docs/specs/semconv/general/attribute-requirement-level/) | Value Type | Description | Example Values |
 | --- | --- | --- | --- | --- | --- |
-| [`gen_ai.security.risk.category`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Required` | string | The category of security risk detected. [1] | `prompt_injection`; `sensitive_info_disclosure`; `jailbreak`; `custom:financial_advice_violation` |
+| [`gen_ai.security.policy.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Required` | string | Identifier of the policy that produced the verdict. | `policy_pii_v2`; `deny-topic-financial-advice`; `org-compliance-001` |
+| [`gen_ai.security.risk.finding`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Required` | string | The security risk finding detected. [1] | `prompt_injection`; `sensitive_info_disclosure`; `jailbreak`; `custom:financial_advice_violation` |
 | [`gen_ai.security.target.type`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Required` | string | The type of content or action the guardrail is applied to. [2] | `llm_input`; `llm_output`; `tool_call_input`; `tool_call_output`; `tool_definition` |
-| [`gen_ai.security.external_event_id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [3] | string | External correlation identifier for a security event. [4] | `evt_abc123`; `incident-2024-001`; `sec-finding-xyz` |
-| [`gen_ai.security.policy.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If a policy produced the verdict. | string | Identifier of the policy that produced the verdict. | `policy_pii_v2`; `deny-topic-financial-advice`; `org-compliance-001` |
+| [`gen_ai.security.external_finding_id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [3] | string | External correlation identifier for a security finding. [4] | `finding_abc123`; `incident-2024-001`; `sec-finding-xyz` |
 | [`gen_ai.security.target.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If available. | string | Identifier of the specific target the guardrail is applied to. [5] | `call_xyz789`; `msg_abc123`; `mem_abc456` |
 | [`gen_ai.security.action.type`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If available. | string | The actual enforcement action taken by the caller or framework. [6] | `allow`; `block`; `modify`; `escalate` |
 | [`gen_ai.security.finding.evidence`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If non-content evidence descriptors are available. | string[] | Non-content evidence descriptors for a security finding. [7] | `["field:bcc", "pattern:email"]`; `["count:2", "position:output.content"]` |
@@ -369,8 +369,8 @@ Events SHOULD be parented to a `gen_ai.apply_guardrail.client` or
 | [`gen_ai.security.verdict.reason`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If available. | string | Human-readable explanation for the security verdict. [16] | `PII detected in output`; `Prompt injection attempt detected`; `Action exceeds agent permission scope` |
 | [`gen_ai.security.verdict.type`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The verdict returned by the security guardrail evaluation. [17] | `allow`; `deny`; `modify`; `warn`; `escalate` |
 
-**[1] `gen_ai.security.risk.category`:** This attribute is free-form to accommodate provider-specific,
-organization-specific, and emerging risk categories.
+**[1] `gen_ai.security.risk.finding`:** This attribute is free-form to accommodate provider-specific,
+organization-specific, and emerging risk finding types.
 
 Suggested values aligned with OWASP LLM Top 10 2025 include:
 
@@ -390,9 +390,9 @@ Instrumentations MAY use additional values when appropriate, for example
 
 **[2] `gen_ai.security.target.type`:** If one of the well-known values applies, then the respective value SHOULD be used. Otherwise, a custom value MAY be used.
 
-**[3] `gen_ai.security.external_event_id`:** If correlation with external security systems is needed.
+**[3] `gen_ai.security.external_finding_id`:** If correlation with external security systems is needed.
 
-**[4] `gen_ai.security.external_event_id`:** This attribute links telemetry to an external security event record in
+**[4] `gen_ai.security.external_finding_id`:** This attribute links telemetry to an external security finding record in
 systems such as SIEM, incident management, or security dashboards.
 
 The value typically comes from the response of an external security
