@@ -215,7 +215,7 @@ query($owner: String!, $name: String!, $number: Int!, $after: String) {
                             }
                             reactionGroups {
                                 content
-                                users(first: 20) {
+                                users(first: 100) {
                                     nodes {
                                         login
                                     }
