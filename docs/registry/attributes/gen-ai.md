@@ -72,15 +72,19 @@ handoff when the framework exposes a typed handoff primitive that
 names the source agent (for example, OpenAI Agents SDK
 `HandoffOutputItem.source_agent`).
 
-In typical agent frameworks, the source agent is also the agent
-whose `invoke_agent` span is the parent of this `execute_tool`
-span; this attribute MAY be set to make the source explicit for
-queries that should not have to traverse parent-child links.
-
 **[2] `gen_ai.agent.handoff.target.name`:** Set on the `execute_tool` span that represents an agent-to-agent
 handoff when the framework exposes a typed handoff primitive that
 names the target agent (for example, OpenAI Agents SDK
 `HandoffOutputItem.target_agent`).
+
+The receiving agent's `invoke_agent` span SHOULD be modeled as a
+sibling of this `execute_tool` span; see the
+[`execute_tool` span definition](/docs/gen-ai/gen-ai-spans.md#execute-tool-span)
+for the full rationale.
+
+MAY be absent if the handoff was interrupted before the target
+agent was determined (for example, when the framework's handoff
+invocation raised).
 
 **[3] `gen_ai.data_source.id`:** Data sources are used by AI agents and RAG applications to store grounding data. A data source may be an external database, object store, document collection, website, or any other storage system used by the GenAI agent or application. The `gen_ai.data_source.id` SHOULD match the identifier used by the GenAI system rather than a name specific to the external storage, such as a database or object store. Semantic conventions referencing `gen_ai.data_source.id` MAY also leverage additional attributes, such as `db.*`, to further identify and describe the data source.
 

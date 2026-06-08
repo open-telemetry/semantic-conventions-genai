@@ -6893,11 +6893,6 @@ refinements:
         handoff when the framework exposes a typed handoff primitive that
         names the source agent (for example, OpenAI Agents SDK
         `HandoffOutputItem.source_agent`).
-
-        In typical agent frameworks, the source agent is also the agent
-        whose `invoke_agent` span is the parent of this `execute_tool`
-        span; this attribute MAY be set to make the source explicit for
-        queries that should not have to traverse parent-child links.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
@@ -6913,6 +6908,15 @@ refinements:
         handoff when the framework exposes a typed handoff primitive that
         names the target agent (for example, OpenAI Agents SDK
         `HandoffOutputItem.target_agent`).
+
+        The receiving agent\u0027s `invoke_agent` span SHOULD be modeled as a
+        sibling of this `execute_tool` span; see the
+        [`execute_tool` span definition](/docs/gen-ai/gen-ai-spans.md#execute-tool-span)
+        for the full rationale.
+
+        MAY be absent if the handoff was interrupted before the target
+        agent was determined (for example, when the framework\u0027s handoff
+        invocation raised).
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
@@ -7107,6 +7111,16 @@ refinements:
       are encouraged to follow this semantic convention for tools invoked by their
       own code and to manually instrument any tool calls that automatic
       instrumentations do not cover.
+
+      When the `execute_tool` span represents an agent-to-agent handoff
+      (typically signaled by `gen_ai.agent.handoff.source.name`), the receiving
+      agent\u0027s `invoke_agent` span SHOULD be modeled as a sibling of this
+      `execute_tool` span, NOT nested beneath it. Agent frameworks typically
+      continue executing the target agent at the top level of the run loop
+      rather than inside the handoff invocation, so nesting would force this
+      `execute_tool` span to remain open across the entire downstream
+      conversation and conflate handoff duration with the target agent\u0027s
+      own work.
     provenance:
       path: ./model/gen-ai/spans.yaml
     stability: development
@@ -11971,11 +11985,6 @@ registry:
       handoff when the framework exposes a typed handoff primitive that
       names the source agent (for example, OpenAI Agents SDK
       `HandoffOutputItem.source_agent`).
-
-      In typical agent frameworks, the source agent is also the agent
-      whose `invoke_agent` span is the parent of this `execute_tool`
-      span; this attribute MAY be set to make the source explicit for
-      queries that should not have to traverse parent-child links.
     provenance:
       path: ./model/gen-ai/registry.yaml
     stability: development
@@ -11989,6 +11998,15 @@ registry:
       handoff when the framework exposes a typed handoff primitive that
       names the target agent (for example, OpenAI Agents SDK
       `HandoffOutputItem.target_agent`).
+
+      The receiving agent\u0027s `invoke_agent` span SHOULD be modeled as a
+      sibling of this `execute_tool` span; see the
+      [`execute_tool` span definition](/docs/gen-ai/gen-ai-spans.md#execute-tool-span)
+      for the full rationale.
+
+      MAY be absent if the handoff was interrupted before the target
+      agent was determined (for example, when the framework\u0027s handoff
+      invocation raised).
     provenance:
       path: ./model/gen-ai/registry.yaml
     stability: development
@@ -17345,11 +17363,6 @@ registry:
         handoff when the framework exposes a typed handoff primitive that
         names the source agent (for example, OpenAI Agents SDK
         `HandoffOutputItem.source_agent`).
-
-        In typical agent frameworks, the source agent is also the agent
-        whose `invoke_agent` span is the parent of this `execute_tool`
-        span; this attribute MAY be set to make the source explicit for
-        queries that should not have to traverse parent-child links.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
@@ -17365,6 +17378,15 @@ registry:
         handoff when the framework exposes a typed handoff primitive that
         names the target agent (for example, OpenAI Agents SDK
         `HandoffOutputItem.target_agent`).
+
+        The receiving agent\u0027s `invoke_agent` span SHOULD be modeled as a
+        sibling of this `execute_tool` span; see the
+        [`execute_tool` span definition](/docs/gen-ai/gen-ai-spans.md#execute-tool-span)
+        for the full rationale.
+
+        MAY be absent if the handoff was interrupted before the target
+        agent was determined (for example, when the framework\u0027s handoff
+        invocation raised).
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
@@ -17558,6 +17580,16 @@ registry:
       are encouraged to follow this semantic convention for tools invoked by their
       own code and to manually instrument any tool calls that automatic
       instrumentations do not cover.
+
+      When the `execute_tool` span represents an agent-to-agent handoff
+      (typically signaled by `gen_ai.agent.handoff.source.name`), the receiving
+      agent\u0027s `invoke_agent` span SHOULD be modeled as a sibling of this
+      `execute_tool` span, NOT nested beneath it. Agent frameworks typically
+      continue executing the target agent at the top level of the run loop
+      rather than inside the handoff invocation, so nesting would force this
+      `execute_tool` span to remain open across the entire downstream
+      conversation and conflate handoff duration with the target agent\u0027s
+      own work.
     provenance:
       path: ./model/gen-ai/spans.yaml
     stability: development

@@ -796,6 +796,16 @@ are encouraged to follow this semantic convention for tools invoked by their
 own code and to manually instrument any tool calls that automatic
 instrumentations do not cover.
 
+When the `execute_tool` span represents an agent-to-agent handoff
+(typically signaled by `gen_ai.agent.handoff.source.name`), the receiving
+agent's `invoke_agent` span SHOULD be modeled as a sibling of this
+`execute_tool` span, NOT nested beneath it. Agent frameworks typically
+continue executing the target agent at the top level of the run loop
+rather than inside the handoff invocation, so nesting would force this
+`execute_tool` span to remain open across the entire downstream
+conversation and conflate handoff duration with the target agent's
+own work.
+
 **Span kind** SHOULD be `INTERNAL`.
 
 **Span status** SHOULD follow the [Recording Errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.41.1/docs/general/recording-errors.md) document.
@@ -828,17 +838,21 @@ handoff when the framework exposes a typed handoff primitive that
 names the source agent (for example, OpenAI Agents SDK
 `HandoffOutputItem.source_agent`).
 
-In typical agent frameworks, the source agent is also the agent
-whose `invoke_agent` span is the parent of this `execute_tool`
-span; this attribute MAY be set to make the source explicit for
-queries that should not have to traverse parent-child links.
-
 **[5] `gen_ai.agent.handoff.target.name`:** when the tool call represents an agent-to-agent handoff and the framework exposes the target agent.
 
 **[6] `gen_ai.agent.handoff.target.name`:** Set on the `execute_tool` span that represents an agent-to-agent
 handoff when the framework exposes a typed handoff primitive that
 names the target agent (for example, OpenAI Agents SDK
 `HandoffOutputItem.target_agent`).
+
+The receiving agent's `invoke_agent` span SHOULD be modeled as a
+sibling of this `execute_tool` span; see the
+[`execute_tool` span definition](/docs/gen-ai/gen-ai-spans.md#execute-tool-span)
+for the full rationale.
+
+MAY be absent if the handoff was interrupted before the target
+agent was determined (for example, when the framework's handoff
+invocation raised).
 
 **[7] `gen_ai.tool.type`:** Extension: A tool executed on the agent-side to directly call external APIs, bridging the gap between the agent and real-world systems.
   Agent-side operations involve actions that are performed by the agent on the server or within the agent's controlled environment.
