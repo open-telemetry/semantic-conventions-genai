@@ -123,7 +123,7 @@ attribute_groups:
           conditionally_required: When available.
       - ref: gen_ai.agent.finish_reason
         requirement_level:
-          conditionally_required: when the agent loop has terminated and the termination reason is known
+          conditionally_required: When the agent loop has terminated and the termination reason is known.
       - ref: gen_ai.data_source.id
         requirement_level:
           conditionally_required: If applicable.
