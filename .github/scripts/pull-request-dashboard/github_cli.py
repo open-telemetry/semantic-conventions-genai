@@ -249,7 +249,7 @@ query($thread_id: ID!, $after: String) {
                     }
                     reactionGroups {
                         content
-                        users(first: 20) {
+                        users(first: 100) {
                             nodes {
                                 login
                             }
