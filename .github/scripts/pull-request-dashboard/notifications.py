@@ -15,7 +15,7 @@ from zoneinfo import ZoneInfo
 from utils import activity_age, format_ts, parse_ts
 
 
-DEFAULT_NOTIFICATION_TIME_ZONE = "America/Los_Angeles"
+NOTIFICATION_TIME_ZONE = ZoneInfo("America/Los_Angeles")
 REVIEWER_FOLLOW_UP_SECONDS = 24 * 60 * 60
 SLACK_WEBHOOK_RETRY_ATTEMPTS = 3
 SLACK_WEBHOOK_RETRY_DELAY_SECONDS = 1.0
@@ -49,12 +49,8 @@ def should_retry_slack_http_error(e: urllib.error.HTTPError) -> bool:
     return e.code == 429 or 500 <= e.code < 600
 
 
-def notification_time_zone() -> ZoneInfo:
-    return ZoneInfo(os.environ.get("SLACK_NOTIFICATION_TIME_ZONE") or DEFAULT_NOTIFICATION_TIME_ZONE)
-
-
 def is_notification_weekday(now: datetime) -> bool:
-    return now.astimezone(notification_time_zone()).weekday() < 5
+    return now.astimezone(NOTIFICATION_TIME_ZONE).weekday() < 5
 
 
 def post_slack_webhook(message: str, webhook_url: str) -> None:
