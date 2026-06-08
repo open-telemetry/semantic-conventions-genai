@@ -215,10 +215,10 @@ query($owner: String!, $name: String!, $number: Int!, $after: String) {
                             }
                             reactionGroups {
                                 content
-                                # Keep this capped at 20: this bulk query can
-                                # request 100 review threads * 100 comments *
-                                # 20 reaction users = 200,000 possible user
-                                # nodes, below GitHub's 500,000 GraphQL ceiling.
+                                # Keep this cap intentionally low: this users
+                                # connection is nested under reactionGroups for
+                                # each fetched review comment, so raising it can
+                                # multiply the query's possible node count.
                                 users(first: 20) {
                                     nodes {
                                         login
