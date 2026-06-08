@@ -215,7 +215,11 @@ query($owner: String!, $name: String!, $number: Int!, $after: String) {
                             }
                             reactionGroups {
                                 content
-                                users(first: 100) {
+                                # Keep this capped at 20: this bulk query can
+                                # request 100 review threads * 100 comments *
+                                # 20 reaction users = 200,000 possible user
+                                # nodes, below GitHub's 500,000 GraphQL ceiling.
+                                users(first: 20) {
                                     nodes {
                                         login
                                     }
@@ -249,7 +253,9 @@ query($thread_id: ID!, $after: String) {
                     }
                     reactionGroups {
                         content
-                        users(first: 100) {
+                        # Keep this aligned with REVIEW_THREADS_QUERY so every
+                        # fetched comment has the same reaction-user cap.
+                        users(first: 20) {
                             nodes {
                                 login
                             }

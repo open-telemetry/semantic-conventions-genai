@@ -497,18 +497,6 @@ def positive_reaction_logins(comment: dict[str, Any]) -> set[str]:
     return logins
 
 
-def reviewer_acknowledged_latest_author_comment(comments: list[dict[str, Any]]) -> bool:
-    if not comments or comments[-1].get("actor_role") != "author":
-        return False
-    thread_reviewers = {
-        comment.get("actor", "").lower()
-        for comment in comments[:-1]
-        if comment.get("actor_role") in ("approver", "outsider") and comment.get("actor")
-    }
-    positive_reactors = {login.lower() for login in comments[-1].get("positive_reactors") or []}
-    return bool(thread_reviewers & positive_reactors)
-
-
 def group_review_threads(
     raw: dict[str, Any],
     author: str,
@@ -537,8 +525,6 @@ def group_review_threads(
         comments = [c for c in comments if c["timestamp"]]
         comments.sort(key=lambda c: c["timestamp"])
         if not comments:
-            continue
-        if reviewer_acknowledged_latest_author_comment(comments):
             continue
         threads.append(add_thread_facts({
             "thread_id": thread.get("id") or f"review-thread-{len(threads) + 1}",
