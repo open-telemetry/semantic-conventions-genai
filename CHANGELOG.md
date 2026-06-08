@@ -50,6 +50,10 @@
 
 ### 📚 Clarifications 📚
 
+- Generalize the `gen_ai.provider.name` description: remove inference-centric
+  paragraphs, and add guidance for per-operation semantic conventions to
+  clarify which kinds of providers apply when it is not clear from context.
+  ([#212](https://github.com/open-telemetry/semantic-conventions-genai/pull/212))
 - Clarify that a GenAI span SHOULD cover the duration of the operation
   as observed by the caller, including any retries.
   ([#216](https://github.com/open-telemetry/semantic-conventions-genai/pull/216))

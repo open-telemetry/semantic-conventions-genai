@@ -64,14 +64,14 @@ attribute_groups:
           recommended: When applicable.
       - ref: jsonrpc.protocol.version
         requirement_level:
-          recommended: when it's not `2.0`.
+          recommended: When it's not `2.0`.
 
   - id: mcp.client.address_and_port.attributes
     visibility: internal
     attributes:
       - ref: server.address
         requirement_level:
-          recommended: If applicable
+          recommended: If applicable.
       - ref: server.port
         requirement_level:
-          recommended: When `server.address` is set
+          recommended: When `server.address` is set.

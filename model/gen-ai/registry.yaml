@@ -77,15 +77,14 @@ attributes:
 
     brief: The Generative AI provider as identified by the client or server instrumentation.
     note: |
-      The attribute SHOULD be set based on the instrumentation's best
-      knowledge and may differ from the actual model provider.
+      Semantic conventions for individual GenAI operations SHOULD clarify which
+      kinds of providers (e.g. inference, embeddings, retrieval, memory, hosted
+      agent providers) apply when it is not clear from context.
 
-      Multiple providers, including Azure OpenAI, Gemini, and AI hosting platforms
-      are accessible using the OpenAI REST API and corresponding client libraries,
-      but may proxy or host models from different providers.
-
-      The `gen_ai.request.model`, `gen_ai.response.model`, and `server.address`
-      attributes may help identify the actual system in use.
+      The attribute SHOULD be set based on the instrumentation's best knowledge
+      and may differ from the actual upstream provider. For example, a client SDK
+      may be configured against a proxy or hosting platform that transparently
+      relays requests to a different provider.
 
       The `gen_ai.provider.name` attribute acts as a discriminator that
       identifies the GenAI telemetry format flavor specific to that provider

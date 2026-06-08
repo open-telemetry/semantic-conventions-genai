@@ -1,0 +1,11 @@
+[project]
+name = "genai-json-schema-generator"
+version = "0.0.0"
+description = "Generates the committed GenAI JSON schemas from the pydantic models in models.py"
+requires-python = ">=3.11"
+dependencies = [
+    "pydantic==2.13.4",
+]
+
+[tool.uv]
+package = false

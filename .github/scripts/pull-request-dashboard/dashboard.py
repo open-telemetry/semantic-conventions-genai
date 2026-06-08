@@ -87,7 +87,8 @@ survive into the cached dashboard state (see ``stored_result``).
     author                          str           Effective author (human, after
                                                   bot-delegation resolution).
     assignees                       list[str]     PR assignees.
-    is_otelbot_author               bool          PR opened by app/otelbot.
+    is_maintenance_bot              bool          PR is authored by a
+                                                  maintenance bot.
     is_draft                        bool
     approval_count                  int           Current unique APPROVED reviews
                                                   from approver-team members.
@@ -108,6 +109,21 @@ survive into the cached dashboard state (see ``stored_result``).
                                                   or PR creation time.
     waiting_age_basis               str           Which heuristic chose
                                                   waiting_since.
+    reviewers                       list[dict]    Reviewers to display (added by
+                                                  add_reviewers). Each entry is
+                                                  {"login": str, "approved": bool,
+                                                  "approved_non_team": bool,
+                                                  "changes_requested": bool,
+                                                  "open_thread": bool}; approved
+                                                  means an approver-team member
+                                                  is in the APPROVED state,
+                                                  approved_non_team means someone
+                                                  outside the team approved,
+                                                  changes_requested means an
+                                                  approver-team member's latest
+                                                  review is CHANGES_REQUESTED,
+                                                  open_thread means they own an
+                                                  unresolved discussion thread.
 
 Stage-2 fields are absent on failure paths (failed is True). Human-readable
 ``age`` strings (e.g. ``3h``) are derived at render time from these
@@ -180,32 +196,25 @@ def role_for(login: str, author: str, reviewers: set[str]) -> str:
     return "outsider"
 
 
-# Bot logins appear in two shapes depending on the API:
-#   - `gh pr view`'s `author` field uses the `app/<slug>` form (e.g.
-#     `app/copilot-swe-agent`), which is what `_DELEGATING_BOT_AUTHORS`
-#     matches against in `effective_author`.
-#   - The Pulls/commits endpoint's `committer.login` field returns the bare
-#     slug (e.g. `copilot`), which is what `_BOT_COMMITTER_LOGINS` matches
-#     against in `detect_human_delegator`.
-# Both sets contain `copilot` because the slug shows up in both contexts.
-_BOT_COMMITTER_LOGINS = {"copilot"}
-_DELEGATING_BOT_AUTHORS = {"app/copilot-swe-agent", "copilot"}
+# Copilot appears in two API shapes: `gh pr view`'s `author` field uses the
+# `app/<slug>` form, while the Pulls/commits endpoint's `committer.login`
+# field can return the bare `copilot` slug. Do not treat either form as the
+# human author behind a Copilot-authored PR.
+_COPILOT_COMMITTER_LOGINS = {"copilot"}
+_COPILOT_PR_AUTHORS = {"app/copilot-swe-agent", "copilot"}
+_MAINTENANCE_BOT_PR_AUTHORS = {"app/otelbot", "app/renovate"}
 
 
-def is_bot_login(login: str) -> bool:
-    if not login:
-        return True
-    low = login.lower()
-    if low in _BOT_COMMITTER_LOGINS:
-        return True
-    return low.startswith("app/") or low.endswith("[bot]")
-
-
-def detect_human_delegator(commits: list[dict[str, Any]]) -> str:
+def human_author_for_copilot_pr(raw: dict[str, Any]) -> str:
+    commits = raw["commits"]
     if not commits:
         return ""
-    login = actor_login(commits[0].get("committer") or {})
-    return "" if is_bot_login(login) else login
+    first_commit = commits[0]
+    login = actor_login(first_commit.get("committer") or {})
+    low = login.lower()
+    if not login or low in _COPILOT_COMMITTER_LOGINS:
+        return ""
+    return login
 
 
 def fetch_pr_raw(
@@ -255,10 +264,10 @@ def effective_author(raw: dict[str, Any]) -> str:
     pr = raw["pr"]
     summary = raw["summary"]
     author = actor_login(pr.get("author") or {}) or actor_login(summary.get("author") or {})
-    if author.lower() in _DELEGATING_BOT_AUTHORS:
-        delegator = detect_human_delegator(raw["commits"])
-        if delegator:
-            return delegator
+    if author.lower() in _COPILOT_PR_AUTHORS:
+        human_author = human_author_for_copilot_pr(raw)
+        if human_author:
+            return human_author
     return author
 
 
@@ -364,9 +373,26 @@ def latest_substantive_activity(events: list[dict[str, Any]], actor_roles: set[s
 
 
 def current_approval_count(events: list[dict[str, Any]]) -> int:
+    approvers = approver_logins(events)
+    return sum(
+        1
+        for reviewer, state in latest_review_states(events).items()
+        if state == "APPROVED" and reviewer in approvers
+    )
+
+
+def approver_logins(events: list[dict[str, Any]]) -> set[str]:
+    return {
+        event["actor"]
+        for event in events
+        if event.get("actor_role") == "approver" and event.get("actor")
+    }
+
+
+def latest_review_states(events: list[dict[str, Any]]) -> dict[str, str]:
     latest_by_reviewer: dict[str, tuple[str, str]] = {}
     for event in events:
-        if event.get("kind") != "review-state" or event.get("actor_role") != "approver":
+        if event.get("kind") != "review-state":
             continue
         reviewer = event.get("actor") or ""
         submitted_at = event.get("timestamp") or ""
@@ -376,7 +402,21 @@ def current_approval_count(events: list[dict[str, Any]]) -> int:
         previous = latest_by_reviewer.get(reviewer)
         if previous is None or submitted_at >= previous[0]:
             latest_by_reviewer[reviewer] = (submitted_at, state)
-    return sum(1 for _, state in latest_by_reviewer.values() if state == "APPROVED")
+    return {reviewer: state for reviewer, (_, state) in latest_by_reviewer.items()}
+
+
+def commenting_reviewers(events: list[dict[str, Any]]) -> set[str]:
+    # Approver-team members who have participated on the PR in any way: an
+    # issue comment, an inline review comment, or a submitted review. This
+    # surfaces engaged reviewers even when they have neither approved nor own
+    # an open thread.
+    return {
+        event["actor"]
+        for event in events
+        if event.get("actor_role") == "approver"
+        and event.get("kind") in ("issue-comment", "review-comment", "review-state")
+        and event.get("actor")
+    }
 
 
 def compute_facts(
@@ -399,7 +439,7 @@ def compute_facts(
     facts = {
         "author": author,
         "assignees": assignees,
-        "is_otelbot_author": api_author.lower() == "app/otelbot",
+        "is_maintenance_bot": api_author.lower() in _MAINTENANCE_BOT_PR_AUTHORS,
         "is_draft": bool(pr.get("isDraft")),
         "approval_count": current_approval_count(events),
         "conflicts": compute_conflicts(pr),
@@ -578,10 +618,10 @@ def action_counts(classifications: list[dict[str, Any]]) -> dict[str, int]:
 
 def route_pr(facts: dict[str, Any], classifications: list[dict[str, Any]]) -> str:
     counts = action_counts(classifications)
-    # otelbot PRs have no human author, so an author-owed thread points at
-    # nobody who can act; skip that check for them. They also reach merge-ready
-    # on a single approval (these are low-risk dependency-bump PRs).
-    is_otelbot = facts.get("is_otelbot_author")
+    # Copilot PRs are mapped back to a human author when possible. Maintenance
+    # bot PRs have no useful author route and need only one approval.
+    is_maintenance_bot = facts.get("is_maintenance_bot")
+    required_approvals = 1 if is_maintenance_bot else 2
     # Precedence:
     #   1. A thread waiting on the author -> "author".
     #   2. Otherwise a thread waiting on something external -> "external".
@@ -590,15 +630,16 @@ def route_pr(facts: dict[str, Any], classifications: list[dict[str, Any]]) -> st
     #      is not merge-ready while an approver still owes a follow-up, because
     #      that response may change their stance.
     #   4. Otherwise the approval count decides: enough approvals -> ready for a
-    #      maintainer to merge (two normally, one for low-risk otelbot PRs);
+    #      maintainer to merge (two normally, one when the author route does
+    #      not apply);
     #      fewer -> still waiting on approvers.
-    if counts["author"] and not is_otelbot:
+    if counts["author"] and not is_maintenance_bot:
         return "author"
     if counts["external"]:
         return "external"
     if counts["reviewer"]:
         return "approver"
-    if facts.get("approval_count", 0) >= (1 if is_otelbot else 2):
+    if facts.get("approval_count", 0) >= required_approvals:
         return "maintainer"
     return "approver"
 
@@ -657,6 +698,71 @@ def add_wait_age_facts(
     facts["waiting_age_basis"] = basis
 
 
+# Thread actions that count as an open, unresolved discussion. A reviewer who
+# commented in such a thread is not yet satisfied, even if they have approved.
+# "none" means no follow-up is needed, so it does not block a clear check.
+OPEN_THREAD_ACTIONS = {"author", "reviewer", "external", "unclear"}
+
+
+def reviewers_with_open_threads(
+    threads: list[dict[str, Any]],
+    classifications: list[dict[str, Any]],
+) -> set[str]:
+    by_id = threads_by_id(threads)
+    logins: set[str] = set()
+    for c in classifications:
+        action = normalize_thread_action((c.get("decision") or {}).get("thread_action") or "")
+        if action not in OPEN_THREAD_ACTIONS:
+            continue
+        thread = by_id.get(c.get("thread_id") or "")
+        if not thread:
+            continue
+        for comment in thread.get("comments") or []:
+            if comment.get("actor_role") in ("approver", "outsider") and comment.get("actor"):
+                logins.add(comment["actor"])
+    return logins
+
+
+def add_reviewers(
+    facts: dict[str, Any],
+    events: list[dict[str, Any]],
+    threads: list[dict[str, Any]],
+    classifications: list[dict[str, Any]],
+) -> None:
+    # Reviewers to display in the dashboard, each flagged with their review
+    # stance: approved (by an approver-team member), approved_non_team (an
+    # approval from someone outside the team), changes_requested (an
+    # approver-team member's latest review blocks), and open_thread (they own
+    # an unresolved discussion thread). The renderer turns these into icons.
+    # Reviewers are everyone who reviewed, owns an open thread, otherwise
+    # commented, or is a PR assignee, sorted alphabetically (case-insensitive).
+    states = latest_review_states(events)
+    approvers = approver_logins(events)
+    approved = {r for r, s in states.items() if s == "APPROVED" and r in approvers}
+    approved_non_team = {r for r, s in states.items() if s == "APPROVED" and r not in approvers}
+    changes_requested = {r for r, s in states.items() if s == "CHANGES_REQUESTED" and r in approvers}
+    with_open = reviewers_with_open_threads(threads, classifications)
+    candidates = (
+        approved
+        | approved_non_team
+        | changes_requested
+        | with_open
+        | commenting_reviewers(events)
+        | set(facts.get("assignees") or [])
+    )
+    candidates.discard("")
+    facts["reviewers"] = [
+        {
+            "login": login,
+            "approved": login in approved,
+            "approved_non_team": login in approved_non_team,
+            "changes_requested": login in changes_requested,
+            "open_thread": login in with_open,
+        }
+        for login in sorted(candidates, key=str.lower)
+    ]
+
+
 # ---------------------------------------------------------------- main
 
 
@@ -693,6 +799,7 @@ def build_pr_result(
             }
         route = route_pr(facts, classifications)
         add_wait_age_facts(facts, route, threads, classifications)
+        add_reviewers(facts, events, threads, classifications)
         return {
             "pr_number": number,
             "pr_title": raw["pr"].get("title") or "",

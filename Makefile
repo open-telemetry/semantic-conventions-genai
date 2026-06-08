@@ -57,7 +57,7 @@ SC_UPSTREAM_MIGRATED_DIRS := gen-ai mcp openai
 # same group id.
 SC_UPSTREAM_MIGRATED_GROUPS := aws/registry.yaml:registry.aws.bedrock
 
-.PHONY: check-policies schema-snapshot generate-registry generate-docs generate-all clean filter-upstream package-dev
+.PHONY: check-policies schema-snapshot generate-registry generate-docs generate-json-schemas generate-all clean filter-upstream package-dev
 
 # Pinned upstream GitHub URL base, passed to templates as `upstream_docs_base`
 # so cross-registry links to upstream pages resolve to the pinned version.
@@ -140,9 +140,16 @@ generate-docs: $(SC_UPSTREAM_STAMP)
 		--param upstream_docs_base=$(UPSTREAM_DOCS_BASE) \
 		docs
 
-# Run every weaver-driven regeneration the repo owns. CI runs this and fails
-# if any committed output is out of sync.
-generate-all: schema-snapshot generate-registry generate-docs
+# Regenerate the JSON schemas under docs/gen-ai/ from the pydantic models in
+# docs/gen-ai/non-normative/models.py. Dependencies are pinned in the sibling
+# pyproject.toml and locked in uv.lock, so `uv run` reproduces the exact
+# environment (and renovate keeps both up to date, like the reference projects).
+generate-json-schemas:
+	cd docs/gen-ai/non-normative && uv run models.py
+
+# Run every regeneration the repo owns (weaver-driven + pydantic-driven).
+# CI runs this and fails if any committed output is out of sync.
+generate-all: schema-snapshot generate-registry generate-docs generate-json-schemas
 
 # Render the resolved registry as a single committed YAML so reviewers can see
 # schema-level changes in PR diffs.
