@@ -99,9 +99,11 @@ def pending_notification_kind(
     last_notified = parse_ts(previous_pr_state.get("last_notified_at") or "")
     if last_notified is None:
         return "initial"
+    if (now - last_notified).total_seconds() < REVIEWER_FOLLOW_UP_SECONDS:
+        return None
     if current_waiting_since > last_notified:
         return "initial"
-    if now.weekday() < 5 and (now - last_notified).total_seconds() >= REVIEWER_FOLLOW_UP_SECONDS:
+    if now.weekday() < 5:
         return "follow-up"
     return None
 
