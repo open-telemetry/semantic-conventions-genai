@@ -7885,7 +7885,7 @@ refinements:
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
-        conditionally_required: when the agent loop has terminated and the termination reason is known
+        conditionally_required: When the agent loop has terminated and the termination reason is known.
       stability: development
       type:
         members:
@@ -8626,7 +8626,7 @@ refinements:
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
-        conditionally_required: when the agent loop has terminated and the termination reason is known
+        conditionally_required: When the agent loop has terminated and the termination reason is known.
       stability: development
       type:
         members:
@@ -18450,7 +18450,7 @@ registry:
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
-        conditionally_required: when the agent loop has terminated and the termination reason is known
+        conditionally_required: When the agent loop has terminated and the termination reason is known.
       stability: development
       type:
         members:
@@ -19190,7 +19190,7 @@ registry:
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
-        conditionally_required: when the agent loop has terminated and the termination reason is known
+        conditionally_required: When the agent loop has terminated and the termination reason is known.
       stability: development
       type:
         members:
