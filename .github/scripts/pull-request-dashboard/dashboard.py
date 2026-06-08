@@ -179,6 +179,7 @@ from utils import actor_login, format_ts, parse_ts, truncate
 # sequentially within that worker).
 DEFAULT_JOBS = 4
 DEFAULT_MODEL = "gpt-5.4-mini"
+POSITIVE_ACK_REACTIONS = {"THUMBS_UP", "HOORAY", "HEART", "ROCKET"}
 
 # ---------------------------------------------------------------- model helpers
 
@@ -455,12 +456,20 @@ def compute_facts(
     return facts
 
 
-def thread_comment(timestamp: str, actor: str, author: str, reviewers: set[str], body: str) -> dict[str, Any]:
+def thread_comment(
+    timestamp: str,
+    actor: str,
+    author: str,
+    reviewers: set[str],
+    body: str,
+    positive_reactors: set[str] | None = None,
+) -> dict[str, Any]:
     return {
         "timestamp": timestamp,
         "actor": actor,
         "actor_role": role_for(actor, author, reviewers),
         "body": truncate(body),
+        "positive_reactors": sorted(positive_reactors or set()),
     }
 
 
@@ -474,6 +483,30 @@ def add_thread_facts(
         "current_conflicts": facts.get("conflicts"),
     }
     return thread
+
+
+def positive_reaction_logins(comment: dict[str, Any]) -> set[str]:
+    logins: set[str] = set()
+    for group in comment.get("reactionGroups") or []:
+        if group.get("content") not in POSITIVE_ACK_REACTIONS:
+            continue
+        for user in ((group.get("users") or {}).get("nodes") or []):
+            login = actor_login(user).lower()
+            if login:
+                logins.add(login)
+    return logins
+
+
+def reviewer_acknowledged_latest_author_comment(comments: list[dict[str, Any]]) -> bool:
+    if not comments or comments[-1].get("actor_role") != "author":
+        return False
+    thread_reviewers = {
+        comment.get("actor", "").lower()
+        for comment in comments[:-1]
+        if comment.get("actor_role") in ("approver", "outsider") and comment.get("actor")
+    }
+    positive_reactors = {login.lower() for login in comments[-1].get("positive_reactors") or []}
+    return bool(thread_reviewers & positive_reactors)
 
 
 def group_review_threads(
@@ -499,10 +532,13 @@ def group_review_threads(
                 author,
                 reviewers,
                 c.get("body") or "",
+                positive_reaction_logins(c),
             ))
         comments = [c for c in comments if c["timestamp"]]
         comments.sort(key=lambda c: c["timestamp"])
         if not comments:
+            continue
+        if reviewer_acknowledged_latest_author_comment(comments):
             continue
         threads.append(add_thread_facts({
             "thread_id": thread.get("id") or f"review-thread-{len(threads) + 1}",
