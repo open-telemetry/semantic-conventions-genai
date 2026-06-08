@@ -1015,6 +1015,10 @@ def render_dashboard_body(
     return render_pr_tables(prs, results, repo)
 
 
+def failed_result_numbers(results: dict[int, dict[str, Any]]) -> list[int]:
+    return [number for number, result in sorted(results.items()) if result.get("failed")]
+
+
 def update_dashboard(args: argparse.Namespace) -> int:
     repo = detect_repo()
     owner, repo_name = repo.split("/", 1)
@@ -1044,6 +1048,15 @@ def update_dashboard(args: argparse.Namespace) -> int:
         args.pr_number,
         open_pr_numbers,
     )
+
+    failed_results = failed_result_numbers(calculation.results)
+    if failed_results:
+        print(
+            "dashboard refresh hit PR failure(s); refusing to publish failed state: "
+            + ", ".join(f"#{number}" for number in failed_results),
+            file=sys.stderr,
+        )
+        return 1
 
     md = render_dashboard_body(
         prs,
