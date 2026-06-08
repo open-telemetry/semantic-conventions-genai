@@ -10,10 +10,12 @@ import time
 from typing import Any
 import urllib.error
 import urllib.request
+from zoneinfo import ZoneInfo
 
 from utils import activity_age, format_ts, parse_ts
 
 
+DEFAULT_NOTIFICATION_TIME_ZONE = "America/Los_Angeles"
 REVIEWER_FOLLOW_UP_SECONDS = 24 * 60 * 60
 SLACK_WEBHOOK_RETRY_ATTEMPTS = 3
 SLACK_WEBHOOK_RETRY_DELAY_SECONDS = 1.0
@@ -45,6 +47,14 @@ def slack_webhook_retry_delay(attempt: int, e: urllib.error.HTTPError | None = N
 
 def should_retry_slack_http_error(e: urllib.error.HTTPError) -> bool:
     return e.code == 429 or 500 <= e.code < 600
+
+
+def notification_time_zone() -> ZoneInfo:
+    return ZoneInfo(os.environ.get("SLACK_NOTIFICATION_TIME_ZONE") or DEFAULT_NOTIFICATION_TIME_ZONE)
+
+
+def is_notification_weekday(now: datetime) -> bool:
+    return now.astimezone(notification_time_zone()).weekday() < 5
 
 
 def post_slack_webhook(message: str, webhook_url: str) -> None:
@@ -101,7 +111,7 @@ def pending_notification_kind(
         return "initial"
     if current_waiting_since > last_notified:
         return "initial"
-    if now.weekday() < 5 and (now - last_notified).total_seconds() >= REVIEWER_FOLLOW_UP_SECONDS:
+    if is_notification_weekday(now) and (now - last_notified).total_seconds() >= REVIEWER_FOLLOW_UP_SECONDS:
         return "follow-up"
     return None
 
