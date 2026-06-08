@@ -39,4 +39,10 @@ def classify_span(span_name: str, span_kind: str, span_attrs: dict[str, object])
         is_remote = _has_any_attr(span_attrs, "server.address", "server.port")
         detected.discard("invoke_agent_client" if not is_remote else "invoke_agent_internal")
 
+    # apply_guardrail also has client and internal span types with the same
+    # operation name; remote-server attributes indicate a client call.
+    if "apply_guardrail_client" in detected or "apply_guardrail_internal" in detected:
+        is_remote = _has_any_attr(span_attrs, "server.address", "server.port")
+        detected.discard("apply_guardrail_client" if not is_remote else "apply_guardrail_internal")
+
     return detected

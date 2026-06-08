@@ -34,6 +34,8 @@ Run `uv run update-reports` to regenerate.
 | [Retrieval](reports/retrieval-span.md) | haystack, langchain, llamaindex |
 | [Memory](reports/memory-span.md) | aws-bedrock-agentcore, google-adk |
 | [Execute Tool](reports/execute-tool-span.md) | autogen, crewai, google-adk, groq, instructor, litellm, llamaindex, mistralai, openai, openai-agents, openai-assistants, pydantic-ai |
+| [Apply Guardrail Client](reports/apply-guardrail-client-span.md) | openai |
+| [Apply Guardrail Internal](reports/apply-guardrail-internal-span.md) | openai |
 
 ### Events
 
@@ -41,4 +43,5 @@ Run `uv run update-reports` to regenerate.
 | --- | --- |
 | [Inference Operation Details](reports/gen-ai-client-inference-operation-details-event.md) | anthropic, autogen, aws-bedrock, azure-ai-inference, cohere, dspy, google-genai, groq, instructor, litellm, llamaindex, mistralai, openai, pydantic-ai, vertexai |
 | [Evaluation Result](reports/gen-ai-evaluation-result-event.md) | azure-ai-evaluation, deepeval, dspy |
+| [Security Finding](reports/gen-ai-security-finding-event.md) | openai |
 <!-- status:end -->

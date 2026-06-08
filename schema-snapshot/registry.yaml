@@ -151,6 +151,10 @@ refinements:
           id: execute_tool
           stability: development
           value: execute_tool
+        - brief: Apply a security guardrail to content or an action
+          id: apply_guardrail
+          stability: development
+          value: apply_guardrail
         - brief: Invoke GenAI workflow
           id: invoke_workflow
           stability: development
@@ -824,6 +828,399 @@ refinements:
     provenance:
       path: ./model/gen-ai/events.yaml
     stability: development
+  - attributes:
+    - brief: The actual enforcement action taken by the caller or framework.
+      examples:
+      - allow
+      - block
+      - modify
+      - escalate
+      key: gen_ai.security.action.type
+      note: |
+        Use this attribute when the guardrail verdict is enforced by the caller or framework and the action is known. For example, a guardrail may return a `warn` verdict while the caller chooses to `block` the operation.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: If available.
+      stability: development
+      type:
+        members:
+        - brief: The caller allowed the content or action to proceed.
+          id: allow
+          stability: development
+          value: allow
+        - brief: The caller blocked the content or action.
+          id: block
+          stability: development
+          value: block
+        - brief: The caller modified the content or action before continuing.
+          id: modify
+          stability: development
+          value: modify
+        - brief: The caller recorded the result for audit purposes without changing execution.
+          id: audit
+          stability: development
+          value: audit
+        - brief: The caller escalated the content or action for human review, approval, or another workflow.
+          id: escalate
+          stability: development
+          value: escalate
+    - brief: External correlation identifier for a security event.
+      examples:
+      - evt_abc123
+      - incident-2024-001
+      - sec-finding-xyz
+      key: gen_ai.security.external_event_id
+      note: |
+        This attribute links telemetry to an external security event record in
+        systems such as SIEM, incident management, or security dashboards.
+
+        The value typically comes from the response of an external security
+        inspection service or may be included in response headers when inspection
+        happens alongside the LLM call.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: If correlation with external security systems is needed.
+      stability: development
+      type: string
+    - brief: Non-content evidence descriptors for a security finding.
+      examples:
+      - - field:bcc
+        - pattern:email
+      - - count:2
+        - position:output.content
+      key: gen_ai.security.finding.evidence
+      note: |
+        This attribute is intended for low-cardinality, non-content descriptors
+        that help locate or explain a finding without recording the evaluated
+        content itself.
+
+        \u003e [!WARNING]
+        \u003e This attribute MUST NOT contain sensitive user content, PII, secrets, or
+        \u003e other high-risk data.
+
+        Example values include:
+
+        - Field identifiers: `field:bcc`, `parameter:query`
+        - Pattern types: `pattern:ssn`, `pattern:credit_card`
+        - Counts: `count:3`
+        - Positions: `position:input[0].content`
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: If non-content evidence descriptors are available.
+      stability: development
+      type: string[]
+    - brief: The unique identifier of the security guardrail service or component.
+      examples:
+      - content-safety
+      - pii-filter-v3
+      - custom-guardrail-001
+      key: gen_ai.security.guardrail.id
+      note: |
+        This identifies the service, component, or library performing the security
+        evaluation, not the policy or configuration being applied.
+
+        For provider-specific guardrail or policy configuration identifiers (for
+        example, an AWS Bedrock guardrail ARN or an Azure Content Safety blocklist
+        ID), use `gen_ai.security.policy.id` instead.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: If available and not already present on the parent span.
+      stability: development
+      type: string
+    - brief: Human-readable name of the security guardrail service or component.
+      examples:
+      - Azure Content Safety
+      - Bedrock Guardrails
+      - Custom PII Filter
+      key: gen_ai.security.guardrail.name
+      note: |
+        This identifies the security evaluation service or component, not the policy name. For policy names, use `gen_ai.security.policy.name`.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: If available and not already present on the parent span.
+      stability: development
+      type: string
+    - brief: The provider or vendor of the security guardrail service.
+      examples:
+      - azure.ai.content_safety
+      - aws.bedrock
+      - gcp.model_armor
+      - custom
+      key: gen_ai.security.guardrail.provider.name
+      note: |
+        This is distinct from `gen_ai.provider.name`, which identifies the GenAI
+        provider for inference, embeddings, retrieval, memory, or agent operations.
+
+        If one of the well-known values applies, then the respective value SHOULD
+        be used. Otherwise, a custom value MAY be used.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: If available and not already present on the parent span.
+      stability: development
+      type:
+        members:
+        - brief: \u0027[Azure AI Content Safety](https://azure.microsoft.com/products/ai-services/ai-content-safety)\u0027
+          id: azure_ai_content_safety
+          stability: development
+          value: azure.ai.content_safety
+        - brief: \u0027[AWS Bedrock Guardrails](https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails.html)\u0027
+          id: aws_bedrock
+          stability: development
+          value: aws.bedrock
+        - brief: \u0027[Google Cloud Model Armor](https://cloud.google.com/security-command-center/docs/model-armor-overview)\u0027
+          id: gcp_model_armor
+          stability: development
+          value: gcp.model_armor
+    - brief: Identifier of the policy that produced the verdict.
+      examples:
+      - policy_pii_v2
+      - deny-topic-financial-advice
+      - org-compliance-001
+      key: gen_ai.security.policy.id
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: If a policy produced the verdict.
+      stability: development
+      type: string
+    - brief: Human-readable name of the policy that produced the verdict.
+      examples:
+      - PII Protection Policy
+      - Financial Advice Restriction
+      key: gen_ai.security.policy.name
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: recommended
+      stability: development
+      type: string
+    - brief: Identifier of the policy rule, section, or control that produced the verdict.
+      examples:
+      - rule-pii-email
+      - section-4.2
+      - detector-jailbreak
+      key: gen_ai.security.policy.rule.id
+      note: |
+        Use this when `gen_ai.security.policy.id` identifies a broader policy and the guardrail reports a more specific rule, section, control, or detector within that policy.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: If available.
+      stability: development
+      type: string
+    - brief: Version of the policy that produced the verdict.
+      examples:
+      - \u00271.0\u0027
+      - 2024-05-01
+      key: gen_ai.security.policy.version
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: recommended
+      stability: development
+      type: string
+    - brief: The category of security risk detected.
+      examples:
+      - prompt_injection
+      - sensitive_info_disclosure
+      - jailbreak
+      - custom:financial_advice_violation
+      key: gen_ai.security.risk.category
+      note: |
+        This attribute is free-form to accommodate provider-specific,
+        organization-specific, and emerging risk categories.
+
+        Suggested values aligned with OWASP LLM Top 10 2025 include:
+
+        - `prompt_injection` (LLM01)
+        - `sensitive_info_disclosure` (LLM02)
+        - `supply_chain` (LLM03)
+        - `data_and_model_poisoning` (LLM04)
+        - `improper_output_handling` (LLM05)
+        - `excessive_agency` (LLM06)
+        - `system_prompt_leakage` (LLM07)
+        - `vector_and_embedding_weaknesses` (LLM08)
+        - `misinformation` (LLM09)
+        - `unbounded_consumption` (LLM10)
+
+        Instrumentations MAY use additional values when appropriate, for example
+        `jailbreak`, `toxicity`, `pii`, `custom:*`, or provider-specific values.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: required
+      stability: development
+      type: string
+    - brief: Numeric risk or confidence score.
+      examples:
+      - 0.85
+      - 0.95
+      - 0.42
+      key: gen_ai.security.risk.score
+      note: |
+        The value SHOULD be in the range `[0.0, 1.0]` when the guardrail provider reports a normalized score. Instrumentations SHOULD document the scoring scale when reporting provider-specific scores that are not normalized.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: If a risk or confidence score is reported.
+      stability: development
+      type: double
+    - brief: Identifier of the specific target the guardrail is applied to.
+      examples:
+      - call_xyz789
+      - msg_abc123
+      - mem_abc456
+      key: gen_ai.security.target.id
+      note: |
+        For example, a tool call identifier, request identifier, memory record identifier, or message identifier, if applicable.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: If available.
+      stability: development
+      type: string
+    - brief: The type of content or action the guardrail is applied to.
+      examples:
+      - llm_input
+      - llm_output
+      - tool_call_input
+      - tool_call_output
+      - tool_definition
+      key: gen_ai.security.target.type
+      note: |
+        If one of the well-known values applies, then the respective value SHOULD be used. Otherwise, a custom value MAY be used.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: required
+      stability: development
+      type:
+        members:
+        - brief: Prompt or messages being sent to the model.
+          id: llm_input
+          stability: development
+          value: llm_input
+        - brief: Response or messages returned from the model.
+          id: llm_output
+          stability: development
+          value: llm_output
+        - brief: Tool call arguments or invocation request.
+          id: tool_call_input
+          stability: development
+          value: tool_call_input
+        - brief: Tool call result or response.
+          id: tool_call_output
+          stability: development
+          value: tool_call_output
+        - brief: Tool definition or schema.
+          id: tool_definition
+          stability: development
+          value: tool_definition
+        - brief: Data being written to memory.
+          id: memory_write
+          stability: development
+          value: memory_write
+        - brief: Data being read from memory.
+          id: memory_read
+          stability: development
+          value: memory_read
+        - brief: Knowledge or RAG query being sent.
+          id: retrieval_query
+          stability: development
+          value: retrieval_query
+        - brief: Knowledge or RAG results being returned.
+          id: retrieval_result
+          stability: development
+          value: retrieval_result
+        - brief: Conversation message.
+          id: message
+          stability: development
+          value: message
+        - brief: Non-tool agent action.
+          id: action
+          stability: development
+          value: action
+    - brief: Provider-specific code for the security verdict.
+      examples:
+      - \u0027112\u0027
+      - \u0027403\u0027
+      - AACS-PII
+      - MODEL_ARMOR_SAFETY
+      key: gen_ai.security.verdict.code
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: If available.
+      stability: development
+      type: string
+    - brief: Human-readable explanation for the security verdict.
+      examples:
+      - PII detected in output
+      - Prompt injection attempt detected
+      - Action exceeds agent permission scope
+      key: gen_ai.security.verdict.reason
+      note: |
+        The value SHOULD be low-cardinality and MUST NOT contain sensitive user content or other high-risk data.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: If available.
+      stability: development
+      type: string
+    - brief: The verdict returned by the security guardrail evaluation.
+      examples:
+      - allow
+      - deny
+      - modify
+      - warn
+      - escalate
+      key: gen_ai.security.verdict.type
+      note: |
+        A verdict describes what the guardrail evaluation recommends or reports. It is not necessarily the action that the caller or framework enforces. When the actual enforcement action is known, especially if it differs from the verdict, use `gen_ai.security.action.type`.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: recommended
+      stability: development
+      type:
+        members:
+        - brief: The content or action is permitted without modification.
+          id: allow
+          stability: development
+          value: allow
+        - brief: The content or action should not proceed.
+          id: deny
+          stability: development
+          value: deny
+        - brief: The content or action is permitted with modifications such as redaction or sanitization.
+          id: modify
+          stability: development
+          value: modify
+        - brief: The content or action is permitted but flagged for review or downstream handling.
+          id: warn
+          stability: development
+          value: warn
+        - brief: The content or action is recorded for audit purposes only.
+          id: audit
+          stability: development
+          value: audit
+        - brief: The content or action requires human review, approval, or another escalation workflow.
+          id: escalate
+          stability: development
+          value: escalate
+    brief: |
+      Reports a specific security finding detected during guardrail evaluation.
+    id: gen_ai.security.finding
+    name: gen_ai.security.finding
+    note: |
+      Multiple findings MAY be emitted for a single guardrail span.
+
+      Events SHOULD be parented to a `gen_ai.apply_guardrail.client` or
+      `gen_ai.apply_guardrail.internal` span when possible.
+    provenance:
+      path: ./model/gen-ai/events.yaml
+    stability: development
   metrics:
   - annotations:
       code_generation:
@@ -893,6 +1290,10 @@ refinements:
           id: execute_tool
           stability: development
           value: execute_tool
+        - brief: Apply a security guardrail to content or an action
+          id: apply_guardrail
+          stability: development
+          value: apply_guardrail
         - brief: Invoke GenAI workflow
           id: invoke_workflow
           stability: development
@@ -1123,6 +1524,10 @@ refinements:
           id: execute_tool
           stability: development
           value: execute_tool
+        - brief: Apply a security guardrail to content or an action
+          id: apply_guardrail
+          stability: development
+          value: apply_guardrail
         - brief: Invoke GenAI workflow
           id: invoke_workflow
           stability: development
@@ -1355,6 +1760,10 @@ refinements:
           id: execute_tool
           stability: development
           value: execute_tool
+        - brief: Apply a security guardrail to content or an action
+          id: apply_guardrail
+          stability: development
+          value: apply_guardrail
         - brief: Invoke GenAI workflow
           id: invoke_workflow
           stability: development
@@ -1586,6 +1995,10 @@ refinements:
           id: execute_tool
           stability: development
           value: execute_tool
+        - brief: Apply a security guardrail to content or an action
+          id: apply_guardrail
+          stability: development
+          value: apply_guardrail
         - brief: Invoke GenAI workflow
           id: invoke_workflow
           stability: development
@@ -1856,6 +2269,10 @@ refinements:
           id: execute_tool
           stability: development
           value: execute_tool
+        - brief: Apply a security guardrail to content or an action
+          id: apply_guardrail
+          stability: development
+          value: apply_guardrail
         - brief: Invoke GenAI workflow
           id: invoke_workflow
           stability: development
@@ -2085,6 +2502,10 @@ refinements:
           id: execute_tool
           stability: development
           value: execute_tool
+        - brief: Apply a security guardrail to content or an action
+          id: apply_guardrail
+          stability: development
+          value: apply_guardrail
         - brief: Invoke GenAI workflow
           id: invoke_workflow
           stability: development
@@ -2314,6 +2735,10 @@ refinements:
           id: execute_tool
           stability: development
           value: execute_tool
+        - brief: Apply a security guardrail to content or an action
+          id: apply_guardrail
+          stability: development
+          value: apply_guardrail
         - brief: Invoke GenAI workflow
           id: invoke_workflow
           stability: development
@@ -2627,6 +3052,10 @@ refinements:
           id: execute_tool
           stability: development
           value: execute_tool
+        - brief: Apply a security guardrail to content or an action
+          id: apply_guardrail
+          stability: development
+          value: apply_guardrail
         - brief: Invoke GenAI workflow
           id: invoke_workflow
           stability: development
@@ -3168,6 +3597,10 @@ refinements:
           id: execute_tool
           stability: development
           value: execute_tool
+        - brief: Apply a security guardrail to content or an action
+          id: apply_guardrail
+          stability: development
+          value: apply_guardrail
         - brief: Invoke GenAI workflow
           id: invoke_workflow
           stability: development
@@ -3654,6 +4087,10 @@ refinements:
           id: execute_tool
           stability: development
           value: execute_tool
+        - brief: Apply a security guardrail to content or an action
+          id: apply_guardrail
+          stability: development
+          value: apply_guardrail
         - brief: Invoke GenAI workflow
           id: invoke_workflow
           stability: development
@@ -3904,6 +4341,10 @@ refinements:
           id: execute_tool
           stability: development
           value: execute_tool
+        - brief: Apply a security guardrail to content or an action
+          id: apply_guardrail
+          stability: development
+          value: apply_guardrail
         - brief: Invoke GenAI workflow
           id: invoke_workflow
           stability: development
@@ -4279,6 +4720,10 @@ refinements:
           id: execute_tool
           stability: development
           value: execute_tool
+        - brief: Apply a security guardrail to content or an action
+          id: apply_guardrail
+          stability: development
+          value: apply_guardrail
         - brief: Invoke GenAI workflow
           id: invoke_workflow
           stability: development
@@ -4990,6 +5435,10 @@ refinements:
           id: execute_tool
           stability: development
           value: execute_tool
+        - brief: Apply a security guardrail to content or an action
+          id: apply_guardrail
+          stability: development
+          value: apply_guardrail
         - brief: Invoke GenAI workflow
           id: invoke_workflow
           stability: development
@@ -5692,6 +6141,10 @@ refinements:
           id: execute_tool
           stability: development
           value: execute_tool
+        - brief: Apply a security guardrail to content or an action
+          id: apply_guardrail
+          stability: development
+          value: apply_guardrail
         - brief: Invoke GenAI workflow
           id: invoke_workflow
           stability: development
@@ -6268,6 +6721,1240 @@ refinements:
           id: other
           stability: stable
           value: _OTHER
+    - brief: The unique identifier of the GenAI agent.
+      examples:
+      - asst_5j66UpCpwteGg4YSxUnt7lPY
+      key: gen_ai.agent.id
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: If applicable.
+      stability: development
+      type: string
+    - brief: The unique identifier for a conversation (session, thread), used to store and correlate messages within this conversation.
+      examples:
+      - conv_5j66UpCpwteGg4YSxUnt7lPY
+      key: gen_ai.conversation.id
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: When available.
+      stability: development
+      type: string
+    - brief: The name of the operation being performed.
+      key: gen_ai.operation.name
+      note: |
+        If one of the predefined values applies, but specific system uses a different name it\u0027s RECOMMENDED to document it in the semantic conventions for specific GenAI system and use system-specific name in the instrumentation. If a different name is not documented, instrumentation libraries SHOULD use applicable predefined value.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: required
+      sampling_relevant: true
+      stability: development
+      type:
+        members:
+        - brief: Chat completion operation such as [OpenAI Chat API](https://platform.openai.com/docs/api-reference/chat)
+          id: chat
+          stability: development
+          value: chat
+        - brief: Multimodal content generation operation such as [Gemini Generate Content](https://ai.google.dev/api/generate-content)
+          id: generate_content
+          stability: development
+          value: generate_content
+        - brief: Text completions operation such as [OpenAI Completions API (Legacy)](https://platform.openai.com/docs/api-reference/completions)
+          id: text_completion
+          stability: development
+          value: text_completion
+        - brief: Embeddings operation such as [OpenAI Create embeddings API](https://platform.openai.com/docs/api-reference/embeddings/create)
+          id: embeddings
+          stability: development
+          value: embeddings
+        - brief: Retrieval operation such as [OpenAI Search Vector Store API](https://platform.openai.com/docs/api-reference/vector-stores/search)
+          id: retrieval
+          stability: development
+          value: retrieval
+        - brief: Create GenAI agent
+          id: create_agent
+          stability: development
+          value: create_agent
+        - brief: Invoke GenAI agent
+          id: invoke_agent
+          stability: development
+          value: invoke_agent
+        - brief: Execute a tool
+          id: execute_tool
+          stability: development
+          value: execute_tool
+        - brief: Apply a security guardrail to content or an action
+          id: apply_guardrail
+          stability: development
+          value: apply_guardrail
+        - brief: Invoke GenAI workflow
+          id: invoke_workflow
+          stability: development
+          value: invoke_workflow
+        - brief: Agent planning or task decomposition phase
+          id: plan
+          stability: development
+          value: plan
+        - brief: Search/query memories from a memory store
+          id: search_memory
+          stability: development
+          value: search_memory
+        - brief: Create new memory records
+          id: create_memory
+          stability: development
+          value: create_memory
+        - brief: Update existing memory records
+          id: update_memory
+          stability: development
+          value: update_memory
+        - brief: Create or update memory records without the caller choosing which
+          id: upsert_memory
+          stability: development
+          value: upsert_memory
+        - brief: Delete memory records
+          id: delete_memory
+          stability: development
+          value: delete_memory
+        - brief: Create or initialize a memory store
+          id: create_memory_store
+          stability: development
+          value: create_memory_store
+        - brief: Delete or deprovision a memory store
+          id: delete_memory_store
+          stability: development
+          value: delete_memory_store
+    - brief: The actual enforcement action taken by the caller or framework.
+      examples:
+      - allow
+      - block
+      - modify
+      - escalate
+      key: gen_ai.security.action.type
+      note: |
+        Use this attribute when the guardrail verdict is enforced by the caller or framework and the action is known. For example, a guardrail may return a `warn` verdict while the caller chooses to `block` the operation.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: If the actual enforcement action is known, especially if it differs from `gen_ai.security.verdict.type`.
+      stability: development
+      type:
+        members:
+        - brief: The caller allowed the content or action to proceed.
+          id: allow
+          stability: development
+          value: allow
+        - brief: The caller blocked the content or action.
+          id: block
+          stability: development
+          value: block
+        - brief: The caller modified the content or action before continuing.
+          id: modify
+          stability: development
+          value: modify
+        - brief: The caller recorded the result for audit purposes without changing execution.
+          id: audit
+          stability: development
+          value: audit
+        - brief: The caller escalated the content or action for human review, approval, or another workflow.
+          id: escalate
+          stability: development
+          value: escalate
+    - brief: Hash of the input content for forensic correlation.
+      examples:
+      - sha256:a3f2b8c9...
+      key: gen_ai.security.content.input.hash
+      note: |
+        Use when full content capture is not desired but correlation is needed. Instrumentations SHOULD document the algorithm and any salting or HMAC approach used.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: If correlation is needed and available without recording full content.
+      stability: development
+      type: string
+    - brief: The input content that was evaluated by the guardrail.
+      examples:
+      - Send an email to customer@example.com
+      key: gen_ai.security.content.input.value
+      note: |
+        \u003e [!WARNING]
+        \u003e This attribute may contain sensitive information including user/PII
+        \u003e data. Instrumentations SHOULD NOT capture this by default. Enable via
+        \u003e opt-in configuration only.
+
+        This attribute MAY be truncated. For correlation without full content,
+        consider `gen_ai.security.content.input.hash`.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: opt_in
+      stability: development
+      type: any
+    - brief: Whether the content was redacted or otherwise modified by the guardrail.
+      examples:
+      - true
+      - false
+      key: gen_ai.security.content.modified
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: If content was redacted or otherwise modified.
+      stability: development
+      type: boolean
+    - brief: The output content after guardrail processing, if modified.
+      examples:
+      - Send an email to [REDACTED]
+      key: gen_ai.security.content.output.value
+      note: |
+        \u003e [!WARNING]
+        \u003e This attribute may contain sensitive information. Instrumentations
+        \u003e SHOULD NOT capture this by default. Enable via opt-in configuration
+        \u003e only.
+
+        For `modify` actions, this MAY contain the sanitized or redacted result.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: opt_in
+      stability: development
+      type: any
+    - brief: External correlation identifier for a security event.
+      examples:
+      - evt_abc123
+      - incident-2024-001
+      - sec-finding-xyz
+      key: gen_ai.security.external_event_id
+      note: |
+        This attribute links telemetry to an external security event record in
+        systems such as SIEM, incident management, or security dashboards.
+
+        The value typically comes from the response of an external security
+        inspection service or may be included in response headers when inspection
+        happens alongside the LLM call.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: If correlation with external security systems is needed.
+      stability: development
+      type: string
+    - brief: Non-content evidence descriptors for a security finding.
+      examples:
+      - - field:bcc
+        - pattern:email
+      - - count:2
+        - position:output.content
+      key: gen_ai.security.finding.evidence
+      note: |
+        This attribute is intended for low-cardinality, non-content descriptors
+        that help locate or explain a finding without recording the evaluated
+        content itself.
+
+        \u003e [!WARNING]
+        \u003e This attribute MUST NOT contain sensitive user content, PII, secrets, or
+        \u003e other high-risk data.
+
+        Example values include:
+
+        - Field identifiers: `field:bcc`, `parameter:query`
+        - Pattern types: `pattern:ssn`, `pattern:credit_card`
+        - Counts: `count:3`
+        - Positions: `position:input[0].content`
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: If non-content evidence descriptors are available.
+      stability: development
+      type: string[]
+    - brief: The unique identifier of the security guardrail service or component.
+      examples:
+      - content-safety
+      - pii-filter-v3
+      - custom-guardrail-001
+      key: gen_ai.security.guardrail.id
+      note: |
+        This identifies the service, component, or library performing the security
+        evaluation, not the policy or configuration being applied.
+
+        For provider-specific guardrail or policy configuration identifiers (for
+        example, an AWS Bedrock guardrail ARN or an Azure Content Safety blocklist
+        ID), use `gen_ai.security.policy.id` instead.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: If available.
+      stability: development
+      type: string
+    - brief: Human-readable name of the security guardrail service or component.
+      examples:
+      - Azure Content Safety
+      - Bedrock Guardrails
+      - Custom PII Filter
+      key: gen_ai.security.guardrail.name
+      note: |
+        This identifies the security evaluation service or component, not the policy name. For policy names, use `gen_ai.security.policy.name`.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: recommended
+      sampling_relevant: true
+      stability: development
+      type: string
+    - brief: The provider or vendor of the security guardrail service.
+      examples:
+      - azure.ai.content_safety
+      - aws.bedrock
+      - gcp.model_armor
+      - custom
+      key: gen_ai.security.guardrail.provider.name
+      note: |
+        This is distinct from `gen_ai.provider.name`, which identifies the GenAI
+        provider for inference, embeddings, retrieval, memory, or agent operations.
+
+        If one of the well-known values applies, then the respective value SHOULD
+        be used. Otherwise, a custom value MAY be used.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: recommended
+      sampling_relevant: true
+      stability: development
+      type:
+        members:
+        - brief: \u0027[Azure AI Content Safety](https://azure.microsoft.com/products/ai-services/ai-content-safety)\u0027
+          id: azure_ai_content_safety
+          stability: development
+          value: azure.ai.content_safety
+        - brief: \u0027[AWS Bedrock Guardrails](https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails.html)\u0027
+          id: aws_bedrock
+          stability: development
+          value: aws.bedrock
+        - brief: \u0027[Google Cloud Model Armor](https://cloud.google.com/security-command-center/docs/model-armor-overview)\u0027
+          id: gcp_model_armor
+          stability: development
+          value: gcp.model_armor
+    - brief: Version of the security guardrail service or component.
+      examples:
+      - 1.0.0
+      - 2024-05-01
+      - v2
+      key: gen_ai.security.guardrail.version
+      note: |
+        This is the version of the evaluating service or component, not the policy version. For policy versions, use `gen_ai.security.policy.version`.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: recommended
+      stability: development
+      type: string
+    - brief: Identifier of the policy that produced the verdict.
+      examples:
+      - policy_pii_v2
+      - deny-topic-financial-advice
+      - org-compliance-001
+      key: gen_ai.security.policy.id
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: If a policy produced the verdict.
+      stability: development
+      type: string
+    - brief: Human-readable name of the policy that produced the verdict.
+      examples:
+      - PII Protection Policy
+      - Financial Advice Restriction
+      key: gen_ai.security.policy.name
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: recommended
+      stability: development
+      type: string
+    - brief: Identifier of the policy rule, section, or control that produced the verdict.
+      examples:
+      - rule-pii-email
+      - section-4.2
+      - detector-jailbreak
+      key: gen_ai.security.policy.rule.id
+      note: |
+        Use this when `gen_ai.security.policy.id` identifies a broader policy and the guardrail reports a more specific rule, section, control, or detector within that policy.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: If available.
+      stability: development
+      type: string
+    - brief: Version of the policy that produced the verdict.
+      examples:
+      - \u00271.0\u0027
+      - 2024-05-01
+      key: gen_ai.security.policy.version
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: recommended
+      stability: development
+      type: string
+    - brief: The category of security risk detected.
+      examples:
+      - prompt_injection
+      - sensitive_info_disclosure
+      - jailbreak
+      - custom:financial_advice_violation
+      key: gen_ai.security.risk.category
+      note: |
+        This attribute is free-form to accommodate provider-specific,
+        organization-specific, and emerging risk categories.
+
+        Suggested values aligned with OWASP LLM Top 10 2025 include:
+
+        - `prompt_injection` (LLM01)
+        - `sensitive_info_disclosure` (LLM02)
+        - `supply_chain` (LLM03)
+        - `data_and_model_poisoning` (LLM04)
+        - `improper_output_handling` (LLM05)
+        - `excessive_agency` (LLM06)
+        - `system_prompt_leakage` (LLM07)
+        - `vector_and_embedding_weaknesses` (LLM08)
+        - `misinformation` (LLM09)
+        - `unbounded_consumption` (LLM10)
+
+        Instrumentations MAY use additional values when appropriate, for example
+        `jailbreak`, `toxicity`, `pii`, `custom:*`, or provider-specific values.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: If a risk category is reported.
+      stability: development
+      type: string
+    - brief: Numeric risk or confidence score.
+      examples:
+      - 0.85
+      - 0.95
+      - 0.42
+      key: gen_ai.security.risk.score
+      note: |
+        The value SHOULD be in the range `[0.0, 1.0]` when the guardrail provider reports a normalized score. Instrumentations SHOULD document the scoring scale when reporting provider-specific scores that are not normalized.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: If a risk or confidence score is reported.
+      stability: development
+      type: double
+    - brief: Identifier of the specific target the guardrail is applied to.
+      examples:
+      - call_xyz789
+      - msg_abc123
+      - mem_abc456
+      key: gen_ai.security.target.id
+      note: |
+        For example, a tool call identifier, request identifier, memory record identifier, or message identifier, if applicable.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: If available.
+      stability: development
+      type: string
+    - brief: The type of content or action the guardrail is applied to.
+      examples:
+      - llm_input
+      - llm_output
+      - tool_call_input
+      - tool_call_output
+      - tool_definition
+      key: gen_ai.security.target.type
+      note: |
+        If one of the well-known values applies, then the respective value SHOULD be used. Otherwise, a custom value MAY be used.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: required
+      sampling_relevant: true
+      stability: development
+      type:
+        members:
+        - brief: Prompt or messages being sent to the model.
+          id: llm_input
+          stability: development
+          value: llm_input
+        - brief: Response or messages returned from the model.
+          id: llm_output
+          stability: development
+          value: llm_output
+        - brief: Tool call arguments or invocation request.
+          id: tool_call_input
+          stability: development
+          value: tool_call_input
+        - brief: Tool call result or response.
+          id: tool_call_output
+          stability: development
+          value: tool_call_output
+        - brief: Tool definition or schema.
+          id: tool_definition
+          stability: development
+          value: tool_definition
+        - brief: Data being written to memory.
+          id: memory_write
+          stability: development
+          value: memory_write
+        - brief: Data being read from memory.
+          id: memory_read
+          stability: development
+          value: memory_read
+        - brief: Knowledge or RAG query being sent.
+          id: retrieval_query
+          stability: development
+          value: retrieval_query
+        - brief: Knowledge or RAG results being returned.
+          id: retrieval_result
+          stability: development
+          value: retrieval_result
+        - brief: Conversation message.
+          id: message
+          stability: development
+          value: message
+        - brief: Non-tool agent action.
+          id: action
+          stability: development
+          value: action
+    - brief: Provider-specific code for the security verdict.
+      examples:
+      - \u0027112\u0027
+      - \u0027403\u0027
+      - AACS-PII
+      - MODEL_ARMOR_SAFETY
+      key: gen_ai.security.verdict.code
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: recommended
+      stability: development
+      type: string
+    - brief: Human-readable explanation for the security verdict.
+      examples:
+      - PII detected in output
+      - Prompt injection attempt detected
+      - Action exceeds agent permission scope
+      key: gen_ai.security.verdict.reason
+      note: |
+        The value SHOULD be low-cardinality and MUST NOT contain sensitive user content or other high-risk data.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: If `gen_ai.security.verdict.type` is not `allow` and a reason is available.
+      stability: development
+      type: string
+    - brief: The verdict returned by the security guardrail evaluation.
+      examples:
+      - allow
+      - deny
+      - modify
+      - warn
+      - escalate
+      key: gen_ai.security.verdict.type
+      note: |
+        A verdict describes what the guardrail evaluation recommends or reports. It is not necessarily the action that the caller or framework enforces. When the actual enforcement action is known, especially if it differs from the verdict, use `gen_ai.security.action.type`.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: required
+      sampling_relevant: true
+      stability: development
+      type:
+        members:
+        - brief: The content or action is permitted without modification.
+          id: allow
+          stability: development
+          value: allow
+        - brief: The content or action should not proceed.
+          id: deny
+          stability: development
+          value: deny
+        - brief: The content or action is permitted with modifications such as redaction or sanitization.
+          id: modify
+          stability: development
+          value: modify
+        - brief: The content or action is permitted but flagged for review or downstream handling.
+          id: warn
+          stability: development
+          value: warn
+        - brief: The content or action is recorded for audit purposes only.
+          id: audit
+          stability: development
+          value: audit
+        - brief: The content or action requires human review, approval, or another escalation workflow.
+          id: escalate
+          stability: development
+          value: escalate
+    - brief: GenAI server address.
+      examples:
+      - example.com
+      - 10.1.2.80
+      - /tmp/my.sock
+      key: server.address
+      note: |
+        When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent the server address behind any intermediaries, for example proxies, if it\u0027s available.
+      requirement_level: recommended
+      sampling_relevant: true
+      stability: stable
+      type: string
+    - brief: GenAI server port.
+      examples:
+      - 80
+      - 8080
+      - 443
+      key: server.port
+      note: |
+        When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries, for example proxies, if it\u0027s available.
+      requirement_level:
+        conditionally_required: If `server.address` is set.
+      sampling_relevant: true
+      stability: stable
+      type: int
+    brief: |
+      Describes a remote security guardrail evaluation.
+    id: gen_ai.apply_guardrail.client
+    kind: client
+    name:
+      note: gen_ai.apply_guardrail.client
+    note: |
+      The `gen_ai.operation.name` SHOULD be `apply_guardrail`.
+
+      **Span name** SHOULD be `apply_guardrail {gen_ai.security.guardrail.name}` when
+      `gen_ai.security.guardrail.name` is readily available. When it is not available,
+      it SHOULD be `apply_guardrail {gen_ai.security.target.type}`.
+      Semantic conventions for individual guardrail services and frameworks MAY specify a different span name format.
+
+      This span SHOULD be used when the guardrail evaluation is performed by
+      another process or service, especially when the call happens over an
+      instrumented protocol such as HTTP.
+
+      Guardrail spans SHOULD be children of the GenAI span they protect, such as
+      [inference](/docs/gen-ai/gen-ai-spans.md#inference) or
+      [execute tool](/docs/gen-ai/gen-ai-spans.md#execute-tool-span) spans.
+
+      Multiple guardrail spans MAY exist under a single operation span if
+      multiple guardrails are chained.
+    provenance:
+      path: ./model/gen-ai/spans.yaml
+    stability: development
+    type: gen_ai.apply_guardrail.client
+  - attributes:
+    - brief: |
+        Describes a class of error the operation ended with.
+      examples:
+      - timeout
+      - java.net.UnknownHostException
+      - server_certificate_invalid
+      - \u0027500\u0027
+      key: error.type
+      note: |
+        The `error.type` SHOULD match the error code returned by the Generative AI provider or the client library,
+        the canonical name of exception that occurred, or another low-cardinality error identifier.
+        Instrumentations SHOULD document the list of errors they report.
+      requirement_level:
+        conditionally_required: If the operation ended in an error.
+      stability: stable
+      type:
+        members:
+        - brief: |
+            A fallback error value to be used when the instrumentation doesn\u0027t define a custom value.
+          id: other
+          stability: stable
+          value: _OTHER
+    - brief: The unique identifier of the GenAI agent.
+      examples:
+      - asst_5j66UpCpwteGg4YSxUnt7lPY
+      key: gen_ai.agent.id
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: If applicable.
+      stability: development
+      type: string
+    - brief: The unique identifier for a conversation (session, thread), used to store and correlate messages within this conversation.
+      examples:
+      - conv_5j66UpCpwteGg4YSxUnt7lPY
+      key: gen_ai.conversation.id
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: When available.
+      stability: development
+      type: string
+    - brief: The name of the operation being performed.
+      key: gen_ai.operation.name
+      note: |
+        If one of the predefined values applies, but specific system uses a different name it\u0027s RECOMMENDED to document it in the semantic conventions for specific GenAI system and use system-specific name in the instrumentation. If a different name is not documented, instrumentation libraries SHOULD use applicable predefined value.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: required
+      sampling_relevant: true
+      stability: development
+      type:
+        members:
+        - brief: Chat completion operation such as [OpenAI Chat API](https://platform.openai.com/docs/api-reference/chat)
+          id: chat
+          stability: development
+          value: chat
+        - brief: Multimodal content generation operation such as [Gemini Generate Content](https://ai.google.dev/api/generate-content)
+          id: generate_content
+          stability: development
+          value: generate_content
+        - brief: Text completions operation such as [OpenAI Completions API (Legacy)](https://platform.openai.com/docs/api-reference/completions)
+          id: text_completion
+          stability: development
+          value: text_completion
+        - brief: Embeddings operation such as [OpenAI Create embeddings API](https://platform.openai.com/docs/api-reference/embeddings/create)
+          id: embeddings
+          stability: development
+          value: embeddings
+        - brief: Retrieval operation such as [OpenAI Search Vector Store API](https://platform.openai.com/docs/api-reference/vector-stores/search)
+          id: retrieval
+          stability: development
+          value: retrieval
+        - brief: Create GenAI agent
+          id: create_agent
+          stability: development
+          value: create_agent
+        - brief: Invoke GenAI agent
+          id: invoke_agent
+          stability: development
+          value: invoke_agent
+        - brief: Execute a tool
+          id: execute_tool
+          stability: development
+          value: execute_tool
+        - brief: Apply a security guardrail to content or an action
+          id: apply_guardrail
+          stability: development
+          value: apply_guardrail
+        - brief: Invoke GenAI workflow
+          id: invoke_workflow
+          stability: development
+          value: invoke_workflow
+        - brief: Agent planning or task decomposition phase
+          id: plan
+          stability: development
+          value: plan
+        - brief: Search/query memories from a memory store
+          id: search_memory
+          stability: development
+          value: search_memory
+        - brief: Create new memory records
+          id: create_memory
+          stability: development
+          value: create_memory
+        - brief: Update existing memory records
+          id: update_memory
+          stability: development
+          value: update_memory
+        - brief: Create or update memory records without the caller choosing which
+          id: upsert_memory
+          stability: development
+          value: upsert_memory
+        - brief: Delete memory records
+          id: delete_memory
+          stability: development
+          value: delete_memory
+        - brief: Create or initialize a memory store
+          id: create_memory_store
+          stability: development
+          value: create_memory_store
+        - brief: Delete or deprovision a memory store
+          id: delete_memory_store
+          stability: development
+          value: delete_memory_store
+    - brief: The actual enforcement action taken by the caller or framework.
+      examples:
+      - allow
+      - block
+      - modify
+      - escalate
+      key: gen_ai.security.action.type
+      note: |
+        Use this attribute when the guardrail verdict is enforced by the caller or framework and the action is known. For example, a guardrail may return a `warn` verdict while the caller chooses to `block` the operation.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: If the actual enforcement action is known, especially if it differs from `gen_ai.security.verdict.type`.
+      stability: development
+      type:
+        members:
+        - brief: The caller allowed the content or action to proceed.
+          id: allow
+          stability: development
+          value: allow
+        - brief: The caller blocked the content or action.
+          id: block
+          stability: development
+          value: block
+        - brief: The caller modified the content or action before continuing.
+          id: modify
+          stability: development
+          value: modify
+        - brief: The caller recorded the result for audit purposes without changing execution.
+          id: audit
+          stability: development
+          value: audit
+        - brief: The caller escalated the content or action for human review, approval, or another workflow.
+          id: escalate
+          stability: development
+          value: escalate
+    - brief: Hash of the input content for forensic correlation.
+      examples:
+      - sha256:a3f2b8c9...
+      key: gen_ai.security.content.input.hash
+      note: |
+        Use when full content capture is not desired but correlation is needed. Instrumentations SHOULD document the algorithm and any salting or HMAC approach used.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: If correlation is needed and available without recording full content.
+      stability: development
+      type: string
+    - brief: The input content that was evaluated by the guardrail.
+      examples:
+      - Send an email to customer@example.com
+      key: gen_ai.security.content.input.value
+      note: |
+        \u003e [!WARNING]
+        \u003e This attribute may contain sensitive information including user/PII
+        \u003e data. Instrumentations SHOULD NOT capture this by default. Enable via
+        \u003e opt-in configuration only.
+
+        This attribute MAY be truncated. For correlation without full content,
+        consider `gen_ai.security.content.input.hash`.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: opt_in
+      stability: development
+      type: any
+    - brief: Whether the content was redacted or otherwise modified by the guardrail.
+      examples:
+      - true
+      - false
+      key: gen_ai.security.content.modified
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: If content was redacted or otherwise modified.
+      stability: development
+      type: boolean
+    - brief: The output content after guardrail processing, if modified.
+      examples:
+      - Send an email to [REDACTED]
+      key: gen_ai.security.content.output.value
+      note: |
+        \u003e [!WARNING]
+        \u003e This attribute may contain sensitive information. Instrumentations
+        \u003e SHOULD NOT capture this by default. Enable via opt-in configuration
+        \u003e only.
+
+        For `modify` actions, this MAY contain the sanitized or redacted result.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: opt_in
+      stability: development
+      type: any
+    - brief: External correlation identifier for a security event.
+      examples:
+      - evt_abc123
+      - incident-2024-001
+      - sec-finding-xyz
+      key: gen_ai.security.external_event_id
+      note: |
+        This attribute links telemetry to an external security event record in
+        systems such as SIEM, incident management, or security dashboards.
+
+        The value typically comes from the response of an external security
+        inspection service or may be included in response headers when inspection
+        happens alongside the LLM call.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: If correlation with external security systems is needed.
+      stability: development
+      type: string
+    - brief: Non-content evidence descriptors for a security finding.
+      examples:
+      - - field:bcc
+        - pattern:email
+      - - count:2
+        - position:output.content
+      key: gen_ai.security.finding.evidence
+      note: |
+        This attribute is intended for low-cardinality, non-content descriptors
+        that help locate or explain a finding without recording the evaluated
+        content itself.
+
+        \u003e [!WARNING]
+        \u003e This attribute MUST NOT contain sensitive user content, PII, secrets, or
+        \u003e other high-risk data.
+
+        Example values include:
+
+        - Field identifiers: `field:bcc`, `parameter:query`
+        - Pattern types: `pattern:ssn`, `pattern:credit_card`
+        - Counts: `count:3`
+        - Positions: `position:input[0].content`
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: If non-content evidence descriptors are available.
+      stability: development
+      type: string[]
+    - brief: The unique identifier of the security guardrail service or component.
+      examples:
+      - content-safety
+      - pii-filter-v3
+      - custom-guardrail-001
+      key: gen_ai.security.guardrail.id
+      note: |
+        This identifies the service, component, or library performing the security
+        evaluation, not the policy or configuration being applied.
+
+        For provider-specific guardrail or policy configuration identifiers (for
+        example, an AWS Bedrock guardrail ARN or an Azure Content Safety blocklist
+        ID), use `gen_ai.security.policy.id` instead.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: If available.
+      stability: development
+      type: string
+    - brief: Human-readable name of the security guardrail service or component.
+      examples:
+      - Azure Content Safety
+      - Bedrock Guardrails
+      - Custom PII Filter
+      key: gen_ai.security.guardrail.name
+      note: |
+        This identifies the security evaluation service or component, not the policy name. For policy names, use `gen_ai.security.policy.name`.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: recommended
+      sampling_relevant: true
+      stability: development
+      type: string
+    - brief: The provider or vendor of the security guardrail service.
+      examples:
+      - azure.ai.content_safety
+      - aws.bedrock
+      - gcp.model_armor
+      - custom
+      key: gen_ai.security.guardrail.provider.name
+      note: |
+        This is distinct from `gen_ai.provider.name`, which identifies the GenAI
+        provider for inference, embeddings, retrieval, memory, or agent operations.
+
+        If one of the well-known values applies, then the respective value SHOULD
+        be used. Otherwise, a custom value MAY be used.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: recommended
+      sampling_relevant: true
+      stability: development
+      type:
+        members:
+        - brief: \u0027[Azure AI Content Safety](https://azure.microsoft.com/products/ai-services/ai-content-safety)\u0027
+          id: azure_ai_content_safety
+          stability: development
+          value: azure.ai.content_safety
+        - brief: \u0027[AWS Bedrock Guardrails](https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails.html)\u0027
+          id: aws_bedrock
+          stability: development
+          value: aws.bedrock
+        - brief: \u0027[Google Cloud Model Armor](https://cloud.google.com/security-command-center/docs/model-armor-overview)\u0027
+          id: gcp_model_armor
+          stability: development
+          value: gcp.model_armor
+    - brief: Version of the security guardrail service or component.
+      examples:
+      - 1.0.0
+      - 2024-05-01
+      - v2
+      key: gen_ai.security.guardrail.version
+      note: |
+        This is the version of the evaluating service or component, not the policy version. For policy versions, use `gen_ai.security.policy.version`.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: recommended
+      stability: development
+      type: string
+    - brief: Identifier of the policy that produced the verdict.
+      examples:
+      - policy_pii_v2
+      - deny-topic-financial-advice
+      - org-compliance-001
+      key: gen_ai.security.policy.id
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: If a policy produced the verdict.
+      stability: development
+      type: string
+    - brief: Human-readable name of the policy that produced the verdict.
+      examples:
+      - PII Protection Policy
+      - Financial Advice Restriction
+      key: gen_ai.security.policy.name
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: recommended
+      stability: development
+      type: string
+    - brief: Identifier of the policy rule, section, or control that produced the verdict.
+      examples:
+      - rule-pii-email
+      - section-4.2
+      - detector-jailbreak
+      key: gen_ai.security.policy.rule.id
+      note: |
+        Use this when `gen_ai.security.policy.id` identifies a broader policy and the guardrail reports a more specific rule, section, control, or detector within that policy.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: If available.
+      stability: development
+      type: string
+    - brief: Version of the policy that produced the verdict.
+      examples:
+      - \u00271.0\u0027
+      - 2024-05-01
+      key: gen_ai.security.policy.version
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: recommended
+      stability: development
+      type: string
+    - brief: The category of security risk detected.
+      examples:
+      - prompt_injection
+      - sensitive_info_disclosure
+      - jailbreak
+      - custom:financial_advice_violation
+      key: gen_ai.security.risk.category
+      note: |
+        This attribute is free-form to accommodate provider-specific,
+        organization-specific, and emerging risk categories.
+
+        Suggested values aligned with OWASP LLM Top 10 2025 include:
+
+        - `prompt_injection` (LLM01)
+        - `sensitive_info_disclosure` (LLM02)
+        - `supply_chain` (LLM03)
+        - `data_and_model_poisoning` (LLM04)
+        - `improper_output_handling` (LLM05)
+        - `excessive_agency` (LLM06)
+        - `system_prompt_leakage` (LLM07)
+        - `vector_and_embedding_weaknesses` (LLM08)
+        - `misinformation` (LLM09)
+        - `unbounded_consumption` (LLM10)
+
+        Instrumentations MAY use additional values when appropriate, for example
+        `jailbreak`, `toxicity`, `pii`, `custom:*`, or provider-specific values.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: If a risk category is reported.
+      stability: development
+      type: string
+    - brief: Numeric risk or confidence score.
+      examples:
+      - 0.85
+      - 0.95
+      - 0.42
+      key: gen_ai.security.risk.score
+      note: |
+        The value SHOULD be in the range `[0.0, 1.0]` when the guardrail provider reports a normalized score. Instrumentations SHOULD document the scoring scale when reporting provider-specific scores that are not normalized.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: If a risk or confidence score is reported.
+      stability: development
+      type: double
+    - brief: Identifier of the specific target the guardrail is applied to.
+      examples:
+      - call_xyz789
+      - msg_abc123
+      - mem_abc456
+      key: gen_ai.security.target.id
+      note: |
+        For example, a tool call identifier, request identifier, memory record identifier, or message identifier, if applicable.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: If available.
+      stability: development
+      type: string
+    - brief: The type of content or action the guardrail is applied to.
+      examples:
+      - llm_input
+      - llm_output
+      - tool_call_input
+      - tool_call_output
+      - tool_definition
+      key: gen_ai.security.target.type
+      note: |
+        If one of the well-known values applies, then the respective value SHOULD be used. Otherwise, a custom value MAY be used.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: required
+      sampling_relevant: true
+      stability: development
+      type:
+        members:
+        - brief: Prompt or messages being sent to the model.
+          id: llm_input
+          stability: development
+          value: llm_input
+        - brief: Response or messages returned from the model.
+          id: llm_output
+          stability: development
+          value: llm_output
+        - brief: Tool call arguments or invocation request.
+          id: tool_call_input
+          stability: development
+          value: tool_call_input
+        - brief: Tool call result or response.
+          id: tool_call_output
+          stability: development
+          value: tool_call_output
+        - brief: Tool definition or schema.
+          id: tool_definition
+          stability: development
+          value: tool_definition
+        - brief: Data being written to memory.
+          id: memory_write
+          stability: development
+          value: memory_write
+        - brief: Data being read from memory.
+          id: memory_read
+          stability: development
+          value: memory_read
+        - brief: Knowledge or RAG query being sent.
+          id: retrieval_query
+          stability: development
+          value: retrieval_query
+        - brief: Knowledge or RAG results being returned.
+          id: retrieval_result
+          stability: development
+          value: retrieval_result
+        - brief: Conversation message.
+          id: message
+          stability: development
+          value: message
+        - brief: Non-tool agent action.
+          id: action
+          stability: development
+          value: action
+    - brief: Provider-specific code for the security verdict.
+      examples:
+      - \u0027112\u0027
+      - \u0027403\u0027
+      - AACS-PII
+      - MODEL_ARMOR_SAFETY
+      key: gen_ai.security.verdict.code
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: recommended
+      stability: development
+      type: string
+    - brief: Human-readable explanation for the security verdict.
+      examples:
+      - PII detected in output
+      - Prompt injection attempt detected
+      - Action exceeds agent permission scope
+      key: gen_ai.security.verdict.reason
+      note: |
+        The value SHOULD be low-cardinality and MUST NOT contain sensitive user content or other high-risk data.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: If `gen_ai.security.verdict.type` is not `allow` and a reason is available.
+      stability: development
+      type: string
+    - brief: The verdict returned by the security guardrail evaluation.
+      examples:
+      - allow
+      - deny
+      - modify
+      - warn
+      - escalate
+      key: gen_ai.security.verdict.type
+      note: |
+        A verdict describes what the guardrail evaluation recommends or reports. It is not necessarily the action that the caller or framework enforces. When the actual enforcement action is known, especially if it differs from the verdict, use `gen_ai.security.action.type`.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: required
+      sampling_relevant: true
+      stability: development
+      type:
+        members:
+        - brief: The content or action is permitted without modification.
+          id: allow
+          stability: development
+          value: allow
+        - brief: The content or action should not proceed.
+          id: deny
+          stability: development
+          value: deny
+        - brief: The content or action is permitted with modifications such as redaction or sanitization.
+          id: modify
+          stability: development
+          value: modify
+        - brief: The content or action is permitted but flagged for review or downstream handling.
+          id: warn
+          stability: development
+          value: warn
+        - brief: The content or action is recorded for audit purposes only.
+          id: audit
+          stability: development
+          value: audit
+        - brief: The content or action requires human review, approval, or another escalation workflow.
+          id: escalate
+          stability: development
+          value: escalate
+    brief: |
+      Describes an in-process security guardrail evaluation.
+    id: gen_ai.apply_guardrail.internal
+    kind: internal
+    name:
+      note: gen_ai.apply_guardrail.internal
+    note: |
+      The `gen_ai.operation.name` SHOULD be `apply_guardrail`.
+
+      **Span name** SHOULD be `apply_guardrail {gen_ai.security.guardrail.name}` when
+      `gen_ai.security.guardrail.name` is readily available. When it is not available,
+      it SHOULD be `apply_guardrail {gen_ai.security.target.type}`.
+      Semantic conventions for individual guardrail services and frameworks MAY specify a different span name format.
+
+      This span SHOULD be used when the guardrail evaluation is performed in the
+      same process as the instrumented GenAI operation.
+
+      Guardrail spans SHOULD be children of the GenAI span they protect, such as
+      [inference](/docs/gen-ai/gen-ai-spans.md#inference) or
+      [execute tool](/docs/gen-ai/gen-ai-spans.md#execute-tool-span) spans.
+
+      Multiple guardrail spans MAY exist under a single operation span if
+      multiple guardrails are chained.
+    provenance:
+      path: ./model/gen-ai/spans.yaml
+    stability: development
+    type: gen_ai.apply_guardrail.internal
+  - attributes:
+    - brief: |
+        Describes a class of error the operation ended with.
+      examples:
+      - timeout
+      - java.net.UnknownHostException
+      - server_certificate_invalid
+      - \u0027500\u0027
+      key: error.type
+      note: |
+        The `error.type` SHOULD match the error code returned by the Generative AI provider or the client library,
+        the canonical name of exception that occurred, or another low-cardinality error identifier.
+        Instrumentations SHOULD document the list of errors they report.
+      requirement_level:
+        conditionally_required: If the operation ended in an error.
+      stability: stable
+      type:
+        members:
+        - brief: |
+            A fallback error value to be used when the instrumentation doesn\u0027t define a custom value.
+          id: other
+          stability: stable
+          value: _OTHER
     - brief: Free-form description of the GenAI agent provided by the application.
       examples:
       - Helps with math problems
@@ -6355,6 +8042,10 @@ refinements:
           id: execute_tool
           stability: development
           value: execute_tool
+        - brief: Apply a security guardrail to content or an action
+          id: apply_guardrail
+          stability: development
+          value: apply_guardrail
         - brief: Invoke GenAI workflow
           id: invoke_workflow
           stability: development
@@ -6642,6 +8333,10 @@ refinements:
           id: execute_tool
           stability: development
           value: execute_tool
+        - brief: Apply a security guardrail to content or an action
+          id: apply_guardrail
+          stability: development
+          value: apply_guardrail
         - brief: Invoke GenAI workflow
           id: invoke_workflow
           stability: development
@@ -6927,6 +8622,10 @@ refinements:
           id: execute_tool
           stability: development
           value: execute_tool
+        - brief: Apply a security guardrail to content or an action
+          id: apply_guardrail
+          stability: development
+          value: apply_guardrail
         - brief: Invoke GenAI workflow
           id: invoke_workflow
           stability: development
@@ -7228,6 +8927,10 @@ refinements:
           id: execute_tool
           stability: development
           value: execute_tool
+        - brief: Apply a security guardrail to content or an action
+          id: apply_guardrail
+          stability: development
+          value: apply_guardrail
         - brief: Invoke GenAI workflow
           id: invoke_workflow
           stability: development
@@ -7984,6 +9687,10 @@ refinements:
           id: execute_tool
           stability: development
           value: execute_tool
+        - brief: Apply a security guardrail to content or an action
+          id: apply_guardrail
+          stability: development
+          value: apply_guardrail
         - brief: Invoke GenAI workflow
           id: invoke_workflow
           stability: development
@@ -8674,6 +10381,10 @@ refinements:
           id: execute_tool
           stability: development
           value: execute_tool
+        - brief: Apply a security guardrail to content or an action
+          id: apply_guardrail
+          stability: development
+          value: apply_guardrail
         - brief: Invoke GenAI workflow
           id: invoke_workflow
           stability: development
@@ -9256,6 +10967,10 @@ refinements:
           id: execute_tool
           stability: development
           value: execute_tool
+        - brief: Apply a security guardrail to content or an action
+          id: apply_guardrail
+          stability: development
+          value: apply_guardrail
         - brief: Invoke GenAI workflow
           id: invoke_workflow
           stability: development
@@ -9526,6 +11241,10 @@ refinements:
           id: execute_tool
           stability: development
           value: execute_tool
+        - brief: Apply a security guardrail to content or an action
+          id: apply_guardrail
+          stability: development
+          value: apply_guardrail
         - brief: Invoke GenAI workflow
           id: invoke_workflow
           stability: development
@@ -9801,6 +11520,10 @@ refinements:
           id: execute_tool
           stability: development
           value: execute_tool
+        - brief: Apply a security guardrail to content or an action
+          id: apply_guardrail
+          stability: development
+          value: apply_guardrail
         - brief: Invoke GenAI workflow
           id: invoke_workflow
           stability: development
@@ -9940,6 +11663,10 @@ refinements:
           id: execute_tool
           stability: development
           value: execute_tool
+        - brief: Apply a security guardrail to content or an action
+          id: apply_guardrail
+          stability: development
+          value: apply_guardrail
         - brief: Invoke GenAI workflow
           id: invoke_workflow
           stability: development
@@ -10251,6 +11978,10 @@ refinements:
           id: execute_tool
           stability: development
           value: execute_tool
+        - brief: Apply a security guardrail to content or an action
+          id: apply_guardrail
+          stability: development
+          value: apply_guardrail
         - brief: Invoke GenAI workflow
           id: invoke_workflow
           stability: development
@@ -10761,6 +12492,10 @@ refinements:
           id: execute_tool
           stability: development
           value: execute_tool
+        - brief: Apply a security guardrail to content or an action
+          id: apply_guardrail
+          stability: development
+          value: apply_guardrail
         - brief: Invoke GenAI workflow
           id: invoke_workflow
           stability: development
@@ -11292,6 +13027,10 @@ refinements:
           id: execute_tool
           stability: development
           value: execute_tool
+        - brief: Apply a security guardrail to content or an action
+          id: apply_guardrail
+          stability: development
+          value: apply_guardrail
         - brief: Invoke GenAI workflow
           id: invoke_workflow
           stability: development
@@ -12198,6 +13937,10 @@ registry:
         id: execute_tool
         stability: development
         value: execute_tool
+      - brief: Apply a security guardrail to content or an action
+        id: apply_guardrail
+        stability: development
+        value: apply_guardrail
       - brief: Invoke GenAI workflow
         id: invoke_workflow
         stability: development
@@ -12592,6 +14335,419 @@ registry:
       path: ./model/gen-ai/registry.yaml
     stability: development
     type: int
+  - brief: The actual enforcement action taken by the caller or framework.
+    examples:
+    - allow
+    - block
+    - modify
+    - escalate
+    key: gen_ai.security.action.type
+    note: |
+      Use this attribute when the guardrail verdict is enforced by the caller or framework and the action is known. For example, a guardrail may return a `warn` verdict while the caller chooses to `block` the operation.
+    provenance:
+      path: ./model/gen-ai/registry.yaml
+    stability: development
+    type:
+      members:
+      - brief: The caller allowed the content or action to proceed.
+        id: allow
+        stability: development
+        value: allow
+      - brief: The caller blocked the content or action.
+        id: block
+        stability: development
+        value: block
+      - brief: The caller modified the content or action before continuing.
+        id: modify
+        stability: development
+        value: modify
+      - brief: The caller recorded the result for audit purposes without changing execution.
+        id: audit
+        stability: development
+        value: audit
+      - brief: The caller escalated the content or action for human review, approval, or another workflow.
+        id: escalate
+        stability: development
+        value: escalate
+  - brief: Hash of the input content for forensic correlation.
+    examples:
+    - sha256:a3f2b8c9...
+    key: gen_ai.security.content.input.hash
+    note: |
+      Use when full content capture is not desired but correlation is needed. Instrumentations SHOULD document the algorithm and any salting or HMAC approach used.
+    provenance:
+      path: ./model/gen-ai/registry.yaml
+    stability: development
+    type: string
+  - brief: The input content that was evaluated by the guardrail.
+    examples:
+    - Send an email to customer@example.com
+    key: gen_ai.security.content.input.value
+    note: |
+      \u003e [!WARNING]
+      \u003e This attribute may contain sensitive information including user/PII
+      \u003e data. Instrumentations SHOULD NOT capture this by default. Enable via
+      \u003e opt-in configuration only.
+
+      This attribute MAY be truncated. For correlation without full content,
+      consider `gen_ai.security.content.input.hash`.
+    provenance:
+      path: ./model/gen-ai/registry.yaml
+    stability: development
+    type: any
+  - brief: Whether the content was redacted or otherwise modified by the guardrail.
+    examples:
+    - true
+    - false
+    key: gen_ai.security.content.modified
+    provenance:
+      path: ./model/gen-ai/registry.yaml
+    stability: development
+    type: boolean
+  - brief: The output content after guardrail processing, if modified.
+    examples:
+    - Send an email to [REDACTED]
+    key: gen_ai.security.content.output.value
+    note: |
+      \u003e [!WARNING]
+      \u003e This attribute may contain sensitive information. Instrumentations
+      \u003e SHOULD NOT capture this by default. Enable via opt-in configuration
+      \u003e only.
+
+      For `modify` actions, this MAY contain the sanitized or redacted result.
+    provenance:
+      path: ./model/gen-ai/registry.yaml
+    stability: development
+    type: any
+  - brief: External correlation identifier for a security event.
+    examples:
+    - evt_abc123
+    - incident-2024-001
+    - sec-finding-xyz
+    key: gen_ai.security.external_event_id
+    note: |
+      This attribute links telemetry to an external security event record in
+      systems such as SIEM, incident management, or security dashboards.
+
+      The value typically comes from the response of an external security
+      inspection service or may be included in response headers when inspection
+      happens alongside the LLM call.
+    provenance:
+      path: ./model/gen-ai/registry.yaml
+    stability: development
+    type: string
+  - brief: Non-content evidence descriptors for a security finding.
+    examples:
+    - - field:bcc
+      - pattern:email
+    - - count:2
+      - position:output.content
+    key: gen_ai.security.finding.evidence
+    note: |
+      This attribute is intended for low-cardinality, non-content descriptors
+      that help locate or explain a finding without recording the evaluated
+      content itself.
+
+      \u003e [!WARNING]
+      \u003e This attribute MUST NOT contain sensitive user content, PII, secrets, or
+      \u003e other high-risk data.
+
+      Example values include:
+
+      - Field identifiers: `field:bcc`, `parameter:query`
+      - Pattern types: `pattern:ssn`, `pattern:credit_card`
+      - Counts: `count:3`
+      - Positions: `position:input[0].content`
+    provenance:
+      path: ./model/gen-ai/registry.yaml
+    stability: development
+    type: string[]
+  - brief: The unique identifier of the security guardrail service or component.
+    examples:
+    - content-safety
+    - pii-filter-v3
+    - custom-guardrail-001
+    key: gen_ai.security.guardrail.id
+    note: |
+      This identifies the service, component, or library performing the security
+      evaluation, not the policy or configuration being applied.
+
+      For provider-specific guardrail or policy configuration identifiers (for
+      example, an AWS Bedrock guardrail ARN or an Azure Content Safety blocklist
+      ID), use `gen_ai.security.policy.id` instead.
+    provenance:
+      path: ./model/gen-ai/registry.yaml
+    stability: development
+    type: string
+  - brief: Human-readable name of the security guardrail service or component.
+    examples:
+    - Azure Content Safety
+    - Bedrock Guardrails
+    - Custom PII Filter
+    key: gen_ai.security.guardrail.name
+    note: |
+      This identifies the security evaluation service or component, not the policy name. For policy names, use `gen_ai.security.policy.name`.
+    provenance:
+      path: ./model/gen-ai/registry.yaml
+    stability: development
+    type: string
+  - brief: The provider or vendor of the security guardrail service.
+    examples:
+    - azure.ai.content_safety
+    - aws.bedrock
+    - gcp.model_armor
+    - custom
+    key: gen_ai.security.guardrail.provider.name
+    note: |
+      This is distinct from `gen_ai.provider.name`, which identifies the GenAI
+      provider for inference, embeddings, retrieval, memory, or agent operations.
+
+      If one of the well-known values applies, then the respective value SHOULD
+      be used. Otherwise, a custom value MAY be used.
+    provenance:
+      path: ./model/gen-ai/registry.yaml
+    stability: development
+    type:
+      members:
+      - brief: \u0027[Azure AI Content Safety](https://azure.microsoft.com/products/ai-services/ai-content-safety)\u0027
+        id: azure_ai_content_safety
+        stability: development
+        value: azure.ai.content_safety
+      - brief: \u0027[AWS Bedrock Guardrails](https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails.html)\u0027
+        id: aws_bedrock
+        stability: development
+        value: aws.bedrock
+      - brief: \u0027[Google Cloud Model Armor](https://cloud.google.com/security-command-center/docs/model-armor-overview)\u0027
+        id: gcp_model_armor
+        stability: development
+        value: gcp.model_armor
+  - brief: Version of the security guardrail service or component.
+    examples:
+    - 1.0.0
+    - 2024-05-01
+    - v2
+    key: gen_ai.security.guardrail.version
+    note: |
+      This is the version of the evaluating service or component, not the policy version. For policy versions, use `gen_ai.security.policy.version`.
+    provenance:
+      path: ./model/gen-ai/registry.yaml
+    stability: development
+    type: string
+  - brief: Identifier of the policy that produced the verdict.
+    examples:
+    - policy_pii_v2
+    - deny-topic-financial-advice
+    - org-compliance-001
+    key: gen_ai.security.policy.id
+    provenance:
+      path: ./model/gen-ai/registry.yaml
+    stability: development
+    type: string
+  - brief: Human-readable name of the policy that produced the verdict.
+    examples:
+    - PII Protection Policy
+    - Financial Advice Restriction
+    key: gen_ai.security.policy.name
+    provenance:
+      path: ./model/gen-ai/registry.yaml
+    stability: development
+    type: string
+  - brief: Identifier of the policy rule, section, or control that produced the verdict.
+    examples:
+    - rule-pii-email
+    - section-4.2
+    - detector-jailbreak
+    key: gen_ai.security.policy.rule.id
+    note: |
+      Use this when `gen_ai.security.policy.id` identifies a broader policy and the guardrail reports a more specific rule, section, control, or detector within that policy.
+    provenance:
+      path: ./model/gen-ai/registry.yaml
+    stability: development
+    type: string
+  - brief: Version of the policy that produced the verdict.
+    examples:
+    - \u00271.0\u0027
+    - 2024-05-01
+    key: gen_ai.security.policy.version
+    provenance:
+      path: ./model/gen-ai/registry.yaml
+    stability: development
+    type: string
+  - brief: The category of security risk detected.
+    examples:
+    - prompt_injection
+    - sensitive_info_disclosure
+    - jailbreak
+    - custom:financial_advice_violation
+    key: gen_ai.security.risk.category
+    note: |
+      This attribute is free-form to accommodate provider-specific,
+      organization-specific, and emerging risk categories.
+
+      Suggested values aligned with OWASP LLM Top 10 2025 include:
+
+      - `prompt_injection` (LLM01)
+      - `sensitive_info_disclosure` (LLM02)
+      - `supply_chain` (LLM03)
+      - `data_and_model_poisoning` (LLM04)
+      - `improper_output_handling` (LLM05)
+      - `excessive_agency` (LLM06)
+      - `system_prompt_leakage` (LLM07)
+      - `vector_and_embedding_weaknesses` (LLM08)
+      - `misinformation` (LLM09)
+      - `unbounded_consumption` (LLM10)
+
+      Instrumentations MAY use additional values when appropriate, for example
+      `jailbreak`, `toxicity`, `pii`, `custom:*`, or provider-specific values.
+    provenance:
+      path: ./model/gen-ai/registry.yaml
+    stability: development
+    type: string
+  - brief: Numeric risk or confidence score.
+    examples:
+    - 0.85
+    - 0.95
+    - 0.42
+    key: gen_ai.security.risk.score
+    note: |
+      The value SHOULD be in the range `[0.0, 1.0]` when the guardrail provider reports a normalized score. Instrumentations SHOULD document the scoring scale when reporting provider-specific scores that are not normalized.
+    provenance:
+      path: ./model/gen-ai/registry.yaml
+    stability: development
+    type: double
+  - brief: Identifier of the specific target the guardrail is applied to.
+    examples:
+    - call_xyz789
+    - msg_abc123
+    - mem_abc456
+    key: gen_ai.security.target.id
+    note: |
+      For example, a tool call identifier, request identifier, memory record identifier, or message identifier, if applicable.
+    provenance:
+      path: ./model/gen-ai/registry.yaml
+    stability: development
+    type: string
+  - brief: The type of content or action the guardrail is applied to.
+    examples:
+    - llm_input
+    - llm_output
+    - tool_call_input
+    - tool_call_output
+    - tool_definition
+    key: gen_ai.security.target.type
+    note: |
+      If one of the well-known values applies, then the respective value SHOULD be used. Otherwise, a custom value MAY be used.
+    provenance:
+      path: ./model/gen-ai/registry.yaml
+    stability: development
+    type:
+      members:
+      - brief: Prompt or messages being sent to the model.
+        id: llm_input
+        stability: development
+        value: llm_input
+      - brief: Response or messages returned from the model.
+        id: llm_output
+        stability: development
+        value: llm_output
+      - brief: Tool call arguments or invocation request.
+        id: tool_call_input
+        stability: development
+        value: tool_call_input
+      - brief: Tool call result or response.
+        id: tool_call_output
+        stability: development
+        value: tool_call_output
+      - brief: Tool definition or schema.
+        id: tool_definition
+        stability: development
+        value: tool_definition
+      - brief: Data being written to memory.
+        id: memory_write
+        stability: development
+        value: memory_write
+      - brief: Data being read from memory.
+        id: memory_read
+        stability: development
+        value: memory_read
+      - brief: Knowledge or RAG query being sent.
+        id: retrieval_query
+        stability: development
+        value: retrieval_query
+      - brief: Knowledge or RAG results being returned.
+        id: retrieval_result
+        stability: development
+        value: retrieval_result
+      - brief: Conversation message.
+        id: message
+        stability: development
+        value: message
+      - brief: Non-tool agent action.
+        id: action
+        stability: development
+        value: action
+  - brief: Provider-specific code for the security verdict.
+    examples:
+    - \u0027112\u0027
+    - \u0027403\u0027
+    - AACS-PII
+    - MODEL_ARMOR_SAFETY
+    key: gen_ai.security.verdict.code
+    provenance:
+      path: ./model/gen-ai/registry.yaml
+    stability: development
+    type: string
+  - brief: Human-readable explanation for the security verdict.
+    examples:
+    - PII detected in output
+    - Prompt injection attempt detected
+    - Action exceeds agent permission scope
+    key: gen_ai.security.verdict.reason
+    note: |
+      The value SHOULD be low-cardinality and MUST NOT contain sensitive user content or other high-risk data.
+    provenance:
+      path: ./model/gen-ai/registry.yaml
+    stability: development
+    type: string
+  - brief: The verdict returned by the security guardrail evaluation.
+    examples:
+    - allow
+    - deny
+    - modify
+    - warn
+    - escalate
+    key: gen_ai.security.verdict.type
+    note: |
+      A verdict describes what the guardrail evaluation recommends or reports. It is not necessarily the action that the caller or framework enforces. When the actual enforcement action is known, especially if it differs from the verdict, use `gen_ai.security.action.type`.
+    provenance:
+      path: ./model/gen-ai/registry.yaml
+    stability: development
+    type:
+      members:
+      - brief: The content or action is permitted without modification.
+        id: allow
+        stability: development
+        value: allow
+      - brief: The content or action should not proceed.
+        id: deny
+        stability: development
+        value: deny
+      - brief: The content or action is permitted with modifications such as redaction or sanitization.
+        id: modify
+        stability: development
+        value: modify
+      - brief: The content or action is permitted but flagged for review or downstream handling.
+        id: warn
+        stability: development
+        value: warn
+      - brief: The content or action is recorded for audit purposes only.
+        id: audit
+        stability: development
+        value: audit
+      - brief: The content or action requires human review, approval, or another escalation workflow.
+        id: escalate
+        stability: development
+        value: escalate
   - brief: The system message or instructions provided to the GenAI model separately from the chat history.
     examples:
     - |
@@ -13212,6 +15368,10 @@ registry:
           id: execute_tool
           stability: development
           value: execute_tool
+        - brief: Apply a security guardrail to content or an action
+          id: apply_guardrail
+          stability: development
+          value: apply_guardrail
         - brief: Invoke GenAI workflow
           id: invoke_workflow
           stability: development
@@ -13882,6 +16042,398 @@ registry:
     provenance:
       path: ./model/gen-ai/events.yaml
     stability: development
+  - attributes:
+    - brief: The actual enforcement action taken by the caller or framework.
+      examples:
+      - allow
+      - block
+      - modify
+      - escalate
+      key: gen_ai.security.action.type
+      note: |
+        Use this attribute when the guardrail verdict is enforced by the caller or framework and the action is known. For example, a guardrail may return a `warn` verdict while the caller chooses to `block` the operation.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: If available.
+      stability: development
+      type:
+        members:
+        - brief: The caller allowed the content or action to proceed.
+          id: allow
+          stability: development
+          value: allow
+        - brief: The caller blocked the content or action.
+          id: block
+          stability: development
+          value: block
+        - brief: The caller modified the content or action before continuing.
+          id: modify
+          stability: development
+          value: modify
+        - brief: The caller recorded the result for audit purposes without changing execution.
+          id: audit
+          stability: development
+          value: audit
+        - brief: The caller escalated the content or action for human review, approval, or another workflow.
+          id: escalate
+          stability: development
+          value: escalate
+    - brief: External correlation identifier for a security event.
+      examples:
+      - evt_abc123
+      - incident-2024-001
+      - sec-finding-xyz
+      key: gen_ai.security.external_event_id
+      note: |
+        This attribute links telemetry to an external security event record in
+        systems such as SIEM, incident management, or security dashboards.
+
+        The value typically comes from the response of an external security
+        inspection service or may be included in response headers when inspection
+        happens alongside the LLM call.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: If correlation with external security systems is needed.
+      stability: development
+      type: string
+    - brief: Non-content evidence descriptors for a security finding.
+      examples:
+      - - field:bcc
+        - pattern:email
+      - - count:2
+        - position:output.content
+      key: gen_ai.security.finding.evidence
+      note: |
+        This attribute is intended for low-cardinality, non-content descriptors
+        that help locate or explain a finding without recording the evaluated
+        content itself.
+
+        \u003e [!WARNING]
+        \u003e This attribute MUST NOT contain sensitive user content, PII, secrets, or
+        \u003e other high-risk data.
+
+        Example values include:
+
+        - Field identifiers: `field:bcc`, `parameter:query`
+        - Pattern types: `pattern:ssn`, `pattern:credit_card`
+        - Counts: `count:3`
+        - Positions: `position:input[0].content`
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: If non-content evidence descriptors are available.
+      stability: development
+      type: string[]
+    - brief: The unique identifier of the security guardrail service or component.
+      examples:
+      - content-safety
+      - pii-filter-v3
+      - custom-guardrail-001
+      key: gen_ai.security.guardrail.id
+      note: |
+        This identifies the service, component, or library performing the security
+        evaluation, not the policy or configuration being applied.
+
+        For provider-specific guardrail or policy configuration identifiers (for
+        example, an AWS Bedrock guardrail ARN or an Azure Content Safety blocklist
+        ID), use `gen_ai.security.policy.id` instead.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: If available and not already present on the parent span.
+      stability: development
+      type: string
+    - brief: Human-readable name of the security guardrail service or component.
+      examples:
+      - Azure Content Safety
+      - Bedrock Guardrails
+      - Custom PII Filter
+      key: gen_ai.security.guardrail.name
+      note: |
+        This identifies the security evaluation service or component, not the policy name. For policy names, use `gen_ai.security.policy.name`.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: If available and not already present on the parent span.
+      stability: development
+      type: string
+    - brief: The provider or vendor of the security guardrail service.
+      examples:
+      - azure.ai.content_safety
+      - aws.bedrock
+      - gcp.model_armor
+      - custom
+      key: gen_ai.security.guardrail.provider.name
+      note: |
+        This is distinct from `gen_ai.provider.name`, which identifies the GenAI
+        provider for inference, embeddings, retrieval, memory, or agent operations.
+
+        If one of the well-known values applies, then the respective value SHOULD
+        be used. Otherwise, a custom value MAY be used.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: If available and not already present on the parent span.
+      stability: development
+      type:
+        members:
+        - brief: \u0027[Azure AI Content Safety](https://azure.microsoft.com/products/ai-services/ai-content-safety)\u0027
+          id: azure_ai_content_safety
+          stability: development
+          value: azure.ai.content_safety
+        - brief: \u0027[AWS Bedrock Guardrails](https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails.html)\u0027
+          id: aws_bedrock
+          stability: development
+          value: aws.bedrock
+        - brief: \u0027[Google Cloud Model Armor](https://cloud.google.com/security-command-center/docs/model-armor-overview)\u0027
+          id: gcp_model_armor
+          stability: development
+          value: gcp.model_armor
+    - brief: Identifier of the policy that produced the verdict.
+      examples:
+      - policy_pii_v2
+      - deny-topic-financial-advice
+      - org-compliance-001
+      key: gen_ai.security.policy.id
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: If a policy produced the verdict.
+      stability: development
+      type: string
+    - brief: Human-readable name of the policy that produced the verdict.
+      examples:
+      - PII Protection Policy
+      - Financial Advice Restriction
+      key: gen_ai.security.policy.name
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: recommended
+      stability: development
+      type: string
+    - brief: Identifier of the policy rule, section, or control that produced the verdict.
+      examples:
+      - rule-pii-email
+      - section-4.2
+      - detector-jailbreak
+      key: gen_ai.security.policy.rule.id
+      note: |
+        Use this when `gen_ai.security.policy.id` identifies a broader policy and the guardrail reports a more specific rule, section, control, or detector within that policy.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: If available.
+      stability: development
+      type: string
+    - brief: Version of the policy that produced the verdict.
+      examples:
+      - \u00271.0\u0027
+      - 2024-05-01
+      key: gen_ai.security.policy.version
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: recommended
+      stability: development
+      type: string
+    - brief: The category of security risk detected.
+      examples:
+      - prompt_injection
+      - sensitive_info_disclosure
+      - jailbreak
+      - custom:financial_advice_violation
+      key: gen_ai.security.risk.category
+      note: |
+        This attribute is free-form to accommodate provider-specific,
+        organization-specific, and emerging risk categories.
+
+        Suggested values aligned with OWASP LLM Top 10 2025 include:
+
+        - `prompt_injection` (LLM01)
+        - `sensitive_info_disclosure` (LLM02)
+        - `supply_chain` (LLM03)
+        - `data_and_model_poisoning` (LLM04)
+        - `improper_output_handling` (LLM05)
+        - `excessive_agency` (LLM06)
+        - `system_prompt_leakage` (LLM07)
+        - `vector_and_embedding_weaknesses` (LLM08)
+        - `misinformation` (LLM09)
+        - `unbounded_consumption` (LLM10)
+
+        Instrumentations MAY use additional values when appropriate, for example
+        `jailbreak`, `toxicity`, `pii`, `custom:*`, or provider-specific values.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: required
+      stability: development
+      type: string
+    - brief: Numeric risk or confidence score.
+      examples:
+      - 0.85
+      - 0.95
+      - 0.42
+      key: gen_ai.security.risk.score
+      note: |
+        The value SHOULD be in the range `[0.0, 1.0]` when the guardrail provider reports a normalized score. Instrumentations SHOULD document the scoring scale when reporting provider-specific scores that are not normalized.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: If a risk or confidence score is reported.
+      stability: development
+      type: double
+    - brief: Identifier of the specific target the guardrail is applied to.
+      examples:
+      - call_xyz789
+      - msg_abc123
+      - mem_abc456
+      key: gen_ai.security.target.id
+      note: |
+        For example, a tool call identifier, request identifier, memory record identifier, or message identifier, if applicable.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: If available.
+      stability: development
+      type: string
+    - brief: The type of content or action the guardrail is applied to.
+      examples:
+      - llm_input
+      - llm_output
+      - tool_call_input
+      - tool_call_output
+      - tool_definition
+      key: gen_ai.security.target.type
+      note: |
+        If one of the well-known values applies, then the respective value SHOULD be used. Otherwise, a custom value MAY be used.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: required
+      stability: development
+      type:
+        members:
+        - brief: Prompt or messages being sent to the model.
+          id: llm_input
+          stability: development
+          value: llm_input
+        - brief: Response or messages returned from the model.
+          id: llm_output
+          stability: development
+          value: llm_output
+        - brief: Tool call arguments or invocation request.
+          id: tool_call_input
+          stability: development
+          value: tool_call_input
+        - brief: Tool call result or response.
+          id: tool_call_output
+          stability: development
+          value: tool_call_output
+        - brief: Tool definition or schema.
+          id: tool_definition
+          stability: development
+          value: tool_definition
+        - brief: Data being written to memory.
+          id: memory_write
+          stability: development
+          value: memory_write
+        - brief: Data being read from memory.
+          id: memory_read
+          stability: development
+          value: memory_read
+        - brief: Knowledge or RAG query being sent.
+          id: retrieval_query
+          stability: development
+          value: retrieval_query
+        - brief: Knowledge or RAG results being returned.
+          id: retrieval_result
+          stability: development
+          value: retrieval_result
+        - brief: Conversation message.
+          id: message
+          stability: development
+          value: message
+        - brief: Non-tool agent action.
+          id: action
+          stability: development
+          value: action
+    - brief: Provider-specific code for the security verdict.
+      examples:
+      - \u0027112\u0027
+      - \u0027403\u0027
+      - AACS-PII
+      - MODEL_ARMOR_SAFETY
+      key: gen_ai.security.verdict.code
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: If available.
+      stability: development
+      type: string
+    - brief: Human-readable explanation for the security verdict.
+      examples:
+      - PII detected in output
+      - Prompt injection attempt detected
+      - Action exceeds agent permission scope
+      key: gen_ai.security.verdict.reason
+      note: |
+        The value SHOULD be low-cardinality and MUST NOT contain sensitive user content or other high-risk data.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: If available.
+      stability: development
+      type: string
+    - brief: The verdict returned by the security guardrail evaluation.
+      examples:
+      - allow
+      - deny
+      - modify
+      - warn
+      - escalate
+      key: gen_ai.security.verdict.type
+      note: |
+        A verdict describes what the guardrail evaluation recommends or reports. It is not necessarily the action that the caller or framework enforces. When the actual enforcement action is known, especially if it differs from the verdict, use `gen_ai.security.action.type`.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: recommended
+      stability: development
+      type:
+        members:
+        - brief: The content or action is permitted without modification.
+          id: allow
+          stability: development
+          value: allow
+        - brief: The content or action should not proceed.
+          id: deny
+          stability: development
+          value: deny
+        - brief: The content or action is permitted with modifications such as redaction or sanitization.
+          id: modify
+          stability: development
+          value: modify
+        - brief: The content or action is permitted but flagged for review or downstream handling.
+          id: warn
+          stability: development
+          value: warn
+        - brief: The content or action is recorded for audit purposes only.
+          id: audit
+          stability: development
+          value: audit
+        - brief: The content or action requires human review, approval, or another escalation workflow.
+          id: escalate
+          stability: development
+          value: escalate
+    brief: |
+      Reports a specific security finding detected during guardrail evaluation.
+    name: gen_ai.security.finding
+    note: |
+      Multiple findings MAY be emitted for a single guardrail span.
+
+      Events SHOULD be parented to a `gen_ai.apply_guardrail.client` or
+      `gen_ai.apply_guardrail.internal` span when possible.
+    provenance:
+      path: ./model/gen-ai/events.yaml
+    stability: development
   metrics:
   - annotations:
       code_generation:
@@ -13951,6 +16503,10 @@ registry:
           id: execute_tool
           stability: development
           value: execute_tool
+        - brief: Apply a security guardrail to content or an action
+          id: apply_guardrail
+          stability: development
+          value: apply_guardrail
         - brief: Invoke GenAI workflow
           id: invoke_workflow
           stability: development
@@ -14180,6 +16736,10 @@ registry:
           id: execute_tool
           stability: development
           value: execute_tool
+        - brief: Apply a security guardrail to content or an action
+          id: apply_guardrail
+          stability: development
+          value: apply_guardrail
         - brief: Invoke GenAI workflow
           id: invoke_workflow
           stability: development
@@ -14411,6 +16971,10 @@ registry:
           id: execute_tool
           stability: development
           value: execute_tool
+        - brief: Apply a security guardrail to content or an action
+          id: apply_guardrail
+          stability: development
+          value: apply_guardrail
         - brief: Invoke GenAI workflow
           id: invoke_workflow
           stability: development
@@ -14641,6 +17205,10 @@ registry:
           id: execute_tool
           stability: development
           value: execute_tool
+        - brief: Apply a security guardrail to content or an action
+          id: apply_guardrail
+          stability: development
+          value: apply_guardrail
         - brief: Invoke GenAI workflow
           id: invoke_workflow
           stability: development
@@ -14910,6 +17478,10 @@ registry:
           id: execute_tool
           stability: development
           value: execute_tool
+        - brief: Apply a security guardrail to content or an action
+          id: apply_guardrail
+          stability: development
+          value: apply_guardrail
         - brief: Invoke GenAI workflow
           id: invoke_workflow
           stability: development
@@ -15138,6 +17710,10 @@ registry:
           id: execute_tool
           stability: development
           value: execute_tool
+        - brief: Apply a security guardrail to content or an action
+          id: apply_guardrail
+          stability: development
+          value: apply_guardrail
         - brief: Invoke GenAI workflow
           id: invoke_workflow
           stability: development
@@ -15366,6 +17942,10 @@ registry:
           id: execute_tool
           stability: development
           value: execute_tool
+        - brief: Apply a security guardrail to content or an action
+          id: apply_guardrail
+          stability: development
+          value: apply_guardrail
         - brief: Invoke GenAI workflow
           id: invoke_workflow
           stability: development
@@ -15677,6 +18257,10 @@ registry:
           id: execute_tool
           stability: development
           value: execute_tool
+        - brief: Apply a security guardrail to content or an action
+          id: apply_guardrail
+          stability: development
+          value: apply_guardrail
         - brief: Invoke GenAI workflow
           id: invoke_workflow
           stability: development
@@ -16216,6 +18800,10 @@ registry:
           id: execute_tool
           stability: development
           value: execute_tool
+        - brief: Apply a security guardrail to content or an action
+          id: apply_guardrail
+          stability: development
+          value: apply_guardrail
         - brief: Invoke GenAI workflow
           id: invoke_workflow
           stability: development
@@ -16656,6 +19244,1238 @@ registry:
           id: other
           stability: stable
           value: _OTHER
+    - brief: The unique identifier of the GenAI agent.
+      examples:
+      - asst_5j66UpCpwteGg4YSxUnt7lPY
+      key: gen_ai.agent.id
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: If applicable.
+      stability: development
+      type: string
+    - brief: The unique identifier for a conversation (session, thread), used to store and correlate messages within this conversation.
+      examples:
+      - conv_5j66UpCpwteGg4YSxUnt7lPY
+      key: gen_ai.conversation.id
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: When available.
+      stability: development
+      type: string
+    - brief: The name of the operation being performed.
+      key: gen_ai.operation.name
+      note: |
+        If one of the predefined values applies, but specific system uses a different name it\u0027s RECOMMENDED to document it in the semantic conventions for specific GenAI system and use system-specific name in the instrumentation. If a different name is not documented, instrumentation libraries SHOULD use applicable predefined value.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: required
+      sampling_relevant: true
+      stability: development
+      type:
+        members:
+        - brief: Chat completion operation such as [OpenAI Chat API](https://platform.openai.com/docs/api-reference/chat)
+          id: chat
+          stability: development
+          value: chat
+        - brief: Multimodal content generation operation such as [Gemini Generate Content](https://ai.google.dev/api/generate-content)
+          id: generate_content
+          stability: development
+          value: generate_content
+        - brief: Text completions operation such as [OpenAI Completions API (Legacy)](https://platform.openai.com/docs/api-reference/completions)
+          id: text_completion
+          stability: development
+          value: text_completion
+        - brief: Embeddings operation such as [OpenAI Create embeddings API](https://platform.openai.com/docs/api-reference/embeddings/create)
+          id: embeddings
+          stability: development
+          value: embeddings
+        - brief: Retrieval operation such as [OpenAI Search Vector Store API](https://platform.openai.com/docs/api-reference/vector-stores/search)
+          id: retrieval
+          stability: development
+          value: retrieval
+        - brief: Create GenAI agent
+          id: create_agent
+          stability: development
+          value: create_agent
+        - brief: Invoke GenAI agent
+          id: invoke_agent
+          stability: development
+          value: invoke_agent
+        - brief: Execute a tool
+          id: execute_tool
+          stability: development
+          value: execute_tool
+        - brief: Apply a security guardrail to content or an action
+          id: apply_guardrail
+          stability: development
+          value: apply_guardrail
+        - brief: Invoke GenAI workflow
+          id: invoke_workflow
+          stability: development
+          value: invoke_workflow
+        - brief: Agent planning or task decomposition phase
+          id: plan
+          stability: development
+          value: plan
+        - brief: Search/query memories from a memory store
+          id: search_memory
+          stability: development
+          value: search_memory
+        - brief: Create new memory records
+          id: create_memory
+          stability: development
+          value: create_memory
+        - brief: Update existing memory records
+          id: update_memory
+          stability: development
+          value: update_memory
+        - brief: Create or update memory records without the caller choosing which
+          id: upsert_memory
+          stability: development
+          value: upsert_memory
+        - brief: Delete memory records
+          id: delete_memory
+          stability: development
+          value: delete_memory
+        - brief: Create or initialize a memory store
+          id: create_memory_store
+          stability: development
+          value: create_memory_store
+        - brief: Delete or deprovision a memory store
+          id: delete_memory_store
+          stability: development
+          value: delete_memory_store
+    - brief: The actual enforcement action taken by the caller or framework.
+      examples:
+      - allow
+      - block
+      - modify
+      - escalate
+      key: gen_ai.security.action.type
+      note: |
+        Use this attribute when the guardrail verdict is enforced by the caller or framework and the action is known. For example, a guardrail may return a `warn` verdict while the caller chooses to `block` the operation.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: If the actual enforcement action is known, especially if it differs from `gen_ai.security.verdict.type`.
+      stability: development
+      type:
+        members:
+        - brief: The caller allowed the content or action to proceed.
+          id: allow
+          stability: development
+          value: allow
+        - brief: The caller blocked the content or action.
+          id: block
+          stability: development
+          value: block
+        - brief: The caller modified the content or action before continuing.
+          id: modify
+          stability: development
+          value: modify
+        - brief: The caller recorded the result for audit purposes without changing execution.
+          id: audit
+          stability: development
+          value: audit
+        - brief: The caller escalated the content or action for human review, approval, or another workflow.
+          id: escalate
+          stability: development
+          value: escalate
+    - brief: Hash of the input content for forensic correlation.
+      examples:
+      - sha256:a3f2b8c9...
+      key: gen_ai.security.content.input.hash
+      note: |
+        Use when full content capture is not desired but correlation is needed. Instrumentations SHOULD document the algorithm and any salting or HMAC approach used.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: If correlation is needed and available without recording full content.
+      stability: development
+      type: string
+    - brief: The input content that was evaluated by the guardrail.
+      examples:
+      - Send an email to customer@example.com
+      key: gen_ai.security.content.input.value
+      note: |
+        \u003e [!WARNING]
+        \u003e This attribute may contain sensitive information including user/PII
+        \u003e data. Instrumentations SHOULD NOT capture this by default. Enable via
+        \u003e opt-in configuration only.
+
+        This attribute MAY be truncated. For correlation without full content,
+        consider `gen_ai.security.content.input.hash`.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: opt_in
+      stability: development
+      type: any
+    - brief: Whether the content was redacted or otherwise modified by the guardrail.
+      examples:
+      - true
+      - false
+      key: gen_ai.security.content.modified
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: If content was redacted or otherwise modified.
+      stability: development
+      type: boolean
+    - brief: The output content after guardrail processing, if modified.
+      examples:
+      - Send an email to [REDACTED]
+      key: gen_ai.security.content.output.value
+      note: |
+        \u003e [!WARNING]
+        \u003e This attribute may contain sensitive information. Instrumentations
+        \u003e SHOULD NOT capture this by default. Enable via opt-in configuration
+        \u003e only.
+
+        For `modify` actions, this MAY contain the sanitized or redacted result.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: opt_in
+      stability: development
+      type: any
+    - brief: External correlation identifier for a security event.
+      examples:
+      - evt_abc123
+      - incident-2024-001
+      - sec-finding-xyz
+      key: gen_ai.security.external_event_id
+      note: |
+        This attribute links telemetry to an external security event record in
+        systems such as SIEM, incident management, or security dashboards.
+
+        The value typically comes from the response of an external security
+        inspection service or may be included in response headers when inspection
+        happens alongside the LLM call.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: If correlation with external security systems is needed.
+      stability: development
+      type: string
+    - brief: Non-content evidence descriptors for a security finding.
+      examples:
+      - - field:bcc
+        - pattern:email
+      - - count:2
+        - position:output.content
+      key: gen_ai.security.finding.evidence
+      note: |
+        This attribute is intended for low-cardinality, non-content descriptors
+        that help locate or explain a finding without recording the evaluated
+        content itself.
+
+        \u003e [!WARNING]
+        \u003e This attribute MUST NOT contain sensitive user content, PII, secrets, or
+        \u003e other high-risk data.
+
+        Example values include:
+
+        - Field identifiers: `field:bcc`, `parameter:query`
+        - Pattern types: `pattern:ssn`, `pattern:credit_card`
+        - Counts: `count:3`
+        - Positions: `position:input[0].content`
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: If non-content evidence descriptors are available.
+      stability: development
+      type: string[]
+    - brief: The unique identifier of the security guardrail service or component.
+      examples:
+      - content-safety
+      - pii-filter-v3
+      - custom-guardrail-001
+      key: gen_ai.security.guardrail.id
+      note: |
+        This identifies the service, component, or library performing the security
+        evaluation, not the policy or configuration being applied.
+
+        For provider-specific guardrail or policy configuration identifiers (for
+        example, an AWS Bedrock guardrail ARN or an Azure Content Safety blocklist
+        ID), use `gen_ai.security.policy.id` instead.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: If available.
+      stability: development
+      type: string
+    - brief: Human-readable name of the security guardrail service or component.
+      examples:
+      - Azure Content Safety
+      - Bedrock Guardrails
+      - Custom PII Filter
+      key: gen_ai.security.guardrail.name
+      note: |
+        This identifies the security evaluation service or component, not the policy name. For policy names, use `gen_ai.security.policy.name`.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: recommended
+      sampling_relevant: true
+      stability: development
+      type: string
+    - brief: The provider or vendor of the security guardrail service.
+      examples:
+      - azure.ai.content_safety
+      - aws.bedrock
+      - gcp.model_armor
+      - custom
+      key: gen_ai.security.guardrail.provider.name
+      note: |
+        This is distinct from `gen_ai.provider.name`, which identifies the GenAI
+        provider for inference, embeddings, retrieval, memory, or agent operations.
+
+        If one of the well-known values applies, then the respective value SHOULD
+        be used. Otherwise, a custom value MAY be used.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: recommended
+      sampling_relevant: true
+      stability: development
+      type:
+        members:
+        - brief: \u0027[Azure AI Content Safety](https://azure.microsoft.com/products/ai-services/ai-content-safety)\u0027
+          id: azure_ai_content_safety
+          stability: development
+          value: azure.ai.content_safety
+        - brief: \u0027[AWS Bedrock Guardrails](https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails.html)\u0027
+          id: aws_bedrock
+          stability: development
+          value: aws.bedrock
+        - brief: \u0027[Google Cloud Model Armor](https://cloud.google.com/security-command-center/docs/model-armor-overview)\u0027
+          id: gcp_model_armor
+          stability: development
+          value: gcp.model_armor
+    - brief: Version of the security guardrail service or component.
+      examples:
+      - 1.0.0
+      - 2024-05-01
+      - v2
+      key: gen_ai.security.guardrail.version
+      note: |
+        This is the version of the evaluating service or component, not the policy version. For policy versions, use `gen_ai.security.policy.version`.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: recommended
+      stability: development
+      type: string
+    - brief: Identifier of the policy that produced the verdict.
+      examples:
+      - policy_pii_v2
+      - deny-topic-financial-advice
+      - org-compliance-001
+      key: gen_ai.security.policy.id
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: If a policy produced the verdict.
+      stability: development
+      type: string
+    - brief: Human-readable name of the policy that produced the verdict.
+      examples:
+      - PII Protection Policy
+      - Financial Advice Restriction
+      key: gen_ai.security.policy.name
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: recommended
+      stability: development
+      type: string
+    - brief: Identifier of the policy rule, section, or control that produced the verdict.
+      examples:
+      - rule-pii-email
+      - section-4.2
+      - detector-jailbreak
+      key: gen_ai.security.policy.rule.id
+      note: |
+        Use this when `gen_ai.security.policy.id` identifies a broader policy and the guardrail reports a more specific rule, section, control, or detector within that policy.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: If available.
+      stability: development
+      type: string
+    - brief: Version of the policy that produced the verdict.
+      examples:
+      - \u00271.0\u0027
+      - 2024-05-01
+      key: gen_ai.security.policy.version
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: recommended
+      stability: development
+      type: string
+    - brief: The category of security risk detected.
+      examples:
+      - prompt_injection
+      - sensitive_info_disclosure
+      - jailbreak
+      - custom:financial_advice_violation
+      key: gen_ai.security.risk.category
+      note: |
+        This attribute is free-form to accommodate provider-specific,
+        organization-specific, and emerging risk categories.
+
+        Suggested values aligned with OWASP LLM Top 10 2025 include:
+
+        - `prompt_injection` (LLM01)
+        - `sensitive_info_disclosure` (LLM02)
+        - `supply_chain` (LLM03)
+        - `data_and_model_poisoning` (LLM04)
+        - `improper_output_handling` (LLM05)
+        - `excessive_agency` (LLM06)
+        - `system_prompt_leakage` (LLM07)
+        - `vector_and_embedding_weaknesses` (LLM08)
+        - `misinformation` (LLM09)
+        - `unbounded_consumption` (LLM10)
+
+        Instrumentations MAY use additional values when appropriate, for example
+        `jailbreak`, `toxicity`, `pii`, `custom:*`, or provider-specific values.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: If a risk category is reported.
+      stability: development
+      type: string
+    - brief: Numeric risk or confidence score.
+      examples:
+      - 0.85
+      - 0.95
+      - 0.42
+      key: gen_ai.security.risk.score
+      note: |
+        The value SHOULD be in the range `[0.0, 1.0]` when the guardrail provider reports a normalized score. Instrumentations SHOULD document the scoring scale when reporting provider-specific scores that are not normalized.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: If a risk or confidence score is reported.
+      stability: development
+      type: double
+    - brief: Identifier of the specific target the guardrail is applied to.
+      examples:
+      - call_xyz789
+      - msg_abc123
+      - mem_abc456
+      key: gen_ai.security.target.id
+      note: |
+        For example, a tool call identifier, request identifier, memory record identifier, or message identifier, if applicable.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: If available.
+      stability: development
+      type: string
+    - brief: The type of content or action the guardrail is applied to.
+      examples:
+      - llm_input
+      - llm_output
+      - tool_call_input
+      - tool_call_output
+      - tool_definition
+      key: gen_ai.security.target.type
+      note: |
+        If one of the well-known values applies, then the respective value SHOULD be used. Otherwise, a custom value MAY be used.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: required
+      sampling_relevant: true
+      stability: development
+      type:
+        members:
+        - brief: Prompt or messages being sent to the model.
+          id: llm_input
+          stability: development
+          value: llm_input
+        - brief: Response or messages returned from the model.
+          id: llm_output
+          stability: development
+          value: llm_output
+        - brief: Tool call arguments or invocation request.
+          id: tool_call_input
+          stability: development
+          value: tool_call_input
+        - brief: Tool call result or response.
+          id: tool_call_output
+          stability: development
+          value: tool_call_output
+        - brief: Tool definition or schema.
+          id: tool_definition
+          stability: development
+          value: tool_definition
+        - brief: Data being written to memory.
+          id: memory_write
+          stability: development
+          value: memory_write
+        - brief: Data being read from memory.
+          id: memory_read
+          stability: development
+          value: memory_read
+        - brief: Knowledge or RAG query being sent.
+          id: retrieval_query
+          stability: development
+          value: retrieval_query
+        - brief: Knowledge or RAG results being returned.
+          id: retrieval_result
+          stability: development
+          value: retrieval_result
+        - brief: Conversation message.
+          id: message
+          stability: development
+          value: message
+        - brief: Non-tool agent action.
+          id: action
+          stability: development
+          value: action
+    - brief: Provider-specific code for the security verdict.
+      examples:
+      - \u0027112\u0027
+      - \u0027403\u0027
+      - AACS-PII
+      - MODEL_ARMOR_SAFETY
+      key: gen_ai.security.verdict.code
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: recommended
+      stability: development
+      type: string
+    - brief: Human-readable explanation for the security verdict.
+      examples:
+      - PII detected in output
+      - Prompt injection attempt detected
+      - Action exceeds agent permission scope
+      key: gen_ai.security.verdict.reason
+      note: |
+        The value SHOULD be low-cardinality and MUST NOT contain sensitive user content or other high-risk data.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: If `gen_ai.security.verdict.type` is not `allow` and a reason is available.
+      stability: development
+      type: string
+    - brief: The verdict returned by the security guardrail evaluation.
+      examples:
+      - allow
+      - deny
+      - modify
+      - warn
+      - escalate
+      key: gen_ai.security.verdict.type
+      note: |
+        A verdict describes what the guardrail evaluation recommends or reports. It is not necessarily the action that the caller or framework enforces. When the actual enforcement action is known, especially if it differs from the verdict, use `gen_ai.security.action.type`.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: required
+      sampling_relevant: true
+      stability: development
+      type:
+        members:
+        - brief: The content or action is permitted without modification.
+          id: allow
+          stability: development
+          value: allow
+        - brief: The content or action should not proceed.
+          id: deny
+          stability: development
+          value: deny
+        - brief: The content or action is permitted with modifications such as redaction or sanitization.
+          id: modify
+          stability: development
+          value: modify
+        - brief: The content or action is permitted but flagged for review or downstream handling.
+          id: warn
+          stability: development
+          value: warn
+        - brief: The content or action is recorded for audit purposes only.
+          id: audit
+          stability: development
+          value: audit
+        - brief: The content or action requires human review, approval, or another escalation workflow.
+          id: escalate
+          stability: development
+          value: escalate
+    - brief: GenAI server address.
+      examples:
+      - example.com
+      - 10.1.2.80
+      - /tmp/my.sock
+      key: server.address
+      note: |
+        When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent the server address behind any intermediaries, for example proxies, if it\u0027s available.
+      requirement_level: recommended
+      sampling_relevant: true
+      stability: stable
+      type: string
+    - brief: GenAI server port.
+      examples:
+      - 80
+      - 8080
+      - 443
+      key: server.port
+      note: |
+        When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries, for example proxies, if it\u0027s available.
+      requirement_level:
+        conditionally_required: If `server.address` is set.
+      sampling_relevant: true
+      stability: stable
+      type: int
+    brief: |
+      Describes a remote security guardrail evaluation.
+    kind: client
+    name:
+      note: gen_ai.apply_guardrail.client
+    note: |
+      The `gen_ai.operation.name` SHOULD be `apply_guardrail`.
+
+      **Span name** SHOULD be `apply_guardrail {gen_ai.security.guardrail.name}` when
+      `gen_ai.security.guardrail.name` is readily available. When it is not available,
+      it SHOULD be `apply_guardrail {gen_ai.security.target.type}`.
+      Semantic conventions for individual guardrail services and frameworks MAY specify a different span name format.
+
+      This span SHOULD be used when the guardrail evaluation is performed by
+      another process or service, especially when the call happens over an
+      instrumented protocol such as HTTP.
+
+      Guardrail spans SHOULD be children of the GenAI span they protect, such as
+      [inference](/docs/gen-ai/gen-ai-spans.md#inference) or
+      [execute tool](/docs/gen-ai/gen-ai-spans.md#execute-tool-span) spans.
+
+      Multiple guardrail spans MAY exist under a single operation span if
+      multiple guardrails are chained.
+    provenance:
+      path: ./model/gen-ai/spans.yaml
+    stability: development
+    type: gen_ai.apply_guardrail.client
+  - attributes:
+    - brief: |
+        Describes a class of error the operation ended with.
+      examples:
+      - timeout
+      - java.net.UnknownHostException
+      - server_certificate_invalid
+      - \u0027500\u0027
+      key: error.type
+      note: |
+        The `error.type` SHOULD match the error code returned by the Generative AI provider or the client library,
+        the canonical name of exception that occurred, or another low-cardinality error identifier.
+        Instrumentations SHOULD document the list of errors they report.
+      requirement_level:
+        conditionally_required: If the operation ended in an error.
+      stability: stable
+      type:
+        members:
+        - brief: |
+            A fallback error value to be used when the instrumentation doesn\u0027t define a custom value.
+          id: other
+          stability: stable
+          value: _OTHER
+    - brief: The unique identifier of the GenAI agent.
+      examples:
+      - asst_5j66UpCpwteGg4YSxUnt7lPY
+      key: gen_ai.agent.id
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: If applicable.
+      stability: development
+      type: string
+    - brief: The unique identifier for a conversation (session, thread), used to store and correlate messages within this conversation.
+      examples:
+      - conv_5j66UpCpwteGg4YSxUnt7lPY
+      key: gen_ai.conversation.id
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: When available.
+      stability: development
+      type: string
+    - brief: The name of the operation being performed.
+      key: gen_ai.operation.name
+      note: |
+        If one of the predefined values applies, but specific system uses a different name it\u0027s RECOMMENDED to document it in the semantic conventions for specific GenAI system and use system-specific name in the instrumentation. If a different name is not documented, instrumentation libraries SHOULD use applicable predefined value.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: required
+      sampling_relevant: true
+      stability: development
+      type:
+        members:
+        - brief: Chat completion operation such as [OpenAI Chat API](https://platform.openai.com/docs/api-reference/chat)
+          id: chat
+          stability: development
+          value: chat
+        - brief: Multimodal content generation operation such as [Gemini Generate Content](https://ai.google.dev/api/generate-content)
+          id: generate_content
+          stability: development
+          value: generate_content
+        - brief: Text completions operation such as [OpenAI Completions API (Legacy)](https://platform.openai.com/docs/api-reference/completions)
+          id: text_completion
+          stability: development
+          value: text_completion
+        - brief: Embeddings operation such as [OpenAI Create embeddings API](https://platform.openai.com/docs/api-reference/embeddings/create)
+          id: embeddings
+          stability: development
+          value: embeddings
+        - brief: Retrieval operation such as [OpenAI Search Vector Store API](https://platform.openai.com/docs/api-reference/vector-stores/search)
+          id: retrieval
+          stability: development
+          value: retrieval
+        - brief: Create GenAI agent
+          id: create_agent
+          stability: development
+          value: create_agent
+        - brief: Invoke GenAI agent
+          id: invoke_agent
+          stability: development
+          value: invoke_agent
+        - brief: Execute a tool
+          id: execute_tool
+          stability: development
+          value: execute_tool
+        - brief: Apply a security guardrail to content or an action
+          id: apply_guardrail
+          stability: development
+          value: apply_guardrail
+        - brief: Invoke GenAI workflow
+          id: invoke_workflow
+          stability: development
+          value: invoke_workflow
+        - brief: Agent planning or task decomposition phase
+          id: plan
+          stability: development
+          value: plan
+        - brief: Search/query memories from a memory store
+          id: search_memory
+          stability: development
+          value: search_memory
+        - brief: Create new memory records
+          id: create_memory
+          stability: development
+          value: create_memory
+        - brief: Update existing memory records
+          id: update_memory
+          stability: development
+          value: update_memory
+        - brief: Create or update memory records without the caller choosing which
+          id: upsert_memory
+          stability: development
+          value: upsert_memory
+        - brief: Delete memory records
+          id: delete_memory
+          stability: development
+          value: delete_memory
+        - brief: Create or initialize a memory store
+          id: create_memory_store
+          stability: development
+          value: create_memory_store
+        - brief: Delete or deprovision a memory store
+          id: delete_memory_store
+          stability: development
+          value: delete_memory_store
+    - brief: The actual enforcement action taken by the caller or framework.
+      examples:
+      - allow
+      - block
+      - modify
+      - escalate
+      key: gen_ai.security.action.type
+      note: |
+        Use this attribute when the guardrail verdict is enforced by the caller or framework and the action is known. For example, a guardrail may return a `warn` verdict while the caller chooses to `block` the operation.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: If the actual enforcement action is known, especially if it differs from `gen_ai.security.verdict.type`.
+      stability: development
+      type:
+        members:
+        - brief: The caller allowed the content or action to proceed.
+          id: allow
+          stability: development
+          value: allow
+        - brief: The caller blocked the content or action.
+          id: block
+          stability: development
+          value: block
+        - brief: The caller modified the content or action before continuing.
+          id: modify
+          stability: development
+          value: modify
+        - brief: The caller recorded the result for audit purposes without changing execution.
+          id: audit
+          stability: development
+          value: audit
+        - brief: The caller escalated the content or action for human review, approval, or another workflow.
+          id: escalate
+          stability: development
+          value: escalate
+    - brief: Hash of the input content for forensic correlation.
+      examples:
+      - sha256:a3f2b8c9...
+      key: gen_ai.security.content.input.hash
+      note: |
+        Use when full content capture is not desired but correlation is needed. Instrumentations SHOULD document the algorithm and any salting or HMAC approach used.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: If correlation is needed and available without recording full content.
+      stability: development
+      type: string
+    - brief: The input content that was evaluated by the guardrail.
+      examples:
+      - Send an email to customer@example.com
+      key: gen_ai.security.content.input.value
+      note: |
+        \u003e [!WARNING]
+        \u003e This attribute may contain sensitive information including user/PII
+        \u003e data. Instrumentations SHOULD NOT capture this by default. Enable via
+        \u003e opt-in configuration only.
+
+        This attribute MAY be truncated. For correlation without full content,
+        consider `gen_ai.security.content.input.hash`.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: opt_in
+      stability: development
+      type: any
+    - brief: Whether the content was redacted or otherwise modified by the guardrail.
+      examples:
+      - true
+      - false
+      key: gen_ai.security.content.modified
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: If content was redacted or otherwise modified.
+      stability: development
+      type: boolean
+    - brief: The output content after guardrail processing, if modified.
+      examples:
+      - Send an email to [REDACTED]
+      key: gen_ai.security.content.output.value
+      note: |
+        \u003e [!WARNING]
+        \u003e This attribute may contain sensitive information. Instrumentations
+        \u003e SHOULD NOT capture this by default. Enable via opt-in configuration
+        \u003e only.
+
+        For `modify` actions, this MAY contain the sanitized or redacted result.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: opt_in
+      stability: development
+      type: any
+    - brief: External correlation identifier for a security event.
+      examples:
+      - evt_abc123
+      - incident-2024-001
+      - sec-finding-xyz
+      key: gen_ai.security.external_event_id
+      note: |
+        This attribute links telemetry to an external security event record in
+        systems such as SIEM, incident management, or security dashboards.
+
+        The value typically comes from the response of an external security
+        inspection service or may be included in response headers when inspection
+        happens alongside the LLM call.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: If correlation with external security systems is needed.
+      stability: development
+      type: string
+    - brief: Non-content evidence descriptors for a security finding.
+      examples:
+      - - field:bcc
+        - pattern:email
+      - - count:2
+        - position:output.content
+      key: gen_ai.security.finding.evidence
+      note: |
+        This attribute is intended for low-cardinality, non-content descriptors
+        that help locate or explain a finding without recording the evaluated
+        content itself.
+
+        \u003e [!WARNING]
+        \u003e This attribute MUST NOT contain sensitive user content, PII, secrets, or
+        \u003e other high-risk data.
+
+        Example values include:
+
+        - Field identifiers: `field:bcc`, `parameter:query`
+        - Pattern types: `pattern:ssn`, `pattern:credit_card`
+        - Counts: `count:3`
+        - Positions: `position:input[0].content`
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: If non-content evidence descriptors are available.
+      stability: development
+      type: string[]
+    - brief: The unique identifier of the security guardrail service or component.
+      examples:
+      - content-safety
+      - pii-filter-v3
+      - custom-guardrail-001
+      key: gen_ai.security.guardrail.id
+      note: |
+        This identifies the service, component, or library performing the security
+        evaluation, not the policy or configuration being applied.
+
+        For provider-specific guardrail or policy configuration identifiers (for
+        example, an AWS Bedrock guardrail ARN or an Azure Content Safety blocklist
+        ID), use `gen_ai.security.policy.id` instead.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: If available.
+      stability: development
+      type: string
+    - brief: Human-readable name of the security guardrail service or component.
+      examples:
+      - Azure Content Safety
+      - Bedrock Guardrails
+      - Custom PII Filter
+      key: gen_ai.security.guardrail.name
+      note: |
+        This identifies the security evaluation service or component, not the policy name. For policy names, use `gen_ai.security.policy.name`.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: recommended
+      sampling_relevant: true
+      stability: development
+      type: string
+    - brief: The provider or vendor of the security guardrail service.
+      examples:
+      - azure.ai.content_safety
+      - aws.bedrock
+      - gcp.model_armor
+      - custom
+      key: gen_ai.security.guardrail.provider.name
+      note: |
+        This is distinct from `gen_ai.provider.name`, which identifies the GenAI
+        provider for inference, embeddings, retrieval, memory, or agent operations.
+
+        If one of the well-known values applies, then the respective value SHOULD
+        be used. Otherwise, a custom value MAY be used.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: recommended
+      sampling_relevant: true
+      stability: development
+      type:
+        members:
+        - brief: \u0027[Azure AI Content Safety](https://azure.microsoft.com/products/ai-services/ai-content-safety)\u0027
+          id: azure_ai_content_safety
+          stability: development
+          value: azure.ai.content_safety
+        - brief: \u0027[AWS Bedrock Guardrails](https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails.html)\u0027
+          id: aws_bedrock
+          stability: development
+          value: aws.bedrock
+        - brief: \u0027[Google Cloud Model Armor](https://cloud.google.com/security-command-center/docs/model-armor-overview)\u0027
+          id: gcp_model_armor
+          stability: development
+          value: gcp.model_armor
+    - brief: Version of the security guardrail service or component.
+      examples:
+      - 1.0.0
+      - 2024-05-01
+      - v2
+      key: gen_ai.security.guardrail.version
+      note: |
+        This is the version of the evaluating service or component, not the policy version. For policy versions, use `gen_ai.security.policy.version`.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: recommended
+      stability: development
+      type: string
+    - brief: Identifier of the policy that produced the verdict.
+      examples:
+      - policy_pii_v2
+      - deny-topic-financial-advice
+      - org-compliance-001
+      key: gen_ai.security.policy.id
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: If a policy produced the verdict.
+      stability: development
+      type: string
+    - brief: Human-readable name of the policy that produced the verdict.
+      examples:
+      - PII Protection Policy
+      - Financial Advice Restriction
+      key: gen_ai.security.policy.name
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: recommended
+      stability: development
+      type: string
+    - brief: Identifier of the policy rule, section, or control that produced the verdict.
+      examples:
+      - rule-pii-email
+      - section-4.2
+      - detector-jailbreak
+      key: gen_ai.security.policy.rule.id
+      note: |
+        Use this when `gen_ai.security.policy.id` identifies a broader policy and the guardrail reports a more specific rule, section, control, or detector within that policy.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: If available.
+      stability: development
+      type: string
+    - brief: Version of the policy that produced the verdict.
+      examples:
+      - \u00271.0\u0027
+      - 2024-05-01
+      key: gen_ai.security.policy.version
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: recommended
+      stability: development
+      type: string
+    - brief: The category of security risk detected.
+      examples:
+      - prompt_injection
+      - sensitive_info_disclosure
+      - jailbreak
+      - custom:financial_advice_violation
+      key: gen_ai.security.risk.category
+      note: |
+        This attribute is free-form to accommodate provider-specific,
+        organization-specific, and emerging risk categories.
+
+        Suggested values aligned with OWASP LLM Top 10 2025 include:
+
+        - `prompt_injection` (LLM01)
+        - `sensitive_info_disclosure` (LLM02)
+        - `supply_chain` (LLM03)
+        - `data_and_model_poisoning` (LLM04)
+        - `improper_output_handling` (LLM05)
+        - `excessive_agency` (LLM06)
+        - `system_prompt_leakage` (LLM07)
+        - `vector_and_embedding_weaknesses` (LLM08)
+        - `misinformation` (LLM09)
+        - `unbounded_consumption` (LLM10)
+
+        Instrumentations MAY use additional values when appropriate, for example
+        `jailbreak`, `toxicity`, `pii`, `custom:*`, or provider-specific values.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: If a risk category is reported.
+      stability: development
+      type: string
+    - brief: Numeric risk or confidence score.
+      examples:
+      - 0.85
+      - 0.95
+      - 0.42
+      key: gen_ai.security.risk.score
+      note: |
+        The value SHOULD be in the range `[0.0, 1.0]` when the guardrail provider reports a normalized score. Instrumentations SHOULD document the scoring scale when reporting provider-specific scores that are not normalized.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: If a risk or confidence score is reported.
+      stability: development
+      type: double
+    - brief: Identifier of the specific target the guardrail is applied to.
+      examples:
+      - call_xyz789
+      - msg_abc123
+      - mem_abc456
+      key: gen_ai.security.target.id
+      note: |
+        For example, a tool call identifier, request identifier, memory record identifier, or message identifier, if applicable.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: If available.
+      stability: development
+      type: string
+    - brief: The type of content or action the guardrail is applied to.
+      examples:
+      - llm_input
+      - llm_output
+      - tool_call_input
+      - tool_call_output
+      - tool_definition
+      key: gen_ai.security.target.type
+      note: |
+        If one of the well-known values applies, then the respective value SHOULD be used. Otherwise, a custom value MAY be used.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: required
+      sampling_relevant: true
+      stability: development
+      type:
+        members:
+        - brief: Prompt or messages being sent to the model.
+          id: llm_input
+          stability: development
+          value: llm_input
+        - brief: Response or messages returned from the model.
+          id: llm_output
+          stability: development
+          value: llm_output
+        - brief: Tool call arguments or invocation request.
+          id: tool_call_input
+          stability: development
+          value: tool_call_input
+        - brief: Tool call result or response.
+          id: tool_call_output
+          stability: development
+          value: tool_call_output
+        - brief: Tool definition or schema.
+          id: tool_definition
+          stability: development
+          value: tool_definition
+        - brief: Data being written to memory.
+          id: memory_write
+          stability: development
+          value: memory_write
+        - brief: Data being read from memory.
+          id: memory_read
+          stability: development
+          value: memory_read
+        - brief: Knowledge or RAG query being sent.
+          id: retrieval_query
+          stability: development
+          value: retrieval_query
+        - brief: Knowledge or RAG results being returned.
+          id: retrieval_result
+          stability: development
+          value: retrieval_result
+        - brief: Conversation message.
+          id: message
+          stability: development
+          value: message
+        - brief: Non-tool agent action.
+          id: action
+          stability: development
+          value: action
+    - brief: Provider-specific code for the security verdict.
+      examples:
+      - \u0027112\u0027
+      - \u0027403\u0027
+      - AACS-PII
+      - MODEL_ARMOR_SAFETY
+      key: gen_ai.security.verdict.code
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: recommended
+      stability: development
+      type: string
+    - brief: Human-readable explanation for the security verdict.
+      examples:
+      - PII detected in output
+      - Prompt injection attempt detected
+      - Action exceeds agent permission scope
+      key: gen_ai.security.verdict.reason
+      note: |
+        The value SHOULD be low-cardinality and MUST NOT contain sensitive user content or other high-risk data.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: If `gen_ai.security.verdict.type` is not `allow` and a reason is available.
+      stability: development
+      type: string
+    - brief: The verdict returned by the security guardrail evaluation.
+      examples:
+      - allow
+      - deny
+      - modify
+      - warn
+      - escalate
+      key: gen_ai.security.verdict.type
+      note: |
+        A verdict describes what the guardrail evaluation recommends or reports. It is not necessarily the action that the caller or framework enforces. When the actual enforcement action is known, especially if it differs from the verdict, use `gen_ai.security.action.type`.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: required
+      sampling_relevant: true
+      stability: development
+      type:
+        members:
+        - brief: The content or action is permitted without modification.
+          id: allow
+          stability: development
+          value: allow
+        - brief: The content or action should not proceed.
+          id: deny
+          stability: development
+          value: deny
+        - brief: The content or action is permitted with modifications such as redaction or sanitization.
+          id: modify
+          stability: development
+          value: modify
+        - brief: The content or action is permitted but flagged for review or downstream handling.
+          id: warn
+          stability: development
+          value: warn
+        - brief: The content or action is recorded for audit purposes only.
+          id: audit
+          stability: development
+          value: audit
+        - brief: The content or action requires human review, approval, or another escalation workflow.
+          id: escalate
+          stability: development
+          value: escalate
+    brief: |
+      Describes an in-process security guardrail evaluation.
+    kind: internal
+    name:
+      note: gen_ai.apply_guardrail.internal
+    note: |
+      The `gen_ai.operation.name` SHOULD be `apply_guardrail`.
+
+      **Span name** SHOULD be `apply_guardrail {gen_ai.security.guardrail.name}` when
+      `gen_ai.security.guardrail.name` is readily available. When it is not available,
+      it SHOULD be `apply_guardrail {gen_ai.security.target.type}`.
+      Semantic conventions for individual guardrail services and frameworks MAY specify a different span name format.
+
+      This span SHOULD be used when the guardrail evaluation is performed in the
+      same process as the instrumented GenAI operation.
+
+      Guardrail spans SHOULD be children of the GenAI span they protect, such as
+      [inference](/docs/gen-ai/gen-ai-spans.md#inference) or
+      [execute tool](/docs/gen-ai/gen-ai-spans.md#execute-tool-span) spans.
+
+      Multiple guardrail spans MAY exist under a single operation span if
+      multiple guardrails are chained.
+    provenance:
+      path: ./model/gen-ai/spans.yaml
+    stability: development
+    type: gen_ai.apply_guardrail.internal
+  - attributes:
+    - brief: |
+        Describes a class of error the operation ended with.
+      examples:
+      - timeout
+      - java.net.UnknownHostException
+      - server_certificate_invalid
+      - \u0027500\u0027
+      key: error.type
+      note: |
+        The `error.type` SHOULD match the error code returned by the Generative AI provider or the client library,
+        the canonical name of exception that occurred, or another low-cardinality error identifier.
+        Instrumentations SHOULD document the list of errors they report.
+      requirement_level:
+        conditionally_required: If the operation ended in an error.
+      stability: stable
+      type:
+        members:
+        - brief: |
+            A fallback error value to be used when the instrumentation doesn\u0027t define a custom value.
+          id: other
+          stability: stable
+          value: _OTHER
     - brief: Free-form description of the GenAI agent provided by the application.
       examples:
       - Helps with math problems
@@ -16743,6 +20563,10 @@ registry:
           id: execute_tool
           stability: development
           value: execute_tool
+        - brief: Apply a security guardrail to content or an action
+          id: apply_guardrail
+          stability: development
+          value: apply_guardrail
         - brief: Invoke GenAI workflow
           id: invoke_workflow
           stability: development
@@ -17029,6 +20853,10 @@ registry:
           id: execute_tool
           stability: development
           value: execute_tool
+        - brief: Apply a security guardrail to content or an action
+          id: apply_guardrail
+          stability: development
+          value: apply_guardrail
         - brief: Invoke GenAI workflow
           id: invoke_workflow
           stability: development
@@ -17313,6 +21141,10 @@ registry:
           id: execute_tool
           stability: development
           value: execute_tool
+        - brief: Apply a security guardrail to content or an action
+          id: apply_guardrail
+          stability: development
+          value: apply_guardrail
         - brief: Invoke GenAI workflow
           id: invoke_workflow
           stability: development
@@ -17613,6 +21445,10 @@ registry:
           id: execute_tool
           stability: development
           value: execute_tool
+        - brief: Apply a security guardrail to content or an action
+          id: apply_guardrail
+          stability: development
+          value: apply_guardrail
         - brief: Invoke GenAI workflow
           id: invoke_workflow
           stability: development
@@ -18368,6 +22204,10 @@ registry:
           id: execute_tool
           stability: development
           value: execute_tool
+        - brief: Apply a security guardrail to content or an action
+          id: apply_guardrail
+          stability: development
+          value: apply_guardrail
         - brief: Invoke GenAI workflow
           id: invoke_workflow
           stability: development
@@ -19057,6 +22897,10 @@ registry:
           id: execute_tool
           stability: development
           value: execute_tool
+        - brief: Apply a security guardrail to content or an action
+          id: apply_guardrail
+          stability: development
+          value: apply_guardrail
         - brief: Invoke GenAI workflow
           id: invoke_workflow
           stability: development
@@ -19638,6 +23482,10 @@ registry:
           id: execute_tool
           stability: development
           value: execute_tool
+        - brief: Apply a security guardrail to content or an action
+          id: apply_guardrail
+          stability: development
+          value: apply_guardrail
         - brief: Invoke GenAI workflow
           id: invoke_workflow
           stability: development
@@ -19907,6 +23755,10 @@ registry:
           id: execute_tool
           stability: development
           value: execute_tool
+        - brief: Apply a security guardrail to content or an action
+          id: apply_guardrail
+          stability: development
+          value: apply_guardrail
         - brief: Invoke GenAI workflow
           id: invoke_workflow
           stability: development
@@ -20181,6 +24033,10 @@ registry:
           id: execute_tool
           stability: development
           value: execute_tool
+        - brief: Apply a security guardrail to content or an action
+          id: apply_guardrail
+          stability: development
+          value: apply_guardrail
         - brief: Invoke GenAI workflow
           id: invoke_workflow
           stability: development
@@ -20319,6 +24175,10 @@ registry:
           id: execute_tool
           stability: development
           value: execute_tool
+        - brief: Apply a security guardrail to content or an action
+          id: apply_guardrail
+          stability: development
+          value: apply_guardrail
         - brief: Invoke GenAI workflow
           id: invoke_workflow
           stability: development
@@ -20629,6 +24489,10 @@ registry:
           id: execute_tool
           stability: development
           value: execute_tool
+        - brief: Apply a security guardrail to content or an action
+          id: apply_guardrail
+          stability: development
+          value: apply_guardrail
         - brief: Invoke GenAI workflow
           id: invoke_workflow
           stability: development
@@ -21138,6 +25002,10 @@ registry:
           id: execute_tool
           stability: development
           value: execute_tool
+        - brief: Apply a security guardrail to content or an action
+          id: apply_guardrail
+          stability: development
+          value: apply_guardrail
         - brief: Invoke GenAI workflow
           id: invoke_workflow
           stability: development

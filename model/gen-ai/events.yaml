@@ -36,6 +36,63 @@ events:
           completion being evaluated. This attribute helps correlate the evaluation
           event with the corresponding operation when span id is not available.
 
+  - name: gen_ai.security.finding
+    brief: >
+      Reports a specific security finding detected during guardrail evaluation.
+    note: |
+      Multiple findings MAY be emitted for a single guardrail span.
+
+      Events SHOULD be parented to a `gen_ai.apply_guardrail.client` or
+      `gen_ai.apply_guardrail.internal` span when possible.
+    stability: development
+    attributes:
+      - ref: gen_ai.security.risk.category
+        requirement_level: required
+      - ref: gen_ai.security.target.type
+        requirement_level: required
+      - ref: gen_ai.security.target.id
+        requirement_level:
+          conditionally_required: If available.
+      - ref: gen_ai.security.verdict.type
+        requirement_level: recommended
+      - ref: gen_ai.security.verdict.reason
+        requirement_level:
+          recommended: If available.
+      - ref: gen_ai.security.verdict.code
+        requirement_level:
+          recommended: If available.
+      - ref: gen_ai.security.action.type
+        requirement_level:
+          recommended: If available.
+      - ref: gen_ai.security.risk.score
+        requirement_level:
+          recommended: If a risk or confidence score is reported.
+      - ref: gen_ai.security.finding.evidence
+        requirement_level:
+          recommended: If non-content evidence descriptors are available.
+      - ref: gen_ai.security.policy.id
+        requirement_level:
+          conditionally_required: If a policy produced the verdict.
+      - ref: gen_ai.security.policy.rule.id
+        requirement_level:
+          recommended: If available.
+      - ref: gen_ai.security.policy.name
+        requirement_level: recommended
+      - ref: gen_ai.security.policy.version
+        requirement_level: recommended
+      - ref: gen_ai.security.guardrail.id
+        requirement_level:
+          recommended: If available and not already present on the parent span.
+      - ref: gen_ai.security.guardrail.name
+        requirement_level:
+          recommended: If available and not already present on the parent span.
+      - ref: gen_ai.security.guardrail.provider.name
+        requirement_level:
+          recommended: If available and not already present on the parent span.
+      - ref: gen_ai.security.external_event_id
+        requirement_level:
+          conditionally_required: If correlation with external security systems is needed.
+
   - name: gen_ai.client.operation.exception
     brief: >
       This event represents an exception that occurred during a Generative AI client operation,

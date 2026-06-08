@@ -44,12 +44,15 @@ SPAN_TYPE_ORDER = [
     "retrieval",
     "memory",
     "execute_tool",
+    "apply_guardrail_client",
+    "apply_guardrail_internal",
 ]
 
 # Display order for event types in reports.
 EVENT_TYPE_ORDER = [
     "gen_ai.client.inference.operation.details",
     "gen_ai.evaluation.result",
+    "gen_ai.security.finding",
 ]
 
 _REQUIREMENT_LEVELS = (

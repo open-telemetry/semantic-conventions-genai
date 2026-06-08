@@ -13,6 +13,8 @@
 
 ### 🚀 New components 🚀
 
+- Add GenAI security guardrail span conventions and a security finding event.
+
 ### 💡 Enhancements 💡
 
 - Add GenAI memory operation span and attributes for memory store lifecycle (create/delete),

@@ -77,8 +77,11 @@ SEMCONV_DOC_LINKS: dict[str, str] = {
     "retrieval": "../../docs/gen-ai/gen-ai-spans.md#retrievals",
     "memory": "../../docs/gen-ai/gen-ai-spans.md#memory",
     "execute_tool": "../../docs/gen-ai/gen-ai-spans.md#execute-tool-span",
+    "apply_guardrail_client": "../../docs/gen-ai/gen-ai-security.md#apply-guardrail-client-span",
+    "apply_guardrail_internal": "../../docs/gen-ai/gen-ai-security.md#apply-guardrail-internal-span",
     "gen_ai.client.inference.operation.details": "../../docs/gen-ai/gen-ai-events.md#event-gen_aiclientinferenceoperationdetails",
     "gen_ai.evaluation.result": "../../docs/gen-ai/gen-ai-events.md#event-gen_aievaluationresult",
+    "gen_ai.security.finding": "../../docs/gen-ai/gen-ai-security.md#event-gen_aisecurityfinding",
 }
 
 

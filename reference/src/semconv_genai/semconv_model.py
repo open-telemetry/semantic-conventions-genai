@@ -164,6 +164,32 @@ SPAN_SPECS: dict[str, AttributeSpec] = {
             }
         ),
     ),
+    "apply_guardrail_client": _from_yaml(
+        _groups,
+        "span.gen_ai.apply_guardrail.client",
+        label="Apply Guardrail Client",
+        op_names=frozenset({"apply_guardrail"}),
+        discriminator_attrs=frozenset(
+            {
+                "gen_ai.security.guardrail.id",
+                "gen_ai.security.guardrail.name",
+                "gen_ai.security.verdict.type",
+            }
+        ),
+    ),
+    "apply_guardrail_internal": _from_yaml(
+        _groups,
+        "span.gen_ai.apply_guardrail.internal",
+        label="Apply Guardrail Internal",
+        op_names=frozenset({"apply_guardrail"}),
+        discriminator_attrs=frozenset(
+            {
+                "gen_ai.security.guardrail.id",
+                "gen_ai.security.guardrail.name",
+                "gen_ai.security.verdict.type",
+            }
+        ),
+    ),
     "create_agent": _from_yaml(
         _groups,
         "span.gen_ai.create_agent.client",
@@ -211,6 +237,11 @@ EVENT_SPECS: dict[str, AttributeSpec] = {
         _groups,
         "event.gen_ai.evaluation.result",
         label="Evaluation Result",
+    ),
+    "gen_ai.security.finding": _from_yaml(
+        _groups,
+        "event.gen_ai.security.finding",
+        label="Security Finding",
     ),
 }
 

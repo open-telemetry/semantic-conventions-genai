@@ -377,6 +377,336 @@ attributes:
         ]
 
     stability: development
+  - key: gen_ai.security.guardrail.id
+    type: string
+    brief: The unique identifier of the security guardrail service or component.
+    note: |
+      This identifies the service, component, or library performing the security
+      evaluation, not the policy or configuration being applied.
+
+      For provider-specific guardrail or policy configuration identifiers (for
+      example, an AWS Bedrock guardrail ARN or an Azure Content Safety blocklist
+      ID), use `gen_ai.security.policy.id` instead.
+    examples: ['content-safety', 'pii-filter-v3', 'custom-guardrail-001']
+    stability: development
+  - key: gen_ai.security.guardrail.name
+    type: string
+    brief: Human-readable name of the security guardrail service or component.
+    note: >
+      This identifies the security evaluation service or component, not the
+      policy name. For policy names, use `gen_ai.security.policy.name`.
+    examples: ['Azure Content Safety', 'Bedrock Guardrails', 'Custom PII Filter']
+    stability: development
+  - key: gen_ai.security.guardrail.version
+    type: string
+    brief: Version of the security guardrail service or component.
+    note: >
+      This is the version of the evaluating service or component, not the policy
+      version. For policy versions, use `gen_ai.security.policy.version`.
+    examples: ['1.0.0', '2024-05-01', 'v2']
+    stability: development
+  - key: gen_ai.security.guardrail.provider.name
+    type:
+      members:
+        - id: azure_ai_content_safety
+          value: "azure.ai.content_safety"
+          brief: '[Azure AI Content Safety](https://azure.microsoft.com/products/ai-services/ai-content-safety)'
+          stability: development
+        - id: aws_bedrock
+          value: "aws.bedrock"
+          brief: '[AWS Bedrock Guardrails](https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails.html)'
+          stability: development
+        - id: gcp_model_armor
+          value: "gcp.model_armor"
+          brief: '[Google Cloud Model Armor](https://cloud.google.com/security-command-center/docs/model-armor-overview)'
+          stability: development
+    brief: The provider or vendor of the security guardrail service.
+    note: |
+      This is distinct from `gen_ai.provider.name`, which identifies the GenAI
+      provider for inference, embeddings, retrieval, memory, or agent operations.
+
+      If one of the well-known values applies, then the respective value SHOULD
+      be used. Otherwise, a custom value MAY be used.
+    examples: ['azure.ai.content_safety', 'aws.bedrock', 'gcp.model_armor', 'custom']
+    stability: development
+  - key: gen_ai.security.verdict.type
+    type:
+      members:
+        - id: allow
+          value: "allow"
+          brief: The content or action is permitted without modification.
+          stability: development
+        - id: deny
+          value: "deny"
+          brief: The content or action should not proceed.
+          stability: development
+        - id: modify
+          value: "modify"
+          brief: The content or action is permitted with modifications such as redaction or sanitization.
+          stability: development
+        - id: warn
+          value: "warn"
+          brief: The content or action is permitted but flagged for review or downstream handling.
+          stability: development
+        - id: audit
+          value: "audit"
+          brief: The content or action is recorded for audit purposes only.
+          stability: development
+        - id: escalate
+          value: "escalate"
+          brief: The content or action requires human review, approval, or another escalation workflow.
+          stability: development
+    brief: The verdict returned by the security guardrail evaluation.
+    note: >
+      A verdict describes what the guardrail evaluation recommends or reports.
+      It is not necessarily the action that the caller or framework enforces.
+      When the actual enforcement action is known, especially if it differs from
+      the verdict, use `gen_ai.security.action.type`.
+    examples: ['allow', 'deny', 'modify', 'warn', 'escalate']
+    stability: development
+  - key: gen_ai.security.verdict.reason
+    type: string
+    brief: Human-readable explanation for the security verdict.
+    note: >
+      The value SHOULD be low-cardinality and MUST NOT contain sensitive user
+      content or other high-risk data.
+    examples:
+      - 'PII detected in output'
+      - 'Prompt injection attempt detected'
+      - 'Action exceeds agent permission scope'
+    stability: development
+  - key: gen_ai.security.verdict.code
+    type: string
+    brief: Provider-specific code for the security verdict.
+    examples: ['112', '403', 'AACS-PII', 'MODEL_ARMOR_SAFETY']
+    stability: development
+  - key: gen_ai.security.action.type
+    type:
+      members:
+        - id: allow
+          value: "allow"
+          brief: The caller allowed the content or action to proceed.
+          stability: development
+        - id: block
+          value: "block"
+          brief: The caller blocked the content or action.
+          stability: development
+        - id: modify
+          value: "modify"
+          brief: The caller modified the content or action before continuing.
+          stability: development
+        - id: audit
+          value: "audit"
+          brief: The caller recorded the result for audit purposes without changing execution.
+          stability: development
+        - id: escalate
+          value: "escalate"
+          brief: The caller escalated the content or action for human review, approval, or another workflow.
+          stability: development
+    brief: The actual enforcement action taken by the caller or framework.
+    note: >
+      Use this attribute when the guardrail verdict is enforced by the caller or
+      framework and the action is known. For example, a guardrail may return a
+      `warn` verdict while the caller chooses to `block` the operation.
+    examples: ['allow', 'block', 'modify', 'escalate']
+    stability: development
+  - key: gen_ai.security.target.type
+    type:
+      members:
+        - id: llm_input
+          value: "llm_input"
+          brief: Prompt or messages being sent to the model.
+          stability: development
+        - id: llm_output
+          value: "llm_output"
+          brief: Response or messages returned from the model.
+          stability: development
+        - id: tool_call_input
+          value: "tool_call_input"
+          brief: Tool call arguments or invocation request.
+          stability: development
+        - id: tool_call_output
+          value: "tool_call_output"
+          brief: Tool call result or response.
+          stability: development
+        - id: tool_definition
+          value: "tool_definition"
+          brief: Tool definition or schema.
+          stability: development
+        - id: memory_write
+          value: "memory_write"
+          brief: Data being written to memory.
+          stability: development
+        - id: memory_read
+          value: "memory_read"
+          brief: Data being read from memory.
+          stability: development
+        - id: retrieval_query
+          value: "retrieval_query"
+          brief: Knowledge or RAG query being sent.
+          stability: development
+        - id: retrieval_result
+          value: "retrieval_result"
+          brief: Knowledge or RAG results being returned.
+          stability: development
+        - id: message
+          value: "message"
+          brief: Conversation message.
+          stability: development
+        - id: action
+          value: "action"
+          brief: Non-tool agent action.
+          stability: development
+    brief: The type of content or action the guardrail is applied to.
+    note: >
+      If one of the well-known values applies, then the respective value SHOULD
+      be used. Otherwise, a custom value MAY be used.
+    examples: ['llm_input', 'llm_output', 'tool_call_input', 'tool_call_output', 'tool_definition']
+    stability: development
+  - key: gen_ai.security.target.id
+    type: string
+    brief: Identifier of the specific target the guardrail is applied to.
+    note: >
+      For example, a tool call identifier, request identifier, memory record
+      identifier, or message identifier, if applicable.
+    examples: ['call_xyz789', 'msg_abc123', 'mem_abc456']
+    stability: development
+  - key: gen_ai.security.risk.category
+    type: string
+    brief: The category of security risk detected.
+    note: |
+      This attribute is free-form to accommodate provider-specific,
+      organization-specific, and emerging risk categories.
+
+      Suggested values aligned with OWASP LLM Top 10 2025 include:
+
+      - `prompt_injection` (LLM01)
+      - `sensitive_info_disclosure` (LLM02)
+      - `supply_chain` (LLM03)
+      - `data_and_model_poisoning` (LLM04)
+      - `improper_output_handling` (LLM05)
+      - `excessive_agency` (LLM06)
+      - `system_prompt_leakage` (LLM07)
+      - `vector_and_embedding_weaknesses` (LLM08)
+      - `misinformation` (LLM09)
+      - `unbounded_consumption` (LLM10)
+
+      Instrumentations MAY use additional values when appropriate, for example
+      `jailbreak`, `toxicity`, `pii`, `custom:*`, or provider-specific values.
+    examples:
+      - 'prompt_injection'
+      - 'sensitive_info_disclosure'
+      - 'jailbreak'
+      - 'custom:financial_advice_violation'
+    stability: development
+  - key: gen_ai.security.risk.score
+    type: double
+    brief: Numeric risk or confidence score.
+    note: >
+      The value SHOULD be in the range `[0.0, 1.0]` when the guardrail provider
+      reports a normalized score. Instrumentations SHOULD document the scoring
+      scale when reporting provider-specific scores that are not normalized.
+    examples: [0.85, 0.95, 0.42]
+    stability: development
+  - key: gen_ai.security.finding.evidence
+    type: string[]
+    brief: Non-content evidence descriptors for a security finding.
+    note: |
+      This attribute is intended for low-cardinality, non-content descriptors
+      that help locate or explain a finding without recording the evaluated
+      content itself.
+
+      > [!WARNING]
+      > This attribute MUST NOT contain sensitive user content, PII, secrets, or
+      > other high-risk data.
+
+      Example values include:
+
+      - Field identifiers: `field:bcc`, `parameter:query`
+      - Pattern types: `pattern:ssn`, `pattern:credit_card`
+      - Counts: `count:3`
+      - Positions: `position:input[0].content`
+    examples:
+      - ['field:bcc', 'pattern:email']
+      - ['count:2', 'position:output.content']
+    stability: development
+  - key: gen_ai.security.policy.id
+    type: string
+    brief: Identifier of the policy that produced the verdict.
+    examples: ['policy_pii_v2', 'deny-topic-financial-advice', 'org-compliance-001']
+    stability: development
+  - key: gen_ai.security.policy.name
+    type: string
+    brief: Human-readable name of the policy that produced the verdict.
+    examples: ['PII Protection Policy', 'Financial Advice Restriction']
+    stability: development
+  - key: gen_ai.security.policy.version
+    type: string
+    brief: Version of the policy that produced the verdict.
+    examples: ['1.0', '2024-05-01']
+    stability: development
+  - key: gen_ai.security.policy.rule.id
+    type: string
+    brief: Identifier of the policy rule, section, or control that produced the verdict.
+    note: >
+      Use this when `gen_ai.security.policy.id` identifies a broader policy and
+      the guardrail reports a more specific rule, section, control, or detector
+      within that policy.
+    examples: ['rule-pii-email', 'section-4.2', 'detector-jailbreak']
+    stability: development
+  - key: gen_ai.security.content.input.value
+    type: any
+    brief: The input content that was evaluated by the guardrail.
+    note: |
+      > [!WARNING]
+      > This attribute may contain sensitive information including user/PII
+      > data. Instrumentations SHOULD NOT capture this by default. Enable via
+      > opt-in configuration only.
+
+      This attribute MAY be truncated. For correlation without full content,
+      consider `gen_ai.security.content.input.hash`.
+    examples:
+      - 'Send an email to customer@example.com'
+    stability: development
+  - key: gen_ai.security.content.output.value
+    type: any
+    brief: The output content after guardrail processing, if modified.
+    note: |
+      > [!WARNING]
+      > This attribute may contain sensitive information. Instrumentations
+      > SHOULD NOT capture this by default. Enable via opt-in configuration
+      > only.
+
+      For `modify` actions, this MAY contain the sanitized or redacted result.
+    examples:
+      - 'Send an email to [REDACTED]'
+    stability: development
+  - key: gen_ai.security.content.input.hash
+    type: string
+    brief: Hash of the input content for forensic correlation.
+    note: >
+      Use when full content capture is not desired but correlation is needed.
+      Instrumentations SHOULD document the algorithm and any salting or HMAC
+      approach used.
+    examples: ['sha256:a3f2b8c9...']
+    stability: development
+  - key: gen_ai.security.content.modified
+    type: boolean
+    brief: Whether the content was redacted or otherwise modified by the guardrail.
+    examples: [true, false]
+    stability: development
+  - key: gen_ai.security.external_event_id
+    type: string
+    brief: External correlation identifier for a security event.
+    note: |
+      This attribute links telemetry to an external security event record in
+      systems such as SIEM, incident management, or security dashboards.
+
+      The value typically comes from the response of an external security
+      inspection service or may be included in response headers when inspection
+      happens alongside the LLM call.
+    examples: ['evt_abc123', 'incident-2024-001', 'sec-finding-xyz']
+    stability: development
   - key: gen_ai.data_source.id
     type: string
     brief: The data source identifier.
@@ -421,6 +751,10 @@ attributes:
         - id: execute_tool
           value: "execute_tool"
           brief: 'Execute a tool'
+          stability: development
+        - id: apply_guardrail
+          value: "apply_guardrail"
+          brief: 'Apply a security guardrail to content or an action'
           stability: development
         - id: invoke_workflow
           value: "invoke_workflow"
