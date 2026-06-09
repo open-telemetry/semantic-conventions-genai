@@ -28,6 +28,7 @@ def run_chat_reference(client):
     request_frequency_penalty = 0.1
     request_presence_penalty = 0.2
     request_top_p = 0.9
+    request_reasoning_level = "medium"
     messages = [
         {"role": "system", "content": "You are a helpful assistant."},
         {"role": "user", "content": "Say hello."},
@@ -59,7 +60,7 @@ def run_chat_reference(client):
         span.set_attribute("gen_ai.request.frequency_penalty", request_frequency_penalty)
         span.set_attribute("gen_ai.request.presence_penalty", request_presence_penalty)
         span.set_attribute("gen_ai.request.top_p", request_top_p)
-        span.set_attribute("gen_ai.request.reasoning.level", "medium")
+        span.set_attribute("gen_ai.request.reasoning.level", request_reasoning_level)
         span.set_attribute("gen_ai.input.messages", input_messages)
         if system_instructions:
             span.set_attribute("gen_ai.system_instructions", json.dumps(system_instructions))
@@ -74,6 +75,7 @@ def run_chat_reference(client):
             frequency_penalty=request_frequency_penalty,
             presence_penalty=request_presence_penalty,
             top_p=request_top_p,
+            reasoning_effort=request_reasoning_level,
         )
         span.set_attribute("gen_ai.response.model", resp.model)
         span.set_attribute("gen_ai.response.id", resp.id)

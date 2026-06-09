@@ -627,7 +627,7 @@ span_refinements:
           Corresponds to `usage.output_tokens_details.reasoning_tokens` in the model response.
       - ref: gen_ai.request.reasoning.level
         note: >
-          Corresponds to the `reasoning.effort` request parameter.
+          Corresponds to the [`reasoning.effort`](https://platform.openai.com/docs/guides/reasoning#reasoning-effort) request parameter.
       - ref: openai.request.service_tier
         requirement_level:
           conditionally_required: If the request includes a service_tier and the value is not 'auto'.
@@ -694,7 +694,7 @@ span_refinements:
         requirement_level: recommended
       - ref: gen_ai.request.reasoning.level
         note: >
-          Corresponds to the `thinking.effort` request parameter.
+          Corresponds to the [`output_config.effort`](https://docs.anthropic.com/en/docs/build-with-claude/effort) request parameter.
       - ref: gen_ai.usage.input_tokens
         note: >
           Anthropic `input_tokens` excludes cached tokens. Compute:

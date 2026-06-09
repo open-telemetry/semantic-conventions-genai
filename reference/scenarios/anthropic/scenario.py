@@ -27,6 +27,7 @@ def run_chat():
     print("  [chat] basic chat completion (reference implementation)")
     request_model = "claude-sonnet-4-20250514"
     request_max_tokens = 100
+    request_reasoning_level = "medium"
     messages = [{"role": "user", "content": "Say hello."}]
     client = anthropic.Anthropic(base_url=MOCK_BASE_URL, api_key="mock-key")
 
@@ -42,7 +43,7 @@ def run_chat():
         span_attributes["server.port"] = port
     with _reference_tracer.start_as_current_span("chat claude-sonnet-4-20250514", attributes=span_attributes) as span:
         span.set_attribute("gen_ai.request.max_tokens", request_max_tokens)
-        span.set_attribute("gen_ai.request.reasoning.level", "medium")
+        span.set_attribute("gen_ai.request.reasoning.level", request_reasoning_level)
         span.set_attribute(
             "gen_ai.input.messages",
             json.dumps([{"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]} for m in messages]),
@@ -51,6 +52,7 @@ def run_chat():
             model=request_model,
             max_tokens=request_max_tokens,
             messages=messages,
+            output_config={"effort": request_reasoning_level},
         )
         span.set_attribute("gen_ai.response.model", resp.model)
         span.set_attribute("gen_ai.response.id", resp.id)
