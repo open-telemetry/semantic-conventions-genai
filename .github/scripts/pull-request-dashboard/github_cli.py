@@ -213,6 +213,14 @@ query($owner: String!, $name: String!, $number: Int!, $after: String) {
                             author {
                                 login
                             }
+                            reactionGroups {
+                                content
+                                users(first: 100) {
+                                    nodes {
+                                        login
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -238,6 +246,14 @@ query($thread_id: ID!, $after: String) {
                     updatedAt
                     author {
                         login
+                    }
+                    reactionGroups {
+                        content
+                        users(first: 100) {
+                            nodes {
+                                login
+                            }
+                        }
                     }
                 }
             }
