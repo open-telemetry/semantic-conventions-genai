@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+import html
 import json
 import os
 import sys
@@ -80,16 +81,23 @@ def post_slack_webhook(message: str, webhook_url: str) -> None:
         return
 
 
+def slack_escape_text(text: str) -> str:
+    return html.escape(text, quote=False)
+
+
 def slack_message(repo: str, result: dict[str, Any], reviewer_mentions: str, kind: str) -> str:
     facts = result.get("facts") or {}
     number = result.get("pr_number")
     url = result.get("pr_url") or f"https://github.com/{repo}/pull/{number}"
+    title = slack_escape_text(str(result.get("pr_title") or "").strip())
+    pr_link_text = f"{title} (#{number})" if title else f"PR #{number}"
     if kind == "follow-up":
         waiting_age = activity_age(parse_ts(facts.get("waiting_since") or ""))
-        lead = f"is waiting on reviewers for {waiting_age}"
+        waiting_suffix = f" ({waiting_age})" if waiting_age != "?" else ""
+        lead = f"waiting on reviewers{waiting_suffix}"
     else:
         lead = "moved to waiting on reviewers"
-    return f"{reviewer_mentions} <{url}|PR #{number}> {lead}"
+    return f"{reviewer_mentions} - {lead}: <{url}|{pr_link_text}>"
 
 
 def pending_notification_kind(
