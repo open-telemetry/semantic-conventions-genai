@@ -130,6 +130,9 @@ attribute_groups:
     attributes:
       - ref_group: attributes.gen_ai.invoke_agent.common
       - ref_group: attributes.gen_ai.address_and_port
+      - ref: gen_ai.agent.invocation.id
+        requirement_level:
+          recommended: when available
 spans:
   - type: gen_ai.inference.client
     kind: client

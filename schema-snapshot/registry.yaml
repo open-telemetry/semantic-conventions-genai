@@ -7870,6 +7870,19 @@ refinements:
         conditionally_required: If applicable.
       stability: development
       type: string
+    - brief: The unique identifier of the remote agent invocation.
+      examples:
+      - run_abc123
+      - 12345678-1234-1234-1234-123456789012
+      key: gen_ai.agent.invocation.id
+      note: |
+        This attribute captures the provider-assigned identifier of the agent invocation operation. Examples include [OpenAI Assistants run IDs](https://platform.openai.com/docs/api-reference/runs/object#runs/object-id) and [Azure AI Foundry Agent invocation IDs](https://ai.azure.com/api-reference/agent-invocations/create-agent-invocation/).
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: when available
+      stability: development
+      type: string
     - brief: Human-readable name of the GenAI agent provided by the application.
       examples:
       - Math Tutor
@@ -12006,6 +12019,17 @@ registry:
     examples:
     - asst_5j66UpCpwteGg4YSxUnt7lPY
     key: gen_ai.agent.id
+    provenance:
+      path: ./model/gen-ai/registry.yaml
+    stability: development
+    type: string
+  - brief: The unique identifier of the remote agent invocation.
+    examples:
+    - run_abc123
+    - 12345678-1234-1234-1234-123456789012
+    key: gen_ai.agent.invocation.id
+    note: |
+      This attribute captures the provider-assigned identifier of the agent invocation operation. Examples include [OpenAI Assistants run IDs](https://platform.openai.com/docs/api-reference/runs/object#runs/object-id) and [Azure AI Foundry Agent invocation IDs](https://ai.azure.com/api-reference/agent-invocations/create-agent-invocation/).
     provenance:
       path: ./model/gen-ai/registry.yaml
     stability: development
@@ -18312,6 +18336,19 @@ registry:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
         conditionally_required: If applicable.
+      stability: development
+      type: string
+    - brief: The unique identifier of the remote agent invocation.
+      examples:
+      - run_abc123
+      - 12345678-1234-1234-1234-123456789012
+      key: gen_ai.agent.invocation.id
+      note: |
+        This attribute captures the provider-assigned identifier of the agent invocation operation. Examples include [OpenAI Assistants run IDs](https://platform.openai.com/docs/api-reference/runs/object#runs/object-id) and [Azure AI Foundry Agent invocation IDs](https://ai.azure.com/api-reference/agent-invocations/create-agent-invocation/).
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        recommended: when available
       stability: development
       type: string
     - brief: Human-readable name of the GenAI agent provided by the application.

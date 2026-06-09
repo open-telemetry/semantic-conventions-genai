@@ -278,6 +278,16 @@ attributes:
     brief: The version of the GenAI agent.
     examples: ["1.0.0", "2025-05-01"]
     stability: development
+  - key: gen_ai.agent.invocation.id
+    type: string
+    brief: The unique identifier of the remote agent invocation.
+    note: >
+      This attribute captures the provider-assigned identifier of the agent
+      invocation operation. Examples include
+      [OpenAI Assistants run IDs](https://platform.openai.com/docs/api-reference/runs/object#runs/object-id)
+      and [Azure AI Foundry Agent invocation IDs](https://ai.azure.com/api-reference/agent-invocations/create-agent-invocation/).
+    examples: ['run_abc123', '12345678-1234-1234-1234-123456789012']
+    stability: development
   - key: gen_ai.tool.name
     type: string
     brief: Name of the tool utilized by the agent.

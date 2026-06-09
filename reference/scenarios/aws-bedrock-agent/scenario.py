@@ -59,7 +59,8 @@ def run_invoke_agent(client):
                 if "chunk" in event:
                     text += event["chunk"].get("bytes", b"").decode("utf-8")
                 elif "trace" in event:
-                    agent_version = event["trace"].get("agentVersion")
+                    trace_event = event["trace"]
+                    agent_version = trace_event.get("agentVersion")
                     if agent_version:
                         span.set_attribute("gen_ai.agent.version", agent_version)
             if text:
