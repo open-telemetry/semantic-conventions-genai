@@ -638,6 +638,14 @@ def action_counts(classifications: list[dict[str, Any]]) -> dict[str, int]:
     return counts
 
 
+def has_blocking_review_thread(classifications: list[dict[str, Any]]) -> bool:
+    for c in classifications:
+        action = normalize_thread_action((c.get("decision") or {}).get("thread_action") or "")
+        if action in ("reviewer", "unclear") and c.get("thread_kind") != "pr-conversation":
+            return True
+    return False
+
+
 def route_pr(facts: dict[str, Any], classifications: list[dict[str, Any]]) -> str:
     counts = action_counts(classifications)
     # Copilot PRs are mapped back to a human author when possible. Maintenance
@@ -647,22 +655,21 @@ def route_pr(facts: dict[str, Any], classifications: list[dict[str, Any]]) -> st
     # Precedence:
     #   1. A thread waiting on the author -> "author".
     #   2. Otherwise a thread waiting on something external -> "external".
-    #   3. Otherwise a thread pending on a reviewer -> "approver". An open
-    #      reviewer-owed thread outranks the approval count: even an approved PR
-    #      is not merge-ready while an approver still owes a follow-up, because
-    #      that response may change their stance.
-    #   4. Otherwise the approval count decides: enough approvals -> ready for a
-    #      maintainer to merge (two normally, one when the author route does
-    #      not apply);
-    #      fewer -> still waiting on approvers.
+    #   3. If there are enough approvals and no unresolved review-comment
+    #      thread is still waiting on a reviewer or is unclear -> "maintainer".
+    #      A reviewer-routed synthetic PR conversation after enough approvals
+    #      means merge is the remaining action, not more review.
+    #   4. Otherwise a thread pending on a reviewer -> "approver".
+    #   5. Otherwise the approval count decides: fewer approvals -> still
+    #      waiting on approvers.
     if counts["author"] and not is_maintenance_bot:
         return "author"
     if counts["external"]:
         return "external"
+    if facts.get("approval_count", 0) >= required_approvals and not has_blocking_review_thread(classifications):
+        return "maintainer"
     if counts["reviewer"]:
         return "approver"
-    if facts.get("approval_count", 0) >= required_approvals:
-        return "maintainer"
     return "approver"
 
 
