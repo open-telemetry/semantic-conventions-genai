@@ -659,17 +659,13 @@ def route_pr(facts: dict[str, Any], classifications: list[dict[str, Any]]) -> st
     #      thread is still waiting on a reviewer or is unclear -> "maintainer".
     #      A reviewer-routed synthetic PR conversation after enough approvals
     #      means merge is the remaining action, not more review.
-    #   4. Otherwise a thread pending on a reviewer -> "approver".
-    #   5. Otherwise the approval count decides: fewer approvals -> still
-    #      waiting on approvers.
+    #   4. Otherwise the PR is still waiting on approvers.
     if counts["author"] and not is_maintenance_bot:
         return "author"
     if counts["external"]:
         return "external"
     if facts.get("approval_count", 0) >= required_approvals and not has_blocking_review_thread(classifications):
         return "maintainer"
-    if counts["reviewer"]:
-        return "approver"
     return "approver"
 
 
