@@ -4565,7 +4565,7 @@ refinements:
       - high
       key: gen_ai.request.reasoning.level
       note: |
-        Corresponds to the `thinking.effort` request parameter.
+        Corresponds to the [`output_config.effort`](https://docs.anthropic.com/en/docs/build-with-claude/effort) request parameter.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
@@ -11742,7 +11742,7 @@ refinements:
       - high
       key: gen_ai.request.reasoning.level
       note: |
-        Corresponds to the `reasoning.effort` request parameter.
+        Corresponds to the [`reasoning.effort`](https://platform.openai.com/docs/guides/reasoning#reasoning-effort) request parameter.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
