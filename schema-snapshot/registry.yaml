@@ -11305,7 +11305,7 @@ refinements:
           id: escalate
           stability: development
           value: escalate
-    - brief: GenAI server address.
+    - brief: Guardrail service address.
       examples:
       - example.com
       - 10.1.2.80
@@ -11317,7 +11317,7 @@ refinements:
       sampling_relevant: true
       stability: stable
       type: string
-    - brief: GenAI server port.
+    - brief: Guardrail service port.
       examples:
       - 80
       - 8080
@@ -23857,7 +23857,7 @@ registry:
           id: escalate
           stability: development
           value: escalate
-    - brief: GenAI server address.
+    - brief: Guardrail service address.
       examples:
       - example.com
       - 10.1.2.80
@@ -23869,7 +23869,7 @@ registry:
       sampling_relevant: true
       stability: stable
       type: string
-    - brief: GenAI server port.
+    - brief: Guardrail service port.
       examples:
       - 80
       - 8080

@@ -4,6 +4,7 @@ import hashlib
 import json
 import os
 
+from opentelemetry.trace import SpanKind
 from reference_shared import (
     flush_and_shutdown,
     mock_server_host_port,
@@ -359,7 +360,11 @@ def run_remote_security_guardrail_reference():
         guardrail_attrs["server.address"] = host
     if port is not None:
         guardrail_attrs["server.port"] = port
-    with _reference_tracer.start_as_current_span("run_guardrail Azure Content Safety", attributes=guardrail_attrs):
+    with _reference_tracer.start_as_current_span(
+        "run_guardrail Azure Content Safety",
+        kind=SpanKind.CLIENT,
+        attributes=guardrail_attrs,
+    ):
         with urlopen(os.environ["MOCK_LLM_URL"] + "/health", timeout=5) as response:
             response.read()
         print("    -> remote guardrail allowed request")

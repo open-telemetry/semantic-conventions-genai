@@ -612,11 +612,11 @@ spans:
         requirement_level: required
         sampling_relevant: true
       - ref: server.address
-        brief: GenAI server address.
+        brief: Guardrail service address.
         requirement_level: recommended
         sampling_relevant: true
       - ref: server.port
-        brief: GenAI server port.
+        brief: Guardrail service port.
         requirement_level:
           conditionally_required: If `server.address` is set.
         sampling_relevant: true
