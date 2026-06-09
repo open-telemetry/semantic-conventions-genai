@@ -32,6 +32,9 @@ def notify_slack_from_state(
     open_pr_numbers = {p["number"] for p in prs if not p.get("isDraft")}
     dashboard_state = load_dashboard_state_cache()
     results = results_from_dashboard_state(dashboard_state, open_pr_numbers)
+    current_prs = {p["number"]: p for p in prs}
+    for number, result in results.items():
+        result["pr_title"] = current_prs.get(number, {}).get("title") or ""
 
     state_file_notification_state = load_notification_state_file()
     previous_state = state_file_notification_state
