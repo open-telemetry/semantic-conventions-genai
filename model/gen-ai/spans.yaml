@@ -135,19 +135,11 @@ attribute_groups:
     visibility: internal
     attributes:
       - ref_group: attributes.gen_ai.error
-      - ref: gen_ai.operation.name
-        requirement_level: required
       - ref: gen_ai.security.guardrail.id
         requirement_level:
           conditionally_required: If available.
-      - ref: gen_ai.security.guardrail.name
-        requirement_level: recommended
       - ref: gen_ai.security.guardrail.version
         requirement_level: recommended
-      - ref: gen_ai.security.guardrail.provider.name
-        requirement_level: recommended
-      - ref: gen_ai.security.verdict.type
-        requirement_level: required
       - ref: gen_ai.security.verdict.reason
         requirement_level:
           conditionally_required: If `gen_ai.security.verdict.type` is not `allow` and a reason is available.
@@ -156,8 +148,6 @@ attribute_groups:
       - ref: gen_ai.security.action.type
         requirement_level:
           conditionally_required: If the actual enforcement action is known, especially if it differs from `gen_ai.security.verdict.type`.
-      - ref: gen_ai.security.target.type
-        requirement_level: required
       - ref: gen_ai.security.target.id
         requirement_level:
           conditionally_required: If available.
@@ -606,20 +596,29 @@ spans:
     stability: development
     attributes:
       - ref_group: attributes.gen_ai.run_guardrail.common
-      - ref_group: attributes.gen_ai.address_and_port
       - ref: gen_ai.operation.name
+        requirement_level: required
         sampling_relevant: true
       - ref: gen_ai.security.guardrail.name
+        requirement_level: recommended
         sampling_relevant: true
       - ref: gen_ai.security.guardrail.provider.name
+        requirement_level: recommended
         sampling_relevant: true
       - ref: gen_ai.security.verdict.type
+        requirement_level: required
         sampling_relevant: true
       - ref: gen_ai.security.target.type
+        requirement_level: required
         sampling_relevant: true
       - ref: server.address
+        brief: GenAI server address.
+        requirement_level: recommended
         sampling_relevant: true
       - ref: server.port
+        brief: GenAI server port.
+        requirement_level:
+          conditionally_required: If `server.address` is set.
         sampling_relevant: true
 
   - type: gen_ai.run_guardrail.internal
@@ -653,14 +652,19 @@ spans:
     attributes:
       - ref_group: attributes.gen_ai.run_guardrail.common
       - ref: gen_ai.operation.name
+        requirement_level: required
         sampling_relevant: true
       - ref: gen_ai.security.guardrail.name
+        requirement_level: recommended
         sampling_relevant: true
       - ref: gen_ai.security.guardrail.provider.name
+        requirement_level: recommended
         sampling_relevant: true
       - ref: gen_ai.security.verdict.type
+        requirement_level: required
         sampling_relevant: true
       - ref: gen_ai.security.target.type
+        requirement_level: required
         sampling_relevant: true
 
   - type: gen_ai.invoke_workflow.internal

@@ -1,5 +1,6 @@
 """Reference implementation for OpenAI."""
 
+import hashlib
 import json
 import os
 
@@ -271,6 +272,7 @@ def run_security_guardrail_reference():
     request_model = "gpt-4o-mini"
     input_text = "Please email jane@example.com about the travel booking."
     sanitized_text = "Please email [REDACTED] about the travel booking."
+    input_hash = f"sha256:{hashlib.sha256(input_text.encode('utf-8')).hexdigest()}"
     parent_attrs = {
         "gen_ai.operation.name": "chat",
         "gen_ai.provider.name": "openai",
@@ -284,7 +286,7 @@ def run_security_guardrail_reference():
         guardrail_attrs = {
             "gen_ai.operation.name": "run_guardrail",
             "gen_ai.security.action.type": "modify",
-            "gen_ai.security.content.input.hash": "sha256:2d711642b726b04401627ca9fbac32f5c8530fb1903cc4db02258717921a4881",
+            "gen_ai.security.content.input.hash": input_hash,
             "gen_ai.security.content.modified": True,
             "gen_ai.security.external_finding_id": "finding_pii_001",
             "gen_ai.security.finding.evidence": ["pattern:email", "position:input.messages[0].content"],
