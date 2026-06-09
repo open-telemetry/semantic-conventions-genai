@@ -10,11 +10,13 @@ import time
 from typing import Any
 import urllib.error
 import urllib.request
+from zoneinfo import ZoneInfo
 
 from utils import activity_age, format_ts, parse_ts
 
 
-APPROVER_FOLLOW_UP_SECONDS = 24 * 60 * 60
+NOTIFICATION_TIME_ZONE = ZoneInfo("America/Los_Angeles")
+REVIEWER_FOLLOW_UP_SECONDS = 24 * 60 * 60
 SLACK_WEBHOOK_RETRY_ATTEMPTS = 3
 SLACK_WEBHOOK_RETRY_DELAY_SECONDS = 1.0
 
@@ -47,6 +49,10 @@ def should_retry_slack_http_error(e: urllib.error.HTTPError) -> bool:
     return e.code == 429 or 500 <= e.code < 600
 
 
+def is_notification_weekday(now: datetime) -> bool:
+    return now.astimezone(NOTIFICATION_TIME_ZONE).weekday() < 5
+
+
 def post_slack_webhook(message: str, webhook_url: str) -> None:
     req = urllib.request.Request(
         webhook_url,
@@ -74,16 +80,16 @@ def post_slack_webhook(message: str, webhook_url: str) -> None:
         return
 
 
-def slack_message(repo: str, result: dict[str, Any], assignee_mention: str, kind: str) -> str:
+def slack_message(repo: str, result: dict[str, Any], reviewer_mentions: str, kind: str) -> str:
     facts = result.get("facts") or {}
     number = result.get("pr_number")
     url = result.get("pr_url") or f"https://github.com/{repo}/pull/{number}"
     if kind == "follow-up":
         waiting_age = activity_age(parse_ts(facts.get("waiting_since") or ""))
-        lead = f"is waiting on approvers for {waiting_age}"
+        lead = f"is waiting on reviewers for {waiting_age}"
     else:
-        lead = "moved to waiting on approvers"
-    return f"{assignee_mention} <{url}|PR #{number}> {lead}"
+        lead = "moved to waiting on reviewers"
+    return f"{reviewer_mentions} <{url}|PR #{number}> {lead}"
 
 
 def pending_notification_kind(
@@ -99,31 +105,44 @@ def pending_notification_kind(
     last_notified = parse_ts(previous_pr_state.get("last_notified_at") or "")
     if last_notified is None:
         return "initial"
+    elapsed_seconds = (now - last_notified).total_seconds()
     if current_waiting_since > last_notified:
+        if elapsed_seconds < REVIEWER_FOLLOW_UP_SECONDS:
+            return None
         return "initial"
-    if now.weekday() < 5 and (now - last_notified).total_seconds() >= APPROVER_FOLLOW_UP_SECONDS:
+    if is_notification_weekday(now) and elapsed_seconds >= REVIEWER_FOLLOW_UP_SECONDS:
         return "follow-up"
     return None
+
+
+def reviewer_logins_for_notification(facts: dict[str, Any]) -> list[str]:
+    # Notify all displayed reviewers because one reviewer's comment may be
+    # relevant context for the others, even when only one person needs to act.
+    return [
+        str(reviewer.get("login") or "")
+        for reviewer in (facts.get("reviewers") or [])
+        if isinstance(reviewer, dict) and reviewer.get("login")
+    ]
 
 
 def send_slack_notification(
     repo: str,
     result: dict[str, Any],
-    assignees: list[str],
+    reviewers: list[str],
     kind: str,
     webhook_url: str,
-    assignee_mentions: str,
+    reviewer_mentions: str,
 ) -> str | None:
     number = result.get("pr_number")
     if not webhook_url:
         return "SLACK_WEBHOOK_URL is not set"
     try:
-        post_slack_webhook(slack_message(repo, result, assignee_mentions, kind), webhook_url)
+        post_slack_webhook(slack_message(repo, result, reviewer_mentions, kind), webhook_url)
     except Exception as e:
-        assignee_list = ", ".join(f"@{assignee}" for assignee in assignees)
-        return f"PR #{number}: failed to notify {assignee_list}: {e}"
+        reviewer_list = ", ".join(f"@{reviewer}" for reviewer in reviewers)
+        return f"PR #{number}: failed to notify {reviewer_list}: {e}"
     print(
-        f"  mentioned {', '.join(f'@{assignee}' for assignee in assignees)} on Slack for PR #{number} ({kind})",
+        f"  mentioned {', '.join(f'@{reviewer}' for reviewer in reviewers)} on Slack for PR #{number} ({kind})",
         file=sys.stderr,
     )
     return None
@@ -180,12 +199,12 @@ def next_notification_state(
             continue
 
         facts = result.get("facts") or {}
-        mapped_assignees = [
-            (a, slack_user_map[a.lower()])
-            for a in (facts.get("assignees") or [])
-            if a.lower() in slack_user_map
+        mapped_reviewers = [
+            (reviewer, slack_user_map[reviewer.lower()])
+            for reviewer in reviewer_logins_for_notification(facts)
+            if reviewer.lower() in slack_user_map
         ]
-        if not mapped_assignees:
+        if not mapped_reviewers:
             if previous_pr_state:
                 new_prs[pr_key] = previous_pr_state
             continue
@@ -201,9 +220,9 @@ def next_notification_state(
         }
 
         if kind:
-            assignees = [assignee for assignee, _ in mapped_assignees]
-            assignee_mentions = " ".join(f"<@{slack_user_id}>" for _, slack_user_id in mapped_assignees)
-            error = send_slack_notification(repo, result, assignees, kind, webhook_url, assignee_mentions)
+            reviewers = [reviewer for reviewer, _ in mapped_reviewers]
+            reviewer_mentions = " ".join(f"<@{slack_user_id}>" for _, slack_user_id in mapped_reviewers)
+            error = send_slack_notification(repo, result, reviewers, kind, webhook_url, reviewer_mentions)
             if error:
                 print(f"  warning: {error}", file=sys.stderr)
                 notification_errors.append(error)

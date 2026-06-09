@@ -59,6 +59,13 @@ def find_dashboard_issue(repo: str) -> int | None:
         after = page_info["endCursor"]
 
 
+def dashboard_issue_url(repo: str) -> str:
+    number = find_dashboard_issue(repo)
+    if number is None:
+        raise RuntimeError(f"dashboard issue not found in {repo}")
+    return f"https://github.com/{repo}/issues/{number}"
+
+
 def publish_dashboard(repo: str, dashboard_body: Path) -> None:
     if not dashboard_body.exists():
         raise RuntimeError(f"dashboard markdown not found: {dashboard_body}")
@@ -97,13 +104,24 @@ def publish_dashboard(repo: str, dashboard_body: Path) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
+        "--print-dashboard-url",
+        action="store_true",
+        help="print the existing dashboard issue URL and exit",
+    )
+    parser.add_argument(
         "--state-branch",
-        required=True,
         help="git branch used for workflow state",
     )
     args = parser.parse_args()
 
     repo = detect_repo()
+    if args.print_dashboard_url:
+        print(dashboard_issue_url(repo))
+        return 0
+
+    if not args.state_branch:
+        parser.error("--state-branch is required unless --print-dashboard-url is set")
+
     with state_branch.temporary_state_dir() as state_dir:
         set_state_dir(state_dir)
         state_branch.configure_git()
