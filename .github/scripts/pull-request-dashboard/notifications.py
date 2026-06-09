@@ -81,7 +81,7 @@ def post_slack_webhook(message: str, webhook_url: str) -> None:
         return
 
 
-def slack_escape_text(text: str) -> str:
+def slack_escape_link_text(text: str) -> str:
     return html.escape(text, quote=False)
 
 
@@ -89,7 +89,7 @@ def slack_message(repo: str, result: dict[str, Any], reviewer_mentions: str, kin
     facts = result.get("facts") or {}
     number = result.get("pr_number")
     url = result.get("pr_url") or f"https://github.com/{repo}/pull/{number}"
-    title = slack_escape_text(str(result.get("pr_title") or "").strip())
+    title = slack_escape_link_text(str(result.get("pr_title") or "").strip())
     pr_link_text = f"{title} (#{number})" if title else f"PR #{number}"
     if kind == "follow-up":
         waiting_age = activity_age(parse_ts(facts.get("waiting_since") or ""))
