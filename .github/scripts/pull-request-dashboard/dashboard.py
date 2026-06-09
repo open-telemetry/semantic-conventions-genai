@@ -736,6 +736,10 @@ def reviewers_with_open_threads(
     by_id = threads_by_id(threads)
     logins: set[str] = set()
     for c in classifications:
+        # The synthetic PR conversation is only for side-level routing, not
+        # for assigning per-reviewer open-thread badges.
+        if c.get("thread_kind") == "pr-conversation":
+            continue
         action = normalize_thread_action((c.get("decision") or {}).get("thread_action") or "")
         if action not in OPEN_THREAD_ACTIONS:
             continue
