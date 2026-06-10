@@ -201,6 +201,11 @@ attributes:
       Instrumentations SHOULD make a best effort to populate this value, using a total
       provided by the provider when available or, depending on the provider API,
       by summing different token types parsed from the provider output.
+
+      When the provider reports both billed token counts and model-consumed
+      token counts (for example, Cohere exposes both `usage.billed_units` and
+      `usage.tokens`), instrumentations SHOULD report the billed count so the
+      value matches the units the customer is charged for.
     examples: [100]
     stability: development
   - key: gen_ai.usage.cache_read.input_tokens
@@ -220,6 +225,11 @@ attributes:
   - key: gen_ai.usage.output_tokens
     type: int
     brief: The number of tokens used in the GenAI response (completion).
+    note: |
+      When the provider reports both billed token counts and model-consumed
+      token counts (for example, Cohere exposes both `usage.billed_units` and
+      `usage.tokens`), instrumentations SHOULD report the billed count so the
+      value matches the units the customer is charged for.
     examples: [180]
     stability: development
   - key: gen_ai.usage.reasoning.output_tokens

@@ -77,15 +77,17 @@ jobs:
         with:
           version: '${{ steps.versions.outputs.weaver_version }}'
 
+      - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+
       - name: Regenerate and check committed outputs are in sync
         run: |
           make generate-all
-          if ! git diff --exit-code -- ./docs/registry ./schema-snapshot; then
+          if ! git diff --exit-code -- ./docs/registry ./schema-snapshot 'docs/gen-ai/gen-ai-*.json'; then
             echo "FAIL: committed generated outputs are out of sync!"
             echo "Run 'make generate-all' and commit the changes."
             exit 1
           fi
-          untracked=$(git ls-files --others --exclude-standard -- ./docs/registry ./schema-snapshot)
+          untracked=$(git ls-files --others --exclude-standard -- ./docs/registry ./schema-snapshot 'docs/gen-ai/gen-ai-*.json')
           if [ -n "$untracked" ]; then
             echo "FAIL: untracked files under generated outputs:"
             echo "$untracked"
