@@ -852,7 +852,7 @@ refinements:
         the canonical name of exception that occurred, or another low-cardinality error identifier.
         Instrumentations SHOULD document the list of errors they report.
       requirement_level:
-        conditionally_required: if the operation ended in an error
+        conditionally_required: If the operation ended in an error.
       stability: stable
       type:
         members:
@@ -906,9 +906,6 @@ refinements:
       are only meaningful within the context of a single framework\u0027s
       instrumentation, which is why instrumentations MUST document what
       counts as a step for their framework.
-
-      This metric SHOULD be specified with `ExplicitBucketBoundaries` of
-      [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024].
     provenance:
       path: ./model/gen-ai/metrics.yaml
     stability: development
@@ -14068,7 +14065,7 @@ registry:
         the canonical name of exception that occurred, or another low-cardinality error identifier.
         Instrumentations SHOULD document the list of errors they report.
       requirement_level:
-        conditionally_required: if the operation ended in an error
+        conditionally_required: If the operation ended in an error.
       stability: stable
       type:
         members:
@@ -14121,9 +14118,6 @@ registry:
       are only meaningful within the context of a single framework\u0027s
       instrumentation, which is why instrumentations MUST document what
       counts as a step for their framework.
-
-      This metric SHOULD be specified with `ExplicitBucketBoundaries` of
-      [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024].
     provenance:
       path: ./model/gen-ai/metrics.yaml
     stability: development

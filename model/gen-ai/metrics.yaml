@@ -152,9 +152,6 @@ metrics:
       are only meaningful within the context of a single framework's
       instrumentation, which is why instrumentations MUST document what
       counts as a step for their framework.
-
-      This metric SHOULD be specified with `ExplicitBucketBoundaries` of
-      [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024].
     instrument: histogram
     unit: "{step}"
     stability: development

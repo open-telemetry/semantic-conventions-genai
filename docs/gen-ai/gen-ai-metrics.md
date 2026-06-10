@@ -985,14 +985,11 @@ are only meaningful within the context of a single framework's
 instrumentation, which is why instrumentations MUST document what
 counts as a step for their framework.
 
-This metric SHOULD be specified with `ExplicitBucketBoundaries` of
-[1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024].
-
 **Attributes:**
 
 | Key | Stability | [Requirement Level](https://opentelemetry.io/docs/specs/semconv/general/attribute-requirement-level/) | Value Type | Description | Example Values |
 | --- | --- | --- | --- | --- | --- |
-| [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.41.1/docs/registry/attributes/error.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` if the operation ended in an error | string | Describes a class of error the operation ended with. [1] | `timeout`; `java.net.UnknownHostException`; `server_certificate_invalid`; `500` |
+| [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.41.1/docs/registry/attributes/error.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If the operation ended in an error. | string | Describes a class of error the operation ended with. [1] | `timeout`; `java.net.UnknownHostException`; `server_certificate_invalid`; `500` |
 | [`gen_ai.agent.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | Human-readable name of the GenAI agent provided by the application. | `Math Tutor`; `Fiction Writer` |
 
 **[1] `error.type`:** The `error.type` SHOULD match the error code returned by the Generative AI provider or the client library,
