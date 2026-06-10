@@ -3,7 +3,7 @@ name = "semantic-conventions-genai-tools"
 version = "0.0.0"
 requires-python = ">=3.12"
 dependencies = [
-    "towncrier==24.8.0",
+    "towncrier==25.8.0",
 ]
 
 [tool.uv]
