@@ -31,8 +31,9 @@
   ([#126](https://github.com/open-telemetry/semantic-conventions-genai/pull/126))
 - Add `moonshot_ai` to `gen_ai.provider.name` well-known values.
   ([#99](https://github.com/open-telemetry/semantic-conventions-genai/pull/99))
-- Add `gen_ai.agent.request.size` and `gen_ai.agent.response.size` metrics to
-  track the byte size of GenAI agent input and output payloads.
+- Add `gen_ai.agent.input.content.size` and `gen_ai.agent.output.content.size`
+  metrics to track the byte size of content the GenAI agent receives and
+  produces at the agent boundary.
   ([#202](https://github.com/open-telemetry/semantic-conventions-genai/pull/202))
 
 ### 🧰 Bug fixes 🧰

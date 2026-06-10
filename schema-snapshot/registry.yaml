@@ -839,6 +839,28 @@ refinements:
       code_generation:
         metric_value_type: int
     attributes:
+    - brief: |
+        Describes a class of error the operation ended with.
+      examples:
+      - timeout
+      - java.net.UnknownHostException
+      - server_certificate_invalid
+      - \u0027500\u0027
+      key: error.type
+      note: |
+        The `error.type` SHOULD match the error code returned by the Generative AI provider or the client library,
+        the canonical name of exception that occurred, or another low-cardinality error identifier.
+        Instrumentations SHOULD document the list of errors they report.
+      requirement_level:
+        conditionally_required: If the operation ended in an error.
+      stability: stable
+      type:
+        members:
+        - brief: |
+            A fallback error value to be used when the instrumentation doesn\u0027t define a custom value.
+          id: other
+          stability: stable
+          value: _OTHER
     - brief: Human-readable name of the GenAI agent provided by the application.
       examples:
       - Math Tutor
@@ -846,38 +868,31 @@ refinements:
       key: gen_ai.agent.name
       provenance:
         path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        conditionally_required: when available
+      requirement_level: recommended
       stability: development
       type: string
-    - brief: The version of the GenAI agent.
-      examples:
-      - 1.0.0
-      - 2025-05-01
-      key: gen_ai.agent.version
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        conditionally_required: when available
-      stability: development
-      type: string
-    brief: GenAI agent request size.
-    id: gen_ai.agent.request.size
+    brief: |
+      The byte size of the content the GenAI agent receives at the agent boundary for a single invocation.
+    id: gen_ai.agent.input.content.size
     instrument: histogram
-    name: gen_ai.agent.request.size
+    name: gen_ai.agent.input.content.size
     note: |
-      This metric measures the size, in bytes, of the input payload provided to
-      a GenAI agent at invocation time (for example, the user message that
-      triggered the agent).
+      Intended for instrumentations of agent frameworks (for example, ADK,
+      LangChain agents, CrewAI agents) that can observe the content passed
+      to the agent at its entrypoint. Useful for capacity planning,
+      anomaly detection (for example, a user pasting a very large prompt),
+      and sizing downstream services (token budgets, vector DB inputs,
+      storage).
 
-      Instrumentations SHOULD compute the size as the byte length of the
-      serialized request content as the agent receives it. For multi-part
-      content (for example, text plus inline binary data), the size SHOULD be
-      the sum of the byte lengths of each part.
-
-      This metric is intended for instrumentations of agent frameworks that
-      can reliably observe an agent\u0027s input payload (for example, ADK,
-      LangChain agents, CrewAI agents).
+      Instrumentations SHOULD record the byte size of the content the
+      agent receives, as observed at the framework\u0027s entrypoint. The exact
+      encoding is framework-defined (for example, a framework that exposes
+      content as typed parts MAY sum the UTF-8 byte length of text parts
+      and the raw byte length of binary parts; a framework that handles
+      content as a serialized payload MAY use the byte length of that
+      serialization). Instrumentations SHOULD document what they count so
+      operators can interpret the values correctly within a given
+      framework.
     provenance:
       path: ./model/gen-ai/metrics.yaml
     stability: development
@@ -886,6 +901,28 @@ refinements:
       code_generation:
         metric_value_type: int
     attributes:
+    - brief: |
+        Describes a class of error the operation ended with.
+      examples:
+      - timeout
+      - java.net.UnknownHostException
+      - server_certificate_invalid
+      - \u0027500\u0027
+      key: error.type
+      note: |
+        The `error.type` SHOULD match the error code returned by the Generative AI provider or the client library,
+        the canonical name of exception that occurred, or another low-cardinality error identifier.
+        Instrumentations SHOULD document the list of errors they report.
+      requirement_level:
+        conditionally_required: If the operation ended in an error.
+      stability: stable
+      type:
+        members:
+        - brief: |
+            A fallback error value to be used when the instrumentation doesn\u0027t define a custom value.
+          id: other
+          stability: stable
+          value: _OTHER
     - brief: Human-readable name of the GenAI agent provided by the application.
       examples:
       - Math Tutor
@@ -893,37 +930,33 @@ refinements:
       key: gen_ai.agent.name
       provenance:
         path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        conditionally_required: when available
+      requirement_level: recommended
       stability: development
       type: string
-    - brief: The version of the GenAI agent.
-      examples:
-      - 1.0.0
-      - 2025-05-01
-      key: gen_ai.agent.version
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        conditionally_required: when available
-      stability: development
-      type: string
-    brief: GenAI agent response size.
-    id: gen_ai.agent.response.size
+    brief: |
+      The byte size of the content the GenAI agent produces at the agent boundary for a single invocation.
+    id: gen_ai.agent.output.content.size
     instrument: histogram
-    name: gen_ai.agent.response.size
+    name: gen_ai.agent.output.content.size
     note: |
-      This metric measures the size, in bytes, of the final response payload
-      produced by a GenAI agent for a single invocation.
+      Intended for instrumentations of agent frameworks (for example, ADK,
+      LangChain agents, CrewAI agents) that can observe the agent\u0027s final
+      output. Useful for capacity planning, spotting unusually large
+      responses, and correlating size with latency or error rate.
 
-      Instrumentations SHOULD compute the size as the byte length of the
-      serialized response content as it leaves the agent. For multi-part
-      content (for example, text plus inline binary data), the size SHOULD be
-      the sum of the byte lengths of each part.
+      Includes only the agent\u0027s final response content. Intermediate
+      content produced inside the invocation (tool calls, tool results,
+      reasoning steps) SHOULD NOT be counted.
 
-      This metric is intended for instrumentations of agent frameworks that
-      can reliably observe an agent\u0027s final response (for example, ADK,
-      LangChain agents, CrewAI agents).
+      Instrumentations SHOULD record the byte size of the content the
+      agent produces, as observed at the framework\u0027s exit point. The exact
+      encoding is framework-defined (for example, a framework that exposes
+      content as typed parts MAY sum the UTF-8 byte length of text parts
+      and the raw byte length of binary parts; a framework that handles
+      content as a serialized payload MAY use the byte length of that
+      serialization). Instrumentations SHOULD document what they count so
+      operators can interpret the values correctly within a given
+      framework.
     provenance:
       path: ./model/gen-ai/metrics.yaml
     stability: development
@@ -14070,6 +14103,28 @@ registry:
       code_generation:
         metric_value_type: int
     attributes:
+    - brief: |
+        Describes a class of error the operation ended with.
+      examples:
+      - timeout
+      - java.net.UnknownHostException
+      - server_certificate_invalid
+      - \u0027500\u0027
+      key: error.type
+      note: |
+        The `error.type` SHOULD match the error code returned by the Generative AI provider or the client library,
+        the canonical name of exception that occurred, or another low-cardinality error identifier.
+        Instrumentations SHOULD document the list of errors they report.
+      requirement_level:
+        conditionally_required: If the operation ended in an error.
+      stability: stable
+      type:
+        members:
+        - brief: |
+            A fallback error value to be used when the instrumentation doesn\u0027t define a custom value.
+          id: other
+          stability: stable
+          value: _OTHER
     - brief: Human-readable name of the GenAI agent provided by the application.
       examples:
       - Math Tutor
@@ -14077,37 +14132,30 @@ registry:
       key: gen_ai.agent.name
       provenance:
         path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        conditionally_required: when available
+      requirement_level: recommended
       stability: development
       type: string
-    - brief: The version of the GenAI agent.
-      examples:
-      - 1.0.0
-      - 2025-05-01
-      key: gen_ai.agent.version
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        conditionally_required: when available
-      stability: development
-      type: string
-    brief: GenAI agent request size.
+    brief: |
+      The byte size of the content the GenAI agent receives at the agent boundary for a single invocation.
     instrument: histogram
-    name: gen_ai.agent.request.size
+    name: gen_ai.agent.input.content.size
     note: |
-      This metric measures the size, in bytes, of the input payload provided to
-      a GenAI agent at invocation time (for example, the user message that
-      triggered the agent).
+      Intended for instrumentations of agent frameworks (for example, ADK,
+      LangChain agents, CrewAI agents) that can observe the content passed
+      to the agent at its entrypoint. Useful for capacity planning,
+      anomaly detection (for example, a user pasting a very large prompt),
+      and sizing downstream services (token budgets, vector DB inputs,
+      storage).
 
-      Instrumentations SHOULD compute the size as the byte length of the
-      serialized request content as the agent receives it. For multi-part
-      content (for example, text plus inline binary data), the size SHOULD be
-      the sum of the byte lengths of each part.
-
-      This metric is intended for instrumentations of agent frameworks that
-      can reliably observe an agent\u0027s input payload (for example, ADK,
-      LangChain agents, CrewAI agents).
+      Instrumentations SHOULD record the byte size of the content the
+      agent receives, as observed at the framework\u0027s entrypoint. The exact
+      encoding is framework-defined (for example, a framework that exposes
+      content as typed parts MAY sum the UTF-8 byte length of text parts
+      and the raw byte length of binary parts; a framework that handles
+      content as a serialized payload MAY use the byte length of that
+      serialization). Instrumentations SHOULD document what they count so
+      operators can interpret the values correctly within a given
+      framework.
     provenance:
       path: ./model/gen-ai/metrics.yaml
     stability: development
@@ -14116,6 +14164,28 @@ registry:
       code_generation:
         metric_value_type: int
     attributes:
+    - brief: |
+        Describes a class of error the operation ended with.
+      examples:
+      - timeout
+      - java.net.UnknownHostException
+      - server_certificate_invalid
+      - \u0027500\u0027
+      key: error.type
+      note: |
+        The `error.type` SHOULD match the error code returned by the Generative AI provider or the client library,
+        the canonical name of exception that occurred, or another low-cardinality error identifier.
+        Instrumentations SHOULD document the list of errors they report.
+      requirement_level:
+        conditionally_required: If the operation ended in an error.
+      stability: stable
+      type:
+        members:
+        - brief: |
+            A fallback error value to be used when the instrumentation doesn\u0027t define a custom value.
+          id: other
+          stability: stable
+          value: _OTHER
     - brief: Human-readable name of the GenAI agent provided by the application.
       examples:
       - Math Tutor
@@ -14123,36 +14193,32 @@ registry:
       key: gen_ai.agent.name
       provenance:
         path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        conditionally_required: when available
+      requirement_level: recommended
       stability: development
       type: string
-    - brief: The version of the GenAI agent.
-      examples:
-      - 1.0.0
-      - 2025-05-01
-      key: gen_ai.agent.version
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        conditionally_required: when available
-      stability: development
-      type: string
-    brief: GenAI agent response size.
+    brief: |
+      The byte size of the content the GenAI agent produces at the agent boundary for a single invocation.
     instrument: histogram
-    name: gen_ai.agent.response.size
+    name: gen_ai.agent.output.content.size
     note: |
-      This metric measures the size, in bytes, of the final response payload
-      produced by a GenAI agent for a single invocation.
+      Intended for instrumentations of agent frameworks (for example, ADK,
+      LangChain agents, CrewAI agents) that can observe the agent\u0027s final
+      output. Useful for capacity planning, spotting unusually large
+      responses, and correlating size with latency or error rate.
 
-      Instrumentations SHOULD compute the size as the byte length of the
-      serialized response content as it leaves the agent. For multi-part
-      content (for example, text plus inline binary data), the size SHOULD be
-      the sum of the byte lengths of each part.
+      Includes only the agent\u0027s final response content. Intermediate
+      content produced inside the invocation (tool calls, tool results,
+      reasoning steps) SHOULD NOT be counted.
 
-      This metric is intended for instrumentations of agent frameworks that
-      can reliably observe an agent\u0027s final response (for example, ADK,
-      LangChain agents, CrewAI agents).
+      Instrumentations SHOULD record the byte size of the content the
+      agent produces, as observed at the framework\u0027s exit point. The exact
+      encoding is framework-defined (for example, a framework that exposes
+      content as typed parts MAY sum the UTF-8 byte length of text parts
+      and the raw byte length of binary parts; a framework that handles
+      content as a serialized payload MAY use the byte length of that
+      serialization). Instrumentations SHOULD document what they count so
+      operators can interpret the values correctly within a given
+      framework.
     provenance:
       path: ./model/gen-ai/metrics.yaml
     stability: development
