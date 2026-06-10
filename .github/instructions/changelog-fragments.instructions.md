@@ -1,6 +1,6 @@
 ---
 description: "Review guidance for Towncrier changelog fragments."
-applyTo: "changelog.d/*.md"
+applyTo: "changelog.d/*.*.md"
 ---
 
 # Changelog fragments
