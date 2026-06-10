@@ -17,6 +17,9 @@
 
 ### 💡 Enhancements 💡
 
+- Add `gen_ai.invoke_agent.server` span (SERVER kind) for describing agent
+  invocation processing on the server side. Includes `client.address` and
+  `client.port` as opt-in attributes.
 - Add GenAI memory operation span and attributes for memory store lifecycle (create/delete),
   memory record create/update/upsert/search/delete operations, and record counts.
   ([#140](https://github.com/open-telemetry/semantic-conventions-genai/pull/140))
