@@ -126,12 +126,15 @@ def pending_notification_kind(
 
 
 def reviewer_logins_for_notification(facts: dict[str, Any]) -> list[str]:
-    # Notify all displayed reviewers because one reviewer's comment may be
-    # relevant context for the others, even when only one person needs to act.
     return [
         str(reviewer.get("login") or "")
         for reviewer in (facts.get("reviewers") or [])
-        if isinstance(reviewer, dict) and reviewer.get("login")
+        if isinstance(reviewer, dict)
+        and reviewer.get("login")
+        and (
+            not (reviewer.get("approved") or reviewer.get("approved_non_team"))
+            or reviewer.get("open_thread")
+        )
     ]
 
 
