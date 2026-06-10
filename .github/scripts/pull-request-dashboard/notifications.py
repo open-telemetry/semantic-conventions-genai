@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+import html
 import json
 import os
 import sys
@@ -10,10 +11,12 @@ import time
 from typing import Any
 import urllib.error
 import urllib.request
+from zoneinfo import ZoneInfo
 
 from utils import activity_age, format_ts, parse_ts
 
 
+NOTIFICATION_TIME_ZONE = ZoneInfo("America/Los_Angeles")
 REVIEWER_FOLLOW_UP_SECONDS = 24 * 60 * 60
 SLACK_WEBHOOK_RETRY_ATTEMPTS = 3
 SLACK_WEBHOOK_RETRY_DELAY_SECONDS = 1.0
@@ -47,6 +50,10 @@ def should_retry_slack_http_error(e: urllib.error.HTTPError) -> bool:
     return e.code == 429 or 500 <= e.code < 600
 
 
+def is_notification_weekday(now: datetime) -> bool:
+    return now.astimezone(NOTIFICATION_TIME_ZONE).weekday() < 5
+
+
 def post_slack_webhook(message: str, webhook_url: str) -> None:
     req = urllib.request.Request(
         webhook_url,
@@ -74,16 +81,25 @@ def post_slack_webhook(message: str, webhook_url: str) -> None:
         return
 
 
+def slack_escape_link_text(text: str) -> str:
+    # Slack link text requires escaping &, <, and >.
+    # Other PR title punctuation can be rendered as-is.
+    return html.escape(text, quote=False)
+
+
 def slack_message(repo: str, result: dict[str, Any], reviewer_mentions: str, kind: str) -> str:
     facts = result.get("facts") or {}
     number = result.get("pr_number")
     url = result.get("pr_url") or f"https://github.com/{repo}/pull/{number}"
+    title = slack_escape_link_text(str(result.get("pr_title") or "").strip())
+    pr_link_text = f"{title} (#{number})" if title else f"PR #{number}"
     if kind == "follow-up":
         waiting_age = activity_age(parse_ts(facts.get("waiting_since") or ""))
-        lead = f"is waiting on reviewers for {waiting_age}"
+        waiting_suffix = f" ({waiting_age})" if waiting_age != "?" else ""
+        lead = f"waiting on reviewers{waiting_suffix}"
     else:
         lead = "moved to waiting on reviewers"
-    return f"{reviewer_mentions} <{url}|PR #{number}> {lead}"
+    return f"{reviewer_mentions} - {lead}: <{url}|{pr_link_text}>"
 
 
 def pending_notification_kind(
@@ -104,18 +120,21 @@ def pending_notification_kind(
         if elapsed_seconds < REVIEWER_FOLLOW_UP_SECONDS:
             return None
         return "initial"
-    if now.weekday() < 5 and elapsed_seconds >= REVIEWER_FOLLOW_UP_SECONDS:
+    if is_notification_weekday(now) and elapsed_seconds >= REVIEWER_FOLLOW_UP_SECONDS:
         return "follow-up"
     return None
 
 
 def reviewer_logins_for_notification(facts: dict[str, Any]) -> list[str]:
-    # Notify all displayed reviewers because one reviewer's comment may be
-    # relevant context for the others, even when only one person needs to act.
     return [
         str(reviewer.get("login") or "")
         for reviewer in (facts.get("reviewers") or [])
-        if isinstance(reviewer, dict) and reviewer.get("login")
+        if isinstance(reviewer, dict)
+        and reviewer.get("login")
+        and (
+            not (reviewer.get("approved") or reviewer.get("approved_non_team"))
+            or reviewer.get("open_thread")
+        )
     ]
 
 

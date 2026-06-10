@@ -44,11 +44,11 @@ def run_chat(client):
             span.set_attribute("gen_ai.response.id", resp.id)
         if hasattr(resp, "finish_reason") and resp.finish_reason:
             span.set_attribute("gen_ai.response.finish_reasons", [resp.finish_reason])
-        if hasattr(resp, "usage") and resp.usage and hasattr(resp.usage, "tokens") and resp.usage.tokens:
-            if hasattr(resp.usage.tokens, "input_tokens"):
-                span.set_attribute("gen_ai.usage.input_tokens", int(resp.usage.tokens.input_tokens))
-            if hasattr(resp.usage.tokens, "output_tokens"):
-                span.set_attribute("gen_ai.usage.output_tokens", int(resp.usage.tokens.output_tokens))
+        if hasattr(resp, "usage") and resp.usage and hasattr(resp.usage, "billed_units") and resp.usage.billed_units:
+            if hasattr(resp.usage.billed_units, "input_tokens"):
+                span.set_attribute("gen_ai.usage.input_tokens", int(resp.usage.billed_units.input_tokens))
+            if hasattr(resp.usage.billed_units, "output_tokens"):
+                span.set_attribute("gen_ai.usage.output_tokens", int(resp.usage.billed_units.output_tokens))
 
         # Emit inference operation details event
         content = resp.message.content[0].text
@@ -72,11 +72,11 @@ def run_chat(client):
             event_attrs["gen_ai.response.id"] = resp.id
         if hasattr(resp, "finish_reason") and resp.finish_reason:
             event_attrs["gen_ai.response.finish_reasons"] = [resp.finish_reason]
-        if hasattr(resp, "usage") and resp.usage and hasattr(resp.usage, "tokens") and resp.usage.tokens:
-            if hasattr(resp.usage.tokens, "input_tokens"):
-                event_attrs["gen_ai.usage.input_tokens"] = int(resp.usage.tokens.input_tokens)
-            if hasattr(resp.usage.tokens, "output_tokens"):
-                event_attrs["gen_ai.usage.output_tokens"] = int(resp.usage.tokens.output_tokens)
+        if hasattr(resp, "usage") and resp.usage and hasattr(resp.usage, "billed_units") and resp.usage.billed_units:
+            if hasattr(resp.usage.billed_units, "input_tokens"):
+                event_attrs["gen_ai.usage.input_tokens"] = int(resp.usage.billed_units.input_tokens)
+            if hasattr(resp.usage.billed_units, "output_tokens"):
+                event_attrs["gen_ai.usage.output_tokens"] = int(resp.usage.billed_units.output_tokens)
         reference_event_logger().emit(
             event_name="gen_ai.client.inference.operation.details",
             body="Inference operation details",
@@ -126,11 +126,11 @@ def run_chat_tool_call(client):
             span.set_attribute("gen_ai.response.id", resp.id)
         if hasattr(resp, "finish_reason") and resp.finish_reason:
             span.set_attribute("gen_ai.response.finish_reasons", [resp.finish_reason])
-        if hasattr(resp, "usage") and resp.usage and hasattr(resp.usage, "tokens") and resp.usage.tokens:
-            if hasattr(resp.usage.tokens, "input_tokens"):
-                span.set_attribute("gen_ai.usage.input_tokens", int(resp.usage.tokens.input_tokens))
-            if hasattr(resp.usage.tokens, "output_tokens"):
-                span.set_attribute("gen_ai.usage.output_tokens", int(resp.usage.tokens.output_tokens))
+        if hasattr(resp, "usage") and resp.usage and hasattr(resp.usage, "billed_units") and resp.usage.billed_units:
+            if hasattr(resp.usage.billed_units, "input_tokens"):
+                span.set_attribute("gen_ai.usage.input_tokens", int(resp.usage.billed_units.input_tokens))
+            if hasattr(resp.usage.billed_units, "output_tokens"):
+                span.set_attribute("gen_ai.usage.output_tokens", int(resp.usage.billed_units.output_tokens))
         content = resp.message.content[0].text
         if hasattr(resp.message, "tool_calls") and resp.message.tool_calls:
             tool_call = resp.message.tool_calls[0]

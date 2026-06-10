@@ -14,26 +14,14 @@
 # we ever need finer granularity.
 templates:
   - pattern: attributes_readme.md.j2
-    filter: >-
-      .registry.attributes
-      | group_by(.key | split(".") | .[0])
-      | map({
-          id: .[0].key | split(".") | .[0],
-          attributes: .
-        })
+    filter: semconv_grouped_attributes({"v2":true})
     application_mode: single
     file_name: attributes/README.md
 
   - pattern: attribute_namespace.md.j2
-    filter: >-
-      .registry.attributes
-      | group_by(.key | split(".") | .[0])
-      | map({
-          id: .[0].key | split(".") | .[0],
-          attributes: .
-        })
+    filter: semconv_grouped_attributes({"v2":true})
     application_mode: each
-    file_name: "attributes/{{ ctx.id | kebab_case }}.md"
+    file_name: "attributes/{{ ctx.root_namespace | kebab_case }}.md"
 
   - pattern: registry_readme.md.j2
     filter: "."
