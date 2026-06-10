@@ -44,10 +44,14 @@
       "timezone": "America/Los_Angeles"
     },
     {
-      "groupName": "GitHub Actions",
-      "commitMessageTopic": "GitHub Actions",
+      "description": "Monthly tooling dependency updates",
+      "groupName": "tooling dependencies",
+      "commitMessageTopic": "tooling dependencies",
       "matchFileNames": [
-        ".github/**"
+        ".github/**",
+        "changelog.d/**",
+        "docs/gen-ai/non-normative/**",
+        "mise.toml"
       ],
       "schedule": [
         "* 0-3 2 * *" // 2nd of the month, 00:00–03:59 America/Los_Angeles

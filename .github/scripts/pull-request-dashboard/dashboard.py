@@ -736,6 +736,10 @@ def reviewers_with_open_threads(
     by_id = threads_by_id(threads)
     logins: set[str] = set()
     for c in classifications:
+        # The synthetic PR conversation contributes to the PR's routing bucket,
+        # but it is not a reviewer-owned discussion thread for badges.
+        if c.get("thread_kind") == "pr-conversation":
+            continue
         action = normalize_thread_action((c.get("decision") or {}).get("thread_action") or "")
         if action not in OPEN_THREAD_ACTIONS:
             continue
