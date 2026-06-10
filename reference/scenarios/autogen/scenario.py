@@ -135,9 +135,6 @@ def run_agent_reference():
                 tools=[get_weather],
                 max_tool_iterations=2,
             )
-            agent_id = getattr(agent, "id", None)
-            if agent_id:
-                span.set_attribute("gen_ai.agent.id", str(agent_id))
 
         async def _run():
             from autogen_agentchat.messages import TextMessage
