@@ -14,12 +14,12 @@
 # we ever need finer granularity.
 templates:
   - pattern: attributes_readme.md.j2
-    filter: try semconv_grouped_attributes({"v2":true}) catch empty
+    filter: semconv_grouped_attributes({"v2":true})
     application_mode: single
     file_name: attributes/README.md
 
   - pattern: attribute_namespace.md.j2
-    filter: try semconv_grouped_attributes({"v2":true}) catch empty
+    filter: semconv_grouped_attributes({"v2":true})
     application_mode: each
     file_name: "attributes/{{ ctx.root_namespace | kebab_case }}.md"
 
