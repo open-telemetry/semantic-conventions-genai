@@ -27,6 +27,6 @@ Update the reference scenarios under `reference/scenarios/` to demonstrate this.
 
 - [ ] Motivation section filled in above
 - [ ] Reference scenarios updated for affected libraries
-- [ ] Changelog entry added under `Unreleased` in `CHANGELOG.md` for any change to the conventions that a consumer would care about. Editorial changes (typos, pure rewording, repo tooling) don't need an entry.
+- [ ] Towncrier fragment added under `changelog.d/` for any change to the conventions that a consumer would care about. Editorial changes (typos, pure rewording, repo tooling) don't need an entry.
 
 See [CONTRIBUTING.md]

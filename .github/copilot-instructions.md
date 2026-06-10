@@ -25,7 +25,7 @@ through several coupled surfaces:
 
 - Keep PRs small and focused. Do not mix unrelated convention changes; see
   the "Keep PRs small" guidance in `CONTRIBUTING.md`.
-- Non-editorial convention changes need a `CHANGELOG.md` `Unreleased` entry.
+- Non-editorial convention changes need a Towncrier fragment under `changelog.d/`.
   Editorial-only changes (typos, rewording, tooling) do not need one.
 - Convention changes under `model/` or `docs/` need a corresponding update
   under `reference/scenarios/` to demonstrate capturability.
