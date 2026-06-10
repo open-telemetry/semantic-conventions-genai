@@ -27,6 +27,8 @@ from utils import utc_now
 def notify_slack_from_state(
     repo: str,
     prior_notification_state: Path | None,
+    notification_numbers: set[int] | None,
+    notification_kinds: set[str] | None,
 ) -> list[str]:
     prs = list_open_prs(repo)
     open_pr_numbers = {p["number"] for p in prs if not p.get("isDraft")}
@@ -47,6 +49,8 @@ def notify_slack_from_state(
         results,
         previous_state,
         utc_now(),
+        notification_numbers=notification_numbers,
+        notification_kinds=notification_kinds,
     )
     notification_errors = [str(error) for error in notification_state.get("_notification_errors") or []]
     notification_state_changed = (notification_state.get("prs") or {}) != (
@@ -68,9 +72,14 @@ def notification_errors_path() -> Path:
     return Path(os.environ.get("RUNNER_TEMP", ".")) / "notification-errors.txt"
 
 
-def notify_slack(prior_notification_state: Path, notification_errors: Path) -> int:
+def notify_slack(
+    prior_notification_state: Path,
+    notification_errors: Path,
+    notification_numbers: set[int] | None,
+    notification_kinds: set[str] | None,
+) -> int:
     repo = detect_repo()
-    errors = notify_slack_from_state(repo, prior_notification_state)
+    errors = notify_slack_from_state(repo, prior_notification_state, notification_numbers, notification_kinds)
     if errors:
         notification_errors.write_text("\n".join(errors) + "\n", encoding="utf-8")
     else:
@@ -82,10 +91,12 @@ def notify_slack_with_state(args: argparse.Namespace, state_dir: Path) -> int:
     prior_notification_state = prior_notification_state_path()
     notification_errors = notification_errors_path()
     notification_errors.unlink(missing_ok=True)
+    notification_numbers = {args.pr_number} if args.pr_number is not None else None
+    notification_kinds = {"initial"} if args.pr_number is not None else {"follow-up"}
     status = state_branch.push_state_changes(
         state_dir,
         "Update dashboard notification state",
-        lambda: notify_slack(prior_notification_state, notification_errors),
+        lambda: notify_slack(prior_notification_state, notification_errors, notification_numbers, notification_kinds),
         state_branch=args.state_branch,
         add_paths=["notification-state.json"],
         retry_snapshots=[(notification_state_path(), prior_notification_state)],
@@ -105,6 +116,11 @@ def main() -> int:
         "--state-branch",
         required=True,
         help="git branch used for workflow state",
+    )
+    parser.add_argument(
+        "--pr-number",
+        type=int,
+        help="send initial notifications for one pull request; omit for scheduled follow-up notifications",
     )
     args = parser.parse_args()
     with state_branch.temporary_state_dir() as state_dir:

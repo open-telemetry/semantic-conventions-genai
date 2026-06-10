@@ -185,6 +185,7 @@ def next_notification_state(
     previous_state: dict[str, Any],
     now: datetime,
     notification_numbers: set[int] | None = None,
+    notification_kinds: set[str] | None = None,
 ) -> dict[str, Any]:
     previous_prs = previous_state.get("prs") or {}
     previous_state_exists = bool(previous_state.get("_loaded_from_dashboard"))
@@ -226,6 +227,8 @@ def next_notification_state(
         kind = pending_notification_kind(
             previous_state_exists, previous_pr_state, current_waiting_since, now,
         )
+        if kind and notification_kinds is not None and kind not in notification_kinds:
+            kind = None
 
         new_pr_state: dict[str, Any] = {
             "last_notified_at": previous_pr_state.get("last_notified_at") or "",

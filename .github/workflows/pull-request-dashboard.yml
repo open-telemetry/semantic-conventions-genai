@@ -290,14 +290,18 @@ jobs:
           python3 .github/scripts/pull-request-dashboard/dashboard.py "${dashboard_args[@]}"
 
   notify-slack:
-    needs: update-dashboard
-    if: needs.update-dashboard.result == 'success'
-    # Slack sends are external side effects, so serialize notification
-    # processing while still allowing PR-specific dashboard computation to run
-    # concurrently. The notification ledger is pushed with the same state-branch
-    # CAS retry loop used by dashboard updates.
+    needs: [resolve-trigger, update-dashboard]
+    if: >-
+      needs.update-dashboard.result == 'success' &&
+      (needs.resolve-trigger.outputs.trigger_event == 'schedule' ||
+       needs.resolve-trigger.outputs.pr_number != '')
+    # Scheduled runs sweep only past-due follow-ups. Targeted runs notify only
+    # the triggering PR and suppress follow-ups, so the two paths do not send
+    # the same Slack side effect concurrently. The notification ledger is
+    # pushed with the same state-branch CAS retry loop used by dashboard
+    # updates.
     concurrency:
-      group: ${{ github.workflow }}-notify-${{ github.repository }}
+      group: ${{ github.workflow }}-notify-${{ github.repository }}-${{ needs.resolve-trigger.outputs.pr_number || 'hourly' }}
       cancel-in-progress: false
     permissions:
       contents: write
@@ -322,10 +326,15 @@ jobs:
           OTELBOT_TOKEN: ${{ steps.otelbot-token.outputs.token }}
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           SLACK_USER_MAP_JSON: ${{ vars.SLACK_USER_MAP_JSON }}
+          TRIGGER_PR_NUMBER: ${{ needs.resolve-trigger.outputs.pr_number }}
         run: |
           set -euo pipefail
-          python3 .github/scripts/pull-request-dashboard/notify_slack.py \
-            --state-branch "$DASHBOARD_STATE_BRANCH"
+          notify_args=(--state-branch "$DASHBOARD_STATE_BRANCH")
+          if [[ -n "${TRIGGER_PR_NUMBER:-}" ]]; then
+            notify_args+=(--pr-number "$TRIGGER_PR_NUMBER")
+          fi
+
+          python3 .github/scripts/pull-request-dashboard/notify_slack.py "${notify_args[@]}"
 
   publish-dashboard:
     needs: update-dashboard
