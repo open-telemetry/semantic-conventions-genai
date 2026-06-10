@@ -116,48 +116,52 @@ metrics:
       - ref: gen_ai.workflow.name
         requirement_level:
           conditionally_required: If available.
-  - name: gen_ai.workflow.steps
+  - name: gen_ai.agent.steps
     annotations:
       code_generation:
         metric_value_type: int
-    brief: 'Number of steps in a single GenAI workflow.'
+    brief: >
+      Number of steps a GenAI agent takes during a single invocation.
     note: |
-      This metric measures the number of discrete steps observed within a
-      single GenAI workflow. A "step" is a framework-defined unit of
-      execution that corresponds to a single observable event within the
-      workflow. Common framework-specific definitions:
+      Recorded once per agent invocation. A "step" is a framework-defined
+      unit of work that the agent itself performs during the invocation;
+      instrumentations MUST count only steps the agent itself authored.
 
-      - **ADK**: each event in the agent's invocation context (model
-        response, tool call, tool result, agent transfer).
-      - **LangGraph**: each node execution in the workflow graph.
-      - **LangChain agents**: each `AgentAction` or `AgentFinish` step.
-      - **CrewAI**: each agent turn within a task.
+      Common framework-specific definitions:
 
-      Instrumentations MUST document what counts as a step for their
-      framework.
+      - **ADK**: each [event](https://adk.dev/runtime/event-loop/#event) in
+        the invocation context whose `event.author` equals the agent name
+        (typically a model response, a tool call the agent issued, or an
+        agent transfer the agent initiated). Tool results, which are
+        authored by the tool rather than the agent, are not counted.
+      - **LangGraph**: each node execution the agent itself performed in
+        the workflow graph.
+      - **LangChain agents**: each `AgentAction` or `AgentFinish` step the
+        agent itself emitted.
+      - **CrewAI**: each agent turn the agent itself took within a task.
 
-      When the `gen_ai.agent.name` dimension is set, instrumentations SHOULD
-      only count steps attributed to that agent (for example, events
-      authored by that agent); events attributed to sub-agents or to a
-      parent workflow SHOULD NOT be counted.
+      Steps emitted by sub-agents or by the surrounding workflow SHOULD
+      NOT be counted; each step SHOULD be recorded exactly once across
+      the full call tree.
 
-      This metric complements `gen_ai.workflow.duration` by giving operators
-      visibility into how "chatty" or compute-intensive a workflow is, and
-      is useful for capacity planning and regression detection across
-      versions.
+      Steps are counted regardless of outcome: a step that errored or
+      partially completed still consumed the agent's execution and SHOULD
+      be counted.
+
+      Step counts MUST NOT be compared across different frameworks. They
+      are only meaningful within the context of a single framework's
+      instrumentation, which is why instrumentations MUST document what
+      counts as a step for their framework.
+
+      This metric SHOULD be specified with `ExplicitBucketBoundaries` of
+      [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024].
     instrument: histogram
     unit: "{step}"
     stability: development
     attributes:
-      - ref: gen_ai.workflow.name
-        requirement_level:
-          conditionally_required: If available.
+      - ref_group: attributes.gen_ai.error
       - ref: gen_ai.agent.name
-        requirement_level:
-          conditionally_required: If available.
-      - ref: gen_ai.agent.version
-        requirement_level:
-          conditionally_required: If available.
+        requirement_level: recommended
 
 metric_refinements:
   - id: openai.client.token.usage
