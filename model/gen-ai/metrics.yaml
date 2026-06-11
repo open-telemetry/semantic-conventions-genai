@@ -116,14 +116,14 @@ metrics:
       - ref: gen_ai.workflow.name
         requirement_level:
           conditionally_required: If available.
-  - name: gen_ai.agent.invocation.duration
+  - name: gen_ai.invoke_agent.duration
     annotations:
       code_generation:
         metric_value_type: double
     brief: >
       The end-to-end duration of a single agent invocation,
-      from the moment the agent is invoked to the moment it produces its final
-      response (or terminates with an error).
+      from the moment the invocation starts until the agent emits
+      the last chunk of its final response or terminates with an error.
     note: |
       Intended for instrumentations of agent frameworks (for example, ADK,
       LangChain agents, CrewAI agents) that can reliably bound a single
@@ -147,26 +147,25 @@ metrics:
       - ref_group: attributes.gen_ai.error
       - ref: gen_ai.agent.name
         requirement_level:
-          conditionally_required: when available
-  - name: gen_ai.tool.execution.duration
+          conditionally_required: When available.
+      - ref: gen_ai.agent.id
+        requirement_level:
+          conditionally_required: When available.
+      - ref: gen_ai.agent.version
+        requirement_level:
+          conditionally_required: When available.
+      - ref: gen_ai.request.model
+        requirement_level:
+          conditionally_required: If available.
+  - name: gen_ai.execute_tool.duration
     annotations:
       code_generation:
         metric_value_type: double
     brief: >
-      The duration of a single tool execution performed by or on behalf of a
-      GenAI agent.
+      The duration of a single tool execution.
     note: |
-      Intended for instrumentations of agent frameworks (or of application
-      code that executes tools on behalf of an agent) that can reliably
-      bound a single tool call.
-
-      Unlike `gen_ai.agent.invocation.duration` (which is required), this
-      metric is only recommended because tools may be executed through
-      paths that the agent framework does not observe — for example,
-      external MCP servers or application-managed dispatch.
-      Instrumentations SHOULD record this metric for every tool execution
-      they observe but are not required to capture all tool calls across
-      the agentic system.
+      Instrumentation that can reliably bound a single tool call SHOULD
+      record this metric for every tool execution they can observe.
 
       When this metric is reported alongside a `gen_ai.execute_tool` span,
       the metric value SHOULD be the same as the span duration.
@@ -181,7 +180,7 @@ metrics:
         requirement_level: recommended
       - ref: gen_ai.agent.name
         requirement_level:
-          conditionally_required: when available
+          conditionally_required: When available.
 
 metric_refinements:
   - id: openai.client.token.usage
