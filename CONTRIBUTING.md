@@ -51,8 +51,8 @@ make generate-all
 
 This regenerates the attribute registry pages under `docs/registry/`,
 refreshes the generated tables embedded in the hand-written docs under
-`docs/gen-ai/`, and updates the committed schema snapshot under
-`schema-snapshot/`.
+`docs/gen-ai/`, updates the committed schema snapshot under
+`schema-snapshot/`, and regenerates the status reports.
 
 ### 3. Validate
 
