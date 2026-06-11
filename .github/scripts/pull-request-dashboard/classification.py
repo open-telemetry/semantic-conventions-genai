@@ -58,6 +58,11 @@ Guidance:
     handed the ball back. If the author answers the thread while mentioning
     separate follow-up work, treat that as a completed reply unless they say
     the current PR is still waiting on that work.
+  - A comment may include positive_reactors: participants who added a positive
+    reaction to that comment. A positive reaction can acknowledge a completed
+    reply, but it does not by itself mean no one has follow-up. For example,
+    if the author says they will still make a change in this PR and a reviewer
+    reacts positively, classify as author.
 
 Respond with a single JSON object and nothing else:
 {{"thread_action": "author" | "reviewer" | "external" | "none" | "unclear", "reason": "short explanation grounded in this thread"}}
@@ -166,6 +171,7 @@ def thread_prompt_input(thread: dict[str, Any]) -> dict[str, Any]:
             "actor": comment.get("actor") or "",
             "participant_role": participant_role(comment.get("actor_role") or ""),
             "body": comment.get("body") or "",
+            "positive_reactors": comment.get("positive_reactors") or [],
         }
         for comment in (thread.get("comments") or [])
     ]

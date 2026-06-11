@@ -1,0 +1,37 @@
+[tool.towncrier]
+filename = "../CHANGELOG.md"
+directory = "."
+start_string = "<!-- towncrier release notes start -->\n"
+title_format = "## {version}"
+issue_format = "[#{issue}](https://github.com/open-telemetry/semantic-conventions-genai/pull/{issue})"
+wrap = true
+
+[[tool.towncrier.type]]
+directory = "breaking"
+name = "🛑 Breaking changes 🛑"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "deprecation"
+name = "🚩 Deprecations 🚩"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "component"
+name = "🚀 New components 🚀"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "enhancement"
+name = "💡 Enhancements 💡"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "bugfix"
+name = "🧰 Bug fixes 🧰"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "clarification"
+name = "📚 Clarifications 📚"
+showcontent = true

@@ -1,6 +1,6 @@
 # Security Finding Event
 
-> **[Semantic Convention](../../docs/gen-ai/gen-ai-security.md#finding-gen_aisecurityfinding)**
+> **[Semantic Convention](../../docs/gen-ai/gen-ai-events.md#event-gen_aisecurityfinding)**
 
 ## Required
 

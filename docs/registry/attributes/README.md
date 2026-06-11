@@ -9,7 +9,7 @@ linkTitle: Attributes
 
 The attributes registry is the place where attributes are defined. An attribute definition covers the following properties of an attribute:
 
-- the `id` (the fully qualified name) of the attribute
+- the `key` (the fully qualified name) of the attribute
 - the `type` of the attribute
 - the `stability` of the attribute
 - a `brief` description of the attribute and optionally a longer `note`
@@ -22,12 +22,6 @@ A definition of an attribute in the registry doesn't necessarily imply that the 
 If applicable, application developers are encouraged to use existing attributes from this registry. See also [these recommendations][developers recommendations] regarding attribute selection and attribute naming for custom use cases.
 
 All registered attributes are listed by namespace in this registry.
-
-> [!WARNING]
->
-> The following registry overview is a work in progress.
->
-> Further attribute namespaces are currently being migrated and will appear in this registry soon.
 
 Currently, the following namespaces exist:
 

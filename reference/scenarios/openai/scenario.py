@@ -1,6 +1,7 @@
 """Reference implementation for OpenAI."""
 
 import hashlib
+import hmac
 import json
 import os
 
@@ -14,6 +15,7 @@ from reference_shared import (
 )
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"] + "/v1"
+REFERENCE_HASH_KEY = b"reference-scenario-only-hmac-key"
 
 _reference_tracer = reference_tracer()
 
@@ -273,7 +275,9 @@ def run_security_guardrail_reference():
     request_model = "gpt-4o-mini"
     input_text = "Please email jane@example.com about the travel booking."
     sanitized_text = "Please email [REDACTED] about the travel booking."
-    input_hash = f"sha256:{hashlib.sha256(input_text.encode('utf-8')).hexdigest()}"
+    # Reference-only fixed key for deterministic output. Production
+    # instrumentations should use a secret HMAC key, not a raw content hash.
+    input_hash = f"hmac-sha256:{hmac.new(REFERENCE_HASH_KEY, input_text.encode('utf-8'), hashlib.sha256).hexdigest()}"
     parent_attrs = {
         "gen_ai.operation.name": "chat",
         "gen_ai.provider.name": "openai",
@@ -342,6 +346,7 @@ def run_remote_security_guardrail_reference():
 
     print("  [remote_security_guardrail] remote input guardrail (reference implementation)")
     host, port = mock_server_host_port(MOCK_BASE_URL)
+    health_url = f"{MOCK_BASE_URL.removesuffix('/v1')}/health"
     guardrail_attrs = {
         "gen_ai.operation.name": "run_guardrail",
         "gen_ai.security.action.type": "allow",
@@ -356,16 +361,15 @@ def run_remote_security_guardrail_reference():
         "gen_ai.security.target.type": "llm_input",
         "gen_ai.security.verdict.type": "allow",
     }
-    if host:
+    if host and port is not None:
         guardrail_attrs["server.address"] = host
-    if port is not None:
         guardrail_attrs["server.port"] = port
     with _reference_tracer.start_as_current_span(
         "run_guardrail Azure Content Safety",
         kind=SpanKind.CLIENT,
         attributes=guardrail_attrs,
     ):
-        with urlopen(os.environ["MOCK_LLM_URL"] + "/health", timeout=5) as response:
+        with urlopen(health_url, timeout=5) as response:
             response.read()
         print("    -> remote guardrail allowed request")
 

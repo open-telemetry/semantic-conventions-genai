@@ -25,12 +25,13 @@ def _matches_spec(op_name: str, attrs: dict[str, object], span_type_key: str) ->
 def classify_span(span_name: str, span_kind: str, span_attrs: dict[str, object]) -> set[str]:
     """Classify a span into GenAI span types using model-backed discriminators.
 
-    ``span_name`` and ``span_kind`` are accepted to match the shared
-    ``ClassifySpan`` signature but are not used: GenAI classification is
-    attribute-driven (``gen_ai.operation.name`` plus discriminator attrs).
+    ``span_name`` is accepted to match the shared ``ClassifySpan`` signature
+    but is not used: GenAI classification is attribute-driven
+    (``gen_ai.operation.name`` plus discriminator attrs).
     """
-    del span_name, span_kind  # unused; accepted for signature compatibility
+    del span_name  # unused; accepted for signature compatibility
     op_name = str(span_attrs.get("gen_ai.operation.name", "")).lower()
+    normalized_span_kind = span_kind.lower()
     detected = {key for key in SPAN_SPECS if _matches_spec(op_name, span_attrs, key)}
 
     # invoke_agent is represented as two span types (client vs internal) that
@@ -40,9 +41,14 @@ def classify_span(span_name: str, span_kind: str, span_attrs: dict[str, object])
         detected.discard("invoke_agent_client" if not is_remote else "invoke_agent_internal")
 
     # run_guardrail also has client and internal span types with the same
-    # operation name; remote-server attributes indicate a client call.
+    # operation name; prefer span kind and fall back to remote-server attrs.
     if "run_guardrail_client" in detected or "run_guardrail_internal" in detected:
-        is_remote = _has_any_attr(span_attrs, "server.address", "server.port")
+        if normalized_span_kind.endswith("client"):
+            is_remote = True
+        elif normalized_span_kind.endswith("internal"):
+            is_remote = False
+        else:
+            is_remote = _has_any_attr(span_attrs, "server.address", "server.port")
         detected.discard("run_guardrail_client" if not is_remote else "run_guardrail_internal")
 
     return detected

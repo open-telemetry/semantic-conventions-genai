@@ -3,7 +3,7 @@ name = "claude-agent-sdk-reference-test"
 version = "0.0.0"
 requires-python = ">=3.12"
 dependencies = [
-    "claude-agent-sdk==0.2.87",
+    "claude-agent-sdk==0.2.94",
     "anyio",
     "genai-reference-shared",
 ]

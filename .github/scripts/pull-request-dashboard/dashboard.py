@@ -179,6 +179,7 @@ from utils import actor_login, format_ts, parse_ts, truncate
 # sequentially within that worker).
 DEFAULT_JOBS = 4
 DEFAULT_MODEL = "gpt-5.4-mini"
+POSITIVE_ACK_REACTIONS = {"THUMBS_UP", "HOORAY", "HEART", "ROCKET"}
 
 # ---------------------------------------------------------------- model helpers
 
@@ -455,12 +456,20 @@ def compute_facts(
     return facts
 
 
-def thread_comment(timestamp: str, actor: str, author: str, reviewers: set[str], body: str) -> dict[str, Any]:
+def thread_comment(
+    timestamp: str,
+    actor: str,
+    author: str,
+    reviewers: set[str],
+    body: str,
+    positive_reactors: set[str] | None = None,
+) -> dict[str, Any]:
     return {
         "timestamp": timestamp,
         "actor": actor,
         "actor_role": role_for(actor, author, reviewers),
         "body": truncate(body),
+        "positive_reactors": sorted(positive_reactors or set()),
     }
 
 
@@ -474,6 +483,18 @@ def add_thread_facts(
         "current_conflicts": facts.get("conflicts"),
     }
     return thread
+
+
+def positive_reaction_logins(comment: dict[str, Any]) -> set[str]:
+    logins: set[str] = set()
+    for group in comment.get("reactionGroups") or []:
+        if group.get("content") not in POSITIVE_ACK_REACTIONS:
+            continue
+        for user in ((group.get("users") or {}).get("nodes") or []):
+            login = actor_login(user).lower()
+            if login:
+                logins.add(login)
+    return logins
 
 
 def group_review_threads(
@@ -499,6 +520,7 @@ def group_review_threads(
                 author,
                 reviewers,
                 c.get("body") or "",
+                positive_reaction_logins(c),
             ))
         comments = [c for c in comments if c["timestamp"]]
         comments.sort(key=lambda c: c["timestamp"])
@@ -616,6 +638,14 @@ def action_counts(classifications: list[dict[str, Any]]) -> dict[str, int]:
     return counts
 
 
+def has_blocking_review_thread(classifications: list[dict[str, Any]]) -> bool:
+    for c in classifications:
+        action = normalize_thread_action((c.get("decision") or {}).get("thread_action") or "")
+        if action in ("reviewer", "unclear") and c.get("thread_kind") != "pr-conversation":
+            return True
+    return False
+
+
 def route_pr(facts: dict[str, Any], classifications: list[dict[str, Any]]) -> str:
     counts = action_counts(classifications)
     # Copilot PRs are mapped back to a human author when possible. Maintenance
@@ -625,21 +655,16 @@ def route_pr(facts: dict[str, Any], classifications: list[dict[str, Any]]) -> st
     # Precedence:
     #   1. A thread waiting on the author -> "author".
     #   2. Otherwise a thread waiting on something external -> "external".
-    #   3. Otherwise a thread pending on a reviewer -> "approver". An open
-    #      reviewer-owed thread outranks the approval count: even an approved PR
-    #      is not merge-ready while an approver still owes a follow-up, because
-    #      that response may change their stance.
-    #   4. Otherwise the approval count decides: enough approvals -> ready for a
-    #      maintainer to merge (two normally, one when the author route does
-    #      not apply);
-    #      fewer -> still waiting on approvers.
+    #   3. If there are enough approvals and no unresolved review-comment
+    #      thread is still waiting on a reviewer or is unclear -> "maintainer".
+    #      A reviewer-routed synthetic PR conversation after enough approvals
+    #      means merge is the remaining action, not more review.
+    #   4. Otherwise the PR is still waiting on approvers.
     if counts["author"] and not is_maintenance_bot:
         return "author"
     if counts["external"]:
         return "external"
-    if counts["reviewer"]:
-        return "approver"
-    if facts.get("approval_count", 0) >= required_approvals:
+    if facts.get("approval_count", 0) >= required_approvals and not has_blocking_review_thread(classifications):
         return "maintainer"
     return "approver"
 
@@ -711,6 +736,10 @@ def reviewers_with_open_threads(
     by_id = threads_by_id(threads)
     logins: set[str] = set()
     for c in classifications:
+        # The synthetic PR conversation contributes to the PR's routing bucket,
+        # but it is not a reviewer-owned discussion thread for badges.
+        if c.get("thread_kind") == "pr-conversation":
+            continue
         action = normalize_thread_action((c.get("decision") or {}).get("thread_action") or "")
         if action not in OPEN_THREAD_ACTIONS:
             continue
@@ -979,6 +1008,10 @@ def render_dashboard_body(
     return render_pr_tables(prs, results, repo)
 
 
+def failed_result_numbers(results: dict[int, dict[str, Any]]) -> list[int]:
+    return [number for number, result in sorted(results.items()) if result.get("failed")]
+
+
 def update_dashboard(args: argparse.Namespace) -> int:
     repo = detect_repo()
     owner, repo_name = repo.split("/", 1)
@@ -1008,6 +1041,15 @@ def update_dashboard(args: argparse.Namespace) -> int:
         args.pr_number,
         open_pr_numbers,
     )
+
+    failed_results = failed_result_numbers(calculation.results)
+    if failed_results:
+        print(
+            "dashboard refresh hit PR failure(s); refusing to publish failed state: "
+            + ", ".join(f"#{number}" for number in failed_results),
+            file=sys.stderr,
+        )
+        return 1
 
     md = render_dashboard_body(
         prs,
