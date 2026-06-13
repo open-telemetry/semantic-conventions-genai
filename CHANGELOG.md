@@ -2,8 +2,6 @@
 
 ## Unreleased
 
-- Add experimental `gen_ai.context.selection.evaluated` event for privacy-preserving context selection counts.
-
 ### 🛑 Breaking changes 🛑
 
 ### 🚩 Deprecations 🚩
