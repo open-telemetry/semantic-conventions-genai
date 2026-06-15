@@ -579,7 +579,8 @@ spans:
       note: |
         **Span name** SHOULD be `run_guardrail {gen_ai.security.guardrail.name}` when
         `gen_ai.security.guardrail.name` is readily available. When it is not available,
-        it SHOULD be `run_guardrail {gen_ai.security.target.type}`.
+        it SHOULD be `run_guardrail {gen_ai.security.target.type} {gen_ai.security.target.subtype}`
+        if `gen_ai.security.target.subtype` is available, otherwise `run_guardrail {gen_ai.security.target.type}`.
         Semantic conventions for individual guardrail services and frameworks MAY specify a different span name format.
     brief: >
       Describes a remote security guardrail evaluation.
@@ -588,7 +589,8 @@ spans:
 
       **Span name** SHOULD be `run_guardrail {gen_ai.security.guardrail.name}` when
       `gen_ai.security.guardrail.name` is readily available. When it is not available,
-      it SHOULD be `run_guardrail {gen_ai.security.target.type}`.
+      it SHOULD be `run_guardrail {gen_ai.security.target.type} {gen_ai.security.target.subtype}`
+      if `gen_ai.security.target.subtype` is available, otherwise `run_guardrail {gen_ai.security.target.type}`.
       Semantic conventions for individual guardrail services and frameworks MAY specify a different span name format.
 
       This span SHOULD be used when the guardrail evaluation is performed by
@@ -619,6 +621,10 @@ spans:
       - ref: gen_ai.security.target.type
         requirement_level: required
         sampling_relevant: true
+      - ref: gen_ai.security.target.subtype
+        requirement_level:
+          conditionally_required: If available.
+        sampling_relevant: true
       - ref: server.address
         brief: Guardrail service address.
         requirement_level: recommended
@@ -635,7 +641,8 @@ spans:
       note: |
         **Span name** SHOULD be `run_guardrail {gen_ai.security.guardrail.name}` when
         `gen_ai.security.guardrail.name` is readily available. When it is not available,
-        it SHOULD be `run_guardrail {gen_ai.security.target.type}`.
+        it SHOULD be `run_guardrail {gen_ai.security.target.type} {gen_ai.security.target.subtype}`
+        if `gen_ai.security.target.subtype` is available, otherwise `run_guardrail {gen_ai.security.target.type}`.
         Semantic conventions for individual guardrail services and frameworks MAY specify a different span name format.
     brief: >
       Describes an in-process security guardrail evaluation.
@@ -644,7 +651,8 @@ spans:
 
       **Span name** SHOULD be `run_guardrail {gen_ai.security.guardrail.name}` when
       `gen_ai.security.guardrail.name` is readily available. When it is not available,
-      it SHOULD be `run_guardrail {gen_ai.security.target.type}`.
+      it SHOULD be `run_guardrail {gen_ai.security.target.type} {gen_ai.security.target.subtype}`
+      if `gen_ai.security.target.subtype` is available, otherwise `run_guardrail {gen_ai.security.target.type}`.
       Semantic conventions for individual guardrail services and frameworks MAY specify a different span name format.
 
       This span SHOULD be used when the guardrail evaluation is performed in the
@@ -673,6 +681,10 @@ spans:
         sampling_relevant: true
       - ref: gen_ai.security.target.type
         requirement_level: required
+        sampling_relevant: true
+      - ref: gen_ai.security.target.subtype
+        requirement_level:
+          conditionally_required: If available.
         sampling_relevant: true
 
   - type: gen_ai.invoke_workflow.internal

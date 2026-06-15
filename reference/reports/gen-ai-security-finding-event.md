@@ -16,6 +16,7 @@
 | --- | --- |
 | gen_ai.security.external_finding_id | [openai] |
 | gen_ai.security.target.id | [openai] |
+| gen_ai.security.target.subtype | [openai] |
 
 ## Recommended
 

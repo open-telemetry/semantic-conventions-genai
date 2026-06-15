@@ -530,41 +530,42 @@ attributes:
   - key: gen_ai.security.target.type
     type:
       members:
-        - id: llm_input
-          value: "llm_input"
-          brief: Prompt or messages being sent to the model.
+        - id: input
+          value: "input"
+          brief: Content or action entering the guarded operation.
           stability: development
-        - id: llm_output
-          value: "llm_output"
-          brief: Response or messages returned from the model.
+        - id: output
+          value: "output"
+          brief: Content or action emitted by the guarded operation.
           stability: development
-        - id: tool_call_input
-          value: "tool_call_input"
-          brief: Tool call arguments or invocation request.
+    brief: The direction of the content or action the guardrail is applied to.
+    note: >
+      If one of the well-known values applies, then the respective value SHOULD
+      be used. Otherwise, a custom value MAY be used.
+    examples: ['input', 'output']
+    stability: development
+  - key: gen_ai.security.target.subtype
+    type:
+      members:
+        - id: llm
+          value: "llm"
+          brief: Prompt, messages, or response content for an LLM operation.
           stability: development
-        - id: tool_call_output
-          value: "tool_call_output"
-          brief: Tool call result or response.
+        - id: tool_call
+          value: "tool_call"
+          brief: Tool call arguments, invocation request, result, or response.
           stability: development
         - id: tool_definition
           value: "tool_definition"
           brief: Tool definition or schema.
           stability: development
-        - id: memory_write
-          value: "memory_write"
-          brief: Data being written to memory.
+        - id: memory
+          value: "memory"
+          brief: Memory content being read or written.
           stability: development
-        - id: memory_read
-          value: "memory_read"
-          brief: Data being read from memory.
-          stability: development
-        - id: retrieval_query
-          value: "retrieval_query"
-          brief: Knowledge or RAG query being sent.
-          stability: development
-        - id: retrieval_result
-          value: "retrieval_result"
-          brief: Knowledge or RAG results being returned.
+        - id: retrieval
+          value: "retrieval"
+          brief: Retrieval query or retrieval result.
           stability: development
         - id: message
           value: "message"
@@ -574,11 +575,15 @@ attributes:
           value: "action"
           brief: Non-tool agent action.
           stability: development
-    brief: The type of content or action the guardrail is applied to.
+    brief: The subtype of content or action the guardrail is applied to.
     note: >
-      If one of the well-known values applies, then the respective value SHOULD
-      be used. Otherwise, a custom value MAY be used.
-    examples: ['llm_input', 'llm_output', 'tool_call_input', 'tool_call_output', 'tool_definition']
+      This attribute refines `gen_ai.security.target.type`. For example,
+      `gen_ai.security.target.type=input` and
+      `gen_ai.security.target.subtype=tool_call` identifies tool call
+      arguments or invocation requests, while `gen_ai.security.target.type=output`
+      and `gen_ai.security.target.subtype=tool_call` identifies tool call
+      results or responses.
+    examples: ['llm', 'tool_call', 'tool_definition', 'retrieval', 'memory']
     stability: development
   - key: gen_ai.security.target.id
     type: string
@@ -701,15 +706,28 @@ attributes:
   - key: gen_ai.security.content.input.hash
     type: string
     brief: Hash of the input content for forensic correlation.
-    note: >
+    note: |
       Use when full content capture is not desired but correlation is needed.
-      Instrumentations SHOULD document the algorithm and any salting or HMAC
-      approach used.
-    examples: ['sha256:a3f2b8c9...']
+
+      Instrumentations SHOULD include the algorithm in the value and document
+      the canonicalization used before hashing. For free-form text, use UTF-8
+      encoded bytes and document any Unicode normalization. For structured
+      inputs such as tool call arguments, use deterministic serialization when
+      possible, for example JSON Canonicalization Scheme (RFC 8785).
+
+      For sensitive content, instrumentations SHOULD use a keyed HMAC or another
+      secret-keyed construction instead of a raw hash to reduce dictionary
+      attack risk.
+    examples: ['sha256:a3f2b8c9...', 'hmac-sha256:b7e4c2a1...']
     stability: development
   - key: gen_ai.security.content.modified
     type: boolean
-    brief: Whether the content was redacted or otherwise modified by the guardrail.
+    brief: Whether guardrail processing actually changed the content.
+    note: >
+      This describes the observed content change, not merely that
+      `gen_ai.security.verdict.type` or `gen_ai.security.action.type` was
+      `modify`. For example, a guardrail can run in modify mode but leave the
+      content unchanged.
     examples: [true, false]
     stability: development
   - key: gen_ai.security.external_finding_id

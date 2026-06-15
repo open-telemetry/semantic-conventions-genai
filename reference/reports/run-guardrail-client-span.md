@@ -22,6 +22,7 @@
 | gen_ai.security.guardrail.id | [openai] |
 | gen_ai.security.policy.id | [openai] |
 | gen_ai.security.target.id | [openai] |
+| gen_ai.security.target.subtype | [openai] |
 | gen_ai.security.verdict.reason | (none) |
 | server.port | [openai] |
 
