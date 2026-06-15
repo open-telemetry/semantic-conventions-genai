@@ -2694,8 +2694,7 @@ refinements:
         conditionally_required: When operation is related to a specific prompt.
       stability: development
       type: string
-    - brief: |
-        The variables supplied to the prompt template in the request. In MCP, prompt arguments map to prompt variables.
+    - brief: The variables supplied to the prompt template in the request.
       examples:
       - Alice
       - French
@@ -3261,8 +3260,7 @@ refinements:
         conditionally_required: When operation is related to a specific prompt.
       stability: development
       type: string
-    - brief: |
-        The variables supplied to the prompt template in the request. In MCP, prompt arguments map to prompt variables.
+    - brief: The variables supplied to the prompt template in the request.
       examples:
       - Alice
       - French
@@ -10508,8 +10506,7 @@ refinements:
         conditionally_required: When operation is related to a specific prompt.
       stability: development
       type: string
-    - brief: |
-        The variables supplied to the prompt template in the request. In MCP, prompt arguments map to prompt variables.
+    - brief: The variables supplied to the prompt template in the request.
       examples:
       - Alice
       - French
@@ -10526,6 +10523,10 @@ refinements:
           the `gen_ai.prompt.variable.user_name` attribute with value `"Alice"`.
         - A variable `language` with value `French` SHOULD be recorded as
           the `gen_ai.prompt.variable.language` attribute with value `"French"`.
+
+        In MCP, [prompt arguments](https://modelcontextprotocol.io/specification/2025-11-25/schema#prompt)
+        supplied in `prompts/get` requests SHOULD be recorded as
+        `gen_ai.prompt.variable.\u003cargument_name\u003e` attributes.
 
         \u003e [!Warning]
         \u003e This attribute may contain sensitive information.
@@ -11044,8 +11045,7 @@ refinements:
         conditionally_required: When operation is related to a specific prompt.
       stability: development
       type: string
-    - brief: |
-        The variables supplied to the prompt template in the request. In MCP, prompt arguments map to prompt variables.
+    - brief: The variables supplied to the prompt template in the request.
       examples:
       - Alice
       - French
@@ -11062,6 +11062,10 @@ refinements:
           the `gen_ai.prompt.variable.user_name` attribute with value `"Alice"`.
         - A variable `language` with value `French` SHOULD be recorded as
           the `gen_ai.prompt.variable.language` attribute with value `"French"`.
+
+        In MCP, [prompt arguments](https://modelcontextprotocol.io/specification/2025-11-25/schema#prompt)
+        supplied in `prompts/get` requests SHOULD be recorded as
+        `gen_ai.prompt.variable.\u003cargument_name\u003e` attributes.
 
         \u003e [!Warning]
         \u003e This attribute may contain sensitive information.
@@ -16075,8 +16079,7 @@ registry:
         conditionally_required: When operation is related to a specific prompt.
       stability: development
       type: string
-    - brief: |
-        The variables supplied to the prompt template in the request. In MCP, prompt arguments map to prompt variables.
+    - brief: The variables supplied to the prompt template in the request.
       examples:
       - Alice
       - French
@@ -16640,8 +16643,7 @@ registry:
         conditionally_required: When operation is related to a specific prompt.
       stability: development
       type: string
-    - brief: |
-        The variables supplied to the prompt template in the request. In MCP, prompt arguments map to prompt variables.
+    - brief: The variables supplied to the prompt template in the request.
       examples:
       - Alice
       - French
@@ -21095,8 +21097,7 @@ registry:
         conditionally_required: When operation is related to a specific prompt.
       stability: development
       type: string
-    - brief: |
-        The variables supplied to the prompt template in the request. In MCP, prompt arguments map to prompt variables.
+    - brief: The variables supplied to the prompt template in the request.
       examples:
       - Alice
       - French
@@ -21113,6 +21114,10 @@ registry:
           the `gen_ai.prompt.variable.user_name` attribute with value `"Alice"`.
         - A variable `language` with value `French` SHOULD be recorded as
           the `gen_ai.prompt.variable.language` attribute with value `"French"`.
+
+        In MCP, [prompt arguments](https://modelcontextprotocol.io/specification/2025-11-25/schema#prompt)
+        supplied in `prompts/get` requests SHOULD be recorded as
+        `gen_ai.prompt.variable.\u003cargument_name\u003e` attributes.
 
         \u003e [!Warning]
         \u003e This attribute may contain sensitive information.
@@ -21630,8 +21635,7 @@ registry:
         conditionally_required: When operation is related to a specific prompt.
       stability: development
       type: string
-    - brief: |
-        The variables supplied to the prompt template in the request. In MCP, prompt arguments map to prompt variables.
+    - brief: The variables supplied to the prompt template in the request.
       examples:
       - Alice
       - French
@@ -21648,6 +21652,10 @@ registry:
           the `gen_ai.prompt.variable.user_name` attribute with value `"Alice"`.
         - A variable `language` with value `French` SHOULD be recorded as
           the `gen_ai.prompt.variable.language` attribute with value `"French"`.
+
+        In MCP, [prompt arguments](https://modelcontextprotocol.io/specification/2025-11-25/schema#prompt)
+        supplied in `prompts/get` requests SHOULD be recorded as
+        `gen_ai.prompt.variable.\u003cargument_name\u003e` attributes.
 
         \u003e [!Warning]
         \u003e This attribute may contain sensitive information.

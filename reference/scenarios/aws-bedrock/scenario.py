@@ -288,35 +288,25 @@ def run_converse_with_document_input_reference(client):
 
 
 def run_converse_with_prompt_template_reference(client):
-    """Scenario: Bedrock Converse API using a named prompt template with version and variables.
+    """Scenario: Bedrock Converse API using a managed prompt template with version and variables.
 
-    Demonstrates setting gen_ai.prompt.name, gen_ai.prompt.version,
-    and gen_ai.prompt.variable.* attributes when using a prompt template.
-
-    AWS Bedrock supports prompt management via Amazon Bedrock Prompt Management,
-    where prompts can be versioned and parameterized with variables.
+    Bedrock Prompt Management prompts are invoked by passing the prompt version ARN
+    as `modelId` and variable values in `promptVariables`. Instrumentation extracts
+    gen_ai.prompt.name, gen_ai.prompt.version, and gen_ai.prompt.variable.* from
+    the request. This scenario does not record gen_ai.input.messages because the
+    Converse request carries no messages.
     """
-    print("  [converse_prompt_template] Bedrock Converse with named prompt template (reference implementation)")
-    request_model = "anthropic.claude-3-haiku-20240307-v1:0"
+    print("  [converse_prompt_template] Bedrock Converse with managed prompt template (reference implementation)")
     prompt_name = "order-inquiry"
     prompt_version = "2.0.1"
+    prompt_arn = f"arn:aws:bedrock:us-east-1:123456789012:prompt/{prompt_name}:{prompt_version}"
     prompt_variables = {"customer_id": "C-12345", "order_id": "ORD-67890"}
+    bedrock_prompt_variables = {name: {"text": value} for name, value in prompt_variables.items()}
 
-    messages = [
-        {
-            "role": "user",
-            "content": [
-                {
-                    "text": f"Look up order {prompt_variables['order_id']} for customer {prompt_variables['customer_id']}."
-                }
-            ],
-        }
-    ]
     host, port = mock_server_host_port(MOCK_BASE_URL)
     span_attributes = {
         "gen_ai.operation.name": "chat",
         "gen_ai.provider.name": "aws.bedrock",
-        "gen_ai.request.model": request_model,
         "gen_ai.prompt.name": prompt_name,
         "gen_ai.prompt.version": prompt_version,
     }
@@ -324,20 +314,12 @@ def run_converse_with_prompt_template_reference(client):
         span_attributes["server.address"] = host
     if port is not None:
         span_attributes["server.port"] = port
-    with _reference_tracer.start_as_current_span(
-        "chat anthropic.claude-3-haiku-20240307-v1:0", attributes=span_attributes
-    ) as span:
+    with _reference_tracer.start_as_current_span("chat", attributes=span_attributes) as span:
         for var_name, var_value in prompt_variables.items():
             span.set_attribute(f"gen_ai.prompt.variable.{var_name}", var_value)
-        span.set_attribute(
-            "gen_ai.input.messages",
-            json.dumps(
-                [{"role": m["role"], "parts": [{"type": "text", "content": m["content"][0]["text"]}]} for m in messages]
-            ),
-        )
         response = client.converse(
-            modelId=request_model,
-            messages=messages,
+            modelId=prompt_arn,
+            promptVariables=bedrock_prompt_variables,
         )
         stop_reason = response.get("stopReason")
         if stop_reason:
@@ -363,12 +345,8 @@ def run_converse_with_prompt_template_reference(client):
 
         event_attrs = {
             "gen_ai.operation.name": "chat",
-            "gen_ai.request.model": request_model,
             "gen_ai.prompt.name": prompt_name,
             "gen_ai.prompt.version": prompt_version,
-            "gen_ai.input.messages": json.dumps(
-                [{"role": m["role"], "parts": [{"type": "text", "content": m["content"][0]["text"]}]} for m in messages]
-            ),
             "gen_ai.output.messages": json.dumps(
                 [
                     {
