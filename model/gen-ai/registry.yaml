@@ -383,6 +383,93 @@ attributes:
     brief: The version of the GenAI agent.
     examples: ["1.0.0", "2025-05-01"]
     stability: development
+  - key: gen_ai.agent.public_key.algorithm
+    type: string
+    brief: Cryptographic algorithm identifier of the agent's identity keypair.
+    note: >
+      Producer-emitted. The value is a case-sensitive algorithm identifier; producers
+      SHOULD draw from a consistent identifier set spanning the classical, post-quantum,
+      and symmetric families (for example `Ed25519`, `ML-DSA-44`, `ML-DSA-65`, `ML-DSA-87`,
+      `Falcon-512`, `Falcon-1024`, `SLH-DSA`), aligned with the JSON Web Key registries
+      (RFC 7517 section 4.1).
+
+      Verifier behaviour on an unrecognized identifier SHOULD be fail-closed: treat the key
+      as opaque and refuse to verify, never best-effort. The attribute records which algorithm
+      a verification decision was made under, so a consumer can distinguish a
+      refused-unknown-algorithm decision from a verified one.
+    examples: ["ed25519", "ml-dsa-65"]
+    stability: development
+  - key: gen_ai.agent.capability
+    type: string
+    brief: >
+      The capability the agent is attempting to invoke. Free-form string matching the
+      producer's capability namespace.
+    examples: ["database.read", "email.send", "code.execute"]
+    stability: development
+  - key: gen_ai.agent.trust.score
+    type: double
+    brief: >
+      Producer-emitted trust score for the agent at decision time, in the range 0.0 to 1.0.
+    note: >
+      A producer-defined decision input, analogous to a sampling decision: the producer computes
+      it with whatever method suits its domain, and downstream observers correlate it against
+      outcomes. It is NOT a normative or cross-producer-comparable value. When emitted it SHOULD
+      be accompanied by `gen_ai.agent.trust.method`, so a consumer can tell a change in the scoring
+      method from a change in the agent's behaviour.
+    stability: development
+  - key: gen_ai.agent.trust.method
+    type: string
+    brief: >
+      Opaque, producer-scoped token identifying the method and version that produced
+      `gen_ai.agent.trust.score`.
+    note: >
+      Consumers compare this token for equality only; its internal structure is producer-defined.
+      When the token changes, the scoring function moved (re-fit, re-threshold, new model), not the
+      agent, so a consumer SHOULD re-anchor outcome correlation rather than read the score change as
+      drift. Recommended wherever `gen_ai.agent.trust.score` is emitted.
+    examples: ["trust-model@2.3.1", "rules-v7"]
+    stability: development
+  - key: gen_ai.agent.drift.score
+    type: double
+    brief: >
+      Producer-emitted behavioural drift score for the agent at decision time, in the range
+      0.0 to 1.0.
+    note: >
+      Same producer-defined, consumer-correlated pattern as `gen_ai.agent.trust.score`: a decision
+      input, not a normative value. When emitted it SHOULD be accompanied by
+      `gen_ai.agent.drift.method`.
+    stability: development
+  - key: gen_ai.agent.drift.method
+    type: string
+    brief: >
+      Opaque, producer-scoped token identifying the method and version that produced
+      `gen_ai.agent.drift.score`.
+    note: >
+      Equality-compared by consumers. A changed token signals the drift-scoring function moved, not
+      the agent, and is a cue to reset outcome correlation. Recommended wherever
+      `gen_ai.agent.drift.score` is emitted.
+    examples: ["embedding-cosine@1.4", "kl-divergence-v2"]
+    stability: development
+  - key: gen_ai.agent.scan.verdict
+    type: string
+    brief: Most recent producer-emitted security scan verdict for the agent.
+    note: >
+      Producer-defined provenance: the convention standardizes the attribute name and the recommended
+      value set (`clean`, `warnings`, `findings`, `critical`, `unknown`), not which scanner produced
+      the value or how often it is refreshed. When emitted it SHOULD be accompanied by
+      `gen_ai.agent.scan.method`.
+    examples: ["clean", "warnings", "findings", "critical", "unknown"]
+    stability: development
+  - key: gen_ai.agent.scan.method
+    type: string
+    brief: >
+      Opaque, producer-scoped token identifying the scanner and version that produced
+      `gen_ai.agent.scan.verdict`.
+    note: >
+      Equality-compared by consumers. A changed token signals the scanning method moved, not the
+      agent. Recommended wherever `gen_ai.agent.scan.verdict` is emitted.
+    examples: ["scanner@1.2.0", "policy-set-2026.06"]
+    stability: development
   - key: gen_ai.tool.name
     type: string
     brief: Name of the tool utilized by the agent.
