@@ -86,7 +86,7 @@ multiple guardrails are chained.
 
 **Span kind** SHOULD be `CLIENT`.
 
-**Span status** SHOULD follow the [Recording Errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.41.1/docs/general/recording-errors.md) document.
+**Span status** SHOULD follow the [Recording Errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.42.0/docs/general/recording-errors.md) document.
 
 **Attributes:**
 
@@ -95,7 +95,7 @@ multiple guardrails are chained.
 | [`gen_ai.operation.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Required` | string | The name of the operation being performed. [1] | `chat`; `generate_content`; `text_completion` |
 | [`gen_ai.security.target.type`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Required` | string | The direction of the content or action the guardrail is applied to. [2] | `input`; `output` |
 | [`gen_ai.security.verdict.type`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Required` | string | The verdict returned by the security guardrail evaluation. [3] | `allow`; `deny`; `modify`; `warn`; `escalate` |
-| [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.41.1/docs/registry/attributes/error.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If the operation ended in an error. | string | Describes a class of error the operation ended with. [4] | `timeout`; `java.net.UnknownHostException`; `server_certificate_invalid`; `500` |
+| [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.42.0/docs/registry/attributes/error.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If the operation ended in an error. | string | Describes a class of error the operation ended with. [4] | `timeout`; `java.net.UnknownHostException`; `server_certificate_invalid`; `500` |
 | [`gen_ai.conversation.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When available. | string | The unique identifier for a conversation (session, thread), used to store and correlate messages within this conversation. | `conv_5j66UpCpwteGg4YSxUnt7lPY` |
 | [`gen_ai.security.action.type`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [5] | string | The actual enforcement action taken by the caller or framework. [6] | `allow`; `block`; `modify`; `escalate` |
 | [`gen_ai.security.content.input.hash`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [7] | string | Hash of the input content for forensic correlation. [8] | `sha256:a3f2b8c9...`; `hmac-sha256:b7e4c2a1...` |
@@ -106,7 +106,7 @@ multiple guardrails are chained.
 | [`gen_ai.security.target.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If available. | string | Identifier of the specific target the guardrail is applied to. [13] | `call_xyz789`; `msg_abc123`; `mem_abc456` |
 | [`gen_ai.security.target.subtype`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If available. | string | The subtype of content or action the guardrail is applied to. [14] | `llm`; `tool_call`; `tool_definition`; `retrieval`; `memory` |
 | [`gen_ai.security.verdict.reason`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [15] | string | Human-readable explanation for the security verdict. [16] | `PII detected in output`; `Prompt injection attempt detected`; `Action exceeds agent permission scope` |
-| [`server.port`](https://github.com/open-telemetry/semantic-conventions/blob/v1.41.1/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If `server.address` is set. | int | Guardrail service port. [17] | `80`; `8080`; `443` |
+| [`server.port`](https://github.com/open-telemetry/semantic-conventions/blob/v1.42.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If `server.address` is set. | int | Guardrail service port. [17] | `80`; `8080`; `443` |
 | [`gen_ai.security.finding.evidence`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If non-content evidence descriptors are available. | string[] | Non-content evidence descriptors for a security finding. [18] | `["field:bcc", "pattern:email"]`; `["count:2", "position:output.content"]` |
 | [`gen_ai.security.guardrail.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | Human-readable name of the security guardrail service or component. [19] | `Azure Content Safety`; `Bedrock Guardrails`; `Custom PII Filter` |
 | [`gen_ai.security.guardrail.provider.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The provider or vendor of the security guardrail service. [20] | `azure.ai.content_safety`; `aws.bedrock`; `gcp.model_armor`; `custom` |
@@ -117,7 +117,7 @@ multiple guardrails are chained.
 | [`gen_ai.security.risk.finding`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If a risk finding is reported. | string | The security risk finding detected. [23] | `prompt_injection`; `sensitive_info_disclosure`; `jailbreak`; `custom:financial_advice_violation` |
 | [`gen_ai.security.risk.score`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If a risk or confidence score is reported. | double | Numeric risk or confidence score. [24] | `0.85`; `0.95`; `0.42` |
 | [`gen_ai.security.verdict.code`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | Provider-specific code for the security verdict. | `112`; `403`; `AACS-PII`; `MODEL_ARMOR_SAFETY` |
-| [`server.address`](https://github.com/open-telemetry/semantic-conventions/blob/v1.41.1/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | Guardrail service address. [25] | `example.com`; `10.1.2.80`; `/tmp/my.sock` |
+| [`server.address`](https://github.com/open-telemetry/semantic-conventions/blob/v1.42.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | Guardrail service address. [25] | `example.com`; `10.1.2.80`; `/tmp/my.sock` |
 | [`gen_ai.security.content.input.value`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | The input content that was evaluated by the guardrail. [26] | `Send an email to customer@example.com` |
 | [`gen_ai.security.content.output.value`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | The output content after guardrail processing, if modified. [27] | `Send an email to [REDACTED]` |
 
@@ -255,8 +255,8 @@ and SHOULD be provided **at span creation time** (if provided at all):
 * [`gen_ai.security.target.subtype`](/docs/registry/attributes/gen-ai.md)
 * [`gen_ai.security.target.type`](/docs/registry/attributes/gen-ai.md)
 * [`gen_ai.security.verdict.type`](/docs/registry/attributes/gen-ai.md)
-* [`server.address`](https://github.com/open-telemetry/semantic-conventions/blob/v1.41.1/docs/registry/attributes/server.md)
-* [`server.port`](https://github.com/open-telemetry/semantic-conventions/blob/v1.41.1/docs/registry/attributes/server.md)
+* [`server.address`](https://github.com/open-telemetry/semantic-conventions/blob/v1.42.0/docs/registry/attributes/server.md)
+* [`server.port`](https://github.com/open-telemetry/semantic-conventions/blob/v1.42.0/docs/registry/attributes/server.md)
 
 ---
 
@@ -384,7 +384,7 @@ multiple guardrails are chained.
 
 **Span kind** SHOULD be `INTERNAL`.
 
-**Span status** SHOULD follow the [Recording Errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.41.1/docs/general/recording-errors.md) document.
+**Span status** SHOULD follow the [Recording Errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.42.0/docs/general/recording-errors.md) document.
 
 **Attributes:**
 
@@ -393,7 +393,7 @@ multiple guardrails are chained.
 | [`gen_ai.operation.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Required` | string | The name of the operation being performed. [1] | `chat`; `generate_content`; `text_completion` |
 | [`gen_ai.security.target.type`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Required` | string | The direction of the content or action the guardrail is applied to. [2] | `input`; `output` |
 | [`gen_ai.security.verdict.type`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Required` | string | The verdict returned by the security guardrail evaluation. [3] | `allow`; `deny`; `modify`; `warn`; `escalate` |
-| [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.41.1/docs/registry/attributes/error.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If the operation ended in an error. | string | Describes a class of error the operation ended with. [4] | `timeout`; `java.net.UnknownHostException`; `server_certificate_invalid`; `500` |
+| [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.42.0/docs/registry/attributes/error.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If the operation ended in an error. | string | Describes a class of error the operation ended with. [4] | `timeout`; `java.net.UnknownHostException`; `server_certificate_invalid`; `500` |
 | [`gen_ai.conversation.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When available. | string | The unique identifier for a conversation (session, thread), used to store and correlate messages within this conversation. | `conv_5j66UpCpwteGg4YSxUnt7lPY` |
 | [`gen_ai.security.action.type`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [5] | string | The actual enforcement action taken by the caller or framework. [6] | `allow`; `block`; `modify`; `escalate` |
 | [`gen_ai.security.content.input.hash`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [7] | string | Hash of the input content for forensic correlation. [8] | `sha256:a3f2b8c9...`; `hmac-sha256:b7e4c2a1...` |
