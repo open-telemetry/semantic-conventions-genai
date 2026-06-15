@@ -27,19 +27,19 @@ def run_retrieval_reference():
 
     data_source_id = "weather-knowledge-base"
     query_text = "Seattle weather"
-    request_top_k = 2.0
+    top_k = 2
     retriever = WeatherRetriever(
         docs=[
             Document(page_content="Seattle weather is rainy and cool.", metadata={"source_id": data_source_id}),
             Document(page_content="Paris weather is mild and breezy.", metadata={"source_id": data_source_id}),
         ],
-        top_k=2,
+        top_k=top_k,
     )
 
     with _reference_tracer.start_as_current_span("retrieval weather-knowledge-base") as span:
         span.set_attribute("gen_ai.operation.name", "retrieval")
         span.set_attribute("gen_ai.data_source.id", data_source_id)
-        span.set_attribute("gen_ai.request.top_k", request_top_k)
+        span.set_attribute("gen_ai.retrieval.top_k", top_k)
         span.set_attribute("gen_ai.retrieval.query.text", query_text)
         documents = retriever.invoke(query_text)
         span.set_attribute(

@@ -16,7 +16,7 @@ def run_chat_reference(client):
     host, port = mock_server_host_port(MOCK_BASE_URL)
     span_attributes = {
         "gen_ai.operation.name": "chat",
-        "gen_ai.provider.name": "azure.openai",
+        "gen_ai.provider.name": "azure.ai.openai",
         "gen_ai.request.model": request_model,
     }
     if host:
@@ -46,7 +46,7 @@ def run_embeddings_reference(client):
     host, port = mock_server_host_port(MOCK_BASE_URL)
     span_attributes_2 = {
         "gen_ai.operation.name": "embeddings",
-        "gen_ai.provider.name": "azure.openai",
+        "gen_ai.provider.name": "azure.ai.openai",
         "gen_ai.request.model": request_model,
     }
     if host:

@@ -9,7 +9,7 @@ linkTitle: Attributes
 
 The attributes registry is the place where attributes are defined. An attribute definition covers the following properties of an attribute:
 
-- the `id` (the fully qualified name) of the attribute
+- the `key` (the fully qualified name) of the attribute
 - the `type` of the attribute
 - the `stability` of the attribute
 - a `brief` description of the attribute and optionally a longer `note`
@@ -23,12 +23,6 @@ If applicable, application developers are encouraged to use existing attributes 
 
 All registered attributes are listed by namespace in this registry.
 
-> [!WARNING]
->
-> The following registry overview is a work in progress.
->
-> Further attribute namespaces are currently being migrated and will appear in this registry soon.
-
 Currently, the following namespaces exist:
 
 - [AWS](aws.md)
@@ -36,4 +30,4 @@ Currently, the following namespaces exist:
 - [MCP](mcp.md)
 - [OpenAI](openai.md)
 
-[developers recommendations]: https://github.com/open-telemetry/semantic-conventions/blob/v1.41.1/docs/general/naming.md#recommendations-for-application-developers
+[developers recommendations]: https://github.com/open-telemetry/semantic-conventions/blob/v1.42.0/docs/general/naming.md#recommendations-for-application-developers

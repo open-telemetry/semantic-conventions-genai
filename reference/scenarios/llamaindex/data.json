@@ -33,9 +33,9 @@
       "gen_ai.operation.name",
       "gen_ai.provider.name",
       "gen_ai.request.model",
-      "gen_ai.request.top_k",
       "gen_ai.retrieval.documents",
       "gen_ai.retrieval.query.text",
+      "gen_ai.retrieval.top_k",
       "server.address",
       "server.port"
     ],

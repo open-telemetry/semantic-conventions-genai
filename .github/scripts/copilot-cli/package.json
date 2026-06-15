@@ -4,6 +4,6 @@
   "private": true,
   "description": "Pinned install of @github/copilot CLI used by .github/workflows/pull-request-dashboard.yml",
   "dependencies": {
-    "@github/copilot": "1.0.43"
+    "@github/copilot": "1.0.58"
   }
 }

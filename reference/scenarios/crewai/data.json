@@ -1,14 +1,25 @@
 {
   "spans": {
-    "create_agent": [
-      "gen_ai.agent.id",
+    "invoke_agent_internal": [
       "gen_ai.agent.name",
+      "gen_ai.input.messages",
       "gen_ai.operation.name",
+      "gen_ai.output.messages",
       "gen_ai.provider.name",
+      "gen_ai.request.choice.count",
+      "gen_ai.request.frequency_penalty",
+      "gen_ai.request.max_tokens",
       "gen_ai.request.model",
+      "gen_ai.request.presence_penalty",
+      "gen_ai.request.seed",
+      "gen_ai.request.stop_sequences",
+      "gen_ai.request.temperature",
+      "gen_ai.request.top_p",
+      "gen_ai.response.finish_reasons",
       "gen_ai.system_instructions",
-      "server.address",
-      "server.port"
+      "gen_ai.tool.definitions",
+      "gen_ai.usage.input_tokens",
+      "gen_ai.usage.output_tokens"
     ],
     "invoke_workflow": [
       "gen_ai.input.messages",
@@ -17,7 +28,6 @@
       "gen_ai.workflow.name"
     ],
     "plan": [
-      "gen_ai.agent.id",
       "gen_ai.agent.name",
       "gen_ai.operation.name"
     ],

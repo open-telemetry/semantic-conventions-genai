@@ -4,6 +4,7 @@ const GITHUB_API_VERSION = "2022-11-28";
 const MAX_WEBHOOK_BYTES = 1024 * 1024;
 
 const ALLOWED_ACTIONS = {
+  check_suite: new Set(["completed", "requested", "rerequested"]),
   pull_request: new Set([
     "assigned",
     "closed",
@@ -72,12 +73,16 @@ async function handle(event) {
   if (!Number.isInteger(prNumber) || prNumber <= 0) {
     return response(202, { status: "ignored", reason: "no pull request number found" });
   }
+  const triggerActor = extractTriggerActor(payload);
+  const triggerReviewId = extractTriggerReviewId(payload);
 
   const installationToken = await createInstallationToken(config);
   await dispatchWorkflow(config, installationToken, repository.fullName, {
     pr_number: String(prNumber),
     trigger_event: eventName,
     trigger_action: action,
+    trigger_actor: triggerActor || "",
+    trigger_review_id: triggerReviewId ? String(triggerReviewId) : "",
   });
 
   return response(202, {
@@ -86,6 +91,8 @@ async function handle(event) {
     pr_number: prNumber,
     trigger_event: eventName,
     trigger_action: action,
+    trigger_actor: triggerActor,
+    trigger_review_id: triggerReviewId,
   });
 }
 
@@ -116,6 +123,14 @@ function readRepository(payload) {
     fullName: repository.full_name,
     owner: repository.owner && repository.owner.login,
   };
+}
+
+function extractTriggerActor(payload) {
+  return payload.sender && payload.sender.login;
+}
+
+function extractTriggerReviewId(payload) {
+  return payload.review && payload.review.id;
 }
 
 function readRawBody(event) {
@@ -152,6 +167,13 @@ function extractPullRequestNumber(eventName, payload) {
     return payload.issue.number;
   }
 
+  const checkPullRequestNumber = extractPullRequestNumberFromPullRequests([
+    payload.check_suite && payload.check_suite.pull_requests,
+  ]);
+  if (checkPullRequestNumber) {
+    return checkPullRequestNumber;
+  }
+
   if (payload.pull_request && Number.isInteger(payload.pull_request.number)) {
     return payload.pull_request.number;
   }
@@ -161,6 +183,20 @@ function extractPullRequestNumber(eventName, payload) {
     payload.review_thread && payload.review_thread.pull_request_url,
     payload.thread && payload.thread.pull_request_url,
   ]);
+}
+
+function extractPullRequestNumberFromPullRequests(pullRequestLists) {
+  for (const pullRequests of pullRequestLists) {
+    if (!Array.isArray(pullRequests)) {
+      continue;
+    }
+    for (const pullRequest of pullRequests) {
+      if (pullRequest && Number.isInteger(pullRequest.number)) {
+        return pullRequest.number;
+      }
+    }
+  }
+  return undefined;
 }
 
 function extractPullRequestNumberFromUrls(urls) {

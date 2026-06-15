@@ -8,10 +8,12 @@ uses tags of the form `vX.Y.Z-dev`; the schema URL lives under
 1. Open a release-prep pull request that:
    - Bumps the top-level `schema_url` in [model/manifest.yaml](model/manifest.yaml)
      to the new version (e.g. `https://opentelemetry.io/schemas/gen-ai-dev/1.43.0-dev`).
-   - Updates [CHANGELOG.md](CHANGELOG.md):
-     - Renames the existing `## Unreleased` section to the new version
-       (e.g. `## 1.43.0-dev`), removing any empty subsections.
-     - Adds a new `## Unreleased` section at the top with empty subsections.
+   - Renders [CHANGELOG.md](CHANGELOG.md) from the fragments in
+     [changelog.d/](changelog.d/) and removes the rendered fragments:
+     ```bash
+     VERSION=$(awk '/^schema_url:/ { n = split($2, parts, "/"); print parts[n]; exit }' model/manifest.yaml)
+     PYTHONUTF8=1 uv run --project changelog.d --locked towncrier build --config changelog.d/towncrier.toml --yes --version "$VERSION"
+     ```
 2. Get the PR reviewed and merged to `main`.
 3. Prepare a [draft release](https://github.com/open-telemetry/semantic-conventions-genai/releases/new):
    - Tag: `vX.Y.Z-dev` matching the bumped `schema_url` (choose "Create new tag on publish").

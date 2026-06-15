@@ -17,7 +17,6 @@ def run_retrieval():
     data_source_id = "weather-knowledge-base"
     query_text = "Seattle weather"
     top_k = 2
-    request_top_k = 2.0
     document_store = InMemoryDocumentStore()
     document_store.write_documents(
         [
@@ -36,7 +35,7 @@ def run_retrieval():
     with _reference_tracer.start_as_current_span("retrieval weather-knowledge-base") as span:
         span.set_attribute("gen_ai.operation.name", "retrieval")
         span.set_attribute("gen_ai.data_source.id", data_source_id)
-        span.set_attribute("gen_ai.request.top_k", request_top_k)
+        span.set_attribute("gen_ai.retrieval.top_k", top_k)
         span.set_attribute("gen_ai.retrieval.query.text", query_text)
         result = retriever.run(query=query_text)
         documents = result["documents"]

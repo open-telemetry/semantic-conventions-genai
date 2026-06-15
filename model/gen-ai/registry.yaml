@@ -70,18 +70,21 @@ attributes:
           stability: development
           value: "mistral_ai"
           brief: '[Mistral AI](https://mistral.ai/)'
+        - id: moonshot_ai
+          stability: development
+          value: "moonshot_ai"
+          brief: '[Moonshot AI](https://www.moonshot.ai/)'
 
     brief: The Generative AI provider as identified by the client or server instrumentation.
     note: |
-      The attribute SHOULD be set based on the instrumentation's best
-      knowledge and may differ from the actual model provider.
+      Semantic conventions for individual GenAI operations SHOULD clarify which
+      kinds of providers (e.g. inference, embeddings, retrieval, memory, hosted
+      agent providers) apply when it is not clear from context.
 
-      Multiple providers, including Azure OpenAI, Gemini, and AI hosting platforms
-      are accessible using the OpenAI REST API and corresponding client libraries,
-      but may proxy or host models from different providers.
-
-      The `gen_ai.request.model`, `gen_ai.response.model`, and `server.address`
-      attributes may help identify the actual system in use.
+      The attribute SHOULD be set based on the instrumentation's best knowledge
+      and may differ from the actual upstream provider. For example, a client SDK
+      may be configured against a proxy or hosting platform that transparently
+      relays requests to a different provider.
 
       The `gen_ai.provider.name` attribute acts as a discriminator that
       identifies the GenAI telemetry format flavor specific to that provider
@@ -118,9 +121,17 @@ attributes:
     examples: [1.0]
     stability: development
   - key: gen_ai.request.top_k
-    type: double
-    brief: The top_k sampling setting for the GenAI request.
-    examples: [1.0]
+    type: int
+    brief: >
+      The top-K sampling setting for the GenAI request: restricts token
+      generation at each step to the K most likely next tokens.
+    note: >
+      This is a decoding/sampling parameter (e.g., Anthropic `top_k`,
+      Cohere `k`, Google `topK`), not an output-shaping parameter. In
+      particular, OpenAI's `top_logprobs` controls how many per-token
+      log-probabilities are returned in the response and does not change
+      generation; it MUST NOT be reported as `gen_ai.request.top_k`.
+    examples: [40]
     stability: development
   - key: gen_ai.request.stop_sequences
     type: string[]
@@ -190,6 +201,11 @@ attributes:
       Instrumentations SHOULD make a best effort to populate this value, using a total
       provided by the provider when available or, depending on the provider API,
       by summing different token types parsed from the provider output.
+
+      When the provider reports both billed token counts and model-consumed
+      token counts (for example, Cohere exposes both `usage.billed_units` and
+      `usage.tokens`), instrumentations SHOULD report the billed count so the
+      value matches the units the customer is charged for.
     examples: [100]
     stability: development
   - key: gen_ai.usage.cache_read.input_tokens
@@ -209,6 +225,11 @@ attributes:
   - key: gen_ai.usage.output_tokens
     type: int
     brief: The number of tokens used in the GenAI response (completion).
+    note: |
+      When the provider reports both billed token counts and model-consumed
+      token counts (for example, Cohere exposes both `usage.billed_units` and
+      `usage.tokens`), instrumentations SHOULD report the billed count so the
+      value matches the units the customer is charged for.
     examples: [180]
     stability: development
   - key: gen_ai.usage.reasoning.output_tokens
@@ -239,8 +260,15 @@ attributes:
     stability: development
   - key: gen_ai.agent.id
     type: string
-    brief: The unique identifier of the GenAI agent.
-    examples: ['asst_5j66UpCpwteGg4YSxUnt7lPY']
+    brief: The unique and stable identifier of the GenAI hosted agent resource.
+    note: >
+      For hosted agents, this SHOULD be the provider-assigned stable identifier of the
+      agent resource such as [AWS Bedrock agent ARN](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_Agent.html)
+      or [GCP Agent Registry identifier](https://docs.cloud.google.com/agent-registry/concepts#agent-identifier).
+
+      It's NOT RECOMMENDED to record in-memory agent instance ids on this attribute due to their transient nature.
+
+    examples: ['asst_5j66UpCpwteGg4YSxUnt7lPY', 'arn:aws:bedrock:us-east-1:123:agent/42', 'urn:agent:projects-123:projects:123:locations:us-east1:aiplatform:reasoningEngines:456']
     stability: development
   - key: gen_ai.agent.name
     type: string
@@ -527,6 +555,13 @@ attributes:
       > [!Warning]
       > This attribute may contain sensitive information.
     examples: ["What is the capital of France?", "weather in Paris"]
+    stability: development
+  - key: gen_ai.retrieval.top_k
+    type: int
+    brief: >
+      The maximum number of documents the retriever was asked to return
+      for the query (also known as `k`, `limit`, or `max_num_results`).
+    examples: [5]
     stability: development
   - key: gen_ai.memory.store.id
     type: string

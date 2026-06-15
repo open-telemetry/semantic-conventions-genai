@@ -3,7 +3,7 @@
   "extends": [
     "config:recommended",
     "helpers:pinGitHubActionDigestsToSemver",
-    "github>grafana/flint#v0.21.0",
+    "github>grafana/flint#v0.22.5",
   ],
   // Security updates are owned by Dependabot. See .github/DEPENDENCIES.md.
   "vulnerabilityAlerts": {
@@ -39,19 +39,24 @@
       "groupName": "reference implementation dependencies (non-major)",
       "commitMessageTopic": "reference implementation dependencies (non-major)",
       "schedule": [
-        "* 0-3 * * 2" // Tuesdays, midnight–4am
+        "* 0-3 * * 2" // Tuesdays, 00:00–03:59 America/Los_Angeles
       ],
       "timezone": "America/Los_Angeles"
     },
     {
-      "groupName": "GitHub Actions",
-      "commitMessageTopic": "GitHub Actions",
+      "description": "Monthly tooling dependency updates",
+      "groupName": "tooling dependencies",
+      "commitMessageTopic": "tooling dependencies",
       "matchFileNames": [
-        ".github/**"
+        ".github/**",
+        "changelog.d/**",
+        "docs/gen-ai/non-normative/**",
+        "mise.toml"
       ],
       "schedule": [
-        "* * 2 * *"
-      ]
+        "* 0-3 2 * *" // 2nd of the month, 00:00–03:59 America/Los_Angeles
+      ],
+      "timezone": "America/Los_Angeles"
     }
   ],
   "labels": [

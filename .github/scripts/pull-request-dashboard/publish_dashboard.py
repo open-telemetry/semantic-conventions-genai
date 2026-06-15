@@ -6,9 +6,8 @@ from __future__ import annotations
 import argparse
 import sys
 from pathlib import Path
-from urllib.parse import quote
 
-from github_cli import detect_repo, gh_api, run_gh
+from github_cli import detect_repo, gh_graphql, run_gh
 from state import dashboard_markdown_path, set_state_dir
 import state_branch
 
@@ -17,18 +16,54 @@ DASHBOARD_TITLE = "Pull Request Dashboard"
 DASHBOARD_LABEL = "dashboard"
 
 
+# GraphQL is used instead of the REST `/repos/{repo}/issues` list endpoint
+# because that endpoint has been observed to sometimes omit the existing
+# open, `dashboard`-labeled issue from its results (across every sort, page
+# size, and `since` variant), even though `GET /repos/{repo}/issues/<n>` and
+# the GraphQL `repository.issues` connection both still return it. When that
+# happens via REST, this script would create a duplicate dashboard issue
+# instead of updating the existing one.
+_FIND_DASHBOARD_ISSUE_QUERY = """
+query ($owner: String!, $name: String!, $label: String!, $after: String) {
+  repository(owner: $owner, name: $name) {
+    issues(
+      first: 100
+      after: $after
+      states: OPEN
+      filterBy: { labels: [$label] }
+      orderBy: { field: CREATED_AT, direction: ASC }
+    ) {
+      pageInfo { hasNextPage endCursor }
+      nodes { number title }
+    }
+  }
+}
+"""
+
+
 def find_dashboard_issue(repo: str) -> int | None:
-    label = quote(DASHBOARD_LABEL, safe="")
-    issues = gh_api(f"/repos/{repo}/issues?state=open&labels={label}&per_page=100", paginate=True)
-    numbers = sorted(
-        issue["number"]
-        for issue in issues
-        if isinstance(issue, dict)
-        and issue.get("pull_request") is None
-        and issue.get("title") == DASHBOARD_TITLE
-        and isinstance(issue.get("number"), int)
-    )
-    return numbers[0] if numbers else None
+    owner, _, name = repo.partition("/")
+    after: str | None = None
+    while True:
+        data = gh_graphql(
+            _FIND_DASHBOARD_ISSUE_QUERY,
+            {"owner": owner, "name": name, "label": DASHBOARD_LABEL, "after": after},
+        )
+        connection = data["data"]["repository"]["issues"]
+        for node in connection["nodes"]:
+            if node["title"] == DASHBOARD_TITLE:
+                return node["number"]
+        page_info = connection["pageInfo"]
+        if not page_info["hasNextPage"]:
+            return None
+        after = page_info["endCursor"]
+
+
+def dashboard_issue_url(repo: str) -> str:
+    number = find_dashboard_issue(repo)
+    if number is None:
+        raise RuntimeError(f"dashboard issue not found in {repo}")
+    return f"https://github.com/{repo}/issues/{number}"
 
 
 def publish_dashboard(repo: str, dashboard_body: Path) -> None:
@@ -69,13 +104,24 @@ def publish_dashboard(repo: str, dashboard_body: Path) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
+        "--print-dashboard-url",
+        action="store_true",
+        help="print the existing dashboard issue URL and exit",
+    )
+    parser.add_argument(
         "--state-branch",
-        required=True,
         help="git branch used for workflow state",
     )
     args = parser.parse_args()
 
     repo = detect_repo()
+    if args.print_dashboard_url:
+        print(dashboard_issue_url(repo))
+        return 0
+
+    if not args.state_branch:
+        parser.error("--state-branch is required unless --print-dashboard-url is set")
+
     with state_branch.temporary_state_dir() as state_dir:
         set_state_dir(state_dir)
         state_branch.configure_git()

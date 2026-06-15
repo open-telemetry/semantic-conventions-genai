@@ -213,6 +213,18 @@ query($owner: String!, $name: String!, $number: Int!, $after: String) {
                             author {
                                 login
                             }
+                            reactionGroups {
+                                content
+                                # Keep this cap intentionally low: this users
+                                # connection is nested under reactionGroups for
+                                # each fetched review comment, so raising it can
+                                # multiply the query's possible node count.
+                                users(first: 20) {
+                                    nodes {
+                                        login
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -238,6 +250,16 @@ query($thread_id: ID!, $after: String) {
                     updatedAt
                     author {
                         login
+                    }
+                    reactionGroups {
+                        content
+                        # Keep this aligned with REVIEW_THREADS_QUERY so every
+                        # fetched comment has the same reaction-user cap.
+                        users(first: 20) {
+                            nodes {
+                                login
+                            }
+                        }
                     }
                 }
             }

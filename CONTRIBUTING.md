@@ -51,8 +51,8 @@ make generate-all
 
 This regenerates the attribute registry pages under `docs/registry/`,
 refreshes the generated tables embedded in the hand-written docs under
-`docs/gen-ai/`, and updates the committed schema snapshot under
-`schema-snapshot/`.
+`docs/gen-ai/`, updates the committed schema snapshot under
+`schema-snapshot/`, and regenerates the status reports.
 
 ### 3. Validate
 
@@ -81,9 +81,14 @@ updates are capturable. See
 
 ### 5. Update the changelog
 
-Add an entry under `Unreleased` in [CHANGELOG.md](CHANGELOG.md) for any
-change to the conventions that a consumer would care about. Editorial
-changes — typos, pure rewording, and repo tooling — don't need an entry.
+Add a Towncrier fragment under [changelog.d/](changelog.d/) for any change to
+the conventions that a consumer would care about. Editorial changes — typos,
+pure rewording, and repo tooling — don't need an entry.
+
+Use a filename of `<pr-number>.<type>.md` once the pull request number is
+known, or `+.<type>.md` before then. Add a numeric counter before `.md` when
+one pull request needs multiple fragments of the same type. See
+[changelog.d/README.md](changelog.d/README.md) for the supported types.
 
 ## Keep PRs small
 
@@ -108,7 +113,7 @@ and add your topic to the
 
 ### Maintainers
 
-- [Liudmila Molkova](https://github.com/lmolkova), Grafana Labs
+- [Liudmila Molkova](https://github.com/lmolkova), Google
 - [Trask Stalnaker](https://github.com/trask), Microsoft
 
 For more information about the maintainer role, see the [community repository](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#maintainer).

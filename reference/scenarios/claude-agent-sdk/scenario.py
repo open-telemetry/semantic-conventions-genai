@@ -53,15 +53,13 @@ async def run_agent_query_reference():
         output_tokens = None
         async for message in query(prompt=prompt_text, options=options):
             if isinstance(message, AssistantMessage):
-                raw = getattr(message, "message", None)
-                if raw is not None:
-                    response_model = response_model or getattr(raw, "model", None)
-                    response_id = response_id or getattr(raw, "id", None)
-                    finish_reason = finish_reason or getattr(raw, "stop_reason", None)
-                    raw_usage = getattr(raw, "usage", None)
-                    if raw_usage is not None:
-                        input_tokens = getattr(raw_usage, "input_tokens", None)
-                        output_tokens = getattr(raw_usage, "output_tokens", None)
+                response_model = response_model or getattr(message, "model", None)
+                response_id = response_id or getattr(message, "message_id", None)
+                finish_reason = finish_reason or getattr(message, "stop_reason", None)
+                msg_usage = getattr(message, "usage", None)
+                if msg_usage is not None and input_tokens is None:
+                    input_tokens = msg_usage.get("input_tokens")
+                    output_tokens = msg_usage.get("output_tokens")
                 for block in message.content:
                     if isinstance(block, TextBlock):
                         output_text += block.text
@@ -70,8 +68,8 @@ async def run_agent_query_reference():
                 finish_reason = finish_reason or getattr(message, "stop_reason", None)
                 msg_usage = getattr(message, "usage", None)
                 if msg_usage is not None and input_tokens is None:
-                    input_tokens = getattr(msg_usage, "input_tokens", None)
-                    output_tokens = getattr(msg_usage, "output_tokens", None)
+                    input_tokens = msg_usage.get("input_tokens")
+                    output_tokens = msg_usage.get("output_tokens")
                 print(f"    -> result: turns={message.num_turns}")
         if response_model:
             span.set_attribute("gen_ai.response.model", response_model)

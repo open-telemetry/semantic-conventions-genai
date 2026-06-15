@@ -45,10 +45,9 @@ If the value would have to be guessed, carried forward from an unrelated call, o
 3. Inventory the Python libraries in this repository that implement the affected operation.
 4. For each library, decide whether the changed fields are credibly available from the current call boundary.
 5. Add or update the reference scenario for every supporting library following [reference-scenarios.instructions.md](../../instructions/reference-scenarios.instructions.md).
-6. Regenerate downstream outputs in dependency order:
+6. Regenerate downstream outputs:
    - Refresh each updated scenario's `reference/scenarios/<library>/data.json` by running its scenario.
-   - Regenerate `reference/reports/*.md` via `uv run update-reports` (see [reference/README.md](../../../reference/README.md)).
-   - If the change also touches `model/**` or `docs/gen-ai/**`, regenerate the registry and docs via `make generate-all` (see `.github/copilot-instructions.md`).
+   - Run `make generate-all` from the repository root to regenerate the registry, docs, and status reports.
 7. Keep unsupported libraries honest. If a library cannot credibly emit a field, leave it out and record it as a capture gap (see [evaluate-reference.instructions.md](../../instructions/evaluate-reference.instructions.md)).
 8. Run targeted validation for the changed libraries when feasible.
 
