@@ -210,7 +210,7 @@ _MAINTENANCE_BOT_PR_AUTHORS = {"app/otelbot", "app/renovate"}
 def reviewer_actor_login(obj: dict[str, Any] | None) -> str:
     login = actor_login(obj)
     if login.lower() in _COPILOT_REVIEWER_LOGINS:
-        return "copilot-pull-request-reviewer"
+        return "copilot-pull-request-reviewer[bot]"
     return login
 
 
