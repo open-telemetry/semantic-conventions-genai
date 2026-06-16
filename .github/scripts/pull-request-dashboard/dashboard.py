@@ -210,7 +210,7 @@ def human_author_for_copilot_pr(raw: dict[str, Any]) -> str:
     assignees = [actor_login(a) for a in (raw["pr"].get("assignees") or [])]
     for login in assignees:
         low = login.lower()
-        if login and low not in _COPILOT_PR_AUTHORS and not low.endswith("[bot]"):
+        if login and low not in _COPILOT_PR_AUTHORS and not low.startswith("app/") and not low.endswith("[bot]"):
             return login
 
     commits = raw["commits"]
