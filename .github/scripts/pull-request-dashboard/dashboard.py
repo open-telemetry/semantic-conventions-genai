@@ -203,7 +203,15 @@ def role_for(login: str, author: str, reviewers: set[str]) -> str:
 # human author behind a Copilot-authored PR.
 _COPILOT_COMMITTER_LOGINS = {"copilot"}
 _COPILOT_PR_AUTHORS = {"app/copilot-swe-agent", "copilot"}
+_COPILOT_REVIEWER_LOGINS = {"copilot", "copilot-pull-request-reviewer", "copilot-pull-request-reviewer[bot]"}
 _MAINTENANCE_BOT_PR_AUTHORS = {"app/otelbot", "app/renovate"}
+
+
+def reviewer_actor_login(obj: dict[str, Any] | None) -> str:
+    login = actor_login(obj)
+    if login.lower() in _COPILOT_REVIEWER_LOGINS:
+        return "copilot-pull-request-reviewer"
+    return login
 
 
 def human_author_for_copilot_pr(raw: dict[str, Any]) -> str:
@@ -295,7 +303,7 @@ def normalize_events(raw: dict[str, Any], author: str, reviewers: set[str]) -> l
             "is_merge_from_base_by_non_author": is_merge_commit(c) and login.lower() != author.lower(),
         })
     for c in raw["issue_comments"]:
-        login = actor_login(c.get("user") or {})
+        login = reviewer_actor_login(c.get("user") or {})
         events.append({
             "kind": "issue-comment",
             "timestamp": c.get("updated_at") or c.get("created_at") or "",
@@ -308,7 +316,7 @@ def normalize_events(raw: dict[str, Any], author: str, reviewers: set[str]) -> l
             "is_merge_from_base_by_non_author": False,
         })
     for c in raw["review_comments"]:
-        login = actor_login(c.get("user") or {})
+        login = reviewer_actor_login(c.get("user") or {})
         events.append({
             "kind": "review-comment",
             "timestamp": c.get("updated_at") or c.get("created_at") or "",
@@ -321,7 +329,7 @@ def normalize_events(raw: dict[str, Any], author: str, reviewers: set[str]) -> l
             "is_merge_from_base_by_non_author": False,
         })
     for r in raw["reviews"]:
-        login = actor_login(r.get("user") or {})
+        login = reviewer_actor_login(r.get("user") or {})
         state = r.get("state") or ""
         events.append({
             "kind": "review-state",
@@ -435,7 +443,7 @@ def compute_facts(
     approver_activity_ts = latest_substantive_activity(events, {"approver"})
     external_activity_ts = latest_substantive_activity(events, {"outsider"})
     api_author = actor_login(pr.get("author") or {})
-    assignees = [actor_login(a) for a in (pr.get("assignees") or [])]
+    assignees = [reviewer_actor_login(a) for a in (pr.get("assignees") or [])]
     assignees = [a for a in assignees if a]
     facts = {
         "author": author,
@@ -513,7 +521,7 @@ def group_review_threads(
             continue
         comments = []
         for c in ((thread.get("comments") or {}).get("nodes") or []):
-            actor = actor_login(c.get("author") or {})
+            actor = reviewer_actor_login(c.get("author") or {})
             comments.append(thread_comment(
                 c.get("updatedAt") or c.get("createdAt") or "",
                 actor,
@@ -559,7 +567,7 @@ def group_pr_conversation(
 ) -> list[dict[str, Any]]:
     comments = []
     for c in raw["issue_comments"]:
-        actor = actor_login(c.get("user") or {})
+        actor = reviewer_actor_login(c.get("user") or {})
         comment = thread_comment(c.get("updated_at") or c.get("created_at") or "", actor, author, reviewers, c.get("body") or "")
         if comment["timestamp"] and comment["actor_role"] != "bot" and comment["body"]:
             comments.append(comment)
@@ -573,7 +581,7 @@ def group_pr_conversation(
         body = (r.get("body") or "").strip()
         if not body:
             continue
-        actor = actor_login(r.get("user") or {})
+        actor = reviewer_actor_login(r.get("user") or {})
         comment = thread_comment(
             r.get("submitted_at") or "", actor, author, reviewers, f"[review: {state}] {body}",
         )
