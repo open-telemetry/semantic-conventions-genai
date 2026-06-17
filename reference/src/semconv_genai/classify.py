@@ -37,7 +37,7 @@ def classify_span(span_name: str, span_kind: str, span_attrs: dict[str, object])
     # invoke_agent is represented as two span types (client vs internal) that
     # share op_name/discriminator_attrs; disambiguate by span kind.
     if "invoke_agent_client" in detected or "invoke_agent_internal" in detected:
-        is_remote = span_kind.lower() == "client"
-        detected.discard("invoke_agent_client" if not is_remote else "invoke_agent_internal")
+        is_client_span = span_kind.lower() == "client"
+        detected.discard("invoke_agent_client" if not is_client_span else "invoke_agent_internal")
 
     return detected
