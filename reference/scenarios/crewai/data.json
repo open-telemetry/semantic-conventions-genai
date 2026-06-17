@@ -5,7 +5,6 @@
       "gen_ai.input.messages",
       "gen_ai.operation.name",
       "gen_ai.output.messages",
-      "gen_ai.provider.name",
       "gen_ai.request.choice.count",
       "gen_ai.request.frequency_penalty",
       "gen_ai.request.max_tokens",

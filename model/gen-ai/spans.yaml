@@ -465,9 +465,6 @@ spans:
     stability: development
     attributes:
       - ref_group: attributes.gen_ai.invoke_agent.common
-      - ref: gen_ai.provider.name
-        requirement_level: required
-        sampling_relevant: true
       - ref: gen_ai.operation.name
         sampling_relevant: true
       - ref: gen_ai.request.model
