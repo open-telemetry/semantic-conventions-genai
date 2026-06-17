@@ -20,6 +20,8 @@ through several coupled surfaces:
   `make generate-all`.
 - `reference/scenarios/<library>/` — runnable Python reference scenarios
   (`scenario.py`) that prove proposed conventions are capturable.
+- `reference/README.md` and `reference/reports/` — telemetry compliance
+  reports, refreshed by `make generate-all`.
 
 ## PR scope
 

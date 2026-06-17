@@ -176,7 +176,7 @@ jobs:
       - uses: ./.github/actions/setup-reference-tooling
 
       - name: Generate status report
-        run: uv run update-reports
+        run: uv run --locked update-reports
 
       - name: Check status report is up to date
         run: git diff --exit-code -- README.md reports/
