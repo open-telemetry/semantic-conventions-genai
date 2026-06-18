@@ -145,15 +145,9 @@ metrics:
     stability: development
     attributes:
       - ref_group: attributes.gen_ai.error
-      - ref: gen_ai.agent.name
-        requirement_level:
-          conditionally_required: When available.
-      - ref: gen_ai.agent.id
-        requirement_level:
-          conditionally_required: When available.
-      - ref: gen_ai.agent.version
-        requirement_level:
-          conditionally_required: When available.
+      - ref_group: attributes.gen_ai.invoked_agent.internal.common
+      
+      
   - name: gen_ai.execute_tool.duration
     annotations:
       code_generation:
@@ -171,13 +165,7 @@ metrics:
     stability: development
     attributes:
       - ref_group: attributes.gen_ai.error
-      - ref: gen_ai.tool.name
-        requirement_level: required
-      - ref: gen_ai.tool.type
-        requirement_level: recommended
-      - ref: gen_ai.agent.name
-        requirement_level:
-          conditionally_required: When available.
+      - ref_group: attributes.gen_ai.execute_tool.common
 
 metric_refinements:
   - id: openai.client.token.usage

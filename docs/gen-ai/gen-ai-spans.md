@@ -832,6 +832,7 @@ instrumentations do not cover.
 | [`gen_ai.operation.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Required` | string | The name of the operation being performed. [1] | `chat`; `generate_content`; `text_completion` |
 | [`gen_ai.tool.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Required` | string | Name of the tool utilized by the agent. | `Flights` |
 | [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.42.0/docs/registry/attributes/error.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If the operation ended in an error. | string | Describes a class of error the operation ended with. [2] | `timeout`; `java.net.UnknownHostException`; `server_certificate_invalid`; `500` |
+| [`gen_ai.agent.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When applicable. | string | The human-readable name of the agent executing the tool. | `Math Tutor`; `Fiction Writer` |
 | [`gen_ai.tool.call.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If available. | string | The tool call identifier. | `call_mszuSIzqtI65i1wAUOE8w5H4` |
 | [`gen_ai.tool.description`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If available. | string | The tool description. | `Multiply two numbers` |
 | [`gen_ai.tool.type`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If available. | string | Type of the tool utilized by the agent [3] | `function`; `extension`; `datastore` |
@@ -872,6 +873,8 @@ The following attributes can be important for making sampling decisions
 and SHOULD be provided **at span creation time** (if provided at all):
 
 * [`gen_ai.operation.name`](/docs/registry/attributes/gen-ai.md)
+* [`gen_ai.tool.name`](/docs/registry/attributes/gen-ai.md)
+* [`gen_ai.tool.type`](/docs/registry/attributes/gen-ai.md)
 
 ---
 

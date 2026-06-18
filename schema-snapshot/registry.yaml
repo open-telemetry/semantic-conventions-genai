@@ -1855,7 +1855,7 @@ refinements:
           id: other
           stability: stable
           value: _OTHER
-    - brief: Human-readable name of the GenAI agent provided by the application.
+    - brief: The human-readable name of the agent executing the tool.
       examples:
       - Math Tutor
       - Fiction Writer
@@ -1863,7 +1863,7 @@ refinements:
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
-        conditionally_required: When available.
+        conditionally_required: When applicable.
       stability: development
       type: string
     - brief: Name of the tool utilized by the agent.
@@ -1889,7 +1889,8 @@ refinements:
         Datastore: A tool used by the agent to access and query structured or unstructured external data for retrieval-augmented tasks or knowledge updates.
       provenance:
         path: ./model/gen-ai/registry.yaml
-      requirement_level: recommended
+      requirement_level:
+        recommended: If available.
       stability: development
       type: string
     brief: |
@@ -1933,22 +1934,7 @@ refinements:
           id: other
           stability: stable
           value: _OTHER
-    - brief: The unique and stable identifier of the GenAI hosted agent resource.
-      examples:
-      - asst_5j66UpCpwteGg4YSxUnt7lPY
-      - arn:aws:bedrock:us-east-1:123:agent/42
-      - urn:agent:projects-123:projects:123:locations:us-east1:aiplatform:reasoningEngines:456
-      key: gen_ai.agent.id
-      note: |
-        For hosted agents, this SHOULD be the provider-assigned stable identifier of the agent resource such as [AWS Bedrock agent ARN](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_Agent.html) or [GCP Agent Registry identifier](https://docs.cloud.google.com/agent-registry/concepts#agent-identifier).
-        It\u0027s NOT RECOMMENDED to record in-memory agent instance ids on this attribute due to their transient nature.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        conditionally_required: When available.
-      stability: development
-      type: string
-    - brief: Human-readable name of the GenAI agent provided by the application.
+    - brief: The human-readable name of the invoked GenAI agent.
       examples:
       - Math Tutor
       - Fiction Writer
@@ -1959,15 +1945,15 @@ refinements:
         conditionally_required: When available.
       stability: development
       type: string
-    - brief: The version of the GenAI agent.
-      examples:
-      - 1.0.0
-      - 2025-05-01
-      key: gen_ai.agent.version
+    - brief: The name of the GenAI model configured for the agent.
+      examples: gpt-4
+      key: gen_ai.request.model
+      note: |
+        This attribute SHOULD be populated if and only if the instrumented  library allows to set only a single model per agent. It SHOULD NOT be populated for agents that support multiple models or dynamic selection.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
-        conditionally_required: When available.
+        recommended: If applicable.
       stability: development
       type: string
     brief: |
@@ -7218,6 +7204,17 @@ refinements:
           id: other
           stability: stable
           value: _OTHER
+    - brief: The human-readable name of the agent executing the tool.
+      examples:
+      - Math Tutor
+      - Fiction Writer
+      key: gen_ai.agent.name
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: When applicable.
+      stability: development
+      type: string
     - brief: The name of the operation being performed.
       key: gen_ai.operation.name
       note: |
@@ -7367,6 +7364,7 @@ refinements:
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level: required
+      sampling_relevant: true
       stability: development
       type: string
     - brief: Type of the tool utilized by the agent
@@ -7385,6 +7383,7 @@ refinements:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
         recommended: If available.
+      sampling_relevant: true
       stability: development
       type: string
     brief: Describes tool execution span.
@@ -8595,15 +8594,15 @@ refinements:
       requirement_level: recommended
       stability: development
       type: int
-    - brief: The name of the GenAI model a request is being made to.
+    - brief: The name of the GenAI model configured for the agent.
       examples: gpt-4
       key: gen_ai.request.model
       note: |
-        The name of the GenAI model a request is being made to. If the model is supplied by a vendor, then the value must be the exact name of the model requested. If the model is a fine-tuned custom model, the value should have a more specific name than the base model that\u0027s been fine-tuned.
+        This attribute SHOULD be populated if and only if the instrumented  library allows to set only a single model per agent. It SHOULD NOT be populated for agents that support multiple models or dynamic selection.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
-        conditionally_required: If available.
+        recommended: If applicable.
       sampling_relevant: true
       stability: development
       type: string
@@ -8902,17 +8901,6 @@ refinements:
       sampling_relevant: true
       stability: development
       type: string
-    - brief: The version of the invoked GenAI agent.
-      examples:
-      - 1.0.0
-      - 2025-05-01
-      key: gen_ai.agent.version
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        conditionally_required: When available.
-      stability: development
-      type: string
     - brief: The unique identifier for a conversation (session, thread), used to store and correlate messages within this conversation.
       examples:
       - conv_5j66UpCpwteGg4YSxUnt7lPY
@@ -9188,15 +9176,15 @@ refinements:
       requirement_level: recommended
       stability: development
       type: int
-    - brief: The name of the GenAI model a request is being made to.
+    - brief: The name of the GenAI model configured for the agent.
       examples: gpt-4
       key: gen_ai.request.model
       note: |
-        The name of the GenAI model a request is being made to. If the model is supplied by a vendor, then the value must be the exact name of the model requested. If the model is a fine-tuned custom model, the value should have a more specific name than the base model that\u0027s been fine-tuned.
+        This attribute SHOULD be populated if and only if the instrumented  library allows to set only a single model per agent. It SHOULD NOT be populated for agents that support multiple models or dynamic selection.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
-        conditionally_required: If available.
+        recommended: If applicable.
       sampling_relevant: true
       stability: development
       type: string
@@ -15269,7 +15257,7 @@ registry:
           id: other
           stability: stable
           value: _OTHER
-    - brief: Human-readable name of the GenAI agent provided by the application.
+    - brief: The human-readable name of the agent executing the tool.
       examples:
       - Math Tutor
       - Fiction Writer
@@ -15277,7 +15265,7 @@ registry:
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
-        conditionally_required: When available.
+        conditionally_required: When applicable.
       stability: development
       type: string
     - brief: Name of the tool utilized by the agent.
@@ -15303,7 +15291,8 @@ registry:
         Datastore: A tool used by the agent to access and query structured or unstructured external data for retrieval-augmented tasks or knowledge updates.
       provenance:
         path: ./model/gen-ai/registry.yaml
-      requirement_level: recommended
+      requirement_level:
+        recommended: If available.
       stability: development
       type: string
     brief: |
@@ -15346,22 +15335,7 @@ registry:
           id: other
           stability: stable
           value: _OTHER
-    - brief: The unique and stable identifier of the GenAI hosted agent resource.
-      examples:
-      - asst_5j66UpCpwteGg4YSxUnt7lPY
-      - arn:aws:bedrock:us-east-1:123:agent/42
-      - urn:agent:projects-123:projects:123:locations:us-east1:aiplatform:reasoningEngines:456
-      key: gen_ai.agent.id
-      note: |
-        For hosted agents, this SHOULD be the provider-assigned stable identifier of the agent resource such as [AWS Bedrock agent ARN](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_Agent.html) or [GCP Agent Registry identifier](https://docs.cloud.google.com/agent-registry/concepts#agent-identifier).
-        It\u0027s NOT RECOMMENDED to record in-memory agent instance ids on this attribute due to their transient nature.
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        conditionally_required: When available.
-      stability: development
-      type: string
-    - brief: Human-readable name of the GenAI agent provided by the application.
+    - brief: The human-readable name of the invoked GenAI agent.
       examples:
       - Math Tutor
       - Fiction Writer
@@ -15372,15 +15346,15 @@ registry:
         conditionally_required: When available.
       stability: development
       type: string
-    - brief: The version of the GenAI agent.
-      examples:
-      - 1.0.0
-      - 2025-05-01
-      key: gen_ai.agent.version
+    - brief: The name of the GenAI model configured for the agent.
+      examples: gpt-4
+      key: gen_ai.request.model
+      note: |
+        This attribute SHOULD be populated if and only if the instrumented  library allows to set only a single model per agent. It SHOULD NOT be populated for agents that support multiple models or dynamic selection.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
-        conditionally_required: When available.
+        recommended: If applicable.
       stability: development
       type: string
     brief: |
@@ -17845,6 +17819,17 @@ registry:
           id: other
           stability: stable
           value: _OTHER
+    - brief: The human-readable name of the agent executing the tool.
+      examples:
+      - Math Tutor
+      - Fiction Writer
+      key: gen_ai.agent.name
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: When applicable.
+      stability: development
+      type: string
     - brief: The name of the operation being performed.
       key: gen_ai.operation.name
       note: |
@@ -17994,6 +17979,7 @@ registry:
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level: required
+      sampling_relevant: true
       stability: development
       type: string
     - brief: Type of the tool utilized by the agent
@@ -18012,6 +17998,7 @@ registry:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
         recommended: If available.
+      sampling_relevant: true
       stability: development
       type: string
     brief: Describes tool execution span.
@@ -19220,15 +19207,15 @@ registry:
       requirement_level: recommended
       stability: development
       type: int
-    - brief: The name of the GenAI model a request is being made to.
+    - brief: The name of the GenAI model configured for the agent.
       examples: gpt-4
       key: gen_ai.request.model
       note: |
-        The name of the GenAI model a request is being made to. If the model is supplied by a vendor, then the value must be the exact name of the model requested. If the model is a fine-tuned custom model, the value should have a more specific name than the base model that\u0027s been fine-tuned.
+        This attribute SHOULD be populated if and only if the instrumented  library allows to set only a single model per agent. It SHOULD NOT be populated for agents that support multiple models or dynamic selection.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
-        conditionally_required: If available.
+        recommended: If applicable.
       sampling_relevant: true
       stability: development
       type: string
@@ -19526,17 +19513,6 @@ registry:
       sampling_relevant: true
       stability: development
       type: string
-    - brief: The version of the invoked GenAI agent.
-      examples:
-      - 1.0.0
-      - 2025-05-01
-      key: gen_ai.agent.version
-      provenance:
-        path: ./model/gen-ai/registry.yaml
-      requirement_level:
-        conditionally_required: When available.
-      stability: development
-      type: string
     - brief: The unique identifier for a conversation (session, thread), used to store and correlate messages within this conversation.
       examples:
       - conv_5j66UpCpwteGg4YSxUnt7lPY
@@ -19812,15 +19788,15 @@ registry:
       requirement_level: recommended
       stability: development
       type: int
-    - brief: The name of the GenAI model a request is being made to.
+    - brief: The name of the GenAI model configured for the agent.
       examples: gpt-4
       key: gen_ai.request.model
       note: |
-        The name of the GenAI model a request is being made to. If the model is supplied by a vendor, then the value must be the exact name of the model requested. If the model is a fine-tuned custom model, the value should have a more specific name than the base model that\u0027s been fine-tuned.
+        This attribute SHOULD be populated if and only if the instrumented  library allows to set only a single model per agent. It SHOULD NOT be populated for agents that support multiple models or dynamic selection.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
-        conditionally_required: If available.
+        recommended: If applicable.
       sampling_relevant: true
       stability: development
       type: string

@@ -113,6 +113,7 @@ def run_agent_reference():
             tool_span.set_attribute("gen_ai.tool.name", "get_weather")
             tool_span.set_attribute("gen_ai.tool.type", "function")
             tool_span.set_attribute("gen_ai.tool.description", "Get the current weather.")
+            tool_span.set_attribute("gen_ai.agent.name", tool_context.agent_name)
             if tool_context.function_call_id:
                 tool_span.set_attribute("gen_ai.tool.call.id", tool_context.function_call_id)
             tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps({"location": location}))

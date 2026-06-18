@@ -34,6 +34,8 @@ async def run_agent():
             tool_span.set_attribute("gen_ai.tool.name", "get_weather")
             tool_span.set_attribute("gen_ai.tool.description", get_weather.description)
             tool_span.set_attribute("gen_ai.tool.type", "function")
+            if ctx.agent is not None and ctx.agent.name:
+                tool_span.set_attribute("gen_ai.agent.name", ctx.agent.name)
             tool_span.set_attribute("gen_ai.tool.call.id", ctx.tool_call_id)
             tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps({"location": location}))
             result = "Sunny, 72°F"
