@@ -1,6 +1,7 @@
 {
   "spans": {
     "inference": [
+      "gen_ai.conversation.compacted",
       "gen_ai.input.messages",
       "gen_ai.operation.name",
       "gen_ai.output.messages",
@@ -49,6 +50,7 @@
   },
   "events": {
     "gen_ai.client.inference.operation.details": [
+      "gen_ai.conversation.compacted",
       "gen_ai.input.messages",
       "gen_ai.operation.name",
       "gen_ai.output.messages",

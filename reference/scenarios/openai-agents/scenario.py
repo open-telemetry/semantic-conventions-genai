@@ -58,14 +58,9 @@ async def run_agent():
     print("  [agent_run] agent with tool calling (reference implementation)")
     agent_span_attributes = {
         "gen_ai.operation.name": "invoke_agent",
-        "gen_ai.provider.name": "openai",
         "gen_ai.request.model": request_model,
         "gen_ai.agent.name": agent.name,
     }
-    if host:
-        agent_span_attributes["server.address"] = host
-    if port is not None:
-        agent_span_attributes["server.port"] = port
     with _reference_tracer.start_as_current_span(
         "invoke_agent test-agent", attributes=agent_span_attributes
     ) as agent_span:

@@ -225,6 +225,9 @@ spans:
           Application developers that manage conversation history MAY add conversation id to GenAI and other
           spans or logs using custom span or log record processors or hooks provided by instrumentation
           libraries.
+      - ref: gen_ai.conversation.compacted
+        requirement_level:
+          recommended: when available
       - ref: gen_ai.provider.name
         # TODO: Not adding to common attributes because of https://github.com/open-telemetry/weaver/issues/479
         requirement_level: required
@@ -468,9 +471,6 @@ spans:
     stability: development
     attributes:
       - ref_group: attributes.gen_ai.invoke_agent.common
-      - ref: gen_ai.provider.name
-        requirement_level: required
-        sampling_relevant: true
       - ref: gen_ai.operation.name
         sampling_relevant: true
       - ref: gen_ai.request.model

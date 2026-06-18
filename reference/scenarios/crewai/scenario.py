@@ -267,7 +267,6 @@ def run_agent():
         "gen_ai.operation.name": "invoke_agent",
         "gen_ai.request.model": request_model,
         "gen_ai.agent.name": researcher_role,
-        "gen_ai.provider.name": "openai",
     }
 
     with _reference_tracer.start_as_current_span(

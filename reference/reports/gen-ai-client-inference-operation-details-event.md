@@ -26,6 +26,7 @@
 
 | Attribute | Supporting Libraries |
 | --- | --- |
+| gen_ai.conversation.compacted | [anthropic], [openai] |
 | gen_ai.request.frequency_penalty | [pydantic-ai] |
 | gen_ai.request.max_tokens | [pydantic-ai] |
 | gen_ai.request.presence_penalty | [pydantic-ai] |

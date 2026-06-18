@@ -25,18 +25,19 @@ def _matches_spec(op_name: str, attrs: dict[str, object], span_type_key: str) ->
 def classify_span(span_name: str, span_kind: str, span_attrs: dict[str, object]) -> set[str]:
     """Classify a span into GenAI span types using model-backed discriminators.
 
-    ``span_name`` and ``span_kind`` are accepted to match the shared
-    ``ClassifySpan`` signature but are not used: GenAI classification is
-    attribute-driven (``gen_ai.operation.name`` plus discriminator attrs).
+    ``span_name`` is accepted to match the shared ``ClassifySpan`` signature
+    but is not used. ``span_kind`` disambiguates the two ``invoke_agent`` span
+    types; the rest of the classification is attribute-driven
+    (``gen_ai.operation.name`` plus discriminator attrs).
     """
-    del span_name, span_kind  # unused; accepted for signature compatibility
+    del span_name  # unused; accepted for signature compatibility
     op_name = str(span_attrs.get("gen_ai.operation.name", "")).lower()
     detected = {key for key in SPAN_SPECS if _matches_spec(op_name, span_attrs, key)}
 
     # invoke_agent is represented as two span types (client vs internal) that
-    # share op_name/discriminator_attrs; disambiguate by remote-server attrs.
+    # share op_name/discriminator_attrs; disambiguate by span kind.
     if "invoke_agent_client" in detected or "invoke_agent_internal" in detected:
-        is_remote = _has_any_attr(span_attrs, "server.address", "server.port")
-        detected.discard("invoke_agent_client" if not is_remote else "invoke_agent_internal")
+        is_client_span = span_kind.lower() == "client"
+        detected.discard("invoke_agent_client" if not is_client_span else "invoke_agent_internal")
 
     return detected
