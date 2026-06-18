@@ -184,6 +184,9 @@ spans:
       - ref: gen_ai.request.stream
         requirement_level:
           conditionally_required: If and only if the request is streaming. If unset, the request is assumed to be non-streaming.
+      - ref: gen_ai.request.reasoning.level
+        requirement_level:
+          recommended: When applicable.
       - ref: gen_ai.response.id
         requirement_level: recommended
       - ref: gen_ai.response.model
@@ -230,6 +233,9 @@ spans:
           Application developers that manage conversation history MAY add conversation id to GenAI and other
           spans or logs using custom span or log record processors or hooks provided by instrumentation
           libraries.
+      - ref: gen_ai.conversation.compacted
+        requirement_level:
+          recommended: when available
       - ref: gen_ai.provider.name
         # TODO: Not adding to common attributes because of https://github.com/open-telemetry/weaver/issues/479
         requirement_level: required
@@ -473,9 +479,6 @@ spans:
     stability: development
     attributes:
       - ref_group: attributes.gen_ai.invoke_agent.common
-      - ref: gen_ai.provider.name
-        requirement_level: required
-        sampling_relevant: true
       - ref: gen_ai.operation.name
         sampling_relevant: true
       - ref: gen_ai.request.model
@@ -633,6 +636,9 @@ span_refinements:
       - ref: gen_ai.usage.reasoning.output_tokens
         note: >
           Corresponds to `usage.output_tokens_details.reasoning_tokens` in the model response.
+      - ref: gen_ai.request.reasoning.level
+        note: >
+          Corresponds to the [`reasoning.effort`](https://platform.openai.com/docs/guides/reasoning#reasoning-effort) request parameter.
       - ref: openai.request.service_tier
         requirement_level:
           conditionally_required: If the request includes a service_tier and the value is not 'auto'.
@@ -697,6 +703,9 @@ span_refinements:
     attributes:
       - ref: gen_ai.request.top_k
         requirement_level: recommended
+      - ref: gen_ai.request.reasoning.level
+        note: >
+          Corresponds to the [`output_config.effort`](https://docs.anthropic.com/en/docs/build-with-claude/effort) request parameter.
       - ref: gen_ai.usage.input_tokens
         note: >
           Anthropic `input_tokens` excludes cached tokens. Compute:

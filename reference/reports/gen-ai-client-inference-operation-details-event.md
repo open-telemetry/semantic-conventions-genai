@@ -28,9 +28,11 @@
 
 | Attribute | Supporting Libraries |
 | --- | --- |
+| gen_ai.conversation.compacted | [anthropic], [openai] |
 | gen_ai.request.frequency_penalty | [pydantic-ai] |
 | gen_ai.request.max_tokens | [pydantic-ai] |
 | gen_ai.request.presence_penalty | [pydantic-ai] |
+| gen_ai.request.reasoning.level | (none) |
 | gen_ai.request.stop_sequences | [pydantic-ai] |
 | gen_ai.request.temperature | [pydantic-ai] |
 | gen_ai.request.top_p | [pydantic-ai] |

@@ -11,32 +11,32 @@
 | <a id="gen-ai-agent-id" href="#gen-ai-agent-id">`gen_ai.agent.id`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The unique and stable identifier of the GenAI hosted agent resource. [1] | `asst_5j66UpCpwteGg4YSxUnt7lPY`; `arn:aws:bedrock:us-east-1:123:agent/42`; `urn:agent:projects-123:projects:123:locations:us-east1:aiplatform:reasoningEngines:456` |
 | <a id="gen-ai-agent-name" href="#gen-ai-agent-name">`gen_ai.agent.name`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | Human-readable name of the GenAI agent provided by the application. | `Math Tutor`; `Fiction Writer` |
 | <a id="gen-ai-agent-version" href="#gen-ai-agent-version">`gen_ai.agent.version`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The version of the GenAI agent. | `1.0.0`; `2025-05-01` |
+| <a id="gen-ai-conversation-compacted" href="#gen-ai-conversation-compacted">`gen_ai.conversation.compacted`</a> | ![Development](https://img.shields.io/badge/-development-blue) | boolean | Indicates whether the effective conversation context used for this operation is a compacted view of a prior conversation. [2] | `true` |
 | <a id="gen-ai-conversation-id" href="#gen-ai-conversation-id">`gen_ai.conversation.id`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The unique identifier for a conversation (session, thread), used to store and correlate messages within this conversation. | `conv_5j66UpCpwteGg4YSxUnt7lPY` |
-| <a id="gen-ai-data-source-id" href="#gen-ai-data-source-id">`gen_ai.data_source.id`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The data source identifier. [2] | `H7STPQYOND` |
+| <a id="gen-ai-data-source-id" href="#gen-ai-data-source-id">`gen_ai.data_source.id`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The data source identifier. [3] | `H7STPQYOND` |
 | <a id="gen-ai-embeddings-dimension-count" href="#gen-ai-embeddings-dimension-count">`gen_ai.embeddings.dimension.count`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The number of dimensions the resulting output embeddings should have. | `512`; `1024` |
 | <a id="gen-ai-evaluation-explanation" href="#gen-ai-evaluation-explanation">`gen_ai.evaluation.explanation`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | A free-form explanation for the assigned score provided by the evaluator. | `The response is factually accurate but lacks sufficient detail to fully address the question.` |
 | <a id="gen-ai-evaluation-name" href="#gen-ai-evaluation-name">`gen_ai.evaluation.name`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The name of the evaluation metric used for the GenAI response. | `Relevance`; `IntentResolution` |
-| <a id="gen-ai-evaluation-score-label" href="#gen-ai-evaluation-score-label">`gen_ai.evaluation.score.label`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | Human readable label for evaluation. [3] | `relevant`; `not_relevant`; `correct`; `incorrect`; `pass`; `fail` |
+| <a id="gen-ai-evaluation-score-label" href="#gen-ai-evaluation-score-label">`gen_ai.evaluation.score.label`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | Human readable label for evaluation. [4] | `relevant`; `not_relevant`; `correct`; `incorrect`; `pass`; `fail` |
 | <a id="gen-ai-evaluation-score-value" href="#gen-ai-evaluation-score-value">`gen_ai.evaluation.score.value`</a> | ![Development](https://img.shields.io/badge/-development-blue) | double | The evaluation score returned by the evaluator. | `4.0` |
-| <a id="gen-ai-input-messages" href="#gen-ai-input-messages">`gen_ai.input.messages`</a> | ![Development](https://img.shields.io/badge/-development-blue) | any | The chat history provided to the model as an input. [4] | [<br>&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;"role": "user",<br>&nbsp;&nbsp;&nbsp;&nbsp;"parts": [<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"type": "text",<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"content": "Weather in Paris?"<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>&nbsp;&nbsp;&nbsp;&nbsp;]<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;"role": "assistant",<br>&nbsp;&nbsp;&nbsp;&nbsp;"parts": [<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"type": "tool_call",<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"id": "call_VSPygqKTWdrhaFErNvMV18Yl",<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"name": "get_weather",<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"arguments": {<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"location": "Paris"<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>&nbsp;&nbsp;&nbsp;&nbsp;]<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;"role": "tool",<br>&nbsp;&nbsp;&nbsp;&nbsp;"parts": [<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"type": "tool_call_response",<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"id": " call_VSPygqKTWdrhaFErNvMV18Yl",<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"result": "rainy, 57°F"<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>&nbsp;&nbsp;&nbsp;&nbsp;]<br>&nbsp;&nbsp;}<br>] |
-| <a id="gen-ai-memory-query-text" href="#gen-ai-memory-query-text">`gen_ai.memory.query.text`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The search query used to retrieve memories. [5] | `user dietary preferences`; `past flight bookings` |
-| <a id="gen-ai-memory-record-count" href="#gen-ai-memory-record-count">`gen_ai.memory.record.count`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The number of memory records relevant to the operation. [6] | `3` |
+| <a id="gen-ai-input-messages" href="#gen-ai-input-messages">`gen_ai.input.messages`</a> | ![Development](https://img.shields.io/badge/-development-blue) | any | The chat history provided to the model as an input. [5] | [<br>&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;"role": "user",<br>&nbsp;&nbsp;&nbsp;&nbsp;"parts": [<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"type": "text",<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"content": "Weather in Paris?"<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>&nbsp;&nbsp;&nbsp;&nbsp;]<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;"role": "assistant",<br>&nbsp;&nbsp;&nbsp;&nbsp;"parts": [<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"type": "tool_call",<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"id": "call_VSPygqKTWdrhaFErNvMV18Yl",<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"name": "get_weather",<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"arguments": {<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"location": "Paris"<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>&nbsp;&nbsp;&nbsp;&nbsp;]<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;"role": "tool",<br>&nbsp;&nbsp;&nbsp;&nbsp;"parts": [<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"type": "tool_call_response",<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"id": " call_VSPygqKTWdrhaFErNvMV18Yl",<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"result": "rainy, 57°F"<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>&nbsp;&nbsp;&nbsp;&nbsp;]<br>&nbsp;&nbsp;}<br>] |
+| <a id="gen-ai-memory-query-text" href="#gen-ai-memory-query-text">`gen_ai.memory.query.text`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The search query used to retrieve memories. [6] | `user dietary preferences`; `past flight bookings` |
+| <a id="gen-ai-memory-record-count" href="#gen-ai-memory-record-count">`gen_ai.memory.record.count`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The number of memory records relevant to the operation. [7] | `3` |
 | <a id="gen-ai-memory-record-id" href="#gen-ai-memory-record-id">`gen_ai.memory.record.id`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The unique identifier of the memory record. | `mem_5j66UpCpwteGg4YSxUnt7lPY` |
-| <a id="gen-ai-memory-records" href="#gen-ai-memory-records">`gen_ai.memory.records`</a> | ![Development](https://img.shields.io/badge/-development-blue) | any | The memory records stored or retrieved in a memory operation. [7] | [<br>&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;"content": "User prefers dark mode",<br>&nbsp;&nbsp;&nbsp;&nbsp;"id": "mem_123",<br>&nbsp;&nbsp;&nbsp;&nbsp;"score": 0.95<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;"content": {<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"preference": "vegetarian meals",<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"confidence": 0.9<br>&nbsp;&nbsp;&nbsp;&nbsp;},<br>&nbsp;&nbsp;&nbsp;&nbsp;"metadata": {<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"source": "profile"<br>&nbsp;&nbsp;&nbsp;&nbsp;}<br>&nbsp;&nbsp;}<br>] |
-| <a id="gen-ai-memory-store-id" href="#gen-ai-memory-store-id">`gen_ai.memory.store.id`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The unique identifier of the memory store. [8] | `ms_abc123`; `user-preferences-store` |
-| <a id="gen-ai-operation-name" href="#gen-ai-operation-name">`gen_ai.operation.name`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The name of the operation being performed. [9] | `chat`; `generate_content`; `text_completion` |
-| <a id="gen-ai-output-messages" href="#gen-ai-output-messages">`gen_ai.output.messages`</a> | ![Development](https://img.shields.io/badge/-development-blue) | any | Messages returned by the model where each message represents a specific model response (choice, candidate). [10] | [<br>&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;"role": "assistant",<br>&nbsp;&nbsp;&nbsp;&nbsp;"parts": [<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"type": "text",<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"content": "The weather in Paris is currently rainy with a temperature of 57°F."<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>&nbsp;&nbsp;&nbsp;&nbsp;],<br>&nbsp;&nbsp;&nbsp;&nbsp;"finish_reason": "stop"<br>&nbsp;&nbsp;}<br>] |
-| <a id="gen-ai-output-type" href="#gen-ai-output-type">`gen_ai.output.type`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | Represents the content type requested by the client. [11] | `text`; `json`; `image` |
+| <a id="gen-ai-memory-records" href="#gen-ai-memory-records">`gen_ai.memory.records`</a> | ![Development](https://img.shields.io/badge/-development-blue) | any | The memory records stored or retrieved in a memory operation. [8] | [<br>&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;"content": "User prefers dark mode",<br>&nbsp;&nbsp;&nbsp;&nbsp;"id": "mem_123",<br>&nbsp;&nbsp;&nbsp;&nbsp;"score": 0.95<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;"content": {<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"preference": "vegetarian meals",<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"confidence": 0.9<br>&nbsp;&nbsp;&nbsp;&nbsp;},<br>&nbsp;&nbsp;&nbsp;&nbsp;"metadata": {<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"source": "profile"<br>&nbsp;&nbsp;&nbsp;&nbsp;}<br>&nbsp;&nbsp;}<br>] |
+| <a id="gen-ai-memory-store-id" href="#gen-ai-memory-store-id">`gen_ai.memory.store.id`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The unique identifier of the memory store. [9] | `ms_abc123`; `user-preferences-store` |
+| <a id="gen-ai-operation-name" href="#gen-ai-operation-name">`gen_ai.operation.name`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The name of the operation being performed. [10] | `chat`; `generate_content`; `text_completion` |
+| <a id="gen-ai-output-messages" href="#gen-ai-output-messages">`gen_ai.output.messages`</a> | ![Development](https://img.shields.io/badge/-development-blue) | any | Messages returned by the model where each message represents a specific model response (choice, candidate). [11] | [<br>&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;"role": "assistant",<br>&nbsp;&nbsp;&nbsp;&nbsp;"parts": [<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"type": "text",<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"content": "The weather in Paris is currently rainy with a temperature of 57°F."<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>&nbsp;&nbsp;&nbsp;&nbsp;],<br>&nbsp;&nbsp;&nbsp;&nbsp;"finish_reason": "stop"<br>&nbsp;&nbsp;}<br>] |
+| <a id="gen-ai-output-type" href="#gen-ai-output-type">`gen_ai.output.type`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | Represents the content type requested by the client. [12] | `text`; `json`; `image` |
 | <a id="gen-ai-prompt-name" href="#gen-ai-prompt-name">`gen_ai.prompt.name`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The name of the prompt that uniquely identifies it. | `analyze-code` |
-| <a id="gen-ai-prompt-variable" href="#gen-ai-prompt-variable">`gen_ai.prompt.variable`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The variables supplied to the prompt template, the `<key>` being the variable name, the value being the variable value. [12] | `Alice`; `French` |
-| <a id="gen-ai-prompt-version" href="#gen-ai-prompt-version">`gen_ai.prompt.version`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The version of the prompt template used. [13] | `1.0.0`; `2025-05-01`; `prod`; `v2` |
-| <a id="gen-ai-provider-name" href="#gen-ai-provider-name">`gen_ai.provider.name`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The Generative AI provider as identified by the client or server instrumentation. [14] | `openai`; `gcp.gen_ai`; `gcp.vertex_ai` |
+| <a id="gen-ai-provider-name" href="#gen-ai-provider-name">`gen_ai.provider.name`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The Generative AI provider as identified by the client or server instrumentation. [13] | `openai`; `gcp.gen_ai`; `gcp.vertex_ai` |
 | <a id="gen-ai-request-choice-count" href="#gen-ai-request-choice-count">`gen_ai.request.choice.count`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The target number of candidate completions to return. | `3` |
-| <a id="gen-ai-request-encoding-formats" href="#gen-ai-request-encoding-formats">`gen_ai.request.encoding_formats`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string[] | The encoding formats requested in an embeddings operation, if specified. [15] | `["base64"]`; `["float", "binary"]` |
+| <a id="gen-ai-request-encoding-formats" href="#gen-ai-request-encoding-formats">`gen_ai.request.encoding_formats`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string[] | The encoding formats requested in an embeddings operation, if specified. [14] | `["base64"]`; `["float", "binary"]` |
 | <a id="gen-ai-request-frequency-penalty" href="#gen-ai-request-frequency-penalty">`gen_ai.request.frequency_penalty`</a> | ![Development](https://img.shields.io/badge/-development-blue) | double | The frequency penalty setting for the GenAI request. | `0.1` |
 | <a id="gen-ai-request-max-tokens" href="#gen-ai-request-max-tokens">`gen_ai.request.max_tokens`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The maximum number of tokens the model generates for a request. | `100` |
 | <a id="gen-ai-request-model" href="#gen-ai-request-model">`gen_ai.request.model`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The name of the GenAI model a request is being made to. | `gpt-4` |
 | <a id="gen-ai-request-presence-penalty" href="#gen-ai-request-presence-penalty">`gen_ai.request.presence_penalty`</a> | ![Development](https://img.shields.io/badge/-development-blue) | double | The presence penalty setting for the GenAI request. | `0.1` |
+| <a id="gen-ai-request-reasoning-level" href="#gen-ai-request-reasoning-level">`gen_ai.request.reasoning.level`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The reasoning or thinking effort level requested for a GenAI model. [15] | `low`; `medium`; `high` |
 | <a id="gen-ai-request-seed" href="#gen-ai-request-seed">`gen_ai.request.seed`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | Requests with same seed value more likely to return same result. | `100` |
 | <a id="gen-ai-request-stop-sequences" href="#gen-ai-request-stop-sequences">`gen_ai.request.stop_sequences`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string[] | List of sequences that the model will use to stop generating further tokens. | `["forest", "lived"]` |
 | <a id="gen-ai-request-stream" href="#gen-ai-request-stream">`gen_ai.request.stream`</a> | ![Development](https://img.shields.io/badge/-development-blue) | boolean | Indicates whether the GenAI request was made in streaming mode. | |
@@ -70,11 +70,16 @@
 **[1] `gen_ai.agent.id`:** For hosted agents, this SHOULD be the provider-assigned stable identifier of the agent resource such as [AWS Bedrock agent ARN](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_Agent.html) or [GCP Agent Registry identifier](https://docs.cloud.google.com/agent-registry/concepts#agent-identifier).
 It's NOT RECOMMENDED to record in-memory agent instance ids on this attribute due to their transient nature.
 
-**[2] `gen_ai.data_source.id`:** Data sources are used by AI agents and RAG applications to store grounding data. A data source may be an external database, object store, document collection, website, or any other storage system used by the GenAI agent or application. The `gen_ai.data_source.id` SHOULD match the identifier used by the GenAI system rather than a name specific to the external storage, such as a database or object store. Semantic conventions referencing `gen_ai.data_source.id` MAY also leverage additional attributes, such as `db.*`, to further identify and describe the data source.
+**[2] `gen_ai.conversation.compacted`:** This attribute is a positive indicator of context compaction. Instrumentations
+SHOULD set it to `true` only when they can reliably determine that context
+compaction was applied. Instrumentations SHOULD NOT set it to `false`; they
+SHOULD leave it unset otherwise.
 
-**[3] `gen_ai.evaluation.score.label`:** This attribute provides a human-readable interpretation of the evaluation score produced by an evaluator. For example, a score value of 1 could mean "relevant" in one evaluation system and "not relevant" in another, depending on the scoring range and evaluator. The label SHOULD have low cardinality. Possible values depend on the evaluation metric and evaluator used; implementations SHOULD document the possible values.
+**[3] `gen_ai.data_source.id`:** Data sources are used by AI agents and RAG applications to store grounding data. A data source may be an external database, object store, document collection, website, or any other storage system used by the GenAI agent or application. The `gen_ai.data_source.id` SHOULD match the identifier used by the GenAI system rather than a name specific to the external storage, such as a database or object store. Semantic conventions referencing `gen_ai.data_source.id` MAY also leverage additional attributes, such as `db.*`, to further identify and describe the data source.
 
-**[4] `gen_ai.input.messages`:** Instrumentations MUST follow [Input messages JSON schema](/docs/gen-ai/gen-ai-input-messages.json).
+**[4] `gen_ai.evaluation.score.label`:** This attribute provides a human-readable interpretation of the evaluation score produced by an evaluator. For example, a score value of 1 could mean "relevant" in one evaluation system and "not relevant" in another, depending on the scoring range and evaluator. The label SHOULD have low cardinality. Possible values depend on the evaluation metric and evaluator used; implementations SHOULD document the possible values.
+
+**[5] `gen_ai.input.messages`:** Instrumentations MUST follow [Input messages JSON schema](/docs/gen-ai/gen-ai-input-messages.json).
 When the attribute is recorded on events, it MUST be recorded in structured
 form. When recorded on spans, it MAY be recorded as a JSON string if structured
 format is not supported and SHOULD be recorded in structured form otherwise.
@@ -89,15 +94,15 @@ input messages.
 See [Recording content on attributes](/docs/gen-ai/gen-ai-spans.md#recording-content-on-attributes)
 section for more details.
 
-**[5] `gen_ai.memory.query.text`:** Instrumentations SHOULD NOT capture this attribute by default. Capture SHOULD be gated
+**[6] `gen_ai.memory.query.text`:** Instrumentations SHOULD NOT capture this attribute by default. Capture SHOULD be gated
 by an explicit user opt-in, for example `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT`.
 
 > [!Warning]
 > This attribute may contain sensitive information.
 
-**[6] `gen_ai.memory.record.count`:** For `search_memory` operations, this is the number of memory records returned by the operation. For `create_memory` operations, this is the number of memory records the operation attempted to create. For `update_memory` operations, this is the number of memory records the operation attempted to modify. For `upsert_memory` operations, this is the number of memory records the operation attempted to create or update. For `delete_memory` operations, this is the number of memory records the operation attempted to delete.
+**[7] `gen_ai.memory.record.count`:** For `search_memory` operations, this is the number of memory records returned by the operation. For `create_memory` operations, this is the number of memory records the operation attempted to create. For `update_memory` operations, this is the number of memory records the operation attempted to modify. For `upsert_memory` operations, this is the number of memory records the operation attempted to create or update. For `delete_memory` operations, this is the number of memory records the operation attempted to delete.
 
-**[7] `gen_ai.memory.records`:** Instrumentations MUST follow [Memory records JSON schema](/docs/gen-ai/gen-ai-memory-records.json).
+**[8] `gen_ai.memory.records`:** Instrumentations MUST follow [Memory records JSON schema](/docs/gen-ai/gen-ai-memory-records.json).
 When the attribute is recorded on events, it MUST be recorded in structured
 form. When recorded on spans, it MAY be recorded as a JSON string if structured
 format is not supported and SHOULD be recorded in structured form otherwise.
@@ -108,11 +113,11 @@ by an explicit user opt-in, for example `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESS
 > [!Warning]
 > This attribute may contain sensitive information including user/PII data.
 
-**[8] `gen_ai.memory.store.id`:** Semantic conventions for individual components SHOULD document what `gen_ai.memory.store.id` maps to within the implementation.
+**[9] `gen_ai.memory.store.id`:** Semantic conventions for individual components SHOULD document what `gen_ai.memory.store.id` maps to within the implementation.
 
-**[9] `gen_ai.operation.name`:** If one of the predefined values applies, but specific system uses a different name it's RECOMMENDED to document it in the semantic conventions for specific GenAI system and use system-specific name in the instrumentation. If a different name is not documented, instrumentation libraries SHOULD use applicable predefined value.
+**[10] `gen_ai.operation.name`:** If one of the predefined values applies, but specific system uses a different name it's RECOMMENDED to document it in the semantic conventions for specific GenAI system and use system-specific name in the instrumentation. If a different name is not documented, instrumentation libraries SHOULD use applicable predefined value.
 
-**[10] `gen_ai.output.messages`:** Instrumentations MUST follow [Output messages JSON schema](/docs/gen-ai/gen-ai-output-messages.json)
+**[11] `gen_ai.output.messages`:** Instrumentations MUST follow [Output messages JSON schema](/docs/gen-ai/gen-ai-output-messages.json)
 
 Each message represents a single output choice/candidate generated by
 the model. Each message corresponds to exactly one generation
@@ -132,31 +137,11 @@ output messages.
 See [Recording content on attributes](/docs/gen-ai/gen-ai-spans.md#recording-content-on-attributes)
 section for more details.
 
-**[11] `gen_ai.output.type`:** This attribute SHOULD be used when the client requests output of a specific type. The model may return zero or more outputs of this type.
+**[12] `gen_ai.output.type`:** This attribute SHOULD be used when the client requests output of a specific type. The model may return zero or more outputs of this type.
 This attribute specifies the output modality and not the actual output format. For example, if an image is requested, the actual output could be a URL pointing to an image file.
 Additional output format details may be recorded in the future in the `gen_ai.output.{type}.*` attributes.
 
-**[12] `gen_ai.prompt.variable`:** Prompt templates are parameterized with variables that are filled in
-at runtime. This attribute records the variable values passed to the
-template. The attribute name defines the variable name, and the
-attribute value is the variable value serialized as a string.
-
-Examples:
-
-- A variable `user_name` with value `Alice` SHOULD be recorded as
-  the `gen_ai.prompt.variable.user_name` attribute with value `"Alice"`.
-- A variable `language` with value `French` SHOULD be recorded as
-  the `gen_ai.prompt.variable.language` attribute with value `"French"`.
-
-> [!Warning]
-> This attribute may contain sensitive information.
-
-**[13] `gen_ai.prompt.version`:** The version string can follow any versioning scheme chosen by the
-application (e.g., SemVer, date-based, or platform-specific tags).
-When a prompt management system is in use, this SHOULD match the
-version identifier used by that system.
-
-**[14] `gen_ai.provider.name`:** Semantic conventions for individual GenAI operations SHOULD clarify which
+**[13] `gen_ai.provider.name`:** Semantic conventions for individual GenAI operations SHOULD clarify which
 kinds of providers (e.g. inference, embeddings, retrieval, memory, hosted
 agent providers) apply when it is not clear from context.
 
@@ -174,7 +159,10 @@ should have the `gen_ai.provider.name` set to `aws.bedrock` and include
 applicable `aws.bedrock.*` attributes and are not expected to include
 `openai.*` attributes.
 
-**[15] `gen_ai.request.encoding_formats`:** In some GenAI systems the encoding formats are called embedding types. Also, some GenAI systems only accept a single format per request.
+**[14] `gen_ai.request.encoding_formats`:** In some GenAI systems the encoding formats are called embedding types. Also, some GenAI systems only accept a single format per request.
+
+**[15] `gen_ai.request.reasoning.level`:** The value SHOULD be the exact string value sent to the provider.
+Semantic conventions for individual providers SHOULD document which input parameter maps to this attribute.
 
 **[16] `gen_ai.request.top_k`:** This is a decoding/sampling parameter (e.g., Anthropic `top_k`, Cohere `k`, Google `topK`), not an output-shaping parameter. In particular, OpenAI's `top_logprobs` controls how many per-token log-probabilities are returned in the response and does not change generation; it MUST NOT be reported as `gen_ai.request.top_k`.
 
