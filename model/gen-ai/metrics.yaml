@@ -151,6 +151,9 @@ metrics:
       - ref: gen_ai.agent.id
         requirement_level:
           conditionally_required: When available.
+      - ref: gen_ai.agent.version
+        requirement_level:
+          conditionally_required: When available.
   - name: gen_ai.execute_tool.duration
     annotations:
       code_generation:
