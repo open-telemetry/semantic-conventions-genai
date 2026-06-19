@@ -1908,6 +1908,172 @@ refinements:
           id: other
           stability: stable
           value: _OTHER
+    - brief: Human-readable name of the GenAI agent provided by the application.
+      examples:
+      - Math Tutor
+      - Fiction Writer
+      key: gen_ai.agent.name
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: When available.
+      stability: development
+      type: string
+    - brief: Name of the tool utilized by the agent.
+      examples:
+      - Flights
+      key: gen_ai.tool.name
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: required
+      stability: development
+      type: string
+    - brief: Type of the tool utilized by the agent
+      examples:
+      - function
+      - extension
+      - datastore
+      key: gen_ai.tool.type
+      note: |
+        Extension: A tool executed on the agent-side to directly call external APIs, bridging the gap between the agent and real-world systems.
+          Agent-side operations involve actions that are performed by the agent on the server or within the agent\u0027s controlled environment.
+        Function: A tool executed on the client-side, where the agent generates parameters for a predefined function, and the client executes the logic.
+          Client-side operations are actions taken on the user\u0027s end or within the client application.
+        Datastore: A tool used by the agent to access and query structured or unstructured external data for retrieval-augmented tasks or knowledge updates.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: recommended
+      stability: development
+      type: string
+    brief: |
+      The duration of a single tool execution.
+    id: gen_ai.execute_tool.duration
+    instrument: histogram
+    name: gen_ai.execute_tool.duration
+    note: |
+      Instrumentation that can reliably bound a single tool call SHOULD
+      record this metric for every tool execution they can observe.
+
+      When this metric is reported alongside a `gen_ai.execute_tool` span,
+      the metric value SHOULD be the same as the span duration.
+    provenance:
+      path: ./model/gen-ai/metrics.yaml
+    stability: development
+    unit: s
+  - annotations:
+      code_generation:
+        metric_value_type: double
+    attributes:
+    - brief: |
+        Describes a class of error the operation ended with.
+      examples:
+      - timeout
+      - java.net.UnknownHostException
+      - server_certificate_invalid
+      - \u0027500\u0027
+      key: error.type
+      note: |
+        The `error.type` SHOULD match the error code returned by the Generative AI provider or the client library,
+        the canonical name of exception that occurred, or another low-cardinality error identifier.
+        Instrumentations SHOULD document the list of errors they report.
+      requirement_level:
+        conditionally_required: If the operation ended in an error.
+      stability: stable
+      type:
+        members:
+        - brief: |
+            A fallback error value to be used when the instrumentation doesn\u0027t define a custom value.
+          id: other
+          stability: stable
+          value: _OTHER
+    - brief: The unique and stable identifier of the GenAI hosted agent resource.
+      examples:
+      - asst_5j66UpCpwteGg4YSxUnt7lPY
+      - arn:aws:bedrock:us-east-1:123:agent/42
+      - urn:agent:projects-123:projects:123:locations:us-east1:aiplatform:reasoningEngines:456
+      key: gen_ai.agent.id
+      note: |
+        For hosted agents, this SHOULD be the provider-assigned stable identifier of the agent resource such as [AWS Bedrock agent ARN](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_Agent.html) or [GCP Agent Registry identifier](https://docs.cloud.google.com/agent-registry/concepts#agent-identifier).
+        It\u0027s NOT RECOMMENDED to record in-memory agent instance ids on this attribute due to their transient nature.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: When available.
+      stability: development
+      type: string
+    - brief: Human-readable name of the GenAI agent provided by the application.
+      examples:
+      - Math Tutor
+      - Fiction Writer
+      key: gen_ai.agent.name
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: When available.
+      stability: development
+      type: string
+    - brief: The version of the GenAI agent.
+      examples:
+      - 1.0.0
+      - 2025-05-01
+      key: gen_ai.agent.version
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: When available.
+      stability: development
+      type: string
+    brief: |
+      The end-to-end duration of a single agent invocation, from the moment the invocation starts until the agent emits the last chunk of its final response or terminates with an error.
+    id: gen_ai.invoke_agent.duration
+    instrument: histogram
+    name: gen_ai.invoke_agent.duration
+    note: |
+      Intended for instrumentations of agent frameworks (for example, ADK,
+      LangChain agents, CrewAI agents) that can reliably bound a single
+      agent invocation.
+
+      If instrumentation can only measure a single provider-facing client
+      operation (for example, one model API call),
+      `gen_ai.client.operation.duration` SHOULD be used instead. If
+      instrumentation can reliably bound a higher-level workflow that
+      coordinates multiple agents, `gen_ai.workflow.duration` SHOULD be
+      used for that workflow. Instrumentation MAY emit several of these
+      metrics for the same request path when more than one boundary is
+      available.
+
+      When this metric is reported alongside a `gen_ai.invoke_agent` span,
+      the metric value SHOULD be the same as the span duration.
+    provenance:
+      path: ./model/gen-ai/metrics.yaml
+    stability: development
+    unit: s
+  - annotations:
+      code_generation:
+        metric_value_type: double
+    attributes:
+    - brief: |
+        Describes a class of error the operation ended with.
+      examples:
+      - timeout
+      - java.net.UnknownHostException
+      - server_certificate_invalid
+      - \u0027500\u0027
+      key: error.type
+      note: |
+        The `error.type` SHOULD match the error code returned by the Generative AI provider or the client library,
+        the canonical name of exception that occurred, or another low-cardinality error identifier.
+        Instrumentations SHOULD document the list of errors they report.
+      requirement_level:
+        conditionally_required: If the operation ended in an error.
+      stability: stable
+      type:
+        members:
+        - brief: |
+            A fallback error value to be used when the instrumentation doesn\u0027t define a custom value.
+          id: other
+          stability: stable
+          value: _OTHER
     - brief: The name of the operation being performed.
       key: gen_ai.operation.name
       note: |
@@ -15596,6 +15762,170 @@ registry:
       path: ./model/gen-ai/metrics.yaml
     stability: development
     unit: \u0027{token}\u0027
+  - annotations:
+      code_generation:
+        metric_value_type: double
+    attributes:
+    - brief: |
+        Describes a class of error the operation ended with.
+      examples:
+      - timeout
+      - java.net.UnknownHostException
+      - server_certificate_invalid
+      - \u0027500\u0027
+      key: error.type
+      note: |
+        The `error.type` SHOULD match the error code returned by the Generative AI provider or the client library,
+        the canonical name of exception that occurred, or another low-cardinality error identifier.
+        Instrumentations SHOULD document the list of errors they report.
+      requirement_level:
+        conditionally_required: If the operation ended in an error.
+      stability: stable
+      type:
+        members:
+        - brief: |
+            A fallback error value to be used when the instrumentation doesn\u0027t define a custom value.
+          id: other
+          stability: stable
+          value: _OTHER
+    - brief: Human-readable name of the GenAI agent provided by the application.
+      examples:
+      - Math Tutor
+      - Fiction Writer
+      key: gen_ai.agent.name
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: When available.
+      stability: development
+      type: string
+    - brief: Name of the tool utilized by the agent.
+      examples:
+      - Flights
+      key: gen_ai.tool.name
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: required
+      stability: development
+      type: string
+    - brief: Type of the tool utilized by the agent
+      examples:
+      - function
+      - extension
+      - datastore
+      key: gen_ai.tool.type
+      note: |
+        Extension: A tool executed on the agent-side to directly call external APIs, bridging the gap between the agent and real-world systems.
+          Agent-side operations involve actions that are performed by the agent on the server or within the agent\u0027s controlled environment.
+        Function: A tool executed on the client-side, where the agent generates parameters for a predefined function, and the client executes the logic.
+          Client-side operations are actions taken on the user\u0027s end or within the client application.
+        Datastore: A tool used by the agent to access and query structured or unstructured external data for retrieval-augmented tasks or knowledge updates.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level: recommended
+      stability: development
+      type: string
+    brief: |
+      The duration of a single tool execution.
+    instrument: histogram
+    name: gen_ai.execute_tool.duration
+    note: |
+      Instrumentation that can reliably bound a single tool call SHOULD
+      record this metric for every tool execution they can observe.
+
+      When this metric is reported alongside a `gen_ai.execute_tool` span,
+      the metric value SHOULD be the same as the span duration.
+    provenance:
+      path: ./model/gen-ai/metrics.yaml
+    stability: development
+    unit: s
+  - annotations:
+      code_generation:
+        metric_value_type: double
+    attributes:
+    - brief: |
+        Describes a class of error the operation ended with.
+      examples:
+      - timeout
+      - java.net.UnknownHostException
+      - server_certificate_invalid
+      - \u0027500\u0027
+      key: error.type
+      note: |
+        The `error.type` SHOULD match the error code returned by the Generative AI provider or the client library,
+        the canonical name of exception that occurred, or another low-cardinality error identifier.
+        Instrumentations SHOULD document the list of errors they report.
+      requirement_level:
+        conditionally_required: If the operation ended in an error.
+      stability: stable
+      type:
+        members:
+        - brief: |
+            A fallback error value to be used when the instrumentation doesn\u0027t define a custom value.
+          id: other
+          stability: stable
+          value: _OTHER
+    - brief: The unique and stable identifier of the GenAI hosted agent resource.
+      examples:
+      - asst_5j66UpCpwteGg4YSxUnt7lPY
+      - arn:aws:bedrock:us-east-1:123:agent/42
+      - urn:agent:projects-123:projects:123:locations:us-east1:aiplatform:reasoningEngines:456
+      key: gen_ai.agent.id
+      note: |
+        For hosted agents, this SHOULD be the provider-assigned stable identifier of the agent resource such as [AWS Bedrock agent ARN](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_Agent.html) or [GCP Agent Registry identifier](https://docs.cloud.google.com/agent-registry/concepts#agent-identifier).
+        It\u0027s NOT RECOMMENDED to record in-memory agent instance ids on this attribute due to their transient nature.
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: When available.
+      stability: development
+      type: string
+    - brief: Human-readable name of the GenAI agent provided by the application.
+      examples:
+      - Math Tutor
+      - Fiction Writer
+      key: gen_ai.agent.name
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: When available.
+      stability: development
+      type: string
+    - brief: The version of the GenAI agent.
+      examples:
+      - 1.0.0
+      - 2025-05-01
+      key: gen_ai.agent.version
+      provenance:
+        path: ./model/gen-ai/registry.yaml
+      requirement_level:
+        conditionally_required: When available.
+      stability: development
+      type: string
+    brief: |
+      The end-to-end duration of a single agent invocation, from the moment the invocation starts until the agent emits the last chunk of its final response or terminates with an error.
+    instrument: histogram
+    name: gen_ai.invoke_agent.duration
+    note: |
+      Intended for instrumentations of agent frameworks (for example, ADK,
+      LangChain agents, CrewAI agents) that can reliably bound a single
+      agent invocation.
+
+      If instrumentation can only measure a single provider-facing client
+      operation (for example, one model API call),
+      `gen_ai.client.operation.duration` SHOULD be used instead. If
+      instrumentation can reliably bound a higher-level workflow that
+      coordinates multiple agents, `gen_ai.workflow.duration` SHOULD be
+      used for that workflow. Instrumentation MAY emit several of these
+      metrics for the same request path when more than one boundary is
+      available.
+
+      When this metric is reported alongside a `gen_ai.invoke_agent` span,
+      the metric value SHOULD be the same as the span duration.
+    provenance:
+      path: ./model/gen-ai/metrics.yaml
+    stability: development
+    unit: s
   - annotations:
       code_generation:
         metric_value_type: double
