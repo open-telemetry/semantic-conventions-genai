@@ -193,7 +193,7 @@ jobs:
 
           body=$(cat <<EOF
           ${MARKER}
-          This PR has review comments. Review suggestions, whether from maintainers or automated reviewers, aren't always correct or required. Please evaluate each comment on its merits, then reply to each thread with the outcome.
+          This PR has review comments. Review suggestions, whether from maintainers or automated reviewers, aren't always correct or required. Please evaluate each comment on its merits, then make sure each thread has a clear outcome.
 
           For example, link to the commit if you applied a suggestion, explain why it wasn't applied, or ask a follow-up question.
 
