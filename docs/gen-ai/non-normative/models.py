@@ -515,23 +515,46 @@ class MemoryRecords(RootModel[List[MemoryRecord]]):
 
 
 # --------------------------------------------------------------------------
+# `gen_ai.tool.call.arguments` and `gen_ai.tool.call.result` models
+# --------------------------------------------------------------------------
+
+
+class ToolCallArguments(RootModel[dict[str, Any]]):
+    """
+    Represents object-like arguments passed to a tool call.
+    """
+
+    pass
+
+
+class ToolCallResult(RootModel[dict[str, Any]]):
+    """
+    Represents object-like results returned by a tool call.
+    """
+
+    pass
+
+
+# --------------------------------------------------------------------------
 # Schema generation entry point
 # --------------------------------------------------------------------------
 
-# Maps committed JSON file name (under docs/gen-ai/) -> root model class.
+# Maps committed JSON file name (under model/gen-ai/) -> root model class.
 SCHEMAS: dict[str, type[BaseModel]] = {
     "gen-ai-input-messages.json": InputMessages,
     "gen-ai-output-messages.json": OutputMessages,
     "gen-ai-system-instructions.json": SystemInstructions,
     "gen-ai-tool-definitions.json": ToolDefinitions,
+    "gen-ai-tool-call-arguments.json": ToolCallArguments,
+    "gen-ai-tool-call-result.json": ToolCallResult,
     "gen-ai-retrieval-documents.json": RetrievalDocuments,
     "gen-ai-memory-records.json": MemoryRecords,
 }
 
 
 def main() -> None:
-    # docs/gen-ai/non-normative/models.py -> docs/gen-ai/
-    output_dir = Path(__file__).resolve().parent.parent
+    # docs/gen-ai/non-normative/models.py -> repo_root/model/gen-ai/
+    output_dir = Path(__file__).resolve().parents[3] / "model" / "gen-ai"
     for filename, model in SCHEMAS.items():
         target = output_dir / filename
         with target.open("w", encoding="utf-8", newline="\n") as f:

@@ -115,7 +115,8 @@ check-policies: $(LOCAL_POLICY_STAMP) $(SC_UPSTREAM_STAMP)
 	$(WEAVER) registry check \
 		-r ./model \
 		--v2 \
-		--policy $(LOCAL_POLICIES)/policies/check
+		--policy $(LOCAL_POLICIES)/policies/check \
+		--policy policies/check/json-schema-annotations
 		# --baseline-registry '$(BASELINE_REGISTRY)' \ uncomment after removing deprecated entries
 
 # Generate the attribute registry pages under docs/registry/ from local

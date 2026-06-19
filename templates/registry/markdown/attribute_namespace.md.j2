@@ -14,7 +14,7 @@
 | Key | Stability | Value Type | Description | Example Values |
 | --- | --- | --- | --- | --- |
 {%- for attribute in ctx.attributes | sort(attribute="key") %}{% set attr_anchor = attribute.key | kebab_case %}
-| <a id="{{ attr_anchor }}" href="#{{ attr_anchor }}">`{{ attribute.key }}`</a> | {{ stability.badge(attribute.stability, attribute.deprecated, attribute.brief) | trim }} | {{ attrs.type(attribute) }} | {{ attribute.brief | trim }}{{ notes.add({"note": attribute.note, "name": attribute.key}) }} | {{ examples.format(attribute) }}|
+| <a id="{{ attr_anchor }}" href="#{{ attr_anchor }}">`{{ attribute.key }}`</a> | {{ stability.badge(attribute.stability, attribute.deprecated, attribute.brief) | trim }} | {{ attrs.type(attribute) }} | {{ attribute.brief | trim }}{{ notes.add({"note": attrs.note(attribute), "name": attribute.key}) }} | {{ examples.format(attribute) }}|
 {%- endfor %}
 
 {{ notes.render() }}
