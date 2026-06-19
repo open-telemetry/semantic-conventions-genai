@@ -169,6 +169,15 @@ jobs:
         run: |
           set -euo pipefail
 
+          if gh api \
+            --paginate \
+            "repos/${REPO}/issues/${PR_NUMBER}/comments" \
+            --jq '.[] | select((.body | contains("'"${MARKER}"'")) or (.body | contains("'"${LEGACY_MARKER}"'"))) | .id' \
+            | grep -q .; then
+            echo "Guidance comment already posted on PR #${PR_NUMBER}; skipping."
+            exit 0
+          fi
+
           review_comment_count=$(gh api \
             --paginate \
             "repos/${REPO}/pulls/${PR_NUMBER}/reviews/${REVIEW_ID}/comments" \
@@ -177,15 +186,6 @@ jobs:
             | tr -d ' ')
           if [[ "$review_comment_count" == "0" ]]; then
             echo "Review ${REVIEW_ID} has no review comments; skipping guidance comment."
-            exit 0
-          fi
-
-          if gh api \
-            --paginate \
-            "repos/${REPO}/issues/${PR_NUMBER}/comments" \
-            --jq '.[] | select((.body | contains("'"${MARKER}"'")) or (.body | contains("'"${LEGACY_MARKER}"'"))) | .id' \
-            | grep -q .; then
-            echo "Guidance comment already posted on PR #${PR_NUMBER}; skipping."
             exit 0
           fi
 
