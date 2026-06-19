@@ -383,7 +383,11 @@ def responses():
         request_input = [item for item in raw_request_input if isinstance(item, dict)]
     else:
         request_input = []
-    if body.get("tools") and not any(item.get("type") == "function_call_output" for item in request_input):
+    if (
+        body.get("tools")
+        and "agent_reference" not in body
+        and not any(item.get("type") == "function_call_output" for item in request_input)
+    ):
         return _responses_tool_call_response(body)
 
     resp = dict(RESPONSES_RESPONSE)
