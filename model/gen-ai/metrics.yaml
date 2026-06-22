@@ -116,6 +116,68 @@ metrics:
       - ref: gen_ai.workflow.name
         requirement_level:
           conditionally_required: If available.
+  - name: gen_ai.invoke_agent.duration
+    annotations:
+      code_generation:
+        metric_value_type: double
+    brief: >
+      The end-to-end duration of a single agent invocation,
+      from the moment the invocation starts until the agent emits
+      the last chunk of its final response or terminates with an error.
+    note: |
+      Intended for instrumentations of agent frameworks (for example, ADK,
+      LangChain agents, CrewAI agents) that can reliably bound a single
+      agent invocation.
+
+      If instrumentation can only measure a single provider-facing client
+      operation (for example, one model API call),
+      `gen_ai.client.operation.duration` SHOULD be used instead. If
+      instrumentation can reliably bound a higher-level workflow that
+      coordinates multiple agents, `gen_ai.workflow.duration` SHOULD be
+      used for that workflow. Instrumentation MAY emit several of these
+      metrics for the same request path when more than one boundary is
+      available.
+
+      When this metric is reported alongside a `gen_ai.invoke_agent` span,
+      the metric value SHOULD be the same as the span duration.
+    instrument: histogram
+    unit: "s"
+    stability: development
+    attributes:
+      - ref_group: attributes.gen_ai.error
+      - ref: gen_ai.agent.name
+        requirement_level:
+          conditionally_required: When available.
+      - ref: gen_ai.agent.id
+        requirement_level:
+          conditionally_required: When available.
+      - ref: gen_ai.agent.version
+        requirement_level:
+          conditionally_required: When available.
+  - name: gen_ai.execute_tool.duration
+    annotations:
+      code_generation:
+        metric_value_type: double
+    brief: >
+      The duration of a single tool execution.
+    note: |
+      Instrumentation that can reliably bound a single tool call SHOULD
+      record this metric for every tool execution they can observe.
+
+      When this metric is reported alongside a `gen_ai.execute_tool` span,
+      the metric value SHOULD be the same as the span duration.
+    instrument: histogram
+    unit: "s"
+    stability: development
+    attributes:
+      - ref_group: attributes.gen_ai.error
+      - ref: gen_ai.tool.name
+        requirement_level: required
+      - ref: gen_ai.tool.type
+        requirement_level: recommended
+      - ref: gen_ai.agent.name
+        requirement_level:
+          conditionally_required: When available.
 
 metric_refinements:
   - id: openai.client.token.usage

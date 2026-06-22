@@ -53,6 +53,35 @@ MESSAGE_TOOL_USE_RESPONSE = {
 }
 
 
+MESSAGE_COMPACTION_RESPONSE = {
+    "id": "msg-mock-compaction-001",
+    "type": "message",
+    "role": "assistant",
+    "content": [
+        {
+            "type": "compaction",
+            "encrypted_content": "opaque encrypted compaction state",
+        }
+    ],
+    "model": "claude-sonnet-4-20250514",
+    "stop_reason": "compaction",
+    "stop_sequence": None,
+    "usage": {
+        "input_tokens": 25,
+        "output_tokens": 8,
+        "iterations": [
+            {
+                "type": "compaction",
+                "input_tokens": 80,
+                "output_tokens": 8,
+                "cache_creation_input_tokens": 0,
+                "cache_read_input_tokens": 0,
+            }
+        ],
+    },
+}
+
+
 def _has_tool_result(body):
     for message in body.get("messages", []):
         content = message.get("content")
@@ -138,6 +167,13 @@ def messages():
 
     if body.get("stream"):
         return Response(_stream_message(body), mimetype="text/event-stream")
+
+    context_management = body.get("context_management") or {}
+    edits = context_management.get("edits") or []
+    if any(edit.get("type") == "compact_20260112" for edit in edits if isinstance(edit, dict)):
+        resp = copy.deepcopy(MESSAGE_COMPACTION_RESPONSE)
+        resp["model"] = body.get("model", resp["model"])
+        return resp
 
     if body.get("tools") and not _has_tool_result(body):
         resp = copy.deepcopy(MESSAGE_TOOL_USE_RESPONSE)

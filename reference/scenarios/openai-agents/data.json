@@ -1,19 +1,16 @@
 {
   "spans": {
-    "invoke_agent_client": [
+    "invoke_agent_internal": [
       "gen_ai.agent.name",
       "gen_ai.input.messages",
       "gen_ai.operation.name",
       "gen_ai.output.messages",
-      "gen_ai.provider.name",
       "gen_ai.request.model",
       "gen_ai.response.finish_reasons",
       "gen_ai.system_instructions",
       "gen_ai.tool.definitions",
       "gen_ai.usage.input_tokens",
-      "gen_ai.usage.output_tokens",
-      "server.address",
-      "server.port"
+      "gen_ai.usage.output_tokens"
     ],
     "inference": [
       "gen_ai.operation.name",

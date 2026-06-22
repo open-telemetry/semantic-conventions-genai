@@ -26,9 +26,11 @@
 
 | Attribute | Supporting Libraries |
 | --- | --- |
+| gen_ai.conversation.compacted | [anthropic], [openai] |
 | gen_ai.request.frequency_penalty | [autogen], [crewai], [google-adk], [openai], [pydantic-ai] |
 | gen_ai.request.max_tokens | [anthropic], [autogen], [crewai], [google-adk], [openai], [pydantic-ai] |
 | gen_ai.request.presence_penalty | [autogen], [crewai], [google-adk], [openai], [pydantic-ai] |
+| gen_ai.request.reasoning.level | [anthropic], [openai] |
 | gen_ai.request.stop_sequences | [autogen], [crewai], [google-adk], [openai], [pydantic-ai] |
 | gen_ai.request.temperature | [autogen], [crewai], [google-adk], [llamaindex], [openai], [pydantic-ai] |
 | gen_ai.request.top_p | [autogen], [crewai], [google-adk], [openai], [pydantic-ai] |

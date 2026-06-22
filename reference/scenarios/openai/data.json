@@ -1,6 +1,7 @@
 {
   "spans": {
     "inference": [
+      "gen_ai.conversation.compacted",
       "gen_ai.input.messages",
       "gen_ai.operation.name",
       "gen_ai.output.messages",
@@ -10,6 +11,7 @@
       "gen_ai.request.max_tokens",
       "gen_ai.request.model",
       "gen_ai.request.presence_penalty",
+      "gen_ai.request.reasoning.level",
       "gen_ai.request.seed",
       "gen_ai.request.stop_sequences",
       "gen_ai.request.stream",
@@ -48,6 +50,7 @@
   },
   "events": {
     "gen_ai.client.inference.operation.details": [
+      "gen_ai.conversation.compacted",
       "gen_ai.input.messages",
       "gen_ai.operation.name",
       "gen_ai.output.messages",

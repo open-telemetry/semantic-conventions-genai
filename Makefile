@@ -57,7 +57,8 @@ SC_UPSTREAM_MIGRATED_DIRS := gen-ai mcp openai
 # same group id.
 SC_UPSTREAM_MIGRATED_GROUPS := aws/registry.yaml:registry.aws.bedrock
 
-.PHONY: check-policies schema-snapshot generate-registry generate-docs generate-json-schemas generate-all clean filter-upstream package-dev
+.PHONY: check-policies generate-registry generate-docs generate-json-schemas generate-all clean filter-upstream package-dev \
+	generate-reference-reports
 
 # Pinned upstream GitHub URL base, passed to templates as `upstream_docs_base`
 # so cross-registry links to upstream pages resolve to the pinned version.
@@ -147,19 +148,13 @@ generate-docs: $(SC_UPSTREAM_STAMP)
 generate-json-schemas:
 	cd docs/gen-ai/non-normative && uv run models.py
 
-# Run every regeneration the repo owns (weaver-driven + pydantic-driven).
-# CI runs this and fails if any committed output is out of sync.
-generate-all: schema-snapshot generate-registry generate-docs generate-json-schemas
+# Update reference reports (README.md and reports/) from data.json files.
+generate-reference-reports:
+	cd reference && uv run --frozen update-reports
 
-# Render the resolved registry as a single committed YAML so reviewers can see
-# schema-level changes in PR diffs.
-schema-snapshot: $(SC_UPSTREAM_STAMP)
-	$(WEAVER) registry generate \
-		-r ./model \
-		--v2 \
-		-t ./templates/registry \
-		yaml \
-		./schema-snapshot
+# Run every regeneration the repo owns (weaver-driven + pydantic-driven + reports).
+# CI checks that all committed outputs match what this target generates.
+generate-all: generate-registry generate-docs generate-json-schemas generate-reference-reports
 
 # Package the registry into a publication artifact. The version comes from
 # model/manifest.yaml's schema_url; bump it there to cut a new release.
@@ -182,7 +177,6 @@ package-dev: $(SC_UPSTREAM_STAMP)
 # (`rm -rf reference/.venv`) for a full reset.
 clean:
 	rm -rf docs/registry
-	rm -rf schema-snapshot
 	rm -rf .build
 	rm -rf reference/.cache
 	find . -type d -name __pycache__ -prune -exec rm -rf {} +

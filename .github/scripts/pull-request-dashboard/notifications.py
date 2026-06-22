@@ -117,9 +117,10 @@ def pending_notification_kind(
         return "initial"
     elapsed_seconds = (now - last_notified).total_seconds()
     if current_waiting_since > last_notified:
-        if elapsed_seconds < REVIEWER_FOLLOW_UP_SECONDS:
-            return None
-        return "initial"
+        waiting_seconds = (now - current_waiting_since).total_seconds()
+        if is_notification_weekday(now) and waiting_seconds >= REVIEWER_FOLLOW_UP_SECONDS:
+            return "follow-up"
+        return None
     if is_notification_weekday(now) and elapsed_seconds >= REVIEWER_FOLLOW_UP_SECONDS:
         return "follow-up"
     return None

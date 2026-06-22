@@ -49,6 +49,49 @@
             "title": "BlobPart",
             "type": "object"
         },
+        "CompactionPart": {
+            "additionalProperties": true,
+            "description": "Represents compacted conversation state sent to or received from the model.",
+            "properties": {
+                "type": {
+                    "const": "compaction",
+                    "description": "The type of the content captured in this part.",
+                    "title": "Type",
+                    "type": "string"
+                },
+                "id": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Provider-assigned identifier for the compaction item or block.",
+                    "title": "Id"
+                },
+                "content": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "The unencrypted compacted conversation summary, when available.",
+                    "title": "Content"
+                }
+            },
+            "required": [
+                "type"
+            ],
+            "title": "CompactionPart",
+            "type": "object"
+        },
         "FilePart": {
             "additionalProperties": true,
             "description": "Represents an external referenced file sent to the model by file id",
@@ -105,6 +148,7 @@
                 "length",
                 "content_filter",
                 "tool_call",
+                "compaction",
                 "error"
             ],
             "title": "FinishReason",
@@ -214,6 +258,9 @@
                             },
                             {
                                 "$ref": "#/$defs/ReasoningPart"
+                            },
+                            {
+                                "$ref": "#/$defs/CompactionPart"
                             },
                             {
                                 "$ref": "#/$defs/GenericPart"

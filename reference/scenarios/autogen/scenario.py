@@ -142,7 +142,6 @@ def run_agent_reference():
 
             agent_span_attributes = {
                 "gen_ai.operation.name": "invoke_agent",
-                "gen_ai.provider.name": "openai",
                 "gen_ai.request.model": request_model,
                 "gen_ai.agent.name": agent.name,
             }

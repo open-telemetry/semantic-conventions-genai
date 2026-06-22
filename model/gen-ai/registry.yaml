@@ -168,6 +168,17 @@ attributes:
     type: boolean
     brief: Indicates whether the GenAI request was made in streaming mode.
     stability: development
+  - key: gen_ai.request.reasoning.level
+    type: string
+    brief: >
+      The reasoning or thinking effort level requested for a GenAI model.
+    note: >
+      The value SHOULD be the exact string value sent to the provider.
+      
+      Semantic conventions for individual providers SHOULD document
+      which input parameter maps to this attribute.
+    examples: ['low', 'medium', 'high']
+    stability: development
   - key: gen_ai.response.id
     type: string
     brief: The unique identifier for the completion.
@@ -257,6 +268,16 @@ attributes:
     type: string
     brief: The unique identifier for a conversation (session, thread), used to store and correlate messages within this conversation.
     examples: ["conv_5j66UpCpwteGg4YSxUnt7lPY"]
+    stability: development
+  - key: gen_ai.conversation.compacted
+    type: boolean
+    brief: Indicates whether the effective conversation context used for this operation is a compacted view of a prior conversation.
+    note: |
+      This attribute is a positive indicator of context compaction. Instrumentations
+      SHOULD set it to `true` only when they can reliably determine that context
+      compaction was applied. Instrumentations SHOULD NOT set it to `false`; they
+      SHOULD leave it unset otherwise.
+    examples: [true]
     stability: development
   - key: gen_ai.agent.id
     type: string
@@ -754,8 +775,8 @@ attributes:
             "parts": [
               {
                 "type": "tool_call_response",
-                "id": " call_VSPygqKTWdrhaFErNvMV18Yl",
-                "result": "rainy, 57°F"
+                "id": "call_VSPygqKTWdrhaFErNvMV18Yl",
+                "response": "rainy, 57°F"
               }
             ]
           }

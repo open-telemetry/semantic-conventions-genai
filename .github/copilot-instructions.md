@@ -16,10 +16,10 @@ through several coupled surfaces:
 - `docs/gen-ai/` and `docs/registry/` — generated from the model via Weaver
   (`make generate-all`). Generated tables and registry pages should not be
   hand-edited.
-- `schema-snapshot/registry.yaml` — committed snapshot, refreshed by
-  `make generate-all`.
 - `reference/scenarios/<library>/` — runnable Python reference scenarios
   (`scenario.py`) that prove proposed conventions are capturable.
+- `reference/README.md` and `reference/reports/` — telemetry compliance
+  reports, refreshed by `make generate-all`.
 
 ## PR scope
 
@@ -39,7 +39,7 @@ through several coupled surfaces:
 
 ## What not to flag in review
 
-- Generated files under `docs/registry/` and `schema-snapshot/registry.yaml`
+- Generated files under `docs/registry/`
   — review the model changes that produced them instead.
 - Generated tables inside `docs/gen-ai/*.md` — review the model changes
   that produced them instead.
