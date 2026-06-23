@@ -124,17 +124,13 @@ jobs:
 
   post-review-guidance:
     needs: resolve-trigger
-    # Copilot submits a review together with its inline review comments, so the
-    # bridge fires a pull_request_review event plus several
-    # pull_request_review_comment events for the same PR within the same second.
-    # The webhook forwards the review's `sender.login`, which for Copilot is
-    # `Copilot` (the bot's review identity is copilot-pull-request-reviewer, but
-    # that is not the webhook sender).
+    # Submitted reviews can include inline review comments, so the bridge fires
+    # a pull_request_review event plus several pull_request_review_comment
+    # events for the same PR within the same second.
     if: >-
       needs.resolve-trigger.outputs.pr_number != '' &&
       needs.resolve-trigger.outputs.trigger_event == 'pull_request_review' &&
       needs.resolve-trigger.outputs.trigger_action == 'submitted' &&
-      needs.resolve-trigger.outputs.trigger_actor == 'Copilot' &&
       needs.resolve-trigger.outputs.trigger_review_id != ''
     # Keyed by the review id, not the PR, so the near-simultaneous
     # pull_request_review_comment events (which share the per-PR dashboard state
@@ -160,7 +156,7 @@ jobs:
           app-id: ${{ vars.OTELBOT_APP_ID }}
           private-key: ${{ secrets.OTELBOT_PRIVATE_KEY }}
 
-      - name: Post Copilot review guidance
+      - name: Post review guidance
         env:
           GH_TOKEN: ${{ steps.otelbot-token.outputs.token }}
           PR_NUMBER: ${{ needs.resolve-trigger.outputs.pr_number }}
@@ -168,9 +164,19 @@ jobs:
           REPO: ${{ github.repository }}
           # Hidden HTML marker used to detect whether the guidance comment
           # has already been posted on this PR.
-          MARKER: <!-- copilot-review-guidance -->
+          MARKER: <!-- review-guidance -->
+          LEGACY_MARKER: <!-- copilot-review-guidance -->
         run: |
           set -euo pipefail
+
+          if gh api \
+            --paginate \
+            "repos/${REPO}/issues/${PR_NUMBER}/comments" \
+            --jq '.[] | select((.body | contains("'"${MARKER}"'")) or (.body | contains("'"${LEGACY_MARKER}"'"))) | .id' \
+            | grep -q .; then
+            echo "Guidance comment already posted on PR #${PR_NUMBER}; skipping."
+            exit 0
+          fi
 
           review_comment_count=$(gh api \
             --paginate \
@@ -179,16 +185,7 @@ jobs:
             | wc -l \
             | tr -d ' ')
           if [[ "$review_comment_count" == "0" ]]; then
-            echo "Copilot review ${REVIEW_ID} has no review comments; skipping guidance comment."
-            exit 0
-          fi
-
-          if gh api \
-            --paginate \
-            "repos/${REPO}/issues/${PR_NUMBER}/comments" \
-            --jq '.[] | select(.body | contains("'"${MARKER}"'")) | .id' \
-            | grep -q .; then
-            echo "Guidance comment already posted on PR #${PR_NUMBER}; skipping."
+            echo "Review ${REVIEW_ID} has no review comments; skipping guidance comment."
             exit 0
           fi
 
@@ -196,14 +193,11 @@ jobs:
 
           body=$(cat <<EOF
           ${MARKER}
-          Copilot has reviewed this PR. Copilot's suggestions aren't always correct or applicable, so please evaluate each comment on its merits and then handle it in one of these ways:
+          This PR has review comments. Review suggestions, whether from maintainers or automated reviewers, aren't always correct or required. Please evaluate each comment on its merits, then make sure each thread has a clear outcome.
 
-          - click GitHub's "Apply suggestion" button (auto-resolves the thread);
-          - reply that it was **applied** (ideally linking to the commit); or
-          - reply that it was **not applied**, with the reason; or
-          - reply with a question for reviewers.
+          For example, link to the commit if you applied a suggestion, explain why it wasn't applied, or ask a follow-up question.
 
-          Automation flags a PR for human review once every Copilot comment has a reply or is marked as resolved, so keeping these threads up to date helps reviewers know when the PR is ready.
+          Automation flags a PR for human review once every review thread has a reply or is marked as resolved.
 
           Status across open PRs is visible on the [pull request dashboard](${dashboard_url}).
           EOF
