@@ -24,12 +24,14 @@ from semconv_genai import (
 from semconv_genai.attribute_spec import AttributeSpec, RequirementLevel
 from semconv_genai.data_files import (
     EVENT_TYPE_ORDER,
+    METRIC_TYPE_ORDER,
     SPAN_TYPE_ORDER,
     ScenarioDataEntry,
     load_scenario_data_files,
 )
 from semconv_genai.semconv_model import (
     EVENT_SPECS,
+    METRIC_SPECS,
     SPAN_SPECS,
 )
 
@@ -65,6 +67,10 @@ def _events_of(entry: ScenarioDataEntry) -> dict[str, dict[str, str]]:
     return entry.events
 
 
+def _metrics_of(entry: ScenarioDataEntry) -> dict[str, dict[str, str]]:
+    return entry.metrics
+
+
 # Relative paths from reports/ to the semantic convention doc page + anchor.
 SEMCONV_DOC_LINKS: dict[str, str] = {
     "create_agent": "../../docs/gen-ai/gen-ai-agent-spans.md#create-agent-span",
@@ -79,6 +85,8 @@ SEMCONV_DOC_LINKS: dict[str, str] = {
     "execute_tool": "../../docs/gen-ai/gen-ai-spans.md#execute-tool-span",
     "gen_ai.client.inference.operation.details": "../../docs/gen-ai/gen-ai-events.md#event-gen_aiclientinferenceoperationdetails",
     "gen_ai.evaluation.result": "../../docs/gen-ai/gen-ai-events.md#event-gen_aievaluationresult",
+    "gen_ai.invoke_agent.inference_calls": "../../docs/gen-ai/gen-ai-metrics.md#metric-gen_aiinvoke_agentinference_calls",
+    "gen_ai.invoke_agent.tool_calls": "../../docs/gen-ai/gen-ai-metrics.md#metric-gen_aiinvoke_agenttool_calls",
 }
 
 
@@ -241,6 +249,25 @@ def generate_index_markdown(
         supporting = _get_supporting_entries(entries, event_type, spec, _events_of)
         lines.append(f"| [{spec.label}](reports/{filename}) | {_library_dir_links(supporting)} |")
 
+    lines.extend(
+        [
+            "",
+            "### Metrics",
+            "",
+            "| Metric | Libraries |",
+            "| --- | --- |",
+        ]
+    )
+
+    for metric_type in METRIC_TYPE_ORDER:
+        spec = METRIC_SPECS[metric_type]
+        filename = _report_filename(metric_type, "metric")
+        # These metrics carry only recommended attributes, so support is keyed
+        # on whether the library emits the metric at all (key present in data),
+        # not on a required-attribute fallback like spans/events.
+        supporting = [e for e in entries if metric_type in _metrics_of(e)]
+        lines.append(f"| [{spec.label}](reports/{filename}) | {_library_dir_links(supporting)} |")
+
     lines.append("")
     return "\n".join(lines)
 
@@ -268,6 +295,16 @@ def write_report_pages(output_dir: Path) -> None:
 
         page_path = reports_dir / _report_filename(event_type, "event")
         page_lines = _render_signal_section(entries, event_type, spec, reports_dir, "Event", _events_of)
+        page_path.write_text(_generate_detail_page(page_lines), encoding="utf-8")
+
+    for metric_type in METRIC_TYPE_ORDER:
+        spec = METRIC_SPECS[metric_type]
+        legacy_page_path = reports_dir / f"{_type_slug(metric_type)}.md"
+        if legacy_page_path.exists():
+            legacy_page_path.unlink()
+
+        page_path = reports_dir / _report_filename(metric_type, "metric")
+        page_lines = _render_signal_section(entries, metric_type, spec, reports_dir, "Metric", _metrics_of)
         page_path.write_text(_generate_detail_page(page_lines), encoding="utf-8")
 
 
