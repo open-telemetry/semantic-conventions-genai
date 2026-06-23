@@ -112,7 +112,7 @@ def run_chat():
                     ]
                 ),
             )
-        usage = result.usage()
+        usage = result.usage
         if usage.total_tokens:
             span.set_attribute("gen_ai.usage.input_tokens", usage.input_tokens)
             span.set_attribute("gen_ai.usage.output_tokens", usage.output_tokens)
@@ -338,7 +338,7 @@ def run_tool_call():
                 )
                 span.set_attribute("gen_ai.output.messages", output_messages)
                 agent_span.set_attribute("gen_ai.output.messages", output_messages)
-            usage = result.usage()
+            usage = result.usage
             if usage.total_tokens:
                 span.set_attribute("gen_ai.usage.input_tokens", usage.input_tokens)
                 span.set_attribute("gen_ai.usage.output_tokens", usage.output_tokens)
