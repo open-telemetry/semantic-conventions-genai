@@ -1949,7 +1949,7 @@ refinements:
       examples: gpt-4
       key: gen_ai.request.model
       note: |
-        This attribute SHOULD be populated if and only if the instrumented  library allows to set only a single model per agent. It SHOULD NOT be populated for agents that support multiple models or dynamic selection.
+        This attribute SHOULD be populated if and only if the instrumented library allows to set only a single model per agent. It SHOULD NOT be populated for agents that support multiple models or dynamic selection.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
@@ -8598,7 +8598,7 @@ refinements:
       examples: gpt-4
       key: gen_ai.request.model
       note: |
-        This attribute SHOULD be populated if and only if the instrumented  library allows to set only a single model per agent. It SHOULD NOT be populated for agents that support multiple models or dynamic selection.
+        This attribute SHOULD be populated if and only if the instrumented library allows to set only a single model per agent. It SHOULD NOT be populated for agents that support multiple models or dynamic selection.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
@@ -9180,7 +9180,7 @@ refinements:
       examples: gpt-4
       key: gen_ai.request.model
       note: |
-        This attribute SHOULD be populated if and only if the instrumented  library allows to set only a single model per agent. It SHOULD NOT be populated for agents that support multiple models or dynamic selection.
+        This attribute SHOULD be populated if and only if the instrumented library allows to set only a single model per agent. It SHOULD NOT be populated for agents that support multiple models or dynamic selection.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
@@ -15350,7 +15350,7 @@ registry:
       examples: gpt-4
       key: gen_ai.request.model
       note: |
-        This attribute SHOULD be populated if and only if the instrumented  library allows to set only a single model per agent. It SHOULD NOT be populated for agents that support multiple models or dynamic selection.
+        This attribute SHOULD be populated if and only if the instrumented library allows to set only a single model per agent. It SHOULD NOT be populated for agents that support multiple models or dynamic selection.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
@@ -19211,7 +19211,7 @@ registry:
       examples: gpt-4
       key: gen_ai.request.model
       note: |
-        This attribute SHOULD be populated if and only if the instrumented  library allows to set only a single model per agent. It SHOULD NOT be populated for agents that support multiple models or dynamic selection.
+        This attribute SHOULD be populated if and only if the instrumented library allows to set only a single model per agent. It SHOULD NOT be populated for agents that support multiple models or dynamic selection.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
@@ -19792,7 +19792,7 @@ registry:
       examples: gpt-4
       key: gen_ai.request.model
       note: |
-        This attribute SHOULD be populated if and only if the instrumented  library allows to set only a single model per agent. It SHOULD NOT be populated for agents that support multiple models or dynamic selection.
+        This attribute SHOULD be populated if and only if the instrumented library allows to set only a single model per agent. It SHOULD NOT be populated for agents that support multiple models or dynamic selection.
       provenance:
         path: ./model/gen-ai/registry.yaml
       requirement_level:
