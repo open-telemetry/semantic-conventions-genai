@@ -129,7 +129,7 @@ metrics:
       This metric instrument describes an operation that executes a coordinated process
       composed of multiple agents or other operations involving generative AI.
 
-      When this metric is reported alongside a `gen_ai.invoke_workflow` span, the metric 
+      When this metric is reported alongside a `gen_ai.invoke_workflow` span, the metric
       value SHOULD be the same as the span duration.
     instrument: histogram
     unit: "s"
