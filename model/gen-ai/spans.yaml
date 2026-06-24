@@ -205,6 +205,14 @@ spans:
           recommended: When applicable.
         note: >
           The value SHOULD be included in `gen_ai.usage.output_tokens`.
+      - ref: gen_ai.prompt.name
+        requirement_level:
+          conditionally_required: when a named prompt template is used
+      - ref: gen_ai.prompt.version
+        requirement_level:
+          conditionally_required: when `gen_ai.prompt.name` is set and a version is available
+      - ref: gen_ai.prompt.variable
+        requirement_level: opt_in
       - ref: gen_ai.conversation.id
         requirement_level:
           conditionally_required: When available.

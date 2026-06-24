@@ -21,6 +21,9 @@ attribute_groups:
         brief: The name of the prompt or prompt template provided in the request or response.
         requirement_level:
           conditionally_required: When operation is related to a specific prompt.
+      - ref: gen_ai.prompt.variable
+        brief: The variables supplied to the prompt template in the request.
+        requirement_level: opt_in
       - ref: error.type
         requirement_level:
           conditionally_required: If and only if the operation fails.
