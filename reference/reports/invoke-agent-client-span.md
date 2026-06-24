@@ -47,6 +47,14 @@
 
 | Attribute | Supporting Libraries |
 | --- | --- |
+| gen_ai.agent.capability | (none) |
+| gen_ai.agent.drift.method | (none) |
+| gen_ai.agent.drift.score | (none) |
+| gen_ai.agent.public_key.algorithm | (none) |
+| gen_ai.agent.scan.method | (none) |
+| gen_ai.agent.scan.verdict | (none) |
+| gen_ai.agent.trust.method | (none) |
+| gen_ai.agent.trust.score | (none) |
 | gen_ai.input.messages | [aws-bedrock-agent], [azure-ai-foundry], [openai-assistants] |
 | gen_ai.output.messages | [aws-bedrock-agent], [azure-ai-foundry], [openai-assistants] |
 | gen_ai.system_instructions | [azure-ai-foundry], [openai-assistants] |
