@@ -1,7 +1,6 @@
 OpenTelemetry **GenAI semantic conventions**: spans, metrics, and events for
 GenAI clients, MCP, and provider-specific conventions. Attributes live in
-`model/<namespace>/registry.yaml`; signals in `spans.yaml`, `metrics.yaml`,
-`events.yaml`. Human docs are in `docs/gen-ai/`; runnable proofs in `reference/`.
+`model/<namespace>/registry.yaml`; signals in `model/<namespace>/{spans,metrics,events}.yaml`. Human docs are in `docs/gen-ai/`; runnable proofs in `reference/`.
 
 ## How to contribute conventions
 
