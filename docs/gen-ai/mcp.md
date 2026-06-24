@@ -151,6 +151,8 @@ option to enable it.
 
 **Span kind** SHOULD be `CLIENT`.
 
+**Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/general/signal-requirement-level.md).
+
 **Attributes:**
 
 | Key | Stability | [Requirement Level](https://opentelemetry.io/docs/specs/semconv/general/attribute-requirement-level/) | Value Type | Description | Example Values |
@@ -358,6 +360,8 @@ for more details.
 
 **Span kind** SHOULD be `SERVER`.
 
+**Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/general/signal-requirement-level.md).
+
 **Attributes:**
 
 | Key | Stability | [Requirement Level](https://opentelemetry.io/docs/specs/semconv/general/attribute-requirement-level/) | Value Type | Description | Example Values |
@@ -538,8 +542,6 @@ deserialize it to an object. When recorded on spans, it MAY be recorded as a JSO
 
 ### Metric: `mcp.client.operation.duration`
 
-This metric is [recommended][MetricRecommended].
-
 This metric SHOULD be specified with
 [`ExplicitBucketBoundaries`](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.55.0/specification/metrics/api.md#instrument-advisory-parameters)
 of `[ 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30, 60, 120, 300 ]`.
@@ -552,6 +554,8 @@ of `[ 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30, 60, 120, 300 ]`.
 | Name | Instrument Type | Unit (UCUM) | Description | Stability | Entity Associations |
 | -------- | --------------- | ----------- | -------------- | --------- | ------ |
 | `mcp.client.operation.duration` | Histogram | `s` | The duration of the MCP request or notification as observed on the sender from the time it was sent until the response or ack is received. | ![Development](https://img.shields.io/badge/-development-blue) | |
+
+**Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/general/signal-requirement-level.md).
 
 **Attributes:**
 
@@ -698,8 +702,6 @@ Examples:
 
 ### Metric: `mcp.server.operation.duration`
 
-This metric is [recommended][MetricRecommended].
-
 This metric SHOULD be specified with
 [`ExplicitBucketBoundaries`](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.55.0/specification/metrics/api.md#instrument-advisory-parameters)
 of `[ 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30, 60, 120, 300 ]`.
@@ -712,6 +714,8 @@ of `[ 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30, 60, 120, 300 ]`.
 | Name | Instrument Type | Unit (UCUM) | Description | Stability | Entity Associations |
 | -------- | --------------- | ----------- | -------------- | --------- | ------ |
 | `mcp.server.operation.duration` | Histogram | `s` | MCP request or notification duration as observed on the receiver from the time it was received until the result or ack is sent. | ![Development](https://img.shields.io/badge/-development-blue) | |
+
+**Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/general/signal-requirement-level.md).
 
 **Attributes:**
 
@@ -852,8 +856,6 @@ Examples:
 
 ### Metric: `mcp.client.session.duration`
 
-This metric is [recommended][MetricRecommended].
-
 This metric SHOULD be specified with
 [`ExplicitBucketBoundaries`](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.55.0/specification/metrics/api.md#instrument-advisory-parameters)
 of `[ 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30, 60, 120, 300 ]`.
@@ -866,6 +868,8 @@ of `[ 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30, 60, 120, 300 ]`.
 | Name | Instrument Type | Unit (UCUM) | Description | Stability | Entity Associations |
 | -------- | --------------- | ----------- | -------------- | --------- | ------ |
 | `mcp.client.session.duration` | Histogram | `s` | The duration of the MCP session as observed on the MCP client. | ![Development](https://img.shields.io/badge/-development-blue) | |
+
+**Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/general/signal-requirement-level.md).
 
 **Attributes:**
 
@@ -941,8 +945,6 @@ is HTTP. It SHOULD be set to `pipe` if the transport is stdio.
 
 ### Metric: `mcp.server.session.duration`
 
-This metric is [recommended][MetricRecommended].
-
 This metric SHOULD be specified with
 [`ExplicitBucketBoundaries`](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.55.0/specification/metrics/api.md#instrument-advisory-parameters)
 of `[ 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30, 60, 120, 300 ]`.
@@ -955,6 +957,8 @@ of `[ 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30, 60, 120, 300 ]`.
 | Name | Instrument Type | Unit (UCUM) | Description | Stability | Entity Associations |
 | -------- | --------------- | ----------- | -------------- | --------- | ------ |
 | `mcp.server.session.duration` | Histogram | `s` | The duration of the MCP session as observed on the MCP server. | ![Development](https://img.shields.io/badge/-development-blue) | |
+
+**Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/general/signal-requirement-level.md).
 
 **Attributes:**
 
@@ -1023,7 +1027,6 @@ is HTTP. It SHOULD be set to `pipe` if the transport is stdio.
 <!-- endweaver -->
 
 [DocumentStatus]: https://opentelemetry.io/docs/specs/otel/document-status
-[MetricRecommended]: https://github.com/open-telemetry/semantic-conventions/blob/v1.40.0/docs/general/metric-requirement-level.md#recommended
 
 ## Recording MCP transport
 
