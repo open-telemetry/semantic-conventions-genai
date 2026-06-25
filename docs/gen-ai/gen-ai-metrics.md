@@ -891,7 +891,7 @@ This metric SHOULD be specified with [ExplicitBucketBoundaries] of [1, 5, 10, 30
 | `gen_ai.invoke_workflow.duration` | Histogram | `s` | Records duration of GenAI workflow. [1] | ![Development](https://img.shields.io/badge/-development-blue) | |
 
 **[1]:** Represents the end-to-end duration of a workflow execution, measured from the point where application code initiates the workflow to the point where the workflow completes, independent of workflow complexity.
-A workflow is a coordinated process composed of multiple agents or other  operations involving generative AI.
+A workflow is a coordinated process composed of multiple agents or other operations involving generative AI.
 If instrumentation measures only a single provider-facing client operation (for example, one model API call), `gen_ai.client.operation.duration` SHOULD be used instead. Instrumentation MAY emit both metrics for the same request path when both boundaries are available.
 When this metric is reported alongside a `gen_ai.invoke_workflow` span, the metric value SHOULD be the same as the span duration.
 
@@ -956,7 +956,7 @@ If instrumentation can only measure a single provider-facing client
 operation (for example, one model API call),
 `gen_ai.client.operation.duration` SHOULD be used instead. If
 instrumentation can reliably bound a higher-level workflow that
-coordinates multiple agents, `gen_ai.workflow.duration` SHOULD be
+coordinates multiple agents, `gen_ai.invoke_workflow.duration` SHOULD be
 used for that workflow. Instrumentation MAY emit several of these
 metrics for the same request path when more than one boundary is
 available.
