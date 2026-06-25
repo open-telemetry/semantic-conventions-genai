@@ -955,7 +955,7 @@ This metric SHOULD be specified with [ExplicitBucketBoundaries] of
 
 | Name | Instrument Type | Unit (UCUM) | Description | Stability | Entity Associations |
 | -------- | --------------- | ----------- | -------------- | --------- | ------ |
-| `gen_ai.invoke_agent.duration` | Histogram | `s` | The end-to-end duration of a single agent invocation, from the moment the invocation starts until the agent emits the last chunk of its final response or terminates with an error. [1] | ![Development](https://img.shields.io/badge/-development-blue) | |
+| `gen_ai.invoke_agent.duration` | Histogram | `s` | The end-to-end duration of a single in-process agent invocation, from the moment the invocation starts until the agent emits the last chunk of its final response or terminates with an error. [1] | ![Development](https://img.shields.io/badge/-development-blue) | |
 
 **[1]:** Intended for instrumentations of agent frameworks (for example, ADK,
 LangChain agents, CrewAI agents) that can reliably bound a single
@@ -970,8 +970,8 @@ used for that workflow. Instrumentation MAY emit several of these
 metrics for the same request path when more than one boundary is
 available.
 
-When this metric is reported alongside a `gen_ai.invoke_agent` span,
-the metric value SHOULD be the same as the span duration.
+When this metric is reported alongside a `gen_ai.invoke_agent.internal`
+span, the metric value SHOULD be the same as the span duration.
 
 **Attributes:**
 

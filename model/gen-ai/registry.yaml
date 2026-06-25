@@ -821,6 +821,36 @@ attributes:
     brief: The name of the prompt that uniquely identifies it.
     examples: ["analyze-code"]
     stability: development
+  - key: gen_ai.prompt.version
+    type: string
+    brief: The version of the prompt template used.
+    note: |
+      The version string can follow any versioning scheme chosen by the
+      application (e.g., SemVer, date-based, or platform-specific tags).
+      When a prompt management system is in use, this SHOULD match the
+      version identifier used by that system.
+    examples: ["1.0.0", "2025-05-01", "prod", "v2"]
+    stability: development
+  - key: gen_ai.prompt.variable
+    type: template[string]
+    brief: The variables supplied to the prompt template, the `<key>` being the variable name, the value being the variable value.
+    note: |
+      Prompt templates are parameterized with variables that are filled in
+      at runtime. This attribute records the variable values passed to the
+      template. The attribute name defines the variable name, and the
+      attribute value is the variable value serialized as a string.
+
+      Examples:
+
+      - A variable `user_name` with value `Alice` SHOULD be recorded as
+        the `gen_ai.prompt.variable.user_name` attribute with value `"Alice"`.
+      - A variable `language` with value `French` SHOULD be recorded as
+        the `gen_ai.prompt.variable.language` attribute with value `"French"`.
+
+      > [!Warning]
+      > This attribute may contain sensitive information.
+    examples: ["Alice", "French"]
+    stability: development
   - key: gen_ai.workflow.name
     type: string
     brief: Human-readable name of the GenAI workflow provided by the application.

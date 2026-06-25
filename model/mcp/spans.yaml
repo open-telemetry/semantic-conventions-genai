@@ -64,6 +64,26 @@ spans:
         requirement_level: opt_in
       - ref: gen_ai.tool.call.result
         requirement_level: opt_in
+      - ref: gen_ai.prompt.variable
+        note: |
+          Prompt templates are parameterized with variables that are filled in
+          at runtime. This attribute records the variable values passed to the
+          template. The attribute name defines the variable name, and the
+          attribute value is the variable value serialized as a string.
+
+          Examples:
+
+          - A variable `user_name` with value `Alice` SHOULD be recorded as
+            the `gen_ai.prompt.variable.user_name` attribute with value `"Alice"`.
+          - A variable `language` with value `French` SHOULD be recorded as
+            the `gen_ai.prompt.variable.language` attribute with value `"French"`.
+
+          In MCP, [prompt arguments](https://modelcontextprotocol.io/specification/2025-11-25/schema#prompt)
+          supplied in `prompts/get` requests SHOULD be recorded as
+          `gen_ai.prompt.variable.<argument_name>` attributes.
+
+          > [!Warning]
+          > This attribute may contain sensitive information.
 
   - type: mcp.server
     kind: server
@@ -111,3 +131,23 @@ spans:
         requirement_level: opt_in
       - ref: gen_ai.tool.call.result
         requirement_level: opt_in
+      - ref: gen_ai.prompt.variable
+        note: |
+          Prompt templates are parameterized with variables that are filled in
+          at runtime. This attribute records the variable values passed to the
+          template. The attribute name defines the variable name, and the
+          attribute value is the variable value serialized as a string.
+
+          Examples:
+
+          - A variable `user_name` with value `Alice` SHOULD be recorded as
+            the `gen_ai.prompt.variable.user_name` attribute with value `"Alice"`.
+          - A variable `language` with value `French` SHOULD be recorded as
+            the `gen_ai.prompt.variable.language` attribute with value `"French"`.
+
+          In MCP, [prompt arguments](https://modelcontextprotocol.io/specification/2025-11-25/schema#prompt)
+          supplied in `prompts/get` requests SHOULD be recorded as
+          `gen_ai.prompt.variable.<argument_name>` attributes.
+
+          > [!Warning]
+          > This attribute may contain sensitive information.

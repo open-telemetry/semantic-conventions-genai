@@ -171,8 +171,9 @@ option to enable it.
 | [`network.transport`](https://github.com/open-telemetry/semantic-conventions/blob/v1.42.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | The transport protocol used for the MCP session. [10] | `tcp`; `quic`; `pipe` |
 | [`server.address`](https://github.com/open-telemetry/semantic-conventions/blob/v1.42.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` If applicable. | string | Server domain name if available without reverse DNS lookup; otherwise, IP address or Unix domain socket name. [11] | `example.com`; `10.1.2.80`; `/tmp/my.sock` |
 | [`server.port`](https://github.com/open-telemetry/semantic-conventions/blob/v1.42.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When `server.address` is set. | int | Server port number. [12] | `80`; `8080`; `443` |
-| [`gen_ai.tool.call.arguments`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | Parameters passed to the tool call. [13] | {<br>&nbsp;&nbsp;&nbsp;&nbsp;"location": "San Francisco?",<br>&nbsp;&nbsp;&nbsp;&nbsp;"date": "2025-10-01"<br>} |
-| [`gen_ai.tool.call.result`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | The result returned by the tool call (if any and if execution was successful). [14] | {<br>&nbsp;&nbsp;"temperature_range": {<br>&nbsp;&nbsp;&nbsp;&nbsp;"high": 75,<br>&nbsp;&nbsp;&nbsp;&nbsp;"low": 60<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;"conditions": "sunny"<br>} |
+| [`gen_ai.prompt.variable`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | string | The variables supplied to the prompt template in the request. [13] | `Alice`; `French` |
+| [`gen_ai.tool.call.arguments`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | Parameters passed to the tool call. [14] | {<br>&nbsp;&nbsp;&nbsp;&nbsp;"location": "San Francisco?",<br>&nbsp;&nbsp;&nbsp;&nbsp;"date": "2025-10-01"<br>} |
+| [`gen_ai.tool.call.result`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | The result returned by the tool call (if any and if execution was successful). [15] | {<br>&nbsp;&nbsp;"temperature_range": {<br>&nbsp;&nbsp;&nbsp;&nbsp;"high": 75,<br>&nbsp;&nbsp;&nbsp;&nbsp;"low": 60<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;"conditions": "sunny"<br>} |
 
 **[1] `error.type`:** This attribute SHOULD be set to the string representation of the JSON-RPC
 error code, if one is returned.
@@ -209,7 +210,26 @@ is HTTP. It SHOULD be set to `pipe` if the transport is stdio.
 
 **[12] `server.port`:** When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries, for example proxies, if it's available.
 
-**[13] `gen_ai.tool.call.arguments`:**
+**[13] `gen_ai.prompt.variable`:** Prompt templates are parameterized with variables that are filled in
+at runtime. This attribute records the variable values passed to the
+template. The attribute name defines the variable name, and the
+attribute value is the variable value serialized as a string.
+
+Examples:
+
+- A variable `user_name` with value `Alice` SHOULD be recorded as
+  the `gen_ai.prompt.variable.user_name` attribute with value `"Alice"`.
+- A variable `language` with value `French` SHOULD be recorded as
+  the `gen_ai.prompt.variable.language` attribute with value `"French"`.
+
+In MCP, [prompt arguments](https://modelcontextprotocol.io/specification/2025-11-25/schema#prompt)
+supplied in `prompts/get` requests SHOULD be recorded as
+`gen_ai.prompt.variable.<argument_name>` attributes.
+
+> [!Warning]
+> This attribute may contain sensitive information.
+
+**[14] `gen_ai.tool.call.arguments`:**
 
 > [!WARNING]
 > This attribute may contain sensitive information.
@@ -218,7 +238,7 @@ It's expected to be an object - in case a serialized string is available
 to the instrumentation, the instrumentation SHOULD do the best effort to
 deserialize it to an object. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
 
-**[14] `gen_ai.tool.call.result`:**
+**[15] `gen_ai.tool.call.result`:**
 
 > [!WARNING]
 > This attribute may contain sensitive information.
@@ -358,8 +378,9 @@ for more details.
 | [`network.protocol.name`](https://github.com/open-telemetry/semantic-conventions/blob/v1.42.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When applicable. | string | [OSI application layer](https://wikipedia.org/wiki/Application_layer) or non-OSI equivalent. [11] | `http`; `websocket` |
 | [`network.protocol.version`](https://github.com/open-telemetry/semantic-conventions/blob/v1.42.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When applicable. | string | The actual version of the protocol used for network communication. | `1.1`; `2` |
 | [`network.transport`](https://github.com/open-telemetry/semantic-conventions/blob/v1.42.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | The transport protocol used for the MCP session. [12] | `tcp`; `quic`; `pipe` |
-| [`gen_ai.tool.call.arguments`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | Parameters passed to the tool call. [13] | {<br>&nbsp;&nbsp;&nbsp;&nbsp;"location": "San Francisco?",<br>&nbsp;&nbsp;&nbsp;&nbsp;"date": "2025-10-01"<br>} |
-| [`gen_ai.tool.call.result`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | The result returned by the tool call (if any and if execution was successful). [14] | {<br>&nbsp;&nbsp;"temperature_range": {<br>&nbsp;&nbsp;&nbsp;&nbsp;"high": 75,<br>&nbsp;&nbsp;&nbsp;&nbsp;"low": 60<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;"conditions": "sunny"<br>} |
+| [`gen_ai.prompt.variable`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | string | The variables supplied to the prompt template in the request. [13] | `Alice`; `French` |
+| [`gen_ai.tool.call.arguments`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | Parameters passed to the tool call. [14] | {<br>&nbsp;&nbsp;&nbsp;&nbsp;"location": "San Francisco?",<br>&nbsp;&nbsp;&nbsp;&nbsp;"date": "2025-10-01"<br>} |
+| [`gen_ai.tool.call.result`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | The result returned by the tool call (if any and if execution was successful). [15] | {<br>&nbsp;&nbsp;"temperature_range": {<br>&nbsp;&nbsp;&nbsp;&nbsp;"high": 75,<br>&nbsp;&nbsp;&nbsp;&nbsp;"low": 60<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;"conditions": "sunny"<br>} |
 
 **[1] `error.type`:** This attribute SHOULD be set to the string representation of the JSON-RPC
 error code, if one is returned.
@@ -396,7 +417,26 @@ Semantic conventions for individual RPC frameworks SHOULD document what `rpc.res
 **[12] `network.transport`:** This attribute SHOULD be set to `tcp` or `quic` if the transport protocol
 is HTTP. It SHOULD be set to `pipe` if the transport is stdio.
 
-**[13] `gen_ai.tool.call.arguments`:**
+**[13] `gen_ai.prompt.variable`:** Prompt templates are parameterized with variables that are filled in
+at runtime. This attribute records the variable values passed to the
+template. The attribute name defines the variable name, and the
+attribute value is the variable value serialized as a string.
+
+Examples:
+
+- A variable `user_name` with value `Alice` SHOULD be recorded as
+  the `gen_ai.prompt.variable.user_name` attribute with value `"Alice"`.
+- A variable `language` with value `French` SHOULD be recorded as
+  the `gen_ai.prompt.variable.language` attribute with value `"French"`.
+
+In MCP, [prompt arguments](https://modelcontextprotocol.io/specification/2025-11-25/schema#prompt)
+supplied in `prompts/get` requests SHOULD be recorded as
+`gen_ai.prompt.variable.<argument_name>` attributes.
+
+> [!Warning]
+> This attribute may contain sensitive information.
+
+**[14] `gen_ai.tool.call.arguments`:**
 
 > [!WARNING]
 > This attribute may contain sensitive information.
@@ -405,7 +445,7 @@ It's expected to be an object - in case a serialized string is available
 to the instrumentation, the instrumentation SHOULD do the best effort to
 deserialize it to an object. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
 
-**[14] `gen_ai.tool.call.result`:**
+**[15] `gen_ai.tool.call.result`:**
 
 > [!WARNING]
 > This attribute may contain sensitive information.
@@ -530,7 +570,8 @@ of `[ 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30, 60, 120, 300 ]`.
 | [`network.transport`](https://github.com/open-telemetry/semantic-conventions/blob/v1.42.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | The transport protocol used for the MCP session. [6] | `tcp`; `quic`; `pipe` |
 | [`server.address`](https://github.com/open-telemetry/semantic-conventions/blob/v1.42.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` If applicable. | string | Server domain name if available without reverse DNS lookup; otherwise, IP address or Unix domain socket name. [7] | `example.com`; `10.1.2.80`; `/tmp/my.sock` |
 | [`server.port`](https://github.com/open-telemetry/semantic-conventions/blob/v1.42.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When `server.address` is set. | int | Server port number. [8] | `80`; `8080`; `443` |
-| [`mcp.resource.uri`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | string | The value of the resource uri. [9] | `postgres://database/customers/schema`; `file:///home/user/documents/report.pdf` |
+| [`gen_ai.prompt.variable`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | string | The variables supplied to the prompt template in the request. [9] | `Alice`; `French` |
+| [`mcp.resource.uri`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | string | The value of the resource uri. [10] | `postgres://database/customers/schema`; `file:///home/user/documents/report.pdf` |
 
 **[1] `error.type`:** This attribute SHOULD be set to the string representation of the JSON-RPC
 error code, if one is returned.
@@ -558,7 +599,22 @@ is HTTP. It SHOULD be set to `pipe` if the transport is stdio.
 
 **[8] `server.port`:** When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries, for example proxies, if it's available.
 
-**[9] `mcp.resource.uri`:** This is a URI of the resource provided in the following requests or notifications: `resources/read`, `resources/subscribe`, `resources/unsubscribe`, or `notifications/resources/updated`.
+**[9] `gen_ai.prompt.variable`:** Prompt templates are parameterized with variables that are filled in
+at runtime. This attribute records the variable values passed to the
+template. The attribute name defines the variable name, and the
+attribute value is the variable value serialized as a string.
+
+Examples:
+
+- A variable `user_name` with value `Alice` SHOULD be recorded as
+  the `gen_ai.prompt.variable.user_name` attribute with value `"Alice"`.
+- A variable `language` with value `French` SHOULD be recorded as
+  the `gen_ai.prompt.variable.language` attribute with value `"French"`.
+
+> [!Warning]
+> This attribute may contain sensitive information.
+
+**[10] `mcp.resource.uri`:** This is a URI of the resource provided in the following requests or notifications: `resources/read`, `resources/subscribe`, `resources/unsubscribe`, or `notifications/resources/updated`.
 
 ---
 
@@ -672,7 +728,8 @@ of `[ 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30, 60, 120, 300 ]`.
 | [`network.protocol.name`](https://github.com/open-telemetry/semantic-conventions/blob/v1.42.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When applicable. | string | [OSI application layer](https://wikipedia.org/wiki/Application_layer) or non-OSI equivalent. [5] | `http`; `websocket` |
 | [`network.protocol.version`](https://github.com/open-telemetry/semantic-conventions/blob/v1.42.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When applicable. | string | The actual version of the protocol used for network communication. | `1.1`; `2` |
 | [`network.transport`](https://github.com/open-telemetry/semantic-conventions/blob/v1.42.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | The transport protocol used for the MCP session. [6] | `tcp`; `quic`; `pipe` |
-| [`mcp.resource.uri`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | string | The value of the resource uri. [7] | `postgres://database/customers/schema`; `file:///home/user/documents/report.pdf` |
+| [`gen_ai.prompt.variable`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | string | The variables supplied to the prompt template in the request. [7] | `Alice`; `French` |
+| [`mcp.resource.uri`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | string | The value of the resource uri. [8] | `postgres://database/customers/schema`; `file:///home/user/documents/report.pdf` |
 
 **[1] `error.type`:** This attribute SHOULD be set to the string representation of the JSON-RPC
 error code, if one is returned.
@@ -696,7 +753,22 @@ Semantic conventions for individual RPC frameworks SHOULD document what `rpc.res
 **[6] `network.transport`:** This attribute SHOULD be set to `tcp` or `quic` if the transport protocol
 is HTTP. It SHOULD be set to `pipe` if the transport is stdio.
 
-**[7] `mcp.resource.uri`:** This is a URI of the resource provided in the following requests or notifications: `resources/read`, `resources/subscribe`, `resources/unsubscribe`, or `notifications/resources/updated`.
+**[7] `gen_ai.prompt.variable`:** Prompt templates are parameterized with variables that are filled in
+at runtime. This attribute records the variable values passed to the
+template. The attribute name defines the variable name, and the
+attribute value is the variable value serialized as a string.
+
+Examples:
+
+- A variable `user_name` with value `Alice` SHOULD be recorded as
+  the `gen_ai.prompt.variable.user_name` attribute with value `"Alice"`.
+- A variable `language` with value `French` SHOULD be recorded as
+  the `gen_ai.prompt.variable.language` attribute with value `"French"`.
+
+> [!Warning]
+> This attribute may contain sensitive information.
+
+**[8] `mcp.resource.uri`:** This is a URI of the resource provided in the following requests or notifications: `resources/read`, `resources/subscribe`, `resources/unsubscribe`, or `notifications/resources/updated`.
 
 ---
 
