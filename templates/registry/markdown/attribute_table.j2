@@ -15,6 +15,6 @@
 
 | Key | Stability | [Requirement Level](https://opentelemetry.io/docs/specs/semconv/general/attribute-requirement-level/) | Value Type | Description | Example Values |
 | --- | --- | --- | --- | --- | --- |
-{% for attribute in attributes | attribute_sort %}| {{ attrs.name_with_link(attribute, attribute_registry_base_url, upstream_docs_base) }} | {{ stability.badge(attribute.stability, attribute.deprecated, attribute.brief) | trim }} | {{ requirement.render({"level": attribute.requirement_level, "name": attribute.key}, notes) | trim }} | {{ attrs.type(attribute) }} | {{ attribute.brief | trim }}{{ notes.add({"note": attribute.note, "name": attribute.key}) }} | {{ examples.format(attribute) }}|
+{% for attribute in attributes | attribute_sort %}| {{ attrs.name_with_link(attribute, attribute_registry_base_url, upstream_docs_base) }} | {{ stability.badge(attribute.stability, attribute.deprecated, attribute.brief) | trim }} | {{ requirement.render({"level": attribute.requirement_level, "name": attribute.key}, notes) | trim }} | {{ attrs.type(attribute) }} | {{ attribute.brief | trim }}{{ notes.add({"note": attrs.note(attribute), "name": attribute.key}) }} | {{ examples.format(attribute) }}|
 {% endfor %}{{ notes.render() }}{{ sampling.snippet(attributes, attribute_registry_base_url, upstream_docs_base) }}{{ enums.tables(attributes | selectattr("type", "mapping"), notes) }}
 {%- endif %}{% endmacro %}

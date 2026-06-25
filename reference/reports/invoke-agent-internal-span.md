@@ -14,12 +14,10 @@
 | --- | --- |
 | gen_ai.agent.description | [autogen] |
 | gen_ai.agent.name | [autogen], [crewai], [google-adk], [openai-agents], [pydantic-ai] |
-| gen_ai.agent.version | (none) |
 | gen_ai.conversation.id | [google-adk] |
 | gen_ai.data_source.id | (none) |
 | gen_ai.output.type | (none) |
 | gen_ai.request.choice.count | [crewai], [google-adk] |
-| gen_ai.request.model | [autogen], [crewai], [google-adk], [openai-agents], [pydantic-ai] |
 | gen_ai.request.seed | [autogen], [crewai], [pydantic-ai] |
 
 ## Recommended
@@ -28,6 +26,7 @@
 | --- | --- |
 | gen_ai.request.frequency_penalty | [autogen], [crewai], [google-adk], [pydantic-ai] |
 | gen_ai.request.max_tokens | [autogen], [crewai], [google-adk], [pydantic-ai] |
+| gen_ai.request.model | [autogen], [crewai], [google-adk], [openai-agents], [pydantic-ai] |
 | gen_ai.request.presence_penalty | [autogen], [crewai], [google-adk], [pydantic-ai] |
 | gen_ai.request.stop_sequences | [autogen], [crewai], [google-adk], [pydantic-ai] |
 | gen_ai.request.temperature | [autogen], [crewai], [google-adk], [pydantic-ai] |
