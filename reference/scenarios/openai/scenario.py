@@ -505,6 +505,101 @@ def run_embeddings_reference(client):
         print(f"    -> embedding dim: {len(resp.data[0].embedding)}")
 
 
+def run_responses_with_prompt_template_reference(client):
+    """Scenario: OpenAI Responses API with a stored prompt template.
+
+    The Responses API accepts a `prompt` parameter that references a stored
+    prompt template by id, with optional version and variables. The
+    instrumentation extracts gen_ai.prompt.name, gen_ai.prompt.version,
+    and gen_ai.prompt.variable.* from the request.
+    """
+    print("  [responses_prompt_template] Responses API with prompt template (reference implementation)")
+    request_model = "gpt-4o-mini"
+    prompt_id = "customer-support"
+    prompt_version = "1.2.0"
+    prompt_variables = {"user_name": "Alice", "language": "French"}
+    host, port = mock_server_host_port(MOCK_BASE_URL)
+    span_attributes = {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "openai",
+        "gen_ai.request.model": request_model,
+        "gen_ai.prompt.name": prompt_id,
+        "gen_ai.prompt.version": prompt_version,
+    }
+    if host:
+        span_attributes["server.address"] = host
+    if port is not None:
+        span_attributes["server.port"] = port
+    with _reference_tracer.start_as_current_span("chat gpt-4o-mini", attributes=span_attributes) as span:
+        for var_name, var_value in prompt_variables.items():
+            span.set_attribute(f"gen_ai.prompt.variable.{var_name}", var_value)
+        resp = client.responses.create(
+            model=request_model,
+            input="Help me with my order.",
+            prompt={
+                "id": prompt_id,
+                "version": prompt_version,
+                "variables": prompt_variables,
+            },
+        )
+        span.set_attribute("gen_ai.response.model", resp.model)
+        span.set_attribute("gen_ai.response.id", resp.id)
+        output_text = None
+        for output in getattr(resp, "output", []) or []:
+            if getattr(output, "type", None) == "message":
+                for content in getattr(output, "content", []) or []:
+                    if getattr(content, "type", None) == "output_text":
+                        output_text = getattr(content, "text", None)
+                        break
+        if output_text:
+            span.set_attribute(
+                "gen_ai.output.messages",
+                json.dumps(
+                    [
+                        {
+                            "role": "assistant",
+                            "parts": [{"type": "text", "content": output_text}],
+                            "finish_reason": "stop",
+                        }
+                    ]
+                ),
+            )
+        if resp.usage:
+            span.set_attribute("gen_ai.usage.input_tokens", resp.usage.input_tokens)
+            span.set_attribute("gen_ai.usage.output_tokens", resp.usage.output_tokens)
+        span.set_attribute("gen_ai.response.finish_reasons", ["stop"])
+
+        event_attrs = {
+            "gen_ai.operation.name": "chat",
+            "gen_ai.request.model": request_model,
+            "gen_ai.prompt.name": prompt_id,
+            "gen_ai.prompt.version": prompt_version,
+            "gen_ai.response.id": resp.id,
+            "gen_ai.response.model": resp.model,
+            "gen_ai.response.finish_reasons": ["stop"],
+        }
+        for var_name, var_value in prompt_variables.items():
+            event_attrs[f"gen_ai.prompt.variable.{var_name}"] = var_value
+        if output_text:
+            event_attrs["gen_ai.output.messages"] = json.dumps(
+                [{"role": "assistant", "parts": [{"type": "text", "content": output_text}], "finish_reason": "stop"}]
+            )
+        if resp.usage:
+            event_attrs["gen_ai.usage.input_tokens"] = resp.usage.input_tokens
+            event_attrs["gen_ai.usage.output_tokens"] = resp.usage.output_tokens
+        if host:
+            event_attrs["server.address"] = host
+        if port is not None:
+            event_attrs["server.port"] = port
+        reference_event_logger().emit(
+            event_name="gen_ai.client.inference.operation.details",
+            body="Inference operation details",
+            attributes=event_attrs,
+        )
+
+        print(f"    -> {(output_text or '')[:60]}")
+
+
 def main():
     print("=== Reference Implementation: OpenAI Reference Implementation ===")
 
@@ -519,6 +614,7 @@ def main():
     run_chat_streaming_reference(client)
     run_chat_tool_call_reference(client)
     run_chat_with_document_input_reference(client)
+    run_responses_with_prompt_template_reference(client)
     run_embeddings_reference(client)
 
     flush_and_shutdown(tp, lp, mp)
