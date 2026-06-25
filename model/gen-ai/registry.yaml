@@ -397,7 +397,7 @@ attributes:
       as opaque and refuse to verify, never best-effort. The attribute records which algorithm
       a verification decision was made under, so a consumer can distinguish a
       refused-unknown-algorithm decision from a verified one.
-    examples: ["ed25519", "ml-dsa-65"]
+    examples: ["Ed25519", "ML-DSA-65"]
     stability: development
   - key: gen_ai.agent.capability
     type: string
@@ -416,6 +416,7 @@ attributes:
       outcomes. It is NOT a normative or cross-producer-comparable value. When emitted it SHOULD
       be accompanied by `gen_ai.agent.trust.method`, so a consumer can tell a change in the scoring
       method from a change in the agent's behaviour.
+    examples: [0.92]
     stability: development
   - key: gen_ai.agent.trust.method
     type: string
@@ -438,6 +439,7 @@ attributes:
       Same producer-defined, consumer-correlated pattern as `gen_ai.agent.trust.score`: a decision
       input, not a normative value. When emitted it SHOULD be accompanied by
       `gen_ai.agent.drift.method`.
+    examples: [0.15]
     stability: development
   - key: gen_ai.agent.drift.method
     type: string

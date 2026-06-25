@@ -1,6 +1,6 @@
 """Reference implementation for an agent-authorization producer.
 
-Exercises the ``gen_ai.agent.*`` authorization attributes added in #291. The
+Exercises the ``gen_ai.agent.*`` authorization attributes proposed in #180. The
 producer is a trust / authorization control plane that, at the agent-invocation
 decision point, emits the agent's identity-key algorithm, its producer-scoped
 trust and drift scores together with the method token that produced each, and
