@@ -110,7 +110,7 @@ metrics:
       measured from the point where application code initiates the workflow to the point where the workflow completes,
       independent of workflow complexity.
 
-      A workflow is a coordinated process composed of multiple agents or other 
+      A workflow is a coordinated process composed of multiple agents or other
       operations involving generative AI.
 
       If instrumentation measures only a single provider-facing client operation
