@@ -52,6 +52,14 @@ CI fails if committed generated output doesn't match `make generate-all`. Add a
 Towncrier fragment under [changelog.d/](changelog.d/) for any consumer-visible
 change. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
+For PR work that needs repository-wide reference coverage, use the `reference`
+skill under [.github/skills/reference/](.github/skills/reference/). For reviews
+of reference coverage, capturability, and honest capture gaps, see the
+evaluation rubric in
+[.github/instructions/evaluate-reference.instructions.md](.github/instructions/evaluate-reference.instructions.md)
+— an instruction file that applies automatically to model, docs, and scenario
+changes, not a skill to invoke.
+
 ## Further reading
 
 - [How to write conventions — best practices](https://github.com/open-telemetry/semantic-conventions/blob/v1.42.0/docs/how-to-write-conventions/README.md#best-practices)
