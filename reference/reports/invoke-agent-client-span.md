@@ -21,7 +21,6 @@
 | gen_ai.data_source.id | (none) |
 | gen_ai.output.type | [azure-ai-foundry] |
 | gen_ai.request.choice.count | (none) |
-| gen_ai.request.model | [azure-ai-foundry], [openai-assistants] |
 | gen_ai.request.seed | (none) |
 | server.port | [aws-bedrock-agent], [azure-ai-foundry], [openai-assistants] |
 
@@ -31,6 +30,7 @@
 | --- | --- |
 | gen_ai.request.frequency_penalty | (none) |
 | gen_ai.request.max_tokens | [azure-ai-foundry], [openai-assistants] |
+| gen_ai.request.model | [azure-ai-foundry], [openai-assistants] |
 | gen_ai.request.presence_penalty | (none) |
 | gen_ai.request.stop_sequences | (none) |
 | gen_ai.request.temperature | [azure-ai-foundry], [openai-assistants] |

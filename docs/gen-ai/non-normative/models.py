@@ -6,21 +6,21 @@ definitions, retrieval documents, and memory records. These models are
 provided for reference only.
 
 Running this script regenerates the JSON schemas committed under
-`docs/gen-ai/gen-ai-*.json`. The output is sibling to this file's parent
-directory (i.e. `docs/gen-ai/`).
+`model/gen-ai/gen-ai-*.json`.
 
 Dependencies and their locked versions are declared in the sibling
 `pyproject.toml` / `uv.lock`, so the generation is reproducible.
 
 Run with:
 
-    cd docs/gen-ai/non-normative && uv run models.py
+    cd docs/gen-ai/non-normative && uv run models.py [output_dir]
 
 or, from the repo root, `make generate-json-schemas`.
 """
 
 from __future__ import annotations
 
+import argparse
 import json
 from enum import StrEnum
 from pathlib import Path
@@ -515,29 +515,69 @@ class MemoryRecords(RootModel[List[MemoryRecord]]):
 
 
 # --------------------------------------------------------------------------
+# `gen_ai.tool.call.arguments` and `gen_ai.tool.call.result` models
+# --------------------------------------------------------------------------
+
+
+class ToolCallArguments(RootModel[dict[str, Any]]):
+    """
+    Represents object-like arguments passed to a tool call.
+    """
+
+    pass
+
+
+class ToolCallResult(RootModel[dict[str, Any]]):
+    """
+    Represents object-like results returned by a tool call.
+    """
+
+    pass
+
+
+# --------------------------------------------------------------------------
 # Schema generation entry point
 # --------------------------------------------------------------------------
 
-# Maps committed JSON file name (under docs/gen-ai/) -> root model class.
+# Maps committed JSON file name (under model/gen-ai/) -> root model class.
 SCHEMAS: dict[str, type[BaseModel]] = {
     "gen-ai-input-messages.json": InputMessages,
     "gen-ai-output-messages.json": OutputMessages,
     "gen-ai-system-instructions.json": SystemInstructions,
     "gen-ai-tool-definitions.json": ToolDefinitions,
+    "gen-ai-tool-call-arguments.json": ToolCallArguments,
+    "gen-ai-tool-call-result.json": ToolCallResult,
     "gen-ai-retrieval-documents.json": RetrievalDocuments,
     "gen-ai-memory-records.json": MemoryRecords,
 }
 
 
 def main() -> None:
-    # docs/gen-ai/non-normative/models.py -> docs/gen-ai/
-    output_dir = Path(__file__).resolve().parent.parent
+    parser = argparse.ArgumentParser(
+        description="Regenerate the JSON schemas from the pydantic models."
+    )
+    parser.add_argument(
+        "output_dir",
+        type=Path,
+        nargs="?",
+        default=Path(__file__).resolve().parents[3] / "model" / "gen-ai",
+        help="Directory where the JSON schema files will be written. Defaults to repo_root/model/gen-ai.",
+    )
+    args = parser.parse_args()
+
+    output_dir = args.output_dir.resolve()
+    output_dir.mkdir(parents=True, exist_ok=True)
+    repo_root = Path(__file__).resolve().parents[3]
+
     for filename, model in SCHEMAS.items():
         target = output_dir / filename
         with target.open("w", encoding="utf-8", newline="\n") as f:
             json.dump(model.model_json_schema(), f, indent=4)
             f.write("\n")
-        print(f"wrote {target.relative_to(output_dir.parent.parent)}")
+        try:
+            print(f"wrote {target.relative_to(repo_root)}")
+        except ValueError:
+            print(f"wrote {target}")
 
 
 if __name__ == "__main__":

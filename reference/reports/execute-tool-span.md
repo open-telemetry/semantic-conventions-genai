@@ -9,6 +9,12 @@
 | gen_ai.operation.name | [autogen], [crewai], [google-adk], [groq], [instructor], [litellm], [llamaindex], [mistralai], [openai], [openai-agents], [openai-assistants], [pydantic-ai] |
 | gen_ai.tool.name | [autogen], [crewai], [google-adk], [groq], [instructor], [litellm], [llamaindex], [mistralai], [openai], [openai-agents], [openai-assistants], [pydantic-ai] |
 
+## Conditionally Required
+
+| Attribute | Supporting Libraries |
+| --- | --- |
+| gen_ai.agent.name | [google-adk], [openai-agents], [pydantic-ai] |
+
 ## Recommended
 
 | Attribute | Supporting Libraries |
