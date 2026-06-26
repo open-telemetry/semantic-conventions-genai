@@ -28,6 +28,7 @@
 | --- | --- |
 | gen_ai.request.frequency_penalty | [autogen], [crewai], [google-adk], [pydantic-ai] |
 | gen_ai.request.max_tokens | [agent-framework], [autogen], [crewai], [google-adk], [pydantic-ai] |
+| gen_ai.request.model | [autogen], [crewai], [google-adk], [openai-agents], [pydantic-ai] |
 | gen_ai.request.presence_penalty | [autogen], [crewai], [google-adk], [pydantic-ai] |
 | gen_ai.request.stop_sequences | [autogen], [crewai], [google-adk], [pydantic-ai] |
 | gen_ai.request.temperature | [agent-framework], [autogen], [crewai], [google-adk], [pydantic-ai] |

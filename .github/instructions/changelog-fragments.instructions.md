@@ -1,5 +1,4 @@
 ---
-description: "Review guidance for Towncrier changelog fragments."
 applyTo: "changelog.d/*.*.md"
 ---
 
