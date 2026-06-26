@@ -27,6 +27,7 @@
     "execute_tool": [
       "gen_ai.agent.handoff.source.name",
       "gen_ai.agent.handoff.target.name",
+      "gen_ai.agent.name",
       "gen_ai.operation.name",
       "gen_ai.tool.call.arguments",
       "gen_ai.tool.call.id",

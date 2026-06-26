@@ -1,5 +1,4 @@
 ---
-description: "Style convention for requirement-level condition notes in model YAML."
 applyTo: "model/**/*.yaml"
 ---
 
