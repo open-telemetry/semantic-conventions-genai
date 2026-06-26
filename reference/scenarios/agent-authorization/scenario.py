@@ -1,22 +1,28 @@
 """Reference implementation for an agent-authorization producer.
 
-Exercises the ``gen_ai.agent.*`` authorization attributes proposed in #180. The
-producer is a trust / authorization control plane that, at the agent-invocation
-decision point, emits the agent's identity-key algorithm, its producer-scoped
-trust and drift scores together with the method token that produced each, and
-the most recent security-scan verdict with its method token. It then lets the
-authorized agent run one inference against the mock OpenAI server.
+Exercises the ``gen_ai.agent.*`` authorization attributes proposed in #180.
+These attributes are not properties of the inference call. They are outputs of
+the component that makes the authorization decision -- a policy decision point,
+an agent gateway, or a control-plane layer sitting in front of the action. That
+component already holds the capability being invoked, the agent's identity-key
+algorithm, its producer-scoped trust and drift signals, and the most recent
+security-scan verdict, because those are the inputs to its allow / deny
+decision.
 
-These attributes are producer-emitted decision inputs. They are not read from
-the LLM SDK request or response, so each is bound to a local at the decision
-point and set inline on the ``invoke_agent`` span -- the signal these
-attributes appear on. The score / verdict values travel with their ``.method``
-token so a consumer can tell a change in the scoring or scanning method from a
-change in the agent's behaviour.
+To make both the instrumentation point and the data source explicit, the
+scenario models that deciding component as an ``AuthorizationGate`` whose
+``decide`` call returns one ``AuthorizationDecision`` object. The instrumentation
+sets the span attributes from the fields of that returned decision rather than
+from literals, then lets the authorized agent run one inference against the mock
+OpenAI server. The signal these attributes appear on is the ``invoke_agent``
+span. Each score / verdict travels with its ``.method`` token so a consumer can
+tell a change in the scoring or scanning method from a change in the agent's
+behaviour.
 """
 
 import json
 import os
+from dataclasses import dataclass
 
 from reference_shared import (
     flush_and_shutdown,
@@ -30,24 +36,68 @@ MOCK_BASE_URL = os.environ["MOCK_LLM_URL"] + "/v1"
 _reference_tracer = reference_tracer()
 
 
-def run_agent_authorization_reference(client):
-    """Scenario: an authorized agent invocation annotated with producer trust attributes."""
+@dataclass(frozen=True)
+class AuthorizationDecision:
+    """The result an authorization control plane returns for one agent invocation.
+
+    Each producer-scoped score / verdict is paired with the method token that
+    produced it, so a consumer can distinguish a re-fit or re-threshold of the
+    method from a real change in the agent.
+    """
+
+    allow: bool
+    capability: str
+    public_key_algorithm: str
+    trust_score: float
+    trust_method: str
+    drift_score: float
+    drift_method: str
+    scan_verdict: str
+    scan_method: str
+
+
+class AuthorizationGate:
+    """Minimal stand-in for the deciding component in front of an agent action.
+
+    A real deployment computes these signals from its own trust model, drift
+    detector, and security scanner before allowing the action. This reference
+    returns a fixed decision so the scenario stays deterministic; the point it
+    demonstrates is structural -- the span attributes are read from the
+    returned decision object, not bound at the instrumentation site, so the
+    instrumentation point (the gate) and the data source (the decision) are
+    both visible.
+    """
+
+    def decide(self, *, agent_id: str, requested_capability: str) -> AuthorizationDecision:
+        # A production decision point would resolve the agent's identity key,
+        # score its trust and drift, and read the latest scan verdict here,
+        # then return them together as the basis for the allow / deny call.
+        return AuthorizationDecision(
+            allow=True,
+            capability=requested_capability,
+            public_key_algorithm="ed25519",
+            trust_score=0.93,
+            trust_method="trust-model@2.3.1",
+            drift_score=0.04,
+            drift_method="embedding-cosine@1.4",
+            scan_verdict="clean",
+            scan_method="scanner@1.2.0",
+        )
+
+
+def run_agent_authorization_reference(client, gate):
+    """Scenario: an authorized agent invocation annotated with the gate's decision."""
     print("  [invoke_agent] authorized agent invocation with producer trust attributes")
     request_model = "gpt-4o-mini"
     agent_id = "asst_5j66UpCpwteGg4YSxUnt7lPY"
     agent_name = "Research Assistant"
 
-    # Producer-emitted decision inputs. The authorization control plane computes
-    # these at decision time; they do not come from the LLM SDK call below.
-    # Each score / verdict is paired with the method token that produced it.
-    agent_capability = "database.read"
-    public_key_algorithm = "ed25519"
-    trust_score = 0.93
-    trust_method = "trust-model@2.3.1"
-    drift_score = 0.04
-    drift_method = "embedding-cosine@1.4"
-    scan_verdict = "clean"
-    scan_method = "scanner@1.2.0"
+    # The deciding component runs first and returns its decision. Everything the
+    # producer-emitted attributes carry comes from this object, not from the LLM
+    # SDK call below.
+    decision = gate.decide(agent_id=agent_id, requested_capability="database.read")
+    if not decision.allow:
+        raise PermissionError(f"authorization gate denied invocation of {agent_id}")
 
     messages = [
         {"role": "system", "content": "You are a research assistant."},
@@ -69,16 +119,16 @@ def run_agent_authorization_reference(client):
     if port is not None:
         span_attributes["server.port"] = port
     with _reference_tracer.start_as_current_span(f"invoke_agent {agent_name}", attributes=span_attributes) as span:
-        # Authorization decision inputs, emitted by the producer on the
-        # agent-invocation span before the agent acts.
-        span.set_attribute("gen_ai.agent.capability", agent_capability)
-        span.set_attribute("gen_ai.agent.public_key.algorithm", public_key_algorithm)
-        span.set_attribute("gen_ai.agent.trust.score", trust_score)
-        span.set_attribute("gen_ai.agent.trust.method", trust_method)
-        span.set_attribute("gen_ai.agent.drift.score", drift_score)
-        span.set_attribute("gen_ai.agent.drift.method", drift_method)
-        span.set_attribute("gen_ai.agent.scan.verdict", scan_verdict)
-        span.set_attribute("gen_ai.agent.scan.method", scan_method)
+        # Authorization decision inputs, set from the decision the gate returned
+        # before the agent acts. Each is a field of `decision`, not a literal.
+        span.set_attribute("gen_ai.agent.capability", decision.capability)
+        span.set_attribute("gen_ai.agent.public_key.algorithm", decision.public_key_algorithm)
+        span.set_attribute("gen_ai.agent.trust.score", decision.trust_score)
+        span.set_attribute("gen_ai.agent.trust.method", decision.trust_method)
+        span.set_attribute("gen_ai.agent.drift.score", decision.drift_score)
+        span.set_attribute("gen_ai.agent.drift.method", decision.drift_method)
+        span.set_attribute("gen_ai.agent.scan.verdict", decision.scan_verdict)
+        span.set_attribute("gen_ai.agent.scan.method", decision.scan_method)
 
         span.set_attribute("gen_ai.input.messages", input_messages)
         resp = client.chat.completions.create(model=request_model, messages=messages)
@@ -108,8 +158,9 @@ def main():
     import openai
 
     client = openai.OpenAI(base_url=MOCK_BASE_URL, api_key="mock-key")
+    gate = AuthorizationGate()
 
-    run_agent_authorization_reference(client)
+    run_agent_authorization_reference(client, gate)
 
     flush_and_shutdown(tp, lp, mp)
 
