@@ -306,6 +306,27 @@ attributes:
     brief: The version of the GenAI agent.
     examples: ["1.0.0", "2025-05-01"]
     stability: development
+  - key: gen_ai.agent.identity.id
+    type: string
+    brief: >
+      Stable identifier of the identity the GenAI agent authenticates and is audited as,
+      independent of the deployed agent resource (`gen_ai.agent.id`) or runtime.
+    note: >
+      `gen_ai.agent.id` identifies the deployed agent resource or definition, while this
+      attribute identifies the durable identity the agent acts as. One identity can span many
+      deployed resource versions and runtimes, so the two are distinct. It MAY be a SPIFFE ID
+      where the platform issues one, for example an AWS Bedrock AgentCore workload identity or
+      a Google Vertex AI Agent Identity.
+
+      This is an identifier for correlation and audit only. It is not a credential and not an
+      input to an access-control decision.
+    examples: ['spiffe://example.org/agent/support-bot', 'arn:aws:bedrock-agentcore:us-east-1:123456789012:workload-identity/directory/default/workload-identity/support-bot']
+    stability: development
+  - key: gen_ai.agent.identity.name
+    type: string
+    brief: Human-readable label for the agent's identity, see `gen_ai.agent.identity.id`.
+    examples: ['customer-support-agent']
+    stability: development
   - key: gen_ai.tool.name
     type: string
     brief: Name of the tool utilized by the agent.

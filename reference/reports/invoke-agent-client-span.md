@@ -46,6 +46,8 @@
 
 | Attribute | Supporting Libraries |
 | --- | --- |
+| gen_ai.agent.identity.id | (none) |
+| gen_ai.agent.identity.name | (none) |
 | gen_ai.input.messages | [aws-bedrock-agent], [azure-ai-foundry], [openai-assistants] |
 | gen_ai.output.messages | [aws-bedrock-agent], [azure-ai-foundry], [openai-assistants] |
 | gen_ai.system_instructions | [azure-ai-foundry], [openai-assistants] |

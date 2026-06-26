@@ -30,6 +30,8 @@
 
 | Attribute | Supporting Libraries |
 | --- | --- |
+| gen_ai.agent.identity.id | (none) |
+| gen_ai.agent.identity.name | (none) |
 | gen_ai.system_instructions | [autogen], [azure-ai-foundry], [openai-assistants] |
 
 [autogen]: ../scenarios/autogen/scenario.py
