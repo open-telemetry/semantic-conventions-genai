@@ -1,5 +1,4 @@
 ---
-description: "Conventions for reference scenarios under reference/scenarios. Covers inline attribute emission, span boundaries, public-entry-point usage, and what to ignore."
 applyTo: "reference/scenarios/**/scenario.py"
 ---
 
