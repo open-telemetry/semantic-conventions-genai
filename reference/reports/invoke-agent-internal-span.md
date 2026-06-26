@@ -14,23 +14,21 @@
 | --- | --- |
 | gen_ai.agent.description | [agent-framework], [autogen] |
 | gen_ai.agent.name | [agent-framework], [autogen], [crewai], [google-adk], [openai-agents], [pydantic-ai] |
-| gen_ai.agent.version | (none) |
 | gen_ai.conversation.id | [google-adk] |
 | gen_ai.data_source.id | (none) |
 | gen_ai.output.type | (none) |
 | gen_ai.request.choice.count | [agent-framework], [crewai], [google-adk] |
-| gen_ai.request.model | [agent-framework], [autogen], [crewai], [google-adk], [openai-agents], [pydantic-ai] |
-| gen_ai.request.seed | [autogen], [crewai], [pydantic-ai] |
+| gen_ai.request.seed | [agent-framework], [autogen], [crewai], [pydantic-ai] |
 
 ## Recommended
 
 | Attribute | Supporting Libraries |
 | --- | --- |
-| gen_ai.request.frequency_penalty | [autogen], [crewai], [google-adk], [pydantic-ai] |
+| gen_ai.request.frequency_penalty | [agent-framework], [autogen], [crewai], [google-adk], [pydantic-ai] |
 | gen_ai.request.max_tokens | [agent-framework], [autogen], [crewai], [google-adk], [pydantic-ai] |
-| gen_ai.request.model | [autogen], [crewai], [google-adk], [openai-agents], [pydantic-ai] |
-| gen_ai.request.presence_penalty | [autogen], [crewai], [google-adk], [pydantic-ai] |
-| gen_ai.request.stop_sequences | [autogen], [crewai], [google-adk], [pydantic-ai] |
+| gen_ai.request.model | [agent-framework], [autogen], [crewai], [google-adk], [openai-agents], [pydantic-ai] |
+| gen_ai.request.presence_penalty | [agent-framework], [autogen], [crewai], [google-adk], [pydantic-ai] |
+| gen_ai.request.stop_sequences | [agent-framework], [autogen], [crewai], [google-adk], [pydantic-ai] |
 | gen_ai.request.temperature | [agent-framework], [autogen], [crewai], [google-adk], [pydantic-ai] |
 | gen_ai.request.top_p | [agent-framework], [autogen], [crewai], [google-adk], [pydantic-ai] |
 | gen_ai.response.finish_reasons | [autogen], [crewai], [google-adk], [openai-agents], [pydantic-ai] |
