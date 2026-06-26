@@ -75,6 +75,21 @@ uv run update-reports
 - After regenerating `scenarios/*/data.json`, run `uv run update-reports` and
   commit both alongside your change.
 
+### Which operations a scenario should emit
+
+A scenario emits telemetry only for the operations the library itself performs.
+Two principles:
+
+- **Don't re-emit another library's telemetry.** If the library delegates an
+  operation to another instrumentable library (for example a framework that
+  calls `openai`, `litellm`, or `google-genai` under the hood), that operation
+  belongs to the underlying library. Emit only what this library owns and
+  correlate via standard context propagation.
+- **Emit an operation only when the library has that concept.** A library emits
+  inference or embeddings only when it is itself the model-call boundary, an
+  agent span only when it models agents, a workflow span only when it models
+  workflows or graphs, and so on.
+
 If a library emits unrelated native telemetry that obscures the intended
 validation surface, suppress that library-owned telemetry in the reference
 scenario rather than changing the semantic conventions to match it.

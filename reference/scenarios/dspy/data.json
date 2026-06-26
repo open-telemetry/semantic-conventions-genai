@@ -1,30 +1,5 @@
 {
-  "spans": {
-    "inference": [
-      "gen_ai.input.messages",
-      "gen_ai.operation.name",
-      "gen_ai.output.messages",
-      "gen_ai.provider.name",
-      "gen_ai.request.model",
-      "gen_ai.response.finish_reasons",
-      "gen_ai.response.id",
-      "gen_ai.response.model",
-      "gen_ai.tool.definitions",
-      "gen_ai.usage.input_tokens",
-      "gen_ai.usage.output_tokens"
-    ]
-  },
   "events": {
-    "gen_ai.client.inference.operation.details": [
-      "gen_ai.operation.name",
-      "gen_ai.output.messages",
-      "gen_ai.request.model",
-      "gen_ai.response.finish_reasons",
-      "gen_ai.response.id",
-      "gen_ai.response.model",
-      "gen_ai.usage.input_tokens",
-      "gen_ai.usage.output_tokens"
-    ],
     "gen_ai.evaluation.result": [
       "gen_ai.evaluation.name",
       "gen_ai.evaluation.score.label",
