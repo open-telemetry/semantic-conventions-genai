@@ -106,13 +106,14 @@ def run_agent_reference():
         """Get the current weather."""
         tool_span_attributes = {
             "gen_ai.operation.name": "execute_tool",
+            "gen_ai.tool.name": "get_weather",
+            "gen_ai.tool.type": "function",
         }
         with _reference_tracer.start_as_current_span(
             "execute_tool get_weather", attributes=tool_span_attributes
         ) as tool_span:
-            tool_span.set_attribute("gen_ai.tool.name", "get_weather")
-            tool_span.set_attribute("gen_ai.tool.type", "function")
             tool_span.set_attribute("gen_ai.tool.description", "Get the current weather.")
+            tool_span.set_attribute("gen_ai.agent.name", tool_context.agent_name)
             if tool_context.function_call_id:
                 tool_span.set_attribute("gen_ai.tool.call.id", tool_context.function_call_id)
             tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps({"location": location}))

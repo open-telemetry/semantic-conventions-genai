@@ -236,7 +236,11 @@ supplied in `prompts/get` requests SHOULD be recorded as
 
 It's expected to be an object - in case a serialized string is available
 to the instrumentation, the instrumentation SHOULD do the best effort to
-deserialize it to an object. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
+deserialize it to an object.
+
+Instrumentations MUST follow [JSON schema](/model/gen-ai/gen-ai-tool-call-arguments.json).
+
+When the attribute is recorded on events, it MUST be recorded in structured form. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
 
 **[15] `gen_ai.tool.call.result`:**
 
@@ -245,7 +249,11 @@ deserialize it to an object. When recorded on spans, it MAY be recorded as a JSO
 
 It's expected to be an object - in case a serialized string is available
 to the instrumentation, the instrumentation SHOULD do the best effort to
-deserialize it to an object. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
+deserialize it to an object.
+
+Instrumentations MUST follow [JSON schema](/model/gen-ai/gen-ai-tool-call-result.json).
+
+When the attribute is recorded on events, it MUST be recorded in structured form. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
 
 ---
 
@@ -443,7 +451,11 @@ supplied in `prompts/get` requests SHOULD be recorded as
 
 It's expected to be an object - in case a serialized string is available
 to the instrumentation, the instrumentation SHOULD do the best effort to
-deserialize it to an object. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
+deserialize it to an object.
+
+Instrumentations MUST follow [JSON schema](/model/gen-ai/gen-ai-tool-call-arguments.json).
+
+When the attribute is recorded on events, it MUST be recorded in structured form. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
 
 **[15] `gen_ai.tool.call.result`:**
 
@@ -452,7 +464,11 @@ deserialize it to an object. When recorded on spans, it MAY be recorded as a JSO
 
 It's expected to be an object - in case a serialized string is available
 to the instrumentation, the instrumentation SHOULD do the best effort to
-deserialize it to an object. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
+deserialize it to an object.
+
+Instrumentations MUST follow [JSON schema](/model/gen-ai/gen-ai-tool-call-result.json).
+
+When the attribute is recorded on events, it MUST be recorded in structured form. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
 
 ---
 

@@ -43,6 +43,7 @@
       "server.port"
     ],
     "execute_tool": [
+      "gen_ai.agent.name",
       "gen_ai.operation.name",
       "gen_ai.tool.call.arguments",
       "gen_ai.tool.call.id",
