@@ -1,13 +1,51 @@
 """Reference implementation for LangChain retrieval and Plan-and-Execute planning."""
 
+import asyncio
 import json
 import os
+from typing import TypedDict
 
+from langchain_core.tools import tool
 from reference_shared import flush_and_shutdown, mock_server_host_port, reference_tracer, setup_otel
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"] + "/v1"
 
 _reference_tracer = reference_tracer()
+
+
+@tool
+def get_weather(location: str) -> str:
+    """Get the current weather for a location."""
+    tool_span_attributes = {
+        "gen_ai.operation.name": "execute_tool",
+        "gen_ai.tool.name": "get_weather",
+        "gen_ai.tool.type": "function",
+    }
+    with _reference_tracer.start_as_current_span(
+        "execute_tool get_weather", attributes=tool_span_attributes
+    ) as tool_span:
+        tool_span.set_attribute("gen_ai.tool.description", get_weather.description)
+        tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps({"location": location}))
+        result = "Sunny, 72°F"
+        tool_span.set_attribute("gen_ai.tool.call.result", result)
+        return result
+
+
+class GraphState(TypedDict):
+    messages: list[str]
+
+
+def node_a(state: GraphState) -> GraphState:
+    print("  [node_a] running tool")
+    result = get_weather.invoke({"location": "Seattle"})
+    return {"messages": state["messages"] + [result]}
+
+
+def node_b(state: GraphState) -> GraphState:
+    print("  [node_b] processing result")
+    last_message = state["messages"][-1]
+    output = f"Processed weather: {last_message}"
+    return {"messages": state["messages"] + [output]}
 
 
 def run_retrieval_reference():
@@ -181,12 +219,64 @@ def run_plan_and_execute_reference():
             print(f"    -> planned {len(plan.steps)} step(s)")
 
 
+async def run_workflow_reference():
+    """Scenario: graph execution via LangGraph wrapped in a workflow span."""
+    print("  [workflow] LangGraph graph run (reference implementation)")
+    from langgraph.graph import StateGraph, START, END
+
+    builder = StateGraph(GraphState)
+    builder.add_node("node_a", node_a)
+    builder.add_node("node_b", node_b)
+    builder.add_edge(START, "node_a")
+    builder.add_edge("node_a", "node_b")
+    builder.add_edge("node_b", END)
+
+    graph = builder.compile()
+
+    input_text = "What's the weather in Seattle?"
+    workflow_name = "Weather graph"
+    workflow_span_attributes = {
+        "gen_ai.operation.name": "invoke_workflow",
+    }
+    with _reference_tracer.start_as_current_span(
+        f"invoke_workflow {workflow_name}", attributes=workflow_span_attributes
+    ) as workflow_span:
+        workflow_span.set_attribute("gen_ai.workflow.name", workflow_name)
+        workflow_span.set_attribute(
+            "gen_ai.input.messages", json.dumps([{"role": "user", "parts": [{"type": "text", "content": input_text}]}])
+        )
+
+        # Note: Other spans (invoke_agent, execute_tool) are omitted for brevity in this scenario.
+        #
+        # OpenInference uses the LangChain run_name as the span name:
+        # https://github.com/Arize-ai/openinference/blob/main/python/instrumentation/openinference-instrumentation-langchain/src/openinference/instrumentation/langchain/_tracer.py#L194
+        # Customize run name as documented in LangChain:
+        # https://docs.langchain.com/langsmith/trace-with-langchain#customize-run-name
+        state = await graph.ainvoke(
+            {"messages": [input_text]},
+            config={"run_name": workflow_name}
+        )
+
+        final_output = state["messages"][-1]
+        output_messages = json.dumps(
+            [
+                {
+                    "role": "assistant",
+                    "parts": [{"type": "text", "content": str(final_output)}],
+                }
+            ]
+        )
+        workflow_span.set_attribute("gen_ai.output.messages", output_messages)
+        print(f"    -> {final_output[:60]}")
+
+
 def main():
     print("=== Reference Implementation: LangChain Reference ===")
 
     tp, lp, mp = setup_otel()
     run_retrieval_reference()
     run_plan_and_execute_reference()
+    asyncio.run(run_workflow_reference())
 
     flush_and_shutdown(tp, lp, mp)
 

@@ -566,14 +566,22 @@ spans:
       The `gen_ai.operation.name` SHOULD be `invoke_workflow`.
       **Span name** SHOULD be `invoke_workflow {gen_ai.workflow.name}`.
 
-      This span SHOULD be reported by the instrumentations when they can
-      reliably determine that invocation is a workflow (i.e. groups several agent
-      invocations) and SHOULD NOT be reported by instrumentations that
-      can't distinguish it `invoke_workflow` from `invoke_agent`.
-      eg: Some frameworks like ADK have workflow agents that orchestrate other agents
-      and report `invoke_agent` spans, so `invoke_workflow` SHOULD NOT be reported by such instrumentations.
-      Conversely, frameworks like CrewAI have a distinct concept of crew (similar to workflow)
-      that is separate from individual agents, so they SHOULD report `invoke_workflow` spans.
+      The workflow span SHOULD be reported for operations executing composable processes
+      (e.g., graphs, orchestrators) that can coordinate multiple agents or GenAI calls.
+      For example, when instrumenting user-facing API that supports composable operations.
+      It SHOULD NOT be reported for standalone agent invocations.
+
+      Framework-specific semantic conventions SHOULD define which operations to report
+      as workflow spans and MAY specify heuristics to distinguish workflows from standalone
+      agent invocations.
+ 
+      Examples of workflow invocations in different frameworks include:
+      
+      - **ADK**: [`Runner.run(...)`](https://adk.dev/agents/) with multi-agent or graph workflow.
+      - **crewai**: [`Crew.kickoff()`](https://docs.crewai.com/concepts/crews)
+      - **langchain / langgraph**: [`*Graph*.invoke(...)`](https://reference.langchain.com/python/langgraph/graphs)
+      - **Microsoft Agent Framework**: [`Workflow*.run(...)`](https://learn.microsoft.com/agent-framework/workflows/)
+      - **OpenAI Agents**: [`Runner.run(starting_agent=...)`](https://openai.github.io/openai-agents-python/ref/run/#agents.run.Runner.run)
     stability: development
     attributes:
       - ref_group: attributes.gen_ai.error
