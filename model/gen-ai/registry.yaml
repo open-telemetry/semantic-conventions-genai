@@ -807,6 +807,53 @@ attributes:
     brief: A free-form explanation for the assigned score provided by the evaluator.
     examples: ["The response is factually accurate but lacks sufficient detail to fully address the question."]
     stability: development
+  - key: gen_ai.evaluation.evaluator.id
+    type: string
+    brief: Stable identifier for the evaluator definition, not the invocation. Results with different evaluator ids must not be treated as comparable.
+    examples: ["judge-v1", "accuracy-model-abc"]
+    stability: development
+  - key: gen_ai.evaluation.evaluator.version
+    type: string
+    brief: Version of the evaluator definition.
+    examples: ["1.0", "v2.5.1"]
+    stability: development
+  - key: gen_ai.evaluation.evaluator.type
+    type:
+      members:
+        - id: llm_judge
+          value: "llm_judge"
+          brief: "Evaluation performed by a Large Language Model."
+        - id: deterministic
+          value: "deterministic"
+          brief: "Evaluation performed by a deterministic script or rule-based system."
+        - id: human
+          value: "human"
+          brief: "Evaluation performed by a human reviewer."
+        - id: custom
+          value: "custom"
+          brief: "Custom or unspecified evaluator type."
+    brief: The type of evaluator.
+    stability: development
+  - key: gen_ai.evaluation.reference_set.id
+    type: string
+    brief: Identifier of the golden/reference set against which the score was produced.
+    note: Conditionally required when a reference set was used.
+    examples: ["dataset-123", "golden-set-v1"]
+    stability: development
+  - key: gen_ai.evaluation.scope
+    type:
+      members:
+        - id: single_output
+          value: "single_output"
+          brief: "The evaluation is scoped to a single output."
+        - id: full_run
+          value: "full_run"
+          brief: "The evaluation is scoped to a full agent run or workflow."
+        - id: human_interaction
+          value: "human_interaction"
+          brief: "The evaluation is scoped to a human interaction step."
+    brief: The unit the result is about.
+    stability: development
   - key: gen_ai.prompt.name
     type: string
     brief: The name of the prompt that uniquely identifies it.

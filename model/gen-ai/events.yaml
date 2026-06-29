@@ -35,7 +35,17 @@ events:
           The unique identifier assigned to the specific
           completion being evaluated. This attribute helps correlate the evaluation
           event with the corresponding operation when span id is not available.
-
+      - ref: gen_ai.evaluation.evaluator.id
+        requirement_level: recommended
+      - ref: gen_ai.evaluation.evaluator.version
+        requirement_level: recommended
+      - ref: gen_ai.evaluation.evaluator.type
+        requirement_level: recommended
+      - ref: gen_ai.evaluation.reference_set.id
+        requirement_level:
+          conditionally_required: When a reference set was used.
+      - ref: gen_ai.evaluation.scope
+        requirement_level: recommended
   - name: gen_ai.client.operation.exception
     brief: >
       This event represents an exception that occurred during a Generative AI client operation,
