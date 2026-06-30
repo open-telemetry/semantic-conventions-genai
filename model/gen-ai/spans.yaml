@@ -338,6 +338,65 @@ spans:
         requirement_level:
           conditionally_required: When applicable.
 
+  - type: gen_ai.get_response.client
+    kind: client
+    name:
+      note: |
+        **Span name** SHOULD be `{gen_ai.operation.name} {gen_ai.response.id}`. Semantic conventions
+        for individual GenAI providers MAY specify a different span name format.
+    brief: >
+      Describes a GenAI get response span. A request to a Generative AI provider that fetches a
+      previously generated model response by its identifier.
+    note: |
+      The `gen_ai.operation.name` SHOULD be `get_response`.
+
+      This operation does not perform inference: it returns a response that was produced by an
+      earlier operation, so no tokens are consumed by the fetch itself. Any token counts present
+      on the fetched response describe that original generation and MUST NOT be reported to the
+      `gen_ai.client.token.usage` metric.
+
+      **Span name** SHOULD be `{gen_ai.operation.name} {gen_ai.response.id}`. Semantic conventions
+      for individual GenAI providers MAY specify a different span name format.
+
+      **Span kind** SHOULD be `CLIENT` and MAY be set to `INTERNAL` on spans representing
+      calls to a provider running in the same process. It's RECOMMENDED to use `CLIENT` kind
+      when the provider being instrumented usually runs in a different process than its client
+      or when the call happens over an instrumented protocol such as HTTP.
+    stability: development
+    attributes:
+      - ref_group: attributes.gen_ai.address_and_port
+      - ref_group: attributes.gen_ai.content
+      - ref_group: attributes.gen_ai.error
+      - ref: gen_ai.provider.name
+        requirement_level: required
+        sampling_relevant: true
+      - ref: gen_ai.operation.name
+        requirement_level: required
+        sampling_relevant: true
+      - ref: server.address
+        sampling_relevant: true
+      - ref: server.port
+        sampling_relevant: true
+      - ref: gen_ai.response.id
+        requirement_level: required
+        sampling_relevant: true
+        note: >
+          The identifier of the response being fetched, as used in the request and returned in the response.
+      - ref: gen_ai.response.model
+        requirement_level: recommended
+      - ref: gen_ai.response.finish_reasons
+        requirement_level: recommended
+      - ref: gen_ai.usage.input_tokens
+        requirement_level: opt_in
+        note: >
+          Reflects the original response generation, not this fetch operation, and MUST NOT be
+          reported to the `gen_ai.client.token.usage` metric.
+      - ref: gen_ai.usage.output_tokens
+        requirement_level: opt_in
+        note: >
+          Reflects the original response generation, not this fetch operation, and MUST NOT be
+          reported to the `gen_ai.client.token.usage` metric.
+
   - type: gen_ai.memory.client
     kind: client
     name:
@@ -675,6 +734,29 @@ span_refinements:
         requirement_level: recommended
       - ref: openai.api.type
         requirement_level: recommended
+
+  - id: openai.get_response.client
+    ref: gen_ai.get_response.client
+    brief: >
+      Semantic Conventions for the [OpenAI](https://openai.com/) [Get a model response](https://platform.openai.com/docs/api-reference/responses/get)
+      operation extend and override the semantic conventions for [Gen AI Spans](gen-ai-spans.md).
+    note: |
+      Describes the [OpenAI Get a model response](https://platform.openai.com/docs/api-reference/responses/get)
+      operation, which fetches a stored response from the Responses API by its identifier. No
+      inference is performed and no tokens are consumed by this operation.
+
+      `gen_ai.provider.name` MUST be set to `"openai"` and SHOULD be provided **at span creation time**.
+
+      **Span name** SHOULD be `{gen_ai.operation.name} {gen_ai.response.id}`.
+    stability: development
+    attributes:
+      - ref: openai.api.type
+        requirement_level: recommended
+        note: >
+          For this operation `openai.api.type` SHOULD be set to `responses`.
+      - ref: openai.response.service_tier
+        requirement_level:
+          conditionally_required: If the response was received and includes a service_tier.
 
   - id: azure.ai.inference.client
     ref: gen_ai.inference.client
