@@ -118,6 +118,9 @@ metrics:
       Instrumentation MAY emit both metrics for the same request path when both boundaries are available.
 
       When this metric is reported alongside a `gen_ai.invoke_workflow` span, the metric value SHOULD be the same as the span duration.
+
+      Individual systems may include additional system-specific attributes.
+      Refer to system-specific documentation, if available.
     instrument: histogram
     unit: "s"
     stability: development
