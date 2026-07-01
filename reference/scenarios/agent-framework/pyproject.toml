@@ -1,9 +1,9 @@
 [project]
-name = "vertexai-reference-test"
+name = "agent-framework-reference-test"
 version = "0.0.0"
 requires-python = ">=3.12"
 dependencies = [
-    "google-cloud-aiplatform==2.0.0",
+    "agent-framework-openai==1.8.2",
     "genai-reference-shared",
 ]
 

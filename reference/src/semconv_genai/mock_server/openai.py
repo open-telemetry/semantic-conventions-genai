@@ -125,10 +125,36 @@ RESPONSES_RESPONSE = {
     ],
     "usage": {
         "input_tokens": 25,
+        "input_tokens_details": {
+            "cached_tokens": 5,
+        },
         "output_tokens": 12,
+        "output_tokens_details": {
+            "reasoning_tokens": 3,
+        },
         "total_tokens": 37,
     },
 }
+
+
+def _responses_tool_call_response(body):
+    response = copy.deepcopy(RESPONSES_RESPONSE)
+    response["id"] = "resp-mock-tool-001"
+    response["model"] = body.get("model", response["model"])
+    tool = body.get("tools", [{}])[0]
+    function = tool.get("function", {})
+    tool_name = tool.get("name") or function.get("name")
+    response["output"] = [
+        {
+            "type": "function_call",
+            "id": "fc_mock_001",
+            "call_id": "call_mock_001",
+            "name": tool_name or "get_weather",
+            "arguments": json.dumps(mock_tool_arguments(tool)),
+            "status": "completed",
+        }
+    ]
+    return response
 
 
 def _mock_chat_content(body, message_text):
@@ -352,6 +378,18 @@ def embeddings(deployment=None):
 @bp.route("/openai/v1/responses", methods=["POST"])
 def responses():
     body = request.get_json(silent=True) or {}
+    raw_request_input = body.get("input")
+    if isinstance(raw_request_input, list):
+        request_input = [item for item in raw_request_input if isinstance(item, dict)]
+    else:
+        request_input = []
+    if (
+        body.get("tools")
+        and "agent_reference" not in body
+        and not any(item.get("type") == "function_call_output" for item in request_input)
+    ):
+        return _responses_tool_call_response(body)
+
     resp = dict(RESPONSES_RESPONSE)
     resp["model"] = body.get("model", resp["model"])
     resp["output"] = copy.deepcopy(resp["output"])

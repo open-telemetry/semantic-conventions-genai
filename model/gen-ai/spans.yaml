@@ -59,13 +59,33 @@ attribute_groups:
       - ref: gen_ai.tool.definitions
         requirement_level: opt_in
 
+  - id: attributes.gen_ai.invoked_agent.internal.common
+    visibility: internal
+    attributes:
+      - ref: gen_ai.agent.name
+        brief: The human-readable name of the invoked GenAI agent.
+        requirement_level:
+          conditionally_required: When available.
+      # not including agent description since this group is shared between 
+      # spans and metrics and description is not needed on metrics
+      - ref: gen_ai.request.model
+        brief: The name of the GenAI model configured for the agent.
+        requirement_level:
+          recommended: If applicable.
+        note: >
+            This attribute SHOULD be populated if and only if the instrumented
+            library allows to set only a single model per agent. It SHOULD NOT
+            be populated for agents that support multiple models or dynamic selection.
+
   - id: attributes.gen_ai.invoke_agent.common
     visibility: internal
     attributes:
-      - ref_group: attributes.gen_ai.common
       - ref_group: attributes.gen_ai.usage
       - ref_group: attributes.gen_ai.content
       - ref_group: attributes.gen_ai.error
+      - ref_group: attributes.gen_ai.invoked_agent.internal.common
+      - ref: gen_ai.operation.name
+        requirement_level: required
       - ref: gen_ai.request.max_tokens
         requirement_level: recommended
       - ref: gen_ai.request.choice.count
@@ -109,27 +129,28 @@ attribute_groups:
           Application developers that manage conversation history MAY add conversation id to GenAI and other
           spans or logs using custom span or log record processors or hooks provided by instrumentation
           libraries.
-      - ref: gen_ai.agent.name
-        brief: The human-readable name of the invoked GenAI agent.
+      - ref: gen_ai.data_source.id
         requirement_level:
-          conditionally_required: When available.
+          conditionally_required: If applicable.
       - ref: gen_ai.agent.description
         brief: The free-form description of the invoked GenAI agent.
         requirement_level:
           conditionally_required: When available.
-      - ref: gen_ai.agent.version
-        brief: The version of the invoked GenAI agent.
-        requirement_level:
-          conditionally_required: When available.
-      - ref: gen_ai.data_source.id
-        requirement_level:
-          conditionally_required: If applicable.
 
-  - id: attributes.gen_ai.invoke_agent.client
+
+  - id: attributes.gen_ai.execute_tool.common
     visibility: internal
     attributes:
-      - ref_group: attributes.gen_ai.invoke_agent.common
-      - ref_group: attributes.gen_ai.address_and_port
+      - ref: gen_ai.tool.name
+        requirement_level: required
+      - ref: gen_ai.tool.type
+        requirement_level:
+          recommended: If available.
+      - ref: gen_ai.agent.name
+        brief: The human-readable name of the agent executing the tool.
+        requirement_level:
+          conditionally_required: When applicable.
+
 spans:
   - type: gen_ai.inference.client
     kind: client
@@ -440,7 +461,8 @@ spans:
       Examples: OpenAI Assistants API, AWS Bedrock Agents.
     stability: development
     attributes:
-      - ref_group: attributes.gen_ai.invoke_agent.client
+      - ref_group: attributes.gen_ai.invoke_agent.common
+      - ref_group: attributes.gen_ai.address_and_port
       - ref: gen_ai.provider.name
         requirement_level: required
         sampling_relevant: true
@@ -458,6 +480,10 @@ spans:
         brief: The stable unique identifier of the invoked GenAI agent.
         requirement_level:
           conditionally_required: If applicable.
+      - ref: gen_ai.agent.version
+        brief: The version of the invoked GenAI agent.
+        requirement_level:
+          conditionally_required: When available.
 
   - type: gen_ai.invoke_agent.internal
     kind: internal
@@ -509,11 +535,12 @@ spans:
     stability: development
     attributes:
       - ref_group: attributes.gen_ai.error
+      - ref_group: attributes.gen_ai.execute_tool.common
       - ref: gen_ai.operation.name
         requirement_level: required
         sampling_relevant: true
       - ref: gen_ai.tool.name
-        requirement_level: required
+        sampling_relevant: true
       - ref: gen_ai.tool.call.id
         requirement_level:
           recommended: If available.
@@ -521,8 +548,7 @@ spans:
         requirement_level:
           recommended: If available.
       - ref: gen_ai.tool.type
-        requirement_level:
-          recommended: If available.
+        sampling_relevant: true
       - ref: gen_ai.tool.call.arguments
         requirement_level: opt_in
       - ref: gen_ai.tool.call.result

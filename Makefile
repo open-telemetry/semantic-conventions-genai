@@ -115,7 +115,8 @@ check-policies: $(LOCAL_POLICY_STAMP) $(SC_UPSTREAM_STAMP)
 	$(WEAVER) registry check \
 		-r ./model \
 		--v2 \
-		--policy $(LOCAL_POLICIES)/policies/check
+		--policy $(LOCAL_POLICIES)/policies/check \
+		--policy policies/check/json-schema-annotations
 		# --baseline-registry '$(BASELINE_REGISTRY)' \ uncomment after removing deprecated entries
 
 # Generate the attribute registry pages under docs/registry/ from local
@@ -141,12 +142,10 @@ generate-docs: $(SC_UPSTREAM_STAMP)
 		--param upstream_docs_base=$(UPSTREAM_DOCS_BASE) \
 		docs
 
-# Regenerate the JSON schemas under docs/gen-ai/ from the pydantic models in
-# docs/gen-ai/non-normative/models.py. Dependencies are pinned in the sibling
-# pyproject.toml and locked in uv.lock, so `uv run` reproduces the exact
-# environment (and renovate keeps both up to date, like the reference projects).
+# Regenerate the JSON schemas under model/gen-ai/ from the pydantic models in
+# docs/gen-ai/non-normative/models.py.
 generate-json-schemas:
-	cd docs/gen-ai/non-normative && uv run models.py
+	cd docs/gen-ai/non-normative && uv run models.py $(CURDIR)/model/gen-ai
 
 # Update reference reports (README.md and reports/) from data.json files.
 generate-reference-reports:
