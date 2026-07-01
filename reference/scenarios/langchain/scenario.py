@@ -222,7 +222,7 @@ def run_plan_and_execute_reference():
 async def run_workflow_reference():
     """Scenario: graph execution via LangGraph wrapped in a workflow span."""
     print("  [workflow] LangGraph graph run (reference implementation)")
-    from langgraph.graph import StateGraph, START, END
+    from langgraph.graph import END, START, StateGraph
 
     builder = StateGraph(GraphState)
     builder.add_node("node_a", node_a)
@@ -252,10 +252,7 @@ async def run_workflow_reference():
         # https://github.com/Arize-ai/openinference/blob/main/python/instrumentation/openinference-instrumentation-langchain/src/openinference/instrumentation/langchain/_tracer.py#L194
         # Customize run name as documented in LangChain:
         # https://docs.langchain.com/langsmith/trace-with-langchain#customize-run-name
-        state = await graph.ainvoke(
-            {"messages": [input_text]},
-            config={"run_name": workflow_name}
-        )
+        state = await graph.ainvoke({"messages": [input_text]}, config={"run_name": workflow_name})
 
         final_output = state["messages"][-1]
         output_messages = json.dumps(

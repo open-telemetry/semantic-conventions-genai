@@ -9,10 +9,9 @@ import json
 import os
 
 import openai
-from agents import Agent, Runner, RunConfig, function_tool
+from agents import Agent, RunConfig, Runner, function_tool
 from agents.models.openai_chatcompletions import OpenAIChatCompletionsModel
 from agents.tool import FunctionTool, ToolContext
-
 from reference_shared import flush_and_shutdown, mock_server_host_port, reference_tracer, setup_otel
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"] + "/v1"
@@ -161,7 +160,7 @@ async def run_agent():
 
 async def run_workflow():
     """Run a simple agent run wrapped in a workflow span representing the SDK workflow tracing."""
-    from agents import Agent, Runner, RunConfig, handoff
+    from agents import Agent, Runner, handoff
     from agents.models.openai_chatcompletions import OpenAIChatCompletionsModel
 
     client = openai.AsyncOpenAI(base_url=MOCK_BASE_URL, api_key="mock-key")
