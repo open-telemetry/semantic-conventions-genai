@@ -160,8 +160,7 @@ async def run_agent():
 
 async def run_workflow():
     """Run a simple agent run wrapped in a workflow span representing the SDK workflow tracing."""
-    from agents import Agent, Runner, handoff
-    from agents.models.openai_chatcompletions import OpenAIChatCompletionsModel
+    from agents import handoff
 
     client = openai.AsyncOpenAI(base_url=MOCK_BASE_URL, api_key="mock-key")
     request_model = "gpt-4o-mini"

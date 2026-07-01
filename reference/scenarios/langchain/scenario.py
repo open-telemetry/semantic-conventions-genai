@@ -1,4 +1,4 @@
-"""Reference implementation for LangChain retrieval and Plan-and-Execute planning."""
+"""Reference implementation for LangChain retrieval, planning, tool execution, and workflow (LangGraph) runs."""
 
 import asyncio
 import json
@@ -246,7 +246,7 @@ async def run_workflow_reference():
             "gen_ai.input.messages", json.dumps([{"role": "user", "parts": [{"type": "text", "content": input_text}]}])
         )
 
-        # Note: Other spans (invoke_agent, execute_tool) are omitted for brevity in this scenario.
+        # Note: Other spans (invoke_agent) are omitted for brevity in this scenario.
         #
         # OpenInference uses the LangChain run_name as the span name:
         # https://github.com/Arize-ai/openinference/blob/main/python/instrumentation/openinference-instrumentation-langchain/src/openinference/instrumentation/langchain/_tracer.py#L194
