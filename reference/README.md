@@ -26,14 +26,14 @@ Run `uv run update-reports` to regenerate.
 | --- | --- |
 | [Create Agent](reports/create-agent-span.md) | autogen, azure-ai-foundry, openai-assistants |
 | [Invoke Agent Client](reports/invoke-agent-client-span.md) | aws-bedrock-agent, azure-ai-foundry, openai-assistants |
-| [Invoke Agent Internal](reports/invoke-agent-internal-span.md) | autogen, crewai, google-adk, openai-agents, pydantic-ai |
+| [Invoke Agent Internal](reports/invoke-agent-internal-span.md) | agent-framework, autogen, crewai, google-adk, openai-agents, pydantic-ai |
 | [Invoke Workflow](reports/invoke-workflow-span.md) | crewai, google-adk |
 | [Plan](reports/plan-span.md) | crewai, langchain |
-| [Inference](reports/inference-span.md) | anthropic, autogen, aws-bedrock, azure-ai-inference, azure-openai, claude-agent-sdk, cohere, crewai, dspy, google-adk, google-genai, groq, instructor, langchain, litellm, llamaindex, mistralai, openai, openai-agents, pydantic-ai, vertexai |
+| [Inference](reports/inference-span.md) | agent-framework, anthropic, autogen, aws-bedrock, azure-ai-inference, azure-openai, claude-agent-sdk, cohere, crewai, dspy, google-adk, google-genai, groq, instructor, langchain, litellm, llamaindex, mistralai, openai, openai-agents, pydantic-ai, vertexai |
 | [Embeddings](reports/embeddings-span.md) | aws-bedrock, azure-ai-inference, azure-openai, cohere, google-genai, litellm, llamaindex, mistralai, openai |
 | [Retrieval](reports/retrieval-span.md) | haystack, langchain, llamaindex |
 | [Memory](reports/memory-span.md) | aws-bedrock-agentcore, google-adk |
-| [Execute Tool](reports/execute-tool-span.md) | autogen, crewai, google-adk, groq, instructor, litellm, llamaindex, mistralai, openai, openai-agents, openai-assistants, pydantic-ai |
+| [Execute Tool](reports/execute-tool-span.md) | agent-framework, autogen, crewai, google-adk, groq, instructor, litellm, llamaindex, mistralai, openai, openai-agents, openai-assistants, pydantic-ai |
 
 ### Events
 

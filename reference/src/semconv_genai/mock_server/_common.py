@@ -31,7 +31,7 @@ def mock_tool_argument_value(name, schema):
 
 def mock_tool_arguments(tool):
     function = (tool or {}).get("function", {})
-    parameters = function.get("parameters") or (tool or {}).get("input_schema", {})
+    parameters = function.get("parameters") or (tool or {}).get("parameters") or (tool or {}).get("input_schema", {})
     properties = parameters.get("properties", {})
     required = parameters.get("required", [])
 
