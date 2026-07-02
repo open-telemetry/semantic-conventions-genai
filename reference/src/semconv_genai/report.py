@@ -75,6 +75,7 @@ SEMCONV_DOC_LINKS: dict[str, str] = {
     "inference": "../../docs/gen-ai/gen-ai-spans.md#inference",
     "embeddings": "../../docs/gen-ai/gen-ai-spans.md#embeddings",
     "retrieval": "../../docs/gen-ai/gen-ai-spans.md#retrievals",
+    "get_response": "../../docs/gen-ai/gen-ai-spans.md#get-response",
     "memory": "../../docs/gen-ai/gen-ai-spans.md#memory",
     "execute_tool": "../../docs/gen-ai/gen-ai-spans.md#execute-tool-span",
     "gen_ai.client.inference.operation.details": "../../docs/gen-ai/gen-ai-events.md#event-gen_aiclientinferenceoperationdetails",

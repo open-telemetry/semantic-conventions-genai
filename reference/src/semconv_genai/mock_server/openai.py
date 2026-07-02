@@ -9,6 +9,11 @@ from ._common import mock_tool_arguments, sse
 
 bp = Blueprint("openai", __name__)
 
+# Stored responses from `POST /v1/responses` with `store=True`, served back by
+# `GET /v1/responses/{id}` so scenarios can fetch a previously generated
+# response by its identifier.
+_STORED_RESPONSES = {}
+
 
 CHAT_REFUSAL_RESPONSE = {
     "id": "chatcmpl-mock-refusal-001",
@@ -109,6 +114,8 @@ RESPONSES_RESPONSE = {
     "id": "resp-mock-001",
     "object": "response",
     "created_at": 1700000000,
+    "status": "completed",
+    "service_tier": "default",
     "model": "gpt-4o-mini",
     "output": [
         {
@@ -404,4 +411,16 @@ def responses():
                 "created_by": "server",
             },
         )
+    if body.get("store"):
+        _STORED_RESPONSES[resp["id"]] = copy.deepcopy(resp)
     return resp
+
+
+@bp.route("/v1/responses/<response_id>", methods=["GET"])
+@bp.route("/openai/v1/responses/<response_id>", methods=["GET"])
+def get_response(response_id):
+    stored = _STORED_RESPONSES.get(response_id)
+    if stored is None:
+        stored = copy.deepcopy(RESPONSES_RESPONSE)
+        stored["id"] = response_id
+    return dict(stored)

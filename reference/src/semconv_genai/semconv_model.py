@@ -136,6 +136,12 @@ SPAN_SPECS: dict[str, AttributeSpec] = {
         op_names=frozenset({"retrieval"}),
         discriminator_attrs=frozenset({"gen_ai.data_source.id"}),
     ),
+    "get_response": _from_yaml(
+        _groups,
+        "span.gen_ai.get_response.client",
+        label="Get Response",
+        op_names=frozenset({"get_response"}),
+    ),
     "memory": _from_yaml(
         _groups,
         "span.gen_ai.memory.client",

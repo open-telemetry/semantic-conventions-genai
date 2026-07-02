@@ -600,6 +600,63 @@ def run_responses_with_prompt_template_reference(client):
         print(f"    -> {(output_text or '')[:60]}")
 
 
+def run_get_response_reference(client):
+    """Scenario: fetch a previously generated Responses API result by its id.
+
+    Emits the `gen_ai.get_response.client` span (OpenAI `openai.get_response.client`
+    refinement) around `client.responses.retrieve(...)`. This operation performs
+    no inference: a response is first created with `store=True`, then fetched by
+    id. Every span attribute is derived from the current retrieve-call boundary:
+
+    - `gen_ai.response.id`, `gen_ai.response.model` come from the fetched object.
+    - `gen_ai.response.finish_reasons` is derived from the fetched `status`.
+    - `gen_ai.usage.*` reflect the ORIGINAL generation, are opt-in here, and are
+      never reported to the token-usage metric.
+    - `openai.api.type` is `responses`; `openai.response.service_tier` comes from
+      the fetched object.
+    """
+    print("  [get_response] fetch a stored Responses API result by id (reference implementation)")
+    request_model = "gpt-4o-mini"
+
+    # Create a stored response first so there is a real id to fetch. This
+    # create call is a separate inference operation and not part of the
+    # get_response span below.
+    created = client.responses.create(
+        model=request_model,
+        input="Say hello.",
+        store=True,
+    )
+    response_id = created.id
+
+    host, port = mock_server_host_port(MOCK_BASE_URL)
+    span_attributes = {
+        "gen_ai.operation.name": "get_response",
+        "gen_ai.provider.name": "openai",
+        "gen_ai.response.id": response_id,
+        "openai.api.type": "responses",
+    }
+    if host:
+        span_attributes["server.address"] = host
+    if port is not None:
+        span_attributes["server.port"] = port
+    with _reference_tracer.start_as_current_span(f"get_response {response_id}", attributes=span_attributes) as span:
+        fetched = client.responses.retrieve(response_id)
+        span.set_attribute("gen_ai.response.id", fetched.id)
+        span.set_attribute("gen_ai.response.model", fetched.model)
+        finish_reason = "stop" if getattr(fetched, "status", None) == "completed" else "error"
+        span.set_attribute("gen_ai.response.finish_reasons", [finish_reason])
+        service_tier = getattr(fetched, "service_tier", None)
+        if service_tier is not None:
+            span.set_attribute("openai.response.service_tier", service_tier)
+        # Token counts describe the original generation, not this fetch. They
+        # are opt-in on the span and MUST NOT be reported to the token-usage
+        # metric.
+        if fetched.usage:
+            span.set_attribute("gen_ai.usage.input_tokens", fetched.usage.input_tokens)
+            span.set_attribute("gen_ai.usage.output_tokens", fetched.usage.output_tokens)
+        print(f"    -> fetched {fetched.id}")
+
+
 def main():
     print("=== Reference Implementation: OpenAI Reference Implementation ===")
 
@@ -615,6 +672,7 @@ def main():
     run_chat_tool_call_reference(client)
     run_chat_with_document_input_reference(client)
     run_responses_with_prompt_template_reference(client)
+    run_get_response_reference(client)
     run_embeddings_reference(client)
 
     flush_and_shutdown(tp, lp, mp)
