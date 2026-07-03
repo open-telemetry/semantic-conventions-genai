@@ -823,15 +823,19 @@ attributes:
         - id: llm_judge
           value: "llm_judge"
           brief: "Evaluation performed by a Large Language Model."
+          stability: development
         - id: deterministic
           value: "deterministic"
           brief: "Evaluation performed by a deterministic script or rule-based system."
+          stability: development
         - id: human
           value: "human"
           brief: "Evaluation performed by a human reviewer."
+          stability: development
         - id: custom
           value: "custom"
           brief: "Custom or unspecified evaluator type."
+          stability: development
     brief: The type of evaluator.
     stability: development
   - key: gen_ai.evaluation.reference_set.id
@@ -846,12 +850,15 @@ attributes:
         - id: single_output
           value: "single_output"
           brief: "The evaluation is scoped to a single output."
+          stability: development
         - id: full_run
           value: "full_run"
           brief: "The evaluation is scoped to a full agent run or workflow."
+          stability: development
         - id: human_interaction
           value: "human_interaction"
           brief: "The evaluation is scoped to a human interaction step."
+          stability: development
     brief: The unit the result is about.
     stability: development
   - key: gen_ai.prompt.name

@@ -12,7 +12,7 @@
 
 | Attribute | Supporting Libraries |
 | --- | --- |
-| gen_ai.evaluation.reference_set.id | (none) |
+| gen_ai.evaluation.reference_set.id | [deepeval] |
 | gen_ai.evaluation.score.label | [azure-ai-evaluation], [dspy] |
 | gen_ai.evaluation.score.value | [azure-ai-evaluation], [deepeval], [dspy] |
 
@@ -20,11 +20,11 @@
 
 | Attribute | Supporting Libraries |
 | --- | --- |
-| gen_ai.evaluation.evaluator.id | (none) |
-| gen_ai.evaluation.evaluator.type | (none) |
-| gen_ai.evaluation.evaluator.version | (none) |
+| gen_ai.evaluation.evaluator.id | [deepeval] |
+| gen_ai.evaluation.evaluator.type | [deepeval] |
+| gen_ai.evaluation.evaluator.version | [deepeval] |
 | gen_ai.evaluation.explanation | [azure-ai-evaluation], [deepeval] |
-| gen_ai.evaluation.scope | (none) |
+| gen_ai.evaluation.scope | [deepeval] |
 | gen_ai.response.id | (none) |
 
 [azure-ai-evaluation]: ../scenarios/azure-ai-evaluation/scenario.py

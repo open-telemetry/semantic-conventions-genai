@@ -298,10 +298,10 @@ If there is no low-cardinality workflow name available for a given framework, th
 
 | Value | Description | Stability |
 | --- | --- | --- |
-| `custom` | Custom or unspecified evaluator type. | Unknown stability. |
-| `deterministic` | Evaluation performed by a deterministic script or rule-based system. | Unknown stability. |
-| `human` | Evaluation performed by a human reviewer. | Unknown stability. |
-| `llm_judge` | Evaluation performed by a Large Language Model. | Unknown stability. |
+| `custom` | Custom or unspecified evaluator type. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `deterministic` | Evaluation performed by a deterministic script or rule-based system. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `human` | Evaluation performed by a human reviewer. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `llm_judge` | Evaluation performed by a Large Language Model. | ![Development](https://img.shields.io/badge/-development-blue) |
 
 ---
 
@@ -309,9 +309,9 @@ If there is no low-cardinality workflow name available for a given framework, th
 
 | Value | Description | Stability |
 | --- | --- | --- |
-| `full_run` | The evaluation is scoped to a full agent run or workflow. | Unknown stability. |
-| `human_interaction` | The evaluation is scoped to a human interaction step. | Unknown stability. |
-| `single_output` | The evaluation is scoped to a single output. | Unknown stability. |
+| `full_run` | The evaluation is scoped to a full agent run or workflow. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `human_interaction` | The evaluation is scoped to a human interaction step. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `single_output` | The evaluation is scoped to a single output. | ![Development](https://img.shields.io/badge/-development-blue) |
 
 ---
 
