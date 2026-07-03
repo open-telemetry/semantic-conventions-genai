@@ -123,7 +123,7 @@ def run_crew():
             span.set_attribute("gen_ai.request.presence_penalty", request_presence_penalty)
             span.set_attribute("gen_ai.request.top_p", request_top_p)
             span.set_attribute(
-                "gen_ai.system_instructions", json.dumps([{"parts": [{"type": "text", "content": system_prompt}]}])
+                "gen_ai.system_instructions", json.dumps([{"type": "text", "content": system_prompt}])
             )
             span.set_attribute(
                 "gen_ai.input.messages",
@@ -281,7 +281,7 @@ def run_agent():
         agent_span.set_attribute("gen_ai.request.presence_penalty", request_presence_penalty)
         agent_span.set_attribute("gen_ai.request.top_p", request_top_p)
         agent_span.set_attribute(
-            "gen_ai.system_instructions", json.dumps([{"parts": [{"type": "text", "content": system_prompt}]}])
+            "gen_ai.system_instructions", json.dumps([{"type": "text", "content": system_prompt}])
         )
         agent_span.set_attribute(
             "gen_ai.input.messages",
@@ -448,7 +448,7 @@ def _run_crew_planning_scenario(*, header, task_description):
                 if system_messages:
                     chat_span.set_attribute(
                         "gen_ai.system_instructions",
-                        json.dumps([{"parts": [{"type": "text", "content": m["content"]}]} for m in system_messages]),
+                        json.dumps([{"type": "text", "content": m["content"]} for m in system_messages]),
                     )
                 if user_messages:
                     chat_span.set_attribute(

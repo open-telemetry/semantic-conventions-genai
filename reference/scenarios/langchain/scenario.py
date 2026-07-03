@@ -134,7 +134,7 @@ def run_plan_and_execute_reference():
                 if system_messages:
                     chat_span.set_attribute(
                         "gen_ai.system_instructions",
-                        json.dumps([{"parts": [{"type": "text", "content": m["content"]}]} for m in system_messages]),
+                        json.dumps([{"type": "text", "content": m["content"]} for m in system_messages]),
                     )
                 if user_messages:
                     chat_span.set_attribute(
