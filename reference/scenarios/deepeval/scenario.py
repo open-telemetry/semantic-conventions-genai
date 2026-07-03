@@ -56,6 +56,11 @@ def run_evaluation():
             attributes = {
                 "gen_ai.evaluation.name": metric.name,
                 "gen_ai.evaluation.score.value": score,
+                "gen_ai.evaluation.evaluator.id": "deepeval-geval-o1-mini",
+                "gen_ai.evaluation.evaluator.type": "llm_judge",
+                "gen_ai.evaluation.evaluator.version": "1.0",
+                "gen_ai.evaluation.scope": "single_output",
+                "gen_ai.evaluation.reference_set.id": "example-golden-dataset",
             }
             if getattr(metric, "reason", None):
                 attributes["gen_ai.evaluation.explanation"] = metric.reason
