@@ -12,6 +12,7 @@ from reference_shared import (
 )
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"] + "/v1"
+INSTRUCTION_ROLES = {"system", "developer"}
 
 _reference_tracer = reference_tracer()
 
@@ -79,13 +80,17 @@ def run_chat_reference(client):
         {"role": "user", "content": "Say hello."},
     ]
     system_instructions = [
-        {"parts": [{"type": "text", "content": message["content"]}]}
+        {"type": "text", "content": message["content"]}
         for message in messages
-        if message["role"] in {"system", "developer"}
+        if message["role"] in INSTRUCTION_ROLES
     ]
     host, port = mock_server_host_port(MOCK_BASE_URL)
     input_messages = json.dumps(
-        [{"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]} for m in messages]
+        [
+            {"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]}
+            for m in messages
+            if m["role"] not in INSTRUCTION_ROLES
+        ]
     )
     span_attributes = {
         "gen_ai.operation.name": "chat",
@@ -155,6 +160,8 @@ def run_chat_reference(client):
             "gen_ai.input.messages": input_messages,
             "gen_ai.output.messages": json.dumps(output_messages),
         }
+        if system_instructions:
+            event_attrs["gen_ai.system_instructions"] = json.dumps(system_instructions)
         if resp.usage:
             event_attrs["gen_ai.usage.input_tokens"] = resp.usage.prompt_tokens
             event_attrs["gen_ai.usage.output_tokens"] = resp.usage.completion_tokens
