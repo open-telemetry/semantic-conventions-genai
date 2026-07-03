@@ -103,11 +103,6 @@ def run_chat():
                         {
                             "role": "assistant",
                             "parts": output_parts,
-                            **(
-                                {"finish_reason": result.response.finish_reason}
-                                if result.response.finish_reason is not None
-                                else {}
-                            ),
                         }
                     ]
                 ),
@@ -140,11 +135,6 @@ def run_chat():
                     {
                         "role": "assistant",
                         "parts": output_parts,
-                        **(
-                            {"finish_reason": result.response.finish_reason}
-                            if result.response.finish_reason is not None
-                            else {}
-                        ),
                     }
                 ]
             ),
@@ -330,11 +320,6 @@ def run_tool_call():
                         {
                             "role": "assistant",
                             "parts": output_parts,
-                            **(
-                                {"finish_reason": result.response.finish_reason}
-                                if result.response.finish_reason is not None
-                                else {}
-                            ),
                         }
                     ]
                 )

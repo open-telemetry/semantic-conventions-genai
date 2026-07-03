@@ -348,8 +348,10 @@ class OutputMessage(ChatMessage):
     specific response (choice, candidate).
     """
 
-    finish_reason: Union[FinishReason, str] = Field(
-        description="Reason for finishing the generation."
+    finish_reason: Optional[Union[FinishReason, str]] = Field(
+        default=None,
+        description="Deprecated. Use `gen_ai.response.finish_reasons` as the authoritative source for finish reasons.",
+        deprecated=True,
     )
 
 

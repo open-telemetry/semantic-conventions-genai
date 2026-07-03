@@ -61,7 +61,6 @@ def run_chat_reference(client):
                     {
                         "role": "assistant",
                         "parts": [{"type": "text", "content": c.message.content}],
-                        "finish_reason": str(c.finish_reason) if c.finish_reason else None,
                     }
                     for c in resp.choices
                 ]

@@ -60,7 +60,6 @@ def run_chat():
                     {
                         "role": "assistant",
                         "parts": [{"type": "text", "content": choice.message.content}],
-                        "finish_reason": choice.finish_reason,
                     }
                     for choice in resp.choices
                     if choice.message.content
@@ -86,7 +85,6 @@ def run_chat():
                     {
                         "role": "assistant",
                         "parts": [{"type": "text", "content": c.message.content}],
-                        "finish_reason": c.finish_reason,
                     }
                     for c in resp.choices
                     if c.message.content
@@ -151,7 +149,6 @@ def run_chat_streaming():
                     {
                         "role": "assistant",
                         "parts": [{"type": "text", "content": text}],
-                        **({"finish_reason": finish_reason} if finish_reason is not None else {}),
                     }
                 ]
             ),

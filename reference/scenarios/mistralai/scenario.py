@@ -78,7 +78,6 @@ def run_chat(client):
                     {
                         "role": "assistant",
                         "parts": [{"type": "text", "content": c.message.content}],
-                        "finish_reason": c.finish_reason,
                     }
                     for c in resp.choices
                 ]
@@ -239,7 +238,6 @@ def run_chat_streaming(client):
                         {
                             "role": "assistant",
                             "parts": [{"type": "text", "content": text}],
-                            **({"finish_reason": finish_reasons[-1]} if finish_reasons else {}),
                         }
                     ]
                 ),

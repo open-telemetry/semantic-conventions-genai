@@ -78,7 +78,6 @@ def run_converse_reference(client):
                     {
                         "role": "assistant",
                         "parts": [{"type": "text", "content": text}],
-                        **({"finish_reason": stop_reason} if stop_reason else {}),
                     }
                 ]
             ),
@@ -96,7 +95,6 @@ def run_converse_reference(client):
                     {
                         "role": "assistant",
                         "parts": [{"type": "text", "content": text}],
-                        "finish_reason": stop_reason,
                     }
                 ]
             ),
@@ -279,7 +277,6 @@ def run_converse_with_document_input_reference(client):
                     {
                         "role": "assistant",
                         "parts": [{"type": "text", "content": text}],
-                        **({"finish_reason": stop_reason} if stop_reason else {}),
                     }
                 ]
             ),
@@ -337,7 +334,6 @@ def run_converse_with_prompt_template_reference(client):
                     {
                         "role": "assistant",
                         "parts": [{"type": "text", "content": text}],
-                        **({"finish_reason": stop_reason} if stop_reason else {}),
                     }
                 ]
             ),
@@ -352,7 +348,6 @@ def run_converse_with_prompt_template_reference(client):
                     {
                         "role": "assistant",
                         "parts": [{"type": "text", "content": text}],
-                        "finish_reason": stop_reason,
                     }
                 ]
             ),

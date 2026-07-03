@@ -91,7 +91,6 @@ def response_output_messages(response):
         {
             "role": "assistant",
             "parts": parts,
-            "finish_reason": getattr(response, "stop_reason", None) or "stop",
         }
     ]
 
@@ -361,7 +360,6 @@ def run_chat_with_document_input():
                 {
                     "role": "assistant",
                     "parts": [{"type": "text", "content": block.text}],
-                    "finish_reason": resp.stop_reason,
                 }
                 for block in resp.content
                 if hasattr(block, "text")

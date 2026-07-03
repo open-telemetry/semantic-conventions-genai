@@ -117,8 +117,7 @@ sequenceDiagram
         "type": "text",
         "content": " Why did the developer bring OpenTelemetry to the party? Because it always knows how to trace the fun!"
       }
-    ],
-    "finish_reason": "stop"
+    ]
   }
 ]
 ```
@@ -198,8 +197,7 @@ Event:
         "type": "text",
         "content": " Why did the developer bring OpenTelemetry to the party? Because it always knows how to trace the fun!"
       }
-    ],
-    "finish_reason": "stop"
+    ]
   }
 ]
 ```
@@ -287,7 +285,6 @@ See the [normative JSON schema](/model/gen-ai/gen-ai-input-messages.json) for mo
 [
   {
     "role": "assistant",
-    "finish_reason": "stop",
     "parts": [
       // Model generated an inline image
       {
@@ -444,8 +441,7 @@ They are likely to be siblings if there is an encompassing span.
           "location": "Paris"
         }
       }
-    ],
-    "finish_reason": "tool_call"
+    ]
   }
 ]
 ```
@@ -561,8 +557,7 @@ If tool call is [instrumented according to execute-tool span definition](/docs/g
         "type": "text",
         "content": "The weather in Paris is currently rainy with a temperature of 57°F."
       }
-    ],
-    "finish_reason": "stop"
+    ]
   }
 ]
 ```
@@ -646,8 +641,7 @@ Span:
         "type": "text",
         "content": "I'm sorry, but I can't assist with that"
       }
-    ],
-    "finish_reason": "stop"
+    ]
   }
 ]
 ```
@@ -712,8 +706,7 @@ Span:
         "type": "text",
         "content": " Why did the developer bring OpenTelemetry to the party? Because it always knows how to trace the fun!"
       }
-    ],
-    "finish_reason": "stop"
+    ]
   }
 ]
 ```
@@ -831,8 +824,7 @@ sequenceDiagram
         "type": "text",
         "content": "The generated random number is **89**, and the result of squaring it is **7921**"
       }
-    ],
-    "finish_reason": "stop"
+    ]
   }
 ]
 ```
@@ -913,8 +905,7 @@ sequenceDiagram
         "type": "text",
         "content": " Why did the developer bring OpenTelemetry to the party? Because it always knows how to trace the fun!"
       }
-    ],
-    "finish_reason": "stop"
+    ]
   },
   {
     "role": "assistant",
@@ -923,8 +914,7 @@ sequenceDiagram
         "type": "text",
         "content": " Why did OpenTelemetry get promoted? It had great span of control!"
       }
-    ],
-    "finish_reason": "stop"
+    ]
   }
 ]
 ```

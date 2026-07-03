@@ -75,7 +75,6 @@ def run_chat():
                             {
                                 "role": "assistant",
                                 "parts": [{"type": "text", "content": choice.message.content}],
-                                "finish_reason": choice.finish_reason,
                             }
                             for choice in response.choices
                             if getattr(choice.message, "content", None)
@@ -122,7 +121,6 @@ def run_chat():
                         {
                             "role": "assistant",
                             "parts": [{"type": "text", "content": choice.message.content}],
-                            "finish_reason": choice.finish_reason,
                         }
                         for choice in response.choices
                         if getattr(choice.message, "content", None)
@@ -215,7 +213,6 @@ def run_tool_call():
                             {
                                 "role": "assistant",
                                 "parts": [{"type": "text", "content": choice.message.content}],
-                                "finish_reason": choice.finish_reason,
                             }
                             for choice in response.choices
                             if getattr(choice.message, "content", None)

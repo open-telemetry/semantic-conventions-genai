@@ -55,9 +55,9 @@ def responses_output_messages(response):
             if text:
                 parts.append({"type": "text", "content": text})
         if parts:
-            output_messages.append({"role": role or "assistant", "parts": parts, "finish_reason": "stop"})
+            output_messages.append({"role": role or "assistant", "parts": parts})
     if pending_parts:
-        output_messages.append({"role": "assistant", "parts": pending_parts, "finish_reason": "compaction"})
+        output_messages.append({"role": "assistant", "parts": pending_parts})
     return output_messages
 
 
@@ -129,7 +129,6 @@ def run_chat_reference(client):
             {
                 "role": c.message.role,
                 "parts": [{"type": "text", "content": c.message.content}],
-                "finish_reason": c.finish_reason,
             }
             for c in resp.choices
         ]
@@ -310,8 +309,6 @@ def run_chat_streaming_reference(client):
                 "role": "assistant",
                 "parts": [{"type": "text", "content": text}],
             }
-            if finish_reasons:
-                output_message["finish_reason"] = finish_reasons[-1]
             span.set_attribute("gen_ai.output.messages", json.dumps([output_message]))
         if input_tokens is not None:
             span.set_attribute("gen_ai.usage.input_tokens", input_tokens)
@@ -462,7 +459,6 @@ def run_chat_with_document_input_reference(client):
             {
                 "role": c.message.role,
                 "parts": [{"type": "text", "content": c.message.content}],
-                "finish_reason": c.finish_reason,
             }
             for c in resp.choices
         ]
@@ -559,7 +555,6 @@ def run_responses_with_prompt_template_reference(client):
                         {
                             "role": "assistant",
                             "parts": [{"type": "text", "content": output_text}],
-                            "finish_reason": "stop",
                         }
                     ]
                 ),
@@ -582,7 +577,7 @@ def run_responses_with_prompt_template_reference(client):
             event_attrs[f"gen_ai.prompt.variable.{var_name}"] = var_value
         if output_text:
             event_attrs["gen_ai.output.messages"] = json.dumps(
-                [{"role": "assistant", "parts": [{"type": "text", "content": output_text}], "finish_reason": "stop"}]
+                [{"role": "assistant", "parts": [{"type": "text", "content": output_text}]}]
             )
         if resp.usage:
             event_attrs["gen_ai.usage.input_tokens"] = resp.usage.input_tokens

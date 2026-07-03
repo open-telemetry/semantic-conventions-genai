@@ -192,6 +192,9 @@ attributes:
   - key: gen_ai.response.finish_reasons
     type: string[]
     brief: Array of reasons the model stopped generating tokens, corresponding to each generation received.
+    note: |
+      This is the authoritative attribute for finish reasons. Values correspond
+      to generations in the same order as the returned choices/candidates.
     examples:
       - [stop]
       - [stop, length]
@@ -759,6 +762,12 @@ attributes:
       (choice/candidate) and vice versa - one choice cannot be split across
       multiple messages or one message cannot contain parts from multiple choices.
 
+      This attribute SHOULD describe replayable output message content and
+      SHOULD NOT duplicate response envelope metadata, including finish
+      reasons, response identifiers, response model, token usage, cost, or
+      timing metadata. Finish reasons SHOULD be recorded in
+      `gen_ai.response.finish_reasons`.
+
       Instrumentations MAY provide a way for users to filter or truncate
       output messages.
 
@@ -777,8 +786,7 @@ attributes:
                 "type": "text",
                 "content": "The weather in Paris is currently rainy with a temperature of 57°F."
               }
-            ],
-            "finish_reason": "stop"
+            ]
           }
         ]
     stability: development

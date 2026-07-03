@@ -58,9 +58,6 @@ def run_chat_reference(llm, request_model, request_temperature, request_choice_c
                     {
                         "role": "assistant",
                         "parts": [{"type": "text", "content": str(resp)}],
-                        "finish_reason": raw.choices[0].finish_reason
-                        if raw and getattr(raw, "choices", None)
-                        else None,
                     }
                 ]
             ),
@@ -79,9 +76,6 @@ def run_chat_reference(llm, request_model, request_temperature, request_choice_c
                     {
                         "role": "assistant",
                         "parts": [{"type": "text", "content": str(resp)}],
-                        "finish_reason": raw.choices[0].finish_reason
-                        if raw and getattr(raw, "choices", None)
-                        else None,
                     }
                 ]
             ),

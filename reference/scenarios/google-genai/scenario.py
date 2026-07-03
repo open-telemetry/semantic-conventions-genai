@@ -64,7 +64,6 @@ def run_chat():
                     {
                         "role": "assistant",
                         "parts": [{"type": "text", "content": response.text}],
-                        "finish_reason": str(response.candidates[0].finish_reason) if response.candidates else None,
                     }
                 ]
             ),
