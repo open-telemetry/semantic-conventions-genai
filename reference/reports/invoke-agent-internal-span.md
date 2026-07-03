@@ -42,6 +42,7 @@
 | Attribute | Supporting Libraries |
 | --- | --- |
 | gen_ai.input.messages | [agent-framework], [autogen], [crewai], [google-adk], [openai-agents], [pydantic-ai] |
+| gen_ai.input.messages_delta | (none) |
 | gen_ai.output.messages | [agent-framework], [autogen], [crewai], [google-adk], [openai-agents], [pydantic-ai] |
 | gen_ai.system_instructions | [agent-framework], [autogen], [crewai], [google-adk], [openai-agents], [pydantic-ai] |
 | gen_ai.tool.definitions | [agent-framework], [autogen], [crewai], [google-adk], [openai-agents], [pydantic-ai] |

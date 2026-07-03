@@ -47,6 +47,7 @@
 | Attribute | Supporting Libraries |
 | --- | --- |
 | gen_ai.input.messages | [aws-bedrock-agent], [azure-ai-foundry], [openai-assistants] |
+| gen_ai.input.messages_delta | (none) |
 | gen_ai.output.messages | [aws-bedrock-agent], [azure-ai-foundry], [openai-assistants] |
 | gen_ai.system_instructions | [azure-ai-foundry], [openai-assistants] |
 | gen_ai.tool.definitions | [azure-ai-foundry], [openai-assistants] |

@@ -52,6 +52,7 @@
 | Attribute | Supporting Libraries |
 | --- | --- |
 | gen_ai.input.messages | [agent-framework], [anthropic], [autogen], [aws-bedrock], [claude-agent-sdk], [crewai], [dspy], [google-adk], [groq], [instructor], [langchain], [litellm], [llamaindex], [mistralai], [openai], [pydantic-ai] |
+| gen_ai.input.messages_delta | (none) |
 | gen_ai.output.messages | [agent-framework], [anthropic], [autogen], [aws-bedrock], [claude-agent-sdk], [crewai], [dspy], [google-adk], [instructor], [langchain], [litellm], [llamaindex], [mistralai], [openai], [pydantic-ai] |
 | gen_ai.prompt.variable | (none) |
 | gen_ai.system_instructions | [agent-framework], [autogen], [crewai], [google-adk], [langchain], [openai], [pydantic-ai] |
