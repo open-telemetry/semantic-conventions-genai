@@ -43,6 +43,9 @@ def run_evaluation():
                     "gen_ai.evaluation.name": evaluation_name,
                     "gen_ai.evaluation.score.label": score_label,
                     "gen_ai.evaluation.score.value": score,
+                    "gen_ai.evaluation.evaluator.id": f"azure-{evaluation_name.lower()}-{model_config.get('model', 'unknown')}",
+                    "gen_ai.evaluation.evaluator.type": "llm_judge",
+                    "gen_ai.evaluation.scope": "single_output",
                 },
             )
 
