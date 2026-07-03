@@ -747,6 +747,60 @@ attributes:
           }
         ]
     stability: development
+  - key: gen_ai.input.messages_delta
+    type: any
+    brief: >
+      New input messages appended since the previous GenAI model request in
+      the same conversation.
+    annotations:
+      type:
+        json_schema: model/gen-ai/gen-ai-input-messages.json
+    note: |
+      This attribute has the same schema as `gen_ai.input.messages`, but only
+      contains the new messages that were not already captured by earlier
+      telemetry in the same `gen_ai.conversation.id`.
+
+      Instrumentations SHOULD prefer `gen_ai.input.messages_delta` over
+      `gen_ai.input.messages` when the effective input context is append-only.
+      For the first request in a conversation, this attribute SHOULD contain the
+      full initial input if it is used.
+
+      Instrumentations SHOULD record `gen_ai.input.messages` instead when the
+      effective input context changes in a non-append-only way and cannot be
+      reconstructed from the previous input, output, and delta messages, for
+      example after context compaction, truncation, or user-visible edits to
+      conversation history.
+
+      When `gen_ai.output.messages` is also captured, consumers MAY reconstruct
+      the effective input messages for each request by ordering GenAI telemetry
+      with the same `gen_ai.conversation.id`, starting from the latest
+      `gen_ai.input.messages` checkpoint, and applying subsequent
+      `gen_ai.output.messages` and `gen_ai.input.messages_delta` values in
+      operation order.
+
+      Instrumentations MAY provide a way for users to filter or truncate input
+      message deltas.
+
+      > [!Warning]
+      > This attribute is likely to contain sensitive information including user/PII data.
+
+      See [Recording content on attributes](/docs/gen-ai/gen-ai-spans.md#recording-content-on-attributes)
+      section for more details.
+    examples:
+      - |
+        [
+          {
+            "role": "tool",
+            "parts": [
+              {
+                "type": "tool_call_response",
+                "id": "call_VSPygqKTWdrhaFErNvMV18Yl",
+                "response": "rainy, 57°F"
+              }
+            ]
+          }
+        ]
+    stability: development
   - key: gen_ai.output.messages
     type: any
     brief: Messages returned by the model where each message represents a specific model response (choice, candidate).
