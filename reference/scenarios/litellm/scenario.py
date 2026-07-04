@@ -136,12 +136,9 @@ def run_chat_streaming():
             stream=True,
         )
         text = ""
-        finish_reason = None
         for chunk in resp:
             if chunk.choices[0].delta.content:
                 text += chunk.choices[0].delta.content
-            if chunk.choices[0].finish_reason is not None:
-                finish_reason = chunk.choices[0].finish_reason
         span.set_attribute(
             "gen_ai.output.messages",
             json.dumps(
