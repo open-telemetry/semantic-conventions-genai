@@ -4,7 +4,7 @@ version = "0.0.0"
 requires-python = ">=3.12"
 dependencies = [
     "google-adk==2.2.0",
-    "google-genai==1.75.0",
+    "google-genai==2.10.0",
     "genai-reference-shared",
 ]
 
