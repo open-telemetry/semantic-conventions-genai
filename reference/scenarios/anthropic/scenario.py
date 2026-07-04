@@ -67,8 +67,28 @@ def input_messages(messages):
                     if compaction_content:
                         compaction_part["content"] = compaction_content
                     parts.append(compaction_part)
+                elif block_type == "tool_use":
+                    tool_use_id = block.get("id") if isinstance(block, dict) else getattr(block, "id", None)
+                    tool_name = block.get("name") if isinstance(block, dict) else getattr(block, "name", None)
+                    tool_input = block.get("input") if isinstance(block, dict) else getattr(block, "input", None)
+                    tool_call_part = {"type": "tool_call", "name": tool_name or "unknown"}
+                    if tool_use_id:
+                        tool_call_part["id"] = tool_use_id
+                    if tool_input is not None:
+                        tool_call_part["arguments"] = tool_input
+                    parts.append(tool_call_part)
+                elif block_type == "tool_result":
+                    tool_use_id = (
+                        block.get("tool_use_id") if isinstance(block, dict) else getattr(block, "tool_use_id", None)
+                    )
+                    tool_content = block.get("content") if isinstance(block, dict) else getattr(block, "content", None)
+                    tool_response_part = {"type": "tool_call_response", "response": tool_content}
+                    if tool_use_id:
+                        tool_response_part["id"] = tool_use_id
+                    parts.append(tool_response_part)
         if parts:
-            converted_messages.append({"role": role or "user", "parts": parts})
+            converted_role = "tool" if any(part["type"] == "tool_call_response" for part in parts) else role or "user"
+            converted_messages.append({"role": converted_role, "parts": parts})
     return converted_messages
 
 
@@ -85,6 +105,18 @@ def response_output_messages(response):
             if compaction_content:
                 compaction_part["content"] = compaction_content
             parts.append(compaction_part)
+        elif block_type == "tool_use":
+            tool_call_part = {
+                "type": "tool_call",
+                "name": getattr(block, "name", None) or "unknown",
+            }
+            tool_use_id = getattr(block, "id", None)
+            if tool_use_id:
+                tool_call_part["id"] = tool_use_id
+            tool_input = getattr(block, "input", None)
+            if tool_input is not None:
+                tool_call_part["arguments"] = tool_input
+            parts.append(tool_call_part)
     if not parts:
         return []
     return [
@@ -276,6 +308,163 @@ def run_compaction_reference():
         print(f"    -> compacted: {conversation_compacted}")
 
 
+def run_chat_multiturn_delta_reference():
+    """Scenario: multi-turn Anthropic Messages with delta input capture.
+
+    Anthropic Messages requests are stateless, so the second request includes
+    the full prior conversation. The telemetry records only the newly appended
+    tool result in `gen_ai.input.messages_delta`.
+    """
+    import anthropic
+
+    print("  [chat_multiturn_delta] multi-turn chat with messages_delta (reference implementation)")
+    request_model = "claude-sonnet-4-20250514"
+    request_max_tokens = 100
+    conversation_id = "conv_anthropic_weather_delta"
+    request_tool = {
+        "name": "get_weather",
+        "description": "Get the current weather",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "location": {"type": "string", "description": "City name"},
+            },
+            "required": ["location"],
+        },
+    }
+    client = anthropic.Anthropic(base_url=MOCK_BASE_URL, api_key="mock-key")
+    host, port = mock_server_host_port(MOCK_BASE_URL)
+    base_span_attributes = {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "anthropic",
+        "gen_ai.request.model": request_model,
+        "gen_ai.conversation.id": conversation_id,
+    }
+    if host:
+        base_span_attributes["server.address"] = host
+    if port is not None:
+        base_span_attributes["server.port"] = port
+
+    first_user_message = {"role": "user", "content": "What's the weather in Seattle?"}
+    first_input_delta = json.dumps(input_messages([first_user_message]))
+    with _reference_tracer.start_as_current_span(
+        "chat claude-sonnet-4-20250514", attributes=base_span_attributes
+    ) as span:
+        span.set_attribute("gen_ai.request.max_tokens", request_max_tokens)
+        span.set_attribute("gen_ai.tool.definitions", json.dumps([request_tool]))
+        span.set_attribute("gen_ai.input.messages_delta", first_input_delta)
+        first_resp = client.messages.create(
+            model=request_model,
+            max_tokens=request_max_tokens,
+            messages=[first_user_message],
+            tools=[request_tool],
+        )
+        span.set_attribute("gen_ai.response.model", first_resp.model)
+        span.set_attribute("gen_ai.response.id", first_resp.id)
+        span.set_attribute("gen_ai.response.finish_reasons", [first_resp.stop_reason])
+        if first_resp.usage:
+            span.set_attribute("gen_ai.usage.input_tokens", first_resp.usage.input_tokens)
+            span.set_attribute("gen_ai.usage.output_tokens", first_resp.usage.output_tokens)
+        first_output_messages = json.dumps(response_output_messages(first_resp))
+        span.set_attribute("gen_ai.output.messages", first_output_messages)
+
+        event_attrs = {
+            "gen_ai.operation.name": "chat",
+            "gen_ai.conversation.id": conversation_id,
+            "gen_ai.request.model": request_model,
+            "gen_ai.response.id": first_resp.id,
+            "gen_ai.response.model": first_resp.model,
+            "gen_ai.response.finish_reasons": [first_resp.stop_reason],
+            "gen_ai.input.messages_delta": first_input_delta,
+            "gen_ai.output.messages": first_output_messages,
+        }
+        if first_resp.usage:
+            event_attrs["gen_ai.usage.input_tokens"] = first_resp.usage.input_tokens
+            event_attrs["gen_ai.usage.output_tokens"] = first_resp.usage.output_tokens
+        if host:
+            event_attrs["server.address"] = host
+        if port is not None:
+            event_attrs["server.port"] = port
+        reference_event_logger().emit(
+            event_name="gen_ai.client.inference.operation.details",
+            body="Inference operation details",
+            attributes=event_attrs,
+        )
+
+    tool_use_block = next(block for block in first_resp.content if getattr(block, "type", None) == "tool_use")
+    tool_result = f"Sunny in {tool_use_block.input['location']}"
+    assistant_tool_use_message = {
+        "role": "assistant",
+        "content": [
+            {
+                "type": "tool_use",
+                "id": tool_use_block.id,
+                "name": tool_use_block.name,
+                "input": tool_use_block.input,
+            }
+        ],
+    }
+    tool_result_message = {
+        "role": "user",
+        "content": [
+            {
+                "type": "tool_result",
+                "tool_use_id": tool_use_block.id,
+                "content": tool_result,
+            }
+        ],
+    }
+    second_input_delta = json.dumps(input_messages([tool_result_message]))
+
+    # The provider request repeats the full Anthropic message history; the
+    # emitted telemetry only stores the newly appended tool result.
+    second_request_messages = [first_user_message, assistant_tool_use_message, tool_result_message]
+    with _reference_tracer.start_as_current_span(
+        "chat claude-sonnet-4-20250514", attributes=base_span_attributes
+    ) as span:
+        span.set_attribute("gen_ai.request.max_tokens", request_max_tokens)
+        span.set_attribute("gen_ai.input.messages_delta", second_input_delta)
+        second_resp = client.messages.create(
+            model=request_model,
+            max_tokens=request_max_tokens,
+            messages=second_request_messages,
+            tools=[request_tool],
+        )
+        span.set_attribute("gen_ai.response.model", second_resp.model)
+        span.set_attribute("gen_ai.response.id", second_resp.id)
+        span.set_attribute("gen_ai.response.finish_reasons", [second_resp.stop_reason])
+        if second_resp.usage:
+            span.set_attribute("gen_ai.usage.input_tokens", second_resp.usage.input_tokens)
+            span.set_attribute("gen_ai.usage.output_tokens", second_resp.usage.output_tokens)
+        second_output_messages = json.dumps(response_output_messages(second_resp))
+        span.set_attribute("gen_ai.output.messages", second_output_messages)
+
+        event_attrs = {
+            "gen_ai.operation.name": "chat",
+            "gen_ai.conversation.id": conversation_id,
+            "gen_ai.request.model": request_model,
+            "gen_ai.response.id": second_resp.id,
+            "gen_ai.response.model": second_resp.model,
+            "gen_ai.response.finish_reasons": [second_resp.stop_reason],
+            "gen_ai.input.messages_delta": second_input_delta,
+            "gen_ai.output.messages": second_output_messages,
+        }
+        if second_resp.usage:
+            event_attrs["gen_ai.usage.input_tokens"] = second_resp.usage.input_tokens
+            event_attrs["gen_ai.usage.output_tokens"] = second_resp.usage.output_tokens
+        if host:
+            event_attrs["server.address"] = host
+        if port is not None:
+            event_attrs["server.port"] = port
+        reference_event_logger().emit(
+            event_name="gen_ai.client.inference.operation.details",
+            body="Inference operation details",
+            attributes=event_attrs,
+        )
+
+        print(f"    -> {second_resp.content[0].text[:60]}")
+
+
 def run_chat_with_document_input():
     """Scenario: chat with a base64 document block (document modality).
 
@@ -378,6 +567,7 @@ def main():
 
     run_chat()
     run_compaction_reference()
+    run_chat_multiturn_delta_reference()
     run_chat_with_document_input()
 
     flush_and_shutdown(tp, lp, mp)

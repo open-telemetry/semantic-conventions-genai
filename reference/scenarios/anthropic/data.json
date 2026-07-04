@@ -2,7 +2,9 @@
   "spans": {
     "inference": [
       "gen_ai.conversation.compacted",
+      "gen_ai.conversation.id",
       "gen_ai.input.messages",
+      "gen_ai.input.messages_delta",
       "gen_ai.operation.name",
       "gen_ai.output.messages",
       "gen_ai.provider.name",
@@ -12,6 +14,7 @@
       "gen_ai.response.finish_reasons",
       "gen_ai.response.id",
       "gen_ai.response.model",
+      "gen_ai.tool.definitions",
       "gen_ai.usage.cache_creation.input_tokens",
       "gen_ai.usage.cache_read.input_tokens",
       "gen_ai.usage.input_tokens",
@@ -23,7 +26,9 @@
   "events": {
     "gen_ai.client.inference.operation.details": [
       "gen_ai.conversation.compacted",
+      "gen_ai.conversation.id",
       "gen_ai.input.messages",
+      "gen_ai.input.messages_delta",
       "gen_ai.operation.name",
       "gen_ai.output.messages",
       "gen_ai.request.model",

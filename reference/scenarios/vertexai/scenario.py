@@ -185,6 +185,136 @@ def run_chat_tool_call():
             print(f"    -> {response.text[:60]}")
 
 
+def run_chat_multiturn_delta():
+    """Scenario: multi-turn chat via Vertex AI with delta input capture.
+
+    The Vertex SDK chat session keeps client-side history and sends the
+    accumulated conversation on later turns. The telemetry records only the
+    newly appended user message in `gen_ai.input.messages_delta`.
+    """
+    from vertexai.generative_models import GenerativeModel
+
+    print("  [chat_multiturn_delta] multi-turn chat with messages_delta via Vertex AI (reference implementation)")
+    request_model = "gemini-2.0-flash"
+    conversation_id = "conv_vertexai_weather_delta"
+    first_prompt = "Say hello."
+    second_prompt = "Now summarize that greeting in three words."
+    span_attributes = {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "gcp.vertex_ai",
+        "gen_ai.request.model": request_model,
+        "gen_ai.conversation.id": conversation_id,
+    }
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", DeprecationWarning)
+        warnings.simplefilter("ignore", UserWarning)
+        model = GenerativeModel(request_model)
+        chat = model.start_chat()
+
+        first_input_delta = json.dumps([{"role": "user", "parts": [{"type": "text", "content": first_prompt}]}])
+        with _reference_tracer.start_as_current_span("chat gemini-2.0-flash", attributes=span_attributes) as span:
+            span.set_attribute("gen_ai.input.messages_delta", first_input_delta)
+            first_response = chat.send_message(first_prompt)
+            first_response_model = first_response.to_dict().get("modelVersion")
+            if first_response_model:
+                span.set_attribute("gen_ai.response.model", first_response_model)
+            if first_response.candidates and first_response.candidates[0].finish_reason:
+                first_finish_reason = str(first_response.candidates[0].finish_reason.name)
+                span.set_attribute("gen_ai.response.finish_reasons", [first_finish_reason])
+            else:
+                first_finish_reason = None
+            if hasattr(first_response, "usage_metadata") and first_response.usage_metadata:
+                if first_response.usage_metadata.prompt_token_count:
+                    span.set_attribute("gen_ai.usage.input_tokens", first_response.usage_metadata.prompt_token_count)
+                if first_response.usage_metadata.candidates_token_count:
+                    span.set_attribute(
+                        "gen_ai.usage.output_tokens", first_response.usage_metadata.candidates_token_count
+                    )
+            first_output_message = {
+                "role": "assistant",
+                "parts": [{"type": "text", "content": first_response.text}],
+            }
+            if first_finish_reason:
+                first_output_message["finish_reason"] = first_finish_reason
+            first_output_messages = json.dumps([first_output_message])
+            span.set_attribute("gen_ai.output.messages", first_output_messages)
+
+            event_attrs = {
+                "gen_ai.operation.name": "chat",
+                "gen_ai.conversation.id": conversation_id,
+                "gen_ai.request.model": request_model,
+                "gen_ai.input.messages_delta": first_input_delta,
+                "gen_ai.output.messages": first_output_messages,
+            }
+            if first_response_model:
+                event_attrs["gen_ai.response.model"] = first_response_model
+            if first_finish_reason:
+                event_attrs["gen_ai.response.finish_reasons"] = [first_finish_reason]
+            if hasattr(first_response, "usage_metadata") and first_response.usage_metadata:
+                if first_response.usage_metadata.prompt_token_count:
+                    event_attrs["gen_ai.usage.input_tokens"] = first_response.usage_metadata.prompt_token_count
+                if first_response.usage_metadata.candidates_token_count:
+                    event_attrs["gen_ai.usage.output_tokens"] = first_response.usage_metadata.candidates_token_count
+            reference_event_logger().emit(
+                event_name="gen_ai.client.inference.operation.details",
+                body="Inference operation details",
+                attributes=event_attrs,
+            )
+
+        second_input_delta = json.dumps([{"role": "user", "parts": [{"type": "text", "content": second_prompt}]}])
+        with _reference_tracer.start_as_current_span("chat gemini-2.0-flash", attributes=span_attributes) as span:
+            span.set_attribute("gen_ai.input.messages_delta", second_input_delta)
+            second_response = chat.send_message(second_prompt)
+            second_response_model = second_response.to_dict().get("modelVersion")
+            if second_response_model:
+                span.set_attribute("gen_ai.response.model", second_response_model)
+            if second_response.candidates and second_response.candidates[0].finish_reason:
+                second_finish_reason = str(second_response.candidates[0].finish_reason.name)
+                span.set_attribute("gen_ai.response.finish_reasons", [second_finish_reason])
+            else:
+                second_finish_reason = None
+            if hasattr(second_response, "usage_metadata") and second_response.usage_metadata:
+                if second_response.usage_metadata.prompt_token_count:
+                    span.set_attribute("gen_ai.usage.input_tokens", second_response.usage_metadata.prompt_token_count)
+                if second_response.usage_metadata.candidates_token_count:
+                    span.set_attribute(
+                        "gen_ai.usage.output_tokens", second_response.usage_metadata.candidates_token_count
+                    )
+            second_output_message = {
+                "role": "assistant",
+                "parts": [{"type": "text", "content": second_response.text}],
+            }
+            if second_finish_reason:
+                second_output_message["finish_reason"] = second_finish_reason
+            second_output_messages = json.dumps([second_output_message])
+            span.set_attribute("gen_ai.output.messages", second_output_messages)
+
+            event_attrs = {
+                "gen_ai.operation.name": "chat",
+                "gen_ai.conversation.id": conversation_id,
+                "gen_ai.request.model": request_model,
+                "gen_ai.input.messages_delta": second_input_delta,
+                "gen_ai.output.messages": second_output_messages,
+            }
+            if second_response_model:
+                event_attrs["gen_ai.response.model"] = second_response_model
+            if second_finish_reason:
+                event_attrs["gen_ai.response.finish_reasons"] = [second_finish_reason]
+            if hasattr(second_response, "usage_metadata") and second_response.usage_metadata:
+                if second_response.usage_metadata.prompt_token_count:
+                    event_attrs["gen_ai.usage.input_tokens"] = second_response.usage_metadata.prompt_token_count
+                if second_response.usage_metadata.candidates_token_count:
+                    event_attrs["gen_ai.usage.output_tokens"] = second_response.usage_metadata.candidates_token_count
+            reference_event_logger().emit(
+                event_name="gen_ai.client.inference.operation.details",
+                body="Inference operation details",
+                attributes=event_attrs,
+            )
+
+            print(f"    -> {second_response.text[:60]}")
+
+
 def run_chat_streaming():
     """Scenario: streaming chat completion with reference implementation."""
     from vertexai.generative_models import GenerativeModel
@@ -229,6 +359,7 @@ def main():
 
     run_chat()
     run_chat_tool_call()
+    run_chat_multiturn_delta()
     run_chat_streaming()
 
     flush_and_shutdown(tp, lp, mp)
