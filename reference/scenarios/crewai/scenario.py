@@ -122,9 +122,7 @@ def run_crew():
             span.set_attribute("gen_ai.request.frequency_penalty", request_frequency_penalty)
             span.set_attribute("gen_ai.request.presence_penalty", request_presence_penalty)
             span.set_attribute("gen_ai.request.top_p", request_top_p)
-            span.set_attribute(
-                "gen_ai.system_instructions", json.dumps([{"type": "text", "content": system_prompt}])
-            )
+            span.set_attribute("gen_ai.system_instructions", json.dumps([{"type": "text", "content": system_prompt}]))
             span.set_attribute(
                 "gen_ai.input.messages",
                 json.dumps([{"role": "user", "parts": [{"type": "text", "content": task.description}]}]),
@@ -280,9 +278,7 @@ def run_agent():
         agent_span.set_attribute("gen_ai.request.frequency_penalty", request_frequency_penalty)
         agent_span.set_attribute("gen_ai.request.presence_penalty", request_presence_penalty)
         agent_span.set_attribute("gen_ai.request.top_p", request_top_p)
-        agent_span.set_attribute(
-            "gen_ai.system_instructions", json.dumps([{"type": "text", "content": system_prompt}])
-        )
+        agent_span.set_attribute("gen_ai.system_instructions", json.dumps([{"type": "text", "content": system_prompt}]))
         agent_span.set_attribute(
             "gen_ai.input.messages",
             json.dumps([{"role": "user", "parts": [{"type": "text", "content": task_description}]}]),

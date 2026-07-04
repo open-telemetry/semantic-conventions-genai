@@ -80,9 +80,7 @@ def run_chat_reference(client):
         {"role": "user", "content": "Say hello."},
     ]
     system_instructions = [
-        {"type": "text", "content": message["content"]}
-        for message in messages
-        if message["role"] in INSTRUCTION_ROLES
+        {"type": "text", "content": message["content"]} for message in messages if message["role"] in INSTRUCTION_ROLES
     ]
     host, port = mock_server_host_port(MOCK_BASE_URL)
     input_messages = json.dumps(
