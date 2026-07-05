@@ -3,7 +3,7 @@ name = "pydantic-ai-reference-test"
 version = "0.0.0"
 requires-python = ">=3.12"
 dependencies = [
-    "pydantic-ai-slim[openai]==2.0.0",
+    "pydantic-ai-slim[openai]==2.5.0",
     "genai-reference-shared",
 ]
 
@@ -12,8 +12,3 @@ genai-reference-shared = { path = "../../shared", editable = true }
 
 [tool.uv]
 package = false
-override-dependencies = [
-    "opentelemetry-api==1.39.1",
-    "opentelemetry-sdk==1.39.1",
-    "opentelemetry-exporter-otlp-proto-grpc==1.39.1",
-]
