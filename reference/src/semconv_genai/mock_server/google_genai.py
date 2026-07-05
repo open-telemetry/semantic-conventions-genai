@@ -89,8 +89,16 @@ def _tool_response(body):
         declaration = function_declarations[0]
         if declaration.get("name"):
             resp["candidates"][0]["content"]["parts"][0]["functionCall"]["name"] = declaration["name"]
+        # Newer google-genai/ADK send the schema as JSON Schema under
+        # `parameters_json_schema` (a.k.a. `parametersJsonSchema`) instead of `parameters`.
+        parameters = (
+            declaration.get("parameters")
+            or declaration.get("parameters_json_schema")
+            or declaration.get("parametersJsonSchema")
+            or {}
+        )
         resp["candidates"][0]["content"]["parts"][0]["functionCall"]["args"] = mock_tool_arguments(
-            {"function": {"parameters": declaration.get("parameters") or {}}}
+            {"function": {"parameters": parameters}}
         )
     return resp
 

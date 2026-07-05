@@ -3,8 +3,8 @@ name = "instructor-reference-test"
 version = "0.0.0"
 requires-python = ">=3.12"
 dependencies = [
-    "instructor==1.15.1",
-    "openai==2.41.0",
+    "instructor==1.15.4",
+    "openai==2.44.0",
     "pydantic==2.13.4",
     "genai-reference-shared",
 ]
