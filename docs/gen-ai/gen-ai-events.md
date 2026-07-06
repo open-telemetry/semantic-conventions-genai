@@ -338,18 +338,16 @@ This event captures the result of evaluating GenAI output for quality, accuracy,
 | Key | Stability | [Requirement Level](https://opentelemetry.io/docs/specs/semconv/general/attribute-requirement-level/) | Value Type | Description | Example Values |
 | --- | --- | --- | --- | --- | --- |
 | [`gen_ai.evaluation.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Required` | string | The name of the evaluation metric used for the GenAI response. | `Relevance`; `IntentResolution` |
-| [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.42.0/docs/registry/attributes/error.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If the operation ended in an error. | string | Describes a class of error the operation ended with. [1] | `timeout`; `java.net.UnknownHostException`; `server_certificate_invalid`; `500` |
+| [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/error.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If the operation ended in an error. | string | Describes a class of error the operation ended with. [1] | `timeout`; `java.net.UnknownHostException`; `server_certificate_invalid`; `500` |
 | [`gen_ai.evaluation.reference_set.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When a reference set was used. | string | Identifier of the golden/reference set against which the score was produced. [2] | `dataset-123`; `golden-set-v1` |
 | [`gen_ai.evaluation.score.label`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If applicable. | string | Human readable label for evaluation. [3] | `relevant`; `not_relevant`; `correct`; `incorrect`; `pass`; `fail` |
-| [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/error.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If the operation ended in an error. | string | Describes a class of error the operation ended with. [1] | `timeout`; `java.net.UnknownHostException`; `server_certificate_invalid`; `500` |
-| [`gen_ai.evaluation.score.label`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If applicable. | string | Human readable label for evaluation. [2] | `relevant`; `not_relevant`; `correct`; `incorrect`; `pass`; `fail` |
 | [`gen_ai.evaluation.score.value`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If applicable. | double | The evaluation score returned by the evaluator. | `4.0` |
-| [`gen_ai.evaluation.evaluator.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | Stable identifier for the evaluator definition, not the invocation. Results with different evaluator ids must not be treated as comparable. | `judge-v1`; `accuracy-model-abc` |
-| [`gen_ai.evaluation.evaluator.type`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The type of evaluator. | `llm_judge`; `deterministic`; `human` |
-| [`gen_ai.evaluation.evaluator.version`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | Version of the evaluator definition. | `1.0`; `v2.5.1` |
+| [`gen_ai.evaluation.evaluator.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | Stable identifier for the evaluator definition, not the invocation. Results with different evaluator ids must not be treated as comparable. [4] | `judge-v1`; `accuracy-model-abc` |
+| [`gen_ai.evaluation.evaluator.type`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The type of evaluator. [5] | `llm_judge`; `deterministic`; `human` |
+| [`gen_ai.evaluation.evaluator.version`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | Version of the evaluator definition. [6] | `1.0`; `v2.5.1` |
 | [`gen_ai.evaluation.explanation`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | A free-form explanation for the assigned score provided by the evaluator. | `The response is factually accurate but lacks sufficient detail to fully address the question.` |
-| [`gen_ai.evaluation.scope`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The unit the result is about. | `single_output`; `full_run`; `human_interaction` |
-| [`gen_ai.response.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` When available. | string | The unique identifier for the completion. [4] | `chatcmpl-123` |
+| [`gen_ai.evaluation.scope`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The unit the result is about. [7] | `single_output`; `full_run`; `human_interaction` |
+| [`gen_ai.response.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` When available. | string | The unique identifier for the completion. [8] | `chatcmpl-123` |
 
 **[1] `error.type`:** The `error.type` SHOULD match the error code returned by the Generative AI provider or the client library,
 the canonical name of exception that occurred, or another low-cardinality error identifier.
@@ -359,7 +357,15 @@ Instrumentations SHOULD document the list of errors they report.
 
 **[3] `gen_ai.evaluation.score.label`:** This attribute provides a human-readable interpretation of the evaluation score produced by an evaluator. For example, a score value of 1 could mean "relevant" in one evaluation system and "not relevant" in another, depending on the scoring range and evaluator. The label SHOULD have low cardinality. Possible values depend on the evaluation metric and evaluator used; implementations SHOULD document the possible values.
 
-**[4] `gen_ai.response.id`:** The unique identifier assigned to the specific
+**[4] `gen_ai.evaluation.evaluator.id`:** The evaluator id should be a stable identifier for the evaluator definition. To maintain valid comparability, results SHOULD be grouped by `(evaluator.id, evaluator.version)` to prevent invalid aggregations when querying the data.
+
+**[5] `gen_ai.evaluation.evaluator.type`:** `gen_ai.evaluation.evaluator.type` describes who or what produced the score (e.g., a human or an LLM). This is independent of `gen_ai.evaluation.scope`, which describes the unit of the evaluation.
+
+**[6] `gen_ai.evaluation.evaluator.version`:** The version MUST change when any score-affecting part of the definition changes (e.g., for an `llm_judge`: the model, rubric, or scoring config). To maintain valid comparability, results SHOULD be grouped by `(evaluator.id, evaluator.version)`.
+
+**[7] `gen_ai.evaluation.scope`:** `gen_ai.evaluation.scope` describes the unit of the evaluation (e.g., a single output or a human interaction). This is independent of `gen_ai.evaluation.evaluator.type`, which describes who or what produced the score (e.g., a human or an LLM).
+
+**[8] `gen_ai.response.id`:** The unique identifier assigned to the specific
 completion being evaluated. This attribute helps correlate the evaluation
 event with the corresponding operation when span id is not available.
 

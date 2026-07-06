@@ -810,11 +810,15 @@ attributes:
   - key: gen_ai.evaluation.evaluator.id
     type: string
     brief: Stable identifier for the evaluator definition, not the invocation. Results with different evaluator ids must not be treated as comparable.
+    note: >
+      The evaluator id should be a stable identifier for the evaluator definition. To maintain valid comparability, results SHOULD be grouped by `(evaluator.id, evaluator.version)` to prevent invalid aggregations when querying the data.
     examples: ["judge-v1", "accuracy-model-abc"]
     stability: development
   - key: gen_ai.evaluation.evaluator.version
     type: string
     brief: Version of the evaluator definition.
+    note: >
+      The version MUST change when any score-affecting part of the definition changes (e.g., for an `llm_judge`: the model, rubric, or scoring config). To maintain valid comparability, results SHOULD be grouped by `(evaluator.id, evaluator.version)`.
     examples: ["1.0", "v2.5.1"]
     stability: development
   - key: gen_ai.evaluation.evaluator.type
@@ -837,6 +841,8 @@ attributes:
           brief: "Custom or unspecified evaluator type."
           stability: development
     brief: The type of evaluator.
+    note: >
+      `gen_ai.evaluation.evaluator.type` describes who or what produced the score (e.g., a human or an LLM). This is independent of `gen_ai.evaluation.scope`, which describes the unit of the evaluation.
     stability: development
   - key: gen_ai.evaluation.reference_set.id
     type: string
@@ -860,6 +866,8 @@ attributes:
           brief: "The evaluation is scoped to a human interaction step."
           stability: development
     brief: The unit the result is about.
+    note: >
+      `gen_ai.evaluation.scope` describes the unit of the evaluation (e.g., a single output or a human interaction). This is independent of `gen_ai.evaluation.evaluator.type`, which describes who or what produced the score (e.g., a human or an LLM).
     stability: development
   - key: gen_ai.prompt.name
     type: string
