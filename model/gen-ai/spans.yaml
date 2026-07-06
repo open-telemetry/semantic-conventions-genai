@@ -350,10 +350,7 @@ spans:
     note: |
       The `gen_ai.operation.name` SHOULD be `get_response`.
 
-      This operation does not perform inference: it returns a response that was produced by an
-      earlier operation, so no tokens are consumed by the fetch itself. Any token counts present
-      on the fetched response describe that original generation and MUST NOT be reported to the
-      `gen_ai.client.token.usage` metric.
+      Instrumentations MUST NOT report token usage or metrics for this operation
 
       **Span name** SHOULD be `{gen_ai.operation.name} {gen_ai.response.id}`. Semantic conventions
       for individual GenAI providers MAY specify a different span name format.
