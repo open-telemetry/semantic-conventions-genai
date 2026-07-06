@@ -3,7 +3,7 @@ name = "crewai-reference-test"
 version = "0.0.0"
 requires-python = ">=3.12"
 dependencies = [
-    "crewai==1.14.6",
+    "crewai==1.15.1",
     "genai-reference-shared",
 ]
 
@@ -13,7 +13,7 @@ genai-reference-shared = { path = "../../shared", editable = true }
 [tool.uv]
 package = false
 override-dependencies = [
-    "opentelemetry-api==1.34.1",
-    "opentelemetry-sdk==1.34.1",
-    "opentelemetry-exporter-otlp-proto-grpc==1.34.1",
+    "opentelemetry-api==1.43.0",
+    "opentelemetry-sdk==1.43.0",
+    "opentelemetry-exporter-otlp-proto-http==1.43.0",
 ]

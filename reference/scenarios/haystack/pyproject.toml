@@ -3,7 +3,7 @@ name = "haystack-reference-test"
 version = "0.0.0"
 requires-python = ">=3.12"
 dependencies = [
-    "haystack-ai==2.30.0",
+    "haystack-ai==2.30.2",
     "genai-reference-shared",
 ]
 
