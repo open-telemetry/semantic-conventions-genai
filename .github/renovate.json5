@@ -3,7 +3,7 @@
   "extends": [
     "config:recommended",
     "helpers:pinGitHubActionDigestsToSemver",
-    "github>grafana/flint#v0.22.5",
+    "github>grafana/flint#v0.22.6",
   ],
   // Security updates are owned by Dependabot. See .github/DEPENDENCIES.md.
   "vulnerabilityAlerts": {
@@ -22,9 +22,28 @@
         "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+) versioning=(?<versioning>\\S+)\\s+SEMCONV_VERSION=(?<currentValue>\\S+)",
         "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+) versioning=(?<versioning>\\S+)\\s+POLICY_REPO_URL=(?<packageName>\\S+)\\s+POLICY_REPO_REF=(?<currentValue>\\S+)"
       ]
+    },
+    {
+      // update otel in override-dependencies 
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^reference/scenarios/.*/pyproject\\.toml$/"
+      ],
+      "datasourceTemplate": "pypi",
+      "versioningTemplate": "pep440",
+      "matchStrings": [
+        "\"(?<depName>opentelemetry-[a-z0-9-]+)==(?<currentValue>[^\"]+)\""
+      ]
     }
   ],
   "packageRules": [
+    {
+      "description": "Allow opentelemetry-semantic-conventions pre-releases",
+      "matchDepNames": [
+        "opentelemetry-semantic-conventions"
+      ],
+      "ignoreUnstable": false
+    },
     {
       "description": "Non-major reference implementation updates",
       "matchFileNames": [
