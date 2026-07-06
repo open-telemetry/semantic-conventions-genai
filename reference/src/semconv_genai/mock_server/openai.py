@@ -400,6 +400,8 @@ def responses():
     resp = dict(RESPONSES_RESPONSE)
     resp["model"] = body.get("model", resp["model"])
     resp["output"] = copy.deepcopy(resp["output"])
+    if body.get("instructions") is not None:
+        resp["instructions"] = body["instructions"]
     context_management = body.get("context_management") or []
     if any(item.get("type") == "compaction" for item in context_management if isinstance(item, dict)):
         resp["output"][0]["content"][0]["text"] = "Great question. Here is Jevons Paradox in simple terms."
@@ -418,7 +420,21 @@ def responses():
 
 @bp.route("/v1/responses/<response_id>", methods=["GET"])
 @bp.route("/openai/v1/responses/<response_id>", methods=["GET"])
-def get_response(response_id):
+def retrieve_response(response_id):
+    # A `failed`-prefixed id lets scenarios fetch a response whose original
+    # generation failed, so the fetch_response instrumentation can be exercised
+    # against a non-completed status.
+    if response_id.startswith("resp-failed"):
+        failed = copy.deepcopy(RESPONSES_RESPONSE)
+        failed["id"] = response_id
+        failed["status"] = "failed"
+        failed["output"] = []
+        failed["usage"] = None
+        failed["error"] = {
+            "code": "server_error",
+            "message": "The model failed to generate a response.",
+        }
+        return dict(failed)
     stored = _STORED_RESPONSES.get(response_id)
     if stored is None:
         stored = copy.deepcopy(RESPONSES_RESPONSE)

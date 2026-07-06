@@ -450,8 +450,8 @@ attributes:
           value: "retrieval"
           brief: 'Retrieval operation such as [OpenAI Search Vector Store API](https://platform.openai.com/docs/api-reference/vector-stores/search)'
           stability: development
-        - id: get_response
-          value: "get_response"
+        - id: fetch_response
+          value: "fetch_response"
           brief: 'Fetch a previously generated model response by its identifier, without performing inference, such as [OpenAI Get a model response](https://platform.openai.com/docs/api-reference/responses/get)'
           stability: development
         - id: create_agent
