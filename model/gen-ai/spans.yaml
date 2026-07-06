@@ -355,10 +355,6 @@ spans:
       **Span name** SHOULD be `{gen_ai.operation.name} {gen_ai.response.id}`. Semantic conventions
       for individual GenAI providers MAY specify a different span name format.
 
-      **Span kind** SHOULD be `CLIENT` and MAY be set to `INTERNAL` on spans representing
-      calls to a provider running in the same process. It's RECOMMENDED to use `CLIENT` kind
-      when the provider being instrumented usually runs in a different process than its client
-      or when the call happens over an instrumented protocol such as HTTP.
     stability: development
     attributes:
       - ref_group: attributes.gen_ai.address_and_port
