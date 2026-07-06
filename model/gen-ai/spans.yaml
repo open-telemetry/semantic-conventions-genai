@@ -345,7 +345,7 @@ spans:
         **Span name** SHOULD be `{gen_ai.operation.name} {gen_ai.response.id}`. Semantic conventions
         for individual GenAI providers MAY specify a different span name format.
     brief: >
-      Describes a GenAI get response span. A request to a Generative AI provider that fetches a
+      Describes a request to a Generative AI provider that fetches a
       previously generated model response by its identifier.
     note: |
       The `gen_ai.operation.name` SHOULD be `get_response`.
