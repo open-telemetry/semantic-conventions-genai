@@ -1039,3 +1039,47 @@ attributes:
       what `gen_ai.workflow.name` means in the context of that framework.
     examples: ["multi_agent_rag", "customer_support_pipeline"]
     stability: development
+  - key: gen_ai.attribution.link_type
+    type:
+      members:
+        - id: caused_by_generation
+          stability: development
+          value: "CAUSED_BY_GENERATION"
+          brief: >
+            The linked span is the LLM generation (chat span) whose completion
+            contained the tool-call invocation that triggered this span.
+            Used on `execute_tool` spans to record which generation caused the
+            tool call. Addresses the open question in
+            [open-telemetry/semantic-conventions-genai#311](https://github.com/open-telemetry/semantic-conventions-genai/issues/311).
+        - id: retry_of
+          stability: development
+          value: "RETRY_OF"
+          brief: >
+            The linked span is the previous attempt of the same operation
+            that was retried. Used to chain retry attempts so the full retry
+            history is reconstructable from the trace without relying on
+            span attributes alone.
+        - id: informed_by
+          stability: development
+          value: "INFORMED_BY"
+          brief: >
+            The linked span is a tool-call result that informed a subsequent
+            LLM generation. Records the provenance of retrieved context or
+            tool output that influenced a chat span.
+    brief: >
+      Semantic type of an OTel span link that records attribution or provenance
+      relationships between GenAI pipeline spans.
+    note: |
+      This attribute SHOULD be recorded on span links, not on the span itself.
+      It classifies the relationship between the span that carries the link and
+      the linked span.
+
+      Instrumentations that support structured tool calls (i.e., the LLM returns
+      tool invocations with stable `tool_call_id` values) SHOULD use
+      `CAUSED_BY_GENERATION` links on `execute_tool` spans to enable backends to
+      reconstruct which generation triggered each tool invocation without
+      relying on parent-child hierarchy alone.
+
+      See [Attribution via span links](./gen-ai-agent-spans.md#attribution-via-span-links)
+      for guidance and examples.
+    stability: development
