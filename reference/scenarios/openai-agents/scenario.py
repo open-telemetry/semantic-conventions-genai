@@ -27,13 +27,15 @@ async def run_agent():
         """Get the current weather for a location."""
         tool_span_attributes = {
             "gen_ai.operation.name": "execute_tool",
+            "gen_ai.tool.name": "get_weather",
+            "gen_ai.tool.type": "function",
         }
         with _reference_tracer.start_as_current_span(
             "execute_tool get_weather", attributes=tool_span_attributes
         ) as tool_span:
-            tool_span.set_attribute("gen_ai.tool.name", "get_weather")
             tool_span.set_attribute("gen_ai.tool.description", get_weather.description)
-            tool_span.set_attribute("gen_ai.tool.type", "function")
+            if ctx.agent is not None and ctx.agent.name:
+                tool_span.set_attribute("gen_ai.agent.name", ctx.agent.name)
             tool_span.set_attribute("gen_ai.tool.call.id", ctx.tool_call_id)
             tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps({"location": location}))
             result = "Sunny, 72°F"
@@ -58,14 +60,9 @@ async def run_agent():
     print("  [agent_run] agent with tool calling (reference implementation)")
     agent_span_attributes = {
         "gen_ai.operation.name": "invoke_agent",
-        "gen_ai.provider.name": "openai",
         "gen_ai.request.model": request_model,
         "gen_ai.agent.name": agent.name,
     }
-    if host:
-        agent_span_attributes["server.address"] = host
-    if port is not None:
-        agent_span_attributes["server.port"] = port
     with _reference_tracer.start_as_current_span(
         "invoke_agent test-agent", attributes=agent_span_attributes
     ) as agent_span:

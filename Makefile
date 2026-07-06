@@ -57,7 +57,7 @@ SC_UPSTREAM_MIGRATED_DIRS := gen-ai mcp openai
 # same group id.
 SC_UPSTREAM_MIGRATED_GROUPS := aws/registry.yaml:registry.aws.bedrock
 
-.PHONY: check-policies schema-snapshot generate-registry generate-docs generate-json-schemas generate-all clean filter-upstream package-dev \
+.PHONY: check-policies generate-registry generate-docs generate-json-schemas generate-all clean filter-upstream package-dev \
 	generate-reference-reports
 
 # Pinned upstream GitHub URL base, passed to templates as `upstream_docs_base`
@@ -115,7 +115,8 @@ check-policies: $(LOCAL_POLICY_STAMP) $(SC_UPSTREAM_STAMP)
 	$(WEAVER) registry check \
 		-r ./model \
 		--v2 \
-		--policy $(LOCAL_POLICIES)/policies/check
+		--policy $(LOCAL_POLICIES)/policies/check \
+		--policy policies/check/json-schema-annotations
 		# --baseline-registry '$(BASELINE_REGISTRY)' \ uncomment after removing deprecated entries
 
 # Generate the attribute registry pages under docs/registry/ from local
@@ -141,12 +142,10 @@ generate-docs: $(SC_UPSTREAM_STAMP)
 		--param upstream_docs_base=$(UPSTREAM_DOCS_BASE) \
 		docs
 
-# Regenerate the JSON schemas under docs/gen-ai/ from the pydantic models in
-# docs/gen-ai/non-normative/models.py. Dependencies are pinned in the sibling
-# pyproject.toml and locked in uv.lock, so `uv run` reproduces the exact
-# environment (and renovate keeps both up to date, like the reference projects).
+# Regenerate the JSON schemas under model/gen-ai/ from the pydantic models in
+# docs/gen-ai/non-normative/models.py.
 generate-json-schemas:
-	cd docs/gen-ai/non-normative && uv run models.py
+	cd docs/gen-ai/non-normative && uv run models.py $(CURDIR)/model/gen-ai
 
 # Update reference reports (README.md and reports/) from data.json files.
 generate-reference-reports:
@@ -154,17 +153,7 @@ generate-reference-reports:
 
 # Run every regeneration the repo owns (weaver-driven + pydantic-driven + reports).
 # CI checks that all committed outputs match what this target generates.
-generate-all: schema-snapshot generate-registry generate-docs generate-json-schemas generate-reference-reports
-
-# Render the resolved registry as a single committed YAML so reviewers can see
-# schema-level changes in PR diffs.
-schema-snapshot: $(SC_UPSTREAM_STAMP)
-	$(WEAVER) registry generate \
-		-r ./model \
-		--v2 \
-		-t ./templates/registry \
-		yaml \
-		./schema-snapshot
+generate-all: generate-registry generate-docs generate-json-schemas generate-reference-reports
 
 # Package the registry into a publication artifact. The version comes from
 # model/manifest.yaml's schema_url; bump it there to cut a new release.
@@ -187,7 +176,6 @@ package-dev: $(SC_UPSTREAM_STAMP)
 # (`rm -rf reference/.venv`) for a full reset.
 clean:
 	rm -rf docs/registry
-	rm -rf schema-snapshot
 	rm -rf .build
 	rm -rf reference/.cache
 	find . -type d -name __pycache__ -prune -exec rm -rf {} +

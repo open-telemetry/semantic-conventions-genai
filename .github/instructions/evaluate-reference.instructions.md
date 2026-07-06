@@ -1,5 +1,4 @@
 ---
-description: "Rubric for evaluating whether semantic-convention changes are supported by reference scenarios."
 applyTo: "model/**,docs/gen-ai/**,reference/scenarios/**"
 ---
 

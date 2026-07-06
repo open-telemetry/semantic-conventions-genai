@@ -20,6 +20,51 @@ REFERENCE_HASH_KEY = b"reference-scenario-only-hmac-key"
 _reference_tracer = reference_tracer()
 
 
+def response_has_compaction_item(response):
+    """Return whether the Responses API output includes a ResponseCompactionItem."""
+    for item in getattr(response, "output", []) or []:
+        item_type = item.get("type") if isinstance(item, dict) else getattr(item, "type", None)
+        if item_type == "compaction":
+            return True
+    return False
+
+
+def responses_output_messages(response):
+    """Convert Responses API output items into OTel output messages."""
+    output_messages = []
+    pending_parts = []
+    for item in getattr(response, "output", []) or []:
+        item_type = item.get("type") if isinstance(item, dict) else getattr(item, "type", None)
+        if item_type == "compaction":
+            compaction_part = {"type": "compaction"}
+            compaction_id = item.get("id") if isinstance(item, dict) else getattr(item, "id", None)
+            if compaction_id:
+                compaction_part["id"] = compaction_id
+            if output_messages and output_messages[-1].get("role") == "assistant":
+                output_messages[-1]["parts"].append(compaction_part)
+            else:
+                pending_parts.append(compaction_part)
+            continue
+        if item_type != "message":
+            continue
+        role = item.get("role") if isinstance(item, dict) else getattr(item, "role", None)
+        content = item.get("content", []) if isinstance(item, dict) else getattr(item, "content", [])
+        parts = pending_parts
+        pending_parts = []
+        for block in content or []:
+            block_type = block.get("type") if isinstance(block, dict) else getattr(block, "type", None)
+            if block_type != "output_text":
+                continue
+            text = block.get("text") if isinstance(block, dict) else getattr(block, "text", None)
+            if text:
+                parts.append({"type": "text", "content": text})
+        if parts:
+            output_messages.append({"role": role or "assistant", "parts": parts, "finish_reason": "stop"})
+    if pending_parts:
+        output_messages.append({"role": "assistant", "parts": pending_parts, "finish_reason": "compaction"})
+    return output_messages
+
+
 def run_chat_reference(client):
     """Scenario: basic chat completion with reference implementation."""
     print("  [chat] basic chat completion (reference implementation)")
@@ -32,6 +77,7 @@ def run_chat_reference(client):
     request_frequency_penalty = 0.1
     request_presence_penalty = 0.2
     request_top_p = 0.9
+    request_reasoning_level = "medium"
     messages = [
         {"role": "system", "content": "You are a helpful assistant."},
         {"role": "user", "content": "Say hello."},
@@ -63,6 +109,7 @@ def run_chat_reference(client):
         span.set_attribute("gen_ai.request.frequency_penalty", request_frequency_penalty)
         span.set_attribute("gen_ai.request.presence_penalty", request_presence_penalty)
         span.set_attribute("gen_ai.request.top_p", request_top_p)
+        span.set_attribute("gen_ai.request.reasoning.level", request_reasoning_level)
         span.set_attribute("gen_ai.input.messages", input_messages)
         if system_instructions:
             span.set_attribute("gen_ai.system_instructions", json.dumps(system_instructions))
@@ -77,6 +124,7 @@ def run_chat_reference(client):
             frequency_penalty=request_frequency_penalty,
             presence_penalty=request_presence_penalty,
             top_p=request_top_p,
+            reasoning_effort=request_reasoning_level,
         )
         span.set_attribute("gen_ai.response.model", resp.model)
         span.set_attribute("gen_ai.response.id", resp.id)
@@ -132,6 +180,82 @@ def run_chat_reference(client):
         )
 
         print(f"    -> {resp.choices[0].message.content[:60]}")
+
+
+def run_responses_compaction_reference(client):
+    """Scenario: Responses API server-side compaction signal from output items."""
+    print("  [responses_compaction] responses with server-side compaction (reference implementation)")
+    request_model = "gpt-4o-mini"
+    conversation = [
+        {
+            "type": "message",
+            "role": "user",
+            "content": "Let's continue a long implementation task.",
+        }
+    ]
+    host, port = mock_server_host_port(MOCK_BASE_URL)
+    span_attributes = {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "openai",
+        "gen_ai.request.model": request_model,
+        "openai.api.type": "responses",
+    }
+    if host:
+        span_attributes["server.address"] = host
+    if port is not None:
+        span_attributes["server.port"] = port
+
+    with _reference_tracer.start_as_current_span("chat gpt-4o-mini", attributes=span_attributes) as span:
+        span.set_attribute(
+            "gen_ai.input.messages",
+            json.dumps([{"role": "user", "parts": [{"type": "text", "content": conversation[0]["content"]}]}]),
+        )
+        response = client.responses.create(
+            model=request_model,
+            input=conversation,
+            store=False,
+            context_management=[{"type": "compaction", "compact_threshold": 200000}],
+        )
+
+        # Provider-side instrumentation derives this from the live SDK
+        # response: a ResponseCompactionItem (`type: "compaction"`) in
+        # response.output. The request option alone is not enough.
+        conversation_compacted = response_has_compaction_item(response)
+        span.set_attribute("gen_ai.conversation.compacted", conversation_compacted)
+        span.set_attribute("gen_ai.response.model", response.model)
+        span.set_attribute("gen_ai.response.id", response.id)
+        output_messages = responses_output_messages(response)
+        if output_messages:
+            span.set_attribute("gen_ai.output.messages", json.dumps(output_messages))
+        if response.usage:
+            span.set_attribute("gen_ai.usage.input_tokens", response.usage.input_tokens)
+            span.set_attribute("gen_ai.usage.output_tokens", response.usage.output_tokens)
+
+        event_attrs = {
+            "gen_ai.operation.name": "chat",
+            "gen_ai.conversation.compacted": conversation_compacted,
+            "gen_ai.request.model": request_model,
+            "gen_ai.response.id": response.id,
+            "gen_ai.response.model": response.model,
+            "gen_ai.input.messages": json.dumps(
+                [{"role": "user", "parts": [{"type": "text", "content": conversation[0]["content"]}]}]
+            ),
+        }
+        if output_messages:
+            event_attrs["gen_ai.output.messages"] = json.dumps(output_messages)
+        if response.usage:
+            event_attrs["gen_ai.usage.input_tokens"] = response.usage.input_tokens
+            event_attrs["gen_ai.usage.output_tokens"] = response.usage.output_tokens
+        if host:
+            event_attrs["server.address"] = host
+        if port is not None:
+            event_attrs["server.port"] = port
+        reference_event_logger().emit(
+            event_name="gen_ai.client.inference.operation.details",
+            body="Inference operation details",
+            attributes=event_attrs,
+        )
+        print(f"    -> compacted: {conversation_compacted}")
 
 
 def run_chat_streaming_reference(client):
@@ -493,6 +617,101 @@ def run_embeddings_reference(client):
         print(f"    -> embedding dim: {len(resp.data[0].embedding)}")
 
 
+def run_responses_with_prompt_template_reference(client):
+    """Scenario: OpenAI Responses API with a stored prompt template.
+
+    The Responses API accepts a `prompt` parameter that references a stored
+    prompt template by id, with optional version and variables. The
+    instrumentation extracts gen_ai.prompt.name, gen_ai.prompt.version,
+    and gen_ai.prompt.variable.* from the request.
+    """
+    print("  [responses_prompt_template] Responses API with prompt template (reference implementation)")
+    request_model = "gpt-4o-mini"
+    prompt_id = "customer-support"
+    prompt_version = "1.2.0"
+    prompt_variables = {"user_name": "Alice", "language": "French"}
+    host, port = mock_server_host_port(MOCK_BASE_URL)
+    span_attributes = {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "openai",
+        "gen_ai.request.model": request_model,
+        "gen_ai.prompt.name": prompt_id,
+        "gen_ai.prompt.version": prompt_version,
+    }
+    if host:
+        span_attributes["server.address"] = host
+    if port is not None:
+        span_attributes["server.port"] = port
+    with _reference_tracer.start_as_current_span("chat gpt-4o-mini", attributes=span_attributes) as span:
+        for var_name, var_value in prompt_variables.items():
+            span.set_attribute(f"gen_ai.prompt.variable.{var_name}", var_value)
+        resp = client.responses.create(
+            model=request_model,
+            input="Help me with my order.",
+            prompt={
+                "id": prompt_id,
+                "version": prompt_version,
+                "variables": prompt_variables,
+            },
+        )
+        span.set_attribute("gen_ai.response.model", resp.model)
+        span.set_attribute("gen_ai.response.id", resp.id)
+        output_text = None
+        for output in getattr(resp, "output", []) or []:
+            if getattr(output, "type", None) == "message":
+                for content in getattr(output, "content", []) or []:
+                    if getattr(content, "type", None) == "output_text":
+                        output_text = getattr(content, "text", None)
+                        break
+        if output_text:
+            span.set_attribute(
+                "gen_ai.output.messages",
+                json.dumps(
+                    [
+                        {
+                            "role": "assistant",
+                            "parts": [{"type": "text", "content": output_text}],
+                            "finish_reason": "stop",
+                        }
+                    ]
+                ),
+            )
+        if resp.usage:
+            span.set_attribute("gen_ai.usage.input_tokens", resp.usage.input_tokens)
+            span.set_attribute("gen_ai.usage.output_tokens", resp.usage.output_tokens)
+        span.set_attribute("gen_ai.response.finish_reasons", ["stop"])
+
+        event_attrs = {
+            "gen_ai.operation.name": "chat",
+            "gen_ai.request.model": request_model,
+            "gen_ai.prompt.name": prompt_id,
+            "gen_ai.prompt.version": prompt_version,
+            "gen_ai.response.id": resp.id,
+            "gen_ai.response.model": resp.model,
+            "gen_ai.response.finish_reasons": ["stop"],
+        }
+        for var_name, var_value in prompt_variables.items():
+            event_attrs[f"gen_ai.prompt.variable.{var_name}"] = var_value
+        if output_text:
+            event_attrs["gen_ai.output.messages"] = json.dumps(
+                [{"role": "assistant", "parts": [{"type": "text", "content": output_text}], "finish_reason": "stop"}]
+            )
+        if resp.usage:
+            event_attrs["gen_ai.usage.input_tokens"] = resp.usage.input_tokens
+            event_attrs["gen_ai.usage.output_tokens"] = resp.usage.output_tokens
+        if host:
+            event_attrs["server.address"] = host
+        if port is not None:
+            event_attrs["server.port"] = port
+        reference_event_logger().emit(
+            event_name="gen_ai.client.inference.operation.details",
+            body="Inference operation details",
+            attributes=event_attrs,
+        )
+
+        print(f"    -> {(output_text or '')[:60]}")
+
+
 def main():
     print("=== Reference Implementation: OpenAI Reference Implementation ===")
 
@@ -503,11 +722,13 @@ def main():
     client = openai.OpenAI(base_url=MOCK_BASE_URL, api_key="mock-key")
 
     run_chat_reference(client)
+    run_responses_compaction_reference(client)
     run_chat_streaming_reference(client)
     run_chat_tool_call_reference(client)
     run_security_guardrail_reference()
     run_remote_security_guardrail_reference()
     run_chat_with_document_input_reference(client)
+    run_responses_with_prompt_template_reference(client)
     run_embeddings_reference(client)
 
     flush_and_shutdown(tp, lp, mp)

@@ -21,11 +21,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           fetch-depth: 0 # needed for merge-base used in modified-files mode
 
-      - uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
+      - uses: jdx/mise-action@e6a8b3978addb5a52f2b4cd9d91eafa7f0ab959d # v4.2.0
 
       - name: Check links for pull requests
         if: github.event_name == 'pull_request'
@@ -48,7 +48,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: Load shared version pins
         id: versions
@@ -66,7 +66,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: Load shared version pins
         id: versions
@@ -77,17 +77,17 @@ jobs:
         with:
           version: '${{ steps.versions.outputs.weaver_version }}'
 
-      - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
 
       - name: Regenerate and check committed outputs are in sync
         run: |
           make generate-all
-          if ! git diff --exit-code -- ./docs/registry ./schema-snapshot 'docs/gen-ai/gen-ai-*.json'; then
+          if ! git diff --exit-code -- ./docs/registry 'model/gen-ai/gen-ai-*.json'; then
             echo "FAIL: committed generated outputs are out of sync!"
             echo "Run 'make generate-all' and commit the changes."
             exit 1
           fi
-          untracked=$(git ls-files --others --exclude-standard -- ./docs/registry ./schema-snapshot 'docs/gen-ai/gen-ai-*.json')
+          untracked=$(git ls-files --others --exclude-standard -- ./docs/registry 'model/gen-ai/gen-ai-*.json')
           if [ -n "$untracked" ]; then
             echo "FAIL: untracked files under generated outputs:"
             echo "$untracked"
@@ -103,9 +103,9 @@ jobs:
       run:
         working-directory: reference
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
-      - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
         with:
           enable-cache: true
           cache-dependency-glob: "reference/**/uv.lock"
@@ -115,6 +115,20 @@ jobs:
 
       - name: Check Python formatting
         run: uv tool run --from ruff ruff format --check src scenarios
+
+  author-self-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Author Self-Review Check
+        run: |
+          if git grep -Fq "<!-- I'm an AI agent!!! -->" -- '*.md' ':!AGENTS.md' ':!CLAUDE.md' || \
+             git grep -Fq "# I'm an AI agent!!!" -- '*.yaml' '*.yml' ':!.github/workflows/ci.yml'; then
+            echo "The PR author (a human) must review the changes."
+            exit 1
+          fi
 
   # ── Discover scenario matrices ─────────────────────────────────────
   reference-scenario-matrix:
@@ -126,7 +140,7 @@ jobs:
       run:
         working-directory: reference
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - uses: ./.github/actions/setup-reference-tooling
 
@@ -146,7 +160,7 @@ jobs:
       fail-fast: false
       matrix: ${{ fromJson(needs.reference-scenario-matrix.outputs.matrix) }}
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - uses: ./.github/actions/setup-reference-tooling
 
@@ -171,7 +185,7 @@ jobs:
       run:
         working-directory: reference
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - uses: ./.github/actions/setup-reference-tooling
 
@@ -189,6 +203,7 @@ jobs:
       - policies
       - generated-docs
       - reference-python-lint
+      - author-self-review
       - reference-scenario-matrix
       - reference-scenarios
       - reference-status-report

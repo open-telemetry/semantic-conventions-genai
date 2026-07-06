@@ -26,7 +26,8 @@ def classify_span(span_name: str, span_kind: str, span_attrs: dict[str, object])
     """Classify a span into GenAI span types using model-backed discriminators.
 
     ``span_name`` is accepted to match the shared ``ClassifySpan`` signature
-    but is not used: GenAI classification is attribute-driven
+    but is not used. ``span_kind`` disambiguates span types that share the same
+    operation name; the rest of the classification is attribute-driven
     (``gen_ai.operation.name`` plus discriminator attrs).
     """
     del span_name  # unused; accepted for signature compatibility
@@ -35,10 +36,10 @@ def classify_span(span_name: str, span_kind: str, span_attrs: dict[str, object])
     detected = {key for key in SPAN_SPECS if _matches_spec(op_name, span_attrs, key)}
 
     # invoke_agent is represented as two span types (client vs internal) that
-    # share op_name/discriminator_attrs; disambiguate by remote-server attrs.
+    # share op_name/discriminator_attrs; disambiguate by span kind.
     if "invoke_agent_client" in detected or "invoke_agent_internal" in detected:
-        is_remote = _has_any_attr(span_attrs, "server.address", "server.port")
-        detected.discard("invoke_agent_client" if not is_remote else "invoke_agent_internal")
+        is_client_span = span_kind.lower() == "client"
+        detected.discard("invoke_agent_client" if not is_client_span else "invoke_agent_internal")
 
     # run_guardrail also has client and internal span types with the same
     # operation name; prefer span kind and fall back to remote-server attrs.

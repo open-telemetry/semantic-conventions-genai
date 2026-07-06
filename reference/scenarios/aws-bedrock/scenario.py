@@ -287,6 +287,93 @@ def run_converse_with_document_input_reference(client):
         print(f"    -> {text[:60]}")
 
 
+def run_converse_with_prompt_template_reference(client):
+    """Scenario: Bedrock Converse API using a managed prompt template with version and variables.
+
+    Bedrock Prompt Management prompts are invoked by passing the prompt version ARN
+    as `modelId` and variable values in `promptVariables`. Instrumentation extracts
+    gen_ai.prompt.name, gen_ai.prompt.version, and gen_ai.prompt.variable.* from
+    the request. This scenario does not record gen_ai.input.messages because the
+    Converse request carries no messages.
+    """
+    print("  [converse_prompt_template] Bedrock Converse with managed prompt template (reference implementation)")
+    prompt_name = "order-inquiry"
+    prompt_version = "2.0.1"
+    prompt_arn = f"arn:aws:bedrock:us-east-1:123456789012:prompt/{prompt_name}:{prompt_version}"
+    prompt_variables = {"customer_id": "C-12345", "order_id": "ORD-67890"}
+    bedrock_prompt_variables = {name: {"text": value} for name, value in prompt_variables.items()}
+
+    host, port = mock_server_host_port(MOCK_BASE_URL)
+    span_attributes = {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "aws.bedrock",
+        "gen_ai.prompt.name": prompt_name,
+        "gen_ai.prompt.version": prompt_version,
+    }
+    if host:
+        span_attributes["server.address"] = host
+    if port is not None:
+        span_attributes["server.port"] = port
+    with _reference_tracer.start_as_current_span("chat", attributes=span_attributes) as span:
+        for var_name, var_value in prompt_variables.items():
+            span.set_attribute(f"gen_ai.prompt.variable.{var_name}", var_value)
+        response = client.converse(
+            modelId=prompt_arn,
+            promptVariables=bedrock_prompt_variables,
+        )
+        stop_reason = response.get("stopReason")
+        if stop_reason:
+            span.set_attribute("gen_ai.response.finish_reasons", [stop_reason])
+        usage = response.get("usage", {})
+        if usage.get("inputTokens") is not None:
+            span.set_attribute("gen_ai.usage.input_tokens", usage["inputTokens"])
+        if usage.get("outputTokens") is not None:
+            span.set_attribute("gen_ai.usage.output_tokens", usage["outputTokens"])
+        text = response["output"]["message"]["content"][0]["text"]
+        span.set_attribute(
+            "gen_ai.output.messages",
+            json.dumps(
+                [
+                    {
+                        "role": "assistant",
+                        "parts": [{"type": "text", "content": text}],
+                        **({"finish_reason": stop_reason} if stop_reason else {}),
+                    }
+                ]
+            ),
+        )
+
+        event_attrs = {
+            "gen_ai.operation.name": "chat",
+            "gen_ai.prompt.name": prompt_name,
+            "gen_ai.prompt.version": prompt_version,
+            "gen_ai.output.messages": json.dumps(
+                [
+                    {
+                        "role": "assistant",
+                        "parts": [{"type": "text", "content": text}],
+                        "finish_reason": stop_reason,
+                    }
+                ]
+            ),
+        }
+        for var_name, var_value in prompt_variables.items():
+            event_attrs[f"gen_ai.prompt.variable.{var_name}"] = var_value
+        if stop_reason:
+            event_attrs["gen_ai.response.finish_reasons"] = [stop_reason]
+        if usage.get("inputTokens") is not None:
+            event_attrs["gen_ai.usage.input_tokens"] = usage["inputTokens"]
+        if usage.get("outputTokens") is not None:
+            event_attrs["gen_ai.usage.output_tokens"] = usage["outputTokens"]
+        reference_event_logger().emit(
+            event_name="gen_ai.client.inference.operation.details",
+            body="Inference operation details",
+            attributes=event_attrs,
+        )
+
+        print(f"    -> {text[:60]}")
+
+
 def run_embeddings_reference(client):
     """Scenario: Bedrock Titan Embeddings with reference implementation."""
     import json as _json
@@ -328,6 +415,7 @@ def main():
     run_converse_reference(client)
     run_converse_tool_call_reference(client)
     run_converse_with_document_input_reference(client)
+    run_converse_with_prompt_template_reference(client)
     run_embeddings_reference(client)
 
     flush_and_shutdown(tp, lp, mp)

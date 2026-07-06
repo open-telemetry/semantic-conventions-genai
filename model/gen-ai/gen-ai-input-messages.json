@@ -96,6 +96,9 @@
                                 "$ref": "#/$defs/ReasoningPart"
                             },
                             {
+                                "$ref": "#/$defs/CompactionPart"
+                            },
+                            {
                                 "$ref": "#/$defs/GenericPart"
                             }
                         ]
@@ -122,6 +125,49 @@
                 "parts"
             ],
             "title": "ChatMessage",
+            "type": "object"
+        },
+        "CompactionPart": {
+            "additionalProperties": true,
+            "description": "Represents compacted conversation state sent to or received from the model.",
+            "properties": {
+                "type": {
+                    "const": "compaction",
+                    "description": "The type of the content captured in this part.",
+                    "title": "Type",
+                    "type": "string"
+                },
+                "id": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Provider-assigned identifier for the compaction item or block.",
+                    "title": "Id"
+                },
+                "content": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "The unencrypted compacted conversation summary, when available.",
+                    "title": "Content"
+                }
+            },
+            "required": [
+                "type"
+            ],
+            "title": "CompactionPart",
             "type": "object"
         },
         "FilePart": {

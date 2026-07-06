@@ -15,6 +15,8 @@
 | --- | --- |
 | gen_ai.conversation.id | (none) |
 | gen_ai.output.type | (none) |
+| gen_ai.prompt.name | [aws-bedrock], [openai] |
+| gen_ai.prompt.version | [aws-bedrock], [openai] |
 | gen_ai.request.choice.count | [llamaindex] |
 | gen_ai.request.model | [anthropic], [autogen], [aws-bedrock], [azure-ai-inference], [cohere], [dspy], [google-genai], [groq], [instructor], [litellm], [llamaindex], [mistralai], [openai], [pydantic-ai], [vertexai] |
 | gen_ai.request.seed | [pydantic-ai] |
@@ -26,9 +28,11 @@
 
 | Attribute | Supporting Libraries |
 | --- | --- |
+| gen_ai.conversation.compacted | [anthropic], [openai] |
 | gen_ai.request.frequency_penalty | [pydantic-ai] |
 | gen_ai.request.max_tokens | [pydantic-ai] |
 | gen_ai.request.presence_penalty | [pydantic-ai] |
+| gen_ai.request.reasoning.level | (none) |
 | gen_ai.request.stop_sequences | [pydantic-ai] |
 | gen_ai.request.temperature | [pydantic-ai] |
 | gen_ai.request.top_p | [pydantic-ai] |
@@ -49,6 +53,7 @@
 | --- | --- |
 | gen_ai.input.messages | [anthropic], [autogen], [aws-bedrock], [azure-ai-inference], [cohere], [google-genai], [groq], [instructor], [litellm], [llamaindex], [mistralai], [openai], [pydantic-ai], [vertexai] |
 | gen_ai.output.messages | [anthropic], [autogen], [aws-bedrock], [azure-ai-inference], [cohere], [dspy], [google-genai], [groq], [instructor], [litellm], [llamaindex], [mistralai], [openai], [pydantic-ai], [vertexai] |
+| gen_ai.prompt.variable | (none) |
 | gen_ai.system_instructions | [autogen], [pydantic-ai] |
 | gen_ai.tool.definitions | (none) |
 

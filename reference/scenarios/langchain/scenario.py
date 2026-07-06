@@ -89,6 +89,7 @@ def run_plan_and_execute_reference():
     planner = load_chat_planner(chat_model)
     captured_completion = None
     captured_messages = None
+    planner_input = "What is the capital of France?"
 
     # langchain-experimental's LLMPlanner has no library-owned agent identity
     # or name (no .id, no .name) -- the planner is a thin wrapper over an
@@ -123,7 +124,7 @@ def run_plan_and_execute_reference():
 
             chat_model.root_client.chat.completions.create = _capture_create
             try:
-                plan = planner.plan(inputs={"input": "What is the capital of France?"})
+                plan = planner.plan(inputs={"input": planner_input})
             finally:
                 chat_model.root_client.chat.completions.create = original_create
 
