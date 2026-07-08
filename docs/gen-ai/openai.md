@@ -183,27 +183,17 @@ Instrumentations MUST follow [JSON schema](/model/gen-ai/gen-ai-input-messages.j
 
 When the attribute is recorded on events, it MUST be recorded in structured form. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
 
-**[24] `gen_ai.input.messages_delta`:** This attribute has the same schema as `gen_ai.input.messages`, but only
-contains the new messages that were not already captured by earlier
-telemetry in the same `gen_ai.conversation.id`.
+**[24] `gen_ai.input.messages_delta`:** This attribute has the same schema as `gen_ai.input.messages`, but contains
+only messages appended since earlier telemetry in the same
+`gen_ai.conversation.id`.
 
-Instrumentations SHOULD prefer `gen_ai.input.messages_delta` over
-`gen_ai.input.messages` when the effective input context is append-only.
-For the first request in a conversation, this attribute SHOULD contain the
-full initial input if it is used.
+Emitters MAY use this attribute when they can reliably identify appended
+messages and correlate them with prior turns. When emitting this attribute,
+emitters SHOULD also set `gen_ai.conversation.id`. Otherwise, emitters
+SHOULD use `gen_ai.input.messages`.
 
-Instrumentations SHOULD record `gen_ai.input.messages` instead when the
-effective input context changes in a non-append-only way and cannot be
-reconstructed from the previous input, output, and delta messages, for
-example after context compaction, truncation, or user-visible edits to
-conversation history.
-
-When `gen_ai.output.messages` is also captured, consumers MAY reconstruct
-the effective input messages for each request by ordering GenAI telemetry
-with the same `gen_ai.conversation.id`, starting from the latest
-`gen_ai.input.messages` checkpoint, and applying subsequent
-`gen_ai.output.messages` and `gen_ai.input.messages_delta` values in
-operation order.
+For the first request in a conversation, this attribute MAY contain the full
+initial input if delta encoding is used from the beginning.
 
 Instrumentations MAY provide a way for users to filter or truncate input
 message deltas.
