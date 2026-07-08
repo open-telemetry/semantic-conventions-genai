@@ -10,12 +10,12 @@ include $(VERSION_PINS_FILE)
 # Run weaver locally if available, otherwise run via the pinned container image.
 # The repo is bind-mounted at /workspace when running in Docker, resolving
 # relative paths the same way they would on the host.
-LOCAL_WEAVER := $(shell command -v weaver 2>/dev/null)
+LOCAL_RAW_VERSION := $(shell weaver --version 2>/dev/null)
 
-ifeq ($(LOCAL_WEAVER),)
+ifeq ($(LOCAL_RAW_VERSION),)
     USE_DOCKER := 1
 else
-    LOCAL_VERSION := $(shell weaver --version 2>&1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?' | head -n1)
+    LOCAL_VERSION := $(shell echo "$(LOCAL_RAW_VERSION)" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?' | head -n1)
     REPO_VERSION := $(shell echo "$(WEAVER_VERSION)" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?' | head -n1)
     IS_LOWER := $(shell printf "%s\n%s" "$(LOCAL_VERSION)" "$(REPO_VERSION)" | sort -V | head -n1)
     ifeq ($(IS_LOWER),$(LOCAL_VERSION))
