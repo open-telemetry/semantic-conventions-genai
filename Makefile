@@ -1,17 +1,36 @@
 # GenAI Semantic Conventions - Makefile
-# Requires: docker (or podman aliased as docker)
 # The weaver version is pinned in versions.env (WEAVER_VERSION) and run via
-# the otel/weaver container image -- contributors do not need to install weaver locally.
+# the otel/weaver container image if a local weaver installation is not found.
 
 # Shared external version pins. Override on the command line when needed, e.g.
 # `make check-policies SEMCONV_VERSION=v1.40.0`.
 VERSION_PINS_FILE := versions.env
 include $(VERSION_PINS_FILE)
 
-# Run weaver via the pinned container image. The repo is bind-mounted at
-# /workspace and that is the working directory, so every relative path the
-# targets below pass to weaver (./model, .build/..., docs/, docs/registry)
-# resolves the same way it would for a host-installed weaver.
+# Run weaver locally if available, otherwise run via the pinned container image.
+# The repo is bind-mounted at /workspace when running in Docker, resolving
+# relative paths the same way they would on the host.
+LOCAL_WEAVER := $(shell command -v weaver 2>/dev/null)
+
+ifeq ($(LOCAL_WEAVER),)
+    USE_DOCKER := 1
+else
+    LOCAL_VERSION := $(shell weaver --version 2>&1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?' | head -n1)
+    REPO_VERSION := $(shell echo "$(WEAVER_VERSION)" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?' | head -n1)
+    IS_LOWER := $(shell printf "%s\n%s" "$(LOCAL_VERSION)" "$(REPO_VERSION)" | sort -V | head -n1)
+    ifeq ($(IS_LOWER),$(LOCAL_VERSION))
+        ifneq ($(LOCAL_VERSION),$(REPO_VERSION))
+            $(shell echo "warning: local weaver version $(LOCAL_VERSION) is lower than required $(REPO_VERSION). Falling back to Docker." >&2)
+            USE_DOCKER := 1
+        else
+            USE_DOCKER := 0
+        endif
+    else
+        USE_DOCKER := 0
+    endif
+endif
+
+ifeq ($(USE_DOCKER),1)
 WEAVER_IMAGE := otel/weaver:$(WEAVER_VERSION)
 WEAVER := docker run --rm \
 	-u $(shell id -u):$(shell id -g) \
@@ -19,6 +38,9 @@ WEAVER := docker run --rm \
 	-w /workspace \
 	-e HOME=/tmp \
 	$(WEAVER_IMAGE)
+else
+WEAVER := weaver
+endif
 
 # Local cache of policies fetched from upstream (gitignored)
 LOCAL_POLICIES := .build/weaver-policies
