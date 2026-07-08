@@ -653,18 +653,17 @@ attributes:
     stability: development
   - key: gen_ai.system_instructions
     type: any
-    brief: The system message or instructions provided to the GenAI model.
+    brief: The system message or instructions provided to the GenAI model separately from the chat history.
     annotations:
       type:
         json_schema: model/gen-ai/gen-ai-system-instructions.json
     note: |
       This attribute SHOULD be used when the corresponding provider or API
-      allows providing system instructions or messages separately from the
-      chat history, or when system/developer instructions are identifiable
-      as messages with instruction roles such as `system` or `developer`.
+      allows to provide system instructions or messages separately from the
+      chat history.
 
-      Instructions recorded in `gen_ai.system_instructions` SHOULD NOT be
-      duplicated in `gen_ai.input.messages`.
+      Instructions that are part of the chat history SHOULD be recorded in
+      `gen_ai.input.messages` attribute instead.
 
       Instrumentations MAY provide a way for users to filter or truncate
       system instructions.
@@ -703,10 +702,6 @@ attributes:
         json_schema: model/gen-ai/gen-ai-input-messages.json
     note: |
       Messages MUST be provided in the order they were sent to the model.
-      System or developer instructions that are recorded in
-      `gen_ai.system_instructions` SHOULD NOT be duplicated in this
-      attribute.
-
       Instrumentations MAY provide a way for users to filter or truncate
       input messages.
 

@@ -52,7 +52,7 @@
 | <a id="gen-ai-retrieval-documents" href="#gen-ai-retrieval-documents">`gen_ai.retrieval.documents`</a> | ![Development](https://img.shields.io/badge/-development-blue) | any | The documents retrieved. [19] | [<br>&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;"id": "doc_123",<br>&nbsp;&nbsp;&nbsp;&nbsp;"score": 0.95<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;"id": "doc_456",<br>&nbsp;&nbsp;&nbsp;&nbsp;"score": 0.87<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;"id": "doc_789",<br>&nbsp;&nbsp;&nbsp;&nbsp;"score": 0.82<br>&nbsp;&nbsp;}<br>] |
 | <a id="gen-ai-retrieval-query-text" href="#gen-ai-retrieval-query-text">`gen_ai.retrieval.query.text`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The query text used for retrieval. [20] | `What is the capital of France?`; `weather in Paris` |
 | <a id="gen-ai-retrieval-top-k" href="#gen-ai-retrieval-top-k">`gen_ai.retrieval.top_k`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The maximum number of documents the retriever was asked to return for the query (also known as `k`, `limit`, or `max_num_results`). | `5` |
-| <a id="gen-ai-system-instructions" href="#gen-ai-system-instructions">`gen_ai.system_instructions`</a> | ![Development](https://img.shields.io/badge/-development-blue) | any | The system message or instructions provided to the GenAI model. [21] | [<br>&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;"type": "text",<br>&nbsp;&nbsp;&nbsp;&nbsp;"content": "You are an Agent that greet users, always use greetings tool to respond"<br>&nbsp;&nbsp;}<br>]; [<br>&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;"type": "text",<br>&nbsp;&nbsp;&nbsp;&nbsp;"content": "You are a language translator."<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;"type": "text",<br>&nbsp;&nbsp;&nbsp;&nbsp;"content": "Your mission is to translate text in English to French."<br>&nbsp;&nbsp;}<br>] |
+| <a id="gen-ai-system-instructions" href="#gen-ai-system-instructions">`gen_ai.system_instructions`</a> | ![Development](https://img.shields.io/badge/-development-blue) | any | The system message or instructions provided to the GenAI model separately from the chat history. [21] | [<br>&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;"type": "text",<br>&nbsp;&nbsp;&nbsp;&nbsp;"content": "You are an Agent that greet users, always use greetings tool to respond"<br>&nbsp;&nbsp;}<br>]; [<br>&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;"type": "text",<br>&nbsp;&nbsp;&nbsp;&nbsp;"content": "You are a language translator."<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;"type": "text",<br>&nbsp;&nbsp;&nbsp;&nbsp;"content": "Your mission is to translate text in English to French."<br>&nbsp;&nbsp;}<br>] |
 | <a id="gen-ai-token-type" href="#gen-ai-token-type">`gen_ai.token.type`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The type of token being counted. | `input`; `output` |
 | <a id="gen-ai-tool-call-arguments" href="#gen-ai-tool-call-arguments">`gen_ai.tool.call.arguments`</a> | ![Development](https://img.shields.io/badge/-development-blue) | any | Parameters passed to the tool call. [22] | {<br>&nbsp;&nbsp;&nbsp;&nbsp;"location": "San Francisco?",<br>&nbsp;&nbsp;&nbsp;&nbsp;"date": "2025-10-01"<br>} |
 | <a id="gen-ai-tool-call-id" href="#gen-ai-tool-call-id">`gen_ai.tool.call.id`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The tool call identifier. | `call_mszuSIzqtI65i1wAUOE8w5H4` |
@@ -82,10 +82,6 @@ SHOULD leave it unset otherwise.
 **[4] `gen_ai.evaluation.score.label`:** This attribute provides a human-readable interpretation of the evaluation score produced by an evaluator. For example, a score value of 1 could mean "relevant" in one evaluation system and "not relevant" in another, depending on the scoring range and evaluator. The label SHOULD have low cardinality. Possible values depend on the evaluation metric and evaluator used; implementations SHOULD document the possible values.
 
 **[5] `gen_ai.input.messages`:** Messages MUST be provided in the order they were sent to the model.
-System or developer instructions that are recorded in
-`gen_ai.system_instructions` SHOULD NOT be duplicated in this
-attribute.
-
 Instrumentations MAY provide a way for users to filter or truncate
 input messages.
 
@@ -201,12 +197,11 @@ When the attribute is recorded on events, it MUST be recorded in structured form
 > This attribute may contain sensitive information.
 
 **[21] `gen_ai.system_instructions`:** This attribute SHOULD be used when the corresponding provider or API
-allows providing system instructions or messages separately from the
-chat history, or when system/developer instructions are identifiable
-as messages with instruction roles such as `system` or `developer`.
+allows to provide system instructions or messages separately from the
+chat history.
 
-Instructions recorded in `gen_ai.system_instructions` SHOULD NOT be
-duplicated in `gen_ai.input.messages`.
+Instructions that are part of the chat history SHOULD be recorded in
+`gen_ai.input.messages` attribute instead.
 
 Instrumentations MAY provide a way for users to filter or truncate
 system instructions.

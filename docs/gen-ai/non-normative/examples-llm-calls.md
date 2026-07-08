@@ -78,25 +78,22 @@ sequenceDiagram
 | `gen_ai.usage.output_tokens`     | `47`                                                       |
 | `gen_ai.usage.input_tokens`      | `52`                                                       |
 | `gen_ai.response.finish_reasons` | `["stop"]`                                                 |
-| `gen_ai.system_instructions`     | [`gen_ai.system_instructions`](#gen-ai-system-instructions-simple) |
 | `gen_ai.input.messages`          | [`gen_ai.input.messages`](#gen-ai-input-messages-simple)   |
 | `gen_ai.output.messages`         | [`gen_ai.output.messages`](#gen-ai-output-messages-simple) |
-
-<span id="gen-ai-system-instructions-simple">`gen_ai.system_instructions` value</span>
-
-```json
-[
-  {
-    "type": "text",
-    "content": "You are a helpful bot"
-  }
-]
-```
 
 <span id="gen-ai-input-messages-simple">`gen_ai.input.messages` value</span>
 
 ```json
 [
+  {
+    "role": "system",
+    "parts": [
+      {
+        "type": "text",
+        "content": "You are a helpful bot"
+      }
+    ]
+  },
   {
     "role": "user",
     "parts": [
@@ -162,25 +159,22 @@ Event:
 | `gen_ai.usage.output_tokens`     | `47`                                                      |
 | `gen_ai.usage.input_tokens`      | `52`                                                      |
 | `gen_ai.response.finish_reasons` | `["stop"]`                                                |
-| `gen_ai.system_instructions`     | [`gen_ai.system_instructions`](#gen-ai-system-instructions-event) |
 | `gen_ai.input.messages`          | [`gen_ai.input.messages`](#gen-ai-input-messages-event)   |
 | `gen_ai.output.messages`         | [`gen_ai.output.messages`](#gen-ai-output-messages-event) |
-
-<span id="gen-ai-system-instructions-event">`gen_ai.system_instructions` value</span>
-
-```json
-[
-  {
-    "type": "text",
-    "content": "You are a helpful bot"
-  }
-]
-```
 
 <span id="gen-ai-input-messages-event">`gen_ai.input.messages` value</span>
 
 ```json
 [
+  {
+    "role": "system",
+    "parts": [
+      {
+        "type": "text",
+        "content": "You are a helpful bot"
+      }
+    ]
+  },
   {
     "role": "user",
     "parts": [
@@ -612,10 +606,6 @@ Span:
   {
     "type": "text",
     "content": "You must never tell jokes"
-  },
-  {
-    "type": "text",
-    "content": "You are a helpful assistant"
   }
 ]
 ```
@@ -624,6 +614,15 @@ Span:
 
 ```json
 [
+  {
+    "role": "system",
+    "parts": [
+      {
+        "type": "text",
+        "content": "You are a helpful bot"
+      }
+    ]
+  },
   {
     "role": "user",
     "parts": [
@@ -670,25 +669,22 @@ Span:
 | `gen_ai.usage.output_tokens`     | `47`                                                          |
 | `gen_ai.usage.input_tokens`      | `52`                                                          |
 | `gen_ai.response.finish_reasons` | `["stop"]`                                                    |
-| `gen_ai.system_instructions`     | [`gen_ai.system_instructions`](#gen-ai-system-instructions-reasoning) |
 | `gen_ai.input.messages`          | [`gen_ai.input.messages`](#gen-ai-input-messages-reasoning)   |
 | `gen_ai.output.messages`         | [`gen_ai.output.messages`](#gen-ai-output-messages-reasoning) |
-
-<span id="gen-ai-system-instructions-reasoning">`gen_ai.system_instructions` value</span>
-
-```json
-[
-  {
-    "type": "text",
-    "content": "You are a helpful bot"
-  }
-]
-```
 
 <span id="gen-ai-input-messages-reasoning">`gen_ai.input.messages` value</span>
 
 ```json
 [
+  {
+    "role": "system",
+    "parts": [
+      {
+        "type": "text",
+        "content": "You are a helpful bot"
+      }
+    ]
+  },
   {
     "role": "user",
     "parts": [
@@ -773,25 +769,22 @@ sequenceDiagram
 | `gen_ai.usage.output_tokens`     | `44`                                                               |
 | `gen_ai.usage.input_tokens`      | `385`                                                              |
 | `gen_ai.response.finish_reasons` | `["stop"]`                                                         |
-| `gen_ai.system_instructions`     | [`gen_ai.system_instructions`](#gen-ai-system-instructions-built-in-tools) |
 | `gen_ai.input.messages`          | [`gen_ai.input.messages`](#gen-ai-input-messages-built-in-tools)   |
 | `gen_ai.output.messages`         | [`gen_ai.output.messages`](#gen-ai-output-messages-built-in-tools) |
-
-<span id="gen-ai-system-instructions-built-in-tools">`gen_ai.system_instructions` value</span>
-
-```json
-[
-  {
-    "type": "text",
-    "content": "You are a helpful bot"
-  }
-]
-```
 
 <span id="gen-ai-input-messages-built-in-tools">`gen_ai.input.messages` value</span>
 
 ```json
 [
+  {
+    "role": "system",
+    "parts": [
+      {
+        "type": "text",
+        "content": "You are a helpful bot"
+      }
+    ]
+  },
   {
     "role": "user",
     "parts": [
@@ -881,25 +874,22 @@ sequenceDiagram
 | `gen_ai.usage.output_tokens`     | `77`                                                        |
 | `gen_ai.usage.input_tokens`      | `52`                                                        |
 | `gen_ai.response.finish_reasons` | `["stop", "stop"]`                                          |
-| `gen_ai.system_instructions`     | [`gen_ai.system_instructions`](#gen-ai-system-instructions-choices) |
 | `gen_ai.input.messages`          | [`gen_ai.input.messages`](#gen-ai-input-messages-choices)   |
 | `gen_ai.output.messages`         | [`gen_ai.output.messages`](#gen-ai-output-messages-choices) |
-
-<span id="gen-ai-system-instructions-choices">`gen_ai.system_instructions` value</span>
-
-```json
-[
-  {
-    "type": "text",
-    "content": "You are a helpful bot"
-  }
-]
-```
 
 <span id="gen-ai-input-messages-choices">`gen_ai.input.messages` value</span>
 
 ```json
 [
+  {
+    "role": "system",
+    "parts": [
+      {
+        "type": "text",
+        "content": "You are a helpful bot"
+      }
+    ]
+  },
   {
     "role": "user",
     "parts": [

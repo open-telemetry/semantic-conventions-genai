@@ -439,20 +439,14 @@ def _run_crew_planning_scenario(*, header, task_description):
                 chat_span.set_attribute("server.port", port)
 
             if messages is not None:
-                system_messages = [m for m in messages if m.get("role") == "system"]
-                user_messages = [m for m in messages if m.get("role") == "user"]
-                if system_messages:
-                    chat_span.set_attribute(
-                        "gen_ai.system_instructions",
-                        json.dumps([{"type": "text", "content": m["content"]} for m in system_messages]),
-                    )
-                if user_messages:
+                chat_messages = [m for m in messages if m.get("role") in {"system", "user"}]
+                if chat_messages:
                     chat_span.set_attribute(
                         "gen_ai.input.messages",
                         json.dumps(
                             [
-                                {"role": "user", "parts": [{"type": "text", "content": m["content"]}]}
-                                for m in user_messages
+                                {"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]}
+                                for m in chat_messages
                             ]
                         ),
                     )
