@@ -56,6 +56,8 @@ client or when the GenAI call happens over instrumented protocol such as HTTP.
 
 **Span status** SHOULD follow the [Recording Errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/general/recording-errors.md) document.
 
+**Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/general/signal-requirement-level.md).
+
 **Attributes:**
 
 | Key | Stability | [Requirement Level](https://opentelemetry.io/docs/specs/semconv/general/attribute-requirement-level/) | Value Type | Description | Example Values |
@@ -371,6 +373,8 @@ The `gen_ai.operation.name` SHOULD be `embeddings`.
 
 **Span status** SHOULD follow the [Recording Errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/general/recording-errors.md) document.
 
+**Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/general/signal-requirement-level.md).
+
 **Attributes:**
 
 | Key | Stability | [Requirement Level](https://opentelemetry.io/docs/specs/semconv/general/attribute-requirement-level/) | Value Type | Description | Example Values |
@@ -522,6 +526,8 @@ for individual GenAI providers and retrievers MAY specify different span name fo
 **Span kind** SHOULD be `CLIENT`.
 
 **Span status** SHOULD follow the [Recording Errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/general/recording-errors.md) document.
+
+**Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/general/signal-requirement-level.md).
 
 **Attributes:**
 
@@ -865,6 +871,8 @@ the operation intends to delete all memory records in the specified store.
 
 **Span status** SHOULD follow the [Recording Errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/general/recording-errors.md) document.
 
+**Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/general/signal-requirement-level.md).
+
 **Attributes:**
 
 | Key | Stability | [Requirement Level](https://opentelemetry.io/docs/specs/semconv/general/attribute-requirement-level/) | Value Type | Description | Example Values |
@@ -1028,6 +1036,8 @@ instrumentations do not cover.
 **Span kind** SHOULD be `INTERNAL`.
 
 **Span status** SHOULD follow the [Recording Errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/general/recording-errors.md) document.
+
+**Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/general/signal-requirement-level.md).
 
 **Attributes:**
 

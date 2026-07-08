@@ -1,16 +1,18 @@
 file_format: definition/2
 events:
   - name: gen_ai.client.inference.operation.details
+    requirement_level: opt_in
     brief: >
       Describes the details of a GenAI completion request including chat history
       and parameters.
     note: >
-      This event is opt-in and could be used to store input and output details
+      This event could be used to store input and output details
       independently from traces.
     stability: development
     attributes:
       - ref_group: span.gen_ai.inference.client
   - name: gen_ai.evaluation.result
+    requirement_level: recommended
     brief: >
       This event captures the result of evaluating GenAI output for quality, accuracy, or other characteristics.
       This event SHOULD be parented to GenAI operation span being evaluated when possible
@@ -37,6 +39,7 @@ events:
           event with the corresponding operation when span id is not available.
 
   - name: gen_ai.client.operation.exception
+    requirement_level: recommended
     brief: >
       This event represents an exception that occurred during a Generative AI client operation,
       such as API errors, rate limiting, model errors, timeouts, or other errors that prevent
