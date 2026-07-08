@@ -1,4 +1,5 @@
 # GenAI Semantic Conventions - Makefile
+# Requires: either local weaver >= $(WEAVER_VERSION) OR docker/podman (aliased as docker)
 # The weaver version is pinned in versions.env (WEAVER_VERSION) and run via
 # the otel/weaver container image if a local weaver installation is not found.
 
@@ -17,14 +18,10 @@ ifeq ($(LOCAL_RAW_VERSION),)
 else
     LOCAL_VERSION := $(shell echo "$(LOCAL_RAW_VERSION)" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?' | head -n1)
     REPO_VERSION := $(shell echo "$(WEAVER_VERSION)" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?' | head -n1)
-    IS_LOWER := $(shell printf "%s\n%s" "$(LOCAL_VERSION)" "$(REPO_VERSION)" | sort -V | head -n1)
-    ifeq ($(IS_LOWER),$(LOCAL_VERSION))
-        ifneq ($(LOCAL_VERSION),$(REPO_VERSION))
-            $(shell echo "warning: local weaver version $(LOCAL_VERSION) is lower than required $(REPO_VERSION). Falling back to Docker." >&2)
-            USE_DOCKER := 1
-        else
-            USE_DOCKER := 0
-        endif
+    IS_LOWER := $(shell awk -v v1="$(LOCAL_VERSION)" -v v2="$(REPO_VERSION)" 'BEGIN { split(v1, a, "."); split(v2, b, "."); for (i = 1; i <= 3; i++) { if (a[i]+0 < b[i]+0) { print "yes"; exit }; if (a[i]+0 > b[i]+0) { print "no"; exit } }; print "no" }')
+    ifeq ($(IS_LOWER),yes)
+        $(warning local weaver version $(LOCAL_VERSION) is lower than required $(REPO_VERSION). Falling back to Docker.)
+        USE_DOCKER := 1
     else
         USE_DOCKER := 0
     endif
