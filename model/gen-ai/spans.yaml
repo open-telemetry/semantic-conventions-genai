@@ -155,6 +155,7 @@ attribute_groups:
 
 spans:
   - type: gen_ai.inference.client
+    requirement_level: recommended
     kind: client
     name:
       note: |
@@ -273,6 +274,7 @@ spans:
         sampling_relevant: true
 
   - type: gen_ai.embeddings.client
+    requirement_level: recommended
     kind: client
     name:
       note: >
@@ -309,6 +311,7 @@ spans:
         requirement_level: recommended
 
   - type: gen_ai.retrieval.client
+    requirement_level: recommended
     kind: client
     name:
       note: |
@@ -341,6 +344,7 @@ spans:
           conditionally_required: When applicable.
 
   - type: gen_ai.memory.client
+    requirement_level: recommended
     kind: client
     name:
       note: |
@@ -393,6 +397,7 @@ spans:
         requirement_level: opt_in
 
   - type: gen_ai.create_agent.client
+    requirement_level: recommended
     kind: client
     name:
       note: |
@@ -445,6 +450,7 @@ spans:
 
 
   - type: gen_ai.invoke_agent.client
+    requirement_level: recommended
     kind: client
     name:
       note: |
@@ -488,6 +494,7 @@ spans:
           conditionally_required: When available.
 
   - type: gen_ai.invoke_agent.internal
+    requirement_level: recommended
     kind: internal
     name:
       note: |
@@ -515,6 +522,7 @@ spans:
         sampling_relevant: true
 
   - type: gen_ai.execute_tool.internal
+    requirement_level: recommended
     kind: internal
     name:
       note: >
@@ -557,6 +565,7 @@ spans:
         requirement_level: opt_in
 
   - type: gen_ai.invoke_workflow.internal
+    requirement_level: recommended
     kind: internal
     name:
       note: >
@@ -591,6 +600,7 @@ spans:
         requirement_level: opt_in
 
   - type: gen_ai.plan.internal
+    requirement_level: recommended
     kind: internal
     name:
       note: >

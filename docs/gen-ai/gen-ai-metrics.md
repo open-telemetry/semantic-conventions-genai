@@ -43,14 +43,6 @@ It is recommended to check system-specific documentation, if available.
 
 ### Metric: `gen_ai.client.token.usage`
 
-This metric is [recommended][MetricRecommended] when an operation involves the usage
-of tokens and the count is readily available.
-
-For example, if GenAI system returns usage information in the streaming response, it SHOULD be used. Or if GenAI system returns each token independently, instrumentation SHOULD count number of output tokens and record the result.
-
-If instrumentation cannot efficiently obtain number of input and/or output tokens, it MAY allow users to enable offline token counting. Otherwise it MUST NOT report usage metric.
-
-When systems report both used tokens and billable tokens, instrumentation MUST report billable tokens.
 
 This metric SHOULD be specified with [ExplicitBucketBoundaries] of [1, 4, 16, 64, 256, 1024, 4096, 16384, 65536, 262144, 1048576, 4194304, 16777216, 67108864].
 
@@ -61,7 +53,14 @@ This metric SHOULD be specified with [ExplicitBucketBoundaries] of [1, 4, 16, 64
 
 | Name | Instrument Type | Unit (UCUM) | Description | Stability | Entity Associations |
 | -------- | --------------- | ----------- | -------------- | --------- | ------ |
-| `gen_ai.client.token.usage` | Histogram | `{token}` | Number of input and output tokens used. | ![Development](https://img.shields.io/badge/-development-blue) | |
+| `gen_ai.client.token.usage` | Histogram | `{token}` | Number of input and output tokens used. [1] | ![Development](https://img.shields.io/badge/-development-blue) | |
+
+**[1]:** This metric SHOULD be reported when an operation involves the usage  of tokens and the count is readily available.
+For example, if GenAI system returns usage information in the streaming response,  it SHOULD be used. Or if GenAI system returns each token independently,  instrumentation SHOULD count number of output tokens and record the result.
+If instrumentation cannot efficiently obtain number of input and/or output tokens, it MAY allow users to enable offline token counting. Otherwise it MUST NOT report usage metric.
+When systems report both used tokens and billable tokens, instrumentation MUST report billable tokens.
+
+**Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/general/signal-requirement-level.md).
 
 **Attributes:**
 
@@ -169,8 +168,6 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 
 ### Metric: `gen_ai.client.operation.duration`
 
-This metric is [required][MetricRequired].
-
 This metric SHOULD be specified with [ExplicitBucketBoundaries] of [0.01, 0.02, 0.04, 0.08, 0.16, 0.32, 0.64, 1.28, 2.56, 5.12, 10.24, 20.48, 40.96, 81.92].
 
 <!-- weaver .registry.metrics[] | select(.name == "gen_ai.client.operation.duration") -->
@@ -181,6 +178,8 @@ This metric SHOULD be specified with [ExplicitBucketBoundaries] of [0.01, 0.02, 
 | Name | Instrument Type | Unit (UCUM) | Description | Stability | Entity Associations |
 | -------- | --------------- | ----------- | -------------- | --------- | ------ |
 | `gen_ai.client.operation.duration` | Histogram | `s` | GenAI operation duration. | ![Development](https://img.shields.io/badge/-development-blue) | |
+
+**Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/general/signal-requirement-level.md).
 
 **Attributes:**
 
@@ -293,8 +292,6 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 
 ### Metric: `gen_ai.client.operation.time_to_first_chunk`
 
-This metric is [recommended][MetricRecommended].
-
 This metric SHOULD be specified with [ExplicitBucketBoundaries] of [0.01, 0.02, 0.04, 0.08, 0.16, 0.32, 0.64, 1.28, 2.56, 5.12, 10.24, 20.48, 40.96, 81.92].
 
 <!-- weaver .registry.metrics[] | select(.name == "gen_ai.client.operation.time_to_first_chunk") -->
@@ -307,6 +304,8 @@ This metric SHOULD be specified with [ExplicitBucketBoundaries] of [0.01, 0.02, 
 | `gen_ai.client.operation.time_to_first_chunk` | Histogram | `s` | Time to receive the first chunk, measured from when the client issues the generation request to when the first chunk is received in the response stream. [1] | ![Development](https://img.shields.io/badge/-development-blue) | |
 
 **[1]:** This metrics SHOULD be reported for streaming calls and SHOULD NOT be reported otherwise.
+
+**Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/general/signal-requirement-level.md).
 
 **Attributes:**
 
@@ -404,8 +403,6 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 
 ### Metric: `gen_ai.client.operation.time_per_output_chunk`
 
-This metric is [recommended][MetricRecommended].
-
 This metric SHOULD be specified with [ExplicitBucketBoundaries] of [0.01, 0.02, 0.04, 0.08, 0.16, 0.32, 0.64, 1.28, 2.56, 5.12, 10.24, 20.48, 40.96, 81.92].
 
 <!-- weaver .registry.metrics[] | select(.name == "gen_ai.client.operation.time_per_output_chunk") -->
@@ -418,6 +415,8 @@ This metric SHOULD be specified with [ExplicitBucketBoundaries] of [0.01, 0.02, 
 | `gen_ai.client.operation.time_per_output_chunk` | Histogram | `s` | Time per output chunk, recorded for each chunk received after the first one, measured as the time elapsed from the end of the previous chunk to the end of the current chunk. [1] | ![Development](https://img.shields.io/badge/-development-blue) | |
 
 **[1]:** This metrics SHOULD be reported for streaming calls and SHOULD NOT be reported otherwise.
+
+**Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/general/signal-requirement-level.md).
 
 **Attributes:**
 
@@ -520,7 +519,7 @@ operational metrics. It includes both functional and performance metrics.
 
 ### Metric: `gen_ai.server.request.duration`
 
-This metric is [recommended][MetricRecommended] to report the model server
+This metric reports the model server
 latency in terms of time spent per request.
 
 This metric SHOULD be specified with [ExplicitBucketBoundaries] of
@@ -534,6 +533,8 @@ This metric SHOULD be specified with [ExplicitBucketBoundaries] of
 | Name | Instrument Type | Unit (UCUM) | Description | Stability | Entity Associations |
 | -------- | --------------- | ----------- | -------------- | --------- | ------ |
 | `gen_ai.server.request.duration` | Histogram | `s` | Generative AI server request duration such as time-to-last byte or last output token. | ![Development](https://img.shields.io/badge/-development-blue) | |
+
+**Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/general/signal-requirement-level.md).
 
 **Attributes:**
 
@@ -644,7 +645,7 @@ Instrumentations SHOULD document the list of errors they report.
 
 ### Metric: `gen_ai.server.time_per_output_token`
 
-This metric is [recommended][MetricRecommended] to report the model server
+This metric reports the model server
 latency in terms of time per token generated after the first token for any model
 servers which support serving LLMs. It is measured by subtracting the time taken
 to generate the first output token from the request duration and dividing the
@@ -663,6 +664,8 @@ This metric SHOULD be specified with [ExplicitBucketBoundaries] of
 | Name | Instrument Type | Unit (UCUM) | Description | Stability | Entity Associations |
 | -------- | --------------- | ----------- | -------------- | --------- | ------ |
 | `gen_ai.server.time_per_output_token` | Histogram | `s` | Time per output token generated after the first token for successful responses. | ![Development](https://img.shields.io/badge/-development-blue) | |
+
+**Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/general/signal-requirement-level.md).
 
 **Attributes:**
 
@@ -760,7 +763,7 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 
 ### Metric: `gen_ai.server.time_to_first_token`
 
-This metric is [recommended][MetricRecommended] to report the model server
+This metric reports the model server
 latency in terms of time spent to generate the first token of the response for
 any model servers which support serving LLMs. It helps measure the time spent in
 the queue and the prefill phase. It is important especially for streaming
@@ -778,6 +781,8 @@ This metric SHOULD be specified with [ExplicitBucketBoundaries] of
 | Name | Instrument Type | Unit (UCUM) | Description | Stability | Entity Associations |
 | -------- | --------------- | ----------- | -------------- | --------- | ------ |
 | `gen_ai.server.time_to_first_token` | Histogram | `s` | Time to generate first token for successful responses. | ![Development](https://img.shields.io/badge/-development-blue) | |
+
+**Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/general/signal-requirement-level.md).
 
 **Attributes:**
 
@@ -887,9 +892,6 @@ Instrumentation MAY emit both metrics for the same request path when both bounda
 
 ### Metric: `gen_ai.workflow.duration`
 
-This metric is [required][MetricRequired] when instrumented component implements workflow operations.
-
-When this metric is reported alongside a `gen_ai.invoke_workflow` span, the metric value SHOULD be the same as the span duration.
 
 This metric SHOULD be specified with [ExplicitBucketBoundaries] of [1, 5, 10, 30, 60, 120, 300, 600, 1800, 3600, 7200].
 
@@ -903,6 +905,9 @@ This metric SHOULD be specified with [ExplicitBucketBoundaries] of [1, 5, 10, 30
 | `gen_ai.workflow.duration` | Histogram | `s` | GenAI workflow duration. [1] | ![Development](https://img.shields.io/badge/-development-blue) | |
 
 **[1]:** This metric instrument describes an operation that executes a coordinated process composed of multiple agents or other operations involving generative AI.
+When this metric is reported alongside a `gen_ai.invoke_workflow` span, the metric  value SHOULD be the same as the span duration.
+
+**Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/general/signal-requirement-level.md).
 
 **Attributes:**
 
@@ -942,9 +947,6 @@ It is recommended to check system-specific documentation, if available.
 
 ### Metric: `gen_ai.invoke_agent.duration`
 
-This metric is [required][MetricRequired] when the instrumented component
-implements agent invocation operations.
-
 This metric SHOULD be specified with [ExplicitBucketBoundaries] of
 [0.1, 0.2, 0.4, 0.8, 1.6, 3.2, 6.4, 12.8, 25.6, 51.2, 102.4, 204.8, 409.6].
 
@@ -972,6 +974,8 @@ available.
 
 When this metric is reported alongside a `gen_ai.invoke_agent.internal`
 span, the metric value SHOULD be the same as the span duration.
+
+**Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/general/signal-requirement-level.md).
 
 **Attributes:**
 
@@ -1006,9 +1010,6 @@ It is recommended to check system-specific documentation, if available.
 
 ### Metric: `gen_ai.execute_tool.duration`
 
-This metric is [recommended][MetricRecommended] for instrumentations that can
-observe tool executions.
-
 This metric SHOULD be specified with [ExplicitBucketBoundaries] of
 [0.01, 0.02, 0.04, 0.08, 0.16, 0.32, 0.64, 1.28, 2.56, 5.12, 10.24, 20.48, 40.96, 81.92].
 
@@ -1026,6 +1027,8 @@ record this metric for every tool execution they can observe.
 
 When this metric is reported alongside a `gen_ai.execute_tool` span,
 the metric value SHOULD be the same as the span duration.
+
+**Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/general/signal-requirement-level.md).
 
 **Attributes:**
 
@@ -1059,6 +1062,4 @@ Datastore: A tool used by the agent to access and query structured or unstructur
 <!-- endweaver -->
 
 [DocumentStatus]: https://opentelemetry.io/docs/specs/otel/document-status
-[MetricRequired]: https://github.com/open-telemetry/semantic-conventions/blob/v1.40.0/docs/general/metric-requirement-level.md#required
-[MetricRecommended]: https://github.com/open-telemetry/semantic-conventions/blob/v1.40.0/docs/general/metric-requirement-level.md#recommended
 [ExplicitBucketBoundaries]: https://github.com/open-telemetry/opentelemetry-specification/blob/v1.55.0/specification/metrics/api.md#instrument-advisory-parameters

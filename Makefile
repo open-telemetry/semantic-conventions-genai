@@ -1,17 +1,33 @@
 # GenAI Semantic Conventions - Makefile
-# Requires: docker (or podman aliased as docker)
+# Requires: either local weaver >= $(WEAVER_VERSION) OR docker/podman (aliased as docker)
 # The weaver version is pinned in versions.env (WEAVER_VERSION) and run via
-# the otel/weaver container image -- contributors do not need to install weaver locally.
+# the otel/weaver container image if a local weaver installation is not found.
 
 # Shared external version pins. Override on the command line when needed, e.g.
 # `make check-policies SEMCONV_VERSION=v1.40.0`.
 VERSION_PINS_FILE := versions.env
 include $(VERSION_PINS_FILE)
 
-# Run weaver via the pinned container image. The repo is bind-mounted at
-# /workspace and that is the working directory, so every relative path the
-# targets below pass to weaver (./model, .build/..., docs/, docs/registry)
-# resolves the same way it would for a host-installed weaver.
+# Run weaver locally if available, otherwise run via the pinned container image.
+# The repo is bind-mounted at /workspace when running in Docker, resolving
+# relative paths the same way they would on the host.
+LOCAL_RAW_VERSION := $(shell weaver --version 2>/dev/null)
+
+ifeq ($(LOCAL_RAW_VERSION),)
+    USE_DOCKER := 1
+else
+    LOCAL_VERSION := $(shell echo "$(LOCAL_RAW_VERSION)" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?' | head -n1)
+    REPO_VERSION := $(shell echo "$(WEAVER_VERSION)" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?' | head -n1)
+    IS_LOWER := $(shell awk -v v1="$(LOCAL_VERSION)" -v v2="$(REPO_VERSION)" 'BEGIN { split(v1, a, "."); split(v2, b, "."); for (i = 1; i <= 3; i++) { if (a[i]+0 < b[i]+0) { print "yes"; exit }; if (a[i]+0 > b[i]+0) { print "no"; exit } }; print "no" }')
+    ifeq ($(IS_LOWER),yes)
+        $(warning local weaver version $(LOCAL_VERSION) is lower than required $(REPO_VERSION). Falling back to Docker.)
+        USE_DOCKER := 1
+    else
+        USE_DOCKER := 0
+    endif
+endif
+
+ifeq ($(USE_DOCKER),1)
 WEAVER_IMAGE := otel/weaver:$(WEAVER_VERSION)
 WEAVER := docker run --rm \
 	-u $(shell id -u):$(shell id -g) \
@@ -19,6 +35,9 @@ WEAVER := docker run --rm \
 	-w /workspace \
 	-e HOME=/tmp \
 	$(WEAVER_IMAGE)
+else
+WEAVER := weaver
+endif
 
 # Local cache of policies fetched from upstream (gitignored)
 LOCAL_POLICIES := .build/weaver-policies
