@@ -19,9 +19,22 @@ attribute_groups:
         requirement_level: recommended
 metrics:
   - name: gen_ai.client.token.usage
+    requirement_level: recommended
     instrument: histogram
     unit: "{token}"
     brief: 'Number of input and output tokens used.'
+    note: > 
+      This metric SHOULD be reported when an operation involves the usage 
+      of tokens and the count is readily available.
+
+      For example, if GenAI system returns usage information in the streaming response, 
+      it SHOULD be used. Or if GenAI system returns each token independently, 
+      instrumentation SHOULD count number of output tokens and record the result.
+
+      If instrumentation cannot efficiently obtain number of input and/or output tokens,
+      it MAY allow users to enable offline token counting. Otherwise it MUST NOT report usage metric.
+
+      When systems report both used tokens and billable tokens, instrumentation MUST report billable tokens.
     stability: development
     annotations:
       code_generation:
@@ -31,6 +44,7 @@ metrics:
       - ref: gen_ai.token.type
         requirement_level: required
   - name: gen_ai.client.operation.duration
+    requirement_level: recommended
     instrument: histogram
     unit: "s"
     brief: 'GenAI operation duration.'
@@ -45,6 +59,7 @@ metrics:
         requirement_level:
           conditionally_required: If the operation involves a call to a GenAI provider.
   - name: gen_ai.client.operation.time_to_first_chunk
+    requirement_level: recommended
     instrument: histogram
     unit: "s"
     brief: 'Time to receive the first chunk, measured from when the client issues the generation request to when the first chunk is received in the response stream.'
@@ -57,6 +72,7 @@ metrics:
     attributes:
       - ref_group: metric_attributes.gen_ai
   - name: gen_ai.client.operation.time_per_output_chunk
+    requirement_level: recommended
     instrument: histogram
     unit: "s"
     brief: >
@@ -70,6 +86,7 @@ metrics:
     attributes:
       - ref_group: metric_attributes.gen_ai
   - name: gen_ai.server.request.duration
+    requirement_level: recommended
     instrument: histogram
     unit: "s"
     brief: 'Generative AI server request duration such as time-to-last byte or last output token.'
@@ -81,6 +98,7 @@ metrics:
       - ref_group: metric_attributes.gen_ai
       - ref_group: attributes.gen_ai.error
   - name: gen_ai.server.time_per_output_token
+    requirement_level: recommended
     instrument: histogram
     unit: "s"
     brief: 'Time per output token generated after the first token for successful responses.'
@@ -91,6 +109,7 @@ metrics:
     attributes:
       - ref_group: metric_attributes.gen_ai
   - name: gen_ai.server.time_to_first_token
+    requirement_level: recommended
     instrument: histogram
     unit: "s"
     brief: 'Time to generate first token for successful responses.'
@@ -101,6 +120,7 @@ metrics:
     attributes:
       - ref_group: metric_attributes.gen_ai
   - name: gen_ai.workflow.duration
+    requirement_level: recommended
     annotations:
       code_generation:
         metric_value_type: double
@@ -108,6 +128,9 @@ metrics:
     note: >
       This metric instrument describes an operation that executes a coordinated process
       composed of multiple agents or other operations involving generative AI.
+
+      When this metric is reported alongside a `gen_ai.invoke_workflow` span, the metric
+      value SHOULD be the same as the span duration.
     instrument: histogram
     unit: "s"
     stability: development
@@ -117,6 +140,7 @@ metrics:
         requirement_level:
           conditionally_required: If available.
   - name: gen_ai.invoke_agent.duration
+    requirement_level: recommended
     annotations:
       code_generation:
         metric_value_type: double
@@ -149,6 +173,7 @@ metrics:
       
       
   - name: gen_ai.execute_tool.duration
+    requirement_level: recommended
     annotations:
       code_generation:
         metric_value_type: double

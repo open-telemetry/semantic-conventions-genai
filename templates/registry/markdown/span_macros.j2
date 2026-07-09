@@ -3,6 +3,7 @@
    and `name.note` -- a markdown blob describing the span name template
    (e.g. "**Span name** SHOULD be `{gen_ai.operation.name} {gen_ai.request.model}`."). #}
 {% import 'stability.j2' as stability %}
+{% import 'signal_requirement_level.j2' as sr %}
 
 {# Span-name rendering is disabled until weaver PR 1401 ships:
    https://github.com/open-telemetry/weaver/pull/1401
@@ -25,5 +26,7 @@
 {%- if "**Span status" not in (span.note or "") %}
 
 **Span status** SHOULD follow the [Recording Errors]({{ params.upstream_docs_base }}/docs/general/recording-errors.md) document.{% endif %}
+
+{{ sr.render(span.requirement_level) }}
 
 {% endmacro %}
