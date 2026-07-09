@@ -739,14 +739,21 @@ the canonical name of exception that occurred, or another low-cardinality error 
 Instrumentations SHOULD document the list of errors they report.
 
 **[3] `gen_ai.workflow.name`:** The workflow name is usually a static, application-unique identifier defined
-in a framework-specific way. It MUST have low cardinality.
+in a framework-specific way.
 
 For example, it can be the name of the first chain in LangChain,
 the name of the crew in CrewAI, or the entry point agent in ADK or
 OpenAI Agents when no explicit workflow name is provided.
 
-Semantic conventions for individual Generative AI frameworks SHOULD document what `gen_ai.workflow.name` means in the context of that framework.
-If there is no low-cardinality workflow name available for a given framework, this attribute MUST NOT be captured by default.
+It is NOT RECOMMENDED to use instrumentation-time constants or names of
+types representing the workflow, such as "StateGraph". When no meaningful
+workflow name is available for a framework, this attribute SHOULD NOT be set.
+
+This attribute MUST have low cardinality; if there is no low-cardinality workflow name
+available for a given framework, it MUST NOT be captured by default.
+
+Semantic conventions for individual Generative AI frameworks SHOULD document 
+what `gen_ai.workflow.name` means in the context of that framework.
 
 **[4] `gen_ai.input.messages`:** Messages MUST be provided in the order they were sent to the model.
 Instrumentations MAY provide a way for users to filter or truncate
