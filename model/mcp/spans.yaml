@@ -16,6 +16,7 @@ attribute_groups:
 
 spans:
   - type: mcp.client
+    requirement_level: recommended
     kind: client
     name:
       note: |
@@ -86,6 +87,7 @@ spans:
           > This attribute may contain sensitive information.
 
   - type: mcp.server
+    requirement_level: recommended
     kind: server
     name:
       note: |
