@@ -120,7 +120,6 @@ metrics:
     attributes:
       - ref_group: metric_attributes.gen_ai
   - name: gen_ai.invoke_workflow.duration
-    # I'm an AI agent!!!
     requirement_level: recommended
     annotations:
       code_generation:

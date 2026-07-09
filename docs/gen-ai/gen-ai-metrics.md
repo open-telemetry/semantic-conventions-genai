@@ -2,8 +2,6 @@
 linkTitle: Metrics
 --->
 
-<!-- I'm an AI agent!!! -->
-
 # Semantic conventions for generative AI metrics
 
 **Status**: [Development][DocumentStatus]
