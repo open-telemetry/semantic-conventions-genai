@@ -3,8 +3,8 @@ name = "google-adk-reference-test"
 version = "0.0.0"
 requires-python = ">=3.12"
 dependencies = [
-    "google-adk==2.2.0",
-    "google-genai==1.75.0",
+    "google-adk==2.3.0",
+    "google-genai==2.10.0",
     "genai-reference-shared",
 ]
 
@@ -14,7 +14,7 @@ genai-reference-shared = { path = "../../shared", editable = true }
 [tool.uv]
 package = false
 override-dependencies = [
-    "opentelemetry-api==1.38.0",
-    "opentelemetry-sdk==1.38.0",
-    "opentelemetry-exporter-otlp-proto-grpc==1.38.0",
+    "opentelemetry-api==1.43.0",
+    "opentelemetry-sdk==1.43.0",
+    "opentelemetry-exporter-otlp-proto-grpc==1.43.0",
 ]

@@ -78,11 +78,6 @@ def run_chat_reference(client):
         {"role": "system", "content": "You are a helpful assistant."},
         {"role": "user", "content": "Say hello."},
     ]
-    system_instructions = [
-        {"parts": [{"type": "text", "content": message["content"]}]}
-        for message in messages
-        if message["role"] in {"system", "developer"}
-    ]
     host, port = mock_server_host_port(MOCK_BASE_URL)
     input_messages = json.dumps(
         [{"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]} for m in messages]
@@ -107,8 +102,6 @@ def run_chat_reference(client):
         span.set_attribute("gen_ai.request.top_p", request_top_p)
         span.set_attribute("gen_ai.request.reasoning.level", request_reasoning_level)
         span.set_attribute("gen_ai.input.messages", input_messages)
-        if system_instructions:
-            span.set_attribute("gen_ai.system_instructions", json.dumps(system_instructions))
         resp = client.chat.completions.create(
             model=request_model,
             messages=messages,

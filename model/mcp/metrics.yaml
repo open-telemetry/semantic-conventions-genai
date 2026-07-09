@@ -18,6 +18,7 @@ attribute_groups:
 
 metrics:
   - name: mcp.client.operation.duration
+    requirement_level: recommended
     instrument: histogram
     unit: s
     brief: >
@@ -29,6 +30,7 @@ metrics:
       - ref_group: mcp.client.address_and_port.attributes
 
   - name: mcp.server.operation.duration
+    requirement_level: recommended
     instrument: histogram
     unit: s
     brief: >
@@ -38,6 +40,7 @@ metrics:
     attributes:
       - ref_group: mcp.operation.metrics.attributes
   - name: mcp.client.session.duration
+    requirement_level: recommended
     instrument: histogram
     unit: s
     brief: The duration of the MCP session as observed on the MCP client.
@@ -47,6 +50,7 @@ metrics:
       - ref_group: mcp.client.address_and_port.attributes
 
   - name: mcp.server.session.duration
+    requirement_level: recommended
     instrument: histogram
     unit: s
     brief: The duration of the MCP session as observed on the MCP server.

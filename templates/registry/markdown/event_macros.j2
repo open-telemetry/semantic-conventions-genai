@@ -1,5 +1,6 @@
 {# v2 event objects expose: name, brief, note, stability, attributes. #}
 {% import 'stability.j2' as stability %}
+{% import 'signal_requirement_level.j2' as sr %}
 {% macro header(event) -%}
 **Status:** {{ stability.badge(event.stability, event.deprecated, event.brief) }}
 
@@ -9,5 +10,7 @@ The event name MUST be `{{ event.name }}`.
 {%- if event.note %}
 
 {{ event.note | trim }}{% endif %}
+
+{{ sr.render(event.requirement_level) }}
 
 {% endmacro %}
