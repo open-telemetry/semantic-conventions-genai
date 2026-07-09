@@ -575,17 +575,19 @@ spans:
       The `gen_ai.operation.name` SHOULD be `invoke_workflow`.
       **Span name** SHOULD be `invoke_workflow {gen_ai.workflow.name}`.
 
-      The workflow span SHOULD be reported for operations executing composable processes
-      (e.g., graphs, orchestrators) that can coordinate multiple agents or GenAI calls.
-      For example, when instrumenting user-facing API that supports composable operations.
-      It SHOULD NOT be reported for standalone agent invocations.
+      The workflow span SHOULD be reported for operations that trigger the execution
+      of composable processes (e.g., graphs, orchestrators) coordinating multiple
+      agents or GenAI calls. It SHOULD NOT be reported for standalone agent invocations.
+
+      If a workflow operation can be invoked both by external callers and internally
+      by the instrumented framework, only the external invocation SHOULD be reported as a workflow span.
 
       Framework-specific semantic conventions SHOULD define which operations to report
-      as workflow spans and MAY specify heuristics to distinguish workflows from standalone
-      agent invocations.
- 
+      as workflows and MAY specify heuristics to distinguish them from standalone
+      agent invocations and internal operations.
+
       Examples of workflow invocations in different frameworks include:
-      
+
       - **ADK**: [`Runner.run(...)`](https://adk.dev/agents/) with multi-agent or graph workflow.
       - **crewai**: [`Crew.kickoff()`](https://docs.crewai.com/concepts/crews)
       - **langchain / langgraph**: [`*Graph*.invoke(...)`](https://reference.langchain.com/python/langgraph/graphs)

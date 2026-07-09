@@ -697,14 +697,16 @@ Represents an operation that executes a coordinated process composed of multiple
 The `gen_ai.operation.name` SHOULD be `invoke_workflow`.
 **Span name** SHOULD be `invoke_workflow {gen_ai.workflow.name}`.
 
-The workflow span SHOULD be reported for operations executing composable processes
-(e.g., graphs, orchestrators) that can coordinate multiple agents or GenAI calls.
-For example, when instrumenting user-facing API that supports composable operations.
-It SHOULD NOT be reported for standalone agent invocations.
+The workflow span SHOULD be reported for operations that trigger the execution
+of composable processes (e.g., graphs, orchestrators) coordinating multiple
+agents or GenAI calls. It SHOULD NOT be reported for standalone agent invocations.
+
+If a workflow operation can be invoked both by external callers and internally
+by the instrumented framework, only the external invocation SHOULD be reported as a workflow span.
 
 Framework-specific semantic conventions SHOULD define which operations to report
-as workflow spans and MAY specify heuristics to distinguish workflows from standalone
-agent invocations.
+as workflows and MAY specify heuristics to distinguish them from standalone
+agent invocations and internal operations.
 
 Examples of workflow invocations in different frameworks include:
 
@@ -736,11 +738,13 @@ Examples of workflow invocations in different frameworks include:
 the canonical name of exception that occurred, or another low-cardinality error identifier.
 Instrumentations SHOULD document the list of errors they report.
 
-**[3] `gen_ai.workflow.name`:** This attribute can be populated in different frameworks; for example, as the name of the first chain in LangChain or the name of the crew in CrewAI.
-The workflow name is usually provided by the application in a way that is specific to the generative AI framework or library that orchestrates the workflow.
-It is usually a static name that is expected to be unique within an application.
+**[3] `gen_ai.workflow.name`:** The workflow name is usually a static, application-unique identifier defined
+in a framework-specific way. It MUST have low cardinality.
 
-`gen_ai.workflow.name` MUST have low cardinality.
+For example, it can be the name of the first chain in LangChain,
+the name of the crew in CrewAI, or the entry point agent in ADK or
+OpenAI Agents when no explicit workflow name is provided.
+
 Semantic conventions for individual Generative AI frameworks SHOULD document what `gen_ai.workflow.name` means in the context of that framework.
 If there is no low-cardinality workflow name available for a given framework, this attribute MUST NOT be captured by default.
 

@@ -905,7 +905,7 @@ This metric SHOULD be specified with [ExplicitBucketBoundaries] of [1, 5, 10, 30
 | `gen_ai.workflow.duration` | Histogram | `s` | GenAI workflow duration. [1] | ![Development](https://img.shields.io/badge/-development-blue) | |
 
 **[1]:** This metric instrument describes an operation that executes a coordinated process composed of multiple agents or other operations involving generative AI.
-When this metric is reported alongside a `gen_ai.invoke_workflow` span, the metric  value SHOULD be the same as the span duration.
+When this metric is reported alongside a `gen_ai.invoke_workflow` span, the metric value SHOULD be the same as the span duration.
 
 **Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/general/signal-requirement-level.md).
 
@@ -920,11 +920,13 @@ When this metric is reported alongside a `gen_ai.invoke_workflow` span, the metr
 the canonical name of exception that occurred, or another low-cardinality error identifier.
 Instrumentations SHOULD document the list of errors they report.
 
-**[2] `gen_ai.workflow.name`:** This attribute can be populated in different frameworks; for example, as the name of the first chain in LangChain or the name of the crew in CrewAI.
-The workflow name is usually provided by the application in a way that is specific to the generative AI framework or library that orchestrates the workflow.
-It is usually a static name that is expected to be unique within an application.
+**[2] `gen_ai.workflow.name`:** The workflow name is usually a static, application-unique identifier defined
+in a framework-specific way. It MUST have low cardinality.
 
-`gen_ai.workflow.name` MUST have low cardinality.
+For example, it can be the name of the first chain in LangChain,
+the name of the crew in CrewAI, or the entry point agent in ADK or
+OpenAI Agents when no explicit workflow name is provided.
+
 Semantic conventions for individual Generative AI frameworks SHOULD document what `gen_ai.workflow.name` means in the context of that framework.
 If there is no low-cardinality workflow name available for a given framework, this attribute MUST NOT be captured by default.
 
