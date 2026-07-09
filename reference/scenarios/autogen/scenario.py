@@ -124,9 +124,7 @@ def run_agent_reference():
             span_attributes_2["server.port"] = port
         with _reference_tracer.start_as_current_span("create_agent test_agent", attributes=span_attributes_2) as span:
             span.set_attribute("gen_ai.agent.description", agent_description)
-            span.set_attribute(
-                "gen_ai.system_instructions", json.dumps([{"parts": [{"type": "text", "content": system_message}]}])
-            )
+            span.set_attribute("gen_ai.system_instructions", json.dumps([{"type": "text", "content": system_message}]))
             agent = AssistantAgent(
                 name=agent_name,
                 model_client=model_client,
@@ -157,7 +155,7 @@ def run_agent_reference():
                 agent_span.set_attribute("gen_ai.request.frequency_penalty", request_frequency_penalty)
                 agent_span.set_attribute("gen_ai.request.presence_penalty", request_presence_penalty)
                 agent_span.set_attribute(
-                    "gen_ai.system_instructions", json.dumps([{"parts": [{"type": "text", "content": system_message}]}])
+                    "gen_ai.system_instructions", json.dumps([{"type": "text", "content": system_message}])
                 )
                 agent_span.set_attribute(
                     "gen_ai.input.messages",
@@ -184,7 +182,7 @@ def run_agent_reference():
                     span.set_attribute("gen_ai.request.presence_penalty", request_presence_penalty)
                     span.set_attribute(
                         "gen_ai.system_instructions",
-                        json.dumps([{"parts": [{"type": "text", "content": system_message}]}]),
+                        json.dumps([{"type": "text", "content": system_message}]),
                     )
                     span.set_attribute(
                         "gen_ai.input.messages",
@@ -248,9 +246,7 @@ def run_agent_reference():
                     event_attrs = {
                         "gen_ai.operation.name": "invoke_agent",
                         "gen_ai.request.model": request_model,
-                        "gen_ai.system_instructions": json.dumps(
-                            [{"parts": [{"type": "text", "content": system_message}]}]
-                        ),
+                        "gen_ai.system_instructions": json.dumps([{"type": "text", "content": system_message}]),
                         "gen_ai.input.messages": json.dumps(
                             [
                                 {"role": "user", "parts": [{"type": "text", "content": input_text}]},
