@@ -191,7 +191,7 @@ def run_agent_reference():
                     agent_span.set_attribute("gen_ai.conversation.id", session.id)
                     agent_span.set_attribute(
                         "gen_ai.system_instructions",
-                        json.dumps([{"parts": [{"type": "text", "content": agent.instruction}]}]),
+                        json.dumps([{"type": "text", "content": agent.instruction}]),
                     )
                     agent_span.set_attribute(
                         "gen_ai.input.messages",
@@ -221,7 +221,7 @@ def run_agent_reference():
                         span.set_attribute("gen_ai.request.stop_sequences", request_stop_sequences)
                         span.set_attribute(
                             "gen_ai.system_instructions",
-                            json.dumps([{"parts": [{"type": "text", "content": agent.instruction}]}]),
+                            json.dumps([{"type": "text", "content": agent.instruction}]),
                         )
                         span.set_attribute(
                             "gen_ai.input.messages",

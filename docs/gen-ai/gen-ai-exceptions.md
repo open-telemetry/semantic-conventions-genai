@@ -31,6 +31,8 @@ This event SHOULD be recorded when an exception occurs during Generative AI clie
 Instrumentations SHOULD set the severity to WARN (severity number 13) when recording this event.
 Instrumentations MAY provide a configuration option to populate exception events with the attributes captured on the corresponding Generative AI client span.
 
+**Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/general/signal-requirement-level.md).
+
 **Attributes:**
 
 | Key | Stability | [Requirement Level](https://opentelemetry.io/docs/specs/semconv/general/attribute-requirement-level/) | Value Type | Description | Example Values |
