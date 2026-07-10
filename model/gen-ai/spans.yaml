@@ -350,8 +350,6 @@ spans:
     note: |
       The `gen_ai.operation.name` SHOULD be `fetch_response`.
 
-      Instrumentations MUST NOT report token usage or metrics for this operation.
-
       `error.type` and the span status describe failures of the fetch itself. Successfully
       fetching a response whose original generation failed or was left incomplete is not an
       error of this operation; that outcome is conveyed through `gen_ai.response.finish_reasons`.
