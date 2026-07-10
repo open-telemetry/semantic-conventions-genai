@@ -673,10 +673,6 @@ Describes a request to a Generative AI provider that fetches a previously genera
 
 The `gen_ai.operation.name` SHOULD be `fetch_response`.
 
-`error.type` and the span status describe failures of the fetch itself. Successfully
-fetching a response whose original generation failed or was left incomplete is not an
-error of this operation; that outcome is conveyed through `gen_ai.response.finish_reasons`.
-
 **Span name** SHOULD be `{gen_ai.operation.name}`. The response identifier is high
 cardinality, so it is not included in the span name. Semantic conventions for individual
 GenAI providers MAY specify a different span name format.
