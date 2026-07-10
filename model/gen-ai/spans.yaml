@@ -377,7 +377,6 @@ spans:
         sampling_relevant: true
       - ref: gen_ai.response.id
         requirement_level: required
-        sampling_relevant: true
         note: >
           The identifier of the response being fetched, as used in the request and returned in the response.
       - ref: gen_ai.system_instructions
