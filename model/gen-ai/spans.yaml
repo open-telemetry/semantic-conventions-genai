@@ -759,6 +759,13 @@ span_refinements:
         requirement_level: recommended
         note: >
           For this operation `openai.api.type` SHOULD be set to `responses`.
+      - ref: gen_ai.response.finish_reasons
+        requirement_level: recommended
+        note: >
+          Derived from the fetched response `status`: a `completed` response maps to its stop
+          reason, a `failed` or `cancelled` response to `error`, and an `incomplete` response to
+          its `incomplete_details.reason` (for example `max_output_tokens` maps to `length` and
+          `content_filter` to `content_filter`).
       - ref: openai.response.service_tier
         requirement_level:
           conditionally_required: If the response was received and includes a service_tier.

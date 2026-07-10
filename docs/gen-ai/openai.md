@@ -380,7 +380,7 @@ Instrumentations SHOULD document the list of errors they report.
 
 **[5] `server.port`:** When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries, for example proxies, if it's available.
 
-**[6] `gen_ai.response.finish_reasons`:** Conveys the outcome of the original generation as recorded on the fetched response, derived from its status: a completed generation maps to its stop reason, an incomplete one to why it was cut short (for example `length` or `content_filter`), and a failed or cancelled generation to `error`.
+**[6] `gen_ai.response.finish_reasons`:** Derived from the fetched response `status`: a `completed` response maps to its stop reason, a `failed` or `cancelled` response to `error`, and an `incomplete` response to its `incomplete_details.reason` (for example `max_output_tokens` maps to `length` and `content_filter` to `content_filter`).
 
 **[7] `openai.api.type`:** For this operation `openai.api.type` SHOULD be set to `responses`.
 
