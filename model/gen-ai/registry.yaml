@@ -557,6 +557,14 @@ attributes:
           value: "delete_memory_store"
           brief: 'Delete or deprovision a memory store'
           stability: development
+        - id: speech_to_text
+          value: "speech_to_text"
+          brief: 'Speech-to-text (transcription) operation such as [OpenAI Create transcription API](https://platform.openai.com/docs/api-reference/audio/createTranscription)'
+          stability: development
+        - id: text_to_speech
+          value: "text_to_speech"
+          brief: 'Text-to-speech (speech synthesis) operation such as [OpenAI Create speech API](https://platform.openai.com/docs/api-reference/audio/createSpeech)'
+          stability: development
     brief: The name of the operation being performed.
     note: >
       If one of the predefined values applies, but specific system uses a different name it's RECOMMENDED to document it in the semantic
@@ -596,6 +604,25 @@ attributes:
 
       Additional output format details may be recorded in the future in the
       `gen_ai.output.{type}.*` attributes.
+    stability: development
+  - key: gen_ai.speech.voice
+    type: string
+    brief: The name or identifier of the voice used to synthesize speech.
+    note: >
+      Applies to text-to-speech (speech synthesis) operations. The value is the
+      provider-specific voice name or identifier requested by the client, for
+      example the OpenAI `voice` parameter (`alloy`, `verse`).
+    examples: ['alloy', 'verse']
+    stability: development
+  - key: gen_ai.speech.input.language
+    type: string
+    brief: The primary language of the input audio for a speech-to-text operation.
+    note: >
+      The language of the input audio, as declared in the request or detected
+      during transcription. When available, the value SHOULD be a BCP-47 language
+      tag (for example `en` or `en-US`); some providers report a language name
+      instead, in which case the reported value is used as-is.
+    examples: ['en', 'en-US']
     stability: development
   - key: gen_ai.embeddings.dimension.count
     type: int

@@ -417,6 +417,37 @@ def embeddings(deployment=None):
     return resp
 
 
+# Cascade voice pipeline stage 1: speech-to-text (transcription). Returns a
+# verbose_json transcription so the SDK exposes the detected `language` and
+# `duration` in addition to the transcript text.
+TRANSCRIPTION_VERBOSE_RESPONSE = {
+    "task": "transcribe",
+    "language": "en",
+    "duration": 3.2,
+    "text": "What is the weather in Seattle today?",
+}
+
+
+@bp.route("/v1/audio/transcriptions", methods=["POST"])
+@bp.route("/audio/transcriptions", methods=["POST"])
+def audio_transcriptions():
+    resp = dict(TRANSCRIPTION_VERBOSE_RESPONSE)
+    if request.form.get("language"):
+        resp["language"] = request.form["language"]
+    return resp
+
+
+# Cascade voice pipeline stage 3: text-to-speech (speech synthesis). Returns
+# raw audio bytes, mirroring the OpenAI Create speech API.
+MOCK_SPEECH_AUDIO = b"mock-synthesized-speech-audio-bytes"
+
+
+@bp.route("/v1/audio/speech", methods=["POST"])
+@bp.route("/audio/speech", methods=["POST"])
+def audio_speech():
+    return Response(MOCK_SPEECH_AUDIO, mimetype="audio/mpeg")
+
+
 @bp.route("/v1/responses", methods=["POST"])
 @bp.route("/openai/v1/responses", methods=["POST"])
 def responses():

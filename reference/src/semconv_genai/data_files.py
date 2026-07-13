@@ -43,6 +43,8 @@ SPAN_TYPE_ORDER = [
     "inference",
     "embeddings",
     "retrieval",
+    "speech_to_text",
+    "text_to_speech",
     "memory",
     "execute_tool",
 ]
