@@ -1,0 +1,1 @@
+Add a voice agent guidance page (`docs/gen-ai/gen-ai-voice-agents.md`) describing how to capture cascade (STT -> LLM -> TTS) and realtime (voice-native) voice agent telemetry by composing existing GenAI spans and attributes.

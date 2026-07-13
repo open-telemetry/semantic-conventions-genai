@@ -18,6 +18,7 @@
 | gen_ai.agent.name | [azure-ai-foundry], [openai-assistants] |
 | gen_ai.agent.version | [aws-bedrock-agent] |
 | gen_ai.conversation.id | [aws-bedrock-agent], [openai-assistants] |
+| gen_ai.conversation.turn.end_reason | (none) |
 | gen_ai.data_source.id | (none) |
 | gen_ai.output.type | [azure-ai-foundry] |
 | gen_ai.request.choice.count | (none) |
@@ -38,7 +39,9 @@
 | gen_ai.response.finish_reasons | (none) |
 | gen_ai.usage.cache_creation.input_tokens | (none) |
 | gen_ai.usage.cache_read.input_tokens | (none) |
+| gen_ai.usage.input_audio_tokens | (none) |
 | gen_ai.usage.input_tokens | [azure-ai-foundry], [openai-assistants] |
+| gen_ai.usage.output_audio_tokens | (none) |
 | gen_ai.usage.output_tokens | [azure-ai-foundry], [openai-assistants] |
 | server.address | [aws-bedrock-agent], [azure-ai-foundry], [openai-assistants] |
 

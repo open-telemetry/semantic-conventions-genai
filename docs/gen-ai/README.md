@@ -13,6 +13,7 @@ Semantic conventions for Generative AI operations are defined for the following 
 * [Metrics](gen-ai-metrics.md): Semantic Conventions for Generative AI operations - *metrics*.
 * [Model spans](gen-ai-spans.md): Semantic Conventions for Generative AI model operations - *spans*.
 * [Agent spans](gen-ai-agent-spans.md): Semantic Conventions for Generative AI agent operations - *spans*.
+* [Voice agents](gen-ai-voice-agents.md): Semantic Conventions for Generative AI voice agents (cascade and realtime) - *guidance*.
 
 Technology specific semantic conventions are defined for the following GenAI system:
 
