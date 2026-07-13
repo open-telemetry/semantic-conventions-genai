@@ -12,7 +12,7 @@ import argparse
 
 from flask import Flask
 
-from . import anthropic, assistants, bedrock, bedrock_agent, bedrock_agentcore, cohere, google_genai, openai
+from . import anthropic, assistants, bedrock, bedrock_agent, bedrock_agentcore, cohere, google_genai, openai, realtime
 
 app = Flask(__name__)
 
@@ -30,7 +30,10 @@ def main():
     parser.add_argument("--port", type=int, default=8080, help="Port to listen on")
     parser.add_argument("--host", type=str, default="127.0.0.1", help="Host to bind to")
     args = parser.parse_args()
-    app.run(host=args.host, port=args.port, debug=False)
+    # Realtime is served by a standalone websockets server (fully compatible with
+    # the openai realtime client) on the next port up from the HTTP mock.
+    realtime.start_in_thread(args.host, args.port + 1)
+    app.run(host=args.host, port=args.port, debug=False, threaded=True)
 
 
 if __name__ == "__main__":

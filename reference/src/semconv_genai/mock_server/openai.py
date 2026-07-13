@@ -9,7 +9,6 @@ from ._common import mock_tool_arguments, sse
 
 bp = Blueprint("openai", __name__)
 
-
 CHAT_REFUSAL_RESPONSE = {
     "id": "chatcmpl-mock-refusal-001",
     "object": "chat.completion",
@@ -53,6 +52,42 @@ CHAT_RESPONSE = {
         "prompt_tokens": 25,
         "completion_tokens": 12,
         "total_tokens": 37,
+    },
+}
+
+CHAT_AUDIO_RESPONSE = {
+    "id": "chatcmpl-mock-audio-001",
+    "object": "chat.completion",
+    "created": 1700000000,
+    "model": "gpt-4o-audio-preview",
+    "choices": [
+        {
+            "index": 0,
+            "message": {
+                "role": "assistant",
+                "content": None,
+                "audio": {
+                    "id": "audio_mock_001",
+                    "expires_at": 1700003600,
+                    "data": "bW9jay1hc3Npc3RhbnQtYXVkaW8=",
+                    "transcript": "Sure. It is currently sunny and about 72 degrees in Seattle.",
+                },
+            },
+            "finish_reason": "stop",
+        }
+    ],
+    "usage": {
+        "prompt_tokens": 40,
+        "completion_tokens": 30,
+        "total_tokens": 70,
+        "prompt_tokens_details": {
+            "text_tokens": 15,
+            "audio_tokens": 25,
+        },
+        "completion_tokens_details": {
+            "text_tokens": 8,
+            "audio_tokens": 22,
+        },
     },
 }
 
@@ -293,6 +328,14 @@ def chat_completions(deployment=None):
     # Streaming
     if body.get("stream"):
         return Response(_stream_chat(body), mimetype="text/event-stream")
+
+    # Audio output (voice-native chat completion, e.g. gpt-4o-audio-preview):
+    # when the caller requests the audio modality, return an assistant audio
+    # message plus text/audio token breakdown in usage details.
+    if "audio" in (body.get("modalities") or []):
+        resp = copy.deepcopy(CHAT_AUDIO_RESPONSE)
+        resp["model"] = body.get("model", resp["model"])
+        return resp
 
     # Compute message text once for content-driven dispatch below.
     message_text = "\n".join(

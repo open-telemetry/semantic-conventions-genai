@@ -1,4 +1,5 @@
 file_format: definition/2
+# I'm an AI agent!!!
 attributes:
   - key: gen_ai.provider.name
     type:
@@ -250,6 +251,34 @@ attributes:
       The value SHOULD be included in `gen_ai.usage.output_tokens`.
     examples: [50]
     stability: development
+  - key: gen_ai.usage.input_audio_tokens
+    type: int
+    brief: The number of audio tokens used in the GenAI input (prompt).
+    note: >
+      The value SHOULD be included in `gen_ai.usage.input_tokens`.
+
+      Voice-native (speech-to-speech) models and multimodal models that accept
+      audio input report audio tokens separately from text tokens. When the
+      provider exposes an audio token count for the input (for example, OpenAI
+      `usage.prompt_tokens_details.audio_tokens` or the Realtime API
+      `usage.input_token_details.audio_tokens`), instrumentations SHOULD report
+      it here.
+    examples: [50]
+    stability: development
+  - key: gen_ai.usage.output_audio_tokens
+    type: int
+    brief: The number of audio tokens used in the GenAI response (completion).
+    note: >
+      The value SHOULD be included in `gen_ai.usage.output_tokens`.
+
+      Voice-native (speech-to-speech) models and multimodal models that produce
+      audio output report audio tokens separately from text tokens. When the
+      provider exposes an audio token count for the output (for example, OpenAI
+      `usage.completion_tokens_details.audio_tokens` or the Realtime API
+      `usage.output_token_details.audio_tokens`), instrumentations SHOULD report
+      it here.
+    examples: [30]
+    stability: development
   - key: gen_ai.token.type
     type:
       members:
@@ -278,6 +307,36 @@ attributes:
       compaction was applied. Instrumentations SHOULD NOT set it to `false`; they
       SHOULD leave it unset otherwise.
     examples: [true]
+    stability: development
+  - key: gen_ai.conversation.turn.end_reason
+    type:
+      members:
+        - id: complete
+          value: "complete"
+          brief: 'The turn ended because the model finished producing its response.'
+          stability: development
+        - id: interrupted
+          value: "interrupted"
+          brief: 'The turn ended because the user interrupted (barge-in) the in-progress response.'
+          stability: development
+        - id: session_closed
+          value: "session_closed"
+          brief: 'The turn ended because the session was closed before the response completed.'
+          stability: development
+    brief: The reason a realtime or voice conversation turn ended.
+    note: >
+      This attribute applies to turn-based, streaming voice interactions
+      (for example, the OpenAI Realtime API or other speech-to-speech models)
+      where a user utterance and the model response form a single turn that can
+      be cut short. Instrumentations SHOULD set it only when they can reliably
+      determine why the turn ended; the `interrupted` value in particular
+      captures barge-in, where new user speech ends the in-progress response.
+
+      If one of the predefined values applies but a specific system uses a
+      different name, it's RECOMMENDED to document it in the semantic conventions
+      for that GenAI system and use the system-specific name in the
+      instrumentation.
+    examples: ['complete', 'interrupted', 'session_closed']
     stability: development
   - key: gen_ai.agent.id
     type: string

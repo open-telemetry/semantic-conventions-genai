@@ -44,8 +44,14 @@ attribute_groups:
         requirement_level: recommended
       - ref: gen_ai.usage.cache_creation.input_tokens
         requirement_level: recommended
+      - ref: gen_ai.usage.input_audio_tokens
+        requirement_level:
+          recommended: When the model reports audio input tokens separately.
       - ref: gen_ai.usage.output_tokens
         requirement_level: recommended
+      - ref: gen_ai.usage.output_audio_tokens
+        requirement_level:
+          recommended: When the model reports audio output tokens separately.
 
   - id: attributes.gen_ai.content
     visibility: internal
@@ -136,6 +142,9 @@ attribute_groups:
         brief: The free-form description of the invoked GenAI agent.
         requirement_level:
           conditionally_required: When available.
+      - ref: gen_ai.conversation.turn.end_reason
+        requirement_level:
+          conditionally_required: For turn-based voice interactions, when the reason the turn ended can be reliably determined.
 
 
   - id: attributes.gen_ai.execute_tool.common
