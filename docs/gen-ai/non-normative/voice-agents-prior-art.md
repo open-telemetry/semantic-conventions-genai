@@ -88,32 +88,96 @@ tracked in [Mapping to the proposed conventions](#mapping-to-the-proposed-conven
 - **Realtime**: same `conversation → turn` hierarchy with realtime-specific
   operation values (`setup`, `model_turn`, `transcription`, `response`).
 
-**Span mapping**
+The tables below map Pipecat's tracing surface span-by-span. Pipecat's spans are
+created in `src/pipecat/utils/tracing/turn_trace_observer.py` (conversation,
+turn) and `service_decorators.py` / `service_attributes.py` (stt, llm, tts, and
+the realtime spans). Notably, Pipecat's `llm` span already sets most `gen_ai.*`
+chat attributes verbatim, so much of the mapping is identity.
+
+**Span hierarchy → `gen_ai.*`**
 
 | Pipecat span | `gen_ai.*` span / operation |
 |---|---|
-| `conversation` | `invoke_agent` (agent session container) |
-| `turn` | conversation turn (no dedicated span; `gen_ai.conversation.turn.*`) |
+| `conversation` (tracer `pipecat.turn`) | `invoke_agent` (agent session container) |
+| `turn` (tracer `pipecat.turn`) | conversation turn (no dedicated span; `gen_ai.conversation.turn.*`) |
 | `stt` | `gen_ai.speech_to_text.client` (`speech_to_text`) |
 | `llm` | `chat` |
 | `tts` | `gen_ai.text_to_speech.client` (`text_to_speech`) |
+| realtime `llm_setup` / `llm_request` / `llm_response` / `llm_tool_call` / `llm_tool_result` (Gemini Live, OpenAI Realtime) | conversation turn under `invoke_agent`; tool ops → `execute_tool` |
 
-**Attribute mapping**
+**`conversation` span attributes**
+
+| Pipecat attribute | `gen_ai.*` attribute |
+|---|---|
+| `conversation.id` | `gen_ai.conversation.id` |
+| `conversation.type` (`"voice"`) | — (no `gen_ai.*` equivalent) |
+| `additional_span_attributes.*` | — (user-supplied resource/context) |
+
+**`turn` span attributes**
+
+| Pipecat attribute | `gen_ai.*` attribute |
+|---|---|
+| `turn.was_interrupted` (`True`) | `gen_ai.conversation.turn.end_reason = interrupted` |
+| `turn.ended_by_conversation_end` (`True`) | `gen_ai.conversation.turn.end_reason = session_closed` |
+| `turn.number` | — (turn index; no `gen_ai.*` equivalent) |
+| `turn.type` (`"conversation"`) | — |
+| `turn.duration_seconds` | — (captured by span duration) |
+| `turn.user_bot_latency_seconds` | — (perceived voice latency; no stable `gen_ai.*` attribute yet) |
+| `conversation.id` | `gen_ai.conversation.id` |
+
+**`stt` span attributes** → `gen_ai.speech_to_text.client`
 
 | Pipecat attribute | `gen_ai.*` attribute |
 |---|---|
 | `gen_ai.provider.name` | `gen_ai.provider.name` (same) |
 | `gen_ai.request.model` | `gen_ai.request.model` (same) |
-| `gen_ai.operation.name` (`stt` / `tts` / `chat`) | `gen_ai.operation.name` (`speech_to_text` / `text_to_speech` / `chat`) |
-| `gen_ai.output.type = speech` | `gen_ai.output.type = speech` (same) |
-| `gen_ai.usage.{input,output}_tokens` | `gen_ai.usage.input_tokens` / `output_tokens` (same) |
-| `voice_id` | `gen_ai.speech.voice` |
+| `gen_ai.operation.name` (`"stt"`) | `gen_ai.operation.name = speech_to_text` |
 | `language` | `gen_ai.speech.input.language` |
-| `turn.was_interrupted` / `tts.interrupted` | `gen_ai.conversation.turn.end_reason = interrupted` |
-| `turn.ended_by_conversation_end` | `gen_ai.conversation.turn.end_reason = session_closed` |
-| `is_final`, `vad_enabled` | — (streaming / VAD detail) |
+| `transcript` | recorded as transcript message content |
 | `metrics.ttfb` | — (voice latency; no stable `gen_ai.*` attribute yet) |
-| `metrics.character_count` | — (provider-specific TTS billing) |
+| `is_final`, `stt.incomplete`, `user_id`, `vad_enabled`, `settings.*` | — (streaming / VAD / per-service detail) |
+
+**`tts` span attributes** → `gen_ai.text_to_speech.client`
+
+| Pipecat attribute | `gen_ai.*` attribute |
+|---|---|
+| `gen_ai.provider.name` | `gen_ai.provider.name` (same) |
+| `gen_ai.request.model` | `gen_ai.request.model` (same) |
+| `gen_ai.operation.name` (`"tts"`) | `gen_ai.operation.name = text_to_speech` |
+| `gen_ai.output.type` (`"speech"`) | `gen_ai.output.type = speech` (same) |
+| `voice_id` | `gen_ai.speech.voice` |
+| `text` | recorded as input message content |
+| `tts.interrupted` (`True`) | `gen_ai.conversation.turn.end_reason = interrupted` (on the turn) |
+| `metrics.ttfb` | — (voice latency; no stable `gen_ai.*` attribute yet) |
+| `metrics.character_count`, `settings.*` | — (character billing / per-service detail) |
+
+**`llm` span attributes** → `chat`
+
+| Pipecat attribute | `gen_ai.*` attribute |
+|---|---|
+| `gen_ai.provider.name` | `gen_ai.provider.name` (same) |
+| `gen_ai.request.model` | `gen_ai.request.model` (same) |
+| `gen_ai.operation.name` (`"chat"`) | `gen_ai.operation.name = chat` (same) |
+| `gen_ai.output.type` (`"text"`) | `gen_ai.output.type = text` (same) |
+| `gen_ai.system_instructions` | `gen_ai.system_instructions` (same) |
+| `gen_ai.request.temperature` / `max_tokens` / `max_completion_tokens` / `top_p` / `top_k` / `frequency_penalty` / `presence_penalty` / `seed` | same keys (reused verbatim) |
+| `gen_ai.usage.input_tokens` / `output_tokens` | same keys (reused verbatim) |
+| `gen_ai.usage.cache_read.input_tokens` / `cache_creation.input_tokens` / `reasoning_tokens` | — (cache / reasoning token breakdown; not in the GenAI registry) |
+| `input` (JSON messages) | recorded as input message content |
+| `output` (accumulated text) | recorded as output message content |
+| `tools` / `tool_count` | tool definitions (recorded as message/tool content) |
+| `stream` (`True`) | `gen_ai.request.stream` (equivalent; Pipecat uses a flat key) |
+| `metrics.ttfb` | — (latency; no stable `gen_ai.*` attribute yet) |
+| `param.*`, `extra.*` | — (unmapped per-service request params) |
+
+Realtime spans (Gemini Live, OpenAI Realtime) largely duplicate the audio-token
+and turn-completion signals of the dedicated realtime provider APIs surveyed
+below, but through Pipecat-specific keys (`tokens.prompt` / `tokens.completion` /
+`tokens.total` alongside `gen_ai.usage.input_tokens` / `output_tokens`,
+`turn_complete`, `response.status`, `output_modality`). These map to
+`gen_ai.usage.*`, `gen_ai.conversation.turn.end_reason`, and `gen_ai.output.type`
+the same way as the [Gemini Live](#google-gemini-live) and
+[Azure Voice Live](#azure-voice-live) tables.
 
 ### LiveKit Agents
 
