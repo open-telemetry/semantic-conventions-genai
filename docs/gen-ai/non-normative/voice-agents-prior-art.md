@@ -98,22 +98,29 @@ chat attributes verbatim, so much of the mapping is identity.
 
 | Pipecat span | `gen_ai.*` span / operation |
 |---|---|
-| `conversation` (tracer `pipecat.turn`) | `invoke_agent` (agent session container) |
-| `turn` (tracer `pipecat.turn`) | conversation turn (no dedicated span; `gen_ai.conversation.turn.*`) |
+| `conversation` (tracer `pipecat.turn`) | not a span — session correlation via `gen_ai.conversation.id` |
+| `turn` (tracer `pipecat.turn`) | `invoke_agent` (per-turn container over the stage spans) |
 | `stt` | `gen_ai.speech_to_text.client` (`speech_to_text`) |
 | `llm` | `chat` |
 | `tts` | `gen_ai.text_to_speech.client` (`text_to_speech`) |
 | realtime `llm_setup` / `llm_request` / `llm_response` / `llm_tool_call` / `llm_tool_result` (Gemini Live, OpenAI Realtime) | conversation turn under `invoke_agent`; tool ops → `execute_tool` |
 
-**`conversation` span attributes**
+Pipecat's `turn` span is the per-exchange container that nests the `stt`, `llm`,
+and `tts` stage spans, which is exactly the role the voice conventions give the
+[invoke agent](../gen-ai-agent-spans.md#invoke-agent-internal-span) span ("the
+container for one turn"). Pipecat's outer `conversation` span spans the whole
+multi-turn session; the GenAI conventions model that as the
+`gen_ai.conversation.id` correlation attribute rather than a dedicated span.
+
+**`conversation` span attributes** (→ carried as attributes, not a span)
 
 | Pipecat attribute | `gen_ai.*` attribute |
 |---|---|
-| `conversation.id` | `gen_ai.conversation.id` |
+| `conversation.id` | `gen_ai.conversation.id` (set on the `invoke_agent` turn span and its children) |
 | `conversation.type` (`"voice"`) | — (no `gen_ai.*` equivalent) |
 | `additional_span_attributes.*` | — (user-supplied resource/context) |
 
-**`turn` span attributes**
+**`turn` span attributes** → `invoke_agent`
 
 | Pipecat attribute | `gen_ai.*` attribute |
 |---|---|
@@ -211,13 +218,19 @@ the same way as the [Gemini Live](#google-gemini-live) and
 
 | LiveKit span | `gen_ai.*` span / operation |
 |---|---|
-| `agent_session` | `invoke_agent` (session container) |
-| `user_turn` | conversation turn, input side (`gen_ai.conversation.turn.*`) |
-| `agent_turn` | conversation turn, response side |
+| `agent_session` | not a span — session correlation via `gen_ai.conversation.id` |
+| `agent_turn` | `invoke_agent` (per-turn container over the response stages) |
+| `user_turn` | input side of the turn (audio recorded as message parts on the turn's inference span) |
 | `llm_node` / `llm_request` | `chat` |
 | `tts_node` / `tts_request` | `gen_ai.text_to_speech.client` (`text_to_speech`) |
 | (STT node) | `gen_ai.speech_to_text.client` (`speech_to_text`) |
 | `eou_detection` | — (endpointing; provider-specific) |
+
+LiveKit splits a single exchange into sibling `user_turn` and `agent_turn`
+spans under a long-lived `agent_session`. The `agent_turn` span (nesting
+`llm_node` / `tts_node`) is the closest match to the `invoke_agent` per-turn
+container; `agent_session` spans the whole conversation and maps to the
+`gen_ai.conversation.id` correlation attribute, not a span.
 
 **Attribute mapping**
 
@@ -258,8 +271,9 @@ would map.
 
 | Gemini Live concept | `gen_ai.*` span / operation |
 |---|---|
-| Live session (`BidiGenerateContent`) | `invoke_agent` (session container) |
-| model turn (server content until `turnComplete`) | conversation turn |
+| Live session (`BidiGenerateContent`) | not a span — session correlation via `gen_ai.conversation.id` |
+| turn (user utterance + model response cycle) | `invoke_agent` (per-turn container) |
+| model response (server content until `turnComplete`) | `chat` (inference) |
 | tool call (`toolCall`) | `execute_tool` |
 
 **Attribute mapping**
@@ -303,9 +317,14 @@ tables reflect that mapping plus the remaining API fields.
 
 | Azure Voice Live concept | `gen_ai.*` span / operation |
 |---|---|
-| realtime session | `invoke_agent` (OpenLLMetry uses `gen_ai.operation.name = invoke_agent`) |
-| `response.created` → `response.done` | conversation turn |
+| realtime session | not a span — session correlation via `gen_ai.conversation.id` |
+| turn (user utterance + its response(s)) | `invoke_agent` (per-turn container) |
+| `response.created` → `response.done` (one model response) | `chat` (inference) |
 | function / tool call | `execute_tool` |
+
+Note: OpenLLMetry's existing wrappers currently place a single `invoke_agent`
+span at the *session* level rather than per turn — a divergence from the per-turn
+container these conventions specify.
 
 **Attribute mapping**
 
@@ -402,9 +421,16 @@ tables reflect that mapping plus the remaining API fields.
 - **Audio-token attributes** (`gen_ai.usage.input_audio_tokens` /
   `output_audio_tokens`) — LiveKit already emits them verbatim; Azure Voice Live
   and Gemini Live both report the underlying per-modality audio token counts.
-- **`invoke_agent` as the realtime turn container** — OpenLLMetry's OpenAI
-  Realtime instrumentation independently uses
-  `gen_ai.operation.name = invoke_agent` for agent sessions.
+- **`invoke_agent` as the agent turn container** — Pipecat's `turn` span and
+  LiveKit's `agent_turn` span both act as the per-exchange container over the
+  stage spans, matching the role these conventions give `invoke_agent`.
+  OpenLLMetry's OpenAI Realtime instrumentation also uses
+  `gen_ai.operation.name = invoke_agent`, though at the session scope rather than
+  per turn (see the [Azure Voice Live](#azure-voice-live) note).
+- **Session correlation via `gen_ai.conversation.id`** — the long-lived session
+  span in Pipecat (`conversation`), LiveKit (`agent_session`), and the realtime
+  provider sessions is a correlation concept, mapped to `gen_ai.conversation.id`
+  rather than a dedicated span.
 - **`speech_to_text` / `text_to_speech` operations** — match Pipecat's `stt` /
   `tts` operation values.
 - **User audio as message parts (no dedicated user span)** — consistent with how
