@@ -1,5 +1,5 @@
 ---
-applyTo: "model/**,docs/gen-ai/**,reference/**"
+applyTo: "model/**,docs/gen-ai/**,reference/scenarios/**"
 ---
 
 # Reference Evaluation
