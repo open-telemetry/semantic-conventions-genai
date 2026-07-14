@@ -694,12 +694,6 @@ spans:
       This span SHOULD be used when the guardrail evaluation is performed in the
       same process as the instrumented GenAI operation.
 
-      Guardrail spans SHOULD be children of the GenAI span they protect, such as
-      [inference](/docs/gen-ai/gen-ai-spans.md#inference) or
-      [execute tool](/docs/gen-ai/gen-ai-spans.md#execute-tool-span) spans.
-
-      Multiple guardrail spans MAY exist under a single operation span if
-      multiple guardrails are chained.
     stability: development
     attributes:
       - ref_group: attributes.gen_ai.run_guardrail.common
