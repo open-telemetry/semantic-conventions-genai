@@ -67,7 +67,7 @@ async def run_agent():
         "invoke_agent test-agent", attributes=agent_span_attributes
     ) as agent_span:
         agent_span.set_attribute(
-            "gen_ai.system_instructions", json.dumps([{"parts": [{"type": "text", "content": agent.instructions}]}])
+            "gen_ai.system_instructions", json.dumps([{"type": "text", "content": agent.instructions}])
         )
         agent_span.set_attribute(
             "gen_ai.input.messages", json.dumps([{"role": "user", "parts": [{"type": "text", "content": input_text}]}])
