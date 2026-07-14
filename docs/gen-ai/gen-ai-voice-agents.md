@@ -157,4 +157,12 @@ Runnable reference scenarios that emit the telemetry described here live under
 - [`openai-audio`](../../reference/scenarios/openai-audio) — audio input and
   output on a single chat completion.
 
+## Prior art
+
+For the breadth-first survey of how existing voice agent frameworks and STT /
+TTS / realtime provider APIs (Pipecat, LiveKit Agents, Google Gemini Live, Azure
+Voice Live, Deepgram, ElevenLabs) model this telemetry, and how it maps to the
+conventions above, see
+[Voice agents: prior art and breadth survey](./non-normative/voice-agents-prior-art.md).
+
 [DocumentStatus]: https://opentelemetry.io/docs/specs/otel/document-status
