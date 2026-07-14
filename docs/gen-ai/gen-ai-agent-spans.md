@@ -215,10 +215,10 @@ Examples: OpenAI Assistants API, AWS Bedrock Agents.
 | [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/error.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If the operation ended in an error. | string | Describes a class of error the operation ended with. [3] | `timeout`; `java.net.UnknownHostException`; `server_certificate_invalid`; `500` |
 | [`gen_ai.agent.description`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When available. | string | The free-form description of the invoked GenAI agent. | `Helps with math problems`; `Generates fiction stories` |
 | [`gen_ai.agent.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If applicable. | string | The stable unique identifier of the invoked GenAI agent. [4] | `asst_5j66UpCpwteGg4YSxUnt7lPY`; `arn:aws:bedrock:us-east-1:123:agent/42`; `urn:agent:projects-123:projects:123:locations:us-east1:aiplatform:reasoningEngines:456` |
+| [`gen_ai.agent.invocation.end_reason`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [5] | string | The reason a GenAI agent invocation (the `invoke_agent` operation) ended. [6] | `completed`; `interrupted`; `session_closed` |
 | [`gen_ai.agent.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When available. | string | The human-readable name of the invoked GenAI agent. | `Math Tutor`; `Fiction Writer` |
 | [`gen_ai.agent.version`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When available. | string | The version of the invoked GenAI agent. | `1.0.0`; `2025-05-01` |
-| [`gen_ai.conversation.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When available. | string | The unique identifier for a conversation (session, thread), used to store and correlate messages within this conversation. [5] | `conv_5j66UpCpwteGg4YSxUnt7lPY` |
-| [`gen_ai.conversation.turn.end_reason`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [6] | string | The reason a realtime or voice conversation turn ended. [7] | `complete`; `interrupted`; `session_closed` |
+| [`gen_ai.conversation.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When available. | string | The unique identifier for a conversation (session, thread), used to store and correlate messages within this conversation. [7] | `conv_5j66UpCpwteGg4YSxUnt7lPY` |
 | [`gen_ai.data_source.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If applicable. | string | The data source identifier. [8] | `H7STPQYOND` |
 | [`gen_ai.output.type`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [9] | string | Represents the content type requested by the client. [10] | `text`; `json`; `image` |
 | [`gen_ai.request.choice.count`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If available, in the request, and !=1. | int | The target number of candidate completions to return. | `3` |
@@ -271,7 +271,13 @@ Instrumentations SHOULD document the list of errors they report.
 **[4] `gen_ai.agent.id`:** For hosted agents, this SHOULD be the provider-assigned stable identifier of the agent resource such as [AWS Bedrock agent ARN](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_Agent.html) or [GCP Agent Registry identifier](https://docs.cloud.google.com/agent-registry/concepts#agent-identifier).
 It's NOT RECOMMENDED to record in-memory agent instance ids on this attribute due to their transient nature.
 
-**[5] `gen_ai.conversation.id`:** Instrumentations SHOULD populate conversation id when they have an identifier
+**[5] `gen_ai.agent.invocation.end_reason`:** When the reason the agent invocation ended can be reliably determined (for example, turn-based voice interactions).
+
+**[6] `gen_ai.agent.invocation.end_reason`:** This attribute describes how an agent invocation concluded and is set on the `invoke_agent` span. It applies to any agent invocation, and is particularly useful for streaming or turn-based voice interactions (for example, the OpenAI Realtime API or other speech-to-speech models) where a user utterance and the agent response form a single invocation that can be cut short. The `interrupted` value in particular captures barge-in, where new user speech ends the in-progress response, as well as client-side cancellation.
+This attribute captures non-error outcomes. A failed invocation SHOULD be recorded by setting the span status to `Error` and populating `error.type`, rather than by adding a value here. Instrumentations SHOULD set this attribute only when they can reliably determine why the invocation ended.
+If one of the predefined values applies but a specific system uses a different name, it's RECOMMENDED to document it in the semantic conventions for that GenAI system and use the system-specific name in the instrumentation.
+
+**[7] `gen_ai.conversation.id`:** Instrumentations SHOULD populate conversation id when they have an identifier
 for the conversation readily available for a given operation, for example:
 
 - when client framework being instrumented manages conversation history
@@ -287,11 +293,6 @@ of request content SHOULD NOT be used as a fallback value.
 Application developers that manage conversation history MAY add conversation id to GenAI and other
 spans or logs using custom span or log record processors or hooks provided by instrumentation
 libraries.
-
-**[6] `gen_ai.conversation.turn.end_reason`:** For turn-based voice interactions, when the reason the turn ended can be reliably determined.
-
-**[7] `gen_ai.conversation.turn.end_reason`:** This attribute applies to turn-based, streaming voice interactions (for example, the OpenAI Realtime API or other speech-to-speech models) where a user utterance and the model response form a single turn that can be cut short. Instrumentations SHOULD set it only when they can reliably determine why the turn ended; the `interrupted` value in particular captures barge-in, where new user speech ends the in-progress response.
-If one of the predefined values applies but a specific system uses a different name, it's RECOMMENDED to document it in the semantic conventions for that GenAI system and use the system-specific name in the instrumentation.
 
 **[8] `gen_ai.data_source.id`:** Data sources are used by AI agents and RAG applications to store grounding data. A data source may be an external database, object store, document collection, website, or any other storage system used by the GenAI agent or application. The `gen_ai.data_source.id` SHOULD match the identifier used by the GenAI system rather than a name specific to the external storage, such as a database or object store. Semantic conventions referencing `gen_ai.data_source.id` MAY also leverage additional attributes, such as `db.*`, to further identify and describe the data source.
 
@@ -416,13 +417,13 @@ and SHOULD be provided **at span creation time** (if provided at all):
 
 ---
 
-`gen_ai.conversation.turn.end_reason` has the following list of well-known values. If one of them applies, then the respective value MUST be used; otherwise, a custom value MAY be used.
+`gen_ai.agent.invocation.end_reason` has the following list of well-known values. If one of them applies, then the respective value MUST be used; otherwise, a custom value MAY be used.
 
 | Value | Description | Stability |
 | --- | --- | --- |
-| `complete` | The turn ended because the model finished producing its response. | ![Development](https://img.shields.io/badge/-development-blue) |
-| `interrupted` | The turn ended because the user interrupted (barge-in) the in-progress response. | ![Development](https://img.shields.io/badge/-development-blue) |
-| `session_closed` | The turn ended because the session was closed before the response completed. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `completed` | The agent invocation finished normally. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `interrupted` | The agent invocation was interrupted before it completed, for example by user barge-in in a voice interaction or a client-side cancellation. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `session_closed` | The agent invocation ended because the underlying session was closed before it completed. | ![Development](https://img.shields.io/badge/-development-blue) |
 
 ---
 
@@ -526,9 +527,9 @@ Examples: LangChain agents, CrewAI agents.
 | [`gen_ai.operation.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Required` | string | The name of the operation being performed. [1] | `chat`; `generate_content`; `text_completion` |
 | [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/error.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If the operation ended in an error. | string | Describes a class of error the operation ended with. [2] | `timeout`; `java.net.UnknownHostException`; `server_certificate_invalid`; `500` |
 | [`gen_ai.agent.description`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When available. | string | The free-form description of the invoked GenAI agent. | `Helps with math problems`; `Generates fiction stories` |
+| [`gen_ai.agent.invocation.end_reason`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [3] | string | The reason a GenAI agent invocation (the `invoke_agent` operation) ended. [4] | `completed`; `interrupted`; `session_closed` |
 | [`gen_ai.agent.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When available. | string | The human-readable name of the invoked GenAI agent. | `Math Tutor`; `Fiction Writer` |
-| [`gen_ai.conversation.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When available. | string | The unique identifier for a conversation (session, thread), used to store and correlate messages within this conversation. [3] | `conv_5j66UpCpwteGg4YSxUnt7lPY` |
-| [`gen_ai.conversation.turn.end_reason`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [4] | string | The reason a realtime or voice conversation turn ended. [5] | `complete`; `interrupted`; `session_closed` |
+| [`gen_ai.conversation.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When available. | string | The unique identifier for a conversation (session, thread), used to store and correlate messages within this conversation. [5] | `conv_5j66UpCpwteGg4YSxUnt7lPY` |
 | [`gen_ai.data_source.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If applicable. | string | The data source identifier. [6] | `H7STPQYOND` |
 | [`gen_ai.output.type`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [7] | string | Represents the content type requested by the client. [8] | `text`; `json`; `image` |
 | [`gen_ai.request.choice.count`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If available, in the request, and !=1. | int | The target number of candidate completions to return. | `3` |
@@ -558,7 +559,13 @@ Examples: LangChain agents, CrewAI agents.
 the canonical name of exception that occurred, or another low-cardinality error identifier.
 Instrumentations SHOULD document the list of errors they report.
 
-**[3] `gen_ai.conversation.id`:** Instrumentations SHOULD populate conversation id when they have an identifier
+**[3] `gen_ai.agent.invocation.end_reason`:** When the reason the agent invocation ended can be reliably determined (for example, turn-based voice interactions).
+
+**[4] `gen_ai.agent.invocation.end_reason`:** This attribute describes how an agent invocation concluded and is set on the `invoke_agent` span. It applies to any agent invocation, and is particularly useful for streaming or turn-based voice interactions (for example, the OpenAI Realtime API or other speech-to-speech models) where a user utterance and the agent response form a single invocation that can be cut short. The `interrupted` value in particular captures barge-in, where new user speech ends the in-progress response, as well as client-side cancellation.
+This attribute captures non-error outcomes. A failed invocation SHOULD be recorded by setting the span status to `Error` and populating `error.type`, rather than by adding a value here. Instrumentations SHOULD set this attribute only when they can reliably determine why the invocation ended.
+If one of the predefined values applies but a specific system uses a different name, it's RECOMMENDED to document it in the semantic conventions for that GenAI system and use the system-specific name in the instrumentation.
+
+**[5] `gen_ai.conversation.id`:** Instrumentations SHOULD populate conversation id when they have an identifier
 for the conversation readily available for a given operation, for example:
 
 - when client framework being instrumented manages conversation history
@@ -574,11 +581,6 @@ of request content SHOULD NOT be used as a fallback value.
 Application developers that manage conversation history MAY add conversation id to GenAI and other
 spans or logs using custom span or log record processors or hooks provided by instrumentation
 libraries.
-
-**[4] `gen_ai.conversation.turn.end_reason`:** For turn-based voice interactions, when the reason the turn ended can be reliably determined.
-
-**[5] `gen_ai.conversation.turn.end_reason`:** This attribute applies to turn-based, streaming voice interactions (for example, the OpenAI Realtime API or other speech-to-speech models) where a user utterance and the model response form a single turn that can be cut short. Instrumentations SHOULD set it only when they can reliably determine why the turn ended; the `interrupted` value in particular captures barge-in, where new user speech ends the in-progress response.
-If one of the predefined values applies but a specific system uses a different name, it's RECOMMENDED to document it in the semantic conventions for that GenAI system and use the system-specific name in the instrumentation.
 
 **[6] `gen_ai.data_source.id`:** Data sources are used by AI agents and RAG applications to store grounding data. A data source may be an external database, object store, document collection, website, or any other storage system used by the GenAI agent or application. The `gen_ai.data_source.id` SHOULD match the identifier used by the GenAI system rather than a name specific to the external storage, such as a database or object store. Semantic conventions referencing `gen_ai.data_source.id` MAY also leverage additional attributes, such as `db.*`, to further identify and describe the data source.
 
@@ -696,13 +698,13 @@ and SHOULD be provided **at span creation time** (if provided at all):
 
 ---
 
-`gen_ai.conversation.turn.end_reason` has the following list of well-known values. If one of them applies, then the respective value MUST be used; otherwise, a custom value MAY be used.
+`gen_ai.agent.invocation.end_reason` has the following list of well-known values. If one of them applies, then the respective value MUST be used; otherwise, a custom value MAY be used.
 
 | Value | Description | Stability |
 | --- | --- | --- |
-| `complete` | The turn ended because the model finished producing its response. | ![Development](https://img.shields.io/badge/-development-blue) |
-| `interrupted` | The turn ended because the user interrupted (barge-in) the in-progress response. | ![Development](https://img.shields.io/badge/-development-blue) |
-| `session_closed` | The turn ended because the session was closed before the response completed. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `completed` | The agent invocation finished normally. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `interrupted` | The agent invocation was interrupted before it completed, for example by user barge-in in a voice interaction or a client-side cancellation. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `session_closed` | The agent invocation ended because the underlying session was closed before it completed. | ![Development](https://img.shields.io/badge/-development-blue) |
 
 ---
 

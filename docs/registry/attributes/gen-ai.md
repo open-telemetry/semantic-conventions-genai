@@ -9,11 +9,11 @@
 | --- | --- | --- | --- | --- |
 | <a id="gen-ai-agent-description" href="#gen-ai-agent-description">`gen_ai.agent.description`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | Free-form description of the GenAI agent provided by the application. | `Helps with math problems`; `Generates fiction stories` |
 | <a id="gen-ai-agent-id" href="#gen-ai-agent-id">`gen_ai.agent.id`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The unique and stable identifier of the GenAI hosted agent resource. [1] | `asst_5j66UpCpwteGg4YSxUnt7lPY`; `arn:aws:bedrock:us-east-1:123:agent/42`; `urn:agent:projects-123:projects:123:locations:us-east1:aiplatform:reasoningEngines:456` |
+| <a id="gen-ai-agent-invocation-end-reason" href="#gen-ai-agent-invocation-end-reason">`gen_ai.agent.invocation.end_reason`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The reason a GenAI agent invocation (the `invoke_agent` operation) ended. [2] | `completed`; `interrupted`; `session_closed` |
 | <a id="gen-ai-agent-name" href="#gen-ai-agent-name">`gen_ai.agent.name`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | Human-readable name of the GenAI agent provided by the application. | `Math Tutor`; `Fiction Writer` |
 | <a id="gen-ai-agent-version" href="#gen-ai-agent-version">`gen_ai.agent.version`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The version of the GenAI agent. | `1.0.0`; `2025-05-01` |
-| <a id="gen-ai-conversation-compacted" href="#gen-ai-conversation-compacted">`gen_ai.conversation.compacted`</a> | ![Development](https://img.shields.io/badge/-development-blue) | boolean | Indicates whether the effective conversation context used for this operation is a compacted view of a prior conversation. [2] | `true` |
+| <a id="gen-ai-conversation-compacted" href="#gen-ai-conversation-compacted">`gen_ai.conversation.compacted`</a> | ![Development](https://img.shields.io/badge/-development-blue) | boolean | Indicates whether the effective conversation context used for this operation is a compacted view of a prior conversation. [3] | `true` |
 | <a id="gen-ai-conversation-id" href="#gen-ai-conversation-id">`gen_ai.conversation.id`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The unique identifier for a conversation (session, thread), used to store and correlate messages within this conversation. | `conv_5j66UpCpwteGg4YSxUnt7lPY` |
-| <a id="gen-ai-conversation-turn-end-reason" href="#gen-ai-conversation-turn-end-reason">`gen_ai.conversation.turn.end_reason`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The reason a realtime or voice conversation turn ended. [3] | `complete`; `interrupted`; `session_closed` |
 | <a id="gen-ai-data-source-id" href="#gen-ai-data-source-id">`gen_ai.data_source.id`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The data source identifier. [4] | `H7STPQYOND` |
 | <a id="gen-ai-embeddings-dimension-count" href="#gen-ai-embeddings-dimension-count">`gen_ai.embeddings.dimension.count`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The number of dimensions the resulting output embeddings should have. | `512`; `1024` |
 | <a id="gen-ai-evaluation-explanation" href="#gen-ai-evaluation-explanation">`gen_ai.evaluation.explanation`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | A free-form explanation for the assigned score provided by the evaluator. | `The response is factually accurate but lacks sufficient detail to fully address the question.` |
@@ -77,13 +77,14 @@
 **[1] `gen_ai.agent.id`:** For hosted agents, this SHOULD be the provider-assigned stable identifier of the agent resource such as [AWS Bedrock agent ARN](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_Agent.html) or [GCP Agent Registry identifier](https://docs.cloud.google.com/agent-registry/concepts#agent-identifier).
 It's NOT RECOMMENDED to record in-memory agent instance ids on this attribute due to their transient nature.
 
-**[2] `gen_ai.conversation.compacted`:** This attribute is a positive indicator of context compaction. Instrumentations
+**[2] `gen_ai.agent.invocation.end_reason`:** This attribute describes how an agent invocation concluded and is set on the `invoke_agent` span. It applies to any agent invocation, and is particularly useful for streaming or turn-based voice interactions (for example, the OpenAI Realtime API or other speech-to-speech models) where a user utterance and the agent response form a single invocation that can be cut short. The `interrupted` value in particular captures barge-in, where new user speech ends the in-progress response, as well as client-side cancellation.
+This attribute captures non-error outcomes. A failed invocation SHOULD be recorded by setting the span status to `Error` and populating `error.type`, rather than by adding a value here. Instrumentations SHOULD set this attribute only when they can reliably determine why the invocation ended.
+If one of the predefined values applies but a specific system uses a different name, it's RECOMMENDED to document it in the semantic conventions for that GenAI system and use the system-specific name in the instrumentation.
+
+**[3] `gen_ai.conversation.compacted`:** This attribute is a positive indicator of context compaction. Instrumentations
 SHOULD set it to `true` only when they can reliably determine that context
 compaction was applied. Instrumentations SHOULD NOT set it to `false`; they
 SHOULD leave it unset otherwise.
-
-**[3] `gen_ai.conversation.turn.end_reason`:** This attribute applies to turn-based, streaming voice interactions (for example, the OpenAI Realtime API or other speech-to-speech models) where a user utterance and the model response form a single turn that can be cut short. Instrumentations SHOULD set it only when they can reliably determine why the turn ended; the `interrupted` value in particular captures barge-in, where new user speech ends the in-progress response.
-If one of the predefined values applies but a specific system uses a different name, it's RECOMMENDED to document it in the semantic conventions for that GenAI system and use the system-specific name in the instrumentation.
 
 **[4] `gen_ai.data_source.id`:** Data sources are used by AI agents and RAG applications to store grounding data. A data source may be an external database, object store, document collection, website, or any other storage system used by the GenAI agent or application. The `gen_ai.data_source.id` SHOULD match the identifier used by the GenAI system rather than a name specific to the external storage, such as a database or object store. Semantic conventions referencing `gen_ai.data_source.id` MAY also leverage additional attributes, such as `db.*`, to further identify and describe the data source.
 
@@ -305,13 +306,13 @@ If there is no low-cardinality workflow name available for a given framework, th
 
 ---
 
-`gen_ai.conversation.turn.end_reason` has the following list of well-known values. If one of them applies, then the respective value MUST be used; otherwise, a custom value MAY be used.
+`gen_ai.agent.invocation.end_reason` has the following list of well-known values. If one of them applies, then the respective value MUST be used; otherwise, a custom value MAY be used.
 
 | Value | Description | Stability |
 | --- | --- | --- |
-| `complete` | The turn ended because the model finished producing its response. | ![Development](https://img.shields.io/badge/-development-blue) |
-| `interrupted` | The turn ended because the user interrupted (barge-in) the in-progress response. | ![Development](https://img.shields.io/badge/-development-blue) |
-| `session_closed` | The turn ended because the session was closed before the response completed. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `completed` | The agent invocation finished normally. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `interrupted` | The agent invocation was interrupted before it completed, for example by user barge-in in a voice interaction or a client-side cancellation. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `session_closed` | The agent invocation ended because the underlying session was closed before it completed. | ![Development](https://img.shields.io/badge/-development-blue) |
 
 ---
 

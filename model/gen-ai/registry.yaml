@@ -308,35 +308,42 @@ attributes:
       SHOULD leave it unset otherwise.
     examples: [true]
     stability: development
-  - key: gen_ai.conversation.turn.end_reason
+  - key: gen_ai.agent.invocation.end_reason
     type:
       members:
-        - id: complete
-          value: "complete"
-          brief: 'The turn ended because the model finished producing its response.'
+        - id: completed
+          value: "completed"
+          brief: 'The agent invocation finished normally.'
           stability: development
         - id: interrupted
           value: "interrupted"
-          brief: 'The turn ended because the user interrupted (barge-in) the in-progress response.'
+          brief: 'The agent invocation was interrupted before it completed, for example by user barge-in in a voice interaction or a client-side cancellation.'
           stability: development
         - id: session_closed
           value: "session_closed"
-          brief: 'The turn ended because the session was closed before the response completed.'
+          brief: 'The agent invocation ended because the underlying session was closed before it completed.'
           stability: development
-    brief: The reason a realtime or voice conversation turn ended.
+    brief: The reason a GenAI agent invocation (the `invoke_agent` operation) ended.
     note: >
-      This attribute applies to turn-based, streaming voice interactions
+      This attribute describes how an agent invocation concluded and is set on
+      the `invoke_agent` span. It applies to any agent invocation, and is
+      particularly useful for streaming or turn-based voice interactions
       (for example, the OpenAI Realtime API or other speech-to-speech models)
-      where a user utterance and the model response form a single turn that can
-      be cut short. Instrumentations SHOULD set it only when they can reliably
-      determine why the turn ended; the `interrupted` value in particular
-      captures barge-in, where new user speech ends the in-progress response.
+      where a user utterance and the agent response form a single invocation
+      that can be cut short. The `interrupted` value in particular captures
+      barge-in, where new user speech ends the in-progress response, as well as
+      client-side cancellation.
+
+      This attribute captures non-error outcomes. A failed invocation SHOULD be
+      recorded by setting the span status to `Error` and populating `error.type`,
+      rather than by adding a value here. Instrumentations SHOULD set this
+      attribute only when they can reliably determine why the invocation ended.
 
       If one of the predefined values applies but a specific system uses a
       different name, it's RECOMMENDED to document it in the semantic conventions
       for that GenAI system and use the system-specific name in the
       instrumentation.
-    examples: ['complete', 'interrupted', 'session_closed']
+    examples: ['completed', 'interrupted', 'session_closed']
     stability: development
   - key: gen_ai.agent.id
     type: string

@@ -1,8 +1,8 @@
 {
   "spans": {
     "invoke_agent_internal": [
+      "gen_ai.agent.invocation.end_reason",
       "gen_ai.agent.name",
-      "gen_ai.conversation.turn.end_reason",
       "gen_ai.operation.name",
       "gen_ai.request.model"
     ],

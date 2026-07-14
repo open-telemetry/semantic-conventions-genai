@@ -13,9 +13,9 @@
 | Attribute | Supporting Libraries |
 | --- | --- |
 | gen_ai.agent.description | [agent-framework], [autogen] |
+| gen_ai.agent.invocation.end_reason | [openai-realtime] |
 | gen_ai.agent.name | [agent-framework], [autogen], [crewai], [google-adk], [openai-agents], [openai-cascade], [openai-realtime], [pydantic-ai] |
 | gen_ai.conversation.id | [google-adk] |
-| gen_ai.conversation.turn.end_reason | [openai-realtime] |
 | gen_ai.data_source.id | (none) |
 | gen_ai.output.type | (none) |
 | gen_ai.request.choice.count | [agent-framework], [crewai], [google-adk] |

@@ -8,9 +8,9 @@ the audio-modality messages and audio token usage.
 Two turns are driven to prove both realtime outcomes are capturable by generic
 instrumentation of ``client.realtime.connect``:
 
-- a ``complete`` turn -> ``gen_ai.conversation.turn.end_reason == "complete"``.
+- a ``completed`` turn -> ``gen_ai.agent.invocation.end_reason == "completed"``.
 - an ``interrupted`` turn (the user barges in mid-response) ->
-  ``gen_ai.conversation.turn.end_reason == "interrupted"``.
+  ``gen_ai.agent.invocation.end_reason == "interrupted"``.
 """
 
 import json
@@ -157,15 +157,15 @@ def _run_turn(conn, behavior, request_model, response_model, host, port):
                         "gen_ai.usage.output_audio_tokens", usage.output_token_details.audio_tokens
                     )
 
-        # Map the realtime response outcome to the turn end reason. A cancelled
-        # response caused by newly detected user speech is a barge-in.
+        # Map the realtime response outcome to the agent invocation end reason.
+        # A cancelled response caused by newly detected user speech is a barge-in.
         if status == "completed":
-            end_reason = "complete"
+            end_reason = "completed"
         elif status == "cancelled" and status_reason == "turn_detected":
             end_reason = "interrupted"
         else:
             end_reason = "session_closed"
-        agent_span.set_attribute("gen_ai.conversation.turn.end_reason", end_reason)
+        agent_span.set_attribute("gen_ai.agent.invocation.end_reason", end_reason)
         print(f"    [{behavior}] -> {end_reason}: {transcript[:50]}")
 
 

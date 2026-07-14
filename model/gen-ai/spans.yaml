@@ -142,9 +142,9 @@ attribute_groups:
         brief: The free-form description of the invoked GenAI agent.
         requirement_level:
           conditionally_required: When available.
-      - ref: gen_ai.conversation.turn.end_reason
+      - ref: gen_ai.agent.invocation.end_reason
         requirement_level:
-          conditionally_required: For turn-based voice interactions, when the reason the turn ended can be reliably determined.
+          conditionally_required: When the reason the agent invocation ended can be reliably determined (for example, turn-based voice interactions).
 
 
   - id: attributes.gen_ai.execute_tool.common

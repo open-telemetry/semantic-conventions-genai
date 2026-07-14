@@ -47,7 +47,7 @@ and attributes introduced for voice agents (the `speech_to_text` and
 `text_to_speech` operations, the [Speech to text](gen-ai-spans.md#speech-to-text)
 and [Text to speech](gen-ai-spans.md#text-to-speech) spans, and the
 `gen_ai.speech.*`, `gen_ai.usage.*_audio_tokens`, and
-`gen_ai.conversation.turn.end_reason` attributes) are in
+`gen_ai.agent.invocation.end_reason` attributes) are in
 [Development][DocumentStatus] status and are being aligned with the
 [GenAI SIG](https://github.com/open-telemetry/community#sig-genai-instrumentation).
 
@@ -106,8 +106,8 @@ user span.
 
 ```mermaid
 flowchart TD
-  A["invoke_agent voice-assistant<br/>(turn container, gen_ai.operation.name = invoke_agent)"]
-  A --> B["chat gpt-realtime<br/>(gen_ai.operation.name = chat)<br/>audio in + audio out, audio tokens,<br/>gen_ai.conversation.turn.end_reason"]
+  A["invoke_agent voice-assistant<br/>(turn container, gen_ai.operation.name = invoke_agent)<br/>gen_ai.agent.invocation.end_reason"]
+  A --> B["chat gpt-realtime<br/>(gen_ai.operation.name = chat)<br/>audio in + audio out, audio tokens"]
   B --> C["execute_tool get_weather<br/>(gen_ai.operation.name = execute_tool)"]
 ```
 
@@ -115,12 +115,16 @@ flowchart TD
 
 Realtime conversations are turn-based and support **barge-in**: the user can
 start speaking while the agent is still responding, interrupting the current
-turn. The outcome of a turn SHOULD be recorded with
-`gen_ai.conversation.turn.end_reason`:
+turn. Because the `invoke_agent` span is the per-turn container, the outcome of
+the turn SHOULD be recorded on it with `gen_ai.agent.invocation.end_reason`:
 
-- `complete` — the model finished the turn normally.
-- `interrupted` — the user interrupted the turn (barge-in) before it completed.
-- `session_closed` — the turn ended because the session was closed.
+- `completed` — the agent finished the turn normally.
+- `interrupted` — the turn was interrupted before it completed, for example by
+  user barge-in or a client-side cancellation.
+- `session_closed` — the turn ended because the underlying session was closed.
+
+A failed turn SHOULD instead be recorded by setting the span status to `Error`
+and populating `error.type`, rather than with an end-reason value.
 
 Input and output audio for the turn SHOULD be recorded as audio message parts on
 the inference span, and any spoken transcript SHOULD be recorded as text parts on
@@ -179,7 +183,8 @@ Runnable reference scenarios that emit the telemetry described here live under
 - [`openai-cascade`](../../reference/scenarios/openai-cascade) — cascade
   pipeline: `invoke_agent` container over STT, chat, and TTS stages.
 - [`openai-realtime`](../../reference/scenarios/openai-realtime) — realtime
-  voice-native turns with audio tokens and barge-in (`turn.end_reason`).
+  voice-native turns with audio tokens and barge-in
+  (`gen_ai.agent.invocation.end_reason`).
 - [`openai-audio`](../../reference/scenarios/openai-audio) — audio input and
   output on a single chat completion.
 

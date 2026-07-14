@@ -124,8 +124,8 @@ multi-turn session; the GenAI conventions model that as the
 
 | Pipecat attribute | `gen_ai.*` attribute |
 |---|---|
-| `turn.was_interrupted` (`True`) | `gen_ai.conversation.turn.end_reason = interrupted` |
-| `turn.ended_by_conversation_end` (`True`) | `gen_ai.conversation.turn.end_reason = session_closed` |
+| `turn.was_interrupted` (`True`) | `gen_ai.agent.invocation.end_reason = interrupted` |
+| `turn.ended_by_conversation_end` (`True`) | `gen_ai.agent.invocation.end_reason = session_closed` |
 | `turn.number` | — (turn index; no `gen_ai.*` equivalent) |
 | `turn.type` (`"conversation"`) | — |
 | `turn.duration_seconds` | — (captured by span duration) |
@@ -154,7 +154,7 @@ multi-turn session; the GenAI conventions model that as the
 | `gen_ai.output.type` (`"speech"`) | `gen_ai.output.type = speech` (same) |
 | `voice_id` | `gen_ai.speech.voice` |
 | `text` | recorded as input message content |
-| `tts.interrupted` (`True`) | `gen_ai.conversation.turn.end_reason = interrupted` (on the turn) |
+| `tts.interrupted` (`True`) | `gen_ai.agent.invocation.end_reason = interrupted` (on the turn) |
 | `metrics.ttfb` | — (voice latency; no stable `gen_ai.*` attribute yet) |
 | `metrics.character_count`, `settings.*` | — (character billing / per-service detail) |
 
@@ -182,7 +182,7 @@ and turn-completion signals of the dedicated realtime provider APIs surveyed
 below, but through Pipecat-specific keys (`tokens.prompt` / `tokens.completion` /
 `tokens.total` alongside `gen_ai.usage.input_tokens` / `output_tokens`,
 `turn_complete`, `response.status`, `output_modality`). These map to
-`gen_ai.usage.*`, `gen_ai.conversation.turn.end_reason`, and `gen_ai.output.type`
+`gen_ai.usage.*`, `gen_ai.agent.invocation.end_reason`, and `gen_ai.output.type`
 the same way as the [Gemini Live](#google-gemini-live) and
 [Azure Voice Live](#azure-voice-live) tables.
 
@@ -242,7 +242,7 @@ container; `agent_session` spans the whole conversation and maps to the
 | `lk.user_transcript` | recorded as transcript message content |
 | `lk.tts.label` | `gen_ai.speech.voice` (approx) |
 | `lk.eou.language` | `gen_ai.speech.input.language` |
-| `lk.interrupted` / `lk.is_interruption` | `gen_ai.conversation.turn.end_reason = interrupted` |
+| `lk.interrupted` / `lk.is_interruption` | `gen_ai.agent.invocation.end_reason = interrupted` |
 | `lk.transcript_confidence` | — (proposed opt-in STT confidence; not yet in spec) |
 | `lk.eou.probability`, `lk.interruption.probability` | — (endpointing / interruption ML; provider-specific) |
 | `lk.e2e_latency`, `lk.response.ttft` / `ttfb`, `lk.transcription_delay` | — (voice latency; no stable `gen_ai.*` attribute yet) |
@@ -285,9 +285,9 @@ would map.
 | `responseTokensDetails[AUDIO].tokenCount` | `gen_ai.usage.output_audio_tokens` |
 | total prompt / response token counts | `gen_ai.usage.input_tokens` / `output_tokens` |
 | `promptTokensDetails[TEXT]` / `responseTokensDetails[TEXT]` | — (text/audio token split; not yet in spec) |
-| `turnComplete` / `generationComplete` | `gen_ai.conversation.turn.end_reason = complete` |
-| `interrupted` | `gen_ai.conversation.turn.end_reason = interrupted` |
-| `goAway` (disconnect) | `gen_ai.conversation.turn.end_reason = session_closed` |
+| `turnComplete` / `generationComplete` | `gen_ai.agent.invocation.end_reason = completed` |
+| `interrupted` | `gen_ai.agent.invocation.end_reason = interrupted` |
+| `goAway` (disconnect) | `gen_ai.agent.invocation.end_reason = session_closed` |
 | `inputTranscription.text` / `outputTranscription.text` | recorded as transcript message content |
 | `speechConfig…voiceName` | `gen_ai.speech.voice` |
 | declared language code | `gen_ai.speech.input.language` |
@@ -335,10 +335,10 @@ container these conventions specify.
 | `…input_token_details.text_tokens` / `output_token_details.text_tokens` | — (text/audio token split; not yet in spec) |
 | `…input_token_details.cached_tokens` | — (cached tokens; no dedicated attribute) |
 | total usage tokens | `gen_ai.usage.input_tokens` / `output_tokens` |
-| `response.status = completed` | `gen_ai.conversation.turn.end_reason = complete` |
-| `response.status = incomplete` (VAD barge-in) | `gen_ai.conversation.turn.end_reason = interrupted` |
-| `response.status = canceled` (client cancel) | `gen_ai.conversation.turn.end_reason = interrupted` (cancel vs barge-in not distinguished — see open questions) |
-| `response.status = failed` | — (no `failed` value yet; proposed addition) |
+| `response.status = completed` | `gen_ai.agent.invocation.end_reason = completed` |
+| `response.status = incomplete` (VAD barge-in) | `gen_ai.agent.invocation.end_reason = interrupted` |
+| `response.status = canceled` (client cancel) | `gen_ai.agent.invocation.end_reason = interrupted` (cancel vs barge-in not distinguished — see open questions) |
+| `response.status = failed` | span status `Error` + `error.type` (failures are not an end-reason value) |
 | `voice.name` | `gen_ai.speech.voice` |
 | input-audio transcription language | `gen_ai.speech.input.language` |
 | `input_audio_format` / `output_audio_format` / `input_audio_sampling_rate` | — (provider-specific audio format) |
@@ -407,7 +407,7 @@ container these conventions specify.
 | `model_id` | `gen_ai.request.model` |
 | `voice_id` / `voice_name` | `gen_ai.speech.voice` |
 | `language_code` | `gen_ai.speech.input.language` |
-| ConvAI `interruption` | `gen_ai.conversation.turn.end_reason = interrupted` |
+| ConvAI `interruption` | `gen_ai.agent.invocation.end_reason = interrupted` |
 | `language_probability` | — (language-detection confidence; provider-specific / opt-in) |
 | `audio_duration_secs` | — (proposed audio-duration usage; not yet in spec) |
 | per-word `logprob` | — (no overall confidence; provider-specific) |
@@ -442,10 +442,16 @@ container these conventions specify.
 
 **Changes / additions the survey motivates:**
 
-- **`gen_ai.conversation.turn.end_reason` needs more states.** Azure distinguishes
-  `completed` / `canceled` (client) / `incomplete` (barge-in) / `failed`; the
-  draft enum (`complete` / `interrupted` / `session_closed`) is missing `failed`
-  and collapses client-cancel and barge-in.
+- **`gen_ai.agent.invocation.end_reason` replaces the earlier
+  `gen_ai.conversation.turn.end_reason`.** Because `invoke_agent` is the per-turn
+  container, the end reason is modeled as a general agent-invocation outcome set
+  on that span rather than as a voice/turn-specific attribute. This generalizes
+  beyond voice to any agent invocation and matches the flat `end_reason` used by
+  Arize OpenInference and the `response.status` field of OpenAI / Azure Realtime.
+  Failures are represented by span status `Error` + `error.type` (not an
+  end-reason value), which is why the enum (`completed` / `interrupted` /
+  `session_closed`) omits `failed`. Client-cancel and barge-in are both mapped to
+  `interrupted`; distinguishing them remains an open question.
 - **STT transcription confidence** is real (Deepgram `confidence`, LiveKit
   `lk.transcript_confidence`) but not universal (ElevenLabs has per-word `logprob`
   only) — suitable as an Opt-In attribute.
