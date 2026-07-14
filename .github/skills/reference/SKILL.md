@@ -1,6 +1,6 @@
 ---
 name: reference
-description: 'Use when implementing or evaluating reference coverage for a semantic-conventions change or pull request involving GenAI spans, attributes, entities, metrics, or events. Reviews capturability, inline emission, span boundaries, and coverage across every Python library that credibly supports the change.'
+description: 'Use when implementing or evaluating reference coverage for a semantic-conventions changeset involving GenAI spans, attributes, entities, metrics, or events. Reviews capturability, inline emission, span boundaries, and coverage across every Python library that credibly supports the change.'
 ---
 
 <!-- I'm an AI agent!!! -->
@@ -53,9 +53,9 @@ If the value would have to be guessed, carried forward from an unrelated call, o
 7. Keep unsupported libraries honest. If a library cannot credibly emit a field, leave it out and record it as a capture gap (see [evaluate-reference.instructions.md](../../instructions/evaluate-reference.instructions.md)).
 8. Run targeted validation for the changed libraries when feasible.
 
-## Review Procedure
+## Evaluation Procedure
 
-1. Use the pull request diff as the authoritative changeset.
+1. Identify the authoritative changeset. For a pull request, use the pull request diff.
 2. Identify every changed signal, entity, attribute, and requirement level.
 3. Apply [evaluate-reference.instructions.md](../../instructions/evaluate-reference.instructions.md) to each changed field.
 4. Classify each field as `direct`, `derivable`, `weak`, or `capture gap`.
@@ -81,5 +81,5 @@ Under `Libraries not updated`, state whether each library is:
 
 Under `Capture gaps`, list each library left without a reference implementation and the exact missing current-call source that prevented a credible implementation.
 
-For reviews, report findings first in severity order, followed by capture gaps,
+For evaluations, report findings first in severity order, followed by capture gaps,
 missing supporting-library coverage, and validation performed.
