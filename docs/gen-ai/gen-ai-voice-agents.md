@@ -136,6 +136,32 @@ audio is recorded as a message part with `modality` = `audio` and an appropriate
 No voice-specific content attributes are introduced. When a request asks the
 model to produce audio, `gen_ai.output.type` SHOULD be set to `speech`.
 
+The audio bytes do not have to be inlined. The message part schema supports three
+ways to carry audio (see the
+[normative message schema](/model/gen-ai/gen-ai-input-messages.json) and the
+[multimodal examples](non-normative/examples-llm-calls.md#multimodal-inputs-example)):
+
+- a `blob` part with inline base64-encoded `content`,
+- a `uri` part that references the audio by URI (for example an object-store or
+  provider URL), or
+- a `file` part that references pre-uploaded audio by provider `file_id`.
+
+Because voice audio is often large and stored externally, instrumentation MAY
+record it by reference with a `uri` or `file` part instead of inlining it. For
+example, the input audio to a `speech_to_text` stage recorded by reference:
+
+```json
+{
+  "type": "uri",
+  "modality": "audio",
+  "mime_type": "audio/wav",
+  "uri": "gs://my-bucket/turn-42-input.wav"
+}
+```
+
+The transcript SHOULD still be recorded as a text part on the same message so the
+turn is reconstructable even when the audio itself is stored by reference.
+
 ### Audio token usage
 
 Speech-to-speech models bill audio separately from text. When the provider

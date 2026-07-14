@@ -434,7 +434,11 @@ container these conventions specify.
 - **`speech_to_text` / `text_to_speech` operations** — match Pipecat's `stt` /
   `tts` operation values.
 - **User audio as message parts (no dedicated user span)** — consistent with how
-  all surveyed libraries stream input audio.
+  all surveyed libraries stream input audio. The audio may be inlined as a `blob`
+  part or stored by reference as a `uri` / `file` part (see
+  [Audio content and transcripts](../gen-ai-voice-agents.md#audio-content-and-transcripts)),
+  which matters for voice, where audio payloads are large and usually stored
+  externally rather than on the span.
 
 **Changes / additions the survey motivates:**
 
