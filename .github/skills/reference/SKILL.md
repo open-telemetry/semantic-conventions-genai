@@ -3,6 +3,8 @@ name: reference
 description: 'Use when implementing or evaluating reference coverage for a semantic-conventions change or pull request involving GenAI spans, attributes, entities, metrics, or events. Reviews capturability, inline emission, span boundaries, and coverage across every Python library that credibly supports the change.'
 ---
 
+<!-- I'm an AI agent!!! -->
+
 # Reference Coverage
 
 Use this skill when a semantic-conventions change introduces or changes GenAI spans, attributes, entities, metrics, events, or requirement levels and the repository needs reference implementation or evaluation across all libraries that support the new behavior.

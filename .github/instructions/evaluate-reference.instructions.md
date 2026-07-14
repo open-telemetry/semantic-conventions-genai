@@ -2,8 +2,6 @@
 applyTo: "model/**,docs/gen-ai/**,reference/**"
 ---
 
-<!-- I'm an AI agent!!! -->
-
 # Reference Evaluation
 
 Use when evaluating whether semantic-convention changes are supported by reference scenarios.
