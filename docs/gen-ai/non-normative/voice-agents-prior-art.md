@@ -62,6 +62,13 @@ provider APIs across the two voice agent architectures:
 | Deepgram | Cascade STT / TTS | None found | API only |
 | ElevenLabs | Cascade STT / TTS (+ ConvAI) | None found | API only |
 
+Each provider section below adds two mapping tables: **spans** (the provider's
+span or protocol concept → the `gen_ai.*` span / operation it corresponds to) and
+**attributes** (the provider's field → the `gen_ai.*` attribute it maps to). In
+the attribute tables, `—` means there is no `gen_ai.*` equivalent today; where a
+mapping depends on a not-yet-accepted addition, it is called out inline and
+tracked in [Mapping to the proposed conventions](#mapping-to-the-proposed-conventions).
+
 ## Cascade frameworks
 
 ### Pipecat
@@ -80,6 +87,33 @@ provider APIs across the two voice agent architectures:
   `turn.user_bot_latency_seconds` (user silence → first bot audio).
 - **Realtime**: same `conversation → turn` hierarchy with realtime-specific
   operation values (`setup`, `model_turn`, `transcription`, `response`).
+
+**Span mapping**
+
+| Pipecat span | `gen_ai.*` span / operation |
+|---|---|
+| `conversation` | `invoke_agent` (agent session container) |
+| `turn` | conversation turn (no dedicated span; `gen_ai.conversation.turn.*`) |
+| `stt` | `gen_ai.speech_to_text.client` (`speech_to_text`) |
+| `llm` | `chat` |
+| `tts` | `gen_ai.text_to_speech.client` (`text_to_speech`) |
+
+**Attribute mapping**
+
+| Pipecat attribute | `gen_ai.*` attribute |
+|---|---|
+| `gen_ai.provider.name` | `gen_ai.provider.name` (same) |
+| `gen_ai.request.model` | `gen_ai.request.model` (same) |
+| `gen_ai.operation.name` (`stt` / `tts` / `chat`) | `gen_ai.operation.name` (`speech_to_text` / `text_to_speech` / `chat`) |
+| `gen_ai.output.type = speech` | `gen_ai.output.type = speech` (same) |
+| `gen_ai.usage.{input,output}_tokens` | `gen_ai.usage.input_tokens` / `output_tokens` (same) |
+| `voice_id` | `gen_ai.speech.voice` |
+| `language` | `gen_ai.speech.input.language` |
+| `turn.was_interrupted` / `tts.interrupted` | `gen_ai.conversation.turn.end_reason = interrupted` |
+| `turn.ended_by_conversation_end` | `gen_ai.conversation.turn.end_reason = session_closed` |
+| `is_final`, `vad_enabled` | — (streaming / VAD detail) |
+| `metrics.ttfb` | — (voice latency; no stable `gen_ai.*` attribute yet) |
+| `metrics.character_count` | — (provider-specific TTS billing) |
 
 ### LiveKit Agents
 
@@ -109,6 +143,34 @@ provider APIs across the two voice agent architectures:
 - **Realtime**: first-class; a `RealtimeModelMetrics` type with per-modality
   audio/text token details and TTFT = time to first audio.
 
+**Span mapping**
+
+| LiveKit span | `gen_ai.*` span / operation |
+|---|---|
+| `agent_session` | `invoke_agent` (session container) |
+| `user_turn` | conversation turn, input side (`gen_ai.conversation.turn.*`) |
+| `agent_turn` | conversation turn, response side |
+| `llm_node` / `llm_request` | `chat` |
+| `tts_node` / `tts_request` | `gen_ai.text_to_speech.client` (`text_to_speech`) |
+| (STT node) | `gen_ai.speech_to_text.client` (`speech_to_text`) |
+| `eou_detection` | — (endpointing; provider-specific) |
+
+**Attribute mapping**
+
+| LiveKit attribute | `gen_ai.*` attribute |
+|---|---|
+| `gen_ai.usage.input_audio_tokens` / `output_audio_tokens` | `gen_ai.usage.input_audio_tokens` / `output_audio_tokens` (verbatim) |
+| `gen_ai.usage.input_text_tokens` / `output_text_tokens` | — (text/audio token split; not yet in spec) |
+| `input_cached_tokens` | — (cached tokens; no dedicated attribute) |
+| `lk.user_transcript` | recorded as transcript message content |
+| `lk.tts.label` | `gen_ai.speech.voice` (approx) |
+| `lk.eou.language` | `gen_ai.speech.input.language` |
+| `lk.interrupted` / `lk.is_interruption` | `gen_ai.conversation.turn.end_reason = interrupted` |
+| `lk.transcript_confidence` | — (proposed opt-in STT confidence; not yet in spec) |
+| `lk.eou.probability`, `lk.interruption.probability` | — (endpointing / interruption ML; provider-specific) |
+| `lk.e2e_latency`, `lk.response.ttft` / `ttfb`, `lk.transcription_delay` | — (voice latency; no stable `gen_ai.*` attribute yet) |
+| `lk.speech_id`, `lk.generation_id` | — (provider-specific correlation ids) |
+
 ## Realtime (voice-native) provider APIs
 
 ### Google Gemini Live
@@ -124,6 +186,33 @@ provider APIs across the two voice agent architectures:
 - **Transcripts**: `inputTranscription.text` / `outputTranscription.text`.
 - **Voice**: `speechConfig.voiceConfig.prebuiltVoiceConfig.voiceName`.
 - **Latency**: no server-emitted first-audio signal.
+
+Gemini Live emits no OpenTelemetry spans; the tables show how its API concepts
+would map.
+
+**Span mapping**
+
+| Gemini Live concept | `gen_ai.*` span / operation |
+|---|---|
+| Live session (`BidiGenerateContent`) | `invoke_agent` (session container) |
+| model turn (server content until `turnComplete`) | conversation turn |
+| tool call (`toolCall`) | `execute_tool` |
+
+**Attribute mapping**
+
+| Gemini Live field | `gen_ai.*` attribute |
+|---|---|
+| model name | `gen_ai.request.model` |
+| `promptTokensDetails[AUDIO].tokenCount` | `gen_ai.usage.input_audio_tokens` |
+| `responseTokensDetails[AUDIO].tokenCount` | `gen_ai.usage.output_audio_tokens` |
+| total prompt / response token counts | `gen_ai.usage.input_tokens` / `output_tokens` |
+| `promptTokensDetails[TEXT]` / `responseTokensDetails[TEXT]` | — (text/audio token split; not yet in spec) |
+| `turnComplete` / `generationComplete` | `gen_ai.conversation.turn.end_reason = complete` |
+| `interrupted` | `gen_ai.conversation.turn.end_reason = interrupted` |
+| `goAway` (disconnect) | `gen_ai.conversation.turn.end_reason = session_closed` |
+| `inputTranscription.text` / `outputTranscription.text` | recorded as transcript message content |
+| `speechConfig…voiceName` | `gen_ai.speech.voice` |
+| declared language code | `gen_ai.speech.input.language` |
 
 ### Azure Voice Live
 
@@ -143,6 +232,34 @@ provider APIs across the two voice agent architectures:
 - **Latency**: word-level `response.audio_timestamp.delta` (`audio_offset_ms`);
   the first event approximates time-to-first-audio from `response.created`.
 
+Partial OpenTelemetry exists via OpenLLMetry's OpenAI Realtime wrappers; the
+tables reflect that mapping plus the remaining API fields.
+
+**Span mapping**
+
+| Azure Voice Live concept | `gen_ai.*` span / operation |
+|---|---|
+| realtime session | `invoke_agent` (OpenLLMetry uses `gen_ai.operation.name = invoke_agent`) |
+| `response.created` → `response.done` | conversation turn |
+| function / tool call | `execute_tool` |
+
+**Attribute mapping**
+
+| Azure Voice Live field | `gen_ai.*` attribute |
+|---|---|
+| `response.usage.input_token_details.audio_tokens` | `gen_ai.usage.input_audio_tokens` |
+| `response.usage.output_token_details.audio_tokens` | `gen_ai.usage.output_audio_tokens` |
+| `…input_token_details.text_tokens` / `output_token_details.text_tokens` | — (text/audio token split; not yet in spec) |
+| `…input_token_details.cached_tokens` | — (cached tokens; no dedicated attribute) |
+| total usage tokens | `gen_ai.usage.input_tokens` / `output_tokens` |
+| `response.status = completed` | `gen_ai.conversation.turn.end_reason = complete` |
+| `response.status = incomplete` (VAD barge-in) | `gen_ai.conversation.turn.end_reason = interrupted` |
+| `response.status = canceled` (client cancel) | `gen_ai.conversation.turn.end_reason = interrupted` (cancel vs barge-in not distinguished — see open questions) |
+| `response.status = failed` | — (no `failed` value yet; proposed addition) |
+| `voice.name` | `gen_ai.speech.voice` |
+| input-audio transcription language | `gen_ai.speech.input.language` |
+| `input_audio_format` / `output_audio_format` / `input_audio_sampling_rate` | — (provider-specific audio format) |
+
 ## Dedicated STT / TTS providers
 
 ### Deepgram
@@ -156,6 +273,25 @@ provider APIs across the two voice agent architectures:
   parameter (`aura-2-thalia-en`); no separate `voice_id`. Format via `encoding` +
   `sample_rate` + `container`. Response is raw audio (no usage body).
 - **Billing**: duration-based (audio seconds) for STT; no token concept.
+
+**Span mapping**
+
+| Deepgram operation | `gen_ai.*` span / operation |
+|---|---|
+| `POST /v1/listen` (STT) | `gen_ai.speech_to_text.client` (`speech_to_text`) |
+| `POST /v1/speak` (TTS) | `gen_ai.text_to_speech.client` (`text_to_speech`) |
+
+**Attribute mapping**
+
+| Deepgram field | `gen_ai.*` attribute |
+|---|---|
+| `model` | `gen_ai.request.model` |
+| `detected_language` | `gen_ai.speech.input.language` |
+| TTS voice (encoded in `model`, e.g. `aura-2-thalia-en`) | `gen_ai.speech.voice` (or via model) |
+| `alternatives[].confidence` | — (proposed opt-in STT confidence; not yet in spec) |
+| `metadata.duration` (audio seconds) | — (proposed audio-duration usage; not yet in spec) |
+| `words[].confidence`, `is_final` / `speech_final`, `endpointing` | — (per-word / streaming detail) |
+| `encoding` / `sample_rate` / `container` | — (provider-specific audio format) |
 
 ### ElevenLabs
 
@@ -172,6 +308,28 @@ provider APIs across the two voice agent architectures:
   `agent_response`, `audio`, `interruption`, `ping`). Analytics are dashboard
   only (agent response latency, turn-taking latency p50/p90/p99, LLM time to
   first sentence) — no OpenTelemetry export.
+
+**Span mapping**
+
+| ElevenLabs operation | `gen_ai.*` span / operation |
+|---|---|
+| `POST /v1/speech-to-text` | `gen_ai.speech_to_text.client` (`speech_to_text`) |
+| `POST /v1/text-to-speech/{voice_id}` | `gen_ai.text_to_speech.client` (`text_to_speech`) |
+| Conversational AI pipeline (STT → LLM → TTS) | `invoke_agent` over `speech_to_text` / `chat` / `text_to_speech` |
+
+**Attribute mapping**
+
+| ElevenLabs field | `gen_ai.*` attribute |
+|---|---|
+| `model_id` | `gen_ai.request.model` |
+| `voice_id` / `voice_name` | `gen_ai.speech.voice` |
+| `language_code` | `gen_ai.speech.input.language` |
+| ConvAI `interruption` | `gen_ai.conversation.turn.end_reason = interrupted` |
+| `language_probability` | — (language-detection confidence; provider-specific / opt-in) |
+| `audio_duration_secs` | — (proposed audio-duration usage; not yet in spec) |
+| per-word `logprob` | — (no overall confidence; provider-specific) |
+| `output_format`, `optimize_streaming_latency` | — (provider-specific audio / latency knob) |
+| `character_count_change_*` | — (character-based billing; provider-specific) |
 
 ## Mapping to the proposed conventions
 
