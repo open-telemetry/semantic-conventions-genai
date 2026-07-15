@@ -5,7 +5,7 @@ requires-python = ">=3.12"
 dependencies = [
     "genai-reference-shared",
     # TODO(pin): swap to released mem0ai after mem0ai/mem0#6325 ships.
-    "mem0ai[otel] @ git+https://github.com/Krishnachaitanyakc/mem0.git@2e47d2b70a90b0d2047317a3e1419ce32b68b6d0",
+    "mem0ai[otel] @ git+https://github.com/mem0ai/mem0.git@refs/pull/6325/head",
 ]
 
 [tool.uv.sources]

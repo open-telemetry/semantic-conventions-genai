@@ -30,6 +30,7 @@ def run_memory_reference():
                 "vector_store": {
                     "provider": "qdrant",
                     "config": {
+                        # Backend collection names are not mem0-defined memory store identifiers.
                         "collection_name": "mem0-reference",
                         "embedding_model_dims": 256,
                         "path": str(storage_path / "qdrant"),
