@@ -1,6 +1,7 @@
 """Reference implementation for mem0 memory operations."""
 
 import os
+import platform
 import tempfile
 from pathlib import Path
 
@@ -66,6 +67,9 @@ def run_memory_reference():
 
 def main():
     print("=== Reference Implementation: mem0 Memory ===")
+
+    # OpenAI lazily forks `uname -p`; cache it before the OTLP exporter starts gRPC threads.
+    platform.platform()
     tracer_provider, logger_provider, meter_provider = setup_otel()
 
     run_memory_reference()
