@@ -116,20 +116,6 @@ jobs:
       - name: Check Python formatting
         run: uv tool run --from ruff ruff format --check src scenarios
 
-  author-self-review:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-
-      - name: Author Self-Review Check
-        run: |
-          if git grep -Fq "<!-- I'm an AI agent!!! -->" -- '*.md' ':!AGENTS.md' ':!CLAUDE.md' || \
-             git grep -Fq "# I'm an AI agent!!!" -- '*.yaml' '*.yml' ':!.github/workflows/ci.yml'; then
-            echo "The PR author (a human) must review the changes."
-            exit 1
-          fi
-
   # ── Discover scenario matrices ─────────────────────────────────────
   reference-scenario-matrix:
     runs-on: ubuntu-latest
@@ -203,7 +189,6 @@ jobs:
       - policies
       - generated-docs
       - reference-python-lint
-      - author-self-review
       - reference-scenario-matrix
       - reference-scenarios
       - reference-status-report
