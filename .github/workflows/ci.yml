@@ -24,6 +24,7 @@ jobs:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           fetch-depth: 0 # needed for merge-base used in modified-files mode
+          persist-credentials: false
 
       - uses: jdx/mise-action@e6a8b3978addb5a52f2b4cd9d91eafa7f0ab959d # v4.2.0
 
@@ -49,6 +50,8 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
 
       - name: Load shared version pins
         id: versions
@@ -67,6 +70,8 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
 
       - name: Load shared version pins
         id: versions
@@ -104,6 +109,8 @@ jobs:
         working-directory: reference
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
 
       - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
         with:
@@ -121,6 +128,8 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
 
       - name: Author Self-Review Check
         run: |
@@ -141,6 +150,8 @@ jobs:
         working-directory: reference
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
 
       - uses: ./.github/actions/setup-reference-tooling
 
@@ -161,6 +172,8 @@ jobs:
       matrix: ${{ fromJson(needs.reference-scenario-matrix.outputs.matrix) }}
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
 
       - uses: ./.github/actions/setup-reference-tooling
 
@@ -169,12 +182,16 @@ jobs:
         run: make filter-upstream
 
       - name: Run implementation scenario
-        run: uv run run-scenario "${{ matrix.scenario.lib }}"
+        env:
+          SCENARIO_LIB: ${{ matrix.scenario.lib }}
+        run: uv run run-scenario "$SCENARIO_LIB"
 
       - name: Check data file is up to date
+        env:
+          SCENARIO_DATA: ${{ matrix.scenario.data }}
         run: |
-          git diff --exit-code -- '${{ matrix.scenario.data }}'
-          untracked=$(git ls-files --others --exclude-standard -- '${{ matrix.scenario.data }}')
+          git diff --exit-code -- "$SCENARIO_DATA"
+          untracked=$(git ls-files --others --exclude-standard -- "$SCENARIO_DATA")
           if [ -n "$untracked" ]; then echo "Untracked data files: $untracked"; exit 1; fi
 
   # ── Status Report ───────────────────────────────────────────────────
@@ -186,6 +203,8 @@ jobs:
         working-directory: reference
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
 
       - uses: ./.github/actions/setup-reference-tooling
 
