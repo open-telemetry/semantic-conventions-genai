@@ -413,13 +413,13 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "genai-reference-shared", editable = "../../shared" },
-    { name = "mem0ai", extras = ["otel"], git = "https://github.com/mem0ai/mem0.git?rev=refs%2Fpull%2F6325%2Fhead" },
+    { name = "mem0ai", extras = ["otel"], git = "https://github.com/mem0ai/mem0.git?rev=2e47d2b70a90b0d2047317a3e1419ce32b68b6d0" },
 ]
 
 [[package]]
 name = "mem0ai"
 version = "2.0.12"
-source = { git = "https://github.com/mem0ai/mem0.git?rev=refs%2Fpull%2F6325%2Fhead#2e47d2b70a90b0d2047317a3e1419ce32b68b6d0" }
+source = { git = "https://github.com/mem0ai/mem0.git?rev=2e47d2b70a90b0d2047317a3e1419ce32b68b6d0#2e47d2b70a90b0d2047317a3e1419ce32b68b6d0" }
 dependencies = [
     { name = "httpx" },
     { name = "openai" },

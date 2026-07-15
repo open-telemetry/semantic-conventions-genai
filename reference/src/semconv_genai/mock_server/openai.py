@@ -216,6 +216,8 @@ def _mock_chat_content(body, message_text):
             "<END_OF_PLAN>"
         )
 
+    # mem0's ADD flow expects a `memory` array; return one deterministic
+    # record so the scenario reaches its embedding and vector-write phases.
     if "You are a Memory Extractor" in message_text and "Your sole operation is ADD" in message_text:
         return json.dumps(
             {
