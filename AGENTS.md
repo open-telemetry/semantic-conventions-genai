@@ -59,7 +59,7 @@ changes, not a skill to invoke.
 
 ## Further reading
 
-- [How to write conventions — best practices](https://github.com/open-telemetry/semantic-conventions/blob/v1.42.0/docs/how-to-write-conventions/README.md#best-practices)
-- [Naming](https://github.com/open-telemetry/semantic-conventions/blob/v1.42.0/docs/general/naming.md)
-- [Events](https://github.com/open-telemetry/semantic-conventions/blob/v1.42.0/docs/general/events.md)
-- [Recording errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.42.0/docs/general/recording-errors.md)
+- [How to write conventions — best practices](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/how-to-write-conventions/README.md#best-practices)
+- [Naming](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/general/naming.md)
+- [Events](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/general/events.md)
+- [Recording errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/general/recording-errors.md)

@@ -905,7 +905,7 @@ This metric SHOULD be specified with [ExplicitBucketBoundaries] of [1, 5, 10, 30
 | `gen_ai.workflow.duration` | Histogram | `s` | GenAI workflow duration. [1] | ![Development](https://img.shields.io/badge/-development-blue) | |
 
 **[1]:** This metric instrument describes an operation that executes a coordinated process composed of multiple agents or other operations involving generative AI.
-When this metric is reported alongside a `gen_ai.invoke_workflow` span, the metric  value SHOULD be the same as the span duration.
+When this metric is reported alongside a `gen_ai.invoke_workflow` span, the metric value SHOULD be the same as the span duration.
 
 **Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/general/signal-requirement-level.md).
 
