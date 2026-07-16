@@ -662,7 +662,7 @@ def _emit_fetch_response_span(client, response_id):
         if instructions:
             span.set_attribute(
                 "gen_ai.system_instructions",
-                json.dumps([{"parts": [{"type": "text", "content": instructions}]}]),
+                json.dumps([{"type": "text", "content": instructions}]),
             )
         output_messages = responses_output_messages(fetched)
         if output_messages:
