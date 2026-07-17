@@ -170,8 +170,55 @@ metrics:
     attributes:
       - ref_group: attributes.gen_ai.error
       - ref_group: attributes.gen_ai.invoked_agent.internal.common
-      
-      
+  - name: gen_ai.invoke_agent.inference_calls
+    annotations:
+      code_generation:
+        metric_value_type: int
+    brief: >
+      The number of inference (model) calls a GenAI agent makes during a
+      single invocation.
+    note: |
+      The distribution is scoped to a single agent invocation and SHOULD include
+      only the inference calls the agent itself issued including failed ones;
+      calls made by sub-agents or transferred-to agents are recorded against
+      those agents' own invocations so that each inference call is counted
+      exactly once across the call tree.
+
+      This metric SHOULD be emitted together with the
+      `gen_ai.invoke_agent.internal` span for the same invocation.
+    instrument: histogram
+    unit: "{inference_call}"
+    stability: development
+    attributes:
+      - ref: gen_ai.agent.name
+        requirement_level: recommended
+  - name: gen_ai.invoke_agent.tool_calls
+    annotations:
+      code_generation:
+        metric_value_type: int
+    brief: >
+      The number of tool calls a GenAI agent makes during a single
+      invocation.
+    note: |
+      The distribution is scoped to a single agent invocation and SHOULD include
+      only the tool calls the agent itself triggers including failed ones;
+      calls made by sub-agents or transferred-to agents are recorded against
+      those agents' own invocations so that each tool call is counted exactly
+      once across the call tree.
+
+      Only client-side tool calls (tools executed by the agent or framework)
+      are counted. Tools executed server-side by the model provider (for
+      example, provider built-in web search or code execution) are not
+      counted here.
+
+      This metric SHOULD be emitted together with the
+      `gen_ai.invoke_agent.internal` span for the same invocation.
+    instrument: histogram
+    unit: "{tool_call}"
+    stability: development
+    attributes:
+      - ref: gen_ai.agent.name
+        requirement_level: recommended
   - name: gen_ai.execute_tool.duration
     requirement_level: recommended
     annotations:
