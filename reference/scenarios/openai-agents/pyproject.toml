@@ -3,8 +3,8 @@ name = "openai-agents-reference-test"
 version = "0.0.0"
 requires-python = ">=3.12"
 dependencies = [
-    "openai==2.44.0",
-    "openai-agents==0.17.7",
+    "openai==2.45.0",
+    "openai-agents==0.18.2",
     "genai-reference-shared",
 ]
 
