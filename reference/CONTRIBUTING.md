@@ -82,13 +82,21 @@ Two principles:
 
 - **Don't re-emit another library's telemetry.** If the library delegates an
   operation to another instrumentable library (for example a framework that
-  calls `openai`, `litellm`, or `google-genai` under the hood), that operation
-  belongs to the underlying library. Emit only what this library owns and
-  correlate via standard context propagation.
-- **Emit an operation only when the library has that concept.** A library emits
-  inference or embeddings only when it is itself the model-call boundary, an
+  calls `openai`, `anthropic`, or `google-genai` under the hood),
+  instrumentation for that operation belongs to the underlying library.
+- **Emit an operation only when the library has that concept.** Emit inference
+  or embeddings only when the library is itself the model-call boundary, an
   agent span only when it models agents, a workflow span only when it models
-  workflows or graphs, and so on.
+  workflows or graphs, and so on. Calling the provider's REST API directly (with
+  no separate instrumentable client library in between) makes the library the
+  model-call boundary, so it is a valid reason to emit inference.
+
+Instrumentation for agent frameworks may emit spans for inference calls, but
+should not do so by default — unless the framework issues the model call in a
+way no other instrumentable library can observe (it calls the REST API directly,
+embeds a vendored model library, or similar), so that without the framework's
+instrumentation the application would have no observability into those inference
+calls.
 
 If a library emits unrelated native telemetry that obscures the intended
 validation surface, suppress that library-owned telemetry in the reference

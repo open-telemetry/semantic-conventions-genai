@@ -260,7 +260,6 @@ def run_agent_reference():
                         agent_span.set_attribute(
                             "gen_ai.response.finish_reasons",
                             [str(finish_reason).lower()],
->>>>>>> 578411f (Remove inference spans from agentic references, add guidance)
                         )
                     if last_text:
                         output_messages = json.dumps(
