@@ -1,0 +1,34 @@
+file_format: definition/2
+events:
+  - name: agent.threat.detection
+    brief: >
+      A single threat-detection decision recorded against an agent operation.
+    note: >
+      A single operation MAY produce multiple `agent.threat.detection` events.
+      For example, the same `execute_tool` operation can produce one
+      request-side network/control finding and one response-side content
+      finding. Modeling each finding as its own event keeps the parent span
+      lean and avoids cramming flat span-level attributes for repeated
+      detections.
+
+      This event SHOULD be parented to the agent operation span being
+      evaluated (`gen_ai.invoke_agent`, `gen_ai.execute_tool`, etc.) or to a
+      separately-scoped enforcement span owned by the detection layer when
+      the detection happened outside a provider span (e.g. forward proxy,
+      MCP proxy, CI wrapper).
+
+      Instrumentations SHOULD set the severity number according to
+      `agent.threat.detection.severity`: low -> 9 (INFO), medium -> 13 (WARN),
+      high -> 17 (ERROR), critical -> 21 (FATAL).
+    stability: development
+    attributes:
+      - ref: agent.threat.detection.rule_id
+        requirement_level: required
+      - ref: agent.threat.detection.ruleset
+        requirement_level: required
+      - ref: agent.threat.detection.severity
+        requirement_level: required
+      - ref: agent.threat.detection.action
+        requirement_level: required
+      - ref: agent.threat.detection.correlation_id
+        requirement_level: recommended
