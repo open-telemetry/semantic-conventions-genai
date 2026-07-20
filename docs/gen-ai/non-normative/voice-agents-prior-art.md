@@ -30,6 +30,7 @@ conventions work broadly across the ecosystem rather than for a single SDK.
   - [Deepgram](#deepgram)
   - [ElevenLabs](#elevenlabs)
 - [Mapping to the proposed conventions](#mapping-to-the-proposed-conventions)
+- [Whole-conversation audio and session modeling](#whole-conversation-audio-and-session-modeling)
 - [Instrumentation gaps](#instrumentation-gaps)
 - [References](#references)
 
@@ -473,6 +474,80 @@ end-of-utterance / endpointing models, backchannel detection, VAD / turn-detecti
 type, audio format / sample rate, TTS character count, diarization speaker counts,
 Gemini thinking tokens, word-level audio timestamps.
 
+## Whole-conversation audio and session modeling
+
+Two related questions came up while validating the conventions against real
+traces: (1) how is the audio for an entire conversation referenced, and (2)
+should a voice conversation be modeled as a long-lived span. The survey below
+records the evidence and the resulting decisions.
+
+### How prior art references whole-conversation audio
+
+No surveyed tracing instrumentation references the audio for an entire
+conversation as a single artifact **in the trace**. Where whole-conversation
+audio exists, it lives in a product data model or a separate recording feature,
+correlated back to the trace (at best) by a conversation identifier. Four
+concrete sample traces and the corresponding framework mechanisms:
+
+| Source | Whole-conversation audio? | Where it lives | In the trace? |
+| --- | --- | --- | --- |
+| **ElevenLabs ConvAI** | Yes — recorded automatically, server-side, one recording per conversation (`GET /v1/convai/conversations/{conversation_id}/audio`). User and agent audio are retained distinctly (`has_user_audio` / `has_response_audio`), but the public download returns a single combined recording. | ElevenLabs platform, keyed by `conversation_id`. | No. The trace/export carries only `conversation_id`; audio is fetched out of band. |
+| **Pipecat** | Yes, if the pipeline includes an [`AudioBufferProcessor`](https://github.com/pipecat-ai/pipecat/blob/main/src/pipecat/processors/audio/audio_buffer_processor.py). It time-aligns both directions and emits the whole conversation via `on_audio_data` (merged; mono mix, or stereo with user-left / bot-right) and `on_track_audio_data` (separate user / bot tracks). | Wherever the application writes it (local file, object storage). Storage is not built in. | No, and there is no built-in identifier linking the recording to the span. |
+| **OpenAI Agents SDK** | No whole-conversation file. Audio appears per span as inline base64 PCM — user audio on the `TranscriptionSpanData` `input`, agent audio on the `SpeechSpanData` `output` — gated behind `trace_include_sensitive_audio_data` (often empty). | Inline in the trace, per utterance. | Per-span only, never assembled into one conversation artifact. |
+| **Microsoft Pipecat cascade sample** | No audio at all. Transcripts and voice metadata (`voice_id`, `gen_ai.output.type = speech`) only. | — | No audio references of any kind. |
+
+Whole-call single recordings also exist outside traces in `Vapi`
+(`stereoRecordingUrl`), `Retell` (`recording_multi_channel_url`), LiveKit
+Egress (a single composite file), and Twilio (`RecordingUrl`) — all delivered
+via webhooks / data models at call end, never attached to OTel spans. Several
+support a multi-channel (per-speaker) layout, matching the ElevenLabs
+`has_user_audio` / `has_response_audio` split and Pipecat's `on_track_audio_data`
+tracks.
+
+**Takeaway:** the audio (and often a per-speaker split) exists almost
+everywhere; the missing piece is a portable, in-trace reference. A
+conversation-scoped recording reference — a `uri` / `file_id` plus a `channels[]`
+layout (index → role, e.g. `0 = user`, `1 = assistant`) and duration, correlated
+by `gen_ai.conversation.id` — would make it interoperable without embedding large
+audio payloads on spans. This remains an open proposal.
+
+### Conversation is modeled as an id, not a span
+
+A voice conversation is **not** modeled as a span. It is correlated across the
+per-turn `invoke_agent` spans by the `gen_ai.conversation.id` attribute, matching
+the rest of the GenAI conventions (which never model a conversation as a span)
+and the Arize OpenInference approach (a `session.id` attribute rather than a
+session span). This diverges from most other prior art — OpenLLMetry
+("Realtime Session"), Pipecat (`conversation`), LiveKit (`agent_session`), and
+Hamming (`call.lifecycle`) each open a session-level span — but the divergence is
+deliberate:
+
+- **Long-lived spans are an anti-pattern here.** A voice call runs for minutes to
+  hours, and a span is exported only when it ends. A conversation span therefore
+  yields no telemetry until the call finishes, retains an open span in memory for
+  the whole call, and is **lost entirely if the process crashes or the WebSocket
+  drops** — a common failure mode for long-lived realtime connections.
+- **A conversation is not one bounded operation in one trace.** It can survive
+  reconnects, span multiple processes or load-balanced realtime backends, and
+  naturally decomposes into one trace per turn. That is a logical cross-cutting
+  grouping, which a correlation id expresses well and a span expresses poorly.
+- **The transport is untraced.** There is no finalized OpenTelemetry semantic
+  convention for WebSocket connections (the handshake is covered by HTTP
+  conventions; frames, messages, and close codes are not) and no portable
+  connection identifier, so there is no transport boundary to anchor a
+  conversation span to. `gen_ai.conversation.id` is the only stable join key.
+
+**Recovering session-level semantics without a session span.** The benefits a
+session span would provide — a place to hang whole-conversation data such as the
+audio recording reference, total durations / token counts, and a session-level
+outcome — can instead be carried by a **conversation-scoped event emitted at
+session end** (for example `gen_ai.conversation.details`), correlated by
+`gen_ai.conversation.id`. Such an event is exported at end like any other event,
+holds nothing open for the duration of the call, survives the per-turn trace
+model, and lets consumers reconstruct the conversation by grouping on
+`gen_ai.conversation.id` (exactly how ElevenLabs' `conversation_id` and Arize's
+`session.id` are used today). Defining that event is an open proposal.
+
 ## Instrumentation gaps
 
 There is currently no published OpenTelemetry instrumentation for Deepgram,
@@ -488,11 +563,14 @@ established practice.
 - Arize OpenInference realtime audio tracing: <https://github.com/Arize-ai/openinference/pull/3173>
 - Hamming voice-agent OpenTelemetry guide: <https://hamming.ai/resources/opentelemetry-voice-agents-tracing-guide>
 - Pipecat tracing: `pipecat-ai/pipecat` — `src/pipecat/utils/tracing/`
+- Pipecat audio recording: `pipecat-ai/pipecat` — `src/pipecat/processors/audio/audio_buffer_processor.py`
+- OpenAI Agents SDK trace span data (audio inline on speech / transcription spans): `openai/openai-agents-python` — `src/agents/tracing/span_data.py`
 - LiveKit Agents telemetry: `livekit/agents` — `livekit-agents/livekit/agents/telemetry/trace_types.py`
 - Google Gemini Live API reference: <https://ai.google.dev/api/live>
 - Azure Voice Live API reference (2025-10-01): <https://learn.microsoft.com/en-us/azure/ai-services/speech-service/voice-live-api-reference-2025-10-01>
 - OpenLLMetry OpenAI Realtime instrumentation: `traceloop/openllmetry` — `packages/opentelemetry-instrumentation-openai/opentelemetry/instrumentation/openai/v1/realtime_wrappers.py`
 - Deepgram STT / TTS API: <https://developers.deepgram.com/reference/speech-to-text/listen-pre-recorded>
 - ElevenLabs STT / TTS API: <https://elevenlabs.io/docs/api-reference/speech-to-text/convert>
+- ElevenLabs ConvAI conversation audio (single recording per conversation): <https://elevenlabs.io/docs/api-reference/conversations/get-audio>
 
 [DocumentStatus]: https://opentelemetry.io/docs/specs/otel/document-status
