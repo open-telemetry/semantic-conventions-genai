@@ -8,11 +8,29 @@ import time
 
 from opentelemetry import trace as _trace
 from opentelemetry.sdk.trace import SpanProcessor
-from reference_shared import flush_and_shutdown, mock_server_host_port, reference_tracer, setup_otel
+from reference_shared import (
+    flush_and_shutdown,
+    mock_server_host_port,
+    reference_meter,
+    reference_tracer,
+    setup_otel,
+)
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"]
 
 _reference_tracer = reference_tracer()
+_reference_meter = reference_meter()
+
+_inference_calls = _reference_meter.create_histogram(
+    "gen_ai.invoke_agent.inference_calls",
+    unit="{inference_call}",
+    description="The number of inference (model) calls a GenAI agent makes during a single invocation.",
+)
+_tool_calls = _reference_meter.create_histogram(
+    "gen_ai.invoke_agent.tool_calls",
+    unit="{tool_call}",
+    description="The number of tool calls a GenAI agent makes during a single invocation.",
+)
 
 
 class SpanCounter(SpanProcessor):
@@ -102,8 +120,14 @@ def run_agent_reference():
     request_frequency_penalty = 0.2
     host, port = mock_server_host_port(MOCK_BASE_URL)
 
+    # Per-invocation call counts, scoped to the single agent invocation below.
+    # ADK can attribute each inference/tool call to the agent that issued it,
+    # which is exactly the criteria the invoke_agent call-count metrics require.
+    call_counts = {"inference": 0, "tool": 0}
+
     def get_weather(location: str, tool_context: ToolContext) -> str:
         """Get the current weather."""
+        call_counts["tool"] += 1
         tool_span_attributes = {
             "gen_ai.operation.name": "execute_tool",
             "gen_ai.tool.name": "get_weather",
@@ -210,6 +234,7 @@ def run_agent_reference():
                     with _reference_tracer.start_as_current_span(
                         "chat gemini-2.0-flash", attributes=span_attributes
                     ) as span:
+                        call_counts["inference"] += 1
                         span.set_attribute("gen_ai.conversation.id", session.id)
                         span.set_attribute("gen_ai.request.choice.count", request_choice_count)
                         span.set_attribute("gen_ai.request.max_tokens", request_max_tokens)
@@ -286,6 +311,12 @@ def run_agent_reference():
                             workflow_span.set_attribute("gen_ai.output.messages", output_messages)
 
         asyncio.run(_run())
+
+        # Both metrics are scoped to the agent invocation and emitted alongside
+        # the invoke_agent (internal) span, dimensioned by the agent name.
+        metric_attributes = {"gen_ai.agent.name": agent.name}
+        _inference_calls.record(call_counts["inference"], metric_attributes)
+        _tool_calls.record(call_counts["tool"], metric_attributes)
 
 
 def run_memory_reference():
