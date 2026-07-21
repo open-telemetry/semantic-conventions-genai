@@ -31,6 +31,7 @@ conventions work broadly across the ecosystem rather than for a single SDK.
   - [ElevenLabs](#elevenlabs)
 - [Mapping to the proposed conventions](#mapping-to-the-proposed-conventions)
 - [Whole-conversation audio and session modeling](#whole-conversation-audio-and-session-modeling)
+- [Open questions](#open-questions)
 - [Instrumentation gaps](#instrumentation-gaps)
 - [References](#references)
 
@@ -547,6 +548,98 @@ holds nothing open for the duration of the call, survives the per-turn trace
 model, and lets consumers reconstruct the conversation by grouping on
 `gen_ai.conversation.id` (exactly how ElevenLabs' `conversation_id` and Arize's
 `session.id` are used today). Defining that event is an open proposal.
+
+## Open questions
+
+The following are unresolved and the most likely to change before
+stabilization. They are recorded here as options, without a recommendation.
+
+### Conversation modeling: session span vs. id + session-end event
+
+How a voice conversation (a session spanning many turns) should be modeled is
+open. Two approaches:
+
+**Approach 1 — model the conversation as a long-lived span.** A single
+`conversation` / `agent_session` span is opened at session start and closed at
+session end, with the per-turn `invoke_agent` spans as its children. This is what
+most surveyed prior art does (OpenLLMetry "Realtime Session", Pipecat
+`conversation`, LiveKit `agent_session`, Hamming `call.lifecycle`).
+
+- *For:* one natural place to hang whole-conversation data (audio recording
+  reference, total durations / token counts, session-level outcome); a single
+  trace that visually contains the whole call; matches most existing voice-agent
+  instrumentation.
+- *Against:* a span is exported only when it ends, so there is no telemetry until
+  the call finishes and the span is lost entirely if the process crashes or the
+  WebSocket drops (a common realtime failure mode); a conversation is not one
+  bounded operation — it can survive reconnects, span multiple processes or
+  load-balanced backends, and naturally decomposes into one trace per turn; the
+  transport has no finalized OTel convention or portable connection id to anchor
+  the span to.
+
+**Approach 2 — model the conversation as an id plus a session-end event.** No
+conversation span. The turns are correlated by the `gen_ai.conversation.id`
+attribute on each `invoke_agent` span, and the session-level data a span would
+have carried is emitted as a conversation-scoped event at session end (for
+example `gen_ai.conversation.details`), also correlated by
+`gen_ai.conversation.id`. This is the approach described under
+[Whole-conversation audio and session modeling](#whole-conversation-audio-and-session-modeling);
+it matches the rest of the GenAI conventions (which never model a conversation as
+a span) and Arize OpenInference (`session.id` attribute, not a span).
+
+- *For:* nothing is held open for the call duration; data is exported
+  incrementally (per turn) and at session end, surviving crashes and reconnects;
+  works across processes and per-turn traces; needs only a stable join key, which
+  `gen_ai.conversation.id` already provides.
+- *Against:* diverges from most existing voice instrumentation; consumers must
+  reconstruct the session by grouping on `gen_ai.conversation.id` rather than
+  reading one span tree; the session-end event (`gen_ai.conversation.details`) is
+  not yet defined.
+
+|  | Approach 1: session span | Approach 2: id + session-end event |
+| --- | --- | --- |
+| Session-level data home | span attributes | session-end event |
+| Turn correlation | parent span | `gen_ai.conversation.id` |
+| Survives crash / WS drop | no (span lost) | yes (per-turn + end event) |
+| Telemetry before call ends | no | yes (per turn) |
+| Multi-process / reconnect | poor fit | natural |
+| Ecosystem alignment | matches most prior art | matches GenAI conventions + Arize |
+
+### Other open questions
+
+- **Barge-in vs. client cancel.** A user interruption (barge-in) and a
+  programmatic cancel both map to `gen_ai.agent.invocation.end_reason =
+  interrupted` (and both appear as `response.status = canceled` in OpenAI /
+  Azure Realtime). Whether to distinguish them is open.
+- **STT transcription confidence.** Real (Deepgram `confidence`, LiveKit
+  `lk.transcript_confidence`) but not universal (ElevenLabs exposes per-word
+  `logprob` only). Candidate as an Opt-In attribute; not yet in spec.
+- **Audio duration as the STT / TTS usage unit.** Dedicated speech providers have
+  no token concept and bill by audio duration (Deepgram `metadata.duration`,
+  ElevenLabs `audio_duration_secs`, LiveKit audio-duration counters). Whether to
+  add a duration-based usage measure is open.
+- **Text vs. audio token split.** LiveKit, Azure Voice Live, and Gemini Live all
+  report text tokens alongside audio tokens. Whether to add
+  `gen_ai.usage.input_text_tokens` / `output_text_tokens` is open.
+- **Voice id vs. name.** Providers disagree: ElevenLabs uses an opaque `voice_id`
+  plus a separate `voice_name`, Deepgram encodes the voice in `model`, and
+  Gemini / Azure use `voice.name`. How `gen_ai.speech.voice` should represent this
+  is open.
+- **Declared vs. detected input language.** Deepgram and ElevenLabs treat the
+  requested language and the detected language as distinct fields;
+  `gen_ai.speech.input.language` currently conflates them.
+- **Perceived / end-to-end latency.** A first-class ecosystem metric (LiveKit
+  `lk.e2e_latency`, ElevenLabs turn-taking latency). Whether to define a dedicated
+  voice-latency signal or reuse `gen_ai.response.time_to_first_chunk` is open.
+- **Whole-conversation audio reference.** A portable, in-trace reference to the
+  whole-conversation recording — a `uri` / `file_id` plus a `channels[]` layout
+  (index → role) and duration, correlated by `gen_ai.conversation.id` — does not
+  exist in any surveyed instrumentation. Whether to define one is open.
+- **Provider-specific attributes.** End-of-utterance / endpointing models,
+  backchannel detection, VAD / turn-detection type, audio format / sample rate,
+  TTS character count, diarization speaker counts, Gemini thinking tokens, and
+  word-level audio timestamps are likely out of scope for generic `gen_ai.*`, but
+  this boundary is not settled.
 
 ## Instrumentation gaps
 
