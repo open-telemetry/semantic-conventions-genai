@@ -30,7 +30,6 @@ conventions work broadly across the ecosystem rather than for a single SDK.
   - [Deepgram](#deepgram)
   - [ElevenLabs](#elevenlabs)
 - [Mapping to the proposed conventions](#mapping-to-the-proposed-conventions)
-- [Whole-conversation audio and session modeling](#whole-conversation-audio-and-session-modeling)
 - [Open questions](#open-questions)
 - [Instrumentation gaps](#instrumentation-gaps)
 - [References](#references)
@@ -475,14 +474,14 @@ end-of-utterance / endpointing models, backchannel detection, VAD / turn-detecti
 type, audio format / sample rate, TTS character count, diarization speaker counts,
 Gemini thinking tokens, word-level audio timestamps.
 
-## Whole-conversation audio and session modeling
+## Open questions
 
-Two related questions came up while validating the conventions against real
-traces: (1) how is the audio for an entire conversation referenced, and (2)
-should a voice conversation be modeled as a long-lived span. The survey below
-records the evidence and the resulting decisions.
+Several questions surfaced while validating the conventions against real traces
+and remain unresolved — these are the most likely to change before
+stabilization. They are recorded here as options, with the supporting evidence,
+and without a recommendation.
 
-### How prior art references whole-conversation audio
+### Whole-conversation audio reference
 
 No surveyed tracing instrumentation references the audio for an entire
 conversation as a single artifact **in the trace**. Where whole-conversation
@@ -505,54 +504,12 @@ support a multi-channel (per-speaker) layout, matching the ElevenLabs
 `has_user_audio` / `has_response_audio` split and Pipecat's `on_track_audio_data`
 tracks.
 
-**Takeaway:** the audio (and often a per-speaker split) exists almost
-everywhere; the missing piece is a portable, in-trace reference. A
-conversation-scoped recording reference — a `uri` / `file_id` plus a `channels[]`
-layout (index → role, e.g. `0 = user`, `1 = assistant`) and duration, correlated
-by `gen_ai.conversation.id` — would make it interoperable without embedding large
-audio payloads on spans. This remains an open proposal.
-
-### Conversation is modeled as an id, not a span
-
-A voice conversation is **not** modeled as a span. It is correlated across the
-per-turn `invoke_agent` spans by the `gen_ai.conversation.id` attribute, matching
-the rest of the GenAI conventions (which never model a conversation as a span)
-and the Arize OpenInference approach (a `session.id` attribute rather than a
-session span). This diverges from most other prior art — OpenLLMetry
-("Realtime Session"), Pipecat (`conversation`), LiveKit (`agent_session`), and
-Hamming (`call.lifecycle`) each open a session-level span — but the divergence is
-deliberate:
-
-- **Long-lived spans are an anti-pattern here.** A voice call runs for minutes to
-  hours, and a span is exported only when it ends. A conversation span therefore
-  yields no telemetry until the call finishes, retains an open span in memory for
-  the whole call, and is **lost entirely if the process crashes or the WebSocket
-  drops** — a common failure mode for long-lived realtime connections.
-- **A conversation is not one bounded operation in one trace.** It can survive
-  reconnects, span multiple processes or load-balanced realtime backends, and
-  naturally decomposes into one trace per turn. That is a logical cross-cutting
-  grouping, which a correlation id expresses well and a span expresses poorly.
-- **The transport is untraced.** There is no finalized OpenTelemetry semantic
-  convention for WebSocket connections (the handshake is covered by HTTP
-  conventions; frames, messages, and close codes are not) and no portable
-  connection identifier, so there is no transport boundary to anchor a
-  conversation span to. `gen_ai.conversation.id` is the only stable join key.
-
-**Recovering session-level semantics without a session span.** The benefits a
-session span would provide — a place to hang whole-conversation data such as the
-audio recording reference, total durations / token counts, and a session-level
-outcome — can instead be carried by a **conversation-scoped event emitted at
-session end** (for example `gen_ai.conversation.details`), correlated by
-`gen_ai.conversation.id`. Such an event is exported at end like any other event,
-holds nothing open for the duration of the call, survives the per-turn trace
-model, and lets consumers reconstruct the conversation by grouping on
-`gen_ai.conversation.id` (exactly how ElevenLabs' `conversation_id` and Arize's
-`session.id` are used today). Defining that event is an open proposal.
-
-## Open questions
-
-The following are unresolved and the most likely to change before
-stabilization. They are recorded here as options, without a recommendation.
+The audio (and often a per-speaker split) exists almost everywhere; the missing
+piece is a portable, in-trace reference. A conversation-scoped recording
+reference — a `uri` / `file_id` plus a `channels[]` layout (index → role, e.g.
+`0 = user`, `1 = assistant`) and duration, correlated by `gen_ai.conversation.id`
+— would make it interoperable without embedding large audio payloads on spans.
+Whether to define one is open.
 
 ### Conversation modeling: session span vs. id + session-end event
 
@@ -582,10 +539,11 @@ conversation span. The turns are correlated by the `gen_ai.conversation.id`
 attribute on each `invoke_agent` span, and the session-level data a span would
 have carried is emitted as a conversation-scoped event at session end (for
 example `gen_ai.conversation.details`), also correlated by
-`gen_ai.conversation.id`. This is the approach described under
-[Whole-conversation audio and session modeling](#whole-conversation-audio-and-session-modeling);
-it matches the rest of the GenAI conventions (which never model a conversation as
-a span) and Arize OpenInference (`session.id` attribute, not a span).
+`gen_ai.conversation.id`. It matches the rest of the GenAI conventions (which
+never model a conversation as a span) and Arize OpenInference (`session.id`
+attribute, not a span), and lets consumers reconstruct the conversation by
+grouping on `gen_ai.conversation.id` — exactly how ElevenLabs' `conversation_id`
+and Arize's `session.id` are used today.
 
 - *For:* nothing is held open for the call duration; data is exported
   incrementally (per turn) and at session end, surviving crashes and reconnects;
@@ -631,10 +589,6 @@ a span) and Arize OpenInference (`session.id` attribute, not a span).
 - **Perceived / end-to-end latency.** A first-class ecosystem metric (LiveKit
   `lk.e2e_latency`, ElevenLabs turn-taking latency). Whether to define a dedicated
   voice-latency signal or reuse `gen_ai.response.time_to_first_chunk` is open.
-- **Whole-conversation audio reference.** A portable, in-trace reference to the
-  whole-conversation recording — a `uri` / `file_id` plus a `channels[]` layout
-  (index → role) and duration, correlated by `gen_ai.conversation.id` — does not
-  exist in any surveyed instrumentation. Whether to define one is open.
 - **Provider-specific attributes.** End-of-utterance / endpointing models,
   backchannel detection, VAD / turn-detection type, audio format / sample rate,
   TTS character count, diarization speaker counts, Gemini thinking tokens, and
