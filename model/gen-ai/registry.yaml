@@ -1,4 +1,5 @@
 file_format: definition/2
+# I'm an AI agent!!!
 attributes:
   - key: gen_ai.provider.name
     type:
@@ -250,6 +251,34 @@ attributes:
       The value SHOULD be included in `gen_ai.usage.output_tokens`.
     examples: [50]
     stability: development
+  - key: gen_ai.usage.input_audio_tokens
+    type: int
+    brief: The number of audio tokens used in the GenAI input (prompt).
+    note: >
+      The value SHOULD be included in `gen_ai.usage.input_tokens`.
+
+      Voice-native (speech-to-speech) models and multimodal models that accept
+      audio input report audio tokens separately from text tokens. When the
+      provider exposes an audio token count for the input (for example, OpenAI
+      `usage.prompt_tokens_details.audio_tokens` or the Realtime API
+      `usage.input_token_details.audio_tokens`), instrumentations SHOULD report
+      it here.
+    examples: [50]
+    stability: development
+  - key: gen_ai.usage.output_audio_tokens
+    type: int
+    brief: The number of audio tokens used in the GenAI response (completion).
+    note: >
+      The value SHOULD be included in `gen_ai.usage.output_tokens`.
+
+      Voice-native (speech-to-speech) models and multimodal models that produce
+      audio output report audio tokens separately from text tokens. When the
+      provider exposes an audio token count for the output (for example, OpenAI
+      `usage.completion_tokens_details.audio_tokens` or the Realtime API
+      `usage.output_token_details.audio_tokens`), instrumentations SHOULD report
+      it here.
+    examples: [30]
+    stability: development
   - key: gen_ai.token.type
     type:
       members:
@@ -278,6 +307,43 @@ attributes:
       compaction was applied. Instrumentations SHOULD NOT set it to `false`; they
       SHOULD leave it unset otherwise.
     examples: [true]
+    stability: development
+  - key: gen_ai.agent.invocation.end_reason
+    type:
+      members:
+        - id: completed
+          value: "completed"
+          brief: 'The agent invocation finished normally.'
+          stability: development
+        - id: interrupted
+          value: "interrupted"
+          brief: 'The agent invocation was interrupted before it completed, for example by user barge-in in a voice interaction or a client-side cancellation.'
+          stability: development
+        - id: session_closed
+          value: "session_closed"
+          brief: 'The agent invocation ended because the underlying session was closed before it completed.'
+          stability: development
+    brief: The reason a GenAI agent invocation (the `invoke_agent` operation) ended.
+    note: >
+      This attribute describes how an agent invocation concluded and is set on
+      the `invoke_agent` span. It applies to any agent invocation, and is
+      particularly useful for streaming or turn-based voice interactions
+      (for example, the OpenAI Realtime API or other speech-to-speech models)
+      where a user utterance and the agent response form a single invocation
+      that can be cut short. The `interrupted` value in particular captures
+      barge-in, where new user speech ends the in-progress response, as well as
+      client-side cancellation.
+
+      This attribute captures non-error outcomes. A failed invocation SHOULD be
+      recorded by setting the span status to `Error` and populating `error.type`,
+      rather than by adding a value here. Instrumentations SHOULD set this
+      attribute only when they can reliably determine why the invocation ended.
+
+      If one of the predefined values applies but a specific system uses a
+      different name, it's RECOMMENDED to document it in the semantic conventions
+      for that GenAI system and use the system-specific name in the
+      instrumentation.
+    examples: ['completed', 'interrupted', 'session_closed']
     stability: development
   - key: gen_ai.agent.id
     type: string
@@ -498,6 +564,14 @@ attributes:
           value: "delete_memory_store"
           brief: 'Delete or deprovision a memory store'
           stability: development
+        - id: speech_to_text
+          value: "speech_to_text"
+          brief: 'Speech-to-text (transcription) operation such as [OpenAI Create transcription API](https://platform.openai.com/docs/api-reference/audio/createTranscription)'
+          stability: development
+        - id: text_to_speech
+          value: "text_to_speech"
+          brief: 'Text-to-speech (speech synthesis) operation such as [OpenAI Create speech API](https://platform.openai.com/docs/api-reference/audio/createSpeech)'
+          stability: development
     brief: The name of the operation being performed.
     note: >
       If one of the predefined values applies, but specific system uses a different name it's RECOMMENDED to document it in the semantic
@@ -537,6 +611,25 @@ attributes:
 
       Additional output format details may be recorded in the future in the
       `gen_ai.output.{type}.*` attributes.
+    stability: development
+  - key: gen_ai.speech.voice
+    type: string
+    brief: The name or identifier of the voice used to synthesize speech.
+    note: >
+      Applies to text-to-speech (speech synthesis) operations. The value is the
+      provider-specific voice name or identifier requested by the client, for
+      example the OpenAI `voice` parameter (`alloy`, `verse`).
+    examples: ['alloy', 'verse']
+    stability: development
+  - key: gen_ai.speech.input.language
+    type: string
+    brief: The primary language of the input audio for a speech-to-text operation.
+    note: >
+      The language of the input audio, as declared in the request or detected
+      during transcription. When available, the value SHOULD be a BCP-47 language
+      tag (for example `en` or `en-US`); some providers report a language name
+      instead, in which case the reported value is used as-is.
+    examples: ['en', 'en-US']
     stability: development
   - key: gen_ai.embeddings.dimension.count
     type: int

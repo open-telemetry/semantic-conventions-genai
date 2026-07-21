@@ -139,6 +139,20 @@ SPAN_SPECS: dict[str, AttributeSpec] = {
         op_names=frozenset({"retrieval"}),
         discriminator_attrs=frozenset({"gen_ai.data_source.id"}),
     ),
+    "speech_to_text": _from_yaml(
+        _groups,
+        "span.gen_ai.speech_to_text.client",
+        label="Speech-to-Text",
+        op_names=frozenset({"speech_to_text"}),
+        discriminator_attrs=frozenset({"gen_ai.speech.input.language"}),
+    ),
+    "text_to_speech": _from_yaml(
+        _groups,
+        "span.gen_ai.text_to_speech.client",
+        label="Text-to-Speech",
+        op_names=frozenset({"text_to_speech"}),
+        discriminator_attrs=frozenset({"gen_ai.speech.voice"}),
+    ),
     "memory": _from_yaml(
         _groups,
         "span.gen_ai.memory.client",

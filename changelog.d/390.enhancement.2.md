@@ -1,0 +1,1 @@
+Add cascade (STT -> LLM -> TTS) voice agent conventions: `speech_to_text` and `text_to_speech` operations, `gen_ai.speech.voice` and `gen_ai.speech.input.language` attributes, and speech-to-text / text-to-speech client spans.
