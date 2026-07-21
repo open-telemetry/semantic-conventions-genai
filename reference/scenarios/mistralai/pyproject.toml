@@ -3,7 +3,7 @@ name = "mistralai-reference-test"
 version = "0.0.0"
 requires-python = ">=3.12"
 dependencies = [
-    "mistralai==2.6.0",
+    "mistralai==2.7.1",
     "genai-reference-shared",
 ]
 
@@ -13,5 +13,5 @@ genai-reference-shared = { path = "../../shared", editable = true }
 [tool.uv]
 package = false
 override-dependencies = [
-    "opentelemetry-semantic-conventions==0.64b0",
+    "opentelemetry-semantic-conventions==0.65b0",
 ]
