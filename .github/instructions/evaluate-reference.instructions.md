@@ -6,7 +6,12 @@ applyTo: "model/**,docs/gen-ai/**,reference/scenarios/**"
 
 Use when evaluating whether semantic-convention changes are supported by reference scenarios.
 
-Goal: for each attribute changed under `model/**`, confirm at least one reference scenario credibly demonstrates it; for each scenario change, confirm it mirrors the model. Flag any changed attribute with no scenario coverage as `add reference for supporting library`.
+When reviewing a pull request, perform a cross-file evaluation rather than reviewing
+each changed file in isolation. For each signal or entity changed under `model/**`,
+inspect the relevant reference scenarios, including unchanged scenarios for other
+supporting libraries.
+
+Goal: for each signal, entity, or attribute changed under `model/**`, confirm at least one reference scenario credibly demonstrates it; for each scenario change, confirm it mirrors the model. Flag any changed field with no scenario coverage as `add reference for supporting library`.
 
 A missing or partial reference is not automatically an implementation bug. It may be a capture gap: a legitimate limitation in what the library exposes from its public call boundary.
 

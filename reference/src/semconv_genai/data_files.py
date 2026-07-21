@@ -27,6 +27,7 @@ from semconv_genai.parse_results import (
 )
 from semconv_genai.semconv_model import (
     EVENT_SPECS,
+    METRIC_SPECS,
     SPAN_SPECS,
 )
 
@@ -50,6 +51,12 @@ SPAN_TYPE_ORDER = [
 EVENT_TYPE_ORDER = [
     "gen_ai.client.inference.operation.details",
     "gen_ai.evaluation.result",
+]
+
+# Display order for metric types in reports.
+METRIC_TYPE_ORDER = [
+    "gen_ai.invoke_agent.inference_calls",
+    "gen_ai.invoke_agent.tool_calls",
 ]
 
 _REQUIREMENT_LEVELS = (
@@ -171,6 +178,28 @@ def _build_event_type_present_names(result: ScenarioResult) -> dict[str, list[st
     )
 
 
+def _metric_type_present_attributes(
+    result: ScenarioResult,
+    metric_name: str,
+    level: RequirementLevel,
+) -> set[str]:
+    """Return attrs present for a metric type at the requested requirement level."""
+    all_present = _present_attributes(result)
+    if level is RequirementLevel.REQUIRED:
+        return result.detected.metric_attrs.get(metric_name, all_present)
+    return result.detected.metric_any_attrs.get(metric_name, all_present)
+
+
+def _build_metric_type_present_names(result: ScenarioResult) -> dict[str, list[str]]:
+    """Return sparse per-metric-type attribute lists for detected metrics."""
+    merged = merge_signal_counts(result.observed.metrics, result.detected.metrics)
+    return _build_signal_type_present_names(
+        METRIC_SPECS,
+        merged,
+        lambda name, level: _metric_type_present_attributes(result, name, level),
+    )
+
+
 # ── Scenario data types and generation ──────────────────────────────
 
 
@@ -179,10 +208,11 @@ class ScenarioDataEntry:
     library: str
     spans: dict[str, dict[str, str]]
     events: dict[str, dict[str, str]]
+    metrics: dict[str, dict[str, str]]
 
 
 def _normalize_generated_scenario_payload(data: dict[str, object]) -> dict[str, object]:
-    """Drop empty top-level objects and sort span attribute names alphabetically."""
+    """Drop empty top-level objects and sort signal attribute names alphabetically."""
     normalized: dict[str, object] = {}
     spans = data.get("spans")
     if isinstance(spans, dict) and spans:
@@ -194,6 +224,11 @@ def _normalize_generated_scenario_payload(data: dict[str, object]) -> dict[str, 
         normalized["events"] = {
             name: sorted(attrs) if isinstance(attrs, (list, set)) else [] for name, attrs in events.items()
         }
+    metrics = data.get("metrics")
+    if isinstance(metrics, dict) and metrics:
+        normalized["metrics"] = {
+            name: sorted(attrs) if isinstance(attrs, (list, set)) else [] for name, attrs in metrics.items()
+        }
     return normalized
 
 
@@ -201,12 +236,16 @@ def _build_single_scenario_data(result: ScenarioResult) -> tuple[dict[str, objec
     """Build committed status-report data from a parsed Weaver result."""
     event_present = _build_event_type_present_names(result)
     spans = _build_span_type_present_names(result)
+    metrics = _build_metric_type_present_names(result)
 
     data: dict[str, object] = {"events": event_present}
     if spans:
         data["spans"] = spans
+    if metrics:
+        data["metrics"] = metrics
 
-    return _normalize_generated_scenario_payload(data), bool(spans) or bool(event_present)
+    has_relevant_data = bool(spans) or bool(event_present) or bool(metrics)
+    return _normalize_generated_scenario_payload(data), has_relevant_data
 
 
 def write_generated_scenario_data(library: str) -> Path:
@@ -255,6 +294,7 @@ def _normalize_scenario_data_entry(entry: dict[str, object], library: str) -> Sc
         library=library,
         spans=_normalize_attr_data(entry.get("spans"), SPAN_SPECS),
         events=_normalize_attr_data(entry.get("events"), EVENT_SPECS),
+        metrics=_normalize_attr_data(entry.get("metrics"), METRIC_SPECS),
     )
 
 

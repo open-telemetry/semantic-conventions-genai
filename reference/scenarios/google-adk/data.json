@@ -66,5 +66,13 @@
       "gen_ai.tool.name",
       "gen_ai.tool.type"
     ]
+  },
+  "metrics": {
+    "gen_ai.invoke_agent.inference_calls": [
+      "gen_ai.agent.name"
+    ],
+    "gen_ai.invoke_agent.tool_calls": [
+      "gen_ai.agent.name"
+    ]
   }
 }
