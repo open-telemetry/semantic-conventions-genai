@@ -3,7 +3,7 @@ name = "pydantic-ai-reference-test"
 version = "0.0.0"
 requires-python = ">=3.12"
 dependencies = [
-    "pydantic-ai-slim[openai]==2.9.1",
+    "pydantic-ai-slim[openai]==2.14.1",
     "genai-reference-shared",
 ]
 
