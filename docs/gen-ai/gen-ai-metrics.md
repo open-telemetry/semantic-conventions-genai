@@ -916,13 +916,31 @@ When this metric is reported alongside a `gen_ai.invoke_workflow` span, the metr
 | Key | Stability | [Requirement Level](https://opentelemetry.io/docs/specs/semconv/general/attribute-requirement-level/) | Value Type | Description | Example Values |
 | --- | --- | --- | --- | --- | --- |
 | [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/error.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If the operation ended in an error. | string | Describes a class of error the operation ended with. [1] | `timeout`; `java.net.UnknownHostException`; `server_certificate_invalid`; `500` |
-| [`gen_ai.workflow.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If available. | string | Human-readable name of the GenAI workflow provided by the application. [2] | `multi_agent_rag`; `customer_support_pipeline` |
+| [`gen_ai.main_agent.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [2] | string | The name of the main GenAI agent or workflow this operation runs within. [3] | `content_pipeline`; `Travel Planner` |
+| [`gen_ai.workflow.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If available. | string | Human-readable name of the GenAI workflow provided by the application. [4] | `multi_agent_rag`; `customer_support_pipeline` |
 
 **[1] `error.type`:** The `error.type` SHOULD match the error code returned by the Generative AI provider or the client library,
 the canonical name of exception that occurred, or another low-cardinality error identifier.
 Instrumentations SHOULD document the list of errors they report.
 
-**[2] `gen_ai.workflow.name`:** This attribute can be populated in different frameworks; for example, as the name of the first chain in LangChain or the name of the crew in CrewAI.
+**[2] `gen_ai.main_agent.name`:** If the workflow is invoked within an encompassing agent or workflow and instrumentation can reliably determine its name.
+
+**[3] `gen_ai.main_agent.name`:** Here, "main agent" is a general term for a local root GenAI agent or an agentic workflow.
+The value matches `{gen_ai.agent.name}` or `{gen_ai.workflow.name}` of the
+outermost local agent or workflow invocation.
+
+Instrumentations SHOULD set this attribute only when they can reliably determine that the
+operation runs within an encompassing agent or workflow invocation and MUST leave it unset otherwise.
+An agent or workflow invocation without this attribute is considered the main agent.
+
+The outermost agent or workflow invocation records its name (for example, in the OpenTelemetry
+Context); nested operations inherit it and MUST NOT overwrite it. 
+
+This attribute is local to the process and SHOULD NOT be propagated across service boundaries.
+
+It is NOT RECOMMENDED to suppress nested agent or workflow invocations by default.
+
+**[4] `gen_ai.workflow.name`:** This attribute can be populated in different frameworks; for example, as the name of the first chain in LangChain or the name of the crew in CrewAI.
 The workflow name is usually provided by the application in a way that is specific to the generative AI framework or library that orchestrates the workflow.
 It is usually a static name that is expected to be unique within an application.
 
@@ -985,13 +1003,31 @@ span, the metric value SHOULD be the same as the span duration.
 | --- | --- | --- | --- | --- | --- |
 | [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/error.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If the operation ended in an error. | string | Describes a class of error the operation ended with. [1] | `timeout`; `java.net.UnknownHostException`; `server_certificate_invalid`; `500` |
 | [`gen_ai.agent.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When available. | string | The human-readable name of the invoked GenAI agent. | `Math Tutor`; `Fiction Writer` |
-| [`gen_ai.request.model`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If applicable. | string | The name of the GenAI model configured for the agent. [2] | `gpt-4` |
+| [`gen_ai.main_agent.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [2] | string | The name of the main GenAI agent or workflow this operation runs within. [3] | `content_pipeline`; `Travel Planner` |
+| [`gen_ai.request.model`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If applicable. | string | The name of the GenAI model configured for the agent. [4] | `gpt-4` |
 
 **[1] `error.type`:** The `error.type` SHOULD match the error code returned by the Generative AI provider or the client library,
 the canonical name of exception that occurred, or another low-cardinality error identifier.
 Instrumentations SHOULD document the list of errors they report.
 
-**[2] `gen_ai.request.model`:** This attribute SHOULD be populated if and only if the instrumented library allows to set only a single model per agent. It SHOULD NOT be populated for agents that support multiple models or dynamic selection.
+**[2] `gen_ai.main_agent.name`:** If the agent is invoked within an encompassing agent or workflow invocation and instrumentation can reliably determine it.
+
+**[3] `gen_ai.main_agent.name`:** Here, "main agent" is a general term for a local root GenAI agent or an agentic workflow.
+The value matches `{gen_ai.agent.name}` or `{gen_ai.workflow.name}` of the
+outermost local agent or workflow invocation.
+
+Instrumentations SHOULD set this attribute only when they can reliably determine that the
+operation runs within an encompassing agent or workflow invocation and MUST leave it unset otherwise.
+An agent or workflow invocation without this attribute is considered the main agent.
+
+The outermost agent or workflow invocation records its name (for example, in the OpenTelemetry
+Context); nested operations inherit it and MUST NOT overwrite it. 
+
+This attribute is local to the process and SHOULD NOT be propagated across service boundaries.
+
+It is NOT RECOMMENDED to suppress nested agent or workflow invocations by default.
+
+**[4] `gen_ai.request.model`:** This attribute SHOULD be populated if and only if the instrumented library allows to set only a single model per agent. It SHOULD NOT be populated for agents that support multiple models or dynamic selection.
 
 ---
 
@@ -1031,6 +1067,8 @@ exactly once across the call tree.
 
 This metric SHOULD be emitted together with the
 `gen_ai.invoke_agent.internal` span for the same invocation.
+
+**Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/general/signal-requirement-level.md).
 
 **Attributes:**
 
@@ -1073,6 +1111,8 @@ counted here.
 
 This metric SHOULD be emitted together with the
 `gen_ai.invoke_agent.internal` span for the same invocation.
+
+**Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/general/signal-requirement-level.md).
 
 **Attributes:**
 

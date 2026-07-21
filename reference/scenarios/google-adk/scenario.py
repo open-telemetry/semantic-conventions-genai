@@ -6,6 +6,7 @@ import json
 import os
 import time
 
+from opentelemetry import context as _otel_context
 from opentelemetry import trace as _trace
 from opentelemetry.sdk.trace import SpanProcessor
 from reference_shared import (
@@ -31,6 +32,26 @@ _tool_calls = _reference_meter.create_histogram(
     unit="{tool_call}",
     description="The number of tool calls a GenAI agent makes during a single invocation.",
 )
+
+# Context key carrying the name of the outermost invoke_agent/invoke_workflow
+# invocation, so nested invocations can record gen_ai.main_agent.name without
+# hardcoding the trace structure.
+_MAIN_AGENT_KEY = _otel_context.create_key("gen_ai.main_agent")
+
+
+@contextlib.contextmanager
+def _main_agent_scope(name):
+    """Yield the main agent's name from OTel Context, or register this invocation
+    as the main agent (yielding None) if none is set."""
+    main_agent = _otel_context.get_value(_MAIN_AGENT_KEY)
+    if main_agent is not None:
+        yield main_agent
+        return
+    token = _otel_context.attach(_otel_context.set_value(_MAIN_AGENT_KEY, name))
+    try:
+        yield None
+    finally:
+        _otel_context.detach(token)
 
 
 class SpanCounter(SpanProcessor):
@@ -188,9 +209,15 @@ def run_agent_reference():
             workflow_span_attributes = {
                 "gen_ai.operation.name": "invoke_workflow",
             }
-            with _reference_tracer.start_as_current_span(
-                f"invoke_workflow {runner.app_name}", attributes=workflow_span_attributes
-            ) as workflow_span:
+            workflow_span_name = f"invoke_workflow {runner.app_name}"
+            with (
+                _reference_tracer.start_as_current_span(
+                    workflow_span_name, attributes=workflow_span_attributes
+                ) as workflow_span,
+                _main_agent_scope(runner.app_name) as main_agent,
+            ):
+                if main_agent is not None:
+                    workflow_span.set_attribute("gen_ai.main_agent.name", main_agent)
                 workflow_span.set_attribute("gen_ai.workflow.name", runner.app_name)
                 workflow_span.set_attribute(
                     "gen_ai.input.messages",
@@ -201,9 +228,15 @@ def run_agent_reference():
                     "gen_ai.request.model": request_model,
                     "gen_ai.agent.name": agent.name,
                 }
-                with _reference_tracer.start_as_current_span(
-                    "invoke_agent test_agent", attributes=agent_span_attributes
-                ) as agent_span:
+                agent_span_name = f"invoke_agent {agent.name}"
+                with (
+                    _reference_tracer.start_as_current_span(
+                        agent_span_name, attributes=agent_span_attributes
+                    ) as agent_span,
+                    _main_agent_scope(agent.name) as agent_main_agent,
+                ):
+                    if agent_main_agent is not None:
+                        agent_span.set_attribute("gen_ai.main_agent.name", agent_main_agent)
                     agent_span.set_attribute("gen_ai.request.choice.count", request_choice_count)
                     agent_span.set_attribute("gen_ai.request.max_tokens", request_max_tokens)
                     agent_span.set_attribute("gen_ai.request.temperature", request_temperature)

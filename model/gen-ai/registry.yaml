@@ -855,3 +855,23 @@ attributes:
       If there is no low-cardinality workflow name available for a given framework, this attribute MUST NOT be captured by default.
     examples: ["multi_agent_rag", "customer_support_pipeline"]
     stability: development
+  - key: gen_ai.main_agent.name
+    type: string
+    brief: The name of the main GenAI agent or workflow this operation runs within.
+    note: |
+      Here, "main agent" is a general term for a local root GenAI agent or an agentic workflow.
+      The value matches `{gen_ai.agent.name}` or `{gen_ai.workflow.name}` of the
+      outermost local agent or workflow invocation.
+
+      Instrumentations SHOULD set this attribute only when they can reliably determine that the
+      operation runs within an encompassing agent or workflow invocation and MUST leave it unset otherwise.
+      An agent or workflow invocation without this attribute is considered the main agent.
+
+      The outermost agent or workflow invocation records its name (for example, in the OpenTelemetry
+      Context); nested operations inherit it and MUST NOT overwrite it. 
+
+      This attribute is local to the process and SHOULD NOT be propagated across service boundaries.
+
+      It is NOT RECOMMENDED to suppress nested agent or workflow invocations by default.
+    examples: ["content_pipeline", "Travel Planner"]
+    stability: development

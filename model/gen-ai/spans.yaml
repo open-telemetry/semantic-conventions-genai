@@ -136,6 +136,11 @@ attribute_groups:
         brief: The free-form description of the invoked GenAI agent.
         requirement_level:
           conditionally_required: When available.
+      - ref: gen_ai.main_agent.name
+        requirement_level:
+          conditionally_required: >
+            If the agent is invoked within an encompassing agent or workflow
+            and instrumentation can reliably determine its name.
 
 
   - id: attributes.gen_ai.execute_tool.common
@@ -592,6 +597,11 @@ spans:
       - ref: gen_ai.workflow.name
         requirement_level:
           conditionally_required: When available.
+      - ref: gen_ai.main_agent.name
+        requirement_level:
+          conditionally_required: >
+            If the workflow is invoked within an encompassing agent or workflow invocation
+            and instrumentation can reliably determine it.
       - ref: gen_ai.input.messages
         requirement_level: opt_in
       - ref: gen_ai.output.messages

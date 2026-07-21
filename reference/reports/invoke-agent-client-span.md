@@ -19,6 +19,7 @@
 | gen_ai.agent.version | [aws-bedrock-agent] |
 | gen_ai.conversation.id | [aws-bedrock-agent], [openai-assistants] |
 | gen_ai.data_source.id | (none) |
+| gen_ai.main_agent.name | (none) |
 | gen_ai.output.type | [azure-ai-foundry] |
 | gen_ai.request.choice.count | (none) |
 | gen_ai.request.seed | (none) |

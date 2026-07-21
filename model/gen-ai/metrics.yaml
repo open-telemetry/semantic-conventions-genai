@@ -139,6 +139,11 @@ metrics:
       - ref: gen_ai.workflow.name
         requirement_level:
           conditionally_required: If available.
+      - ref: gen_ai.main_agent.name
+        requirement_level:
+          conditionally_required: >
+            If the workflow is invoked within an encompassing agent or workflow
+            and instrumentation can reliably determine its name.
   - name: gen_ai.invoke_agent.duration
     requirement_level: recommended
     annotations:
@@ -170,6 +175,11 @@ metrics:
     attributes:
       - ref_group: attributes.gen_ai.error
       - ref_group: attributes.gen_ai.invoked_agent.internal.common
+      - ref: gen_ai.main_agent.name
+        requirement_level:
+          conditionally_required: >
+            If the agent is invoked within an encompassing agent or workflow invocation
+            and instrumentation can reliably determine it.      
   - name: gen_ai.invoke_agent.inference_calls
     annotations:
       code_generation:
