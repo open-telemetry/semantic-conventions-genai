@@ -86,9 +86,7 @@ def _run_turn(conn, behavior, request_model, response_model, host, port):
         if port is not None:
             chat_attributes["server.port"] = port
 
-        with _reference_tracer.start_as_current_span(
-            f"chat {request_model}", attributes=chat_attributes
-        ) as chat_span:
+        with _reference_tracer.start_as_current_span(f"chat {request_model}", attributes=chat_attributes) as chat_span:
             chat_span.set_attribute("gen_ai.input.messages", input_messages)
 
             # The user speaks: append their audio to the input buffer, commit it,
@@ -96,9 +94,7 @@ def _run_turn(conn, behavior, request_model, response_model, host, port):
             # user barges in (interrupted) or lets the turn finish (complete).
             conn.send({"type": "input_audio_buffer.append", "audio": INPUT_AUDIO_B64})
             conn.send({"type": "input_audio_buffer.commit"})
-            conn.send(
-                {"type": "response.create", "response": {"metadata": {"mock_behavior": behavior}}}
-            )
+            conn.send({"type": "response.create", "response": {"metadata": {"mock_behavior": behavior}}})
 
             response_id = None
             transcript_deltas = []
@@ -149,13 +145,9 @@ def _run_turn(conn, behavior, request_model, response_model, host, port):
                 chat_span.set_attribute("gen_ai.usage.input_tokens", usage.input_tokens)
                 chat_span.set_attribute("gen_ai.usage.output_tokens", usage.output_tokens)
                 if usage.input_token_details and usage.input_token_details.audio_tokens:
-                    chat_span.set_attribute(
-                        "gen_ai.usage.input_audio_tokens", usage.input_token_details.audio_tokens
-                    )
+                    chat_span.set_attribute("gen_ai.usage.input_audio_tokens", usage.input_token_details.audio_tokens)
                 if usage.output_token_details and usage.output_token_details.audio_tokens:
-                    chat_span.set_attribute(
-                        "gen_ai.usage.output_audio_tokens", usage.output_token_details.audio_tokens
-                    )
+                    chat_span.set_attribute("gen_ai.usage.output_audio_tokens", usage.output_token_details.audio_tokens)
 
         # Map the realtime response outcome to the agent invocation end reason.
         # A cancelled response caused by newly detected user speech is a barge-in.
