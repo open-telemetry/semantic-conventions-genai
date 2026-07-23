@@ -469,9 +469,8 @@ class RetrievalDocument(BaseModel):
         default_factory=lambda: None,
         description="A unique identifier for the document.",
     )
-    score: float | SkipJsonSchema[None] = Field(
-        default_factory=lambda: None,
-        description="The relevance score of the document.",
+    score: float | None = Field(
+        default=None, description="The relevance score of the document."
     )
 
     model_config = ConfigDict(

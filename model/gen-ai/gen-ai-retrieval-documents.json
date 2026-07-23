@@ -10,9 +10,17 @@
                     "type": "string"
                 },
                 "score": {
+                    "anyOf": [
+                        {
+                            "type": "number"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
                     "description": "The relevance score of the document.",
-                    "title": "Score",
-                    "type": "number"
+                    "title": "Score"
                 }
             },
             "title": "RetrievalDocument",
