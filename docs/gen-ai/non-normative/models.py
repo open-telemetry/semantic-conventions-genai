@@ -34,7 +34,6 @@ from pydantic import (
     GetJsonSchemaHandler,
     RootModel,
 )
-from pydantic.json_schema import SkipJsonSchema
 from pydantic_core import core_schema
 
 
@@ -465,9 +464,8 @@ class RetrievalDocument(BaseModel):
     Represents a single document retrieved from a vector database or search system.
     """
 
-    id: str | SkipJsonSchema[None] = Field(
-        default_factory=lambda: None,
-        description="A unique identifier for the document.",
+    id: str | None = Field(
+        default=None, description="A unique identifier for the document."
     )
     score: float | None = Field(
         default=None, description="The relevance score of the document."

@@ -5,9 +5,17 @@
             "description": "Represents a single document retrieved from a vector database or search system.",
             "properties": {
                 "id": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
                     "description": "A unique identifier for the document.",
-                    "title": "Id",
-                    "type": "string"
+                    "title": "Id"
                 },
                 "score": {
                     "anyOf": [
