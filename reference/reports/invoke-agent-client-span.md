@@ -6,8 +6,8 @@
 
 | Attribute | Supporting Libraries |
 | --- | --- |
-| gen_ai.operation.name | [aws-bedrock-agent], [azure-ai-foundry], [openai-assistants] |
-| gen_ai.provider.name | [aws-bedrock-agent], [azure-ai-foundry], [openai-assistants] |
+| gen_ai.operation.name | [aws-bedrock-agent], [azure-ai-foundry], [google-genai], [openai-assistants] |
+| gen_ai.provider.name | [aws-bedrock-agent], [azure-ai-foundry], [google-genai], [openai-assistants] |
 
 ## Conditionally Required
 
@@ -15,7 +15,7 @@
 | --- | --- |
 | gen_ai.agent.description | [openai-assistants] |
 | gen_ai.agent.id | [aws-bedrock-agent], [openai-assistants] |
-| gen_ai.agent.name | [azure-ai-foundry], [openai-assistants] |
+| gen_ai.agent.name | [azure-ai-foundry], [google-genai], [openai-assistants] |
 | gen_ai.agent.version | [aws-bedrock-agent] |
 | gen_ai.conversation.id | [aws-bedrock-agent], [openai-assistants] |
 | gen_ai.data_source.id | (none) |
@@ -30,16 +30,17 @@
 | --- | --- |
 | gen_ai.request.frequency_penalty | (none) |
 | gen_ai.request.max_tokens | [azure-ai-foundry], [openai-assistants] |
-| gen_ai.request.model | [azure-ai-foundry], [openai-assistants] |
+| gen_ai.request.model | [azure-ai-foundry], [google-genai], [openai-assistants] |
 | gen_ai.request.presence_penalty | (none) |
+| gen_ai.request.previous_response.id | [google-genai] |
 | gen_ai.request.stop_sequences | (none) |
 | gen_ai.request.temperature | [azure-ai-foundry], [openai-assistants] |
 | gen_ai.request.top_p | [azure-ai-foundry], [openai-assistants] |
 | gen_ai.response.finish_reasons | (none) |
 | gen_ai.usage.cache_creation.input_tokens | (none) |
 | gen_ai.usage.cache_read.input_tokens | (none) |
-| gen_ai.usage.input_tokens | [azure-ai-foundry], [openai-assistants] |
-| gen_ai.usage.output_tokens | [azure-ai-foundry], [openai-assistants] |
+| gen_ai.usage.input_tokens | [azure-ai-foundry], [google-genai], [openai-assistants] |
+| gen_ai.usage.output_tokens | [azure-ai-foundry], [google-genai], [openai-assistants] |
 | server.address | [aws-bedrock-agent], [azure-ai-foundry], [openai-assistants] |
 
 ## Opt-In
@@ -53,4 +54,5 @@
 
 [aws-bedrock-agent]: ../scenarios/aws-bedrock-agent/scenario.py
 [azure-ai-foundry]: ../scenarios/azure-ai-foundry/scenario.py
+[google-genai]: ../scenarios/google-genai/scenario.py
 [openai-assistants]: ../scenarios/openai-assistants/scenario.py

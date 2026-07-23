@@ -7,6 +7,7 @@ against a mock Google GenAI server, with manual OTel spans.
 import json
 import os
 
+from opentelemetry.trace import SpanKind
 from reference_shared import flush_and_shutdown, reference_event_logger, reference_tracer, setup_otel
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"]
@@ -55,6 +56,7 @@ def run_chat():
         # Emit inference operation details event
         event_attrs = {
             "gen_ai.operation.name": "chat",
+            "gen_ai.provider.name": "gcp.gemini",
             "gen_ai.request.model": request_model,
             "gen_ai.input.messages": json.dumps(
                 [{"role": "user", "parts": [{"type": "text", "content": prompt_text}]}]
@@ -88,6 +90,87 @@ def run_chat():
         )
 
         print(f"    -> {response.text[:60]}")
+
+
+def run_interactions_continuation():
+    """Scenario: Google GenAI Interactions API continuation."""
+    from google import genai
+    from google.genai import types
+
+    print("  [interactions_continuation] interactions continuation via Google GenAI (reference implementation)")
+    client = genai.Client(
+        api_key="mock-key",
+        http_options=types.HttpOptions(
+            base_url=MOCK_BASE_URL,
+            api_version="v1beta",
+        ),
+    )
+    request_model = "gemini-2.0-flash"
+    initial_interaction = client.interactions.create(
+        model=request_model,
+        input="Initial prompt.",
+    )
+    previous_interaction_id = initial_interaction.id
+
+    prompt_text = "Follow up prompt."
+    span_attributes = {
+        "gen_ai.operation.name": "invoke_agent",
+        "gen_ai.provider.name": "gcp.gemini",
+        "gen_ai.request.model": request_model,
+        "gen_ai.agent.name": "interactions_agent",
+        "gen_ai.request.previous_response.id": previous_interaction_id,
+    }
+    with _reference_tracer.start_as_current_span(
+        "invoke_agent interactions_agent", kind=SpanKind.CLIENT, attributes=span_attributes
+    ) as span:
+        interaction = client.interactions.create(
+            model=request_model,
+            previous_interaction_id=previous_interaction_id,
+            input=prompt_text,
+        )
+        if interaction.id:
+            span.set_attribute("gen_ai.response.id", interaction.id)
+        if interaction.model:
+            span.set_attribute("gen_ai.response.model", str(interaction.model))
+        if interaction.usage:
+            if interaction.usage.prompt_tokens:
+                span.set_attribute("gen_ai.usage.input_tokens", interaction.usage.prompt_tokens)
+            if interaction.usage.candidates_tokens:
+                span.set_attribute("gen_ai.usage.output_tokens", interaction.usage.candidates_tokens)
+
+        event_attrs = {
+            "gen_ai.operation.name": "chat",
+            "gen_ai.provider.name": "gcp.gemini",
+            "gen_ai.request.model": request_model,
+            "gen_ai.request.previous_response.id": previous_interaction_id,
+            "gen_ai.input.messages": json.dumps(
+                [{"role": "user", "parts": [{"type": "text", "content": prompt_text}]}]
+            ),
+            "gen_ai.output.messages": json.dumps(
+                [
+                    {
+                        "role": "assistant",
+                        "parts": [{"type": "text", "content": "This is a response from the mock interactions server."}],
+                        "finish_reason": "stop",
+                    }
+                ]
+            ),
+        }
+        if interaction.id:
+            event_attrs["gen_ai.response.id"] = interaction.id
+        if interaction.model:
+            event_attrs["gen_ai.response.model"] = str(interaction.model)
+        if interaction.usage:
+            if interaction.usage.prompt_tokens:
+                event_attrs["gen_ai.usage.input_tokens"] = interaction.usage.prompt_tokens
+            if interaction.usage.candidates_tokens:
+                event_attrs["gen_ai.usage.output_tokens"] = interaction.usage.candidates_tokens
+        reference_event_logger().emit(
+            event_name="gen_ai.client.inference.operation.details",
+            body="Inference operation details",
+            attributes=event_attrs,
+        )
+        print(f"    -> previous_response_id: {previous_interaction_id}")
 
 
 def run_chat_tool_call():
@@ -256,6 +339,7 @@ def main():
     # NO instrument() call - reference implementation only
 
     run_chat()
+    run_interactions_continuation()
     run_chat_tool_call()
     run_chat_streaming()
     run_embeddings()
