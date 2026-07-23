@@ -38,7 +38,9 @@
 | gen_ai.response.finish_reasons | (none) |
 | gen_ai.usage.cache_creation.input_tokens | (none) |
 | gen_ai.usage.cache_read.input_tokens | (none) |
+| gen_ai.usage.input_audio_tokens | (none) |
 | gen_ai.usage.input_tokens | [azure-ai-foundry], [openai-assistants] |
+| gen_ai.usage.output_audio_tokens | (none) |
 | gen_ai.usage.output_tokens | [azure-ai-foundry], [openai-assistants] |
 | server.address | [aws-bedrock-agent], [azure-ai-foundry], [openai-assistants] |
 
