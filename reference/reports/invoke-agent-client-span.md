@@ -36,6 +36,8 @@
 | gen_ai.request.temperature | [azure-ai-foundry], [openai-assistants] |
 | gen_ai.request.top_p | [azure-ai-foundry], [openai-assistants] |
 | gen_ai.response.finish_reasons | (none) |
+| gen_ai.usage.audio.input_tokens | (none) |
+| gen_ai.usage.audio.output_tokens | (none) |
 | gen_ai.usage.cache_creation.input_tokens | (none) |
 | gen_ai.usage.cache_read.input_tokens | (none) |
 | gen_ai.usage.input_tokens | [azure-ai-foundry], [openai-assistants] |

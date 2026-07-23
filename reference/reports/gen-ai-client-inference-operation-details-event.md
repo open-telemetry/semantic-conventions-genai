@@ -40,6 +40,8 @@
 | gen_ai.response.id | [anthropic], [azure-ai-inference], [cohere], [dspy], [groq], [instructor], [litellm], [llamaindex], [mistralai], [openai], [pydantic-ai] |
 | gen_ai.response.model | [anthropic], [azure-ai-inference], [dspy], [google-genai], [groq], [instructor], [litellm], [llamaindex], [mistralai], [openai], [pydantic-ai] |
 | gen_ai.response.time_to_first_chunk | (none) |
+| gen_ai.usage.audio.input_tokens | (none) |
+| gen_ai.usage.audio.output_tokens | (none) |
 | gen_ai.usage.cache_creation.input_tokens | [anthropic] |
 | gen_ai.usage.cache_read.input_tokens | [anthropic] |
 | gen_ai.usage.input_tokens | [anthropic], [autogen], [aws-bedrock], [azure-ai-inference], [cohere], [dspy], [google-genai], [groq], [instructor], [litellm], [llamaindex], [mistralai], [openai], [pydantic-ai], [vertexai] |

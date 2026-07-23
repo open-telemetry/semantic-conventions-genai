@@ -10,6 +10,7 @@ requires-python = ">=3.12"
 dependencies = [
     "flask>=3.0",
     "pyyaml>=6.0",
+    "websockets>=13",
 ]
 
 [project.optional-dependencies]
