@@ -464,8 +464,8 @@ class RetrievalDocument(BaseModel):
     Represents a single document retrieved from a vector database or search system.
     """
 
-    id: str = Field(description="A unique identifier for the document.")
-    score: float = Field(description="The relevance score of the document.")
+    id: Optional[str] = Field(default=None, description="A unique identifier for the document.")
+    score: Optional[float] = Field(default=None, description="The relevance score of the document.")
 
     model_config = ConfigDict(
         extra="allow"
