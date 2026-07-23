@@ -250,6 +250,34 @@ attributes:
       The value SHOULD be included in `gen_ai.usage.output_tokens`.
     examples: [50]
     stability: development
+  - key: gen_ai.usage.audio.input_tokens
+    type: int
+    brief: The number of audio tokens used in the GenAI input (prompt).
+    note: >
+      The value SHOULD be included in `gen_ai.usage.input_tokens`.
+
+      Voice-native (speech-to-speech) models and multimodal models that accept
+      audio input report audio tokens separately from text tokens. When the
+      provider exposes an audio token count for the input (for example, OpenAI
+      `usage.prompt_tokens_details.audio_tokens` or the Realtime API
+      `usage.input_token_details.audio_tokens`), instrumentations SHOULD report
+      it here.
+    examples: [50]
+    stability: development
+  - key: gen_ai.usage.audio.output_tokens
+    type: int
+    brief: The number of audio tokens used in the GenAI response (completion).
+    note: >
+      The value SHOULD be included in `gen_ai.usage.output_tokens`.
+
+      Voice-native (speech-to-speech) models and multimodal models that produce
+      audio output report audio tokens separately from text tokens. When the
+      provider exposes an audio token count for the output (for example, OpenAI
+      `usage.completion_tokens_details.audio_tokens` or the Realtime API
+      `usage.output_token_details.audio_tokens`), instrumentations SHOULD report
+      it here.
+    examples: [30]
+    stability: development
   - key: gen_ai.token.type
     type:
       members:

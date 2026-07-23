@@ -44,8 +44,14 @@ attribute_groups:
         requirement_level: recommended
       - ref: gen_ai.usage.cache_creation.input_tokens
         requirement_level: recommended
+      - ref: gen_ai.usage.audio.input_tokens
+        requirement_level:
+          recommended: When the model reports audio input tokens separately.
       - ref: gen_ai.usage.output_tokens
         requirement_level: recommended
+      - ref: gen_ai.usage.audio.output_tokens
+        requirement_level:
+          recommended: When the model reports audio output tokens separately.
 
   - id: attributes.gen_ai.content
     visibility: internal
