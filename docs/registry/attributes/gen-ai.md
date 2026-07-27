@@ -45,7 +45,7 @@
 | <a id="gen-ai-request-temperature" href="#gen-ai-request-temperature">`gen_ai.request.temperature`</a> | ![Development](https://img.shields.io/badge/-development-blue) | double | The temperature setting for the GenAI request. | `0.0` |
 | <a id="gen-ai-request-top-k" href="#gen-ai-request-top-k">`gen_ai.request.top_k`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The top-K sampling setting for the GenAI request: restricts token generation at each step to the K most likely next tokens. [18] | `40` |
 | <a id="gen-ai-request-top-p" href="#gen-ai-request-top-p">`gen_ai.request.top_p`</a> | ![Development](https://img.shields.io/badge/-development-blue) | double | The top_p sampling setting for the GenAI request. | `1.0` |
-| <a id="gen-ai-response-finish-reasons" href="#gen-ai-response-finish-reasons">`gen_ai.response.finish_reasons`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string[] | Array of reasons the model stopped generating tokens, corresponding to each generation received. [19] | `["stop"]`; `["stop", "length"]` |
+| <a id="gen-ai-response-finish-reasons" href="#gen-ai-response-finish-reasons">`gen_ai.response.finish_reasons`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string[] | Array of reasons the model stopped generating tokens, corresponding to each generation received. [19] | `["stop"]`; `["stop", "length"]`; `["stop", "length", "error"]` |
 | <a id="gen-ai-response-id" href="#gen-ai-response-id">`gen_ai.response.id`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The unique identifier for the completion. | `chatcmpl-123` |
 | <a id="gen-ai-response-model" href="#gen-ai-response-model">`gen_ai.response.model`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The name of the model that generated the response. | `gpt-4-0613` |
 | <a id="gen-ai-response-time-to-first-chunk" href="#gen-ai-response-time-to-first-chunk">`gen_ai.response.time_to_first_chunk`</a> | ![Development](https://img.shields.io/badge/-development-blue) | double | Time to first chunk in a streaming response, measured from request issuance, in seconds. The value is measured from when the client issues the generation request to when the first chunk is received in the response stream. | `0.5`; `1.2` |
@@ -122,12 +122,6 @@ the model. Each message corresponds to exactly one generation
 (choice/candidate) and vice versa - one choice cannot be split across
 multiple messages or one message cannot contain parts from multiple choices.
 
-This attribute SHOULD describe replayable output message content and
-SHOULD NOT duplicate response envelope metadata, including finish
-reasons, response identifiers, response model, token usage, cost, or
-timing metadata. Finish reasons SHOULD be recorded in
-`gen_ai.response.finish_reasons`.
-
 Instrumentations MAY provide a way for users to filter or truncate
 output messages.
 
@@ -190,8 +184,15 @@ Semantic conventions for individual providers SHOULD document which input parame
 
 **[18] `gen_ai.request.top_k`:** This is a decoding/sampling parameter (e.g., Anthropic `top_k`, Cohere `k`, Google `topK`), not an output-shaping parameter. In particular, OpenAI's `top_logprobs` controls how many per-token log-probabilities are returned in the response and does not change generation; it MUST NOT be reported as `gen_ai.request.top_k`.
 
-**[19] `gen_ai.response.finish_reasons`:** This is the authoritative attribute for finish reasons. Values correspond
-to generations in the same order as the returned choices/candidates.
+**[19] `gen_ai.response.finish_reasons`:** Values correspond to generations in the same order as the returned
+choices/candidates.
+
+When a request is expected to produce multiple choices/candidates, each
+position SHOULD contain the finish reason for the corresponding
+choice/candidate. If a finish reason was expected but not received, for
+example because generation failed, was cancelled, or a stream ended before
+the final event, instrumentations SHOULD report `error` for that
+position instead of omitting it.
 
 **[20] `gen_ai.retrieval.documents`:** Each document object SHOULD contain at least the following properties:
 `id` (string): A unique identifier for the document, `score` (double): The relevance score of the document

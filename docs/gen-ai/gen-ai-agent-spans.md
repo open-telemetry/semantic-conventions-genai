@@ -228,7 +228,7 @@ Examples: OpenAI Assistants API, AWS Bedrock Agents.
 | [`gen_ai.request.stop_sequences`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string[] | List of sequences that the model will use to stop generating further tokens. | `["forest", "lived"]` |
 | [`gen_ai.request.temperature`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | double | The temperature setting for the GenAI request. | `0.0` |
 | [`gen_ai.request.top_p`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | double | The top_p sampling setting for the GenAI request. | `1.0` |
-| [`gen_ai.response.finish_reasons`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string[] | Array of reasons the model stopped generating tokens, corresponding to each generation received. [11] | `["stop"]`; `["stop", "length"]` |
+| [`gen_ai.response.finish_reasons`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string[] | Array of reasons the model stopped generating tokens, corresponding to each generation received. [11] | `["stop"]`; `["stop", "length"]`; `["stop", "length", "error"]` |
 | [`gen_ai.usage.cache_creation.input_tokens`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | int | The number of input tokens written to a provider-managed cache. [12] | `25` |
 | [`gen_ai.usage.cache_read.input_tokens`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | int | The number of input tokens served from a provider-managed cache. [13] | `50` |
 | [`gen_ai.usage.input_tokens`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | int | The number of tokens used in the GenAI input (prompt). [14] | `100` |
@@ -295,8 +295,15 @@ Additional output format details may be recorded in the future in the `gen_ai.ou
 
 **[10] `gen_ai.request.model`:** This attribute SHOULD be populated if and only if the instrumented library allows to set only a single model per agent. It SHOULD NOT be populated for agents that support multiple models or dynamic selection.
 
-**[11] `gen_ai.response.finish_reasons`:** This is the authoritative attribute for finish reasons. Values correspond
-to generations in the same order as the returned choices/candidates.
+**[11] `gen_ai.response.finish_reasons`:** Values correspond to generations in the same order as the returned
+choices/candidates.
+
+When a request is expected to produce multiple choices/candidates, each
+position SHOULD contain the finish reason for the corresponding
+choice/candidate. If a finish reason was expected but not received, for
+example because generation failed, was cancelled, or a stream ended before
+the final event, instrumentations SHOULD report `error` for that
+position instead of omitting it.
 
 **[12] `gen_ai.usage.cache_creation.input_tokens`:** The value SHOULD be included in `gen_ai.usage.input_tokens`.
 
@@ -337,12 +344,6 @@ When the attribute is recorded on events, it MUST be recorded in structured form
 the model. Each message corresponds to exactly one generation
 (choice/candidate) and vice versa - one choice cannot be split across
 multiple messages or one message cannot contain parts from multiple choices.
-
-This attribute SHOULD describe replayable output message content and
-SHOULD NOT duplicate response envelope metadata, including finish
-reasons, response identifiers, response model, token usage, cost, or
-timing metadata. Finish reasons SHOULD be recorded in
-`gen_ai.response.finish_reasons`.
 
 Instrumentations MAY provide a way for users to filter or truncate
 output messages.
@@ -516,7 +517,7 @@ Examples: LangChain agents, CrewAI agents.
 | [`gen_ai.request.stop_sequences`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string[] | List of sequences that the model will use to stop generating further tokens. | `["forest", "lived"]` |
 | [`gen_ai.request.temperature`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | double | The temperature setting for the GenAI request. | `0.0` |
 | [`gen_ai.request.top_p`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | double | The top_p sampling setting for the GenAI request. | `1.0` |
-| [`gen_ai.response.finish_reasons`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string[] | Array of reasons the model stopped generating tokens, corresponding to each generation received. [8] | `["stop"]`; `["stop", "length"]` |
+| [`gen_ai.response.finish_reasons`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string[] | Array of reasons the model stopped generating tokens, corresponding to each generation received. [8] | `["stop"]`; `["stop", "length"]`; `["stop", "length", "error"]` |
 | [`gen_ai.usage.cache_creation.input_tokens`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | int | The number of input tokens written to a provider-managed cache. [9] | `25` |
 | [`gen_ai.usage.cache_read.input_tokens`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | int | The number of input tokens served from a provider-managed cache. [10] | `50` |
 | [`gen_ai.usage.input_tokens`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | int | The number of tokens used in the GenAI input (prompt). [11] | `100` |
@@ -559,8 +560,15 @@ Additional output format details may be recorded in the future in the `gen_ai.ou
 
 **[7] `gen_ai.request.model`:** This attribute SHOULD be populated if and only if the instrumented library allows to set only a single model per agent. It SHOULD NOT be populated for agents that support multiple models or dynamic selection.
 
-**[8] `gen_ai.response.finish_reasons`:** This is the authoritative attribute for finish reasons. Values correspond
-to generations in the same order as the returned choices/candidates.
+**[8] `gen_ai.response.finish_reasons`:** Values correspond to generations in the same order as the returned
+choices/candidates.
+
+When a request is expected to produce multiple choices/candidates, each
+position SHOULD contain the finish reason for the corresponding
+choice/candidate. If a finish reason was expected but not received, for
+example because generation failed, was cancelled, or a stream ended before
+the final event, instrumentations SHOULD report `error` for that
+position instead of omitting it.
 
 **[9] `gen_ai.usage.cache_creation.input_tokens`:** The value SHOULD be included in `gen_ai.usage.input_tokens`.
 
@@ -599,12 +607,6 @@ When the attribute is recorded on events, it MUST be recorded in structured form
 the model. Each message corresponds to exactly one generation
 (choice/candidate) and vice versa - one choice cannot be split across
 multiple messages or one message cannot contain parts from multiple choices.
-
-This attribute SHOULD describe replayable output message content and
-SHOULD NOT duplicate response envelope metadata, including finish
-reasons, response identifiers, response model, token usage, cost, or
-timing metadata. Finish reasons SHOULD be recorded in
-`gen_ai.response.finish_reasons`.
 
 Instrumentations MAY provide a way for users to filter or truncate
 output messages.
@@ -772,12 +774,6 @@ When the attribute is recorded on events, it MUST be recorded in structured form
 the model. Each message corresponds to exactly one generation
 (choice/candidate) and vice versa - one choice cannot be split across
 multiple messages or one message cannot contain parts from multiple choices.
-
-This attribute SHOULD describe replayable output message content and
-SHOULD NOT duplicate response envelope metadata, including finish
-reasons, response identifiers, response model, token usage, cost, or
-timing metadata. Finish reasons SHOULD be recorded in
-`gen_ai.response.finish_reasons`.
 
 Instrumentations MAY provide a way for users to filter or truncate
 output messages.

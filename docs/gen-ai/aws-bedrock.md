@@ -60,7 +60,7 @@ Semantic Conventions for [AWS Bedrock](https://aws.amazon.com/bedrock/) client s
 | [`gen_ai.request.temperature`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | double | The temperature setting for the GenAI request. | `0.0` |
 | [`gen_ai.request.top_k`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | int | The top-K sampling setting for the GenAI request: restricts token generation at each step to the K most likely next tokens. [14] | `40` |
 | [`gen_ai.request.top_p`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | double | The top_p sampling setting for the GenAI request. | `1.0` |
-| [`gen_ai.response.finish_reasons`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string[] | Array of reasons the model stopped generating tokens, corresponding to each generation received. [15] | `["stop"]`; `["stop", "length"]` |
+| [`gen_ai.response.finish_reasons`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string[] | Array of reasons the model stopped generating tokens, corresponding to each generation received. [15] | `["stop"]`; `["stop", "length"]`; `["stop", "length", "error"]` |
 | [`gen_ai.response.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The unique identifier for the completion. | `chatcmpl-123` |
 | [`gen_ai.response.model`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The name of the model that generated the response. [16] | `gpt-4-0613` |
 | [`gen_ai.response.time_to_first_chunk`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If the request was a streaming request. | double | Time to first chunk in a streaming response, measured from request issuance, in seconds. The value is measured from when the client issues the generation request to when the first chunk is received in the response stream. | `0.5`; `1.2` |
@@ -146,8 +146,15 @@ Semantic conventions for individual providers SHOULD document which input parame
 
 **[14] `gen_ai.request.top_k`:** This is a decoding/sampling parameter (e.g., Anthropic `top_k`, Cohere `k`, Google `topK`), not an output-shaping parameter. In particular, OpenAI's `top_logprobs` controls how many per-token log-probabilities are returned in the response and does not change generation; it MUST NOT be reported as `gen_ai.request.top_k`.
 
-**[15] `gen_ai.response.finish_reasons`:** This is the authoritative attribute for finish reasons. Values correspond
-to generations in the same order as the returned choices/candidates.
+**[15] `gen_ai.response.finish_reasons`:** Values correspond to generations in the same order as the returned
+choices/candidates.
+
+When a request is expected to produce multiple choices/candidates, each
+position SHOULD contain the finish reason for the corresponding
+choice/candidate. If a finish reason was expected but not received, for
+example because generation failed, was cancelled, or a stream ended before
+the final event, instrumentations SHOULD report `error` for that
+position instead of omitting it.
 
 **[16] `gen_ai.response.model`:** If available. The name of the GenAI model that provided the response. If the model is supplied by a vendor, then the value must be the exact name of the model actually used. If the model is a fine-tuned custom model, the value should have a more specific name than the base model that's been fine-tuned.
 
@@ -192,12 +199,6 @@ When the attribute is recorded on events, it MUST be recorded in structured form
 the model. Each message corresponds to exactly one generation
 (choice/candidate) and vice versa - one choice cannot be split across
 multiple messages or one message cannot contain parts from multiple choices.
-
-This attribute SHOULD describe replayable output message content and
-SHOULD NOT duplicate response envelope metadata, including finish
-reasons, response identifiers, response model, token usage, cost, or
-timing metadata. Finish reasons SHOULD be recorded in
-`gen_ai.response.finish_reasons`.
 
 Instrumentations MAY provide a way for users to filter or truncate
 output messages.
