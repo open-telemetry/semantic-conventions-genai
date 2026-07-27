@@ -179,6 +179,15 @@ attributes:
       which input parameter maps to this attribute.
     examples: ['low', 'medium', 'high']
     stability: development
+  - key: gen_ai.request.previous_response.id
+    type: string
+    brief: The unique identifier of a previous response or interaction used to provide context for the current operation.
+    note: |
+      Instrumentations SHOULD populate this attribute when the request references a previous response or interaction identifier to continue a conversation or pass prior context.
+      For example, `previous_response_id` in [OpenAI Responses API](https://developers.openai.com/api/docs/guides/conversation-state#passing-context-from-the-previous-response)
+      or `previous_interaction_id` in [Google GenAI Interactions API](https://ai.google.dev/gemini-api/docs/interactions-overview).
+    examples: ['resp_0123456789aBCdef', 'interaction-123']
+    stability: development
   - key: gen_ai.response.id
     type: string
     brief: The unique identifier for the completion.

@@ -209,6 +209,9 @@ spans:
       - ref: gen_ai.request.reasoning.level
         requirement_level:
           recommended: When applicable.
+      - ref: gen_ai.request.previous_response.id
+        requirement_level:
+          recommended: When available and if the request references a previous response.
       - ref: gen_ai.response.id
         requirement_level: recommended
       - ref: gen_ai.response.model
@@ -482,6 +485,9 @@ spans:
         sampling_relevant: true
       - ref: server.port
         sampling_relevant: true
+      - ref: gen_ai.request.previous_response.id
+        requirement_level:
+          recommended: When available and if the request references a previous response.
       - ref: gen_ai.agent.id
         brief: The stable unique identifier of the invoked GenAI agent.
         requirement_level:

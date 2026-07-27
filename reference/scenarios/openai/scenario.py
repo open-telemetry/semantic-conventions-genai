@@ -141,6 +141,7 @@ def run_chat_reference(client):
         # Emit inference operation details event
         event_attrs = {
             "gen_ai.operation.name": "chat",
+            "gen_ai.provider.name": "openai",
             "gen_ai.request.model": request_model,
             "gen_ai.response.id": resp.id,
             "gen_ai.response.model": resp.model,
@@ -222,6 +223,7 @@ def run_responses_compaction_reference(client):
 
         event_attrs = {
             "gen_ai.operation.name": "chat",
+            "gen_ai.provider.name": "openai",
             "gen_ai.conversation.compacted": conversation_compacted,
             "gen_ai.request.model": request_model,
             "gen_ai.response.id": response.id,
@@ -245,6 +247,93 @@ def run_responses_compaction_reference(client):
             attributes=event_attrs,
         )
         print(f"    -> compacted: {conversation_compacted}")
+
+
+def run_responses_continuation_reference(client):
+    """Scenario: Responses API continuation with previous_response_id."""
+    print("  [responses_continuation] responses with previous_response_id (reference implementation)")
+    request_model = "gpt-4o-mini"
+    initial_conversation = [
+        {
+            "type": "message",
+            "role": "user",
+            "content": "Initial prompt.",
+        }
+    ]
+    initial_response = client.responses.create(
+        model=request_model,
+        input=initial_conversation,
+    )
+    previous_response_id = initial_response.id
+
+    continuation_conversation = [
+        {
+            "type": "message",
+            "role": "user",
+            "content": "Follow up on previous response.",
+        }
+    ]
+    host, port = mock_server_host_port(MOCK_BASE_URL)
+    span_attributes = {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "openai",
+        "gen_ai.request.model": request_model,
+        "gen_ai.request.previous_response.id": previous_response_id,
+        "openai.api.type": "responses",
+    }
+    if host:
+        span_attributes["server.address"] = host
+    if port is not None:
+        span_attributes["server.port"] = port
+
+    with _reference_tracer.start_as_current_span("chat gpt-4o-mini", attributes=span_attributes) as span:
+        span.set_attribute(
+            "gen_ai.input.messages",
+            json.dumps(
+                [{"role": "user", "parts": [{"type": "text", "content": continuation_conversation[0]["content"]}]}]
+            ),
+        )
+        response = client.responses.create(
+            model=request_model,
+            previous_response_id=previous_response_id,
+            input=continuation_conversation,
+        )
+
+        span.set_attribute("gen_ai.response.model", response.model)
+        span.set_attribute("gen_ai.response.id", response.id)
+        output_messages = responses_output_messages(response)
+        if output_messages:
+            span.set_attribute("gen_ai.output.messages", json.dumps(output_messages))
+        if response.usage:
+            span.set_attribute("gen_ai.usage.input_tokens", response.usage.input_tokens)
+            span.set_attribute("gen_ai.usage.output_tokens", response.usage.output_tokens)
+
+        event_attrs = {
+            "gen_ai.operation.name": "chat",
+            "gen_ai.provider.name": "openai",
+            "gen_ai.request.model": request_model,
+            "gen_ai.request.previous_response.id": previous_response_id,
+            "gen_ai.response.id": response.id,
+            "gen_ai.response.model": response.model,
+            "gen_ai.input.messages": json.dumps(
+                [{"role": "user", "parts": [{"type": "text", "content": continuation_conversation[0]["content"]}]}]
+            ),
+        }
+        if output_messages:
+            event_attrs["gen_ai.output.messages"] = json.dumps(output_messages)
+        if response.usage:
+            event_attrs["gen_ai.usage.input_tokens"] = response.usage.input_tokens
+            event_attrs["gen_ai.usage.output_tokens"] = response.usage.output_tokens
+        if host:
+            event_attrs["server.address"] = host
+        if port is not None:
+            event_attrs["server.port"] = port
+        reference_event_logger().emit(
+            event_name="gen_ai.client.inference.operation.details",
+            body="Inference operation details",
+            attributes=event_attrs,
+        )
+        print(f"    -> previous_response_id: {previous_response_id}")
 
 
 def run_chat_streaming_reference(client):
@@ -564,6 +653,7 @@ def run_responses_with_prompt_template_reference(client):
 
         event_attrs = {
             "gen_ai.operation.name": "chat",
+            "gen_ai.provider.name": "openai",
             "gen_ai.request.model": request_model,
             "gen_ai.prompt.name": prompt_id,
             "gen_ai.prompt.version": prompt_version,
@@ -604,6 +694,7 @@ def main():
 
     run_chat_reference(client)
     run_responses_compaction_reference(client)
+    run_responses_continuation_reference(client)
     run_chat_streaming_reference(client)
     run_chat_tool_call_reference(client)
     run_chat_with_document_input_reference(client)
