@@ -33,6 +33,11 @@ def reference_event_logger(name: str = GENAI_REFERENCE_INSTRUMENTATION):
     return get_logger_provider().get_logger(name)
 
 
+def reference_meter(name: str = GENAI_REFERENCE_INSTRUMENTATION) -> metrics.Meter:
+    """Return the Meter used by reference scenarios to emit gen_ai.* metrics."""
+    return metrics.get_meter(name)
+
+
 def mock_server_host_port(url: str) -> tuple[str | None, int | None]:
     """Return ``(hostname, port)`` parsed from ``url``.
 
