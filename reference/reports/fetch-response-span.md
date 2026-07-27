@@ -14,6 +14,7 @@
 
 | Attribute | Supporting Libraries |
 | --- | --- |
+| gen_ai.request.stream_cursor | [openai] |
 | server.port | [openai] |
 
 ## Recommended

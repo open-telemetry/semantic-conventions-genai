@@ -188,6 +188,15 @@ attributes:
       or `previous_interaction_id` in [Google GenAI Interactions API](https://ai.google.dev/gemini-api/docs/interactions-overview).
     examples: ['resp_0123456789aBCdef', 'interaction-123']
     stability: development
+  - key: gen_ai.request.stream_cursor
+    type: string
+    brief: The cursor identifying the last streamed event already received, used to resume a streamed response from that position.
+    note: |
+      Instrumentations SHOULD populate this attribute when a request resumes a streamed response from a prior position, for example when fetching a stored response with streaming enabled.
+      For example, `starting_after` in the [OpenAI Responses API](https://developers.openai.com/api/docs/guides/background#streaming-a-background-response)
+      or `last_event_id` in the [Google GenAI Interactions API](https://ai.google.dev/api/interactions-api).
+    examples: ['42', 'event-abc123']
+    stability: development
   - key: gen_ai.response.id
     type: string
     brief: The unique identifier for the completion.

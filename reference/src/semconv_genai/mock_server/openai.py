@@ -14,6 +14,11 @@ bp = Blueprint("openai", __name__)
 # response by its identifier.
 _STORED_RESPONSES = {}
 
+# Ids of responses created as background streams. Only these may be resumed via
+# `GET /v1/responses/{id}?stream=true&starting_after=...`, mirroring OpenAI,
+# which rejects cursor-based resumption of non-background/non-streaming responses.
+_RESUMABLE_RESPONSES = set()
+
 
 CHAT_REFUSAL_RESPONSE = {
     "id": "chatcmpl-mock-refusal-001",
@@ -415,7 +420,28 @@ def responses():
         )
     if body.get("store"):
         _STORED_RESPONSES[resp["id"]] = copy.deepcopy(resp)
+    if body.get("stream"):
+        # Background streaming create: emit lifecycle events then end before
+        # completion, as if the caller disconnected. Such a response can be
+        # resumed later via `GET .../{id}?stream=true&starting_after=<seq>`.
+        if body.get("background"):
+            _RESUMABLE_RESPONSES.add(resp["id"])
+        return Response(_stream_create(resp), mimetype="text/event-stream")
     return resp
+
+
+def _stream_create(response):
+    """Yield SSE lifecycle events for a background streaming create.
+
+    Ends after `response.in_progress` (before completion), modelling a caller
+    that disconnects mid-stream and later resumes the response by cursor.
+    """
+    in_progress = copy.deepcopy(response)
+    in_progress["status"] = "in_progress"
+    in_progress["output"] = []
+    in_progress["usage"] = None
+    yield sse({"type": "response.created", "sequence_number": 0, "response": in_progress})
+    yield sse({"type": "response.in_progress", "sequence_number": 1, "response": in_progress})
 
 
 @bp.route("/v1/responses/<response_id>", methods=["GET"])
@@ -439,4 +465,31 @@ def retrieve_response(response_id):
     if stored is None:
         stored = copy.deepcopy(RESPONSES_RESPONSE)
         stored["id"] = response_id
+    # A streaming retrieve resumes the response stream from `starting_after`,
+    # OpenAI's cursor for the last event the caller already received. Only
+    # background streaming responses are resumable; reject cursor retrieval of
+    # any other response, as OpenAI does. Emit the terminal `response.completed`
+    # event carrying the full response object.
+    if request.args.get("stream", "").lower() in ("1", "true"):
+        if response_id not in _RESUMABLE_RESPONSES:
+            return {
+                "error": {
+                    "type": "invalid_request_error",
+                    "message": "Only background responses created with streaming can be resumed.",
+                }
+            }, 400
+        starting_after = request.args.get("starting_after")
+        return Response(_stream_retrieve(stored, starting_after), mimetype="text/event-stream")
     return dict(stored)
+
+
+def _stream_retrieve(response, starting_after):
+    """Yield SSE events resuming a stored response stream after `starting_after`."""
+    sequence_number = int(starting_after) + 1 if starting_after is not None else 0
+    yield sse(
+        {
+            "type": "response.completed",
+            "sequence_number": sequence_number,
+            "response": response,
+        }
+    )

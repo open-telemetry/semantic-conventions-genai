@@ -378,6 +378,13 @@ spans:
         requirement_level: required
         note: >
           The identifier of the response being fetched, as used in the request and returned in the response.
+      - ref: gen_ai.request.stream_cursor
+        requirement_level:
+          conditionally_required: When the fetch resumes a streamed response from a prior position.
+        note: >
+          The cursor identifying the last streamed event already received, used to resume a
+          streamed fetch from that position. Maps to `starting_after` in the OpenAI Responses
+          API and `last_event_id` in the Google GenAI Interactions API.
       - ref: gen_ai.system_instructions
         requirement_level: opt_in
         note: >
