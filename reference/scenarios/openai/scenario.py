@@ -690,8 +690,14 @@ def _fetch_response_finish_reason(fetched):
     ORIGINAL generation recorded on the response. A completed generation maps to
     its stop reason, an incomplete one to why it was cut short, and a failed or
     cancelled generation to `error`.
+
+    Returns None for non-terminal statuses (`queued`, `in_progress`): generation
+    has not stopped yet, so there is no finish reason to record. The lifecycle
+    state is conveyed by `gen_ai.response.status` instead.
     """
     status = getattr(fetched, "status", None)
+    if status in ("queued", "in_progress"):
+        return None
     if status == "completed":
         return "stop"
     if status == "incomplete":
@@ -712,10 +718,14 @@ def _emit_fetch_response_span(client, response_id, starting_after=None):
     value is derived from the retrieve-call boundary:
 
     - `gen_ai.response.id`, `gen_ai.response.model` come from the fetched object.
+    - `gen_ai.response.status` conveys the lifecycle state of the fetched response
+      (for example `completed` or `failed`), taken from the fetched `status` field.
     - `gen_ai.response.finish_reasons` conveys the ORIGINAL generation's outcome,
       derived from the fetched `status`/`incomplete_details` (see helper above).
-      A fetched response whose original generation failed or is incomplete is NOT
-      an error of this fetch, so `error.type`/span status are not set for it.
+      It is only recorded for terminal statuses; a still-`queued` or `in_progress`
+      response has no finish reason. A fetched response whose original generation
+      failed or is incomplete is NOT an error of this fetch, so `error.type`/span
+      status are not set for it.
     - `gen_ai.system_instructions` and `gen_ai.output.messages` are the content
       carried by the fetched response. The original input messages are NOT part
       of the fetched response object, so `gen_ai.input.messages` is not recorded.
@@ -755,7 +765,12 @@ def _emit_fetch_response_span(client, response_id, starting_after=None):
             fetched = client.responses.retrieve(response_id)
         span.set_attribute("gen_ai.response.id", fetched.id)
         span.set_attribute("gen_ai.response.model", fetched.model)
-        span.set_attribute("gen_ai.response.finish_reasons", [_fetch_response_finish_reason(fetched)])
+        status = getattr(fetched, "status", None)
+        if status is not None:
+            span.set_attribute("gen_ai.response.status", status)
+        finish_reason = _fetch_response_finish_reason(fetched)
+        if finish_reason is not None:
+            span.set_attribute("gen_ai.response.finish_reasons", [finish_reason])
         service_tier = getattr(fetched, "service_tier", None)
         if service_tier is not None:
             span.set_attribute("openai.response.service_tier", service_tier)

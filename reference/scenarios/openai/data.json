@@ -48,6 +48,7 @@
       "gen_ai.response.finish_reasons",
       "gen_ai.response.id",
       "gen_ai.response.model",
+      "gen_ai.response.status",
       "gen_ai.system_instructions",
       "server.address",
       "server.port"

@@ -214,6 +214,45 @@ attributes:
       - [stop]
       - [stop, length]
     stability: development
+  - key: gen_ai.response.status
+    type:
+      members:
+        - id: queued
+          value: "queued"
+          brief: The response has been accepted by the provider but generation has not started yet.
+          stability: development
+        - id: in_progress
+          value: "in_progress"
+          brief: The response is still being generated, for example a background or streamed response that has not finished.
+          stability: development
+        - id: completed
+          value: "completed"
+          brief: The response finished generating successfully.
+          stability: development
+        - id: incomplete
+          value: "incomplete"
+          brief: The response stopped before generation completed, for example because a token limit or content filter was reached.
+          stability: development
+        - id: failed
+          value: "failed"
+          brief: The response generation failed with an error.
+          stability: development
+        - id: cancelled
+          value: "cancelled"
+          brief: The response generation was cancelled before it completed.
+          stability: development
+    brief: The lifecycle status of a generated response, as reported by the provider when the response is fetched or polled.
+    note: >
+      This attribute captures the lifecycle state of a (possibly background or long-running)
+      generation, such as whether it is queued, still running, or has reached a terminal state.
+      It is distinct from `gen_ai.response.finish_reasons`, which describes why the model stopped
+      once it began producing output.
+
+      The value SHOULD be the provider's response status mapped onto the closest member of this
+      enum. Semantic conventions for individual GenAI providers SHOULD document how their status
+      values map to this attribute.
+    examples: ['completed', 'in_progress']
+    stability: development
   - key: gen_ai.response.time_to_first_chunk
     type: double
     brief: >

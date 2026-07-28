@@ -397,6 +397,13 @@ spans:
         requirement_level: opt_in
       - ref: gen_ai.response.model
         requirement_level: recommended
+      - ref: gen_ai.response.status
+        requirement_level: recommended
+        note: >
+          The lifecycle status of the fetched response as reported by the provider, mapped onto the
+          cross-provider enum. For a background or streamed response this conveys whether generation
+          is still queued or in progress, or has reached a terminal state such as completed, failed,
+          or cancelled.
       - ref: gen_ai.response.finish_reasons
         requirement_level: recommended
         note: >
@@ -772,6 +779,11 @@ span_refinements:
         requirement_level: recommended
         note: >
           For this operation `openai.api.type` SHOULD be set to `responses`.
+      - ref: gen_ai.response.status
+        requirement_level: recommended
+        note: >
+          Set from the fetched response `status` field, whose values (`queued`, `in_progress`,
+          `completed`, `incomplete`, `failed`, `cancelled`) map directly onto this attribute.
       - ref: gen_ai.response.finish_reasons
         requirement_level: recommended
         note: >
