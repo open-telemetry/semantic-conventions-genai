@@ -520,7 +520,7 @@ wheels = [
 
 [[package]]
 name = "openai"
-version = "2.46.0"
+version = "2.49.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
@@ -532,14 +532,14 @@ dependencies = [
     { name = "tqdm" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/af/ac/f725c4efbda8657d02be684607e5a2e5ce362e4790fdbcbdfb7c15018647/openai-2.46.0.tar.gz", hash = "sha256:0421e0735ac41451cad894af4cddf0435bfbf8cbc538ac0e15b3c062f2ddc06a", size = 1114628, upload-time = "2026-07-17T02:48:06.05Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/d3/9a/275bee8349b766906741223b98c668fcd4e17e1982a87597778743b4156f/openai-2.49.0.tar.gz", hash = "sha256:80f934333b5b83cef2fde9af7151dacaa72e150f43f92b7675f7647ca6157f48", size = 1080973, upload-time = "2026-07-27T22:51:40.014Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ea/7b/206238ebcb50b235942b1c66dba4974776f2057402a8d91c399be587d66a/openai-2.46.0-py3-none-any.whl", hash = "sha256:672381db55efb3a1e2610f29304c130cccdd0b319bace4d492b2443cb64c1e7c", size = 1637556, upload-time = "2026-07-17T02:48:03.695Z" },
+    { url = "https://files.pythonhosted.org/packages/b1/ca/53357e460a1172e831ecbe43dd0c37342b7211a1eb09f4cf21a412adbbdf/openai-2.49.0-py3-none-any.whl", hash = "sha256:b694201eaa42a1ccf2aa125fe29458150108fb22df1abfb55d7188599da81d8c", size = 1648589, upload-time = "2026-07-27T22:51:38Z" },
 ]
 
 [[package]]
 name = "openai-agents"
-version = "0.18.3"
+version = "0.19.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "griffelib" },
@@ -550,9 +550,9 @@ dependencies = [
     { name = "typing-extensions" },
     { name = "websockets" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/80/3f/b1162cad8720fafc9cf658d6896027385967f5006adfb92ae0dab2b54a70/openai_agents-0.18.3.tar.gz", hash = "sha256:e637f5f5a50692ccbedb0e4f7f2e4f8e2facfcddd41142f35faf90c89b700fc3", size = 5577652, upload-time = "2026-07-17T03:40:25.208Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/ba/6c/8fa83cb23d2fe864b284cb45acf895d72a2f6e9827cc684dd4ef0d02d414/openai_agents-0.19.0.tar.gz", hash = "sha256:1d519d6966834e5c04160caec3a2549190e92ce50cdeb22fac5e17e67b8b98b2", size = 5620718, upload-time = "2026-07-27T22:49:26.615Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/e0/7c/08b9929a15131081898e38c5612d44ee293851d5c80f31ca1153efe82143/openai_agents-0.18.3-py3-none-any.whl", hash = "sha256:c6ed971fdeb34d39a9931787bd3960c1e84dc5d7345705794cc5cab8a1158d07", size = 880799, upload-time = "2026-07-17T03:40:23.163Z" },
+    { url = "https://files.pythonhosted.org/packages/3b/3a/bac1aa3405c0f11b4334ac999e881d08fa40fad1f3b7229a1ca222ada489/openai_agents-0.19.0-py3-none-any.whl", hash = "sha256:25392cff993eca7c75b0679ec8d0111faef20c517222c0193111097d0f70db7a", size = 928463, upload-time = "2026-07-27T22:49:24.405Z" },
 ]
 
 [[package]]
@@ -568,8 +568,8 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "genai-reference-shared", editable = "../../shared" },
-    { name = "openai", specifier = "==2.46.0" },
-    { name = "openai-agents", specifier = "==0.18.3" },
+    { name = "openai", specifier = "==2.49.0" },
+    { name = "openai-agents", specifier = "==0.19.0" },
 ]
 
 [[package]]
