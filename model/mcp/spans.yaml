@@ -47,7 +47,7 @@ spans:
       document for details on how to record span status. See also `rpc.response.status_code` attribute
       for the details on which values classify as errors.
 
-      The status description SHOULD match the `JSONRPCError.message` if the message is available.
+      If the span status is set to `ERROR`, the status description SHOULD match the `JSONRPCError.message` if the message is available.
 
       MCP tool call execution spans are compatible with GenAI [execute_tool spans](/docs/gen-ai/gen-ai-spans.md#execute-tool-span).
 
@@ -120,7 +120,7 @@ spans:
       document for details on how to record span status. See also `rpc.response.status_code` attribute
       for the details on which values classify as errors.
 
-      The status description SHOULD match the `JSONRPCError.message` if the message is available.
+      If the span status is set to `ERROR`, the status description SHOULD match the `JSONRPCError.message` if the message is available.
     stability: development
     attributes:
       - ref_group: trace.mcp.common.attributes

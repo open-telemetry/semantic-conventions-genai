@@ -138,7 +138,7 @@ to avoid high cardinality span names.
 document for details on how to record span status. See also `rpc.response.status_code` attribute
 for the details on which values classify as errors.
 
-The status description SHOULD match the `JSONRPCError.message` if the message is available.
+If the span status is set to `ERROR`, the status description SHOULD match the `JSONRPCError.message` if the message is available.
 
 MCP tool call execution spans are compatible with GenAI [execute_tool spans](/docs/gen-ai/gen-ai-spans.md#execute-tool-span).
 
@@ -183,8 +183,8 @@ error code, if one is returned.
 For client spans, `error.type` SHOULD be set for any failed request or error response
 (including both client-side and server-side errors).
 
-For server spans, `error.type` SHOULD only be set if the response status code indicates an
-error, or for timeouts or transport errors. `error.type` SHOULD NOT be set on server spans
+For server spans, `error.type` SHOULD only be set if the response status code indicates a
+server-side error, or for timeouts or transport errors. `error.type` SHOULD NOT be set on server spans
 for client-side errors.
 
 When JSON-RPC call is successful, but an error is returned within the
@@ -370,7 +370,7 @@ to avoid high cardinality span names.
 document for details on how to record span status. See also `rpc.response.status_code` attribute
 for the details on which values classify as errors.
 
-The status description SHOULD match the `JSONRPCError.message` if the message is available.
+If the span status is set to `ERROR`, the status description SHOULD match the `JSONRPCError.message` if the message is available.
 
 **Span kind** SHOULD be `SERVER`.
 
@@ -406,8 +406,8 @@ error code, if one is returned.
 For client spans, `error.type` SHOULD be set for any failed request or error response
 (including both client-side and server-side errors).
 
-For server spans, `error.type` SHOULD only be set if the response status code indicates an
-error, or for timeouts or transport errors. `error.type` SHOULD NOT be set on server spans
+For server spans, `error.type` SHOULD only be set if the response status code indicates a
+server-side error, or for timeouts or transport errors. `error.type` SHOULD NOT be set on server spans
 for client-side errors.
 
 When JSON-RPC call is successful, but an error is returned within the
@@ -614,8 +614,8 @@ error code, if one is returned.
 For client spans, `error.type` SHOULD be set for any failed request or error response
 (including both client-side and server-side errors).
 
-For server spans, `error.type` SHOULD only be set if the response status code indicates an
-error, or for timeouts or transport errors. `error.type` SHOULD NOT be set on server spans
+For server spans, `error.type` SHOULD only be set if the response status code indicates a
+server-side error, or for timeouts or transport errors. `error.type` SHOULD NOT be set on server spans
 for client-side errors.
 
 When JSON-RPC call is successful, but an error is returned within the
@@ -779,8 +779,8 @@ error code, if one is returned.
 For client spans, `error.type` SHOULD be set for any failed request or error response
 (including both client-side and server-side errors).
 
-For server spans, `error.type` SHOULD only be set if the response status code indicates an
-error, or for timeouts or transport errors. `error.type` SHOULD NOT be set on server spans
+For server spans, `error.type` SHOULD only be set if the response status code indicates a
+server-side error, or for timeouts or transport errors. `error.type` SHOULD NOT be set on server spans
 for client-side errors.
 
 When JSON-RPC call is successful, but an error is returned within the
