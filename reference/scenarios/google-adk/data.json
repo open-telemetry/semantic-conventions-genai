@@ -21,6 +21,7 @@
       "gen_ai.usage.output_tokens"
     ],
     "invoke_workflow": [
+      "gen_ai.conversation.id",
       "gen_ai.input.messages",
       "gen_ai.operation.name",
       "gen_ai.output.messages",

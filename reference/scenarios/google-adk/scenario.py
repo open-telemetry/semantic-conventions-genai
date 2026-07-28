@@ -192,6 +192,7 @@ def run_agent_reference():
                 f"invoke_workflow {runner.app_name}", attributes=workflow_span_attributes
             ) as workflow_span:
                 workflow_span.set_attribute("gen_ai.workflow.name", runner.app_name)
+                workflow_span.set_attribute("gen_ai.conversation.id", session.id)
                 workflow_span.set_attribute(
                     "gen_ai.input.messages",
                     json.dumps([{"role": "user", "parts": [{"type": "text", "content": input_text}]}]),
