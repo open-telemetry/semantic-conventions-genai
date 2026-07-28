@@ -580,7 +580,7 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 
 **[7] `server.address`:** When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent the server address behind any intermediaries, for example proxies, if it's available.
 
-**[8] `gen_ai.retrieval.documents`:** Each document object SHOULD contain at least the following properties:
+**[8] `gen_ai.retrieval.documents`:** Each document object SHOULD contain the following properties when available:
 `id` (string): A unique identifier for the document, `score` (double): The relevance score of the document
 
 Instrumentations MUST follow [JSON schema](/model/gen-ai/gen-ai-retrieval-documents.json).

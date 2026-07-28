@@ -559,7 +559,7 @@ attributes:
       type:
         json_schema: model/gen-ai/gen-ai-retrieval-documents.json
     note: |
-      Each document object SHOULD contain at least the following properties:
+      Each document object SHOULD contain the following properties when available:
       `id` (string): A unique identifier for the document, `score` (double): The relevance score of the document
     examples:
       - |
