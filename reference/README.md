@@ -29,7 +29,7 @@ Run `uv run update-reports` to regenerate.
 | [Invoke Agent Internal](reports/invoke-agent-internal-span.md) | agent-framework, autogen, crewai, google-adk, openai-agents, pydantic-ai |
 | [Invoke Workflow](reports/invoke-workflow-span.md) | crewai, google-adk |
 | [Plan](reports/plan-span.md) | crewai, langchain |
-| [Inference](reports/inference-span.md) | agent-framework, anthropic, autogen, aws-bedrock, azure-ai-inference, azure-openai, claude-agent-sdk, cohere, crewai, dspy, google-adk, google-genai, groq, instructor, langchain, litellm, llamaindex, mistralai, openai, openai-agents, openai-realtime, pydantic-ai, vertexai |
+| [Inference](reports/inference-span.md) | agent-framework, anthropic, autogen, aws-bedrock, azure-ai-inference, azure-openai, claude-agent-sdk, cohere, crewai, dspy, gemini-live, google-adk, google-genai, groq, instructor, langchain, litellm, llamaindex, mistralai, openai, openai-agents, openai-realtime, pydantic-ai, vertexai |
 | [Embeddings](reports/embeddings-span.md) | aws-bedrock, azure-ai-inference, azure-openai, cohere, google-genai, litellm, llamaindex, mistralai, openai |
 | [Retrieval](reports/retrieval-span.md) | haystack, langchain, llamaindex |
 | [Memory](reports/memory-span.md) | aws-bedrock-agentcore, google-adk |

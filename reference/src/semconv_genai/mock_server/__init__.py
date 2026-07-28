@@ -12,7 +12,18 @@ import argparse
 
 from flask import Flask
 
-from . import anthropic, assistants, bedrock, bedrock_agent, bedrock_agentcore, cohere, google_genai, openai, realtime
+from . import (
+    anthropic,
+    assistants,
+    bedrock,
+    bedrock_agent,
+    bedrock_agentcore,
+    cohere,
+    gemini_live,
+    google_genai,
+    openai,
+    realtime,
+)
 
 app = Flask(__name__)
 
@@ -33,6 +44,9 @@ def main():
     # Realtime is served by a standalone websockets server (fully compatible with
     # the openai realtime client) on the next port up from the HTTP mock.
     realtime.start_in_thread(args.host, args.port + 1)
+    # Gemini Live is served by a standalone (TLS) websockets server on the
+    # second port up from the HTTP mock.
+    gemini_live.start_in_thread(args.host, args.port + 2)
     app.run(host=args.host, port=args.port, debug=False, threaded=True)
 
 
