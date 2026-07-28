@@ -281,9 +281,10 @@ def run_evaluation():
                 "gen_ai.evaluation.score.label": score_label,
                 "gen_ai.evaluation.score.value": score,
                 "gen_ai.evaluation.evaluator.id": f"dspy-{contains_mock_response.__name__.lower()}",
-                "gen_ai.evaluation.evaluator.type": "deterministic",
-                "gen_ai.evaluation.scope": "single_output",
             }
+            
+            if type(evaluate).__name__ == "Evaluate":
+                attributes["gen_ai.evaluation.scope"] = "single_output"
             reference_event_logger("gen_ai.evaluation.reference").emit(
                 event_name="gen_ai.evaluation.result",
                 body="Evaluation result",
