@@ -43,11 +43,11 @@ spans:
       as `target` in the span name when it is available but SHOULD NOT include it by default
       to avoid high cardinality span names.
 
-      **Span status** SHOULD be set to `ERROR` when `error.type` attribute is present.
-      The status description SHOULD match the `JSONRPCError.message` if the message is available.
+      **Span status**: refer to the [Recording Errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.41.0/docs/general/recording-errors.md)
+      document for details on how to record span status. See also `rpc.response.status_code` attribute
+      for the details on which values classify as errors.
 
-      Refer to the [Recording Errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.41.0/docs/general/recording-errors.md) document
-      for more details.
+      The status description SHOULD match the `JSONRPCError.message` if the message is available.
 
       MCP tool call execution spans are compatible with GenAI [execute_tool spans](/docs/gen-ai/gen-ai-spans.md#execute-tool-span).
 
@@ -61,6 +61,9 @@ spans:
     attributes:
       - ref_group: trace.mcp.common.attributes
       - ref_group: mcp.client.address_and_port.attributes
+      - ref: rpc.response.status_code
+        note: |
+          All JSON-RPC error codes SHOULD be considered errors.
       - ref: gen_ai.tool.call.arguments
         requirement_level: opt_in
       - ref: gen_ai.tool.call.result
@@ -113,14 +116,20 @@ spans:
       as `target` in the span name when it is available but SHOULD NOT include it by default
       to avoid high cardinality span names.
 
-      **Span status** SHOULD be set to `ERROR` when `error.type` attribute is present.
-      The status description SHOULD match the `JSONRPCError.message` if the message is available.
+      **Span status**: refer to the [Recording Errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.41.0/docs/general/recording-errors.md)
+      document for details on how to record span status. See also `rpc.response.status_code` attribute
+      for the details on which values classify as errors.
 
-      Refer to the [Recording Errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.41.0/docs/general/recording-errors.md) document
-      for more details.
+      The status description SHOULD match the `JSONRPCError.message` if the message is available.
     stability: development
     attributes:
       - ref_group: trace.mcp.common.attributes
+      - ref: rpc.response.status_code
+        note: |
+          The following status codes SHOULD be considered errors:
+
+          - `-32603` (`Internal error`)
+          - Any error code in the range `-32000` to `-32099` (`Server error`)
       - ref: client.address
         requirement_level:
           recommended: If applicable.

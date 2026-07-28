@@ -31,12 +31,19 @@ attribute_groups:
           This attribute SHOULD be set to the string representation of the JSON-RPC
           error code, if one is returned.
 
+          For client spans, `error.type` SHOULD be set for any failed request or error response
+          (including both client-side and server-side errors).
+
+          For server spans, `error.type` SHOULD only be set if the response status code indicates an
+          error, or for timeouts or transport errors. `error.type` SHOULD NOT be set on server spans
+          for client-side errors.
+
           When JSON-RPC call is successful, but an error is returned within the
           result payload, this attribute SHOULD be set to the low-cardinality
           string representation of the error. When
           [CallToolResult](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/9c8a44e47e16b789a1f9d47c89ea23ed13a37cf9/schema/2025-06-18/schema.ts#L715)
           is returned with `isError` set to `true`, this attribute SHOULD be set to
-          `tool_error`.
+          `tool_error` on client spans, but SHOULD NOT be set on server spans.
       - ref: mcp.method.name
         requirement_level: required
       - ref: mcp.protocol.version

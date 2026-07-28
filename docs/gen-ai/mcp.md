@@ -134,11 +134,11 @@ Instrumentation MAY allow users to opt into including `{mcp.resource.uri}`
 as `target` in the span name when it is available but SHOULD NOT include it by default
 to avoid high cardinality span names.
 
-**Span status** SHOULD be set to `ERROR` when `error.type` attribute is present.
-The status description SHOULD match the `JSONRPCError.message` if the message is available.
+**Span status**: refer to the [Recording Errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.41.0/docs/general/recording-errors.md)
+document for details on how to record span status. See also `rpc.response.status_code` attribute
+for the details on which values classify as errors.
 
-Refer to the [Recording Errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.41.0/docs/general/recording-errors.md) document
-for more details.
+The status description SHOULD match the `JSONRPCError.message` if the message is available.
 
 MCP tool call execution spans are compatible with GenAI [execute_tool spans](/docs/gen-ai/gen-ai-spans.md#execute-tool-span).
 
@@ -158,21 +158,21 @@ option to enable it.
 | Key | Stability | [Requirement Level](https://opentelemetry.io/docs/specs/semconv/general/attribute-requirement-level/) | Value Type | Description | Example Values |
 | --- | --- | --- | --- | --- | --- |
 | [`mcp.method.name`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Required` | string | The name of the request or notification method. | `notifications/cancelled`; `initialize`; `notifications/initialized` |
-| [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/error.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If and only if the operation fails. | string | Describes a class of error the operation ended with. [1] | `timeout`; `java.net.UnknownHostException`; `server_certificate_invalid`; `500` |
+| [`error.type`](/docs/registry/attributes/error.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If and only if the operation fails. | string | Describes a class of error the operation ended with. [1] | `timeout`; `java.net.UnknownHostException`; `server_certificate_invalid`; `500` |
 | [`gen_ai.prompt.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When operation is related to a specific prompt. | string | The name of the prompt or prompt template provided in the request or response. | `analyze-code` |
 | [`gen_ai.tool.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When operation is related to a specific tool. | string | Name of the tool utilized by the agent. | `Flights` |
-| [`jsonrpc.request.id`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/jsonrpc.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When the client executes a request. | string | A string representation of the `id` property of the request and its corresponding response. [2] | `10`; `request-7` |
+| [`jsonrpc.request.id`](/docs/registry/attributes/jsonrpc.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When the client executes a request. | string | A string representation of the `id` property of the request and its corresponding response. [2] | `10`; `request-7` |
 | [`mcp.resource.uri`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [3] | string | The value of the resource uri. [4] | `postgres://database/customers/schema`; `file:///home/user/documents/report.pdf` |
-| [`rpc.response.status_code`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/rpc.md) | ![Release Candidate](https://img.shields.io/badge/-rc-mediumorchid) | `Conditionally Required` If response contains an error code. | string | The error code from the JSON-RPC response. [5] | `OK`; `DEADLINE_EXCEEDED`; `-32602` |
+| [`rpc.response.status_code`](/docs/registry/attributes/rpc.md) | ![Release Candidate](https://img.shields.io/badge/-rc-mediumorchid) | `Conditionally Required` If response contains an error code. | string | The error code from the JSON-RPC response. [5] | `OK`; `DEADLINE_EXCEEDED`; `-32602` |
 | [`gen_ai.operation.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` [6] | string | The name of the GenAI operation being performed. [7] | `execute_tool` |
-| [`jsonrpc.protocol.version`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/jsonrpc.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` When it's not `2.0`. | string | Protocol version, as specified in the `jsonrpc` property of the request and its corresponding response. | `2.0`; `1.0` |
+| [`jsonrpc.protocol.version`](/docs/registry/attributes/jsonrpc.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` When it's not `2.0`. | string | Protocol version, as specified in the `jsonrpc` property of the request and its corresponding response. | `2.0`; `1.0` |
 | [`mcp.protocol.version`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The [version](https://modelcontextprotocol.io/specification/versioning) of the Model Context Protocol used. | `2025-06-18` |
 | [`mcp.session.id`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` [8] | string | Identifies [MCP session](https://modelcontextprotocol.io/specification/2025-06-18/basic/transports#session-management). | `191c4850af6c49e08843a3f6c80e5046` |
-| [`network.protocol.name`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When applicable. | string | [OSI application layer](https://wikipedia.org/wiki/Application_layer) or non-OSI equivalent. [9] | `http`; `websocket` |
-| [`network.protocol.version`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When applicable. | string | The actual version of the protocol used for network communication. | `1.1`; `2` |
-| [`network.transport`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | The transport protocol used for the MCP session. [10] | `tcp`; `quic`; `pipe` |
-| [`server.address`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` If applicable. | string | Server domain name if available without reverse DNS lookup; otherwise, IP address or Unix domain socket name. [11] | `example.com`; `10.1.2.80`; `/tmp/my.sock` |
-| [`server.port`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When `server.address` is set. | int | Server port number. [12] | `80`; `8080`; `443` |
+| [`network.protocol.name`](/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When applicable. | string | [OSI application layer](https://wikipedia.org/wiki/Application_layer) or non-OSI equivalent. [9] | `http`; `websocket` |
+| [`network.protocol.version`](/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When applicable. | string | The actual version of the protocol used for network communication. | `1.1`; `2` |
+| [`network.transport`](/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | The transport protocol used for the MCP session. [10] | `tcp`; `quic`; `pipe` |
+| [`server.address`](/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` If applicable. | string | Server domain name if available without reverse DNS lookup; otherwise, IP address or Unix domain socket name. [11] | `example.com`; `10.1.2.80`; `/tmp/my.sock` |
+| [`server.port`](/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When `server.address` is set. | int | Server port number. [12] | `80`; `8080`; `443` |
 | [`gen_ai.prompt.variable`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | string | The variables supplied to the prompt template in the request. [13] | `Alice`; `French` |
 | [`gen_ai.tool.call.arguments`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | Parameters passed to the tool call. [14] | {<br>&nbsp;&nbsp;&nbsp;&nbsp;"location": "San Francisco?",<br>&nbsp;&nbsp;&nbsp;&nbsp;"date": "2025-10-01"<br>} |
 | [`gen_ai.tool.call.result`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | The result returned by the tool call (if any and if execution was successful). [15] | {<br>&nbsp;&nbsp;"temperature_range": {<br>&nbsp;&nbsp;&nbsp;&nbsp;"high": 75,<br>&nbsp;&nbsp;&nbsp;&nbsp;"low": 60<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;"conditions": "sunny"<br>} |
@@ -180,12 +180,19 @@ option to enable it.
 **[1] `error.type`:** This attribute SHOULD be set to the string representation of the JSON-RPC
 error code, if one is returned.
 
+For client spans, `error.type` SHOULD be set for any failed request or error response
+(including both client-side and server-side errors).
+
+For server spans, `error.type` SHOULD only be set if the response status code indicates an
+error, or for timeouts or transport errors. `error.type` SHOULD NOT be set on server spans
+for client-side errors.
+
 When JSON-RPC call is successful, but an error is returned within the
 result payload, this attribute SHOULD be set to the low-cardinality
 string representation of the error. When
 [CallToolResult](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/9c8a44e47e16b789a1f9d47c89ea23ed13a37cf9/schema/2025-06-18/schema.ts#L715)
 is returned with `isError` set to `true`, this attribute SHOULD be set to
-`tool_error`.
+`tool_error` on client spans, but SHOULD NOT be set on server spans.
 
 **[2] `jsonrpc.request.id`:** Under the [JSON-RPC specification](https://www.jsonrpc.org/specification), the `id` property may be a string, number, null, or omitted entirely. When omitted, the request is treated as a notification. Using `null` is not equivalent to omitting the `id`, but it is discouraged.
 Instrumentations SHOULD NOT capture this attribute when the `id` is `null` or omitted.
@@ -194,8 +201,7 @@ Instrumentations SHOULD NOT capture this attribute when the `id` is `null` or om
 
 **[4] `mcp.resource.uri`:** This is a URI of the resource provided in the following requests or notifications: `resources/read`, `resources/subscribe`, `resources/unsubscribe`, or `notifications/resources/updated`.
 
-**[5] `rpc.response.status_code`:** Usually it represents an error code, but may also represent partial success, warning, or differentiate between various types of successful outcomes.
-Semantic conventions for individual RPC frameworks SHOULD document what `rpc.response.status_code` means in the context of that system and which values are considered to represent errors.
+**[5] `rpc.response.status_code`:** All JSON-RPC error codes SHOULD be considered errors.
 
 **[6] `gen_ai.operation.name`:** SHOULD be set to `execute_tool` when the operation describes a tool call and SHOULD NOT be set otherwise.
 
@@ -360,11 +366,11 @@ Instrumentation MAY allow users to opt into including `{mcp.resource.uri}`
 as `target` in the span name when it is available but SHOULD NOT include it by default
 to avoid high cardinality span names.
 
-**Span status** SHOULD be set to `ERROR` when `error.type` attribute is present.
-The status description SHOULD match the `JSONRPCError.message` if the message is available.
+**Span status**: refer to the [Recording Errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.41.0/docs/general/recording-errors.md)
+document for details on how to record span status. See also `rpc.response.status_code` attribute
+for the details on which values classify as errors.
 
-Refer to the [Recording Errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.41.0/docs/general/recording-errors.md) document
-for more details.
+The status description SHOULD match the `JSONRPCError.message` if the message is available.
 
 **Span kind** SHOULD be `SERVER`.
 
@@ -375,21 +381,21 @@ for more details.
 | Key | Stability | [Requirement Level](https://opentelemetry.io/docs/specs/semconv/general/attribute-requirement-level/) | Value Type | Description | Example Values |
 | --- | --- | --- | --- | --- | --- |
 | [`mcp.method.name`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Required` | string | The name of the request or notification method. | `notifications/cancelled`; `initialize`; `notifications/initialized` |
-| [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/error.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If and only if the operation fails. | string | Describes a class of error the operation ended with. [1] | `timeout`; `java.net.UnknownHostException`; `server_certificate_invalid`; `500` |
+| [`error.type`](/docs/registry/attributes/error.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If and only if the operation fails. | string | Describes a class of error the operation ended with. [1] | `timeout`; `java.net.UnknownHostException`; `server_certificate_invalid`; `500` |
 | [`gen_ai.prompt.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When operation is related to a specific prompt. | string | The name of the prompt or prompt template provided in the request or response. | `analyze-code` |
 | [`gen_ai.tool.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When operation is related to a specific tool. | string | Name of the tool utilized by the agent. | `Flights` |
-| [`jsonrpc.request.id`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/jsonrpc.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When the client executes a request. | string | A string representation of the `id` property of the request and its corresponding response. [2] | `10`; `request-7` |
+| [`jsonrpc.request.id`](/docs/registry/attributes/jsonrpc.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When the client executes a request. | string | A string representation of the `id` property of the request and its corresponding response. [2] | `10`; `request-7` |
 | [`mcp.resource.uri`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [3] | string | The value of the resource uri. [4] | `postgres://database/customers/schema`; `file:///home/user/documents/report.pdf` |
-| [`rpc.response.status_code`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/rpc.md) | ![Release Candidate](https://img.shields.io/badge/-rc-mediumorchid) | `Conditionally Required` If response contains an error code. | string | The error code from the JSON-RPC response. [5] | `OK`; `DEADLINE_EXCEEDED`; `-32602` |
-| [`client.address`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/client.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` If applicable. | string | Client address - domain name if available without reverse DNS lookup; otherwise, IP address or Unix domain socket name. [6] | `client.example.com`; `10.1.2.80`; `/tmp/my.sock` |
-| [`client.port`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/client.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When `client.address` is set. | int | Client port number. [7] | `65123` |
+| [`rpc.response.status_code`](/docs/registry/attributes/rpc.md) | ![Release Candidate](https://img.shields.io/badge/-rc-mediumorchid) | `Conditionally Required` If response contains an error code. | string | The error code from the JSON-RPC response. [5] | `OK`; `DEADLINE_EXCEEDED`; `-32602` |
+| [`client.address`](/docs/registry/attributes/client.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` If applicable. | string | Client address - domain name if available without reverse DNS lookup; otherwise, IP address or Unix domain socket name. [6] | `client.example.com`; `10.1.2.80`; `/tmp/my.sock` |
+| [`client.port`](/docs/registry/attributes/client.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When `client.address` is set. | int | Client port number. [7] | `65123` |
 | [`gen_ai.operation.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` [8] | string | The name of the GenAI operation being performed. [9] | `execute_tool` |
-| [`jsonrpc.protocol.version`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/jsonrpc.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` When it's not `2.0`. | string | Protocol version, as specified in the `jsonrpc` property of the request and its corresponding response. | `2.0`; `1.0` |
+| [`jsonrpc.protocol.version`](/docs/registry/attributes/jsonrpc.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` When it's not `2.0`. | string | Protocol version, as specified in the `jsonrpc` property of the request and its corresponding response. | `2.0`; `1.0` |
 | [`mcp.protocol.version`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The [version](https://modelcontextprotocol.io/specification/versioning) of the Model Context Protocol used. | `2025-06-18` |
 | [`mcp.session.id`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` [10] | string | Identifies [MCP session](https://modelcontextprotocol.io/specification/2025-06-18/basic/transports#session-management). | `191c4850af6c49e08843a3f6c80e5046` |
-| [`network.protocol.name`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When applicable. | string | [OSI application layer](https://wikipedia.org/wiki/Application_layer) or non-OSI equivalent. [11] | `http`; `websocket` |
-| [`network.protocol.version`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When applicable. | string | The actual version of the protocol used for network communication. | `1.1`; `2` |
-| [`network.transport`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | The transport protocol used for the MCP session. [12] | `tcp`; `quic`; `pipe` |
+| [`network.protocol.name`](/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When applicable. | string | [OSI application layer](https://wikipedia.org/wiki/Application_layer) or non-OSI equivalent. [11] | `http`; `websocket` |
+| [`network.protocol.version`](/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When applicable. | string | The actual version of the protocol used for network communication. | `1.1`; `2` |
+| [`network.transport`](/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | The transport protocol used for the MCP session. [12] | `tcp`; `quic`; `pipe` |
 | [`gen_ai.prompt.variable`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | string | The variables supplied to the prompt template in the request. [13] | `Alice`; `French` |
 | [`gen_ai.tool.call.arguments`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | Parameters passed to the tool call. [14] | {<br>&nbsp;&nbsp;&nbsp;&nbsp;"location": "San Francisco?",<br>&nbsp;&nbsp;&nbsp;&nbsp;"date": "2025-10-01"<br>} |
 | [`gen_ai.tool.call.result`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | The result returned by the tool call (if any and if execution was successful). [15] | {<br>&nbsp;&nbsp;"temperature_range": {<br>&nbsp;&nbsp;&nbsp;&nbsp;"high": 75,<br>&nbsp;&nbsp;&nbsp;&nbsp;"low": 60<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;"conditions": "sunny"<br>} |
@@ -397,12 +403,19 @@ for more details.
 **[1] `error.type`:** This attribute SHOULD be set to the string representation of the JSON-RPC
 error code, if one is returned.
 
+For client spans, `error.type` SHOULD be set for any failed request or error response
+(including both client-side and server-side errors).
+
+For server spans, `error.type` SHOULD only be set if the response status code indicates an
+error, or for timeouts or transport errors. `error.type` SHOULD NOT be set on server spans
+for client-side errors.
+
 When JSON-RPC call is successful, but an error is returned within the
 result payload, this attribute SHOULD be set to the low-cardinality
 string representation of the error. When
 [CallToolResult](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/9c8a44e47e16b789a1f9d47c89ea23ed13a37cf9/schema/2025-06-18/schema.ts#L715)
 is returned with `isError` set to `true`, this attribute SHOULD be set to
-`tool_error`.
+`tool_error` on client spans, but SHOULD NOT be set on server spans.
 
 **[2] `jsonrpc.request.id`:** Under the [JSON-RPC specification](https://www.jsonrpc.org/specification), the `id` property may be a string, number, null, or omitted entirely. When omitted, the request is treated as a notification. Using `null` is not equivalent to omitting the `id`, but it is discouraged.
 Instrumentations SHOULD NOT capture this attribute when the `id` is `null` or omitted.
@@ -411,8 +424,10 @@ Instrumentations SHOULD NOT capture this attribute when the `id` is `null` or om
 
 **[4] `mcp.resource.uri`:** This is a URI of the resource provided in the following requests or notifications: `resources/read`, `resources/subscribe`, `resources/unsubscribe`, or `notifications/resources/updated`.
 
-**[5] `rpc.response.status_code`:** Usually it represents an error code, but may also represent partial success, warning, or differentiate between various types of successful outcomes.
-Semantic conventions for individual RPC frameworks SHOULD document what `rpc.response.status_code` means in the context of that system and which values are considered to represent errors.
+**[5] `rpc.response.status_code`:** The following status codes SHOULD be considered errors:
+
+- `-32603` (`Internal error`)
+- Any error code in the range `-32000` to `-32099` (`Server error`)
 
 **[6] `client.address`:** When observed from the server side, and when communicating through an intermediary, `client.address` SHOULD represent the client address behind any intermediaries,  for example proxies, if it's available.
 
@@ -578,30 +593,37 @@ of `[ 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30, 60, 120, 300 ]`.
 | Key | Stability | [Requirement Level](https://opentelemetry.io/docs/specs/semconv/general/attribute-requirement-level/) | Value Type | Description | Example Values |
 | --- | --- | --- | --- | --- | --- |
 | [`mcp.method.name`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Required` | string | The name of the request or notification method. | `notifications/cancelled`; `initialize`; `notifications/initialized` |
-| [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/error.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If and only if the operation fails. | string | Describes a class of error the operation ended with. [1] | `timeout`; `java.net.UnknownHostException`; `server_certificate_invalid`; `500` |
+| [`error.type`](/docs/registry/attributes/error.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If and only if the operation fails. | string | Describes a class of error the operation ended with. [1] | `timeout`; `java.net.UnknownHostException`; `server_certificate_invalid`; `500` |
 | [`gen_ai.prompt.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When operation is related to a specific prompt. | string | The name of the prompt or prompt template provided in the request or response. | `analyze-code` |
 | [`gen_ai.tool.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When operation is related to a specific tool. | string | Name of the tool utilized by the agent. | `Flights` |
-| [`rpc.response.status_code`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/rpc.md) | ![Release Candidate](https://img.shields.io/badge/-rc-mediumorchid) | `Conditionally Required` If response contains an error code. | string | The error code from the JSON-RPC response. [2] | `OK`; `DEADLINE_EXCEEDED`; `-32602` |
+| [`rpc.response.status_code`](/docs/registry/attributes/rpc.md) | ![Release Candidate](https://img.shields.io/badge/-rc-mediumorchid) | `Conditionally Required` If response contains an error code. | string | The error code from the JSON-RPC response. [2] | `OK`; `DEADLINE_EXCEEDED`; `-32602` |
 | [`gen_ai.operation.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` [3] | string | The name of the GenAI operation being performed. [4] | `execute_tool` |
-| [`jsonrpc.protocol.version`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/jsonrpc.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` When it's not `2.0`. | string | Protocol version, as specified in the `jsonrpc` property of the request and its corresponding response. | `2.0`; `1.0` |
+| [`jsonrpc.protocol.version`](/docs/registry/attributes/jsonrpc.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` When it's not `2.0`. | string | Protocol version, as specified in the `jsonrpc` property of the request and its corresponding response. | `2.0`; `1.0` |
 | [`mcp.protocol.version`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The [version](https://modelcontextprotocol.io/specification/versioning) of the Model Context Protocol used. | `2025-06-18` |
-| [`network.protocol.name`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When applicable. | string | [OSI application layer](https://wikipedia.org/wiki/Application_layer) or non-OSI equivalent. [5] | `http`; `websocket` |
-| [`network.protocol.version`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When applicable. | string | The actual version of the protocol used for network communication. | `1.1`; `2` |
-| [`network.transport`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | The transport protocol used for the MCP session. [6] | `tcp`; `quic`; `pipe` |
-| [`server.address`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` If applicable. | string | Server domain name if available without reverse DNS lookup; otherwise, IP address or Unix domain socket name. [7] | `example.com`; `10.1.2.80`; `/tmp/my.sock` |
-| [`server.port`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When `server.address` is set. | int | Server port number. [8] | `80`; `8080`; `443` |
+| [`network.protocol.name`](/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When applicable. | string | [OSI application layer](https://wikipedia.org/wiki/Application_layer) or non-OSI equivalent. [5] | `http`; `websocket` |
+| [`network.protocol.version`](/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When applicable. | string | The actual version of the protocol used for network communication. | `1.1`; `2` |
+| [`network.transport`](/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | The transport protocol used for the MCP session. [6] | `tcp`; `quic`; `pipe` |
+| [`server.address`](/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` If applicable. | string | Server domain name if available without reverse DNS lookup; otherwise, IP address or Unix domain socket name. [7] | `example.com`; `10.1.2.80`; `/tmp/my.sock` |
+| [`server.port`](/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When `server.address` is set. | int | Server port number. [8] | `80`; `8080`; `443` |
 | [`gen_ai.prompt.variable`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | string | The variables supplied to the prompt template in the request. [9] | `Alice`; `French` |
 | [`mcp.resource.uri`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | string | The value of the resource uri. [10] | `postgres://database/customers/schema`; `file:///home/user/documents/report.pdf` |
 
 **[1] `error.type`:** This attribute SHOULD be set to the string representation of the JSON-RPC
 error code, if one is returned.
 
+For client spans, `error.type` SHOULD be set for any failed request or error response
+(including both client-side and server-side errors).
+
+For server spans, `error.type` SHOULD only be set if the response status code indicates an
+error, or for timeouts or transport errors. `error.type` SHOULD NOT be set on server spans
+for client-side errors.
+
 When JSON-RPC call is successful, but an error is returned within the
 result payload, this attribute SHOULD be set to the low-cardinality
 string representation of the error. When
 [CallToolResult](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/9c8a44e47e16b789a1f9d47c89ea23ed13a37cf9/schema/2025-06-18/schema.ts#L715)
 is returned with `isError` set to `true`, this attribute SHOULD be set to
-`tool_error`.
+`tool_error` on client spans, but SHOULD NOT be set on server spans.
 
 **[2] `rpc.response.status_code`:** Usually it represents an error code, but may also represent partial success, warning, or differentiate between various types of successful outcomes.
 Semantic conventions for individual RPC frameworks SHOULD document what `rpc.response.status_code` means in the context of that system and which values are considered to represent errors.
@@ -738,28 +760,35 @@ of `[ 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30, 60, 120, 300 ]`.
 | Key | Stability | [Requirement Level](https://opentelemetry.io/docs/specs/semconv/general/attribute-requirement-level/) | Value Type | Description | Example Values |
 | --- | --- | --- | --- | --- | --- |
 | [`mcp.method.name`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Required` | string | The name of the request or notification method. | `notifications/cancelled`; `initialize`; `notifications/initialized` |
-| [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/error.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If and only if the operation fails. | string | Describes a class of error the operation ended with. [1] | `timeout`; `java.net.UnknownHostException`; `server_certificate_invalid`; `500` |
+| [`error.type`](/docs/registry/attributes/error.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If and only if the operation fails. | string | Describes a class of error the operation ended with. [1] | `timeout`; `java.net.UnknownHostException`; `server_certificate_invalid`; `500` |
 | [`gen_ai.prompt.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When operation is related to a specific prompt. | string | The name of the prompt or prompt template provided in the request or response. | `analyze-code` |
 | [`gen_ai.tool.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When operation is related to a specific tool. | string | Name of the tool utilized by the agent. | `Flights` |
-| [`rpc.response.status_code`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/rpc.md) | ![Release Candidate](https://img.shields.io/badge/-rc-mediumorchid) | `Conditionally Required` If response contains an error code. | string | The error code from the JSON-RPC response. [2] | `OK`; `DEADLINE_EXCEEDED`; `-32602` |
+| [`rpc.response.status_code`](/docs/registry/attributes/rpc.md) | ![Release Candidate](https://img.shields.io/badge/-rc-mediumorchid) | `Conditionally Required` If response contains an error code. | string | The error code from the JSON-RPC response. [2] | `OK`; `DEADLINE_EXCEEDED`; `-32602` |
 | [`gen_ai.operation.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` [3] | string | The name of the GenAI operation being performed. [4] | `execute_tool` |
-| [`jsonrpc.protocol.version`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/jsonrpc.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` When it's not `2.0`. | string | Protocol version, as specified in the `jsonrpc` property of the request and its corresponding response. | `2.0`; `1.0` |
+| [`jsonrpc.protocol.version`](/docs/registry/attributes/jsonrpc.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` When it's not `2.0`. | string | Protocol version, as specified in the `jsonrpc` property of the request and its corresponding response. | `2.0`; `1.0` |
 | [`mcp.protocol.version`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The [version](https://modelcontextprotocol.io/specification/versioning) of the Model Context Protocol used. | `2025-06-18` |
-| [`network.protocol.name`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When applicable. | string | [OSI application layer](https://wikipedia.org/wiki/Application_layer) or non-OSI equivalent. [5] | `http`; `websocket` |
-| [`network.protocol.version`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When applicable. | string | The actual version of the protocol used for network communication. | `1.1`; `2` |
-| [`network.transport`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | The transport protocol used for the MCP session. [6] | `tcp`; `quic`; `pipe` |
+| [`network.protocol.name`](/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When applicable. | string | [OSI application layer](https://wikipedia.org/wiki/Application_layer) or non-OSI equivalent. [5] | `http`; `websocket` |
+| [`network.protocol.version`](/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When applicable. | string | The actual version of the protocol used for network communication. | `1.1`; `2` |
+| [`network.transport`](/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | The transport protocol used for the MCP session. [6] | `tcp`; `quic`; `pipe` |
 | [`gen_ai.prompt.variable`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | string | The variables supplied to the prompt template in the request. [7] | `Alice`; `French` |
 | [`mcp.resource.uri`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | string | The value of the resource uri. [8] | `postgres://database/customers/schema`; `file:///home/user/documents/report.pdf` |
 
 **[1] `error.type`:** This attribute SHOULD be set to the string representation of the JSON-RPC
 error code, if one is returned.
 
+For client spans, `error.type` SHOULD be set for any failed request or error response
+(including both client-side and server-side errors).
+
+For server spans, `error.type` SHOULD only be set if the response status code indicates an
+error, or for timeouts or transport errors. `error.type` SHOULD NOT be set on server spans
+for client-side errors.
+
 When JSON-RPC call is successful, but an error is returned within the
 result payload, this attribute SHOULD be set to the low-cardinality
 string representation of the error. When
 [CallToolResult](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/9c8a44e47e16b789a1f9d47c89ea23ed13a37cf9/schema/2025-06-18/schema.ts#L715)
 is returned with `isError` set to `true`, this attribute SHOULD be set to
-`tool_error`.
+`tool_error` on client spans, but SHOULD NOT be set on server spans.
 
 **[2] `rpc.response.status_code`:** Usually it represents an error code, but may also represent partial success, warning, or differentiate between various types of successful outcomes.
 Semantic conventions for individual RPC frameworks SHOULD document what `rpc.response.status_code` means in the context of that system and which values are considered to represent errors.
@@ -891,14 +920,14 @@ of `[ 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30, 60, 120, 300 ]`.
 
 | Key | Stability | [Requirement Level](https://opentelemetry.io/docs/specs/semconv/general/attribute-requirement-level/) | Value Type | Description | Example Values |
 | --- | --- | --- | --- | --- | --- |
-| [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/error.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If and only if session ends with an error. | string | Describes a class of error the operation ended with. [1] | `timeout`; `java.net.UnknownHostException`; `server_certificate_invalid`; `500` |
-| [`jsonrpc.protocol.version`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/jsonrpc.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` When it's not `2.0`. | string | Protocol version, as specified in the `jsonrpc` property of the request and its corresponding response. | `2.0`; `1.0` |
+| [`error.type`](/docs/registry/attributes/error.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If and only if session ends with an error. | string | Describes a class of error the operation ended with. [1] | `timeout`; `java.net.UnknownHostException`; `server_certificate_invalid`; `500` |
+| [`jsonrpc.protocol.version`](/docs/registry/attributes/jsonrpc.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` When it's not `2.0`. | string | Protocol version, as specified in the `jsonrpc` property of the request and its corresponding response. | `2.0`; `1.0` |
 | [`mcp.protocol.version`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The [version](https://modelcontextprotocol.io/specification/versioning) of the Model Context Protocol used. | `2025-06-18` |
-| [`network.protocol.name`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When applicable. | string | [OSI application layer](https://wikipedia.org/wiki/Application_layer) or non-OSI equivalent. [2] | `http`; `websocket` |
-| [`network.protocol.version`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When applicable. | string | The actual version of the protocol used for network communication. | `1.1`; `2` |
-| [`network.transport`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | The transport protocol used for the MCP session. [3] | `tcp`; `quic`; `pipe` |
-| [`server.address`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` If applicable. | string | Server domain name if available without reverse DNS lookup; otherwise, IP address or Unix domain socket name. [4] | `example.com`; `10.1.2.80`; `/tmp/my.sock` |
-| [`server.port`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When `server.address` is set. | int | Server port number. [5] | `80`; `8080`; `443` |
+| [`network.protocol.name`](/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When applicable. | string | [OSI application layer](https://wikipedia.org/wiki/Application_layer) or non-OSI equivalent. [2] | `http`; `websocket` |
+| [`network.protocol.version`](/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When applicable. | string | The actual version of the protocol used for network communication. | `1.1`; `2` |
+| [`network.transport`](/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | The transport protocol used for the MCP session. [3] | `tcp`; `quic`; `pipe` |
+| [`server.address`](/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` If applicable. | string | Server domain name if available without reverse DNS lookup; otherwise, IP address or Unix domain socket name. [4] | `example.com`; `10.1.2.80`; `/tmp/my.sock` |
+| [`server.port`](/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When `server.address` is set. | int | Server port number. [5] | `80`; `8080`; `443` |
 
 **[1] `error.type`:** The `error.type` SHOULD be predictable, and SHOULD have low cardinality.
 
@@ -980,12 +1009,12 @@ of `[ 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30, 60, 120, 300 ]`.
 
 | Key | Stability | [Requirement Level](https://opentelemetry.io/docs/specs/semconv/general/attribute-requirement-level/) | Value Type | Description | Example Values |
 | --- | --- | --- | --- | --- | --- |
-| [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/error.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If and only if session ends with an error. | string | Describes a class of error the operation ended with. [1] | `timeout`; `java.net.UnknownHostException`; `server_certificate_invalid`; `500` |
-| [`jsonrpc.protocol.version`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/jsonrpc.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` When it's not `2.0`. | string | Protocol version, as specified in the `jsonrpc` property of the request and its corresponding response. | `2.0`; `1.0` |
+| [`error.type`](/docs/registry/attributes/error.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If and only if session ends with an error. | string | Describes a class of error the operation ended with. [1] | `timeout`; `java.net.UnknownHostException`; `server_certificate_invalid`; `500` |
+| [`jsonrpc.protocol.version`](/docs/registry/attributes/jsonrpc.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` When it's not `2.0`. | string | Protocol version, as specified in the `jsonrpc` property of the request and its corresponding response. | `2.0`; `1.0` |
 | [`mcp.protocol.version`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The [version](https://modelcontextprotocol.io/specification/versioning) of the Model Context Protocol used. | `2025-06-18` |
-| [`network.protocol.name`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When applicable. | string | [OSI application layer](https://wikipedia.org/wiki/Application_layer) or non-OSI equivalent. [2] | `http`; `websocket` |
-| [`network.protocol.version`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When applicable. | string | The actual version of the protocol used for network communication. | `1.1`; `2` |
-| [`network.transport`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | The transport protocol used for the MCP session. [3] | `tcp`; `quic`; `pipe` |
+| [`network.protocol.name`](/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When applicable. | string | [OSI application layer](https://wikipedia.org/wiki/Application_layer) or non-OSI equivalent. [2] | `http`; `websocket` |
+| [`network.protocol.version`](/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When applicable. | string | The actual version of the protocol used for network communication. | `1.1`; `2` |
+| [`network.transport`](/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | The transport protocol used for the MCP session. [3] | `tcp`; `quic`; `pipe` |
 
 **[1] `error.type`:** The `error.type` SHOULD be predictable, and SHOULD have low cardinality.
 
