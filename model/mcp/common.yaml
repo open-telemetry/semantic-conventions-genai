@@ -26,17 +26,20 @@ attribute_groups:
         requirement_level: opt_in
       - ref: error.type
         requirement_level:
-          conditionally_required: If and only if the operation fails.
+          conditionally_required: >
+            On client spans, if and only if the operation fails. On server spans,
+            if and only if the operation fails with a server-side error, timeout, or transport error.
         note: |
-          This attribute SHOULD be set to the string representation of the JSON-RPC
-          error code, if one is returned.
+          On client spans, `error.type` SHOULD be set for any failed request or error response,
+          including both client-side and server-side errors.
 
-          For client spans, `error.type` SHOULD be set for any failed request or error response
-          (including both client-side and server-side errors).
+          On server spans, `error.type` SHOULD NOT be set for client-side errors. See
+          `rpc.response.status_code` for which error codes are considered server-side.
 
-          For server spans, `error.type` SHOULD only be set if the response status code indicates a
-          server-side error, or for timeouts or transport errors. `error.type` SHOULD NOT be set on server spans
-          for client-side errors.
+          When `error.type` is set, it SHOULD be set to the string representation of the JSON-RPC
+          error code, if one is returned. Otherwise (for example on timeouts or transport errors)
+          it SHOULD be set following the [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/error.md)
+          guidance.
 
           When JSON-RPC call is successful, but an error is returned within the
           result payload, this attribute SHOULD be set to the low-cardinality
