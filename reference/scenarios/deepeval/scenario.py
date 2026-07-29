@@ -12,10 +12,10 @@ _reference_tracer = reference_tracer()
 
 def run_evaluation():
     """Scenario: evaluation result event via DeepEval GEval."""
+    from deepeval.dataset import EvaluationDataset
     from deepeval.metrics import GEval
     from deepeval.models import GPTModel
     from deepeval.test_case import LLMTestCase, LLMTestCaseParams
-    from deepeval.dataset import EvaluationDataset
 
     print("  [evaluate] DeepEval relevance evaluation event")
 
@@ -56,23 +56,23 @@ def run_evaluation():
     with _reference_tracer.start_as_current_span("reference.evaluation", kind=SpanKind.INTERNAL) as span:
         try:
             score = float(metric.measure(test_case))
-            
+
             attributes = {
                 "gen_ai.evaluation.name": metric.name,
                 "gen_ai.evaluation.score.value": score,
                 "gen_ai.evaluation.evaluator.id": f"deepeval-{type(metric).__name__.lower()}-{metric.model.model}",
             }
-            
+
             if getattr(metric, "model", None) is not None or getattr(metric, "evaluation_model", None) is not None:
                 attributes["gen_ai.evaluation.evaluator.type"] = "llm_judge"
             else:
                 attributes["gen_ai.evaluation.evaluator.type"] = "deterministic"
-                
+
             if type(test_case).__name__ == "LLMTestCase":
                 attributes["gen_ai.evaluation.scope"] = "single_output"
             elif type(test_case).__name__ == "ConversationalTestCase":
                 attributes["gen_ai.evaluation.scope"] = "full_run"
-                
+
             if getattr(dataset, "alias", None):
                 attributes["gen_ai.evaluation.reference_set.id"] = dataset.alias
             if getattr(metric, "reason", None):
