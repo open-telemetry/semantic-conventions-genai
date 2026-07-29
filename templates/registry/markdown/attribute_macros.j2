@@ -23,13 +23,13 @@
 {{ group_id | split_id | join(" ") | title_case | acronym }} Attributes
 {%- endmacro %}
 
-{# v2 link rendering: attribute.provenance is set for locally-defined attributes
+{# v2 link rendering: attribute.provenance.path is set for locally-defined attributes
    (their YAML file lives under ./model/) and is null for attributes imported
    from a dependency. Local attributes link to /docs/registry/attributes/<ns>.md;
    imported attributes link to the pinned upstream registry page. #}
 {% macro name_with_link(attribute, attribute_registry_base_url, upstream_docs_base) -%}
 {%- set ns_id = name(attribute) | trim | split_id | first -%}
-[`{{ name(attribute) | trim }}`]({% if attribute.provenance %}{{ attribute_registry_base_url }}/{{ ns_id | kebab_case }}.md{% else %}{{ upstream_docs_base }}/docs/registry/attributes/{{ ns_id | kebab_case }}.md{% endif %})
+[`{{ name(attribute) | trim }}`]({% if attribute.provenance.path %}{{ attribute_registry_base_url }}/{{ ns_id | kebab_case }}.md{% else %}{{ upstream_docs_base }}/docs/registry/attributes/{{ ns_id | kebab_case }}.md{% endif %})
 {%- endmacro %}
 
 {% macro heading_link_fragments(title) %}{{ title | trim | lower | replace(" ", "-") | replace("(", "") | replace(")", "") | replace("/", "") | replace("\\", "") | replace(".", "") | replace("!", "") | replace("?", "") | replace("~", "") | replace("#", "")}}{% endmacro %}

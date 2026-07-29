@@ -8,6 +8,9 @@ updates:
       - "/reference/scenarios/*"
     schedule:
       interval: "weekly"
+    # Cooldown does not apply to security updates; this value satisfies zizmor.
+    cooldown:
+      default-days: 7
     open-pull-requests-limit: 0
     groups:
       python-security:
@@ -21,6 +24,9 @@ updates:
       - "/.github/actions/*"
     schedule:
       interval: "weekly"
+    # Cooldown does not apply to security updates; this value satisfies zizmor.
+    cooldown:
+      default-days: 7
     open-pull-requests-limit: 0
     groups:
       actions-security:

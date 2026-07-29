@@ -50,7 +50,7 @@ def run_chat():
         "frequency_penalty": request_frequency_penalty,
         "presence_penalty": request_presence_penalty,
     }
-    system_instructions = json.dumps([{"parts": [{"type": "text", "content": system_prompt}]}])
+    system_instructions = json.dumps([{"type": "text", "content": system_prompt}])
 
     host, port = mock_server_host_port(MOCK_BASE_URL)
     span_attributes = {
@@ -75,7 +75,6 @@ def run_chat():
             "gen_ai.input.messages",
             json.dumps(
                 [
-                    {"role": "system", "parts": [{"type": "text", "content": system_prompt}]},
                     {"role": "user", "parts": [{"type": "text", "content": prompt_text}]},
                 ]
             ),
@@ -131,7 +130,6 @@ def run_chat():
             "gen_ai.system_instructions": system_instructions,
             "gen_ai.input.messages": json.dumps(
                 [
-                    {"role": "system", "parts": [{"type": "text", "content": system_prompt}]},
                     {"role": "user", "parts": [{"type": "text", "content": prompt_text}]},
                 ]
             ),
@@ -224,7 +222,7 @@ def run_tool_call():
         "frequency_penalty": request_frequency_penalty,
         "presence_penalty": request_presence_penalty,
     }
-    system_instructions = json.dumps([{"parts": [{"type": "text", "content": system_prompt}]}])
+    system_instructions = json.dumps([{"type": "text", "content": system_prompt}])
 
     agent_span_attributes = {
         "gen_ai.operation.name": "invoke_agent",
@@ -284,7 +282,6 @@ def run_tool_call():
                 "gen_ai.input.messages",
                 json.dumps(
                     [
-                        {"role": "system", "parts": [{"type": "text", "content": system_prompt}]},
                         {"role": "user", "parts": [{"type": "text", "content": prompt_text}]},
                     ]
                 ),
