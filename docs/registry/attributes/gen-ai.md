@@ -199,7 +199,7 @@ example because generation failed, was cancelled, or a stream ended before
 the final event, instrumentations SHOULD report `error` for that
 position instead of omitting it.
 
-**[21] `gen_ai.retrieval.documents`:** Each document object SHOULD contain at least the following properties:
+**[21] `gen_ai.retrieval.documents`:** Each document object SHOULD contain the following properties when available:
 `id` (string): A unique identifier for the document, `score` (double): The relevance score of the document
 
 Instrumentations MUST follow [JSON schema](/model/gen-ai/gen-ai-retrieval-documents.json).
