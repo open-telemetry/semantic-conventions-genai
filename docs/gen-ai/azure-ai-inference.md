@@ -201,6 +201,14 @@ messages and correlate them with prior turns. When emitting this attribute,
 emitters SHOULD also set `gen_ai.conversation.id`. Otherwise, emitters
 SHOULD use `gen_ai.input.messages`.
 
+Instrumentations SHOULD require a separate opt-in for delta encoding.
+Enabling input message capture SHOULD NOT implicitly enable delta encoding.
+
+Delta encoding requires all telemetry used for reconstruction to be
+retained. Emitters SHOULD use `gen_ai.input.messages` when sampling or
+other telemetry processing may independently discard an operation in the
+conversation.
+
 For the first request in a conversation, this attribute MAY contain the full
 initial input if delta encoding is used from the beginning.
 

@@ -224,6 +224,14 @@ messages and correlate them with prior turns. When emitting this attribute,
 emitters SHOULD also set `gen_ai.conversation.id`. Otherwise, emitters
 SHOULD use `gen_ai.input.messages`.
 
+Instrumentations SHOULD require a separate opt-in for delta encoding.
+Enabling input message capture SHOULD NOT implicitly enable delta encoding.
+
+Delta encoding requires all telemetry used for reconstruction to be
+retained. Emitters SHOULD use `gen_ai.input.messages` when sampling or
+other telemetry processing may independently discard an operation in the
+conversation.
+
 For the first request in a conversation, this attribute MAY contain the full
 initial input if delta encoding is used from the beginning.
 
@@ -606,7 +614,7 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 
 **[7] `server.address`:** When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent the server address behind any intermediaries, for example proxies, if it's available.
 
-**[8] `gen_ai.retrieval.documents`:** Each document object SHOULD contain at least the following properties:
+**[8] `gen_ai.retrieval.documents`:** Each document object SHOULD contain the following properties when available:
 `id` (string): A unique identifier for the document, `score` (double): The relevance score of the document
 
 Instrumentations MUST follow [JSON schema](/model/gen-ai/gen-ai-retrieval-documents.json).
@@ -1051,12 +1059,19 @@ when they can reliably identify appended messages and correlate them with prior
 turns. When emitting this attribute, emitters SHOULD also set
 `gen_ai.conversation.id`.
 
+Instrumentations SHOULD require a separate opt-in for delta encoding. Enabling
+input message capture SHOULD NOT implicitly enable delta encoding.
+
 For the first request in a conversation, `gen_ai.input.messages_delta` MAY
 contain the full initial input if delta encoding is used from the beginning.
 When `gen_ai.output.messages` is also captured, consumers can reconstruct the
 effective input for later requests by ordering GenAI telemetry with the same
 `gen_ai.conversation.id` and applying recorded `gen_ai.output.messages` and
 `gen_ai.input.messages_delta` values in operation order.
+
+Delta encoding requires every operation used for reconstruction to be retained.
+Emitters SHOULD use `gen_ai.input.messages` when sampling or other telemetry
+processing may independently discard an operation in the conversation.
 
 When appended messages cannot be reliably identified or correlated with prior
 turns, emitters SHOULD use `gen_ai.input.messages`. This includes cases where the

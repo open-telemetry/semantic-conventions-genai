@@ -106,6 +106,14 @@ messages and correlate them with prior turns. When emitting this attribute,
 emitters SHOULD also set `gen_ai.conversation.id`. Otherwise, emitters
 SHOULD use `gen_ai.input.messages`.
 
+Instrumentations SHOULD require a separate opt-in for delta encoding.
+Enabling input message capture SHOULD NOT implicitly enable delta encoding.
+
+Delta encoding requires all telemetry used for reconstruction to be
+retained. Emitters SHOULD use `gen_ai.input.messages` when sampling or
+other telemetry processing may independently discard an operation in the
+conversation.
+
 For the first request in a conversation, this attribute MAY contain the full
 initial input if delta encoding is used from the beginning.
 
@@ -215,7 +223,7 @@ Semantic conventions for individual providers SHOULD document which input parame
 
 **[20] `gen_ai.request.top_k`:** This is a decoding/sampling parameter (e.g., Anthropic `top_k`, Cohere `k`, Google `topK`), not an output-shaping parameter. In particular, OpenAI's `top_logprobs` controls how many per-token log-probabilities are returned in the response and does not change generation; it MUST NOT be reported as `gen_ai.request.top_k`.
 
-**[21] `gen_ai.retrieval.documents`:** Each document object SHOULD contain at least the following properties:
+**[21] `gen_ai.retrieval.documents`:** Each document object SHOULD contain the following properties when available:
 `id` (string): A unique identifier for the document, `score` (double): The relevance score of the document
 
 Instrumentations MUST follow [JSON schema](/model/gen-ai/gen-ai-retrieval-documents.json).
