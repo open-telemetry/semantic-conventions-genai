@@ -249,7 +249,8 @@ attributes:
       once it began producing output.
 
       The value SHOULD be the provider's response status mapped onto the closest member of this
-      enum. Semantic conventions for individual GenAI providers SHOULD document how their status
+      enum or a provider-specific value when none of these apply.
+      Semantic conventions for individual GenAI providers SHOULD document how their status
       values map to this attribute.
     examples: ['completed', 'in_progress']
     stability: development

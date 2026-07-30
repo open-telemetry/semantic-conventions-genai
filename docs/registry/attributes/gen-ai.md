@@ -196,7 +196,7 @@ or `last_event_id` in the [Google GenAI Interactions API](https://ai.google.dev/
 **[20] `gen_ai.request.top_k`:** This is a decoding/sampling parameter (e.g., Anthropic `top_k`, Cohere `k`, Google `topK`), not an output-shaping parameter. In particular, OpenAI's `top_logprobs` controls how many per-token log-probabilities are returned in the response and does not change generation; it MUST NOT be reported as `gen_ai.request.top_k`.
 
 **[21] `gen_ai.response.status`:** This attribute captures the lifecycle state of a (possibly background or long-running) generation, such as whether it is queued, still running, or has reached a terminal state. It is distinct from `gen_ai.response.finish_reasons`, which describes why the model stopped once it began producing output.
-The value SHOULD be the provider's response status mapped onto the closest member of this enum. Semantic conventions for individual GenAI providers SHOULD document how their status values map to this attribute.
+The value SHOULD be the provider's response status mapped onto the closest member of this enum or a provider-specific value when none of these apply. Semantic conventions for individual GenAI providers SHOULD document how their status values map to this attribute.
 
 **[22] `gen_ai.retrieval.documents`:** Each document object SHOULD contain the following properties when available:
 `id` (string): A unique identifier for the document, `score` (double): The relevance score of the document
