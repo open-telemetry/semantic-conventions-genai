@@ -285,6 +285,7 @@ def run_evaluation():
 
             if type(evaluate).__name__ == "Evaluate":
                 attributes["gen_ai.evaluation.scope"] = "single_output"
+            attributes["gen_ai.evaluation.evaluator.type"] = "deterministic"
             reference_event_logger("gen_ai.evaluation.reference").emit(
                 event_name="gen_ai.evaluation.result",
                 body="Evaluation result",
