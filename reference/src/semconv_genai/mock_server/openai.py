@@ -216,6 +216,21 @@ def _mock_chat_content(body, message_text):
             "<END_OF_PLAN>"
         )
 
+    # mem0's ADD flow expects a `memory` array; return one deterministic
+    # record so the scenario reaches its embedding and vector-write phases.
+    if "You are a Memory Extractor" in message_text and "Your sole operation is ADD" in message_text:
+        return json.dumps(
+            {
+                "memory": [
+                    {
+                        "id": "0",
+                        "text": "User prefers vegetarian meals and dark mode.",
+                        "attributed_to": "user",
+                    }
+                ]
+            }
+        )
+
     response_format = body.get("response_format") or {}
     if response_format.get("type") != "json_object":
         return "This is a response from the mock server."
