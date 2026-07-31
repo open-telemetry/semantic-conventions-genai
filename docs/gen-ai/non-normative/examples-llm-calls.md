@@ -389,7 +389,7 @@ that was returned, and the evidence that can be replayed later.
 | `gen_ai.tool.name`                  | `"send_email"`                                                        |
 | `gen_ai.operation.name`             | `"execute_tool"`                                                      |
 | `app.governance.action.ref`         | `"action:4f87b1e2"`                                                   |
-| `app.governance.action.hash`        | `"sha256:4f87b1e24c6a8fb0e7e7d5a4f4e245a4b9a48f0f8e5d0f93c9f4b0a2"`   |
+| `app.governance.action.hash`        | `"sha256:32fdc6a24364e58454e46e3c452562810b7b002b72d92f9eca20507d82180ca0"` |
 | `app.governance.verdict`            | `"require_approval"`                                                  |
 | `app.governance.approval.status`    | `"approved"`                                                          |
 | `app.governance.approval.id`        | `"approval_01J8R2N6T9Y4M7"`                                           |
