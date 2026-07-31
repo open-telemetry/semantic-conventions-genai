@@ -11,6 +11,7 @@
   - [Multimodal output example](#multimodal-output-example)
 - [Tool calls (functions)](#tool-calls-functions)
   - [GenAI client spans when content capturing is disabled](#genai-client-spans-when-content-capturing-is-disabled)
+    - [Governed tool action metadata](#governed-tool-action-metadata)
   - [GenAI client spans when content capturing is enabled on span attributes](#genai-client-spans-when-content-capturing-is-enabled-on-span-attributes)
 - [System instructions along with chat history (content enabled)](#system-instructions-along-with-chat-history-content-enabled)
 - [Chat completion with reasoning (content enabled)](#chat-completion-with-reasoning-content-enabled)
@@ -373,6 +374,32 @@ If tool call is [instrumented according to execute-tool span definition](/docs/g
 | `gen_ai.tool.name`      | `"get_weather"`                   |
 | `gen_ai.operation.name` | `"execute_tool"`                  |
 | `gen_ai.tool.type`      | `"function"`                      |
+
+#### Governed tool action metadata
+
+Applications that gate tool calls through an approval or policy checkpoint can
+attach additional application-specific attributes to the execute-tool span. The
+following attributes are non-normative examples; they illustrate how a system
+can correlate a tool execution with the action that was reviewed, the verdict
+that was returned, and the evidence that can be replayed later.
+
+| Property                            | Value                                                                 |
+| ----------------------------------- | --------------------------------------------------------------------- |
+| `gen_ai.tool.call.id`               | `"call_VSPygqKTWdrhaFErNvMV18Yl"`                                      |
+| `gen_ai.tool.name`                  | `"send_email"`                                                        |
+| `gen_ai.operation.name`             | `"execute_tool"`                                                      |
+| `app.governance.action.ref`         | `"action:4f87b1e2"`                                                   |
+| `app.governance.action.hash`        | `"sha256:4f87b1e24c6a8fb0e7e7d5a4f4e245a4b9a48f0f8e5d0f93c9f4b0a2"`   |
+| `app.governance.verdict`            | `"require_approval"`                                                  |
+| `app.governance.approval.status`    | `"approved"`                                                          |
+| `app.governance.approval.id`        | `"approval_01J8R2N6T9Y4M7"`                                           |
+| `app.governance.proof.url`          | `"https://governance.example.com/proof/action:4f87b1e2"`              |
+| `app.governance.external_verifier`  | `"verifier:example-independent-mediator"`                             |
+
+The reviewed action reference should be derived before the tool executes. If
+the eventual tool input or target resource changes, the application should emit
+a different action reference or mark the execution as no longer covered by the
+original approval.
 
 **GenAI client span 2:**
 
