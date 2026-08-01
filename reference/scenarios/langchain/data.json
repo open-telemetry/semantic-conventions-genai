@@ -9,6 +9,15 @@
       "gen_ai.retrieval.documents",
       "gen_ai.retrieval.query.text",
       "gen_ai.retrieval.top_k"
+    ],
+    "execute_tool": [
+      "gen_ai.operation.name",
+      "gen_ai.tool.call.arguments",
+      "gen_ai.tool.call.id",
+      "gen_ai.tool.call.result",
+      "gen_ai.tool.description",
+      "gen_ai.tool.name",
+      "gen_ai.tool.type"
     ]
   }
 }

@@ -212,6 +212,7 @@ def google_genai_interactions():
 
 
 @bp.route("/v1/projects/<path:rest>", methods=["POST"])
+@bp.route("/v1beta1/projects/<path:rest>", methods=["POST"])
 def vertex_ai(rest):
     """Handle Vertex AI API requests (same response format as Google GenAI)."""
     body = request.get_json(silent=True) or {}

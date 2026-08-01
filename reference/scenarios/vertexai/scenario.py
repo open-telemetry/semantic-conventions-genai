@@ -14,19 +14,28 @@ MOCK_BASE_URL = os.environ["MOCK_LLM_URL"]
 
 # The Vertex AI gapic REST transport defaults to HTTPS. Monkey-patch the
 # transport to use plain HTTP so we can talk to the local mock server.
+# The preview (automatic function calling) surface goes through v1beta1, so both
+# transports need patching.
 from google.cloud.aiplatform_v1.services.prediction_service.transports.rest import (  # noqa: E402
     PredictionServiceRestTransport,
 )
-
-_original_rest_init = PredictionServiceRestTransport.__init__
-
-
-def _patched_rest_init(self, **kwargs):
-    kwargs.setdefault("url_scheme", "http")
-    return _original_rest_init(self, **kwargs)
+from google.cloud.aiplatform_v1beta1.services.prediction_service.transports.rest import (  # noqa: E402
+    PredictionServiceRestTransport as PredictionServiceRestTransportV1Beta1,
+)
 
 
-PredictionServiceRestTransport.__init__ = _patched_rest_init
+def _patch_http(transport_cls):
+    original_init = transport_cls.__init__
+
+    def _patched_rest_init(self, **kwargs):
+        kwargs.setdefault("url_scheme", "http")
+        return original_init(self, **kwargs)
+
+    transport_cls.__init__ = _patched_rest_init
+
+
+_patch_http(PredictionServiceRestTransport)
+_patch_http(PredictionServiceRestTransportV1Beta1)
 
 _reference_tracer = reference_tracer()
 
@@ -118,22 +127,41 @@ def run_chat():
 
 def run_chat_tool_call():
     """Scenario: chat with tool calling with reference implementation."""
-    from vertexai.generative_models import FunctionDeclaration, GenerativeModel, Tool
+    # Automatic function calling lives under `preview` in google-cloud-aiplatform 2.x.
+    from vertexai.preview.generative_models import (
+        AutomaticFunctionCallingResponder,
+        CallableFunctionDeclaration,
+        GenerativeModel,
+        Tool,
+    )
 
     print("  [chat_tool_call] chat with tool calling via Vertex AI (reference implementation)")
     request_model = "gemini-2.0-flash"
-    get_weather_func = FunctionDeclaration(
-        name="get_weather",
-        description="Get the current weather",
-        parameters={
-            "type": "object",
-            "properties": {
-                "location": {"type": "string", "description": "City name"},
-            },
-            "required": ["location"],
-        },
-    )
-    tool = Tool(function_declarations=[get_weather_func])
+
+    def get_weather(location: str) -> str:
+        """Get the current weather.
+
+        Args:
+            location: City name
+        """
+        # The SDK invokes this callable as part of automatic function calling.
+        # The public FunctionCall wrapper exposes only name/args, so the tool call
+        # id is not recorded here.
+        tool_span_attributes = {
+            "gen_ai.operation.name": "execute_tool",
+            "gen_ai.tool.name": "get_weather",
+            "gen_ai.tool.description": "Get the current weather",
+            "gen_ai.tool.type": "function",
+        }
+        with _reference_tracer.start_as_current_span(
+            "execute_tool get_weather", attributes=tool_span_attributes
+        ) as tool_span:
+            tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps({"location": location}))
+            result = f"Sunny in {location}"
+            tool_span.set_attribute("gen_ai.tool.call.result", result)
+            return result
+
+    tool = Tool(function_declarations=[CallableFunctionDeclaration.from_func(get_weather)])
     span_attributes_2 = {
         "gen_ai.operation.name": "chat",
         "gen_ai.provider.name": "gcp.vertex_ai",
@@ -164,7 +192,8 @@ def run_chat_tool_call():
             warnings.simplefilter("ignore", DeprecationWarning)
             warnings.simplefilter("ignore", UserWarning)
             model = GenerativeModel(request_model)
-            response = model.generate_content(
+            chat = model.start_chat(responder=AutomaticFunctionCallingResponder(max_automatic_function_calls=1))
+            response = chat.send_message(
                 "What's the weather in Seattle?",
                 tools=[tool],
             )

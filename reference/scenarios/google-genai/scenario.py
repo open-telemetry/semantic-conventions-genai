@@ -15,6 +15,53 @@ MOCK_BASE_URL = os.environ["MOCK_LLM_URL"]
 _reference_tracer = reference_tracer()
 
 
+def _patch_automatic_function_calling():
+    """Emit execute_tool spans from the SDK's automatic-function-calling dispatch.
+
+    `_extra_utils.get_function_response_parts` is where the SDK invokes the
+    application's callable: the `FunctionCall` (id, name, args) and the callable
+    itself are both in scope, so this is the hook generic instrumentation would
+    patch. Wrapping the callable instead would lose the tool call id.
+    """
+    from google.genai import _extra_utils
+
+    original = _extra_utils.get_function_response_parts
+
+    def instrumented(response, function_map):
+        parts = []
+        candidate = response.candidates[0] if response.candidates else None
+        for part in (candidate.content.parts if candidate and candidate.content else None) or []:
+            call = part.function_call
+            if not call or not call.name:
+                continue
+            func = function_map.get(call.name)
+            tool_span_attributes = {
+                "gen_ai.operation.name": "execute_tool",
+                "gen_ai.tool.name": call.name,
+                "gen_ai.tool.type": "function",
+            }
+            description = (getattr(func, "__doc__", None) or "").strip().splitlines()
+            if description:
+                tool_span_attributes["gen_ai.tool.description"] = description[0]
+            with _reference_tracer.start_as_current_span(
+                f"execute_tool {call.name}", attributes=tool_span_attributes
+            ) as tool_span:
+                if call.id:
+                    tool_span.set_attribute("gen_ai.tool.call.id", call.id)
+                tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps(dict(call.args or {})))
+                single = response.model_copy(deep=True)
+                single.candidates[0].content.parts = [part]
+                result_parts = original(single, function_map)
+                for result_part in result_parts:
+                    tool_span.set_attribute(
+                        "gen_ai.tool.call.result", json.dumps(result_part.function_response.response)
+                    )
+                parts.extend(result_parts)
+        return parts
+
+    _extra_utils.get_function_response_parts = instrumented
+
+
 def run_chat():
     """Scenario: basic chat completion with reference implementation."""
     from google import genai
@@ -187,22 +234,16 @@ def run_chat_tool_call():
         ),
     )
     request_model = "gemini-2.0-flash"
-    tool = types.Tool(
-        function_declarations=[
-            types.FunctionDeclaration(
-                name="get_weather",
-                description="Get the current weather",
-                parameters=types.Schema(
-                    type="OBJECT",
-                    properties={
-                        "location": types.Schema(type="STRING", description="City name"),
-                    },
-                    required=["location"],
-                ),
-            )
-        ]
-    )
-    tools = [tool]
+
+    def get_weather(location: str) -> str:
+        """Get the current weather.
+
+        Args:
+            location: City name
+        """
+        return f"Sunny in {location}"
+
+    tools = [get_weather]
     span_attributes_2 = {
         "gen_ai.operation.name": "chat",
         "gen_ai.provider.name": "gcp.gemini",
@@ -340,6 +381,7 @@ def main():
 
     run_chat()
     run_interactions_continuation()
+    _patch_automatic_function_calling()
     run_chat_tool_call()
     run_chat_streaming()
     run_embeddings()

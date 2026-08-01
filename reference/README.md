@@ -34,7 +34,7 @@ Run `uv run update-reports` to regenerate.
 | [Retrieval](reports/retrieval-span.md) | haystack, langchain, llamaindex |
 | [Fetch Response](reports/fetch-response-span.md) | openai |
 | [Memory](reports/memory-span.md) | aws-bedrock-agentcore, google-adk |
-| [Execute Tool](reports/execute-tool-span.md) | agent-framework, autogen, crewai, google-adk, groq, instructor, litellm, llamaindex, mistralai, openai, openai-agents, openai-assistants, pydantic-ai |
+| [Execute Tool](reports/execute-tool-span.md) | agent-framework, autogen, crewai, google-adk, google-genai, langchain, llamaindex, openai-agents, openai-assistants, pydantic-ai, vertexai |
 
 ### Events
 

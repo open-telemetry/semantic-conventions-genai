@@ -9,4 +9,4 @@ running in application code.
 | --- | --- | --- |
 | inference (`chat`) | Yes — calls the provider model directly | ✅ Implemented |
 | embeddings | Yes — calls the provider model directly | ✅ Implemented |
-| execute_tool | No — the client returns tool calls but doesn't execute them; the tool runs in app code | ❌ Shown, but not instrumentable |
+| execute_tool | No — the client returns tool calls but doesn't execute them; the tool runs in app code | ➖ Not instrumentable |

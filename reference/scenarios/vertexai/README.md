@@ -9,4 +9,4 @@ callables, the SDK executes them — so tool execution is instrumentable here.
 | --- | --- | --- |
 | inference (`chat`) | Yes — calls the model directly | ✅ Implemented |
 | embeddings | Yes — Vertex AI text-embeddings API | ❌ Not implemented |
-| execute_tool | Yes — automatic function calling executes the tool | ❌ Not implemented |
+| execute_tool | Yes — automatic function calling executes the tool (`preview` surface in google-cloud-aiplatform 2.x) | ✅ Implemented |

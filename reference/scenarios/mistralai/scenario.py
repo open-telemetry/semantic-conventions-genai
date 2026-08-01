@@ -156,23 +156,9 @@ def run_chat_tool_call(client):
             span.set_attribute("gen_ai.usage.output_tokens", resp.usage.completion_tokens)
         choice = resp.choices[0]
         if choice.message.tool_calls:
-            tool_call = choice.message.tool_calls[0]
-            arguments_json = tool_call.function.arguments or "{}"
-            arguments = json.loads(arguments_json)
-            tool_span_attributes = {
-                "gen_ai.operation.name": "execute_tool",
-            }
-            with _reference_tracer.start_as_current_span(
-                "execute_tool get_weather", attributes=tool_span_attributes
-            ) as tool_span:
-                tool_span.set_attribute("gen_ai.tool.name", tool_call.function.name)
-                tool_span.set_attribute("gen_ai.tool.description", request_tool["function"]["description"])
-                tool_span.set_attribute("gen_ai.tool.type", request_tool["type"])
-                tool_span.set_attribute("gen_ai.tool.call.id", tool_call.id)
-                tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps(arguments))
-                result = f"Sunny in {arguments.get('location', 'unknown')}"
-                tool_span.set_attribute("gen_ai.tool.call.result", result)
-            print(f"    -> tool_call: {tool_call.function.name}")
+            # The client returns the tool call; running it is app code the client
+            # never sees, so there is no execute_tool span to emit here.
+            print(f"    -> tool_call: {choice.message.tool_calls[0].function.name}")
         else:
             print(f"    -> {choice.message.content[:60]}")
 
