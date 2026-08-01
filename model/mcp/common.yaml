@@ -46,8 +46,6 @@ attribute_groups:
       - ref: mcp.protocol.version
       - ref_group: mcp.network.protocol.attributes
 
-  # `rpc.response.status_code` lives in the client/server groups below because the
-  # set of codes that classify as errors differs between the two sides.
   - id: mcp.client.status.attributes
     visibility: internal
     attributes:
@@ -56,6 +54,9 @@ attribute_groups:
         requirement_level:
           conditionally_required: If response contains an error code.
         note: |
+          This attribute records the [JSON-RPC error code](https://www.jsonrpc.org/specification#error_object)
+          returned in the error response.
+
           All JSON-RPC error codes SHOULD be considered errors.
 
   - id: mcp.server.status.attributes
@@ -66,6 +67,9 @@ attribute_groups:
         requirement_level:
           conditionally_required: If response contains an error code.
         note: |
+          This attribute records the [JSON-RPC error code](https://www.jsonrpc.org/specification#error_object)
+          returned in the error response.
+
           The following error codes indicate that the caller sent a request the
           server could not serve and SHOULD NOT be considered errors:
 

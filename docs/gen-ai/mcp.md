@@ -198,7 +198,10 @@ Instrumentations SHOULD NOT capture this attribute when the `id` is `null` or om
 
 **[4] `mcp.resource.uri`:** This is a URI of the resource provided in the following requests or notifications: `resources/read`, `resources/subscribe`, `resources/unsubscribe`, or `notifications/resources/updated`.
 
-**[5] `rpc.response.status_code`:** All JSON-RPC error codes SHOULD be considered errors.
+**[5] `rpc.response.status_code`:** This attribute records the [JSON-RPC error code](https://www.jsonrpc.org/specification#error_object)
+returned in the error response.
+
+All JSON-RPC error codes SHOULD be considered errors.
 
 **[6] `gen_ai.operation.name`:** SHOULD be set to `execute_tool` when the operation describes a tool call and SHOULD NOT be set otherwise.
 
@@ -421,7 +424,10 @@ Instrumentations SHOULD NOT capture this attribute when the `id` is `null` or om
 
 **[4] `mcp.resource.uri`:** This is a URI of the resource provided in the following requests or notifications: `resources/read`, `resources/subscribe`, `resources/unsubscribe`, or `notifications/resources/updated`.
 
-**[5] `rpc.response.status_code`:** The following error codes indicate that the caller sent a request the
+**[5] `rpc.response.status_code`:** This attribute records the [JSON-RPC error code](https://www.jsonrpc.org/specification#error_object)
+returned in the error response.
+
+The following error codes indicate that the caller sent a request the
 server could not serve and SHOULD NOT be considered errors:
 
 - `-32700` (`Parse error`)
@@ -629,7 +635,10 @@ string representation of the error. When
 is returned with `isError` set to `true`, this attribute SHOULD be set to
 `tool_error`.
 
-**[2] `rpc.response.status_code`:** All JSON-RPC error codes SHOULD be considered errors.
+**[2] `rpc.response.status_code`:** This attribute records the [JSON-RPC error code](https://www.jsonrpc.org/specification#error_object)
+returned in the error response.
+
+All JSON-RPC error codes SHOULD be considered errors.
 
 **[3] `gen_ai.operation.name`:** SHOULD be set to `execute_tool` when the operation describes a tool call and SHOULD NOT be set otherwise.
 
@@ -793,7 +802,10 @@ string representation of the error. When
 is returned with `isError` set to `true`, this attribute SHOULD be set to
 `tool_error`.
 
-**[2] `rpc.response.status_code`:** The following error codes indicate that the caller sent a request the
+**[2] `rpc.response.status_code`:** This attribute records the [JSON-RPC error code](https://www.jsonrpc.org/specification#error_object)
+returned in the error response.
+
+The following error codes indicate that the caller sent a request the
 server could not serve and SHOULD NOT be considered errors:
 
 - `-32700` (`Parse error`)
