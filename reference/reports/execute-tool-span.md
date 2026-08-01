@@ -6,8 +6,8 @@
 
 | Attribute | Supporting Libraries |
 | --- | --- |
-| gen_ai.operation.name | [agent-framework], [autogen], [crewai], [google-adk], [groq], [instructor], [langchain], [litellm], [llamaindex], [mistralai], [openai], [openai-agents], [openai-assistants], [pydantic-ai] |
-| gen_ai.tool.name | [agent-framework], [autogen], [crewai], [google-adk], [groq], [instructor], [langchain], [litellm], [llamaindex], [mistralai], [openai], [openai-agents], [openai-assistants], [pydantic-ai] |
+| gen_ai.operation.name | [agent-framework], [autogen], [crewai], [google-adk], [groq], [instructor], [litellm], [llamaindex], [mistralai], [openai], [openai-agents], [openai-assistants], [pydantic-ai] |
+| gen_ai.tool.name | [agent-framework], [autogen], [crewai], [google-adk], [groq], [instructor], [litellm], [llamaindex], [mistralai], [openai], [openai-agents], [openai-assistants], [pydantic-ai] |
 
 ## Conditionally Required
 
@@ -20,15 +20,15 @@
 | Attribute | Supporting Libraries |
 | --- | --- |
 | gen_ai.tool.call.id | [agent-framework], [autogen], [google-adk], [groq], [instructor], [litellm], [llamaindex], [mistralai], [openai], [openai-agents], [openai-assistants], [pydantic-ai] |
-| gen_ai.tool.description | [agent-framework], [autogen], [crewai], [google-adk], [groq], [instructor], [langchain], [litellm], [llamaindex], [mistralai], [openai], [openai-agents], [openai-assistants], [pydantic-ai] |
-| gen_ai.tool.type | [agent-framework], [autogen], [crewai], [google-adk], [groq], [instructor], [langchain], [litellm], [llamaindex], [mistralai], [openai], [openai-agents], [openai-assistants], [pydantic-ai] |
+| gen_ai.tool.description | [agent-framework], [autogen], [crewai], [google-adk], [groq], [instructor], [litellm], [llamaindex], [mistralai], [openai], [openai-agents], [openai-assistants], [pydantic-ai] |
+| gen_ai.tool.type | [agent-framework], [autogen], [crewai], [google-adk], [groq], [instructor], [litellm], [llamaindex], [mistralai], [openai], [openai-agents], [openai-assistants], [pydantic-ai] |
 
 ## Opt-In
 
 | Attribute | Supporting Libraries |
 | --- | --- |
-| gen_ai.tool.call.arguments | [agent-framework], [autogen], [crewai], [google-adk], [groq], [instructor], [langchain], [litellm], [llamaindex], [mistralai], [openai], [openai-agents], [openai-assistants], [pydantic-ai] |
-| gen_ai.tool.call.result | [agent-framework], [autogen], [crewai], [google-adk], [groq], [instructor], [langchain], [litellm], [llamaindex], [mistralai], [openai], [openai-agents], [openai-assistants], [pydantic-ai] |
+| gen_ai.tool.call.arguments | [agent-framework], [autogen], [crewai], [google-adk], [groq], [instructor], [litellm], [llamaindex], [mistralai], [openai], [openai-agents], [openai-assistants], [pydantic-ai] |
+| gen_ai.tool.call.result | [agent-framework], [autogen], [crewai], [google-adk], [groq], [instructor], [litellm], [llamaindex], [mistralai], [openai], [openai-agents], [openai-assistants], [pydantic-ai] |
 
 [agent-framework]: ../scenarios/agent-framework/scenario.py
 [autogen]: ../scenarios/autogen/scenario.py
@@ -36,7 +36,6 @@
 [google-adk]: ../scenarios/google-adk/scenario.py
 [groq]: ../scenarios/groq/scenario.py
 [instructor]: ../scenarios/instructor/scenario.py
-[langchain]: ../scenarios/langchain/scenario.py
 [litellm]: ../scenarios/litellm/scenario.py
 [llamaindex]: ../scenarios/llamaindex/scenario.py
 [mistralai]: ../scenarios/mistralai/scenario.py

@@ -1,4 +1,4 @@
-"""Reference implementation for LangChain retrieval, planning, tool execution, and workflow (LangGraph) runs."""
+"""Reference implementation for LangChain retrieval, planning, and workflow (LangGraph) runs."""
 
 import asyncio
 import json
@@ -10,42 +10,77 @@ from reference_shared import flush_and_shutdown, reference_tracer, setup_otel
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"] + "/v1"
 
+AGENT_MODEL = "gpt-4o-mini"
+AGENT_NAME = "weather-agent"
+AGENT_SYSTEM_PROMPT = "You are a helpful weather assistant."
+
 _reference_tracer = reference_tracer()
 
 
 @tool
 def get_weather(location: str) -> str:
     """Get the current weather for a location."""
-    tool_span_attributes = {
-        "gen_ai.operation.name": "execute_tool",
-        "gen_ai.tool.name": "get_weather",
-        "gen_ai.tool.type": "function",
-    }
-    with _reference_tracer.start_as_current_span(
-        "execute_tool get_weather", attributes=tool_span_attributes
-    ) as tool_span:
-        tool_span.set_attribute("gen_ai.tool.description", get_weather.description)
-        tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps({"location": location}))
-        result = "Sunny, 72°F"
-        tool_span.set_attribute("gen_ai.tool.call.result", result)
-        return result
+    return f"Sunny, 72°F in {location}"
 
 
 class GraphState(TypedDict):
     messages: list[str]
 
 
-def node_a(state: GraphState) -> GraphState:
-    print("  [node_a] running tool")
-    result = get_weather.invoke({"location": "Seattle"})
-    return {"messages": state["messages"] + [result]}
+async def agent_node(state: GraphState) -> GraphState:
+    """Graph node that delegates to a LangGraph agent, reported as an invoke_agent span."""
+    from langchain.agents import create_agent
+    from langchain_openai import ChatOpenAI
+
+    agent = create_agent(
+        model=ChatOpenAI(model=AGENT_MODEL, base_url=MOCK_BASE_URL, api_key="mock-key"),
+        tools=[get_weather],
+        system_prompt=AGENT_SYSTEM_PROMPT,
+        name=AGENT_NAME,
+    )
+
+    input_text = state["messages"][-1]
+    agent_span_attributes = {
+        "gen_ai.operation.name": "invoke_agent",
+        "gen_ai.agent.name": AGENT_NAME,
+        "gen_ai.request.model": AGENT_MODEL,
+    }
+    with _reference_tracer.start_as_current_span(
+        f"invoke_agent {AGENT_NAME}", attributes=agent_span_attributes
+    ) as agent_span:
+        agent_span.set_attribute(
+            "gen_ai.system_instructions", json.dumps([{"type": "text", "content": AGENT_SYSTEM_PROMPT}])
+        )
+        agent_span.set_attribute(
+            "gen_ai.input.messages", json.dumps([{"role": "user", "parts": [{"type": "text", "content": input_text}]}])
+        )
+        agent_span.set_attribute(
+            "gen_ai.tool.definitions",
+            json.dumps([{"type": "function", "name": get_weather.name, "description": get_weather.description}]),
+        )
+
+        # LangChain delegates the model call to the underlying LLM client (openai),
+        # whose own instrumentation owns the inference span. The agent runs the tool
+        # itself, so the execute_tool span belongs to LangChain instrumentation.
+        result = await agent.ainvoke({"messages": [{"role": "user", "content": input_text}]})
+
+        final_message = result["messages"][-1]
+        usage = getattr(final_message, "usage_metadata", None) or {}
+        if usage.get("input_tokens"):
+            agent_span.set_attribute("gen_ai.usage.input_tokens", usage["input_tokens"])
+        if usage.get("output_tokens"):
+            agent_span.set_attribute("gen_ai.usage.output_tokens", usage["output_tokens"])
+        agent_span.set_attribute(
+            "gen_ai.output.messages",
+            json.dumps([{"role": "assistant", "parts": [{"type": "text", "content": final_message.text()}]}]),
+        )
+        return {"messages": state["messages"] + [final_message.text()]}
 
 
-def node_b(state: GraphState) -> GraphState:
-    print("  [node_b] processing result")
+def format_node(state: GraphState) -> GraphState:
+    print("  [format] formatting agent result")
     last_message = state["messages"][-1]
-    output = f"Processed weather: {last_message}"
-    return {"messages": state["messages"] + [output]}
+    return {"messages": state["messages"] + [f"Weather report: {last_message}"]}
 
 
 def run_retrieval_reference():
@@ -141,11 +176,11 @@ async def run_workflow_reference():
     from langgraph.graph import END, START, StateGraph
 
     builder = StateGraph(GraphState)
-    builder.add_node("node_a", node_a)
-    builder.add_node("node_b", node_b)
-    builder.add_edge(START, "node_a")
-    builder.add_edge("node_a", "node_b")
-    builder.add_edge("node_b", END)
+    builder.add_node("agent", agent_node)
+    builder.add_node("format", format_node)
+    builder.add_edge(START, "agent")
+    builder.add_edge("agent", "format")
+    builder.add_edge("format", END)
 
     graph = builder.compile()
 
@@ -162,8 +197,8 @@ async def run_workflow_reference():
             "gen_ai.input.messages", json.dumps([{"role": "user", "parts": [{"type": "text", "content": input_text}]}])
         )
 
-        # The graph runs a tool-calling node followed by a formatting node; the
-        # execute_tool span is emitted by the node itself.
+        # The graph coordinates an agent node and a formatting node; the agent
+        # invocation is reported as a child invoke_agent span.
         #
         # OpenInference uses the LangChain run_name as the span name:
         # https://github.com/Arize-ai/openinference/blob/main/python/instrumentation/openinference-instrumentation-langchain/src/openinference/instrumentation/langchain/_tracer.py#L194
