@@ -102,10 +102,6 @@ async def run_agent():
             agent_span.set_attribute("gen_ai.usage.output_tokens", usage.output_tokens)
         if captured_responses:
             last_response = captured_responses[-1]
-            if getattr(last_response, "id", None):
-                agent_span.set_attribute("gen_ai.response.id", last_response.id)
-            if getattr(last_response, "model", None):
-                agent_span.set_attribute("gen_ai.response.model", last_response.model)
             finish_reasons = [
                 choice.finish_reason
                 for choice in getattr(last_response, "choices", []) or []

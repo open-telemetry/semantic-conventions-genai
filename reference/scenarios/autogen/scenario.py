@@ -184,12 +184,6 @@ def run_agent_reference():
                 finish_reasons = [result.finish_reason for result in captured_results if result.finish_reason]
                 if finish_reasons:
                     agent_span.set_attribute("gen_ai.response.finish_reasons", finish_reasons)
-                if captured_results:
-                    last_result = captured_results[-1]
-                    if getattr(last_result, "model", None):
-                        agent_span.set_attribute("gen_ai.response.model", last_result.model)
-                    if getattr(last_result, "id", None):
-                        agent_span.set_attribute("gen_ai.response.id", last_result.id)
                 total_input_tokens = sum(
                     result.usage.prompt_tokens
                     for result in captured_results

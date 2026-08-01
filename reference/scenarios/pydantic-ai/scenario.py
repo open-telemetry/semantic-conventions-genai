@@ -1,6 +1,6 @@
 """Reference implementation for Pydantic AI.
 
-Exercises: chat via OpenAI client
+Exercises: agent run with tool calling
 against a mock OpenAI server, with manual OTel spans (no logfire/Agent.instrument_all).
 """
 
@@ -109,10 +109,6 @@ def run_tool_call():
             ),
         )
         result = agent.run_sync(prompt_text, model_settings=model_settings)
-        if result.response.model_name:
-            agent_span.set_attribute("gen_ai.response.model", result.response.model_name)
-        if result.response.provider_response_id:
-            agent_span.set_attribute("gen_ai.response.id", result.response.provider_response_id)
         if result.response.finish_reason is not None:
             agent_span.set_attribute(
                 "gen_ai.response.finish_reasons",

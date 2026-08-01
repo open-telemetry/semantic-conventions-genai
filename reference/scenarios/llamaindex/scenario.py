@@ -15,7 +15,7 @@ MOCK_BASE_URL = os.environ["MOCK_LLM_URL"] + "/v1"
 _reference_tracer = reference_tracer()
 
 
-def run_agent_reference(llm, request_model, request_temperature):
+def run_agent_reference(llm):
     """Scenario: agent with tool calling and reference implementation."""
     print("  [chat_tool_call] agent with tool calling (reference implementation)")
     import llama_index.core.tools.calling as tool_calling
@@ -126,7 +126,7 @@ def main():
         api_key="mock-key",
     )
 
-    run_agent_reference(llm, request_model, request_temperature)
+    run_agent_reference(llm)
     run_retrieval_reference()
 
     flush_and_shutdown(tp, lp, mp)

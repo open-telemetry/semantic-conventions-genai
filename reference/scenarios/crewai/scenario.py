@@ -104,7 +104,7 @@ def run_crew():
         )
         # CrewAI delegates the LLM call to the underlying LLM client, whose
         # own instrumentation owns the inference span. This scenario emits only
-        # the workflow operation.
+        # the workflow and tool operations CrewAI runs itself.
         result = crew.kickoff()
         workflow_span.set_attribute(
             "gen_ai.output.messages",
