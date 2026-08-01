@@ -3,7 +3,7 @@
 import json
 import os
 
-from reference_shared import flush_and_shutdown, mock_server_host_port, reference_tracer, setup_otel
+from reference_shared import flush_and_shutdown, reference_tracer, setup_otel
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"] + "/v1"
 
@@ -68,27 +68,22 @@ def run_plan_and_execute_reference():
     marker and returns a numbered-step body that the parser splits into
     `Step` objects deterministically.
 
-    The plan span tags the `LLMPlanner` instance as the planning agent. The
-    chat child span captures the real outgoing messages from the LLM call
-    (patched at `chat_model.root_client.chat.completions.create`, the
-    default sync path through `langchain_openai.ChatOpenAI._generate` →
-    `self.client.with_raw_response.create(...)`) and the real
-    `ChatCompletion` response.
+    The plan span represents the planning phase. The LLM call that generates
+    the plan is issued by `langchain_openai.ChatOpenAI` (backed by the `openai`
+    client) and is captured as a child inference span by generic OpenAI
+    instrumentation, so this reference scenario does not emit it.
     """
     print("  [plan] Plan-and-Execute via langchain-experimental (reference implementation)")
     from langchain_experimental.plan_and_execute import load_chat_planner
     from langchain_openai import ChatOpenAI
 
     request_model = "gpt-4o-mini"
-    host, port = mock_server_host_port(MOCK_BASE_URL)
     chat_model = ChatOpenAI(
         model=request_model,
         base_url=MOCK_BASE_URL,
         api_key="mock-key",
     )
     planner = load_chat_planner(chat_model)
-    captured_completion = None
-    captured_messages = None
     planner_input = "What is the capital of France?"
 
     # langchain-experimental's LLMPlanner has no library-owned agent identity
@@ -98,81 +93,8 @@ def run_plan_and_execute_reference():
     # implementation class name.
     with _reference_tracer.start_as_current_span("plan") as plan_span:
         plan_span.set_attribute("gen_ai.operation.name", "plan")
-
-        with _reference_tracer.start_as_current_span("chat gpt-4o-mini") as chat_span:
-            chat_span.set_attribute("gen_ai.operation.name", "chat")
-            chat_span.set_attribute("gen_ai.provider.name", "openai")
-            chat_span.set_attribute("gen_ai.request.model", request_model)
-            if host:
-                chat_span.set_attribute("server.address", host)
-            if port is not None:
-                chat_span.set_attribute("server.port", port)
-
-            # langchain-openai's ChatOpenAI._generate() goes through
-            # self.client.with_raw_response.create(...), where
-            # self.client = self.root_client.chat.completions (base.py:1235).
-            # Patching root_client.chat.completions.create is the closest
-            # capture of the outgoing request and incoming raw response.
-            original_create = chat_model.root_client.chat.completions.create
-
-            def _capture_create(*args, **kwargs):
-                nonlocal captured_completion, captured_messages
-                captured_messages = kwargs.get("messages")
-                response = original_create(*args, **kwargs)
-                captured_completion = response
-                return response
-
-            chat_model.root_client.chat.completions.create = _capture_create
-            try:
-                plan = planner.plan(inputs={"input": planner_input})
-            finally:
-                chat_model.root_client.chat.completions.create = original_create
-
-            if captured_messages is not None:
-                chat_messages = [m for m in captured_messages if m.get("role") in {"system", "user"}]
-                if chat_messages:
-                    chat_span.set_attribute(
-                        "gen_ai.input.messages",
-                        json.dumps(
-                            [
-                                {"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]}
-                                for m in chat_messages
-                            ]
-                        ),
-                    )
-
-            if captured_completion is not None:
-                # with_raw_response.create returns an APIResponse wrapping
-                # the parsed ChatCompletion; .parse() unwraps it.
-                completion = (
-                    captured_completion.parse() if hasattr(captured_completion, "parse") else captured_completion
-                )
-                if getattr(completion, "model", None):
-                    chat_span.set_attribute("gen_ai.response.model", completion.model)
-                if getattr(completion, "id", None):
-                    chat_span.set_attribute("gen_ai.response.id", completion.id)
-                if getattr(completion, "choices", None):
-                    chat_span.set_attribute(
-                        "gen_ai.response.finish_reasons",
-                        [choice.finish_reason for choice in completion.choices if choice.finish_reason],
-                    )
-                    assistant_content = completion.choices[0].message.content
-                    if assistant_content:
-                        chat_span.set_attribute(
-                            "gen_ai.output.messages",
-                            json.dumps(
-                                [
-                                    {
-                                        "role": "assistant",
-                                        "parts": [{"type": "text", "content": assistant_content}],
-                                    }
-                                ]
-                            ),
-                        )
-                if getattr(completion, "usage", None):
-                    chat_span.set_attribute("gen_ai.usage.input_tokens", completion.usage.prompt_tokens)
-                    chat_span.set_attribute("gen_ai.usage.output_tokens", completion.usage.completion_tokens)
-            print(f"    -> planned {len(plan.steps)} step(s)")
+        plan = planner.plan(inputs={"input": planner_input})
+        print(f"    -> planned {len(plan.steps)} step(s)")
 
 
 def main():

@@ -683,6 +683,171 @@ def run_responses_with_prompt_template_reference(client):
         print(f"    -> {(output_text or '')[:60]}")
 
 
+def _fetch_response_finish_reason(fetched):
+    """Map a fetched Responses `status` to a `gen_ai.response.finish_reasons` value.
+
+    The fetch itself always succeeds here; this conveys the outcome of the
+    ORIGINAL generation recorded on the response. A completed generation maps to
+    its stop reason, an incomplete one to why it was cut short, and a failed or
+    cancelled generation to `error`.
+
+    Returns None for non-terminal statuses (`queued`, `in_progress`): generation
+    has not stopped yet, so there is no finish reason to record. The lifecycle
+    state is conveyed by `gen_ai.response.status` instead.
+    """
+    status = getattr(fetched, "status", None)
+    if status in ("queued", "in_progress"):
+        return None
+    if status == "completed":
+        return "stop"
+    if status == "incomplete":
+        details = getattr(fetched, "incomplete_details", None)
+        reason = getattr(details, "reason", None) if details else None
+        if reason == "max_output_tokens":
+            return "length"
+        if reason == "content_filter":
+            return "content_filter"
+        return "incomplete"
+    return "error"
+
+
+def _emit_fetch_response_span(client, response_id, starting_after=None):
+    """Fetch a response by id and emit the `gen_ai.fetch_response.client` span.
+
+    Owns its own span boundary, so all attributes are set inline here. Every
+    value is derived from the retrieve-call boundary:
+
+    - `gen_ai.response.id`, `gen_ai.response.model` come from the fetched object.
+    - `gen_ai.response.status` conveys the lifecycle state of the fetched response
+      (for example `completed` or `failed`), taken from the fetched `status` field.
+    - `gen_ai.response.finish_reasons` conveys the ORIGINAL generation's outcome,
+      derived from the fetched `status`/`incomplete_details` (see helper above).
+      It is only recorded for terminal statuses; a still-`queued` or `in_progress`
+      response has no finish reason. A fetched response whose original generation
+      failed or is incomplete is NOT an error of this fetch, so `error.type`/span
+      status are not set for it.
+    - `gen_ai.system_instructions` and `gen_ai.output.messages` are the content
+      carried by the fetched response. The original input messages are NOT part
+      of the fetched response object, so `gen_ai.input.messages` is not recorded.
+    - `gen_ai.request.stream_cursor` is the resume cursor (OpenAI `starting_after`),
+      a request-side parameter available at the call boundary, recorded only when
+      the fetch resumes a streamed response from a prior position.
+    - Token usage is intentionally NOT recorded: no inference happens here, and
+      the fetched response's token counts belong to the original generation.
+      Recording them would double-count tokens when summing spans in a
+      multi-step run.
+    - `openai.api.type` is `responses`; `openai.response.service_tier` comes from
+      the fetched object.
+    """
+    host, port = mock_server_host_port(MOCK_BASE_URL)
+    span_attributes = {
+        "gen_ai.operation.name": "fetch_response",
+        "gen_ai.provider.name": "openai",
+        "gen_ai.response.id": response_id,
+        "openai.api.type": "responses",
+    }
+    if starting_after is not None:
+        span_attributes["gen_ai.request.stream_cursor"] = str(starting_after)
+    if host:
+        span_attributes["server.address"] = host
+    if port is not None:
+        span_attributes["server.port"] = port
+    with _reference_tracer.start_as_current_span("fetch_response", attributes=span_attributes) as span:
+        if starting_after is not None:
+            # Resume the streamed response from the cursor. The terminal
+            # `response.completed` event carries the full response object.
+            fetched = None
+            for event in client.responses.retrieve(response_id, stream=True, starting_after=starting_after):
+                candidate = getattr(event, "response", None)
+                if candidate is not None:
+                    fetched = candidate
+        else:
+            fetched = client.responses.retrieve(response_id)
+        span.set_attribute("gen_ai.response.id", fetched.id)
+        span.set_attribute("gen_ai.response.model", fetched.model)
+        status = getattr(fetched, "status", None)
+        if status is not None:
+            span.set_attribute("gen_ai.response.status", status)
+        finish_reason = _fetch_response_finish_reason(fetched)
+        if finish_reason is not None:
+            span.set_attribute("gen_ai.response.finish_reasons", [finish_reason])
+        service_tier = getattr(fetched, "service_tier", None)
+        if service_tier is not None:
+            span.set_attribute("openai.response.service_tier", service_tier)
+        # Content carried on the fetched response: system instructions and output
+        # messages. The original input messages are NOT part of the fetched
+        # response, so `gen_ai.input.messages` is not set here.
+        instructions = getattr(fetched, "instructions", None)
+        if instructions:
+            span.set_attribute(
+                "gen_ai.system_instructions",
+                json.dumps([{"type": "text", "content": instructions}]),
+            )
+        output_messages = responses_output_messages(fetched)
+        if output_messages:
+            span.set_attribute("gen_ai.output.messages", json.dumps(output_messages))
+        # Token usage is intentionally NOT recorded on this span: no inference
+        # happens on a fetch, and the fetched response's token counts belong to
+        # the original generation (already accounted for on that operation).
+        print(f"    -> fetched {fetched.id} (status={getattr(fetched, 'status', None)})")
+
+
+def run_fetch_response_reference(client):
+    """Scenario: fetch a previously generated Responses API result by its id.
+
+    Emits the `gen_ai.fetch_response.client` span (OpenAI `openai.fetch_response.client`
+    refinement) around `client.responses.retrieve(...)`. This operation performs
+    no inference: a response is first created with `store=True`, then fetched by
+    id. A background streaming response is then created, consumed until the
+    caller disconnects, and resumed from the last event's cursor to show
+    `gen_ai.request.stream_cursor` being recorded. A final fetch retrieves a
+    response whose original generation failed, to show that the fetch still
+    succeeds and the failure is conveyed through `gen_ai.response.finish_reasons`
+    rather than as an error of the fetch.
+    """
+    print("  [fetch_response] fetch a stored Responses API result by id (reference implementation)")
+    request_model = "gpt-4o-mini"
+
+    # Create a stored response first so there is a real id to fetch. This
+    # create call is a separate inference operation and not part of the
+    # fetch_response span below.
+    created = client.responses.create(
+        model=request_model,
+        instructions="You are a helpful assistant.",
+        input="Say hello.",
+        store=True,
+    )
+    _emit_fetch_response_span(client, created.id)
+
+    # Resume a streamed fetch from a real cursor. Only a background response
+    # created with streaming can be resumed by id, so create one, consume it
+    # until the caller "disconnects" (the stream ends before completion), and
+    # capture the last event's sequence_number. Resuming with that cursor lets a
+    # generic instrumentation record it as `gen_ai.request.stream_cursor`.
+    background = client.responses.create(
+        model=request_model,
+        instructions="You are a helpful assistant.",
+        input="Say hello.",
+        background=True,
+        stream=True,
+        store=True,
+    )
+    background_id = None
+    last_sequence_number = None
+    for event in background:
+        response_obj = getattr(event, "response", None)
+        if response_obj is not None:
+            background_id = response_obj.id
+        sequence_number = getattr(event, "sequence_number", None)
+        if sequence_number is not None:
+            last_sequence_number = sequence_number
+    _emit_fetch_response_span(client, background_id, starting_after=last_sequence_number)
+
+    # Fetch a response whose original generation failed. The fetch succeeds; the
+    # failure surfaces only via gen_ai.response.finish_reasons.
+    _emit_fetch_response_span(client, "resp-failed-001")
+
+
 def main():
     print("=== Reference Implementation: OpenAI Reference Implementation ===")
 
@@ -699,6 +864,7 @@ def main():
     run_chat_tool_call_reference(client)
     run_chat_with_document_input_reference(client)
     run_responses_with_prompt_template_reference(client)
+    run_fetch_response_reference(client)
     run_embeddings_reference(client)
 
     flush_and_shutdown(tp, lp, mp)

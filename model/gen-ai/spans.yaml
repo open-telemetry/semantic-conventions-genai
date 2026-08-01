@@ -164,10 +164,6 @@ spans:
       This span represents a client call to Generative AI model or service that generates
       a response or requests a tool call based on the input prompt.
     note: |
-      **Span name** SHOULD be `{gen_ai.operation.name} {gen_ai.request.model}`.
-      Semantic conventions for individual GenAI systems and frameworks MAY specify different span name format
-      and MUST follow the overall [guidelines for span names](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.56.0/specification/trace/api.md#span).
-
       **Span kind** SHOULD be `CLIENT` and MAY be set to `INTERNAL` on spans representing
       call to models running in the same process. It's RECOMMENDED to use `CLIENT` kind
       when the GenAI system being instrumented usually runs in a different process than its
@@ -285,7 +281,6 @@ spans:
       that generates an embeddings based on the input.
     note: |
       The `gen_ai.operation.name` SHOULD be `embeddings`.
-      **Span name** SHOULD be `{gen_ai.operation.name} {gen_ai.request.model}`.
     stability: development
     attributes:
       - ref_group: attributes.gen_ai.common
@@ -323,9 +318,6 @@ spans:
       that retrieves relevant information or context from a vector database or search system.
     note: |
       The `gen_ai.operation.name` SHOULD be `retrieval`.
-
-      **Span name** SHOULD be `{gen_ai.operation.name} {gen_ai.data_source.id}`. Semantic conventions
-      for individual GenAI providers and retrievers MAY specify different span name format.
     stability: development
     attributes:
       - ref_group: attributes.gen_ai.common
@@ -343,6 +335,71 @@ spans:
       - ref: gen_ai.data_source.id
         requirement_level:
           conditionally_required: When applicable.
+
+  - type: gen_ai.fetch_response.client
+    kind: client
+    name:
+      note: |
+        **Span name** SHOULD be `{gen_ai.operation.name}`. The response identifier is high
+        cardinality, so it is not included in the span name. Semantic conventions for individual
+        GenAI providers MAY specify a different span name format.
+    brief: >
+      Describes a request to a Generative AI provider that fetches a
+      previously generated model response by its identifier.
+    note: |
+      The `gen_ai.operation.name` SHOULD be `fetch_response`.
+
+    stability: development
+    attributes:
+      - ref_group: attributes.gen_ai.address_and_port
+      - ref_group: attributes.gen_ai.error
+      - ref: gen_ai.provider.name
+        requirement_level: required
+        sampling_relevant: true
+      - ref: gen_ai.operation.name
+        requirement_level: required
+        sampling_relevant: true
+      - ref: server.address
+        sampling_relevant: true
+      - ref: server.port
+        sampling_relevant: true
+      - ref: gen_ai.response.id
+        requirement_level: required
+        note: >
+          The identifier of the response being fetched, as used in the request and returned in the response.
+      - ref: gen_ai.request.stream_cursor
+        requirement_level:
+          conditionally_required: When the fetch resumes a streamed response from a prior position.
+        note: >
+          The cursor identifying the last streamed event already received, used to resume a
+          streamed fetch from that position. Maps to `starting_after` in the OpenAI Responses
+          API and `last_event_id` in the Google GenAI Interactions API.
+      - ref: gen_ai.system_instructions
+        requirement_level: opt_in
+        note: >
+          Only content carried on the fetched response is recorded. A fetched response contains
+          the system instructions, output messages, and tool definitions but not the original
+          input messages, so `gen_ai.input.messages` is not set on this span.
+      - ref: gen_ai.output.messages
+        requirement_level: opt_in
+      - ref: gen_ai.tool.definitions
+        requirement_level: opt_in
+      - ref: gen_ai.response.model
+        requirement_level: recommended
+      - ref: gen_ai.response.status
+        requirement_level: recommended
+        note: >
+          The lifecycle status of the fetched response as reported by the provider, mapped onto the
+          cross-provider enum. For a background or streamed response this conveys whether generation
+          is still queued or in progress, or has reached a terminal state such as completed, failed,
+          or cancelled.
+      - ref: gen_ai.response.finish_reasons
+        requirement_level: recommended
+        note: >
+          Conveys the outcome of the original generation as recorded on the fetched response,
+          derived from its status: a completed generation maps to its stop reason, an incomplete
+          one to why it was cut short (for example `length` or `content_filter`), and a failed or
+          cancelled generation to `error`.
 
   - type: gen_ai.memory.client
     requirement_level: recommended
@@ -364,8 +421,6 @@ spans:
       Use `update_memory` when the caller requests modification of known existing memory records.
       Use `upsert_memory` when the caller invokes a public API that may create, update, or consolidate
       memory records without the caller choosing which.
-
-      **Span name** SHOULD be `{gen_ai.operation.name}`.
 
       **Span kind** SHOULD be `CLIENT` and MAY be set to `INTERNAL` on spans representing
       calls to memory systems running in the same process. It's RECOMMENDED to use `CLIENT` kind
@@ -409,9 +464,6 @@ spans:
       with remote agent services.
     note: |
       The `gen_ai.operation.name` SHOULD be `create_agent`.
-
-      **Span name** SHOULD be `create_agent {gen_ai.agent.name}`.
-      Semantic conventions for individual GenAI systems and frameworks MAY specify different span name format.
     stability: development
     attributes:
       - ref_group: attributes.gen_ai.common
@@ -463,10 +515,6 @@ spans:
     note: |
       The `gen_ai.operation.name` SHOULD be `invoke_agent`.
 
-      **Span name** SHOULD be `invoke_agent {gen_ai.agent.name}` if `gen_ai.agent.name` is readily available.
-      When `gen_ai.agent.name` is not available, it SHOULD be `invoke_agent`.
-      Semantic conventions for individual GenAI systems and frameworks MAY specify different span name format.
-
       Examples: OpenAI Assistants API, AWS Bedrock Agents.
     stability: development
     attributes:
@@ -510,10 +558,6 @@ spans:
     note: |
       The `gen_ai.operation.name` SHOULD be `invoke_agent`.
 
-      **Span name** SHOULD be `invoke_agent {gen_ai.agent.name}` if `gen_ai.agent.name` is readily available.
-      When `gen_ai.agent.name` is not available, it SHOULD be `invoke_agent`.
-      Semantic conventions for individual GenAI systems and frameworks MAY specify different span name format.
-
       Examples: LangChain agents, CrewAI agents.
     stability: development
     attributes:
@@ -534,8 +578,6 @@ spans:
     brief: Describes tool execution span.
     note: |
       `gen_ai.operation.name` SHOULD be `execute_tool`.
-
-      **Span name** SHOULD be `execute_tool {gen_ai.tool.name}`.
 
       GenAI instrumentations that can instrument tool execution calls SHOULD do so,
       unless another instrumentation can reliably cover all supported tool types.
@@ -579,7 +621,6 @@ spans:
       or other operations involving generative AI.
     note: |
       The `gen_ai.operation.name` SHOULD be `invoke_workflow`.
-      **Span name** SHOULD be `invoke_workflow {gen_ai.workflow.name}`.
 
       This span SHOULD be reported by the instrumentations when they can
       reliably determine that invocation is a workflow (i.e. groups several agent
@@ -615,9 +656,6 @@ spans:
     note: |
       The `gen_ai.operation.name` SHOULD be `plan`.
 
-      **Span name** SHOULD be `plan {gen_ai.agent.name}` if `gen_ai.agent.name` is readily available.
-      When `gen_ai.agent.name` is not available, it SHOULD be `plan`.
-
       A plan span represents the decision phase where an agent formulates
       a strategy before executing it. The LLM call that generates the plan
       SHOULD be a child of the plan span, and the tool or task spans produced
@@ -647,8 +685,6 @@ span_refinements:
       and override the semantic conventions for [Gen AI Spans](gen-ai-spans.md).
     note: |
       `gen_ai.provider.name` MUST be set to `"openai"` and SHOULD be provided **at span creation time**.
-
-      **Span name** SHOULD be `{gen_ai.operation.name} {gen_ai.request.model}`.
     stability: development
     attributes:
       # TODO https://github.com/open-telemetry/weaver/pull/1407: use a shared ref_group again once note overrides are preserved.
@@ -691,6 +727,39 @@ span_refinements:
         requirement_level: recommended
       - ref: openai.api.type
         requirement_level: recommended
+
+  - id: openai.fetch_response.client
+    ref: gen_ai.fetch_response.client
+    brief: >
+      Semantic Conventions for the [OpenAI](https://openai.com/) [Get a model response](https://platform.openai.com/docs/api-reference/responses/get)
+      operation extend and override the semantic conventions for [Gen AI Spans](gen-ai-spans.md).
+    note: |
+      Describes the [OpenAI Get a model response](https://platform.openai.com/docs/api-reference/responses/get)
+      operation, which fetches a stored response from the Responses API by its identifier. No
+      inference is performed and no tokens are consumed by this operation.
+
+      `gen_ai.provider.name` MUST be set to `"openai"` and SHOULD be provided **at span creation time**.
+    stability: development
+    attributes:
+      - ref: openai.api.type
+        requirement_level: recommended
+        note: >
+          For this operation `openai.api.type` SHOULD be set to `responses`.
+      - ref: gen_ai.response.status
+        requirement_level: recommended
+        note: >
+          Set from the fetched response `status` field, whose values (`queued`, `in_progress`,
+          `completed`, `incomplete`, `failed`, `cancelled`) map directly onto this attribute.
+      - ref: gen_ai.response.finish_reasons
+        requirement_level: recommended
+        note: >
+          Derived from the fetched response `status`: a `completed` response maps to its stop
+          reason, a `failed` or `cancelled` response to `error`, and an `incomplete` response to
+          its `incomplete_details.reason` (for example `max_output_tokens` maps to `length` and
+          `content_filter` to `content_filter`).
+      - ref: openai.response.service_tier
+        requirement_level:
+          conditionally_required: If the response was received and includes a service_tier.
 
   - id: azure.ai.inference.client
     ref: gen_ai.inference.client
@@ -739,8 +808,6 @@ span_refinements:
       and override the semantic conventions for [Gen AI Spans](gen-ai-spans.md).
     note: |
       `gen_ai.provider.name` MUST be set to `"anthropic"` and SHOULD be provided **at span creation time**.
-
-      **Span name** SHOULD be `{gen_ai.operation.name} {gen_ai.request.model}`.
     stability: development
     attributes:
       - ref: gen_ai.request.top_k

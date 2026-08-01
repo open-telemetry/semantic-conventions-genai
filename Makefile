@@ -39,10 +39,6 @@ else
 WEAVER := weaver
 endif
 
-# Local cache of policies fetched from upstream (gitignored)
-LOCAL_POLICIES := .build/weaver-policies
-LOCAL_POLICY_STAMP := $(LOCAL_POLICIES)/.$(POLICY_REPO_REF)
-
 # Baseline registry for the backwards-compatibility policy. Override on the
 # command line to compare against a different ref or fork.
 BASELINE_REGISTRY := https://github.com/trask/semantic-conventions-genai.git[model]
@@ -89,18 +85,6 @@ VERSION := $(shell awk '/^schema_url:/ { n = split($$2, parts, "/"); print parts
 RESOLVED_SCHEMA_URI := https://github.com/open-telemetry/semantic-conventions-genai/releases/download/v$(VERSION)/resolved.yaml
 PACKAGE_OUTPUT := .build/package
 
-# Work around a Weaver 0.23.0 panic when `registry check` fetches a pinned remote
-# policy pack by commit SHA. Keep the policy source pinned, but materialize it as
-# a local checkout before running validation.
-$(LOCAL_POLICY_STAMP): $(VERSION_PINS_FILE)
-	@mkdir -p .build
-	rm -rf $(LOCAL_POLICIES)
-	git init -q $(LOCAL_POLICIES)
-	cd $(LOCAL_POLICIES) && git remote add origin $(POLICY_REPO_URL)
-	cd $(LOCAL_POLICIES) && git fetch --depth 1 origin $(POLICY_REPO_REF)
-	cd $(LOCAL_POLICIES) && git checkout --detach FETCH_HEAD
-	touch $(LOCAL_POLICY_STAMP)
-
 # Clone upstream semantic-conventions at the pinned version and drop the
 # subdirectories that have been migrated into this repo. See the long
 # comment on SC_UPSTREAM_FILTERED above.
@@ -129,12 +113,12 @@ $(SC_UPSTREAM_STAMP): $(VERSION_PINS_FILE)
 
 filter-upstream: $(SC_UPSTREAM_STAMP)
 
-# Validate the model and run shared policies
-check-policies: $(LOCAL_POLICY_STAMP) $(SC_UPSTREAM_STAMP)
+# Validate the model and run shared policies from otel-weaver-packages.
+check-policies: $(SC_UPSTREAM_STAMP)
 	$(WEAVER) registry check \
 		-r ./model \
 		--v2 \
-		--policy $(LOCAL_POLICIES)/policies/check \
+		--policy '$(POLICY_REPO_URL)@$(POLICY_REPO_REF)[policies/check]' \
 		--policy policies/check/json-schema-annotations
 		# --baseline-registry '$(BASELINE_REGISTRY)' \ uncomment after removing deprecated entries
 

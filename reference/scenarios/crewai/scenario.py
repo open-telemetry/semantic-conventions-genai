@@ -7,7 +7,7 @@ against a mock OpenAI server, with manual OTel spans.
 import json
 import os
 
-from reference_shared import flush_and_shutdown, mock_server_host_port, reference_tracer, setup_otel
+from reference_shared import flush_and_shutdown, reference_tracer, setup_otel
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"] + "/v1"
 
@@ -33,7 +33,6 @@ def run_crew():
     request_frequency_penalty = 0.1
     request_presence_penalty = 0.2
     system_prompt = "You are a helpful research assistant."
-    host, port = mock_server_host_port(MOCK_BASE_URL)
     os.environ["OPENAI_API_KEY"] = "mock-key"
     os.environ["OPENAI_API_BASE"] = MOCK_BASE_URL
     os.environ["OPENAI_MODEL_NAME"] = request_model
@@ -51,7 +50,6 @@ def run_crew():
         frequency_penalty=request_frequency_penalty,
         presence_penalty=request_presence_penalty,
     )
-    captured_completion = None
 
     @tool
     def get_weather(location: str) -> str:
@@ -104,91 +102,22 @@ def run_crew():
             "gen_ai.input.messages",
             json.dumps([{"role": "user", "parts": [{"type": "text", "content": task.description}]}]),
         )
-        span_attributes = {
-            "gen_ai.operation.name": "chat",
-            "gen_ai.provider.name": "openai",
-            "gen_ai.request.model": request_model,
-        }
-        if host:
-            span_attributes["server.address"] = host
-        if port is not None:
-            span_attributes["server.port"] = port
-        with _reference_tracer.start_as_current_span("chat gpt-4o-mini", attributes=span_attributes) as span:
-            span.set_attribute("gen_ai.request.choice.count", request_choice_count)
-            span.set_attribute("gen_ai.request.max_tokens", request_max_tokens)
-            span.set_attribute("gen_ai.request.temperature", request_temperature)
-            span.set_attribute("gen_ai.request.seed", request_seed)
-            span.set_attribute("gen_ai.request.stop_sequences", request_stop_sequences)
-            span.set_attribute("gen_ai.request.frequency_penalty", request_frequency_penalty)
-            span.set_attribute("gen_ai.request.presence_penalty", request_presence_penalty)
-            span.set_attribute("gen_ai.request.top_p", request_top_p)
-            span.set_attribute("gen_ai.system_instructions", json.dumps([{"type": "text", "content": system_prompt}]))
-            span.set_attribute(
-                "gen_ai.input.messages",
-                json.dumps([{"role": "user", "parts": [{"type": "text", "content": task.description}]}]),
-            )
-            span.set_attribute(
-                "gen_ai.tool.definitions",
-                json.dumps(
-                    [
-                        {
-                            "type": "function",
-                            "function": {
-                                "name": t.name,
-                                "description": t.func.__doc__,
-                                "parameters": t.args_schema.model_json_schema(),
-                            },
-                        }
-                        for t in tools
-                    ]
-                ),
-            )
-            original_create = researcher.llm._client.chat.completions.create
-
-            def _capture_completion(*args, **kwargs):
-                nonlocal captured_completion
-                response = original_create(*args, **kwargs)
-                captured_completion = response
-                return response
-
-            researcher.llm._client.chat.completions.create = _capture_completion
-            try:
-                result = crew.kickoff()
-            finally:
-                researcher.llm._client.chat.completions.create = original_create
-            if captured_completion is not None:
-                span.set_attribute("gen_ai.response.model", captured_completion.model)
-                span.set_attribute("gen_ai.response.id", captured_completion.id)
-                span.set_attribute(
-                    "gen_ai.response.finish_reasons",
-                    [choice.finish_reason for choice in captured_completion.choices],
-                )
-                if captured_completion.usage:
-                    span.set_attribute("gen_ai.usage.input_tokens", captured_completion.usage.prompt_tokens)
-                    span.set_attribute("gen_ai.usage.output_tokens", captured_completion.usage.completion_tokens)
-            span.set_attribute(
-                "gen_ai.output.messages",
-                json.dumps(
-                    [
-                        {
-                            "role": "assistant",
-                            "parts": [{"type": "text", "content": str(result)}],
-                        }
-                    ]
-                ),
-            )
-            workflow_span.set_attribute(
-                "gen_ai.output.messages",
-                json.dumps(
-                    [
-                        {
-                            "role": "assistant",
-                            "parts": [{"type": "text", "content": str(result)}],
-                        }
-                    ]
-                ),
-            )
-            print(f"    -> {str(result)[:60]}")
+        # CrewAI delegates the LLM call to the underlying LLM client, whose
+        # own instrumentation owns the inference span. This scenario emits only
+        # the workflow and tool operations CrewAI runs itself.
+        result = crew.kickoff()
+        workflow_span.set_attribute(
+            "gen_ai.output.messages",
+            json.dumps(
+                [
+                    {
+                        "role": "assistant",
+                        "parts": [{"type": "text", "content": str(result)}],
+                    }
+                ]
+            ),
+        )
+        print(f"    -> {str(result)[:60]}")
 
 
 def run_agent():
@@ -359,7 +288,6 @@ def _run_crew_planning_scenario(*, header, task_description):
 
     request_model = "gpt-4o-mini"
     system_prompt = "You are a helpful research assistant."
-    host, port = mock_server_host_port(MOCK_BASE_URL)
     os.environ["OPENAI_API_KEY"] = "mock-key"
     os.environ["OPENAI_API_BASE"] = MOCK_BASE_URL
     os.environ["OPENAI_MODEL_NAME"] = request_model
@@ -417,84 +345,13 @@ def _run_crew_planning_scenario(*, header, task_description):
             finally:
                 del self._create_planning_agent
 
-    # CrewAI routes the planner's structured-output call through
-    # beta.chat.completions.parse (crewai/llms/providers/openai/
-    # completion.py around line 1612); fall-through, converter, and
-    # worker calls go through chat.completions.create. Wrap both so
-    # each LLM round-trip is captured in its own chat span. Calls made
-    # while the plan span is active land under it; the worker task call
-    # lands as a sibling top-level chat span.
-    original_parse = llm._client.beta.chat.completions.parse
-    original_create = llm._client.chat.completions.create
-
-    def _emit_chat_span(call_fn, call_args, call_kwargs):
-        messages = call_kwargs.get("messages")
-        with _reference_tracer.start_as_current_span(f"chat {request_model}") as chat_span:
-            chat_span.set_attribute("gen_ai.operation.name", "chat")
-            chat_span.set_attribute("gen_ai.provider.name", "openai")
-            chat_span.set_attribute("gen_ai.request.model", request_model)
-            if host:
-                chat_span.set_attribute("server.address", host)
-            if port is not None:
-                chat_span.set_attribute("server.port", port)
-
-            if messages is not None:
-                chat_messages = [m for m in messages if m.get("role") in {"system", "user"}]
-                if chat_messages:
-                    chat_span.set_attribute(
-                        "gen_ai.input.messages",
-                        json.dumps(
-                            [
-                                {"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]}
-                                for m in chat_messages
-                            ]
-                        ),
-                    )
-
-            completion = call_fn(*call_args, **call_kwargs)
-
-            if getattr(completion, "model", None):
-                chat_span.set_attribute("gen_ai.response.model", completion.model)
-            if getattr(completion, "id", None):
-                chat_span.set_attribute("gen_ai.response.id", completion.id)
-            if getattr(completion, "choices", None):
-                chat_span.set_attribute(
-                    "gen_ai.response.finish_reasons",
-                    [choice.finish_reason for choice in completion.choices if choice.finish_reason],
-                )
-                assistant_content = completion.choices[0].message.content
-                if assistant_content:
-                    chat_span.set_attribute(
-                        "gen_ai.output.messages",
-                        json.dumps(
-                            [
-                                {
-                                    "role": "assistant",
-                                    "parts": [{"type": "text", "content": assistant_content}],
-                                }
-                            ]
-                        ),
-                    )
-            if getattr(completion, "usage", None):
-                chat_span.set_attribute("gen_ai.usage.input_tokens", completion.usage.prompt_tokens)
-                chat_span.set_attribute("gen_ai.usage.output_tokens", completion.usage.completion_tokens)
-
-            return completion
-
-    def _capture_parse(*args, **kwargs):
-        return _emit_chat_span(original_parse, args, kwargs)
-
-    def _capture_create(*args, **kwargs):
-        return _emit_chat_span(original_create, args, kwargs)
-
+    # CrewAI delegates the planner and worker LLM calls to the underlying
+    # openai client, whose own instrumentation owns those inference spans. This
+    # scenario emits only the plan operation.
     CrewPlanner._handle_crew_planning = _wrapped_handle_crew_planning
-    llm._client.beta.chat.completions.parse = _capture_parse
-    llm._client.chat.completions.create = _capture_create
     try:
         result = crew.kickoff()
     finally:
-        llm._client.beta.chat.completions.parse = original_parse
-        llm._client.chat.completions.create = original_create
         CrewPlanner._handle_crew_planning = original_handle
 
     print(f"    -> {str(result)[:60]}")

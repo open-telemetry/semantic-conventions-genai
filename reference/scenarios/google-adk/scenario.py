@@ -10,7 +10,6 @@ from opentelemetry import trace as _trace
 from opentelemetry.sdk.trace import SpanProcessor
 from reference_shared import (
     flush_and_shutdown,
-    mock_server_host_port,
     reference_meter,
     reference_tracer,
     setup_otel,
@@ -118,7 +117,6 @@ def run_agent_reference():
     request_stop_sequences = ["<END>"]
     request_presence_penalty = 0.4
     request_frequency_penalty = 0.2
-    host, port = mock_server_host_port(MOCK_BASE_URL)
 
     # Per-invocation call counts, scoped to the single agent invocation below.
     # ADK can attribute each inference/tool call to the agent that issued it,
@@ -222,93 +220,58 @@ def run_agent_reference():
                         json.dumps([{"role": "user", "parts": [{"type": "text", "content": input_text}]}]),
                     )
                     agent_span.set_attribute("gen_ai.tool.definitions", json.dumps(tool_defs))
-                    span_attributes = {
-                        "gen_ai.operation.name": "chat",
-                        "gen_ai.provider.name": "gcp.gemini",
-                        "gen_ai.request.model": request_model,
-                    }
-                    if host:
-                        span_attributes["server.address"] = host
-                    if port is not None:
-                        span_attributes["server.port"] = port
-                    with _reference_tracer.start_as_current_span(
-                        "chat gemini-2.0-flash", attributes=span_attributes
-                    ) as span:
-                        call_counts["inference"] += 1
-                        span.set_attribute("gen_ai.conversation.id", session.id)
-                        span.set_attribute("gen_ai.request.choice.count", request_choice_count)
-                        span.set_attribute("gen_ai.request.max_tokens", request_max_tokens)
-                        span.set_attribute("gen_ai.request.temperature", request_temperature)
-                        span.set_attribute("gen_ai.request.top_p", request_top_p)
-                        span.set_attribute("gen_ai.request.top_k", request_top_k)
-                        span.set_attribute("gen_ai.request.frequency_penalty", request_frequency_penalty)
-                        span.set_attribute("gen_ai.request.presence_penalty", request_presence_penalty)
-                        span.set_attribute("gen_ai.request.stop_sequences", request_stop_sequences)
-                        span.set_attribute(
-                            "gen_ai.system_instructions",
-                            json.dumps([{"type": "text", "content": agent.instruction}]),
+                    usage_metadata = None
+                    finish_reason = None
+                    last_text = ""
+                    async for event in runner.run_async(
+                        user_id="test_user",
+                        session_id=session.id,
+                        new_message=types.Content(
+                            role="user",
+                            parts=[types.Part(text=input_text)],
+                        ),
+                    ):
+                        if getattr(event, "usage_metadata", None) is not None:
+                            # Only model-response events carry usage, so this counts
+                            # one inference call per LLM round-trip.
+                            call_counts["inference"] += 1
+                            usage_metadata = event.usage_metadata
+                        event_finish_reason = getattr(event, "finish_reason", None)
+                        if isinstance(event, dict):
+                            event_finish_reason = event.get("finish_reason")
+                        if event_finish_reason is not None:
+                            finish_reason = getattr(event_finish_reason, "value", event_finish_reason)
+                        if event.content and event.content.parts:
+                            text = event.content.parts[0].text
+                            if text:
+                                last_text = text
+                                print(f"    -> {text[:60]}")
+                    if usage_metadata is not None:
+                        prompt_token_count = getattr(usage_metadata, "prompt_token_count", None)
+                        candidate_token_count = getattr(usage_metadata, "candidates_token_count", None)
+                        if isinstance(usage_metadata, dict):
+                            prompt_token_count = usage_metadata.get("prompt_token_count")
+                            candidate_token_count = usage_metadata.get("candidates_token_count")
+                        if prompt_token_count is not None:
+                            agent_span.set_attribute("gen_ai.usage.input_tokens", prompt_token_count)
+                        if candidate_token_count is not None:
+                            agent_span.set_attribute("gen_ai.usage.output_tokens", candidate_token_count)
+                    if finish_reason is not None:
+                        agent_span.set_attribute(
+                            "gen_ai.response.finish_reasons",
+                            [str(finish_reason).lower()],
                         )
-                        span.set_attribute(
-                            "gen_ai.input.messages",
-                            json.dumps([{"role": "user", "parts": [{"type": "text", "content": input_text}]}]),
+                    if last_text:
+                        output_messages = json.dumps(
+                            [
+                                {
+                                    "role": "assistant",
+                                    "parts": [{"type": "text", "content": last_text}],
+                                }
+                            ]
                         )
-                        span.set_attribute("gen_ai.tool.definitions", json.dumps(tool_defs))
-                        usage_metadata = None
-                        finish_reason = None
-                        last_text = ""
-                        async for event in runner.run_async(
-                            user_id="test_user",
-                            session_id=session.id,
-                            new_message=types.Content(
-                                role="user",
-                                parts=[types.Part(text=input_text)],
-                            ),
-                        ):
-                            if getattr(event, "usage_metadata", None) is not None:
-                                usage_metadata = event.usage_metadata
-                            event_finish_reason = getattr(event, "finish_reason", None)
-                            if isinstance(event, dict):
-                                event_finish_reason = event.get("finish_reason")
-                            if event_finish_reason is not None:
-                                finish_reason = getattr(event_finish_reason, "value", event_finish_reason)
-                            if event.content and event.content.parts:
-                                text = event.content.parts[0].text
-                                if text:
-                                    last_text = text
-                                    print(f"    -> {text[:60]}")
-                        if usage_metadata is not None:
-                            prompt_token_count = getattr(usage_metadata, "prompt_token_count", None)
-                            candidate_token_count = getattr(usage_metadata, "candidates_token_count", None)
-                            if isinstance(usage_metadata, dict):
-                                prompt_token_count = usage_metadata.get("prompt_token_count")
-                                candidate_token_count = usage_metadata.get("candidates_token_count")
-                            if prompt_token_count is not None:
-                                span.set_attribute("gen_ai.usage.input_tokens", prompt_token_count)
-                                agent_span.set_attribute("gen_ai.usage.input_tokens", prompt_token_count)
-                            if candidate_token_count is not None:
-                                span.set_attribute("gen_ai.usage.output_tokens", candidate_token_count)
-                                agent_span.set_attribute("gen_ai.usage.output_tokens", candidate_token_count)
-                        if finish_reason is not None:
-                            span.set_attribute(
-                                "gen_ai.response.finish_reasons",
-                                [str(finish_reason).lower()],
-                            )
-                            agent_span.set_attribute(
-                                "gen_ai.response.finish_reasons",
-                                [str(finish_reason).lower()],
-                            )
-                        if last_text:
-                            output_messages = json.dumps(
-                                [
-                                    {
-                                        "role": "assistant",
-                                        "parts": [{"type": "text", "content": last_text}],
-                                    }
-                                ]
-                            )
-                            span.set_attribute("gen_ai.output.messages", output_messages)
-                            agent_span.set_attribute("gen_ai.output.messages", output_messages)
-                            workflow_span.set_attribute("gen_ai.output.messages", output_messages)
+                        agent_span.set_attribute("gen_ai.output.messages", output_messages)
+                        workflow_span.set_attribute("gen_ai.output.messages", output_messages)
 
         asyncio.run(_run())
 

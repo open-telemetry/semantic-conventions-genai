@@ -5,6 +5,7 @@ requires-python = ">=3.12"
 dependencies = [
     "anthropic==0.120.1",
     "genai-reference-shared",
+    "opentelemetry-util-genai==1.0b0",
 ]
 
 [tool.uv.sources]
