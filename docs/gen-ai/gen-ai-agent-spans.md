@@ -195,11 +195,11 @@ Describes GenAI agent invocation over a remote service.
 
 The `gen_ai.operation.name` SHOULD be `invoke_agent`.
 
+Examples: OpenAI Assistants API, AWS Bedrock Agents.
+
 **Span name** SHOULD be `invoke_agent {gen_ai.agent.name}` if `gen_ai.agent.name` is readily available.
 When `gen_ai.agent.name` is not available, it SHOULD be `invoke_agent`.
 Semantic conventions for individual GenAI systems and frameworks MAY specify different span name format.
-
-Examples: OpenAI Assistants API, AWS Bedrock Agents.
 
 **Span kind** SHOULD be `CLIENT`.
 
@@ -488,11 +488,11 @@ Describes GenAI agent invocation within the same process.
 
 The `gen_ai.operation.name` SHOULD be `invoke_agent`.
 
+Examples: LangChain agents, CrewAI agents.
+
 **Span name** SHOULD be `invoke_agent {gen_ai.agent.name}` if `gen_ai.agent.name` is readily available.
 When `gen_ai.agent.name` is not available, it SHOULD be `invoke_agent`.
 Semantic conventions for individual GenAI systems and frameworks MAY specify different span name format.
-
-Examples: LangChain agents, CrewAI agents.
 
 **Span kind** SHOULD be `INTERNAL`.
 
@@ -711,7 +711,6 @@ and SHOULD be provided **at span creation time** (if provided at all):
 Represents an operation that executes a coordinated process composed of multiple agents or other operations involving generative AI.
 
 The `gen_ai.operation.name` SHOULD be `invoke_workflow`.
-**Span name** SHOULD be `invoke_workflow {gen_ai.workflow.name}`.
 
 This span SHOULD be reported by the instrumentations when they can
 reliably determine that invocation is a workflow (i.e. groups several agent
@@ -721,6 +720,8 @@ eg: Some frameworks like ADK have workflow agents that orchestrate other agents
 and report `invoke_agent` spans, so `invoke_workflow` SHOULD NOT be reported by such instrumentations.
 Conversely, frameworks like CrewAI have a distinct concept of crew (similar to workflow)
 that is separate from individual agents, so they SHOULD report `invoke_workflow` spans.
+
+**Span name** SHOULD be `invoke_workflow {gen_ai.workflow.name}`.
 
 **Span kind** SHOULD be `INTERNAL`.
 
@@ -841,9 +842,6 @@ Represents an agent planning or task decomposition phase.
 
 The `gen_ai.operation.name` SHOULD be `plan`.
 
-**Span name** SHOULD be `plan {gen_ai.agent.name}` if `gen_ai.agent.name` is readily available.
-When `gen_ai.agent.name` is not available, it SHOULD be `plan`.
-
 A plan span represents the decision phase where an agent formulates
 a strategy before executing it. The LLM call that generates the plan
 SHOULD be a child of the plan span, and the tool or task spans produced
@@ -854,6 +852,8 @@ This span SHOULD be reported by instrumentations when they can reliably determin
 that the operation being instrumented is planning or task decomposition, and SHOULD
 NOT be reported when the instrumentation cannot distinguish planning from generic
 reasoning or normal inference.
+
+**Span name** SHOULD be `plan {gen_ai.agent.name}` if `gen_ai.agent.name` is readily available. When `gen_ai.agent.name` is not available, it SHOULD be `plan`.
 
 **Span kind** SHOULD be `INTERNAL`.
 

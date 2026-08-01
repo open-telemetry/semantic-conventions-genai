@@ -35,6 +35,8 @@ Semantic Conventions for [Anthropic](https://www.anthropic.com/) client spans ex
 `gen_ai.provider.name` MUST be set to `"anthropic"` and SHOULD be provided **at span creation time**.
 
 **Span name** SHOULD be `{gen_ai.operation.name} {gen_ai.request.model}`.
+Semantic conventions for individual GenAI systems and frameworks MAY specify different span name format
+and MUST follow the overall [guidelines for span names](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.56.0/specification/trace/api.md#span).
 
 **Span kind** SHOULD be `CLIENT`.
 

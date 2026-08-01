@@ -164,10 +164,6 @@ spans:
       This span represents a client call to Generative AI model or service that generates
       a response or requests a tool call based on the input prompt.
     note: |
-      **Span name** SHOULD be `{gen_ai.operation.name} {gen_ai.request.model}`.
-      Semantic conventions for individual GenAI systems and frameworks MAY specify different span name format
-      and MUST follow the overall [guidelines for span names](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.56.0/specification/trace/api.md#span).
-
       **Span kind** SHOULD be `CLIENT` and MAY be set to `INTERNAL` on spans representing
       call to models running in the same process. It's RECOMMENDED to use `CLIENT` kind
       when the GenAI system being instrumented usually runs in a different process than its
@@ -285,7 +281,6 @@ spans:
       that generates an embeddings based on the input.
     note: |
       The `gen_ai.operation.name` SHOULD be `embeddings`.
-      **Span name** SHOULD be `{gen_ai.operation.name} {gen_ai.request.model}`.
     stability: development
     attributes:
       - ref_group: attributes.gen_ai.common
@@ -323,9 +318,6 @@ spans:
       that retrieves relevant information or context from a vector database or search system.
     note: |
       The `gen_ai.operation.name` SHOULD be `retrieval`.
-
-      **Span name** SHOULD be `{gen_ai.operation.name} {gen_ai.data_source.id}`. Semantic conventions
-      for individual GenAI providers and retrievers MAY specify different span name format.
     stability: development
     attributes:
       - ref_group: attributes.gen_ai.common
@@ -348,17 +340,14 @@ spans:
     kind: client
     name:
       note: |
-        **Span name** SHOULD be `{gen_ai.operation.name}`. Semantic conventions
-        for individual GenAI providers MAY specify a different span name format.
+        **Span name** SHOULD be `{gen_ai.operation.name}`. The response identifier is high
+        cardinality, so it is not included in the span name. Semantic conventions for individual
+        GenAI providers MAY specify a different span name format.
     brief: >
       Describes a request to a Generative AI provider that fetches a
       previously generated model response by its identifier.
     note: |
       The `gen_ai.operation.name` SHOULD be `fetch_response`.
-
-      **Span name** SHOULD be `{gen_ai.operation.name}`. The response identifier is high
-      cardinality, so it is not included in the span name. Semantic conventions for individual
-      GenAI providers MAY specify a different span name format.
 
     stability: development
     attributes:
@@ -433,8 +422,6 @@ spans:
       Use `upsert_memory` when the caller invokes a public API that may create, update, or consolidate
       memory records without the caller choosing which.
 
-      **Span name** SHOULD be `{gen_ai.operation.name}`.
-
       **Span kind** SHOULD be `CLIENT` and MAY be set to `INTERNAL` on spans representing
       calls to memory systems running in the same process. It's RECOMMENDED to use `CLIENT` kind
       when the memory system being instrumented usually runs in a different process than its
@@ -477,9 +464,6 @@ spans:
       with remote agent services.
     note: |
       The `gen_ai.operation.name` SHOULD be `create_agent`.
-
-      **Span name** SHOULD be `create_agent {gen_ai.agent.name}`.
-      Semantic conventions for individual GenAI systems and frameworks MAY specify different span name format.
     stability: development
     attributes:
       - ref_group: attributes.gen_ai.common
@@ -531,10 +515,6 @@ spans:
     note: |
       The `gen_ai.operation.name` SHOULD be `invoke_agent`.
 
-      **Span name** SHOULD be `invoke_agent {gen_ai.agent.name}` if `gen_ai.agent.name` is readily available.
-      When `gen_ai.agent.name` is not available, it SHOULD be `invoke_agent`.
-      Semantic conventions for individual GenAI systems and frameworks MAY specify different span name format.
-
       Examples: OpenAI Assistants API, AWS Bedrock Agents.
     stability: development
     attributes:
@@ -578,10 +558,6 @@ spans:
     note: |
       The `gen_ai.operation.name` SHOULD be `invoke_agent`.
 
-      **Span name** SHOULD be `invoke_agent {gen_ai.agent.name}` if `gen_ai.agent.name` is readily available.
-      When `gen_ai.agent.name` is not available, it SHOULD be `invoke_agent`.
-      Semantic conventions for individual GenAI systems and frameworks MAY specify different span name format.
-
       Examples: LangChain agents, CrewAI agents.
     stability: development
     attributes:
@@ -602,8 +578,6 @@ spans:
     brief: Describes tool execution span.
     note: |
       `gen_ai.operation.name` SHOULD be `execute_tool`.
-
-      **Span name** SHOULD be `execute_tool {gen_ai.tool.name}`.
 
       GenAI instrumentations that can instrument tool execution calls SHOULD do so,
       unless another instrumentation can reliably cover all supported tool types.
@@ -647,7 +621,6 @@ spans:
       or other operations involving generative AI.
     note: |
       The `gen_ai.operation.name` SHOULD be `invoke_workflow`.
-      **Span name** SHOULD be `invoke_workflow {gen_ai.workflow.name}`.
 
       This span SHOULD be reported by the instrumentations when they can
       reliably determine that invocation is a workflow (i.e. groups several agent
@@ -683,9 +656,6 @@ spans:
     note: |
       The `gen_ai.operation.name` SHOULD be `plan`.
 
-      **Span name** SHOULD be `plan {gen_ai.agent.name}` if `gen_ai.agent.name` is readily available.
-      When `gen_ai.agent.name` is not available, it SHOULD be `plan`.
-
       A plan span represents the decision phase where an agent formulates
       a strategy before executing it. The LLM call that generates the plan
       SHOULD be a child of the plan span, and the tool or task spans produced
@@ -715,8 +685,6 @@ span_refinements:
       and override the semantic conventions for [Gen AI Spans](gen-ai-spans.md).
     note: |
       `gen_ai.provider.name` MUST be set to `"openai"` and SHOULD be provided **at span creation time**.
-
-      **Span name** SHOULD be `{gen_ai.operation.name} {gen_ai.request.model}`.
     stability: development
     attributes:
       # TODO https://github.com/open-telemetry/weaver/pull/1407: use a shared ref_group again once note overrides are preserved.
@@ -771,8 +739,6 @@ span_refinements:
       inference is performed and no tokens are consumed by this operation.
 
       `gen_ai.provider.name` MUST be set to `"openai"` and SHOULD be provided **at span creation time**.
-
-      **Span name** SHOULD be `{gen_ai.operation.name}`.
     stability: development
     attributes:
       - ref: openai.api.type
@@ -842,8 +808,6 @@ span_refinements:
       and override the semantic conventions for [Gen AI Spans](gen-ai-spans.md).
     note: |
       `gen_ai.provider.name` MUST be set to `"anthropic"` and SHOULD be provided **at span creation time**.
-
-      **Span name** SHOULD be `{gen_ai.operation.name} {gen_ai.request.model}`.
     stability: development
     attributes:
       - ref: gen_ai.request.top_k

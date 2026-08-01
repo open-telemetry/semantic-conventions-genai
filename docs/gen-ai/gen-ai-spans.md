@@ -45,14 +45,14 @@ retries.
 
 This span represents a client call to Generative AI model or service that generates a response or requests a tool call based on the input prompt.
 
-**Span name** SHOULD be `{gen_ai.operation.name} {gen_ai.request.model}`.
-Semantic conventions for individual GenAI systems and frameworks MAY specify different span name format
-and MUST follow the overall [guidelines for span names](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.56.0/specification/trace/api.md#span).
-
 **Span kind** SHOULD be `CLIENT` and MAY be set to `INTERNAL` on spans representing
 call to models running in the same process. It's RECOMMENDED to use `CLIENT` kind
 when the GenAI system being instrumented usually runs in a different process than its
 client or when the GenAI call happens over instrumented protocol such as HTTP.
+
+**Span name** SHOULD be `{gen_ai.operation.name} {gen_ai.request.model}`.
+Semantic conventions for individual GenAI systems and frameworks MAY specify different span name format
+and MUST follow the overall [guidelines for span names](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.56.0/specification/trace/api.md#span).
 
 **Span status** SHOULD follow the [Recording Errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/general/recording-errors.md) document.
 
@@ -376,6 +376,7 @@ and SHOULD be provided **at span creation time** (if provided at all):
 Describes GenAI embeddings span - a request to a Generative AI model or service that generates an embeddings based on the input.
 
 The `gen_ai.operation.name` SHOULD be `embeddings`.
+
 **Span name** SHOULD be `{gen_ai.operation.name} {gen_ai.request.model}`.
 
 **Span kind** SHOULD be `CLIENT`.
@@ -890,8 +891,6 @@ Use `update_memory` when the caller requests modification of known existing memo
 Use `upsert_memory` when the caller invokes a public API that may create, update, or consolidate
 memory records without the caller choosing which.
 
-**Span name** SHOULD be `{gen_ai.operation.name}`.
-
 **Span kind** SHOULD be `CLIENT` and MAY be set to `INTERNAL` on spans representing
 calls to memory systems running in the same process. It's RECOMMENDED to use `CLIENT` kind
 when the memory system being instrumented usually runs in a different process than its
@@ -899,6 +898,8 @@ client or when the memory call happens over instrumented protocol such as HTTP.
 
 For `delete_memory`, lack of `gen_ai.memory.record.id` may indicate that
 the operation intends to delete all memory records in the specified store.
+
+**Span name** SHOULD be `{gen_ai.operation.name}`.
 
 **Span status** SHOULD follow the [Recording Errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/general/recording-errors.md) document.
 
@@ -1054,8 +1055,6 @@ Describes tool execution span.
 
 `gen_ai.operation.name` SHOULD be `execute_tool`.
 
-**Span name** SHOULD be `execute_tool {gen_ai.tool.name}`.
-
 GenAI instrumentations that can instrument tool execution calls SHOULD do so,
 unless another instrumentation can reliably cover all supported tool types.
 MCP tool executions may also be traced by the
@@ -1065,6 +1064,8 @@ Tools are often executed directly by application code. Application developers
 are encouraged to follow this semantic convention for tools invoked by their
 own code and to manually instrument any tool calls that automatic
 instrumentations do not cover.
+
+**Span name** SHOULD be `execute_tool {gen_ai.tool.name}`.
 
 **Span kind** SHOULD be `INTERNAL`.
 

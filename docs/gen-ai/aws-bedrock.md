@@ -27,6 +27,10 @@ Semantic Conventions for [AWS Bedrock](https://aws.amazon.com/bedrock/) client s
 
 `gen_ai.provider.name` MUST be set to `"aws.bedrock"` and SHOULD be provided **at span creation time**.
 
+**Span name** SHOULD be `{gen_ai.operation.name} {gen_ai.request.model}`.
+Semantic conventions for individual GenAI systems and frameworks MAY specify different span name format
+and MUST follow the overall [guidelines for span names](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.56.0/specification/trace/api.md#span).
+
 **Span kind** SHOULD be `CLIENT`.
 
 **Span status** SHOULD follow the [Recording Errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/general/recording-errors.md) document.
