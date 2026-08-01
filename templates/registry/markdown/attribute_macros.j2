@@ -30,7 +30,7 @@
    upstream registry page. #}
 {% macro name_with_link(attribute, attribute_registry_base_url, upstream_docs_base) -%}
 {%- set ns_id = name(attribute) | trim | split_id | first -%}
-[`{{ name(attribute) | trim }}`]({% if attribute.provenance and attribute.provenance.path %}{{ attribute_registry_base_url }}/{{ ns_id | kebab_case }}.md{% else %}{{ upstream_docs_base }}/docs/registry/attributes/{{ ns_id | kebab_case }}.md{% endif %})
+[`{{ name(attribute) | trim }}`]({% if attribute.provenance.path %}{{ attribute_registry_base_url }}/{{ ns_id | kebab_case }}.md{% else %}{{ upstream_docs_base }}/docs/registry/attributes/{{ ns_id | kebab_case }}.md{% endif %})
 {%- endmacro %}
 
 {% macro heading_link_fragments(title) %}{{ title | trim | lower | replace(" ", "-") | replace("(", "") | replace(")", "") | replace("/", "") | replace("\\", "") | replace(".", "") | replace("!", "") | replace("?", "") | replace("~", "") | replace("#", "")}}{% endmacro %}

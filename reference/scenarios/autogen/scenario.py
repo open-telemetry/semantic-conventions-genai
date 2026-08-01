@@ -10,7 +10,6 @@ import time
 from reference_shared import (
     flush_and_shutdown,
     mock_server_host_port,
-    reference_event_logger,
     reference_tracer,
     setup_otel,
 )
@@ -162,114 +161,56 @@ def run_agent_reference():
                     json.dumps([{"role": "user", "parts": [{"type": "text", "content": input_text}]}]),
                 )
                 agent_span.set_attribute("gen_ai.tool.definitions", json.dumps(tool_defs))
-                host, port = mock_server_host_port(MOCK_BASE_URL)
-                span_attributes_3 = {
-                    "gen_ai.operation.name": "chat",
-                    "gen_ai.provider.name": "openai",
-                    "gen_ai.request.model": request_model,
-                }
-                if host:
-                    span_attributes_3["server.address"] = host
-                if port is not None:
-                    span_attributes_3["server.port"] = port
-                with _reference_tracer.start_as_current_span("chat gpt-4o-mini", attributes=span_attributes_3) as span:
-                    span.set_attribute("gen_ai.request.seed", request_seed)
-                    span.set_attribute("gen_ai.request.max_tokens", request_max_tokens)
-                    span.set_attribute("gen_ai.request.temperature", request_temperature)
-                    span.set_attribute("gen_ai.request.top_p", request_top_p)
-                    span.set_attribute("gen_ai.request.stop_sequences", request_stop_sequences)
-                    span.set_attribute("gen_ai.request.frequency_penalty", request_frequency_penalty)
-                    span.set_attribute("gen_ai.request.presence_penalty", request_presence_penalty)
-                    span.set_attribute(
-                        "gen_ai.system_instructions",
-                        json.dumps([{"type": "text", "content": system_message}]),
-                    )
-                    span.set_attribute(
-                        "gen_ai.input.messages",
-                        json.dumps([{"role": "user", "parts": [{"type": "text", "content": input_text}]}]),
-                    )
-                    span.set_attribute("gen_ai.tool.definitions", json.dumps(tool_defs))
-                    original_create = model_client.create
+                # AutoGen delegates the LLM call to the underlying openai client,
+                # whose own instrumentation owns the inference span and the
+                # inference-operation-details event. This scenario emits only the
+                # agent operations; it captures the model response to populate the
+                # invoke_agent span's response attributes.
+                original_create = model_client.create
 
-                    async def _capture_create(messages, **kwargs):
-                        result = await original_create(messages, **kwargs)
-                        captured_results.append(result)
-                        return result
+                async def _capture_create(messages, **kwargs):
+                    result = await original_create(messages, **kwargs)
+                    captured_results.append(result)
+                    return result
 
-                    model_client.create = _capture_create
-                    try:
-                        response = await agent.on_messages(
-                            [TextMessage(content=input_text, source="user")],
-                            cancellation_token=CancellationToken(),
-                        )
-                    finally:
-                        model_client.create = original_create
-                    finish_reasons = [result.finish_reason for result in captured_results if result.finish_reason]
-                    if finish_reasons:
-                        agent_span.set_attribute("gen_ai.response.finish_reasons", finish_reasons)
-                    if captured_results:
-                        last_result = captured_results[-1]
-                        if getattr(last_result, "model", None):
-                            agent_span.set_attribute("gen_ai.response.model", last_result.model)
-                        if getattr(last_result, "id", None):
-                            agent_span.set_attribute("gen_ai.response.id", last_result.id)
-                    total_input_tokens = sum(
-                        result.usage.prompt_tokens
-                        for result in captured_results
-                        if getattr(result, "usage", None) is not None
+                model_client.create = _capture_create
+                try:
+                    response = await agent.on_messages(
+                        [TextMessage(content=input_text, source="user")],
+                        cancellation_token=CancellationToken(),
                     )
-                    total_output_tokens = sum(
-                        result.usage.completion_tokens
-                        for result in captured_results
-                        if getattr(result, "usage", None) is not None
-                    )
-                    if total_input_tokens:
-                        agent_span.set_attribute("gen_ai.usage.input_tokens", total_input_tokens)
-                    if total_output_tokens:
-                        agent_span.set_attribute("gen_ai.usage.output_tokens", total_output_tokens)
-                    output_messages = json.dumps(
-                        [
-                            {
-                                "role": "assistant",
-                                "parts": [{"type": "text", "content": str(response.chat_message.content)}],
-                            }
-                        ]
-                    )
-                    span.set_attribute(
-                        "gen_ai.output.messages",
-                        output_messages,
-                    )
-                    agent_span.set_attribute(
-                        "gen_ai.output.messages",
-                        output_messages,
-                    )
-                    event_attrs = {
-                        "gen_ai.operation.name": "invoke_agent",
-                        "gen_ai.request.model": request_model,
-                        "gen_ai.system_instructions": json.dumps([{"type": "text", "content": system_message}]),
-                        "gen_ai.input.messages": json.dumps(
-                            [
-                                {"role": "user", "parts": [{"type": "text", "content": input_text}]},
-                            ]
-                        ),
-                        "gen_ai.output.messages": output_messages,
-                    }
-                    if finish_reasons:
-                        event_attrs["gen_ai.response.finish_reasons"] = finish_reasons
-                    if total_input_tokens:
-                        event_attrs["gen_ai.usage.input_tokens"] = total_input_tokens
-                    if total_output_tokens:
-                        event_attrs["gen_ai.usage.output_tokens"] = total_output_tokens
-                    if host:
-                        event_attrs["server.address"] = host
-                    if port is not None:
-                        event_attrs["server.port"] = port
-                    reference_event_logger().emit(
-                        event_name="gen_ai.client.inference.operation.details",
-                        body="Inference operation details",
-                        attributes=event_attrs,
-                    )
-                    print(f"    -> {str(response.chat_message.content)[:60]}")
+                finally:
+                    model_client.create = original_create
+                finish_reasons = [result.finish_reason for result in captured_results if result.finish_reason]
+                if finish_reasons:
+                    agent_span.set_attribute("gen_ai.response.finish_reasons", finish_reasons)
+                total_input_tokens = sum(
+                    result.usage.prompt_tokens
+                    for result in captured_results
+                    if getattr(result, "usage", None) is not None
+                )
+                total_output_tokens = sum(
+                    result.usage.completion_tokens
+                    for result in captured_results
+                    if getattr(result, "usage", None) is not None
+                )
+                if total_input_tokens:
+                    agent_span.set_attribute("gen_ai.usage.input_tokens", total_input_tokens)
+                if total_output_tokens:
+                    agent_span.set_attribute("gen_ai.usage.output_tokens", total_output_tokens)
+                output_messages = json.dumps(
+                    [
+                        {
+                            "role": "assistant",
+                            "parts": [{"type": "text", "content": str(response.chat_message.content)}],
+                        }
+                    ]
+                )
+                agent_span.set_attribute(
+                    "gen_ai.output.messages",
+                    output_messages,
+                )
+                print(f"    -> {str(response.chat_message.content)[:60]}")
 
         asyncio.run(_run())
     finally:
@@ -278,66 +219,12 @@ def run_agent_reference():
         _tool_base.trace_tool_span = previous_tool_span
 
 
-def run_chat_tool_call_reference():
-    """Scenario: chat with tool calling with reference implementation."""
-    import openai
-
-    print("  [chat_tool_call] chat with tool calling (reference implementation)")
-    request_model = "gpt-4o-mini"
-    request_tool = {
-        "type": "function",
-        "function": {
-            "name": "get_weather",
-            "description": "Get the current weather",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "location": {"type": "string", "description": "City name"},
-                },
-                "required": ["location"],
-            },
-        },
-    }
-    tools = [request_tool]
-
-    client = openai.OpenAI(base_url=MOCK_BASE_URL, api_key="mock-key")
-    host, port = mock_server_host_port(MOCK_BASE_URL)
-    span_attributes = {
-        "gen_ai.operation.name": "chat",
-        "gen_ai.provider.name": "openai",
-        "gen_ai.request.model": request_model,
-    }
-    if host:
-        span_attributes["server.address"] = host
-    if port is not None:
-        span_attributes["server.port"] = port
-    with _reference_tracer.start_as_current_span("chat gpt-4o-mini", attributes=span_attributes) as span:
-        span.set_attribute("gen_ai.tool.definitions", json.dumps(tools))
-        resp = client.chat.completions.create(
-            model=request_model,
-            messages=[{"role": "user", "content": "What's the weather in Seattle?"}],
-            tools=tools,
-        )
-        span.set_attribute("gen_ai.response.model", resp.model)
-        span.set_attribute("gen_ai.response.id", resp.id)
-        span.set_attribute("gen_ai.response.finish_reasons", [c.finish_reason for c in resp.choices])
-        if resp.usage:
-            span.set_attribute("gen_ai.usage.input_tokens", resp.usage.prompt_tokens)
-            span.set_attribute("gen_ai.usage.output_tokens", resp.usage.completion_tokens)
-        choice = resp.choices[0]
-        if choice.message.tool_calls:
-            print(f"    -> tool_call: {choice.message.tool_calls[0].function.name}")
-        else:
-            print(f"    -> {choice.message.content[:60]}")
-
-
 def main():
     print("=== Reference Implementation: AutoGen Reference Implementation ===")
 
     tp, lp, mp = setup_otel()
 
     run_agent_reference()
-    run_chat_tool_call_reference()
 
     time.sleep(2)
 
