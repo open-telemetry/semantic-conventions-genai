@@ -340,17 +340,14 @@ spans:
     kind: client
     name:
       note: |
-        **Span name** SHOULD be `{gen_ai.operation.name}`. Semantic conventions
-        for individual GenAI providers MAY specify a different span name format.
+        **Span name** SHOULD be `{gen_ai.operation.name}`. The response identifier is high
+        cardinality, so it is not included in the span name. Semantic conventions for individual
+        GenAI providers MAY specify a different span name format.
     brief: >
       Describes a request to a Generative AI provider that fetches a
       previously generated model response by its identifier.
     note: |
       The `gen_ai.operation.name` SHOULD be `fetch_response`.
-
-      **Span name** SHOULD be `{gen_ai.operation.name}`. The response identifier is high
-      cardinality, so it is not included in the span name. Semantic conventions for individual
-      GenAI providers MAY specify a different span name format.
 
     stability: development
     attributes:
@@ -683,9 +680,6 @@ spans:
 span_refinements:
   - id: openai.inference.client
     ref: gen_ai.inference.client
-    name:
-      note: >
-        **Span name** SHOULD be `{gen_ai.operation.name} {gen_ai.request.model}`.
     brief: >
       Semantic Conventions for [OpenAI](https://openai.com/) client spans extend
       and override the semantic conventions for [Gen AI Spans](gen-ai-spans.md).
@@ -745,8 +739,6 @@ span_refinements:
       inference is performed and no tokens are consumed by this operation.
 
       `gen_ai.provider.name` MUST be set to `"openai"` and SHOULD be provided **at span creation time**.
-
-      **Span name** SHOULD be `{gen_ai.operation.name}`.
     stability: development
     attributes:
       - ref: openai.api.type
@@ -811,9 +803,6 @@ span_refinements:
 
   - id: anthropic.inference.client
     ref: gen_ai.inference.client
-    name:
-      note: >
-        **Span name** SHOULD be `{gen_ai.operation.name} {gen_ai.request.model}`.
     brief: >
       Semantic Conventions for [Anthropic](https://www.anthropic.com/) client spans extend
       and override the semantic conventions for [Gen AI Spans](gen-ai-spans.md).
