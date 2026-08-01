@@ -43,6 +43,8 @@ def _patch_automatic_function_calling():
                 "gen_ai.tool.type": "function",
             }
             description = (getattr(func, "__doc__", "") or "").strip().splitlines()
+            if description:
+                tool_span_attributes["gen_ai.tool.description"] = description[0]
             with _reference_tracer.start_as_current_span(
                 f"execute_tool {call.name}", attributes=tool_span_attributes
             ) as tool_span:
