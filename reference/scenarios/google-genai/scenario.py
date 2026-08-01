@@ -35,14 +35,14 @@ def _patch_automatic_function_calling():
             if not call or not call.name:
                 continue
             func = function_map.get(call.name)
+            if func is None:
+                continue
             tool_span_attributes = {
                 "gen_ai.operation.name": "execute_tool",
                 "gen_ai.tool.name": call.name,
                 "gen_ai.tool.type": "function",
             }
-            description = (getattr(func, "__doc__", None) or "").strip().splitlines()
-            if description:
-                tool_span_attributes["gen_ai.tool.description"] = description[0]
+            description = (getattr(func, "__doc__", "") or "").strip().splitlines()
             with _reference_tracer.start_as_current_span(
                 f"execute_tool {call.name}", attributes=tool_span_attributes
             ) as tool_span:
