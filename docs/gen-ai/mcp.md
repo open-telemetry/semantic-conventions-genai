@@ -158,36 +158,30 @@ to avoid high cardinality span names.
 | Key | Stability | [Requirement Level](https://opentelemetry.io/docs/specs/semconv/general/attribute-requirement-level/) | Value Type | Description | Example Values |
 | --- | --- | --- | --- | --- | --- |
 | [`mcp.method.name`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Required` | string | The name of the request or notification method. | `notifications/cancelled`; `initialize`; `notifications/initialized` |
-| [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/error.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` [1] | string | Describes a class of error the operation ended with. [2] | `timeout`; `java.net.UnknownHostException`; `server_certificate_invalid`; `500` |
+| [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/error.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If and only if the operation fails. | string | Describes a class of error the operation ended with. [1] | `timeout`; `java.net.UnknownHostException`; `server_certificate_invalid`; `500` |
 | [`gen_ai.prompt.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When operation is related to a specific prompt. | string | The name of the prompt or prompt template provided in the request or response. | `analyze-code` |
 | [`gen_ai.tool.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When operation is related to a specific tool. | string | Name of the tool utilized by the agent. | `Flights` |
-| [`jsonrpc.request.id`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/jsonrpc.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When the client executes a request. | string | A string representation of the `id` property of the request and its corresponding response. [3] | `10`; `request-7` |
-| [`mcp.resource.uri`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [4] | string | The value of the resource uri. [5] | `postgres://database/customers/schema`; `file:///home/user/documents/report.pdf` |
-| [`rpc.response.status_code`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/rpc.md) | ![Release Candidate](https://img.shields.io/badge/-rc-mediumorchid) | `Conditionally Required` If response contains an error code. | string | The error code from the JSON-RPC response. [6] | `OK`; `DEADLINE_EXCEEDED`; `-32602` |
-| [`gen_ai.operation.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` [7] | string | The name of the GenAI operation being performed. [8] | `execute_tool` |
+| [`jsonrpc.request.id`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/jsonrpc.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When the client executes a request. | string | A string representation of the `id` property of the request and its corresponding response. [2] | `10`; `request-7` |
+| [`mcp.resource.uri`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [3] | string | The value of the resource uri. [4] | `postgres://database/customers/schema`; `file:///home/user/documents/report.pdf` |
+| [`rpc.response.status_code`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/rpc.md) | ![Release Candidate](https://img.shields.io/badge/-rc-mediumorchid) | `Conditionally Required` If response contains an error code. | string | The error code from the JSON-RPC response. [5] | `OK`; `DEADLINE_EXCEEDED`; `-32602` |
+| [`gen_ai.operation.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` [6] | string | The name of the GenAI operation being performed. [7] | `execute_tool` |
 | [`jsonrpc.protocol.version`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/jsonrpc.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` When it's not `2.0`. | string | Protocol version, as specified in the `jsonrpc` property of the request and its corresponding response. | `2.0`; `1.0` |
 | [`mcp.protocol.version`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The [version](https://modelcontextprotocol.io/specification/versioning) of the Model Context Protocol used. | `2025-06-18` |
-| [`mcp.session.id`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` [9] | string | Identifies [MCP session](https://modelcontextprotocol.io/specification/2025-06-18/basic/transports#session-management). | `191c4850af6c49e08843a3f6c80e5046` |
-| [`network.protocol.name`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When applicable. | string | [OSI application layer](https://wikipedia.org/wiki/Application_layer) or non-OSI equivalent. [10] | `http`; `websocket` |
+| [`mcp.session.id`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` [8] | string | Identifies [MCP session](https://modelcontextprotocol.io/specification/2025-06-18/basic/transports#session-management). | `191c4850af6c49e08843a3f6c80e5046` |
+| [`network.protocol.name`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When applicable. | string | [OSI application layer](https://wikipedia.org/wiki/Application_layer) or non-OSI equivalent. [9] | `http`; `websocket` |
 | [`network.protocol.version`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When applicable. | string | The actual version of the protocol used for network communication. | `1.1`; `2` |
-| [`network.transport`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | The transport protocol used for the MCP session. [11] | `tcp`; `quic`; `pipe` |
-| [`server.address`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` If applicable. | string | Server domain name if available without reverse DNS lookup; otherwise, IP address or Unix domain socket name. [12] | `example.com`; `10.1.2.80`; `/tmp/my.sock` |
-| [`server.port`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When `server.address` is set. | int | Server port number. [13] | `80`; `8080`; `443` |
-| [`gen_ai.prompt.variable`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | string | The variables supplied to the prompt template in the request. [14] | `Alice`; `French` |
-| [`gen_ai.tool.call.arguments`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | Parameters passed to the tool call. [15] | {<br>&nbsp;&nbsp;&nbsp;&nbsp;"location": "San Francisco?",<br>&nbsp;&nbsp;&nbsp;&nbsp;"date": "2025-10-01"<br>} |
-| [`gen_ai.tool.call.result`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | The result returned by the tool call (if any and if execution was successful). [16] | {<br>&nbsp;&nbsp;"temperature_range": {<br>&nbsp;&nbsp;&nbsp;&nbsp;"high": 75,<br>&nbsp;&nbsp;&nbsp;&nbsp;"low": 60<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;"conditions": "sunny"<br>} |
+| [`network.transport`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | The transport protocol used for the MCP session. [10] | `tcp`; `quic`; `pipe` |
+| [`server.address`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` If applicable. | string | Server domain name if available without reverse DNS lookup; otherwise, IP address or Unix domain socket name. [11] | `example.com`; `10.1.2.80`; `/tmp/my.sock` |
+| [`server.port`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When `server.address` is set. | int | Server port number. [12] | `80`; `8080`; `443` |
+| [`gen_ai.prompt.variable`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | string | The variables supplied to the prompt template in the request. [13] | `Alice`; `French` |
+| [`gen_ai.tool.call.arguments`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | Parameters passed to the tool call. [14] | {<br>&nbsp;&nbsp;&nbsp;&nbsp;"location": "San Francisco?",<br>&nbsp;&nbsp;&nbsp;&nbsp;"date": "2025-10-01"<br>} |
+| [`gen_ai.tool.call.result`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | The result returned by the tool call (if any and if execution was successful). [15] | {<br>&nbsp;&nbsp;"temperature_range": {<br>&nbsp;&nbsp;&nbsp;&nbsp;"high": 75,<br>&nbsp;&nbsp;&nbsp;&nbsp;"low": 60<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;"conditions": "sunny"<br>} |
 
-**[1] `error.type`:** On the client side, if and only if the operation fails. On the server side, if and only if the operation fails with a server-side error, an error reported in the result payload, a timeout, or a transport error.
-
-**[2] `error.type`:** On the client side, `error.type` SHOULD be set for any failed request or error
-response, including both client-side and server-side errors.
-
-On the server side, `error.type` SHOULD NOT be set for client-side errors. See
-`rpc.response.status_code` for which error codes are considered server-side.
-
-When `error.type` is set, it SHOULD be set to the string representation of the JSON-RPC
-error code, if one is returned. Otherwise (for example on timeouts or transport errors)
-it SHOULD be set following the [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/error.md)
+**[1] `error.type`:** When the response carries a JSON-RPC error code that classifies as an error,
+`error.type` SHOULD be set to the string representation of that code. See
+`rpc.response.status_code` for which codes classify as errors. Otherwise
+(for example on timeouts or transport errors) it SHOULD be set following the
+[`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/error.md)
 guidance.
 
 When JSON-RPC call is successful, but an error is returned within the
@@ -197,31 +191,31 @@ string representation of the error. When
 is returned with `isError` set to `true`, this attribute SHOULD be set to
 `tool_error`.
 
-**[3] `jsonrpc.request.id`:** Under the [JSON-RPC specification](https://www.jsonrpc.org/specification), the `id` property may be a string, number, null, or omitted entirely. When omitted, the request is treated as a notification. Using `null` is not equivalent to omitting the `id`, but it is discouraged.
+**[2] `jsonrpc.request.id`:** Under the [JSON-RPC specification](https://www.jsonrpc.org/specification), the `id` property may be a string, number, null, or omitted entirely. When omitted, the request is treated as a notification. Using `null` is not equivalent to omitting the `id`, but it is discouraged.
 Instrumentations SHOULD NOT capture this attribute when the `id` is `null` or omitted.
 
-**[4] `mcp.resource.uri`:** When the client executes a request type that includes a resource URI parameter.
+**[3] `mcp.resource.uri`:** When the client executes a request type that includes a resource URI parameter.
 
-**[5] `mcp.resource.uri`:** This is a URI of the resource provided in the following requests or notifications: `resources/read`, `resources/subscribe`, `resources/unsubscribe`, or `notifications/resources/updated`.
+**[4] `mcp.resource.uri`:** This is a URI of the resource provided in the following requests or notifications: `resources/read`, `resources/subscribe`, `resources/unsubscribe`, or `notifications/resources/updated`.
 
-**[6] `rpc.response.status_code`:** All JSON-RPC error codes SHOULD be considered errors.
+**[5] `rpc.response.status_code`:** All JSON-RPC error codes SHOULD be considered errors.
 
-**[7] `gen_ai.operation.name`:** SHOULD be set to `execute_tool` when the operation describes a tool call and SHOULD NOT be set otherwise.
+**[6] `gen_ai.operation.name`:** SHOULD be set to `execute_tool` when the operation describes a tool call and SHOULD NOT be set otherwise.
 
-**[8] `gen_ai.operation.name`:** Populating this attribute for tool calling along with `mcp.method.name` allows consumers to treat MCP tool calls spans similarly with other tool call types.
+**[7] `gen_ai.operation.name`:** Populating this attribute for tool calling along with `mcp.method.name` allows consumers to treat MCP tool calls spans similarly with other tool call types.
 
-**[9] `mcp.session.id`:** When the MCP request or notification is part of a session.
+**[8] `mcp.session.id`:** When the MCP request or notification is part of a session.
 
-**[10] `network.protocol.name`:** The value SHOULD be normalized to lowercase.
+**[9] `network.protocol.name`:** The value SHOULD be normalized to lowercase.
 
-**[11] `network.transport`:** This attribute SHOULD be set to `tcp` or `quic` if the transport protocol
+**[10] `network.transport`:** This attribute SHOULD be set to `tcp` or `quic` if the transport protocol
 is HTTP. It SHOULD be set to `pipe` if the transport is stdio.
 
-**[12] `server.address`:** When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent the server address behind any intermediaries, for example proxies, if it's available.
+**[11] `server.address`:** When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent the server address behind any intermediaries, for example proxies, if it's available.
 
-**[13] `server.port`:** When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries, for example proxies, if it's available.
+**[12] `server.port`:** When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries, for example proxies, if it's available.
 
-**[14] `gen_ai.prompt.variable`:** Prompt templates are parameterized with variables that are filled in
+**[13] `gen_ai.prompt.variable`:** Prompt templates are parameterized with variables that are filled in
 at runtime. This attribute records the variable values passed to the
 template. The attribute name defines the variable name, and the
 attribute value is the variable value serialized as a string.
@@ -240,7 +234,7 @@ supplied in `prompts/get` requests SHOULD be recorded as
 > [!Warning]
 > This attribute may contain sensitive information.
 
-**[15] `gen_ai.tool.call.arguments`:**
+**[14] `gen_ai.tool.call.arguments`:**
 
 > [!WARNING]
 > This attribute may contain sensitive information.
@@ -253,7 +247,7 @@ Instrumentations MUST follow [JSON schema](/model/gen-ai/gen-ai-tool-call-argume
 
 When the attribute is recorded on events, it MUST be recorded in structured form. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
 
-**[16] `gen_ai.tool.call.result`:**
+**[15] `gen_ai.tool.call.result`:**
 
 > [!WARNING]
 > This attribute may contain sensitive information.
@@ -288,7 +282,7 @@ When the attribute is recorded on events, it MUST be recorded in structured form
 | `delete_memory_store` | Delete or deprovision a memory store | ![Development](https://img.shields.io/badge/-development-blue) |
 | `embeddings` | Embeddings operation such as [OpenAI Create embeddings API](https://platform.openai.com/docs/api-reference/embeddings/create) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `execute_tool` | Execute a tool | ![Development](https://img.shields.io/badge/-development-blue) |
-| `fetch_response` | Fetch a previously generated model response by its identifier, without performing inference, such as [OpenAI Get a model response](https://platform.openai.com/docs/api-reference/responses/get) [17] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `fetch_response` | Fetch a previously generated model response by its identifier, without performing inference, such as [OpenAI Get a model response](https://platform.openai.com/docs/api-reference/responses/get) [16] | ![Development](https://img.shields.io/badge/-development-blue) |
 | `generate_content` | Multimodal content generation operation such as [Gemini Generate Content](https://ai.google.dev/api/generate-content) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `invoke_agent` | Invoke GenAI agent | ![Development](https://img.shields.io/badge/-development-blue) |
 | `invoke_workflow` | Invoke GenAI workflow | ![Development](https://img.shields.io/badge/-development-blue) |
@@ -299,7 +293,7 @@ When the attribute is recorded on events, it MUST be recorded in structured form
 | `update_memory` | Update existing memory records | ![Development](https://img.shields.io/badge/-development-blue) |
 | `upsert_memory` | Create or update memory records without the caller choosing which | ![Development](https://img.shields.io/badge/-development-blue) |
 
-**[17]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
+**[16]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
 
 ---
 
@@ -387,36 +381,30 @@ to avoid high cardinality span names.
 | Key | Stability | [Requirement Level](https://opentelemetry.io/docs/specs/semconv/general/attribute-requirement-level/) | Value Type | Description | Example Values |
 | --- | --- | --- | --- | --- | --- |
 | [`mcp.method.name`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Required` | string | The name of the request or notification method. | `notifications/cancelled`; `initialize`; `notifications/initialized` |
-| [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/error.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` [1] | string | Describes a class of error the operation ended with. [2] | `timeout`; `java.net.UnknownHostException`; `server_certificate_invalid`; `500` |
+| [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/error.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If and only if the operation fails. | string | Describes a class of error the operation ended with. [1] | `timeout`; `java.net.UnknownHostException`; `server_certificate_invalid`; `500` |
 | [`gen_ai.prompt.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When operation is related to a specific prompt. | string | The name of the prompt or prompt template provided in the request or response. | `analyze-code` |
 | [`gen_ai.tool.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When operation is related to a specific tool. | string | Name of the tool utilized by the agent. | `Flights` |
-| [`jsonrpc.request.id`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/jsonrpc.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When the client executes a request. | string | A string representation of the `id` property of the request and its corresponding response. [3] | `10`; `request-7` |
-| [`mcp.resource.uri`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [4] | string | The value of the resource uri. [5] | `postgres://database/customers/schema`; `file:///home/user/documents/report.pdf` |
-| [`rpc.response.status_code`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/rpc.md) | ![Release Candidate](https://img.shields.io/badge/-rc-mediumorchid) | `Conditionally Required` If response contains an error code. | string | The error code from the JSON-RPC response. [6] | `OK`; `DEADLINE_EXCEEDED`; `-32602` |
-| [`client.address`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/client.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` If applicable. | string | Client address - domain name if available without reverse DNS lookup; otherwise, IP address or Unix domain socket name. [7] | `client.example.com`; `10.1.2.80`; `/tmp/my.sock` |
-| [`client.port`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/client.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When `client.address` is set. | int | Client port number. [8] | `65123` |
-| [`gen_ai.operation.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` [9] | string | The name of the GenAI operation being performed. [10] | `execute_tool` |
+| [`jsonrpc.request.id`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/jsonrpc.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When the client executes a request. | string | A string representation of the `id` property of the request and its corresponding response. [2] | `10`; `request-7` |
+| [`mcp.resource.uri`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [3] | string | The value of the resource uri. [4] | `postgres://database/customers/schema`; `file:///home/user/documents/report.pdf` |
+| [`rpc.response.status_code`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/rpc.md) | ![Release Candidate](https://img.shields.io/badge/-rc-mediumorchid) | `Conditionally Required` If response contains an error code. | string | The error code from the JSON-RPC response. [5] | `OK`; `DEADLINE_EXCEEDED`; `-32602` |
+| [`client.address`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/client.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` If applicable. | string | Client address - domain name if available without reverse DNS lookup; otherwise, IP address or Unix domain socket name. [6] | `client.example.com`; `10.1.2.80`; `/tmp/my.sock` |
+| [`client.port`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/client.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When `client.address` is set. | int | Client port number. [7] | `65123` |
+| [`gen_ai.operation.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` [8] | string | The name of the GenAI operation being performed. [9] | `execute_tool` |
 | [`jsonrpc.protocol.version`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/jsonrpc.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` When it's not `2.0`. | string | Protocol version, as specified in the `jsonrpc` property of the request and its corresponding response. | `2.0`; `1.0` |
 | [`mcp.protocol.version`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The [version](https://modelcontextprotocol.io/specification/versioning) of the Model Context Protocol used. | `2025-06-18` |
-| [`mcp.session.id`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` [11] | string | Identifies [MCP session](https://modelcontextprotocol.io/specification/2025-06-18/basic/transports#session-management). | `191c4850af6c49e08843a3f6c80e5046` |
-| [`network.protocol.name`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When applicable. | string | [OSI application layer](https://wikipedia.org/wiki/Application_layer) or non-OSI equivalent. [12] | `http`; `websocket` |
+| [`mcp.session.id`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` [10] | string | Identifies [MCP session](https://modelcontextprotocol.io/specification/2025-06-18/basic/transports#session-management). | `191c4850af6c49e08843a3f6c80e5046` |
+| [`network.protocol.name`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When applicable. | string | [OSI application layer](https://wikipedia.org/wiki/Application_layer) or non-OSI equivalent. [11] | `http`; `websocket` |
 | [`network.protocol.version`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When applicable. | string | The actual version of the protocol used for network communication. | `1.1`; `2` |
-| [`network.transport`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | The transport protocol used for the MCP session. [13] | `tcp`; `quic`; `pipe` |
-| [`gen_ai.prompt.variable`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | string | The variables supplied to the prompt template in the request. [14] | `Alice`; `French` |
-| [`gen_ai.tool.call.arguments`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | Parameters passed to the tool call. [15] | {<br>&nbsp;&nbsp;&nbsp;&nbsp;"location": "San Francisco?",<br>&nbsp;&nbsp;&nbsp;&nbsp;"date": "2025-10-01"<br>} |
-| [`gen_ai.tool.call.result`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | The result returned by the tool call (if any and if execution was successful). [16] | {<br>&nbsp;&nbsp;"temperature_range": {<br>&nbsp;&nbsp;&nbsp;&nbsp;"high": 75,<br>&nbsp;&nbsp;&nbsp;&nbsp;"low": 60<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;"conditions": "sunny"<br>} |
+| [`network.transport`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | The transport protocol used for the MCP session. [12] | `tcp`; `quic`; `pipe` |
+| [`gen_ai.prompt.variable`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | string | The variables supplied to the prompt template in the request. [13] | `Alice`; `French` |
+| [`gen_ai.tool.call.arguments`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | Parameters passed to the tool call. [14] | {<br>&nbsp;&nbsp;&nbsp;&nbsp;"location": "San Francisco?",<br>&nbsp;&nbsp;&nbsp;&nbsp;"date": "2025-10-01"<br>} |
+| [`gen_ai.tool.call.result`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | The result returned by the tool call (if any and if execution was successful). [15] | {<br>&nbsp;&nbsp;"temperature_range": {<br>&nbsp;&nbsp;&nbsp;&nbsp;"high": 75,<br>&nbsp;&nbsp;&nbsp;&nbsp;"low": 60<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;"conditions": "sunny"<br>} |
 
-**[1] `error.type`:** On the client side, if and only if the operation fails. On the server side, if and only if the operation fails with a server-side error, an error reported in the result payload, a timeout, or a transport error.
-
-**[2] `error.type`:** On the client side, `error.type` SHOULD be set for any failed request or error
-response, including both client-side and server-side errors.
-
-On the server side, `error.type` SHOULD NOT be set for client-side errors. See
-`rpc.response.status_code` for which error codes are considered server-side.
-
-When `error.type` is set, it SHOULD be set to the string representation of the JSON-RPC
-error code, if one is returned. Otherwise (for example on timeouts or transport errors)
-it SHOULD be set following the [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/error.md)
+**[1] `error.type`:** When the response carries a JSON-RPC error code that classifies as an error,
+`error.type` SHOULD be set to the string representation of that code. See
+`rpc.response.status_code` for which codes classify as errors. Otherwise
+(for example on timeouts or transport errors) it SHOULD be set following the
+[`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/error.md)
 guidance.
 
 When JSON-RPC call is successful, but an error is returned within the
@@ -426,14 +414,14 @@ string representation of the error. When
 is returned with `isError` set to `true`, this attribute SHOULD be set to
 `tool_error`.
 
-**[3] `jsonrpc.request.id`:** Under the [JSON-RPC specification](https://www.jsonrpc.org/specification), the `id` property may be a string, number, null, or omitted entirely. When omitted, the request is treated as a notification. Using `null` is not equivalent to omitting the `id`, but it is discouraged.
+**[2] `jsonrpc.request.id`:** Under the [JSON-RPC specification](https://www.jsonrpc.org/specification), the `id` property may be a string, number, null, or omitted entirely. When omitted, the request is treated as a notification. Using `null` is not equivalent to omitting the `id`, but it is discouraged.
 Instrumentations SHOULD NOT capture this attribute when the `id` is `null` or omitted.
 
-**[4] `mcp.resource.uri`:** When the client executes a request type that includes a resource URI parameter.
+**[3] `mcp.resource.uri`:** When the client executes a request type that includes a resource URI parameter.
 
-**[5] `mcp.resource.uri`:** This is a URI of the resource provided in the following requests or notifications: `resources/read`, `resources/subscribe`, `resources/unsubscribe`, or `notifications/resources/updated`.
+**[4] `mcp.resource.uri`:** This is a URI of the resource provided in the following requests or notifications: `resources/read`, `resources/subscribe`, `resources/unsubscribe`, or `notifications/resources/updated`.
 
-**[6] `rpc.response.status_code`:** The following error codes indicate that the caller sent a request the
+**[5] `rpc.response.status_code`:** The following error codes indicate that the caller sent a request the
 server could not serve and SHOULD NOT be considered errors:
 
 - `-32700` (`Parse error`)
@@ -445,22 +433,22 @@ server could not serve and SHOULD NOT be considered errors:
 
 Any other error code SHOULD be considered an error.
 
-**[7] `client.address`:** When observed from the server side, and when communicating through an intermediary, `client.address` SHOULD represent the client address behind any intermediaries,  for example proxies, if it's available.
+**[6] `client.address`:** When observed from the server side, and when communicating through an intermediary, `client.address` SHOULD represent the client address behind any intermediaries,  for example proxies, if it's available.
 
-**[8] `client.port`:** When observed from the server side, and when communicating through an intermediary, `client.port` SHOULD represent the client port behind any intermediaries,  for example proxies, if it's available.
+**[7] `client.port`:** When observed from the server side, and when communicating through an intermediary, `client.port` SHOULD represent the client port behind any intermediaries,  for example proxies, if it's available.
 
-**[9] `gen_ai.operation.name`:** SHOULD be set to `execute_tool` when the operation describes a tool call and SHOULD NOT be set otherwise.
+**[8] `gen_ai.operation.name`:** SHOULD be set to `execute_tool` when the operation describes a tool call and SHOULD NOT be set otherwise.
 
-**[10] `gen_ai.operation.name`:** Populating this attribute for tool calling along with `mcp.method.name` allows consumers to treat MCP tool calls spans similarly with other tool call types.
+**[9] `gen_ai.operation.name`:** Populating this attribute for tool calling along with `mcp.method.name` allows consumers to treat MCP tool calls spans similarly with other tool call types.
 
-**[11] `mcp.session.id`:** When the MCP request or notification is part of a session.
+**[10] `mcp.session.id`:** When the MCP request or notification is part of a session.
 
-**[12] `network.protocol.name`:** The value SHOULD be normalized to lowercase.
+**[11] `network.protocol.name`:** The value SHOULD be normalized to lowercase.
 
-**[13] `network.transport`:** This attribute SHOULD be set to `tcp` or `quic` if the transport protocol
+**[12] `network.transport`:** This attribute SHOULD be set to `tcp` or `quic` if the transport protocol
 is HTTP. It SHOULD be set to `pipe` if the transport is stdio.
 
-**[14] `gen_ai.prompt.variable`:** Prompt templates are parameterized with variables that are filled in
+**[13] `gen_ai.prompt.variable`:** Prompt templates are parameterized with variables that are filled in
 at runtime. This attribute records the variable values passed to the
 template. The attribute name defines the variable name, and the
 attribute value is the variable value serialized as a string.
@@ -479,7 +467,7 @@ supplied in `prompts/get` requests SHOULD be recorded as
 > [!Warning]
 > This attribute may contain sensitive information.
 
-**[15] `gen_ai.tool.call.arguments`:**
+**[14] `gen_ai.tool.call.arguments`:**
 
 > [!WARNING]
 > This attribute may contain sensitive information.
@@ -492,7 +480,7 @@ Instrumentations MUST follow [JSON schema](/model/gen-ai/gen-ai-tool-call-argume
 
 When the attribute is recorded on events, it MUST be recorded in structured form. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
 
-**[16] `gen_ai.tool.call.result`:**
+**[15] `gen_ai.tool.call.result`:**
 
 > [!WARNING]
 > This attribute may contain sensitive information.
@@ -527,7 +515,7 @@ When the attribute is recorded on events, it MUST be recorded in structured form
 | `delete_memory_store` | Delete or deprovision a memory store | ![Development](https://img.shields.io/badge/-development-blue) |
 | `embeddings` | Embeddings operation such as [OpenAI Create embeddings API](https://platform.openai.com/docs/api-reference/embeddings/create) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `execute_tool` | Execute a tool | ![Development](https://img.shields.io/badge/-development-blue) |
-| `fetch_response` | Fetch a previously generated model response by its identifier, without performing inference, such as [OpenAI Get a model response](https://platform.openai.com/docs/api-reference/responses/get) [17] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `fetch_response` | Fetch a previously generated model response by its identifier, without performing inference, such as [OpenAI Get a model response](https://platform.openai.com/docs/api-reference/responses/get) [16] | ![Development](https://img.shields.io/badge/-development-blue) |
 | `generate_content` | Multimodal content generation operation such as [Gemini Generate Content](https://ai.google.dev/api/generate-content) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `invoke_agent` | Invoke GenAI agent | ![Development](https://img.shields.io/badge/-development-blue) |
 | `invoke_workflow` | Invoke GenAI workflow | ![Development](https://img.shields.io/badge/-development-blue) |
@@ -538,7 +526,7 @@ When the attribute is recorded on events, it MUST be recorded in structured form
 | `update_memory` | Update existing memory records | ![Development](https://img.shields.io/badge/-development-blue) |
 | `upsert_memory` | Create or update memory records without the caller choosing which | ![Development](https://img.shields.io/badge/-development-blue) |
 
-**[17]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
+**[16]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
 
 ---
 
@@ -612,32 +600,26 @@ of `[ 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30, 60, 120, 300 ]`.
 | Key | Stability | [Requirement Level](https://opentelemetry.io/docs/specs/semconv/general/attribute-requirement-level/) | Value Type | Description | Example Values |
 | --- | --- | --- | --- | --- | --- |
 | [`mcp.method.name`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Required` | string | The name of the request or notification method. | `notifications/cancelled`; `initialize`; `notifications/initialized` |
-| [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/error.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` [1] | string | Describes a class of error the operation ended with. [2] | `timeout`; `java.net.UnknownHostException`; `server_certificate_invalid`; `500` |
+| [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/error.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If and only if the operation fails. | string | Describes a class of error the operation ended with. [1] | `timeout`; `java.net.UnknownHostException`; `server_certificate_invalid`; `500` |
 | [`gen_ai.prompt.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When operation is related to a specific prompt. | string | The name of the prompt or prompt template provided in the request or response. | `analyze-code` |
 | [`gen_ai.tool.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When operation is related to a specific tool. | string | Name of the tool utilized by the agent. | `Flights` |
-| [`rpc.response.status_code`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/rpc.md) | ![Release Candidate](https://img.shields.io/badge/-rc-mediumorchid) | `Conditionally Required` If response contains an error code. | string | The error code from the JSON-RPC response. [3] | `OK`; `DEADLINE_EXCEEDED`; `-32602` |
-| [`gen_ai.operation.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` [4] | string | The name of the GenAI operation being performed. [5] | `execute_tool` |
+| [`rpc.response.status_code`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/rpc.md) | ![Release Candidate](https://img.shields.io/badge/-rc-mediumorchid) | `Conditionally Required` If response contains an error code. | string | The error code from the JSON-RPC response. [2] | `OK`; `DEADLINE_EXCEEDED`; `-32602` |
+| [`gen_ai.operation.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` [3] | string | The name of the GenAI operation being performed. [4] | `execute_tool` |
 | [`jsonrpc.protocol.version`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/jsonrpc.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` When it's not `2.0`. | string | Protocol version, as specified in the `jsonrpc` property of the request and its corresponding response. | `2.0`; `1.0` |
 | [`mcp.protocol.version`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The [version](https://modelcontextprotocol.io/specification/versioning) of the Model Context Protocol used. | `2025-06-18` |
-| [`network.protocol.name`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When applicable. | string | [OSI application layer](https://wikipedia.org/wiki/Application_layer) or non-OSI equivalent. [6] | `http`; `websocket` |
+| [`network.protocol.name`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When applicable. | string | [OSI application layer](https://wikipedia.org/wiki/Application_layer) or non-OSI equivalent. [5] | `http`; `websocket` |
 | [`network.protocol.version`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When applicable. | string | The actual version of the protocol used for network communication. | `1.1`; `2` |
-| [`network.transport`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | The transport protocol used for the MCP session. [7] | `tcp`; `quic`; `pipe` |
-| [`server.address`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` If applicable. | string | Server domain name if available without reverse DNS lookup; otherwise, IP address or Unix domain socket name. [8] | `example.com`; `10.1.2.80`; `/tmp/my.sock` |
-| [`server.port`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When `server.address` is set. | int | Server port number. [9] | `80`; `8080`; `443` |
-| [`gen_ai.prompt.variable`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | string | The variables supplied to the prompt template in the request. [10] | `Alice`; `French` |
-| [`mcp.resource.uri`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | string | The value of the resource uri. [11] | `postgres://database/customers/schema`; `file:///home/user/documents/report.pdf` |
+| [`network.transport`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | The transport protocol used for the MCP session. [6] | `tcp`; `quic`; `pipe` |
+| [`server.address`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` If applicable. | string | Server domain name if available without reverse DNS lookup; otherwise, IP address or Unix domain socket name. [7] | `example.com`; `10.1.2.80`; `/tmp/my.sock` |
+| [`server.port`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When `server.address` is set. | int | Server port number. [8] | `80`; `8080`; `443` |
+| [`gen_ai.prompt.variable`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | string | The variables supplied to the prompt template in the request. [9] | `Alice`; `French` |
+| [`mcp.resource.uri`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | string | The value of the resource uri. [10] | `postgres://database/customers/schema`; `file:///home/user/documents/report.pdf` |
 
-**[1] `error.type`:** On the client side, if and only if the operation fails. On the server side, if and only if the operation fails with a server-side error, an error reported in the result payload, a timeout, or a transport error.
-
-**[2] `error.type`:** On the client side, `error.type` SHOULD be set for any failed request or error
-response, including both client-side and server-side errors.
-
-On the server side, `error.type` SHOULD NOT be set for client-side errors. See
-`rpc.response.status_code` for which error codes are considered server-side.
-
-When `error.type` is set, it SHOULD be set to the string representation of the JSON-RPC
-error code, if one is returned. Otherwise (for example on timeouts or transport errors)
-it SHOULD be set following the [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/error.md)
+**[1] `error.type`:** When the response carries a JSON-RPC error code that classifies as an error,
+`error.type` SHOULD be set to the string representation of that code. See
+`rpc.response.status_code` for which codes classify as errors. Otherwise
+(for example on timeouts or transport errors) it SHOULD be set following the
+[`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/error.md)
 guidance.
 
 When JSON-RPC call is successful, but an error is returned within the
@@ -647,22 +629,22 @@ string representation of the error. When
 is returned with `isError` set to `true`, this attribute SHOULD be set to
 `tool_error`.
 
-**[3] `rpc.response.status_code`:** All JSON-RPC error codes SHOULD be considered errors.
+**[2] `rpc.response.status_code`:** All JSON-RPC error codes SHOULD be considered errors.
 
-**[4] `gen_ai.operation.name`:** SHOULD be set to `execute_tool` when the operation describes a tool call and SHOULD NOT be set otherwise.
+**[3] `gen_ai.operation.name`:** SHOULD be set to `execute_tool` when the operation describes a tool call and SHOULD NOT be set otherwise.
 
-**[5] `gen_ai.operation.name`:** Populating this attribute for tool calling along with `mcp.method.name` allows consumers to treat MCP tool calls spans similarly with other tool call types.
+**[4] `gen_ai.operation.name`:** Populating this attribute for tool calling along with `mcp.method.name` allows consumers to treat MCP tool calls spans similarly with other tool call types.
 
-**[6] `network.protocol.name`:** The value SHOULD be normalized to lowercase.
+**[5] `network.protocol.name`:** The value SHOULD be normalized to lowercase.
 
-**[7] `network.transport`:** This attribute SHOULD be set to `tcp` or `quic` if the transport protocol
+**[6] `network.transport`:** This attribute SHOULD be set to `tcp` or `quic` if the transport protocol
 is HTTP. It SHOULD be set to `pipe` if the transport is stdio.
 
-**[8] `server.address`:** When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent the server address behind any intermediaries, for example proxies, if it's available.
+**[7] `server.address`:** When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent the server address behind any intermediaries, for example proxies, if it's available.
 
-**[9] `server.port`:** When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries, for example proxies, if it's available.
+**[8] `server.port`:** When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries, for example proxies, if it's available.
 
-**[10] `gen_ai.prompt.variable`:** Prompt templates are parameterized with variables that are filled in
+**[9] `gen_ai.prompt.variable`:** Prompt templates are parameterized with variables that are filled in
 at runtime. This attribute records the variable values passed to the
 template. The attribute name defines the variable name, and the
 attribute value is the variable value serialized as a string.
@@ -677,7 +659,7 @@ Examples:
 > [!Warning]
 > This attribute may contain sensitive information.
 
-**[11] `mcp.resource.uri`:** This is a URI of the resource provided in the following requests or notifications: `resources/read`, `resources/subscribe`, `resources/unsubscribe`, or `notifications/resources/updated`.
+**[10] `mcp.resource.uri`:** This is a URI of the resource provided in the following requests or notifications: `resources/read`, `resources/subscribe`, `resources/unsubscribe`, or `notifications/resources/updated`.
 
 ---
 
@@ -701,7 +683,7 @@ Examples:
 | `delete_memory_store` | Delete or deprovision a memory store | ![Development](https://img.shields.io/badge/-development-blue) |
 | `embeddings` | Embeddings operation such as [OpenAI Create embeddings API](https://platform.openai.com/docs/api-reference/embeddings/create) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `execute_tool` | Execute a tool | ![Development](https://img.shields.io/badge/-development-blue) |
-| `fetch_response` | Fetch a previously generated model response by its identifier, without performing inference, such as [OpenAI Get a model response](https://platform.openai.com/docs/api-reference/responses/get) [12] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `fetch_response` | Fetch a previously generated model response by its identifier, without performing inference, such as [OpenAI Get a model response](https://platform.openai.com/docs/api-reference/responses/get) [11] | ![Development](https://img.shields.io/badge/-development-blue) |
 | `generate_content` | Multimodal content generation operation such as [Gemini Generate Content](https://ai.google.dev/api/generate-content) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `invoke_agent` | Invoke GenAI agent | ![Development](https://img.shields.io/badge/-development-blue) |
 | `invoke_workflow` | Invoke GenAI workflow | ![Development](https://img.shields.io/badge/-development-blue) |
@@ -712,7 +694,7 @@ Examples:
 | `update_memory` | Update existing memory records | ![Development](https://img.shields.io/badge/-development-blue) |
 | `upsert_memory` | Create or update memory records without the caller choosing which | ![Development](https://img.shields.io/badge/-development-blue) |
 
-**[12]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
+**[11]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
 
 ---
 
@@ -784,30 +766,24 @@ of `[ 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30, 60, 120, 300 ]`.
 | Key | Stability | [Requirement Level](https://opentelemetry.io/docs/specs/semconv/general/attribute-requirement-level/) | Value Type | Description | Example Values |
 | --- | --- | --- | --- | --- | --- |
 | [`mcp.method.name`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Required` | string | The name of the request or notification method. | `notifications/cancelled`; `initialize`; `notifications/initialized` |
-| [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/error.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` [1] | string | Describes a class of error the operation ended with. [2] | `timeout`; `java.net.UnknownHostException`; `server_certificate_invalid`; `500` |
+| [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/error.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If and only if the operation fails. | string | Describes a class of error the operation ended with. [1] | `timeout`; `java.net.UnknownHostException`; `server_certificate_invalid`; `500` |
 | [`gen_ai.prompt.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When operation is related to a specific prompt. | string | The name of the prompt or prompt template provided in the request or response. | `analyze-code` |
 | [`gen_ai.tool.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When operation is related to a specific tool. | string | Name of the tool utilized by the agent. | `Flights` |
-| [`rpc.response.status_code`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/rpc.md) | ![Release Candidate](https://img.shields.io/badge/-rc-mediumorchid) | `Conditionally Required` If response contains an error code. | string | The error code from the JSON-RPC response. [3] | `OK`; `DEADLINE_EXCEEDED`; `-32602` |
-| [`gen_ai.operation.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` [4] | string | The name of the GenAI operation being performed. [5] | `execute_tool` |
+| [`rpc.response.status_code`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/rpc.md) | ![Release Candidate](https://img.shields.io/badge/-rc-mediumorchid) | `Conditionally Required` If response contains an error code. | string | The error code from the JSON-RPC response. [2] | `OK`; `DEADLINE_EXCEEDED`; `-32602` |
+| [`gen_ai.operation.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` [3] | string | The name of the GenAI operation being performed. [4] | `execute_tool` |
 | [`jsonrpc.protocol.version`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/jsonrpc.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` When it's not `2.0`. | string | Protocol version, as specified in the `jsonrpc` property of the request and its corresponding response. | `2.0`; `1.0` |
 | [`mcp.protocol.version`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The [version](https://modelcontextprotocol.io/specification/versioning) of the Model Context Protocol used. | `2025-06-18` |
-| [`network.protocol.name`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When applicable. | string | [OSI application layer](https://wikipedia.org/wiki/Application_layer) or non-OSI equivalent. [6] | `http`; `websocket` |
+| [`network.protocol.name`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When applicable. | string | [OSI application layer](https://wikipedia.org/wiki/Application_layer) or non-OSI equivalent. [5] | `http`; `websocket` |
 | [`network.protocol.version`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When applicable. | string | The actual version of the protocol used for network communication. | `1.1`; `2` |
-| [`network.transport`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | The transport protocol used for the MCP session. [7] | `tcp`; `quic`; `pipe` |
-| [`gen_ai.prompt.variable`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | string | The variables supplied to the prompt template in the request. [8] | `Alice`; `French` |
-| [`mcp.resource.uri`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | string | The value of the resource uri. [9] | `postgres://database/customers/schema`; `file:///home/user/documents/report.pdf` |
+| [`network.transport`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | The transport protocol used for the MCP session. [6] | `tcp`; `quic`; `pipe` |
+| [`gen_ai.prompt.variable`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | string | The variables supplied to the prompt template in the request. [7] | `Alice`; `French` |
+| [`mcp.resource.uri`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | string | The value of the resource uri. [8] | `postgres://database/customers/schema`; `file:///home/user/documents/report.pdf` |
 
-**[1] `error.type`:** On the client side, if and only if the operation fails. On the server side, if and only if the operation fails with a server-side error, an error reported in the result payload, a timeout, or a transport error.
-
-**[2] `error.type`:** On the client side, `error.type` SHOULD be set for any failed request or error
-response, including both client-side and server-side errors.
-
-On the server side, `error.type` SHOULD NOT be set for client-side errors. See
-`rpc.response.status_code` for which error codes are considered server-side.
-
-When `error.type` is set, it SHOULD be set to the string representation of the JSON-RPC
-error code, if one is returned. Otherwise (for example on timeouts or transport errors)
-it SHOULD be set following the [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/error.md)
+**[1] `error.type`:** When the response carries a JSON-RPC error code that classifies as an error,
+`error.type` SHOULD be set to the string representation of that code. See
+`rpc.response.status_code` for which codes classify as errors. Otherwise
+(for example on timeouts or transport errors) it SHOULD be set following the
+[`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/error.md)
 guidance.
 
 When JSON-RPC call is successful, but an error is returned within the
@@ -817,7 +793,7 @@ string representation of the error. When
 is returned with `isError` set to `true`, this attribute SHOULD be set to
 `tool_error`.
 
-**[3] `rpc.response.status_code`:** The following error codes indicate that the caller sent a request the
+**[2] `rpc.response.status_code`:** The following error codes indicate that the caller sent a request the
 server could not serve and SHOULD NOT be considered errors:
 
 - `-32700` (`Parse error`)
@@ -829,16 +805,16 @@ server could not serve and SHOULD NOT be considered errors:
 
 Any other error code SHOULD be considered an error.
 
-**[4] `gen_ai.operation.name`:** SHOULD be set to `execute_tool` when the operation describes a tool call and SHOULD NOT be set otherwise.
+**[3] `gen_ai.operation.name`:** SHOULD be set to `execute_tool` when the operation describes a tool call and SHOULD NOT be set otherwise.
 
-**[5] `gen_ai.operation.name`:** Populating this attribute for tool calling along with `mcp.method.name` allows consumers to treat MCP tool calls spans similarly with other tool call types.
+**[4] `gen_ai.operation.name`:** Populating this attribute for tool calling along with `mcp.method.name` allows consumers to treat MCP tool calls spans similarly with other tool call types.
 
-**[6] `network.protocol.name`:** The value SHOULD be normalized to lowercase.
+**[5] `network.protocol.name`:** The value SHOULD be normalized to lowercase.
 
-**[7] `network.transport`:** This attribute SHOULD be set to `tcp` or `quic` if the transport protocol
+**[6] `network.transport`:** This attribute SHOULD be set to `tcp` or `quic` if the transport protocol
 is HTTP. It SHOULD be set to `pipe` if the transport is stdio.
 
-**[8] `gen_ai.prompt.variable`:** Prompt templates are parameterized with variables that are filled in
+**[7] `gen_ai.prompt.variable`:** Prompt templates are parameterized with variables that are filled in
 at runtime. This attribute records the variable values passed to the
 template. The attribute name defines the variable name, and the
 attribute value is the variable value serialized as a string.
@@ -853,7 +829,7 @@ Examples:
 > [!Warning]
 > This attribute may contain sensitive information.
 
-**[9] `mcp.resource.uri`:** This is a URI of the resource provided in the following requests or notifications: `resources/read`, `resources/subscribe`, `resources/unsubscribe`, or `notifications/resources/updated`.
+**[8] `mcp.resource.uri`:** This is a URI of the resource provided in the following requests or notifications: `resources/read`, `resources/subscribe`, `resources/unsubscribe`, or `notifications/resources/updated`.
 
 ---
 
@@ -877,7 +853,7 @@ Examples:
 | `delete_memory_store` | Delete or deprovision a memory store | ![Development](https://img.shields.io/badge/-development-blue) |
 | `embeddings` | Embeddings operation such as [OpenAI Create embeddings API](https://platform.openai.com/docs/api-reference/embeddings/create) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `execute_tool` | Execute a tool | ![Development](https://img.shields.io/badge/-development-blue) |
-| `fetch_response` | Fetch a previously generated model response by its identifier, without performing inference, such as [OpenAI Get a model response](https://platform.openai.com/docs/api-reference/responses/get) [10] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `fetch_response` | Fetch a previously generated model response by its identifier, without performing inference, such as [OpenAI Get a model response](https://platform.openai.com/docs/api-reference/responses/get) [9] | ![Development](https://img.shields.io/badge/-development-blue) |
 | `generate_content` | Multimodal content generation operation such as [Gemini Generate Content](https://ai.google.dev/api/generate-content) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `invoke_agent` | Invoke GenAI agent | ![Development](https://img.shields.io/badge/-development-blue) |
 | `invoke_workflow` | Invoke GenAI workflow | ![Development](https://img.shields.io/badge/-development-blue) |
@@ -888,7 +864,7 @@ Examples:
 | `update_memory` | Update existing memory records | ![Development](https://img.shields.io/badge/-development-blue) |
 | `upsert_memory` | Create or update memory records without the caller choosing which | ![Development](https://img.shields.io/badge/-development-blue) |
 
-**[10]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
+**[9]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
 
 ---
 
