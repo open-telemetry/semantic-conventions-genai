@@ -1,23 +1,23 @@
 ---
 name: reference
-description: 'Use when implementing a semantic-conventions change, upstream proposal diff, spec change, or new GenAI span or attribute in this repository. Adds reference scenarios, inline attribute emission, and data coverage for every Python library that credibly supports the change.'
+description: 'Use when implementing or evaluating reference coverage for a semantic-conventions changeset involving GenAI spans, attributes, entities, metrics, or events. Reviews capturability, inline emission, span boundaries, and coverage across every Python library that credibly supports the change.'
 ---
 
 # Reference Coverage
 
-Use this skill when a semantic-conventions change introduces or changes GenAI spans, attributes, or requirement levels and the repository needs reference coverage across all libraries that support the new behavior.
+Use this skill when a semantic-conventions change introduces or changes GenAI spans, attributes, entities, metrics, events, or requirement levels and the repository needs reference implementation or evaluation across all libraries that support the new behavior.
 
 Per-scenario authoring rules — inline attribute emission, span boundaries, current-call values, public-entry-point usage, and what to ignore — live in [reference-scenarios.instructions.md](../../instructions/reference-scenarios.instructions.md). Follow that file when editing any `reference/scenarios/**/scenario.py`. This skill covers only the agent-level workflow around it.
 
 ## Goal
 
-Turn the semantic-conventions change into concrete reference implementations in this repository: scenarios and emitted attributes that honestly exercise every supporting library without faking values the library cannot credibly expose.
+Implement or evaluate concrete reference scenarios and emitted attributes that honestly exercise every supporting library without faking values the library cannot credibly expose.
 
 ## Non-Goals
 
 This skill is not for deciding whether the convention itself is correct.
 
-It is also not the final evaluation pass. After adding reference implementations, consult the evaluation rubric in [evaluate-reference.instructions.md](../../instructions/evaluate-reference.instructions.md) to judge capturability, coverage quality, and honest capture gaps.
+Use [evaluate-reference.instructions.md](../../instructions/evaluate-reference.instructions.md) for the final evaluation of capturability, coverage quality, and honest capture gaps.
 
 ## Core Stance
 
@@ -38,7 +38,7 @@ A library should usually get a reference update when all of the following are tr
 
 If the value would have to be guessed, carried forward from an unrelated call, or synthesized from test-only scaffolding, do not force it into the reference implementation.
 
-## Procedure
+## Implementation Procedure
 
 1. Read the semantic-conventions change and extract the exact changed spans, attributes, requirement levels, and examples.
 2. Translate it into a concrete implementation worklist grouped by operation, not by prose section.
@@ -50,6 +50,16 @@ If the value would have to be guessed, carried forward from an unrelated call, o
    - Run `make generate-all` from the repository root to regenerate the registry, docs, and status reports.
 7. Keep unsupported libraries honest. If a library cannot credibly emit a field, leave it out and record it as a capture gap (see [evaluate-reference.instructions.md](../../instructions/evaluate-reference.instructions.md)).
 8. Run targeted validation for the changed libraries when feasible.
+
+## Evaluation Procedure
+
+1. Identify the authoritative changeset. For a pull request, use the pull request diff.
+2. Identify every changed signal, entity, attribute, and requirement level.
+3. Apply [evaluate-reference.instructions.md](../../instructions/evaluate-reference.instructions.md) to each changed field.
+4. Classify each field as `direct`, `derivable`, `weak`, or `capture gap`.
+5. Verify emitted values come from the current call and spans wrap real library operations.
+6. Inventory every existing scenario that credibly supports the change, including unchanged scenarios.
+7. Report implementation defects separately from honest capture gaps and missing coverage.
 
 ## Output Format
 
@@ -68,3 +78,6 @@ Under `Libraries not updated`, state whether each library is:
 - `honest capture gap; evaluate separately`
 
 Under `Capture gaps`, list each library left without a reference implementation and the exact missing current-call source that prevented a credible implementation.
+
+For evaluations, report findings first in severity order, followed by capture gaps,
+missing supporting-library coverage, and validation performed.

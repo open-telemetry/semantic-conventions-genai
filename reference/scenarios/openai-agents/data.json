@@ -18,18 +18,6 @@
       "gen_ai.output.messages",
       "gen_ai.workflow.name"
     ],
-    "inference": [
-      "gen_ai.operation.name",
-      "gen_ai.provider.name",
-      "gen_ai.request.model",
-      "gen_ai.response.id",
-      "gen_ai.response.model",
-      "gen_ai.tool.definitions",
-      "gen_ai.usage.input_tokens",
-      "gen_ai.usage.output_tokens",
-      "server.address",
-      "server.port"
-    ],
     "execute_tool": [
       "gen_ai.agent.name",
       "gen_ai.operation.name",

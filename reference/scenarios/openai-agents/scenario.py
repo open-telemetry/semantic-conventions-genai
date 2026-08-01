@@ -1,7 +1,7 @@
 """Reference implementation for OpenAI Agents.
 
-Exercises: agent run with tool calling
-against a mock OpenAI server, with manual OTel spans.
+Exercises: agent run with tool calling and a multi-agent run with handoffs
+wrapped in a workflow span, against a mock OpenAI server, with manual OTel spans.
 """
 
 import asyncio
@@ -12,7 +12,7 @@ import openai
 from agents import Agent, RunConfig, Runner, function_tool
 from agents.models.openai_chatcompletions import OpenAIChatCompletionsModel
 from agents.tool import FunctionTool, ToolContext
-from reference_shared import flush_and_shutdown, mock_server_host_port, reference_tracer, setup_otel
+from reference_shared import flush_and_shutdown, reference_tracer, setup_otel
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"] + "/v1"
 
@@ -48,7 +48,6 @@ async def run_agent():
 
     tools = [get_weather]
     captured_responses = []
-    host, port = mock_server_host_port(MOCK_BASE_URL)
     agent = Agent(
         name="test-agent",
         instructions="You are a helpful assistant.",
@@ -85,77 +84,44 @@ async def run_agent():
                 ]
             ),
         )
-        span_attributes = {
-            "gen_ai.operation.name": "chat",
-            "gen_ai.provider.name": "openai",
-            "gen_ai.request.model": request_model,
-        }
-        if host:
-            span_attributes["server.address"] = host
-        if port is not None:
-            span_attributes["server.port"] = port
-        with _reference_tracer.start_as_current_span("chat gpt-4o-mini", attributes=span_attributes) as span:
-            span.set_attribute(
-                "gen_ai.tool.definitions",
+        original_create = client.chat.completions.create
+
+        async def _capture_create(*args, **kwargs):
+            response = await original_create(*args, **kwargs)
+            captured_responses.append(response)
+            return response
+
+        client.chat.completions.create = _capture_create
+        try:
+            result = await Runner.run(agent, input_text)
+        finally:
+            client.chat.completions.create = original_create
+        usage = result.context_wrapper.usage
+        if usage.total_tokens:
+            agent_span.set_attribute("gen_ai.usage.input_tokens", usage.input_tokens)
+            agent_span.set_attribute("gen_ai.usage.output_tokens", usage.output_tokens)
+        if captured_responses:
+            last_response = captured_responses[-1]
+            finish_reasons = [
+                choice.finish_reason
+                for choice in getattr(last_response, "choices", []) or []
+                if getattr(choice, "finish_reason", None)
+            ]
+            if finish_reasons:
+                agent_span.set_attribute("gen_ai.response.finish_reasons", finish_reasons)
+        if result.final_output:
+            agent_span.set_attribute(
+                "gen_ai.output.messages",
                 json.dumps(
                     [
                         {
-                            "type": "function",
-                            "function": {
-                                "name": t.name,
-                                "description": t.description,
-                                "parameters": t.params_json_schema,
-                            },
+                            "role": "assistant",
+                            "parts": [{"type": "text", "content": str(result.final_output)}],
                         }
-                        for t in tools
-                        if isinstance(t, FunctionTool)
                     ]
                 ),
             )
-            original_create = client.chat.completions.create
-
-            async def _capture_create(*args, **kwargs):
-                response = await original_create(*args, **kwargs)
-                captured_responses.append(response)
-                return response
-
-            client.chat.completions.create = _capture_create
-            try:
-                result = await Runner.run(agent, input_text)
-            finally:
-                client.chat.completions.create = original_create
-            usage = result.context_wrapper.usage
-            if usage.total_tokens:
-                span.set_attribute("gen_ai.usage.input_tokens", usage.input_tokens)
-                span.set_attribute("gen_ai.usage.output_tokens", usage.output_tokens)
-                agent_span.set_attribute("gen_ai.usage.input_tokens", usage.input_tokens)
-                agent_span.set_attribute("gen_ai.usage.output_tokens", usage.output_tokens)
-            if captured_responses:
-                last_response = captured_responses[-1]
-                if getattr(last_response, "id", None):
-                    span.set_attribute("gen_ai.response.id", last_response.id)
-                if getattr(last_response, "model", None):
-                    span.set_attribute("gen_ai.response.model", last_response.model)
-                finish_reasons = [
-                    choice.finish_reason
-                    for choice in getattr(last_response, "choices", []) or []
-                    if getattr(choice, "finish_reason", None)
-                ]
-                if finish_reasons:
-                    agent_span.set_attribute("gen_ai.response.finish_reasons", finish_reasons)
-            if result.final_output:
-                agent_span.set_attribute(
-                    "gen_ai.output.messages",
-                    json.dumps(
-                        [
-                            {
-                                "role": "assistant",
-                                "parts": [{"type": "text", "content": str(result.final_output)}],
-                            }
-                        ]
-                    ),
-                )
-            print(f"    -> {str(result.final_output)[:60]}")
+        print(f"    -> {str(result.final_output)[:60]}")
 
 
 async def run_workflow():
@@ -180,7 +146,7 @@ async def run_workflow():
     input_text = "What's the weather in Seattle?"
 
     print("  [workflow_run] agent run as workflow (reference implementation)")
-    workflow_name = "Agent workflow"
+    workflow_name = "sequential-agents"
     workflow_span_attributes = {
         "gen_ai.operation.name": "invoke_workflow",
     }
@@ -192,8 +158,8 @@ async def run_workflow():
             "gen_ai.input.messages", json.dumps([{"role": "user", "parts": [{"type": "text", "content": input_text}]}])
         )
 
-        # Note: Agent spans (invoke_agent) are expected to be children of workflow
-        # but are omitted for brevity in this scenario.
+        # Note: Agent spans (invoke_agent) are expected to be children of the
+        # workflow span but are omitted for brevity in this scenario.
         result = await Runner.run(agent_a, input_text, run_config=RunConfig(workflow_name=workflow_name))
 
         if result.final_output:

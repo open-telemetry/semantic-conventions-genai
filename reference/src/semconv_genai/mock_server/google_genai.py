@@ -183,6 +183,34 @@ def google_genai(model_action):
     return RESPONSE
 
 
+@bp.route("/v1beta/interactions", methods=["POST"])
+def google_genai_interactions():
+    """Handle Google GenAI Interactions API requests."""
+    body = request.get_json(silent=True) or {}
+    resp = {
+        "id": "interaction-mock-123",
+        "model": body.get("model", "gemini-2.0-flash"),
+        "status": "COMPLETED",
+        "previous_interaction_id": body.get("previous_interaction_id"),
+        "steps": [
+            {
+                "type": "model_output",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": "This is a response from the mock interactions server.",
+                    }
+                ],
+            }
+        ],
+        "usage": {
+            "prompt_tokens": 12,
+            "candidates_tokens": 8,
+        },
+    }
+    return resp
+
+
 @bp.route("/v1/projects/<path:rest>", methods=["POST"])
 def vertex_ai(rest):
     """Handle Vertex AI API requests (same response format as Google GenAI)."""

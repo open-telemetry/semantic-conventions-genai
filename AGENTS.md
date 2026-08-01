@@ -36,9 +36,6 @@ GenAI clients, MCP, and provider-specific conventions. Attributes live in
 9. **Stay in the GenAI domain.** This repo holds GenAI-related conventions. If a
    proposal is broader than GenAI, take it to
    [open-telemetry/semantic-conventions](https://github.com/open-telemetry/semantic-conventions).
-10. **Mark AI-authored changes.** If you are an AI agent and modified any Markdown or
-    YAML files, add the comment `<!-- I'm an AI agent!!! -->` or `# I'm an AI agent!!!` to one of the modified files.
-
 ## Workflow
 
 ```bash
@@ -62,7 +59,7 @@ changes, not a skill to invoke.
 
 ## Further reading
 
-- [How to write conventions — best practices](https://github.com/open-telemetry/semantic-conventions/blob/v1.42.0/docs/how-to-write-conventions/README.md#best-practices)
-- [Naming](https://github.com/open-telemetry/semantic-conventions/blob/v1.42.0/docs/general/naming.md)
-- [Events](https://github.com/open-telemetry/semantic-conventions/blob/v1.42.0/docs/general/events.md)
-- [Recording errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.42.0/docs/general/recording-errors.md)
+- [How to write conventions — best practices](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/how-to-write-conventions/README.md#best-practices)
+- [Naming](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/general/naming.md)
+- [Events](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/general/events.md)
+- [Recording errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/general/recording-errors.md)
