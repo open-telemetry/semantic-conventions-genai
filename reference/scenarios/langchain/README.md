@@ -9,7 +9,7 @@ execution.
 | Operation | Should be instrumented here | Status |
 | --- | --- | --- |
 | inference (`chat`) | No — delegates to the LLM client (`openai`) | ✅ Correctly not emitted |
-| invoke_workflow | Yes — chain/graph execution | ❌ Not implemented |
+| invoke_workflow | Yes — chain/graph execution | ✅ Implemented |
 | retrieval | Yes — retriever runs the retrieval | ✅ Implemented |
 | plan | Yes — Plan-and-Execute planning phase | ✅ Implemented |
-| execute_tool | Yes — LangChain runs the tool | ❌ Not implemented |
+| execute_tool | Yes — LangChain runs the tool | ✅ Implemented |
