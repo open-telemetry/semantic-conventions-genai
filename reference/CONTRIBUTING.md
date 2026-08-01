@@ -91,12 +91,12 @@ Two principles:
   no separate instrumentable client library in between) makes the library the
   model-call boundary, so it is a valid reason to emit inference.
 
-Instrumentation for agent frameworks may emit spans for inference calls, but
-should not do so by default — unless the framework issues the model call in a
-way no other instrumentable library can observe (it calls the REST API directly,
-embeds a vendored model library, or similar), so that without the framework's
-instrumentation the application would have no observability into those inference
-calls.
+Agent-framework instrumentation SHOULD NOT emit inference spans by default; the
+underlying LLM library owns them. The exception is a framework that issues the
+model call in a way no other instrumentable library can observe — it calls the
+REST API directly, embeds a vendored model library, or similar. In that case the
+framework is the only place the inference call is visible, so it SHOULD emit the
+span.
 
 If a library emits unrelated native telemetry that obscures the intended
 validation surface, suppress that library-owned telemetry in the reference

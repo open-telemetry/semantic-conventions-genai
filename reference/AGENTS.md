@@ -82,6 +82,8 @@ inference-operation-details event — ask:
 
 - **Yes** → emit a workflow span around the library API that invokes the
   workflow.
+- **No** → don't emit a workflow span. A single agent run or a plain chain of
+  calls is not an AI workflow.
 
 ## Step 2 — Implement in a reference scenario
 
