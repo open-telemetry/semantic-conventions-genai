@@ -7,7 +7,7 @@
 | Attribute | Supporting Libraries |
 | --- | --- |
 | gen_ai.operation.name | [anthropic], [autogen], [aws-bedrock], [azure-ai-inference], [cohere], [dspy], [google-genai], [groq], [instructor], [litellm], [llamaindex], [mistralai], [openai], [pydantic-ai], [vertexai] |
-| gen_ai.provider.name | [google-genai], [openai] |
+| gen_ai.provider.name | [anthropic], [google-genai], [openai] |
 
 ## Conditionally Required
 
@@ -30,10 +30,10 @@
 | --- | --- |
 | gen_ai.conversation.compacted | [anthropic], [openai] |
 | gen_ai.request.frequency_penalty | [pydantic-ai] |
-| gen_ai.request.max_tokens | [pydantic-ai] |
+| gen_ai.request.max_tokens | [anthropic], [pydantic-ai] |
 | gen_ai.request.presence_penalty | [pydantic-ai] |
 | gen_ai.request.previous_response.id | [google-genai], [openai] |
-| gen_ai.request.reasoning.level | (none) |
+| gen_ai.request.reasoning.level | [anthropic] |
 | gen_ai.request.stop_sequences | [pydantic-ai] |
 | gen_ai.request.temperature | [pydantic-ai] |
 | gen_ai.request.top_p | [pydantic-ai] |

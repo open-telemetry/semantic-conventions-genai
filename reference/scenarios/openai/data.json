@@ -40,6 +40,19 @@
       "server.address",
       "server.port"
     ],
+    "fetch_response": [
+      "gen_ai.operation.name",
+      "gen_ai.output.messages",
+      "gen_ai.provider.name",
+      "gen_ai.request.stream_cursor",
+      "gen_ai.response.finish_reasons",
+      "gen_ai.response.id",
+      "gen_ai.response.model",
+      "gen_ai.response.status",
+      "gen_ai.system_instructions",
+      "server.address",
+      "server.port"
+    ],
     "execute_tool": [
       "gen_ai.operation.name",
       "gen_ai.tool.call.arguments",
