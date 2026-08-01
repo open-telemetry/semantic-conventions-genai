@@ -716,8 +716,11 @@ The workflow span SHOULD be reported for operations that trigger the execution
 of composable processes (e.g., graphs, orchestrators) coordinating multiple
 agents or GenAI calls. It SHOULD NOT be reported for standalone agent invocations.
 
-If a workflow operation can be invoked both by external callers and internally
-by the instrumented framework, only the external invocation SHOULD be reported as a workflow span.
+The `invoke_workflow` span SHOULD NOT be reported when the workflow invocation is
+an internal implementation detail of another operation (e.g., an agent or tool that
+spins up a runner/workflow under the hood to delegate to a sub-agent) rather than
+a user-facing entry point. Workflows defined by the application SHOULD be reported
+even when nested, for example a sub-graph invoked as a node of another graph.
 
 Framework-specific semantic conventions SHOULD define which operations to report
 as workflows and MAY specify heuristics to distinguish them from standalone
@@ -729,7 +732,7 @@ Examples of workflow invocations in different frameworks include:
 - **CrewAI**: [`Crew.kickoff()`](https://docs.crewai.com/concepts/crews)
 - **LangChain / LangGraph**: [`*Graph*.invoke(...)`](https://reference.langchain.com/python/langgraph/graphs)
 - **Microsoft Agent Framework**: [`Workflow*.run(...)`](https://learn.microsoft.com/agent-framework/workflows/)
-- **OpenAI Agents**: [`Runner.run(starting_agent=...)`](https://openai.github.io/openai-agents-python/ref/run/#agents.run.Runner.run)
+- **OpenAI Agents**: [`Runner.run(starting_agent=...)`](https://openai.github.io/openai-agents-python/ref/run/#agents.run.Runner.run) with handoffs, sub-agents, or agents-as-tools.
 
 **Span name** SHOULD be `invoke_workflow {gen_ai.workflow.name}`.
 
@@ -762,12 +765,10 @@ For example, it can be the name of the first chain in LangChain,
 the name of the crew in CrewAI, or the entry point agent in ADK or
 OpenAI Agents when no explicit workflow name is provided.
 
-It is NOT RECOMMENDED to use instrumentation-time constants or names of
-types representing the workflow, such as "StateGraph". When no meaningful
-workflow name is available for a framework, this attribute SHOULD NOT be set.
-
-This attribute MUST have low cardinality; if there is no low-cardinality workflow name
-available for a given framework, it MUST NOT be captured by default.
+This attribute MUST have low cardinality. It is NOT RECOMMENDED to use
+instrumentation-time constants or names of types representing the workflow,
+such as "StateGraph". When no meaningful, low-cardinality workflow name is
+available for a given framework, this attribute MUST NOT be captured by default.
 
 Semantic conventions for individual Generative AI frameworks SHOULD document
 what `gen_ai.workflow.name` means in the context of that framework.
