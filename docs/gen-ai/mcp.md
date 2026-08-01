@@ -125,7 +125,7 @@ It's reported by the MCP client when it initiates the request
 or notification or by the MCP server when server initiates the operation.
 It covers the time to receive the response or ack from the peer.
 
-**Span status**: refer to the [Recording Errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.41.0/docs/general/recording-errors.md)
+**Span status**: refer to the [Recording Errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/general/recording-errors.md)
 document for details on how to record span status. See also `rpc.response.status_code` attribute
 for the details on which values classify as errors.
 
@@ -177,12 +177,12 @@ to avoid high cardinality span names.
 | [`gen_ai.tool.call.arguments`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | Parameters passed to the tool call. [15] | {<br>&nbsp;&nbsp;&nbsp;&nbsp;"location": "San Francisco?",<br>&nbsp;&nbsp;&nbsp;&nbsp;"date": "2025-10-01"<br>} |
 | [`gen_ai.tool.call.result`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | The result returned by the tool call (if any and if execution was successful). [16] | {<br>&nbsp;&nbsp;"temperature_range": {<br>&nbsp;&nbsp;&nbsp;&nbsp;"high": 75,<br>&nbsp;&nbsp;&nbsp;&nbsp;"low": 60<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;"conditions": "sunny"<br>} |
 
-**[1] `error.type`:** On client spans, if and only if the operation fails. On server spans, if and only if the operation fails with a server-side error, timeout, or transport error.
+**[1] `error.type`:** On the client side, if and only if the operation fails. On the server side, if and only if the operation fails with a server-side error, an error reported in the result payload, a timeout, or a transport error.
 
-**[2] `error.type`:** On client spans, `error.type` SHOULD be set for any failed request or error response,
-including both client-side and server-side errors.
+**[2] `error.type`:** On the client side, `error.type` SHOULD be set for any failed request or error
+response, including both client-side and server-side errors.
 
-On server spans, `error.type` SHOULD NOT be set for client-side errors. See
+On the server side, `error.type` SHOULD NOT be set for client-side errors. See
 `rpc.response.status_code` for which error codes are considered server-side.
 
 When `error.type` is set, it SHOULD be set to the string representation of the JSON-RPC
@@ -363,7 +363,7 @@ This span describes the processing of the MCP request or notification initiated 
 It's reported by the MCP server when client initiates the request
 (or notification) or by the MCP client when server initiates the operation.
 
-**Span status**: refer to the [Recording Errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.41.0/docs/general/recording-errors.md)
+**Span status**: refer to the [Recording Errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/general/recording-errors.md)
 document for details on how to record span status. See also `rpc.response.status_code` attribute
 for the details on which values classify as errors.
 
@@ -406,12 +406,12 @@ to avoid high cardinality span names.
 | [`gen_ai.tool.call.arguments`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | Parameters passed to the tool call. [15] | {<br>&nbsp;&nbsp;&nbsp;&nbsp;"location": "San Francisco?",<br>&nbsp;&nbsp;&nbsp;&nbsp;"date": "2025-10-01"<br>} |
 | [`gen_ai.tool.call.result`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | The result returned by the tool call (if any and if execution was successful). [16] | {<br>&nbsp;&nbsp;"temperature_range": {<br>&nbsp;&nbsp;&nbsp;&nbsp;"high": 75,<br>&nbsp;&nbsp;&nbsp;&nbsp;"low": 60<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;"conditions": "sunny"<br>} |
 
-**[1] `error.type`:** On client spans, if and only if the operation fails. On server spans, if and only if the operation fails with a server-side error, timeout, or transport error.
+**[1] `error.type`:** On the client side, if and only if the operation fails. On the server side, if and only if the operation fails with a server-side error, an error reported in the result payload, a timeout, or a transport error.
 
-**[2] `error.type`:** On client spans, `error.type` SHOULD be set for any failed request or error response,
-including both client-side and server-side errors.
+**[2] `error.type`:** On the client side, `error.type` SHOULD be set for any failed request or error
+response, including both client-side and server-side errors.
 
-On server spans, `error.type` SHOULD NOT be set for client-side errors. See
+On the server side, `error.type` SHOULD NOT be set for client-side errors. See
 `rpc.response.status_code` for which error codes are considered server-side.
 
 When `error.type` is set, it SHOULD be set to the string representation of the JSON-RPC
@@ -433,10 +433,17 @@ Instrumentations SHOULD NOT capture this attribute when the `id` is `null` or om
 
 **[5] `mcp.resource.uri`:** This is a URI of the resource provided in the following requests or notifications: `resources/read`, `resources/subscribe`, `resources/unsubscribe`, or `notifications/resources/updated`.
 
-**[6] `rpc.response.status_code`:** The following status codes SHOULD be considered errors:
+**[6] `rpc.response.status_code`:** The following error codes indicate that the caller sent a request the
+server could not serve and SHOULD NOT be considered errors:
 
-- `-32603` (`Internal error`)
-- Any error code in the range `-32000` to `-32099` (`Server error`)
+- `-32700` (`Parse error`)
+- `-32600` (`Invalid Request`)
+- `-32601` (`Method not found`)
+- `-32602` (`Invalid params`) - also returned when the requested tool
+  does not exist
+- `-32002` ([`Resource not found`](https://modelcontextprotocol.io/specification/2025-11-25/server/resources#error-handling))
+
+Any other error code SHOULD be considered an error.
 
 **[7] `client.address`:** When observed from the server side, and when communicating through an intermediary, `client.address` SHOULD represent the client address behind any intermediaries,  for example proxies, if it's available.
 
@@ -620,12 +627,12 @@ of `[ 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30, 60, 120, 300 ]`.
 | [`gen_ai.prompt.variable`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | string | The variables supplied to the prompt template in the request. [10] | `Alice`; `French` |
 | [`mcp.resource.uri`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | string | The value of the resource uri. [11] | `postgres://database/customers/schema`; `file:///home/user/documents/report.pdf` |
 
-**[1] `error.type`:** On client spans, if and only if the operation fails. On server spans, if and only if the operation fails with a server-side error, timeout, or transport error.
+**[1] `error.type`:** On the client side, if and only if the operation fails. On the server side, if and only if the operation fails with a server-side error, an error reported in the result payload, a timeout, or a transport error.
 
-**[2] `error.type`:** On client spans, `error.type` SHOULD be set for any failed request or error response,
-including both client-side and server-side errors.
+**[2] `error.type`:** On the client side, `error.type` SHOULD be set for any failed request or error
+response, including both client-side and server-side errors.
 
-On server spans, `error.type` SHOULD NOT be set for client-side errors. See
+On the server side, `error.type` SHOULD NOT be set for client-side errors. See
 `rpc.response.status_code` for which error codes are considered server-side.
 
 When `error.type` is set, it SHOULD be set to the string representation of the JSON-RPC
@@ -640,8 +647,7 @@ string representation of the error. When
 is returned with `isError` set to `true`, this attribute SHOULD be set to
 `tool_error`.
 
-**[3] `rpc.response.status_code`:** Usually it represents an error code, but may also represent partial success, warning, or differentiate between various types of successful outcomes.
-Semantic conventions for individual RPC frameworks SHOULD document what `rpc.response.status_code` means in the context of that system and which values are considered to represent errors.
+**[3] `rpc.response.status_code`:** All JSON-RPC error codes SHOULD be considered errors.
 
 **[4] `gen_ai.operation.name`:** SHOULD be set to `execute_tool` when the operation describes a tool call and SHOULD NOT be set otherwise.
 
@@ -791,12 +797,12 @@ of `[ 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30, 60, 120, 300 ]`.
 | [`gen_ai.prompt.variable`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | string | The variables supplied to the prompt template in the request. [8] | `Alice`; `French` |
 | [`mcp.resource.uri`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | string | The value of the resource uri. [9] | `postgres://database/customers/schema`; `file:///home/user/documents/report.pdf` |
 
-**[1] `error.type`:** On client spans, if and only if the operation fails. On server spans, if and only if the operation fails with a server-side error, timeout, or transport error.
+**[1] `error.type`:** On the client side, if and only if the operation fails. On the server side, if and only if the operation fails with a server-side error, an error reported in the result payload, a timeout, or a transport error.
 
-**[2] `error.type`:** On client spans, `error.type` SHOULD be set for any failed request or error response,
-including both client-side and server-side errors.
+**[2] `error.type`:** On the client side, `error.type` SHOULD be set for any failed request or error
+response, including both client-side and server-side errors.
 
-On server spans, `error.type` SHOULD NOT be set for client-side errors. See
+On the server side, `error.type` SHOULD NOT be set for client-side errors. See
 `rpc.response.status_code` for which error codes are considered server-side.
 
 When `error.type` is set, it SHOULD be set to the string representation of the JSON-RPC
@@ -811,8 +817,17 @@ string representation of the error. When
 is returned with `isError` set to `true`, this attribute SHOULD be set to
 `tool_error`.
 
-**[3] `rpc.response.status_code`:** Usually it represents an error code, but may also represent partial success, warning, or differentiate between various types of successful outcomes.
-Semantic conventions for individual RPC frameworks SHOULD document what `rpc.response.status_code` means in the context of that system and which values are considered to represent errors.
+**[3] `rpc.response.status_code`:** The following error codes indicate that the caller sent a request the
+server could not serve and SHOULD NOT be considered errors:
+
+- `-32700` (`Parse error`)
+- `-32600` (`Invalid Request`)
+- `-32601` (`Method not found`)
+- `-32602` (`Invalid params`) - also returned when the requested tool
+  does not exist
+- `-32002` ([`Resource not found`](https://modelcontextprotocol.io/specification/2025-11-25/server/resources#error-handling))
+
+Any other error code SHOULD be considered an error.
 
 **[4] `gen_ai.operation.name`:** SHOULD be set to `execute_tool` when the operation describes a tool call and SHOULD NOT be set otherwise.
 

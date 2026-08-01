@@ -34,7 +34,7 @@ spans:
       or notification or by the MCP server when server initiates the operation.
       It covers the time to receive the response or ack from the peer.
 
-      **Span status**: refer to the [Recording Errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.41.0/docs/general/recording-errors.md)
+      **Span status**: refer to the [Recording Errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/general/recording-errors.md)
       document for details on how to record span status. See also `rpc.response.status_code` attribute
       for the details on which values classify as errors.
 
@@ -52,9 +52,7 @@ spans:
     attributes:
       - ref_group: trace.mcp.common.attributes
       - ref_group: mcp.client.address_and_port.attributes
-      - ref: rpc.response.status_code
-        note: |
-          All JSON-RPC error codes SHOULD be considered errors.
+      - ref_group: mcp.client.status.attributes
       - ref: gen_ai.tool.call.arguments
         requirement_level: opt_in
       - ref: gen_ai.tool.call.result
@@ -98,7 +96,7 @@ spans:
       It's reported by the MCP server when client initiates the request
       (or notification) or by the MCP client when server initiates the operation.
 
-      **Span status**: refer to the [Recording Errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.41.0/docs/general/recording-errors.md)
+      **Span status**: refer to the [Recording Errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/general/recording-errors.md)
       document for details on how to record span status. See also `rpc.response.status_code` attribute
       for the details on which values classify as errors.
 
@@ -106,12 +104,7 @@ spans:
     stability: development
     attributes:
       - ref_group: trace.mcp.common.attributes
-      - ref: rpc.response.status_code
-        note: |
-          The following status codes SHOULD be considered errors:
-
-          - `-32603` (`Internal error`)
-          - Any error code in the range `-32000` to `-32099` (`Server error`)
+      - ref_group: mcp.server.status.attributes
       - ref: client.address
         requirement_level:
           recommended: If applicable.
