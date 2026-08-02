@@ -6,6 +6,7 @@ against a mock Google GenAI server, with manual OTel spans.
 
 import json
 import os
+from contextlib import contextmanager
 
 from opentelemetry.trace import SpanKind
 from reference_shared import flush_and_shutdown, reference_event_logger, reference_tracer, setup_otel
@@ -15,6 +16,7 @@ MOCK_BASE_URL = os.environ["MOCK_LLM_URL"]
 _reference_tracer = reference_tracer()
 
 
+@contextmanager
 def _patch_automatic_function_calling():
     """Emit execute_tool spans from the SDK's automatic-function-calling dispatch.
 
@@ -62,6 +64,10 @@ def _patch_automatic_function_calling():
         return parts
 
     _extra_utils.get_function_response_parts = instrumented
+    try:
+        yield
+    finally:
+        _extra_utils.get_function_response_parts = original
 
 
 def run_chat():
@@ -251,7 +257,10 @@ def run_chat_tool_call():
         "gen_ai.provider.name": "gcp.gemini",
         "gen_ai.request.model": request_model,
     }
-    with _reference_tracer.start_as_current_span("chat gemini-2.0-flash", attributes=span_attributes_2) as span:
+    with (
+        _patch_automatic_function_calling(),
+        _reference_tracer.start_as_current_span("chat gemini-2.0-flash", attributes=span_attributes_2) as span,
+    ):
         span.set_attribute(
             "gen_ai.tool.definitions",
             json.dumps(
@@ -383,7 +392,6 @@ def main():
 
     run_chat()
     run_interactions_continuation()
-    _patch_automatic_function_calling()
     run_chat_tool_call()
     run_chat_streaming()
     run_embeddings()

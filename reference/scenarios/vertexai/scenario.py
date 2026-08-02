@@ -7,6 +7,7 @@ against a mock Vertex AI server, with manual OTel spans.
 import json
 import os
 import warnings
+from contextlib import contextmanager
 
 from reference_shared import flush_and_shutdown, reference_event_logger, reference_tracer, setup_otel
 
@@ -38,6 +39,70 @@ _patch_http(PredictionServiceRestTransport)
 _patch_http(PredictionServiceRestTransportV1Beta1)
 
 _reference_tracer = reference_tracer()
+
+
+@contextmanager
+def _patch_automatic_function_calling():
+    """Emit execute_tool spans from the SDK's automatic-function-calling dispatch.
+
+    `_MessageResponder.respond_to_model_response` is where the SDK invokes the
+    application's callable: the `FunctionCall` (id, name, args) and the callable
+    declaration are both in scope, so this is the hook generic instrumentation
+    would patch. Wrapping the callable itself would lose the tool call id.
+    """
+    from vertexai.generative_models import _generative_models
+
+    responder_cls = _generative_models.AutomaticFunctionCallingResponder._MessageResponder
+    original = responder_cls.respond_to_model_response
+
+    def traced(declaration, function_call):
+        raw_call = function_call.to_dict()
+        function = declaration._function
+
+        def instrumented_function(**kwargs):
+            tool_span_attributes = {
+                "gen_ai.operation.name": "execute_tool",
+                "gen_ai.tool.name": raw_call["name"],
+                "gen_ai.tool.type": "function",
+            }
+            description = declaration._raw_function_declaration.description
+            if description:
+                tool_span_attributes["gen_ai.tool.description"] = description
+            with _reference_tracer.start_as_current_span(
+                f"execute_tool {raw_call['name']}", attributes=tool_span_attributes
+            ) as tool_span:
+                if raw_call.get("id"):
+                    tool_span.set_attribute("gen_ai.tool.call.id", raw_call["id"])
+                tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps(raw_call.get("args") or {}))
+                result = function(**kwargs)
+                tool_span.set_attribute(
+                    "gen_ai.tool.call.result", result if isinstance(result, str) else json.dumps(result)
+                )
+                return result
+
+        return instrumented_function
+
+    def instrumented(self, *, response, **kwargs):
+        candidate = response.candidates[0] if response.candidates else None
+        calls = {call.name: call for call in (candidate.function_calls if candidate else [])}
+        restore = []
+        for tool in self._tools or []:
+            for name, declaration in tool._callable_functions.items():
+                if name not in calls:
+                    continue
+                restore.append((declaration, declaration._function))
+                declaration._function = traced(declaration, calls[name])
+        try:
+            return original(self, response=response, **kwargs)
+        finally:
+            for declaration, function in restore:
+                declaration._function = function
+
+    responder_cls.respond_to_model_response = instrumented
+    try:
+        yield
+    finally:
+        responder_cls.respond_to_model_response = original
 
 
 def _mock_host():
@@ -144,22 +209,7 @@ def run_chat_tool_call():
         Args:
             location: City name
         """
-        # The SDK invokes this callable as part of automatic function calling.
-        # The public FunctionCall wrapper exposes only name/args, so the tool call
-        # id is not recorded here.
-        tool_span_attributes = {
-            "gen_ai.operation.name": "execute_tool",
-            "gen_ai.tool.name": "get_weather",
-            "gen_ai.tool.description": "Get the current weather",
-            "gen_ai.tool.type": "function",
-        }
-        with _reference_tracer.start_as_current_span(
-            "execute_tool get_weather", attributes=tool_span_attributes
-        ) as tool_span:
-            tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps({"location": location}))
-            result = f"Sunny in {location}"
-            tool_span.set_attribute("gen_ai.tool.call.result", result)
-            return result
+        return f"Sunny in {location}"
 
     tool = Tool(function_declarations=[CallableFunctionDeclaration.from_func(get_weather)])
     span_attributes_2 = {
@@ -167,7 +217,10 @@ def run_chat_tool_call():
         "gen_ai.provider.name": "gcp.vertex_ai",
         "gen_ai.request.model": request_model,
     }
-    with _reference_tracer.start_as_current_span("chat gemini-2.0-flash", attributes=span_attributes_2) as span:
+    with (
+        _patch_automatic_function_calling(),
+        _reference_tracer.start_as_current_span("chat gemini-2.0-flash", attributes=span_attributes_2) as span,
+    ):
         span.set_attribute(
             "gen_ai.tool.definitions",
             json.dumps(
