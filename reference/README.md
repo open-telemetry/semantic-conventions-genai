@@ -24,7 +24,7 @@ Run `uv run update-reports` to regenerate.
 
 | Span | Libraries |
 | --- | --- |
-| [Create Agent](reports/create-agent-span.md) | autogen, azure-ai-foundry, openai-assistants |
+| [Create Agent](reports/create-agent-span.md) | anthropic, aws-bedrock-agent, azure-ai-foundry, mistralai, openai-assistants |
 | [Invoke Agent Client](reports/invoke-agent-client-span.md) | aws-bedrock-agent, azure-ai-foundry, google-genai, openai-assistants |
 | [Invoke Agent Internal](reports/invoke-agent-internal-span.md) | agent-framework, autogen, crewai, google-adk, openai-agents, pydantic-ai |
 | [Invoke Workflow](reports/invoke-workflow-span.md) | crewai, google-adk |

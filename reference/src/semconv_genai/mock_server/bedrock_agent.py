@@ -1,4 +1,9 @@
-"""AWS Bedrock Agent Runtime-compatible endpoints."""
+"""AWS Bedrock Agent control-plane and Agent Runtime-compatible endpoints.
+
+Serves both the ``bedrock-agent`` (control plane) and ``bedrock-agent-runtime``
+(data plane) operations against a single mock URL, since both boto3 clients
+accept the same ``endpoint_url``.
+"""
 
 import base64
 import json
@@ -8,6 +13,44 @@ from flask import Blueprint, Response, request
 from ._common import encode_aws_event_stream_message
 
 bp = Blueprint("bedrock_agent", __name__)
+
+_AGENT_COUNTER = 0
+
+
+# Control plane -------------------------------------------------------------
+
+
+@bp.route("/agents/", methods=["PUT"])
+def bedrock_agent_create():
+    """Handle Bedrock Agent CreateAgent."""
+    global _AGENT_COUNTER
+    _AGENT_COUNTER += 1
+    body = request.get_json(silent=True) or {}
+    agent_id = f"MOCKAGENTID{_AGENT_COUNTER:03d}"
+    agent = {
+        "agentId": agent_id,
+        "agentName": body.get("agentName", "unnamed-agent"),
+        "agentArn": f"arn:aws:bedrock:us-east-1:123456789012:agent/{agent_id}",
+        "agentVersion": "DRAFT",
+        "agentStatus": "CREATING",
+        "foundationModel": body.get("foundationModel"),
+        "instruction": body.get("instruction"),
+        "description": body.get("description"),
+        "idleSessionTTLInSeconds": body.get("idleSessionTTLInSeconds", 600),
+        "agentResourceRoleArn": body.get(
+            "agentResourceRoleArn", "arn:aws:iam::123456789012:role/service-role/AmazonBedrockExecutionRoleForAgents"
+        ),
+        "createdAt": "2026-04-08T00:00:00Z",
+        "updatedAt": "2026-04-08T00:00:00Z",
+    }
+    return Response(
+        json.dumps({"agent": {k: v for k, v in agent.items() if v is not None}}),
+        status=202,
+        mimetype="application/json",
+    )
+
+
+# Data plane ----------------------------------------------------------------
 
 
 def _stream_invoke(agent_id, alias_id, session_id, enable_trace=False):
