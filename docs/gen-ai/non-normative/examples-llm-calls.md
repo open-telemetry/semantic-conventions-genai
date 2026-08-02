@@ -382,6 +382,9 @@ attach additional application-specific attributes to the execute-tool span. The
 following attributes are non-normative examples; they illustrate how a system
 can correlate a tool execution with the action that was reviewed, the verdict
 that was returned, and the evidence that can be replayed later.
+These attributes are correlation claims, not authorization or verification
+evidence; consumers must independently validate the referenced approval,
+verifier, or proof material before treating them as governance evidence.
 
 | Property                            | Value                                                                 |
 | ----------------------------------- | --------------------------------------------------------------------- |
