@@ -14,6 +14,6 @@ here as client spans — the same way `aws-bedrock-agent` instruments
 | --- | --- | --- |
 | memory | Yes — AgentCore Memory store / record create, update, search, delete | ✅ Implemented |
 | invoke_agent (client) | Yes — `InvokeAgentRuntime` invokes the remote agent | ❌ Not implemented |
-| create_agent (client) | No — `CreateAgentRuntime` deploys a container, not an agent configuration | ➖ Out of scope |
+| create_agent | No — `CreateAgentRuntime` deploys a container, not an agent configuration | ➖ Out of scope |
 | execute_tool | Yes — `InvokeCodeInterpreter` / `InvokeBrowser` built-in tools | ❌ Not implemented |
 | inference (`chat`) | No — runs remotely inside the agent runtime | ✅ Correctly not emitted |
