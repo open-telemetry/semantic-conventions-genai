@@ -30,6 +30,11 @@ _tool_calls = _reference_meter.create_histogram(
     unit="{tool_call}",
     description="The number of tool calls a GenAI agent makes during a single invocation.",
 )
+_budget_utilization = _reference_meter.create_histogram(
+    "gen_ai.invoke_agent.token_budget.utilization",
+    unit="1",
+    description="Fraction of configured token budget consumed by an agent invocation.",
+)
 
 
 class SpanCounter(SpanProcessor):
@@ -216,6 +221,8 @@ def run_agent_reference():
                 with _reference_tracer.start_as_current_span(
                     "invoke_agent test_agent", attributes=agent_span_attributes
                 ) as agent_span:
+                    agent_span.set_attribute("gen_ai.agent.iteration_budget", 10)
+                    agent_span.set_attribute("gen_ai.agent.token_budget", 100000)
                     agent_span.set_attribute("gen_ai.request.choice.count", request_choice_count)
                     agent_span.set_attribute("gen_ai.request.max_tokens", request_max_tokens)
                     agent_span.set_attribute("gen_ai.request.temperature", request_temperature)
@@ -270,6 +277,11 @@ def run_agent_reference():
                             agent_span.set_attribute("gen_ai.usage.input_tokens", prompt_token_count)
                         if candidate_token_count is not None:
                             agent_span.set_attribute("gen_ai.usage.output_tokens", candidate_token_count)
+                    agent_span.set_attribute("gen_ai.agent.iteration_budget.consumed", call_counts["inference"])
+                    if usage_metadata is not None:
+                        prompt_tc = getattr(usage_metadata, "prompt_token_count", 0) or 0
+                        cand_tc = getattr(usage_metadata, "candidates_token_count", 0) or 0
+                        agent_span.set_attribute("gen_ai.agent.token_budget.consumed", prompt_tc + cand_tc)
                     if finish_reason is not None:
                         agent_span.set_attribute(
                             "gen_ai.response.finish_reasons",
@@ -289,11 +301,12 @@ def run_agent_reference():
 
         asyncio.run(_run())
 
-        # Both metrics are scoped to the agent invocation and emitted alongside
+        # All metrics are scoped to the agent invocation and emitted alongside
         # the invoke_agent (internal) span, dimensioned by the agent name.
         metric_attributes = {"gen_ai.agent.name": agent.name}
         _inference_calls.record(call_counts["inference"], metric_attributes)
         _tool_calls.record(call_counts["tool"], metric_attributes)
+        _budget_utilization.record(call_counts["inference"] / 10.0, metric_attributes)
 
 
 def run_memory_reference():

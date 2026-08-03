@@ -1,7 +1,11 @@
 {
   "spans": {
     "invoke_agent_internal": [
+      "gen_ai.agent.iteration_budget",
+      "gen_ai.agent.iteration_budget.consumed",
       "gen_ai.agent.name",
+      "gen_ai.agent.token_budget",
+      "gen_ai.agent.token_budget.consumed",
       "gen_ai.conversation.id",
       "gen_ai.input.messages",
       "gen_ai.operation.name",
@@ -50,6 +54,9 @@
       "gen_ai.agent.name"
     ],
     "gen_ai.invoke_agent.tool_calls": [
+      "gen_ai.agent.name"
+    ],
+    "gen_ai.invoke_agent.token_budget.utilization": [
       "gen_ai.agent.name"
     ]
   }
