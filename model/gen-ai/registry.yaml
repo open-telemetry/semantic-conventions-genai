@@ -946,70 +946,50 @@ attributes:
     stability: development
   - key: gen_ai.agent.token_budget
     type: int
-    brief: The maximum total tokens (input + output) allocated for this agent invocation.
+    brief: Cumulative token budget configured for this agent invocation.
     note: |
-      Some agent frameworks and orchestration layers allow callers to set a
-      cumulative token budget across all inference calls within a single
-      agent invocation. When this limit is reached the agent loop terminates.
-
-      This attribute records the configured budget at invocation time. It
-      SHOULD only be populated when the framework natively exposes a
-      cumulative token limit at the agent invocation level:
-
-      - CrewAI: `Agent(max_tokens=...)` when used as an aggregate cap
+      Records the cumulative token budget (input + output, across all
+      inference calls) configured for this agent invocation. When the
+      budget is exhausted the agent loop terminates. Populated from the
+      framework's configuration (e.g., CrewAI `Agent(max_tokens=...)`
+      when used as an aggregate cap).
 
       Instrumentations MUST NOT synthesize a token budget by multiplying
-      iteration limits by per-call token limits. Such computation produces
-      inconsistent values across frameworks and makes cross-framework
-      comparison unreliable.
-
-      When no explicit token budget is configured at the agent invocation
-      level, this attribute MUST NOT be set.
+      iteration limits by per-call token limits.
     examples: [50000, 100000, 500000]
     stability: development
   - key: gen_ai.agent.token_budget.consumed
     type: int
-    brief: The total tokens (input + output) consumed by this agent invocation at completion.
+    brief: Cumulative tokens consumed across all inference calls in this invocation.
     note: |
-      This is the sum of all `gen_ai.usage.input_tokens` and
-      `gen_ai.usage.output_tokens` across every inference call made by
-      this agent during the invocation. Sub-agent consumption is NOT
-      included; each agent reports its own consumption independently.
+      Total tokens (input + output) consumed across all inference calls
+      within this agent invocation. Sub-agent consumption is NOT included;
+      each agent reports its own consumption independently.
 
       This attribute SHOULD be set when the agent invocation completes
-      (regardless of finish reason). It enables budget utilization queries
-      such as "what fraction of their budget do agents typically use?"
-      and anomaly detection on runaway agents.
+      regardless of finish reason. When `gen_ai.agent.token_budget` is
+      also present, the ratio consumed/budget gives budget utilization.
     examples: [12340, 48500, 99800]
     stability: development
   - key: gen_ai.agent.iteration_budget
     type: int
-    brief: The maximum number of agent loop iterations (turns) allowed for this invocation.
+    brief: Maximum iterations configured for this agent invocation.
     note: |
-      Most agent frameworks enforce an iteration limit to prevent infinite
-      loops. This attribute records the configured maximum, populated from
-      the framework's configuration API:
-
-      - Google ADK: `RunConfig(max_llm_calls=...)`
-      - LangChain: `AgentExecutor(max_iterations=...)`
-      - LangGraph: `recursion_limit` in graph config
-      - CrewAI: `Agent(max_iter=...)`
-      - OpenAI Agents SDK: `Runner.run(max_turns=...)`
-
-      When no explicit iteration limit is configured, this attribute
-      MUST NOT be set.
+      Records the maximum number of iterations configured for this agent
+      invocation, populated from the framework's configuration (e.g.,
+      LangChain `max_iterations`, CrewAI `max_iter`, OpenAI Agents SDK
+      `max_turns`, LangGraph `recursion_limit`, Google ADK
+      `max_llm_calls`).
     examples: [10, 25, 50]
     stability: development
   - key: gen_ai.agent.iteration_budget.consumed
     type: int
-    brief: The number of agent loop iterations actually executed in this invocation.
+    brief: Iterations completed in this agent invocation.
     note: |
-      Each iteration typically corresponds to one inference call followed
-      by optional tool execution. This attribute SHOULD be set when the
-      agent invocation completes.
-
-      Combined with `gen_ai.agent.iteration_budget`, this enables
-      utilization analysis and early warning of agents approaching their
-      iteration cap.
+      Number of iterations the agent completed before the invocation
+      ended. This attribute SHOULD be set when the agent invocation
+      completes regardless of finish reason. Combined with
+      `gen_ai.agent.iteration_budget`, this allows computing iteration
+      budget utilization.
     examples: [3, 8, 25]
     stability: development
