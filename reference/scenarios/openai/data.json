@@ -52,6 +52,48 @@
       "gen_ai.system_instructions",
       "server.address",
       "server.port"
+    ],
+    "run_guardrail_client": [
+      "gen_ai.operation.name",
+      "gen_ai.security.action.type",
+      "gen_ai.security.guardrail.id",
+      "gen_ai.security.guardrail.name",
+      "gen_ai.security.guardrail.provider.name",
+      "gen_ai.security.guardrail.version",
+      "gen_ai.security.policy.id",
+      "gen_ai.security.policy.name",
+      "gen_ai.security.policy.version",
+      "gen_ai.security.target.id",
+      "gen_ai.security.target.subtype",
+      "gen_ai.security.target.type",
+      "gen_ai.security.verdict.type",
+      "server.address",
+      "server.port"
+    ],
+    "run_guardrail_internal": [
+      "gen_ai.conversation.id",
+      "gen_ai.operation.name",
+      "gen_ai.security.action.type",
+      "gen_ai.security.content.input.hash",
+      "gen_ai.security.content.modified",
+      "gen_ai.security.external_finding_id",
+      "gen_ai.security.finding.evidence",
+      "gen_ai.security.guardrail.id",
+      "gen_ai.security.guardrail.name",
+      "gen_ai.security.guardrail.provider.name",
+      "gen_ai.security.guardrail.version",
+      "gen_ai.security.policy.id",
+      "gen_ai.security.policy.name",
+      "gen_ai.security.policy.rule.id",
+      "gen_ai.security.policy.version",
+      "gen_ai.security.risk.finding",
+      "gen_ai.security.risk.score",
+      "gen_ai.security.target.id",
+      "gen_ai.security.target.subtype",
+      "gen_ai.security.target.type",
+      "gen_ai.security.verdict.code",
+      "gen_ai.security.verdict.reason",
+      "gen_ai.security.verdict.type"
     ]
   },
   "events": {
@@ -72,6 +114,26 @@
       "gen_ai.usage.output_tokens",
       "server.address",
       "server.port"
+    ],
+    "gen_ai.security.finding": [
+      "gen_ai.security.action.type",
+      "gen_ai.security.external_finding_id",
+      "gen_ai.security.finding.evidence",
+      "gen_ai.security.guardrail.id",
+      "gen_ai.security.guardrail.name",
+      "gen_ai.security.guardrail.provider.name",
+      "gen_ai.security.policy.id",
+      "gen_ai.security.policy.name",
+      "gen_ai.security.policy.rule.id",
+      "gen_ai.security.policy.version",
+      "gen_ai.security.risk.finding",
+      "gen_ai.security.risk.score",
+      "gen_ai.security.target.id",
+      "gen_ai.security.target.subtype",
+      "gen_ai.security.target.type",
+      "gen_ai.security.verdict.code",
+      "gen_ai.security.verdict.reason",
+      "gen_ai.security.verdict.type"
     ]
   }
 }

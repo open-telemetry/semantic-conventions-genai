@@ -84,10 +84,13 @@ SEMCONV_DOC_LINKS: dict[str, str] = {
     "fetch_response": "../../docs/gen-ai/gen-ai-spans.md#fetch-response",
     "memory": "../../docs/gen-ai/gen-ai-spans.md#memory",
     "execute_tool": "../../docs/gen-ai/gen-ai-spans.md#execute-tool-span",
+    "run_guardrail_client": "../../docs/gen-ai/gen-ai-security.md#run-guardrail-client-span",
+    "run_guardrail_internal": "../../docs/gen-ai/gen-ai-security.md#run-guardrail-internal-span",
     "gen_ai.client.inference.operation.details": "../../docs/gen-ai/gen-ai-events.md#event-gen_aiclientinferenceoperationdetails",
     "gen_ai.evaluation.result": "../../docs/gen-ai/gen-ai-events.md#event-gen_aievaluationresult",
     "gen_ai.invoke_agent.inference_calls": "../../docs/gen-ai/gen-ai-metrics.md#metric-gen_aiinvoke_agentinference_calls",
     "gen_ai.invoke_agent.tool_calls": "../../docs/gen-ai/gen-ai-metrics.md#metric-gen_aiinvoke_agenttool_calls",
+    "gen_ai.security.finding": "../../docs/gen-ai/gen-ai-events.md#event-gen_aisecurityfinding",
 }
 
 
