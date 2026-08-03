@@ -16,4 +16,4 @@ execution happen across a process boundary it cannot observe.
 | execute_tool | No — the client returns tool calls but doesn't execute them; the tool runs in app code | ➖ Not instrumentable |
 | create_agent (client) | Yes — hosted Agents API `beta.agents.create` | ✅ Implemented |
 | invoke_agent (client) | Yes — `beta.conversations.start` runs the remote agent | ❌ Not implemented |
-| invoke_workflow (client) | Yes — hosted Workflows API | ❌ Not implemented |
+| invoke_workflow | Yes — hosted Workflows API | ❌ Not implemented |
