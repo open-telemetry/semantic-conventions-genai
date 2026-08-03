@@ -948,22 +948,23 @@ attributes:
     type: int
     brief: The maximum total tokens (input + output) allocated for this agent invocation.
     note: |
-      Agent frameworks allow callers to set a token budget that caps the
-      cumulative token consumption across all inference calls within a
-      single agent invocation. When this limit is reached the agent loop
-      terminates.
+      Some agent frameworks and orchestration layers allow callers to set a
+      cumulative token budget across all inference calls within a single
+      agent invocation. When this limit is reached the agent loop terminates.
 
-      This attribute records the configured budget at invocation time.
-      It is populated from the framework's configuration API:
+      This attribute records the configured budget at invocation time. It
+      SHOULD only be populated when the framework natively exposes a
+      cumulative token limit at the agent invocation level:
 
-      - OpenAI Agents SDK: `Runner.run(max_turns=...)` combined with per-turn `max_tokens`
-      - LangChain: `AgentExecutor(max_iterations=..., max_execution_time=...)`
-      - CrewAI: `Crew(max_rpm=..., max_tokens_per_task=...)`
-      - Google ADK: `RunConfig(max_llm_calls=...)`
-      - Claude Agent SDK: `max_tokens` parameter in agent loop configuration
+      - CrewAI: `Agent(max_tokens=...)` when used as an aggregate cap
 
-      When no explicit token budget is configured, this attribute MUST NOT
-      be set.
+      Instrumentations MUST NOT synthesize a token budget by multiplying
+      iteration limits by per-call token limits. Such computation produces
+      inconsistent values across frameworks and makes cross-framework
+      comparison unreliable.
+
+      When no explicit token budget is configured at the agent invocation
+      level, this attribute MUST NOT be set.
     examples: [50000, 100000, 500000]
     stability: development
   - key: gen_ai.agent.token_budget.consumed
@@ -986,13 +987,14 @@ attributes:
     brief: The maximum number of agent loop iterations (turns) allowed for this invocation.
     note: |
       Most agent frameworks enforce an iteration limit to prevent infinite
-      loops. This attribute records the configured maximum.
+      loops. This attribute records the configured maximum, populated from
+      the framework's configuration API:
 
-      - OpenAI Agents SDK: `max_turns`
+      - Google ADK: `RunConfig(max_llm_calls=...)`
       - LangChain: `AgentExecutor(max_iterations=...)`
-      - CrewAI: `max_iter` per agent
-      - Google ADK: `max_llm_calls`
-      - Anthropic Claude Agent SDK: loop iteration limit
+      - LangGraph: `recursion_limit` in graph config
+      - CrewAI: `Agent(max_iter=...)`
+      - OpenAI Agents SDK: `Runner.run(max_turns=...)`
 
       When no explicit iteration limit is configured, this attribute
       MUST NOT be set.
