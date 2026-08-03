@@ -23,5 +23,5 @@ execution is instrumentable here.
 | inference (`chat`) | Yes — calls the model directly | ✅ Implemented |
 | execute_tool | Yes — automatic function calling executes the tool (`preview` surface in google-cloud-aiplatform 2.x) | ✅ Implemented |
 | embeddings | Yes — text-embeddings API | ➖ Won't add — SDK deprecated |
-| create_agent | Yes — Agent Engine (`vertexai.agent_engines`, not deprecated) hosts agents remotely | ❌ Not implemented |
-| invoke_agent (client) | Yes — Agent Engine (`vertexai.agent_engines`, not deprecated) hosts agents remotely | ❌ Not implemented |
+| create_agent | Yes — Agent Engine hosts agents remotely | ➖ Won't add — SDK deprecated |
+| invoke_agent (client) | Yes — Agent Engine hosts agents remotely | ➖ Won't add — SDK deprecated |
