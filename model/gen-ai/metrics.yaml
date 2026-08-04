@@ -234,20 +234,20 @@ metrics:
     annotations:
       code_generation:
         metric_value_type: double
-    brief: >
-      The fraction of the configured token budget consumed by an agent
-      invocation, expressed as a value between 0.0 and 1.0.
+    brief: 'Fraction of configured token budget consumed by an agent invocation.'
     note: |
-      Calculated as `gen_ai.agent.token_budget.consumed / gen_ai.agent.token_budget`
+      Calculated as `gen_ai.agent.token_budget.consumed / gen_ai.agent.token_budget.limit`
       when both values are available. A value of 1.0 means the agent
-      exhausted its entire budget.
-
-      This metric enables capacity planning (typical utilization
-      distribution) and alerting (agents consistently near 1.0 may need
-      larger budgets or optimization).
+      exhausted its entire budget. Values greater than 1.0 are valid and
+      indicate the budget was exceeded before enforcement halted execution.
 
       This metric SHOULD only be emitted when a token budget is configured
-      and the invocation has completed.
+      (`gen_ai.agent.token_budget.limit` is set) and the invocation span
+      has ended.
+
+      The `gen_ai.agent.token_budget.limit` value used in the denominator
+      MUST be the framework's configured value; see that attribute's note
+      for constraints on synthetic values.
     instrument: histogram
     unit: "1"
     stability: development

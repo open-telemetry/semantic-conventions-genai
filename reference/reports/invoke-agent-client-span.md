@@ -28,6 +28,10 @@
 
 | Attribute | Supporting Libraries |
 | --- | --- |
+| gen_ai.agent.iteration_budget.consumed | (none) |
+| gen_ai.agent.iteration_budget.limit | (none) |
+| gen_ai.agent.token_budget.consumed | (none) |
+| gen_ai.agent.token_budget.limit | (none) |
 | gen_ai.request.frequency_penalty | (none) |
 | gen_ai.request.max_tokens | [azure-ai-foundry], [openai-assistants] |
 | gen_ai.request.model | [azure-ai-foundry], [google-genai], [openai-assistants] |

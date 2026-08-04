@@ -1,8 +1,8 @@
 {
   "spans": {
     "invoke_agent_internal": [
-      "gen_ai.agent.iteration_budget",
       "gen_ai.agent.iteration_budget.consumed",
+      "gen_ai.agent.iteration_budget.limit",
       "gen_ai.agent.name",
       "gen_ai.agent.token_budget.consumed",
       "gen_ai.conversation.id",
@@ -16,6 +16,7 @@
       "gen_ai.request.presence_penalty",
       "gen_ai.request.stop_sequences",
       "gen_ai.request.temperature",
+      "gen_ai.request.top_k",
       "gen_ai.request.top_p",
       "gen_ai.response.finish_reasons",
       "gen_ai.system_instructions",
@@ -53,9 +54,6 @@
       "gen_ai.agent.name"
     ],
     "gen_ai.invoke_agent.tool_calls": [
-      "gen_ai.agent.name"
-    ],
-    "gen_ai.invoke_agent.token_budget.utilization": [
       "gen_ai.agent.name"
     ]
   }

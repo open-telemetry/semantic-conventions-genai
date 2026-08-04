@@ -30,12 +30,6 @@ _tool_calls = _reference_meter.create_histogram(
     unit="{tool_call}",
     description="The number of tool calls a GenAI agent makes during a single invocation.",
 )
-_budget_utilization = _reference_meter.create_histogram(
-    "gen_ai.invoke_agent.token_budget.utilization",
-    unit="1",
-    description="Fraction of configured token budget consumed by an agent invocation.",
-)
-
 
 class SpanCounter(SpanProcessor):
     """Lightweight span counter for diagnosing whether instrumentation fires."""
@@ -224,7 +218,7 @@ def run_agent_reference():
                 with _reference_tracer.start_as_current_span(
                     "invoke_agent test_agent", attributes=agent_span_attributes
                 ) as agent_span:
-                    agent_span.set_attribute("gen_ai.agent.iteration_budget", run_config.max_llm_calls)
+                    agent_span.set_attribute("gen_ai.agent.iteration_budget.limit", run_config.max_llm_calls)
                     agent_span.set_attribute("gen_ai.request.choice.count", request_choice_count)
                     agent_span.set_attribute("gen_ai.request.max_tokens", request_max_tokens)
                     agent_span.set_attribute("gen_ai.request.temperature", request_temperature)
@@ -306,9 +300,6 @@ def run_agent_reference():
         metric_attributes = {"gen_ai.agent.name": agent.name}
         _inference_calls.record(call_counts["inference"], metric_attributes)
         _tool_calls.record(call_counts["tool"], metric_attributes)
-        _budget_utilization.record(
-            call_counts["inference"] / run_config.max_llm_calls, metric_attributes
-        )
 
 
 def run_memory_reference():

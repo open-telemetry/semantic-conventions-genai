@@ -80,18 +80,18 @@ attribute_groups:
   - id: attributes.gen_ai.agent.budget
     visibility: internal
     attributes:
-      - ref: gen_ai.agent.token_budget
+      - ref: gen_ai.agent.token_budget.limit
         requirement_level:
           recommended: When the framework exposes a configured token budget.
       - ref: gen_ai.agent.token_budget.consumed
         requirement_level:
-          recommended: When the agent invocation has completed.
-      - ref: gen_ai.agent.iteration_budget
+          recommended: When the agent invocation span ends.
+      - ref: gen_ai.agent.iteration_budget.limit
         requirement_level:
           recommended: When the framework exposes a configured iteration limit.
       - ref: gen_ai.agent.iteration_budget.consumed
         requirement_level:
-          recommended: When the agent invocation has completed.
+          recommended: When the agent invocation span ends.
 
   - id: attributes.gen_ai.invoke_agent.common
     visibility: internal
