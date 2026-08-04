@@ -25,9 +25,7 @@ rules, and external security systems. Examples include content safety services,
 model armor services, policy engines, DLP filters, prompt-injection detectors,
 and custom application controls.
 
-Guardrail spans SHOULD be children of the GenAI span they protect, such as
-[inference](gen-ai-spans.md#inference) or
-[execute tool](gen-ai-spans.md#execute-tool-span) spans. Use a
+Use a
 `gen_ai.run_guardrail.client` span when the guardrail evaluation is performed
 by another process or service, and a `gen_ai.run_guardrail.internal` span when
 the evaluation is performed in-process.
@@ -77,13 +75,6 @@ This span SHOULD be used when the guardrail evaluation is performed by
 another process or service, especially when the call happens over an
 instrumented protocol such as HTTP.
 
-Guardrail spans SHOULD be children of the GenAI span they protect, such as
-[inference](/docs/gen-ai/gen-ai-spans.md#inference) or
-[execute tool](/docs/gen-ai/gen-ai-spans.md#execute-tool-span) spans.
-
-Multiple guardrail spans MAY exist under a single operation span if
-multiple guardrails are chained.
-
 **Span name** SHOULD be `run_guardrail {gen_ai.security.guardrail.name}` when
 `gen_ai.security.guardrail.name` is readily available. When it is not available,
 it SHOULD be `run_guardrail {gen_ai.security.target.type} {gen_ai.security.target.subtype}`
@@ -109,25 +100,22 @@ Semantic conventions for individual guardrail services and frameworks MAY specif
 | [`gen_ai.security.content.input.hash`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [7] | string | Hash of the input content for forensic correlation. [8] | `sha256:a3f2b8c9...`; `hmac-sha256:b7e4c2a1...` |
 | [`gen_ai.security.content.modified`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If content was redacted or otherwise modified. | boolean | Whether guardrail processing actually changed the content. [9] | `true`; `false` |
 | [`gen_ai.security.external_finding_id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [10] | string | External correlation identifier for a security finding. [11] | `finding_abc123`; `incident-2024-001`; `sec-finding-xyz` |
-| [`gen_ai.security.guardrail.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If available. | string | The unique identifier of the security guardrail service or component. [12] | `content-safety`; `pii-filter-v3`; `custom-guardrail-001` |
 | [`gen_ai.security.policy.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If a policy produced the verdict. | string | Identifier of the policy that produced the verdict. | `policy_pii_v2`; `deny-topic-financial-advice`; `org-compliance-001` |
-| [`gen_ai.security.target.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If available. | string | Identifier of the specific target the guardrail is applied to. [13] | `call_xyz789`; `msg_abc123`; `mem_abc456` |
-| [`gen_ai.security.target.subtype`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If available. | string | The subtype of content or action the guardrail is applied to. [14] | `llm`; `tool_call`; `tool_definition`; `retrieval`; `memory` |
-| [`gen_ai.security.verdict.reason`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [15] | string | Human-readable explanation for the security verdict. [16] | `PII detected in output`; `Prompt injection attempt detected`; `Action exceeds agent permission scope` |
-| [`server.port`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If `server.address` is set. | int | Guardrail service port. [17] | `80`; `8080`; `443` |
-| [`gen_ai.security.finding.evidence`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If non-content evidence descriptors are available. | string[] | Non-content evidence descriptors for a security finding. [18] | `["field:bcc", "pattern:email"]`; `["count:2", "position:output.content"]` |
-| [`gen_ai.security.guardrail.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | Human-readable name of the security guardrail service or component. [19] | `Azure Content Safety`; `Bedrock Guardrails`; `Custom PII Filter` |
-| [`gen_ai.security.guardrail.provider.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The provider or vendor of the security guardrail service. [20] | `azure.ai.content_safety`; `aws.bedrock`; `gcp.model_armor`; `custom` |
-| [`gen_ai.security.guardrail.version`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | Version of the security guardrail service or component. [21] | `1.0.0`; `2024-05-01`; `v2` |
+| [`gen_ai.security.target.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If available. | string | Identifier of the specific target the guardrail is applied to. [12] | `call_xyz789`; `msg_abc123`; `mem_abc456` |
+| [`gen_ai.security.target.subtype`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If available. | string | The subtype of content or action the guardrail is applied to. [13] | `llm`; `tool_call`; `tool_definition`; `retrieval`; `memory` |
+| [`gen_ai.security.verdict.reason`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [14] | string | Human-readable explanation for the security verdict. [15] | `PII detected in output`; `Prompt injection attempt detected`; `Action exceeds agent permission scope` |
+| [`server.port`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If `server.address` is set. | int | Guardrail service port. [16] | `80`; `8080`; `443` |
+| [`gen_ai.provider.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The Generative AI provider as identified by the client or server instrumentation. [17] | `openai`; `gcp.gen_ai`; `gcp.vertex_ai` |
+| [`gen_ai.security.guardrail.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | Human-readable name of the security guardrail service or component. [18] | `Azure Content Safety`; `Bedrock Guardrails`; `Custom PII Filter` |
 | [`gen_ai.security.policy.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | Human-readable name of the policy that produced the verdict. | `PII Protection Policy`; `Financial Advice Restriction` |
-| [`gen_ai.security.policy.rule.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If available. | string | Identifier of the policy rule, section, or control that produced the verdict. [22] | `rule-pii-email`; `section-4.2`; `detector-jailbreak` |
+| [`gen_ai.security.policy.rule.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If available. | string | Identifier of the policy rule, section, or control that produced the verdict. [19] | `rule-pii-email`; `section-4.2`; `detector-jailbreak` |
 | [`gen_ai.security.policy.version`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | Version of the policy that produced the verdict. | `1.0`; `2024-05-01` |
-| [`gen_ai.security.risk.finding`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If a risk finding is reported. | string | The security risk finding detected. [23] | `prompt_injection`; `sensitive_info_disclosure`; `jailbreak`; `custom:financial_advice_violation` |
-| [`gen_ai.security.risk.score`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If a risk or confidence score is reported. | double | Numeric risk or confidence score. [24] | `0.85`; `0.95`; `0.42` |
+| [`gen_ai.security.risk.finding`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If a risk finding is reported. | string | The security risk finding detected. [20] | `prompt_injection`; `sensitive_info_disclosure`; `jailbreak`; `custom:financial_advice_violation` |
+| [`gen_ai.security.risk.score`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If a risk or confidence score is reported. | double | Numeric risk or confidence score. [21] | `0.85`; `0.95`; `0.42` |
 | [`gen_ai.security.verdict.code`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | Provider-specific code for the security verdict. | `112`; `403`; `AACS-PII`; `MODEL_ARMOR_SAFETY` |
-| [`server.address`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | Guardrail service address. [25] | `example.com`; `10.1.2.80`; `/tmp/my.sock` |
-| [`gen_ai.security.content.input.value`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | The input content that was evaluated by the guardrail. [26] | `Send an email to customer@example.com` |
-| [`gen_ai.security.content.output.value`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | The output content after guardrail processing, if modified. [27] | `Send an email to [REDACTED]` |
+| [`server.address`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | Guardrail service address. [22] | `example.com`; `10.1.2.80`; `/tmp/my.sock` |
+| [`gen_ai.security.content.input.value`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | The input content that was evaluated by the guardrail. [23] | `Send an email to customer@example.com` |
+| [`gen_ai.security.content.output.value`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | The output content after guardrail processing, if modified. [24] | `Send an email to [REDACTED]` |
 
 **[1] `gen_ai.operation.name`:** If one of the predefined values applies, but specific system uses a different name it's RECOMMENDED to document it in the semantic conventions for specific GenAI system and use system-specific name in the instrumentation. If a different name is not documented, instrumentation libraries SHOULD use applicable predefined value.
 
@@ -168,51 +156,39 @@ The value typically comes from the response of an external security
 inspection service or may be included in response headers when inspection
 happens alongside the LLM call.
 
-**[12] `gen_ai.security.guardrail.id`:** This identifies the service, component, or library performing the security
-evaluation, not the policy or configuration being applied.
+**[12] `gen_ai.security.target.id`:** For example, a tool call identifier, request identifier, memory record identifier, or message identifier, if applicable.
 
-For provider-specific guardrail or policy configuration identifiers (for
-example, an AWS Bedrock guardrail ARN or an Azure Content Safety blocklist
-ID), use `gen_ai.security.policy.id` instead.
+**[13] `gen_ai.security.target.subtype`:** This attribute refines `gen_ai.security.target.type`. For example, `gen_ai.security.target.type=input` and `gen_ai.security.target.subtype=tool_call` identifies tool call arguments or invocation requests, while `gen_ai.security.target.type=output` and `gen_ai.security.target.subtype=tool_call` identifies tool call results or responses.
 
-**[13] `gen_ai.security.target.id`:** For example, a tool call identifier, request identifier, memory record identifier, or message identifier, if applicable.
+**[14] `gen_ai.security.verdict.reason`:** If `gen_ai.security.verdict.type` is not `allow` and a reason is available.
 
-**[14] `gen_ai.security.target.subtype`:** This attribute refines `gen_ai.security.target.type`. For example, `gen_ai.security.target.type=input` and `gen_ai.security.target.subtype=tool_call` identifies tool call arguments or invocation requests, while `gen_ai.security.target.type=output` and `gen_ai.security.target.subtype=tool_call` identifies tool call results or responses.
+**[15] `gen_ai.security.verdict.reason`:** The value SHOULD be low-cardinality and MUST NOT contain sensitive user content or other high-risk data.
 
-**[15] `gen_ai.security.verdict.reason`:** If `gen_ai.security.verdict.type` is not `allow` and a reason is available.
+**[16] `server.port`:** When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries, for example proxies, if it's available.
 
-**[16] `gen_ai.security.verdict.reason`:** The value SHOULD be low-cardinality and MUST NOT contain sensitive user content or other high-risk data.
+**[17] `gen_ai.provider.name`:** Semantic conventions for individual GenAI operations SHOULD clarify which
+kinds of providers (e.g. inference, embeddings, retrieval, memory, hosted
+agent providers) apply when it is not clear from context.
 
-**[17] `server.port`:** When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries, for example proxies, if it's available.
+The attribute SHOULD be set based on the instrumentation's best knowledge
+and may differ from the actual upstream provider. For example, a client SDK
+may be configured against a proxy or hosting platform that transparently
+relays requests to a different provider.
 
-**[18] `gen_ai.security.finding.evidence`:** This attribute is intended for low-cardinality, non-content descriptors
-that help locate or explain a finding without recording the evaluated
-content itself.
+The `gen_ai.provider.name` attribute acts as a discriminator that
+identifies the GenAI telemetry format flavor specific to that provider
+within GenAI semantic conventions.
+It SHOULD be set consistently with provider-specific attributes and signals.
+For example, GenAI spans, metrics, and events related to AWS Bedrock
+should have the `gen_ai.provider.name` set to `aws.bedrock` and include
+applicable `aws.bedrock.*` attributes and are not expected to include
+`openai.*` attributes.
 
-> [!WARNING]
-> This attribute MUST NOT contain sensitive user content, PII, secrets, or
-> other high-risk data.
+**[18] `gen_ai.security.guardrail.name`:** This identifies the security evaluation service or component, not the policy name. For policy names, use `gen_ai.security.policy.name`.
 
-Example values include:
+**[19] `gen_ai.security.policy.rule.id`:** Use this when `gen_ai.security.policy.id` identifies a broader policy and the guardrail reports a more specific rule, section, control, or detector within that policy.
 
-- Field identifiers: `field:bcc`, `parameter:query`
-- Pattern types: `pattern:ssn`, `pattern:credit_card`
-- Counts: `count:3`
-- Positions: `position:input[0].content`
-
-**[19] `gen_ai.security.guardrail.name`:** This identifies the security evaluation service or component, not the policy name. For policy names, use `gen_ai.security.policy.name`.
-
-**[20] `gen_ai.security.guardrail.provider.name`:** This is distinct from `gen_ai.provider.name`, which identifies the GenAI
-provider for inference, embeddings, retrieval, memory, or agent operations.
-
-If one of the well-known values applies, then the respective value SHOULD
-be used. Otherwise, a custom value MAY be used.
-
-**[21] `gen_ai.security.guardrail.version`:** This is the version of the evaluating service or component, not the policy version. For policy versions, use `gen_ai.security.policy.version`.
-
-**[22] `gen_ai.security.policy.rule.id`:** Use this when `gen_ai.security.policy.id` identifies a broader policy and the guardrail reports a more specific rule, section, control, or detector within that policy.
-
-**[23] `gen_ai.security.risk.finding`:** This attribute is free-form to accommodate provider-specific,
+**[20] `gen_ai.security.risk.finding`:** This attribute is free-form to accommodate provider-specific,
 organization-specific, and emerging risk finding types.
 
 Suggested values aligned with OWASP LLM Top 10 2025 include:
@@ -231,11 +207,11 @@ Suggested values aligned with OWASP LLM Top 10 2025 include:
 Instrumentations MAY use additional values when appropriate, for example
 `jailbreak`, `toxicity`, `pii`, `custom:*`, or provider-specific values.
 
-**[24] `gen_ai.security.risk.score`:** The value SHOULD be in the range `[0.0, 1.0]` when the guardrail provider reports a normalized score. Instrumentations SHOULD document the scoring scale when reporting provider-specific scores that are not normalized.
+**[21] `gen_ai.security.risk.score`:** The value SHOULD be in the range `[0.0, 1.0]` when the guardrail provider reports a normalized score. Instrumentations SHOULD document the scoring scale when reporting provider-specific scores that are not normalized.
 
-**[25] `server.address`:** When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent the server address behind any intermediaries, for example proxies, if it's available.
+**[22] `server.address`:** When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent the server address behind any intermediaries, for example proxies, if it's available.
 
-**[26] `gen_ai.security.content.input.value`:**
+**[23] `gen_ai.security.content.input.value`:**
 
 > [!WARNING]
 > This attribute may contain sensitive information including user/PII
@@ -249,7 +225,7 @@ Instrumentations MUST follow [JSON schema](/model/gen-ai/gen-ai-security-content
 
 When the attribute is recorded on events, it MUST be recorded in structured form. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
 
-**[27] `gen_ai.security.content.output.value`:**
+**[24] `gen_ai.security.content.output.value`:**
 
 > [!WARNING]
 > This attribute may contain sensitive information. Instrumentations
@@ -266,8 +242,8 @@ The following attributes can be important for making sampling decisions
 and SHOULD be provided **at span creation time** (if provided at all):
 
 * [`gen_ai.operation.name`](/docs/registry/attributes/gen-ai.md)
+* [`gen_ai.provider.name`](/docs/registry/attributes/gen-ai.md)
 * [`gen_ai.security.guardrail.name`](/docs/registry/attributes/gen-ai.md)
-* [`gen_ai.security.guardrail.provider.name`](/docs/registry/attributes/gen-ai.md)
 * [`gen_ai.security.target.subtype`](/docs/registry/attributes/gen-ai.md)
 * [`gen_ai.security.target.type`](/docs/registry/attributes/gen-ai.md)
 * [`gen_ai.security.verdict.type`](/docs/registry/attributes/gen-ai.md)
@@ -296,7 +272,7 @@ and SHOULD be provided **at span creation time** (if provided at all):
 | `delete_memory_store` | Delete or deprovision a memory store | ![Development](https://img.shields.io/badge/-development-blue) |
 | `embeddings` | Embeddings operation such as [OpenAI Create embeddings API](https://platform.openai.com/docs/api-reference/embeddings/create) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `execute_tool` | Execute a tool | ![Development](https://img.shields.io/badge/-development-blue) |
-| `fetch_response` | Fetch a previously generated model response by its identifier, without performing inference, such as [OpenAI Get a model response](https://platform.openai.com/docs/api-reference/responses/get) [28] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `fetch_response` | Fetch a previously generated model response by its identifier, without performing inference, such as [OpenAI Get a model response](https://platform.openai.com/docs/api-reference/responses/get) [25] | ![Development](https://img.shields.io/badge/-development-blue) |
 | `generate_content` | Multimodal content generation operation such as [Gemini Generate Content](https://ai.google.dev/api/generate-content) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `invoke_agent` | Invoke GenAI agent | ![Development](https://img.shields.io/badge/-development-blue) |
 | `invoke_workflow` | Invoke GenAI workflow | ![Development](https://img.shields.io/badge/-development-blue) |
@@ -308,7 +284,36 @@ and SHOULD be provided **at span creation time** (if provided at all):
 | `update_memory` | Update existing memory records | ![Development](https://img.shields.io/badge/-development-blue) |
 | `upsert_memory` | Create or update memory records without the caller choosing which | ![Development](https://img.shields.io/badge/-development-blue) |
 
-**[28]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
+**[25]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
+
+---
+
+`gen_ai.provider.name` has the following list of well-known values. If one of them applies, then the respective value MUST be used; otherwise, a custom value MAY be used.
+
+| Value | Description | Stability |
+| --- | --- | --- |
+| `anthropic` | [Anthropic](https://www.anthropic.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `aws.bedrock` | [AWS Bedrock](https://aws.amazon.com/bedrock) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `azure.ai.inference` | Azure AI Inference | ![Development](https://img.shields.io/badge/-development-blue) |
+| `azure.ai.openai` | [Azure OpenAI](https://learn.microsoft.com/en-us/azure/ai-services/openai/overview) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `cohere` | [Cohere](https://cohere.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `deepseek` | [DeepSeek](https://www.deepseek.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `gcp.gemini` | [Gemini](https://cloud.google.com/products/gemini) [26] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `gcp.gen_ai` | Any Google generative AI endpoint [27] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `gcp.vertex_ai` | [Vertex AI](https://cloud.google.com/vertex-ai) [28] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `groq` | [Groq](https://groq.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `ibm.watsonx.ai` | [IBM Watsonx AI](https://www.ibm.com/products/watsonx-ai) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `mistral_ai` | [Mistral AI](https://mistral.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `moonshot_ai` | [Moonshot AI](https://www.moonshot.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `openai` | [OpenAI](https://openai.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `perplexity` | [Perplexity](https://www.perplexity.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `x_ai` | [xAI](https://x.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
+
+**[26]:** Used when accessing the 'generativelanguage.googleapis.com' endpoint. Also known as the AI Studio API.
+
+**[27]:** May be used when specific backend is unknown.
+
+**[28]:** Used when accessing the 'aiplatform.googleapis.com' endpoint.
 
 ---
 
@@ -321,16 +326,6 @@ and SHOULD be provided **at span creation time** (if provided at all):
 | `block` | The caller blocked the content or action. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `escalate` | The caller escalated the content or action for human review, approval, or another workflow. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `modify` | The caller modified the content or action before continuing. | ![Development](https://img.shields.io/badge/-development-blue) |
-
----
-
-`gen_ai.security.guardrail.provider.name` has the following list of well-known values. If one of them applies, then the respective value MUST be used; otherwise, a custom value MAY be used.
-
-| Value | Description | Stability |
-| --- | --- | --- |
-| `aws.bedrock` | [AWS Bedrock Guardrails](https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails.html) | ![Development](https://img.shields.io/badge/-development-blue) |
-| `azure.ai.content_safety` | [Azure AI Content Safety](https://azure.microsoft.com/products/ai-services/ai-content-safety) | ![Development](https://img.shields.io/badge/-development-blue) |
-| `gcp.model_armor` | [Google Cloud Model Armor](https://cloud.google.com/security-command-center/docs/model-armor-overview) | ![Development](https://img.shields.io/badge/-development-blue) |
 
 ---
 
@@ -419,23 +414,20 @@ Semantic conventions for individual guardrail services and frameworks MAY specif
 | [`gen_ai.security.content.input.hash`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [7] | string | Hash of the input content for forensic correlation. [8] | `sha256:a3f2b8c9...`; `hmac-sha256:b7e4c2a1...` |
 | [`gen_ai.security.content.modified`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If content was redacted or otherwise modified. | boolean | Whether guardrail processing actually changed the content. [9] | `true`; `false` |
 | [`gen_ai.security.external_finding_id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [10] | string | External correlation identifier for a security finding. [11] | `finding_abc123`; `incident-2024-001`; `sec-finding-xyz` |
-| [`gen_ai.security.guardrail.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If available. | string | The unique identifier of the security guardrail service or component. [12] | `content-safety`; `pii-filter-v3`; `custom-guardrail-001` |
 | [`gen_ai.security.policy.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If a policy produced the verdict. | string | Identifier of the policy that produced the verdict. | `policy_pii_v2`; `deny-topic-financial-advice`; `org-compliance-001` |
-| [`gen_ai.security.target.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If available. | string | Identifier of the specific target the guardrail is applied to. [13] | `call_xyz789`; `msg_abc123`; `mem_abc456` |
-| [`gen_ai.security.target.subtype`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If available. | string | The subtype of content or action the guardrail is applied to. [14] | `llm`; `tool_call`; `tool_definition`; `retrieval`; `memory` |
-| [`gen_ai.security.verdict.reason`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [15] | string | Human-readable explanation for the security verdict. [16] | `PII detected in output`; `Prompt injection attempt detected`; `Action exceeds agent permission scope` |
-| [`gen_ai.security.finding.evidence`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If non-content evidence descriptors are available. | string[] | Non-content evidence descriptors for a security finding. [17] | `["field:bcc", "pattern:email"]`; `["count:2", "position:output.content"]` |
-| [`gen_ai.security.guardrail.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | Human-readable name of the security guardrail service or component. [18] | `Azure Content Safety`; `Bedrock Guardrails`; `Custom PII Filter` |
-| [`gen_ai.security.guardrail.provider.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The provider or vendor of the security guardrail service. [19] | `azure.ai.content_safety`; `aws.bedrock`; `gcp.model_armor`; `custom` |
-| [`gen_ai.security.guardrail.version`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | Version of the security guardrail service or component. [20] | `1.0.0`; `2024-05-01`; `v2` |
+| [`gen_ai.security.target.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If available. | string | Identifier of the specific target the guardrail is applied to. [12] | `call_xyz789`; `msg_abc123`; `mem_abc456` |
+| [`gen_ai.security.target.subtype`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If available. | string | The subtype of content or action the guardrail is applied to. [13] | `llm`; `tool_call`; `tool_definition`; `retrieval`; `memory` |
+| [`gen_ai.security.verdict.reason`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [14] | string | Human-readable explanation for the security verdict. [15] | `PII detected in output`; `Prompt injection attempt detected`; `Action exceeds agent permission scope` |
+| [`gen_ai.provider.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The Generative AI provider as identified by the client or server instrumentation. [16] | `openai`; `gcp.gen_ai`; `gcp.vertex_ai` |
+| [`gen_ai.security.guardrail.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | Human-readable name of the security guardrail service or component. [17] | `Azure Content Safety`; `Bedrock Guardrails`; `Custom PII Filter` |
 | [`gen_ai.security.policy.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | Human-readable name of the policy that produced the verdict. | `PII Protection Policy`; `Financial Advice Restriction` |
-| [`gen_ai.security.policy.rule.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If available. | string | Identifier of the policy rule, section, or control that produced the verdict. [21] | `rule-pii-email`; `section-4.2`; `detector-jailbreak` |
+| [`gen_ai.security.policy.rule.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If available. | string | Identifier of the policy rule, section, or control that produced the verdict. [18] | `rule-pii-email`; `section-4.2`; `detector-jailbreak` |
 | [`gen_ai.security.policy.version`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | Version of the policy that produced the verdict. | `1.0`; `2024-05-01` |
-| [`gen_ai.security.risk.finding`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If a risk finding is reported. | string | The security risk finding detected. [22] | `prompt_injection`; `sensitive_info_disclosure`; `jailbreak`; `custom:financial_advice_violation` |
-| [`gen_ai.security.risk.score`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If a risk or confidence score is reported. | double | Numeric risk or confidence score. [23] | `0.85`; `0.95`; `0.42` |
+| [`gen_ai.security.risk.finding`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If a risk finding is reported. | string | The security risk finding detected. [19] | `prompt_injection`; `sensitive_info_disclosure`; `jailbreak`; `custom:financial_advice_violation` |
+| [`gen_ai.security.risk.score`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If a risk or confidence score is reported. | double | Numeric risk or confidence score. [20] | `0.85`; `0.95`; `0.42` |
 | [`gen_ai.security.verdict.code`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | Provider-specific code for the security verdict. | `112`; `403`; `AACS-PII`; `MODEL_ARMOR_SAFETY` |
-| [`gen_ai.security.content.input.value`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | The input content that was evaluated by the guardrail. [24] | `Send an email to customer@example.com` |
-| [`gen_ai.security.content.output.value`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | The output content after guardrail processing, if modified. [25] | `Send an email to [REDACTED]` |
+| [`gen_ai.security.content.input.value`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | The input content that was evaluated by the guardrail. [21] | `Send an email to customer@example.com` |
+| [`gen_ai.security.content.output.value`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | The output content after guardrail processing, if modified. [22] | `Send an email to [REDACTED]` |
 
 **[1] `gen_ai.operation.name`:** If one of the predefined values applies, but specific system uses a different name it's RECOMMENDED to document it in the semantic conventions for specific GenAI system and use system-specific name in the instrumentation. If a different name is not documented, instrumentation libraries SHOULD use applicable predefined value.
 
@@ -476,49 +468,37 @@ The value typically comes from the response of an external security
 inspection service or may be included in response headers when inspection
 happens alongside the LLM call.
 
-**[12] `gen_ai.security.guardrail.id`:** This identifies the service, component, or library performing the security
-evaluation, not the policy or configuration being applied.
+**[12] `gen_ai.security.target.id`:** For example, a tool call identifier, request identifier, memory record identifier, or message identifier, if applicable.
 
-For provider-specific guardrail or policy configuration identifiers (for
-example, an AWS Bedrock guardrail ARN or an Azure Content Safety blocklist
-ID), use `gen_ai.security.policy.id` instead.
+**[13] `gen_ai.security.target.subtype`:** This attribute refines `gen_ai.security.target.type`. For example, `gen_ai.security.target.type=input` and `gen_ai.security.target.subtype=tool_call` identifies tool call arguments or invocation requests, while `gen_ai.security.target.type=output` and `gen_ai.security.target.subtype=tool_call` identifies tool call results or responses.
 
-**[13] `gen_ai.security.target.id`:** For example, a tool call identifier, request identifier, memory record identifier, or message identifier, if applicable.
+**[14] `gen_ai.security.verdict.reason`:** If `gen_ai.security.verdict.type` is not `allow` and a reason is available.
 
-**[14] `gen_ai.security.target.subtype`:** This attribute refines `gen_ai.security.target.type`. For example, `gen_ai.security.target.type=input` and `gen_ai.security.target.subtype=tool_call` identifies tool call arguments or invocation requests, while `gen_ai.security.target.type=output` and `gen_ai.security.target.subtype=tool_call` identifies tool call results or responses.
+**[15] `gen_ai.security.verdict.reason`:** The value SHOULD be low-cardinality and MUST NOT contain sensitive user content or other high-risk data.
 
-**[15] `gen_ai.security.verdict.reason`:** If `gen_ai.security.verdict.type` is not `allow` and a reason is available.
+**[16] `gen_ai.provider.name`:** Semantic conventions for individual GenAI operations SHOULD clarify which
+kinds of providers (e.g. inference, embeddings, retrieval, memory, hosted
+agent providers) apply when it is not clear from context.
 
-**[16] `gen_ai.security.verdict.reason`:** The value SHOULD be low-cardinality and MUST NOT contain sensitive user content or other high-risk data.
+The attribute SHOULD be set based on the instrumentation's best knowledge
+and may differ from the actual upstream provider. For example, a client SDK
+may be configured against a proxy or hosting platform that transparently
+relays requests to a different provider.
 
-**[17] `gen_ai.security.finding.evidence`:** This attribute is intended for low-cardinality, non-content descriptors
-that help locate or explain a finding without recording the evaluated
-content itself.
+The `gen_ai.provider.name` attribute acts as a discriminator that
+identifies the GenAI telemetry format flavor specific to that provider
+within GenAI semantic conventions.
+It SHOULD be set consistently with provider-specific attributes and signals.
+For example, GenAI spans, metrics, and events related to AWS Bedrock
+should have the `gen_ai.provider.name` set to `aws.bedrock` and include
+applicable `aws.bedrock.*` attributes and are not expected to include
+`openai.*` attributes.
 
-> [!WARNING]
-> This attribute MUST NOT contain sensitive user content, PII, secrets, or
-> other high-risk data.
+**[17] `gen_ai.security.guardrail.name`:** This identifies the security evaluation service or component, not the policy name. For policy names, use `gen_ai.security.policy.name`.
 
-Example values include:
+**[18] `gen_ai.security.policy.rule.id`:** Use this when `gen_ai.security.policy.id` identifies a broader policy and the guardrail reports a more specific rule, section, control, or detector within that policy.
 
-- Field identifiers: `field:bcc`, `parameter:query`
-- Pattern types: `pattern:ssn`, `pattern:credit_card`
-- Counts: `count:3`
-- Positions: `position:input[0].content`
-
-**[18] `gen_ai.security.guardrail.name`:** This identifies the security evaluation service or component, not the policy name. For policy names, use `gen_ai.security.policy.name`.
-
-**[19] `gen_ai.security.guardrail.provider.name`:** This is distinct from `gen_ai.provider.name`, which identifies the GenAI
-provider for inference, embeddings, retrieval, memory, or agent operations.
-
-If one of the well-known values applies, then the respective value SHOULD
-be used. Otherwise, a custom value MAY be used.
-
-**[20] `gen_ai.security.guardrail.version`:** This is the version of the evaluating service or component, not the policy version. For policy versions, use `gen_ai.security.policy.version`.
-
-**[21] `gen_ai.security.policy.rule.id`:** Use this when `gen_ai.security.policy.id` identifies a broader policy and the guardrail reports a more specific rule, section, control, or detector within that policy.
-
-**[22] `gen_ai.security.risk.finding`:** This attribute is free-form to accommodate provider-specific,
+**[19] `gen_ai.security.risk.finding`:** This attribute is free-form to accommodate provider-specific,
 organization-specific, and emerging risk finding types.
 
 Suggested values aligned with OWASP LLM Top 10 2025 include:
@@ -537,9 +517,9 @@ Suggested values aligned with OWASP LLM Top 10 2025 include:
 Instrumentations MAY use additional values when appropriate, for example
 `jailbreak`, `toxicity`, `pii`, `custom:*`, or provider-specific values.
 
-**[23] `gen_ai.security.risk.score`:** The value SHOULD be in the range `[0.0, 1.0]` when the guardrail provider reports a normalized score. Instrumentations SHOULD document the scoring scale when reporting provider-specific scores that are not normalized.
+**[20] `gen_ai.security.risk.score`:** The value SHOULD be in the range `[0.0, 1.0]` when the guardrail provider reports a normalized score. Instrumentations SHOULD document the scoring scale when reporting provider-specific scores that are not normalized.
 
-**[24] `gen_ai.security.content.input.value`:**
+**[21] `gen_ai.security.content.input.value`:**
 
 > [!WARNING]
 > This attribute may contain sensitive information including user/PII
@@ -553,7 +533,7 @@ Instrumentations MUST follow [JSON schema](/model/gen-ai/gen-ai-security-content
 
 When the attribute is recorded on events, it MUST be recorded in structured form. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
 
-**[25] `gen_ai.security.content.output.value`:**
+**[22] `gen_ai.security.content.output.value`:**
 
 > [!WARNING]
 > This attribute may contain sensitive information. Instrumentations
@@ -570,8 +550,8 @@ The following attributes can be important for making sampling decisions
 and SHOULD be provided **at span creation time** (if provided at all):
 
 * [`gen_ai.operation.name`](/docs/registry/attributes/gen-ai.md)
+* [`gen_ai.provider.name`](/docs/registry/attributes/gen-ai.md)
 * [`gen_ai.security.guardrail.name`](/docs/registry/attributes/gen-ai.md)
-* [`gen_ai.security.guardrail.provider.name`](/docs/registry/attributes/gen-ai.md)
 * [`gen_ai.security.target.subtype`](/docs/registry/attributes/gen-ai.md)
 * [`gen_ai.security.target.type`](/docs/registry/attributes/gen-ai.md)
 * [`gen_ai.security.verdict.type`](/docs/registry/attributes/gen-ai.md)
@@ -598,7 +578,7 @@ and SHOULD be provided **at span creation time** (if provided at all):
 | `delete_memory_store` | Delete or deprovision a memory store | ![Development](https://img.shields.io/badge/-development-blue) |
 | `embeddings` | Embeddings operation such as [OpenAI Create embeddings API](https://platform.openai.com/docs/api-reference/embeddings/create) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `execute_tool` | Execute a tool | ![Development](https://img.shields.io/badge/-development-blue) |
-| `fetch_response` | Fetch a previously generated model response by its identifier, without performing inference, such as [OpenAI Get a model response](https://platform.openai.com/docs/api-reference/responses/get) [26] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `fetch_response` | Fetch a previously generated model response by its identifier, without performing inference, such as [OpenAI Get a model response](https://platform.openai.com/docs/api-reference/responses/get) [23] | ![Development](https://img.shields.io/badge/-development-blue) |
 | `generate_content` | Multimodal content generation operation such as [Gemini Generate Content](https://ai.google.dev/api/generate-content) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `invoke_agent` | Invoke GenAI agent | ![Development](https://img.shields.io/badge/-development-blue) |
 | `invoke_workflow` | Invoke GenAI workflow | ![Development](https://img.shields.io/badge/-development-blue) |
@@ -610,7 +590,36 @@ and SHOULD be provided **at span creation time** (if provided at all):
 | `update_memory` | Update existing memory records | ![Development](https://img.shields.io/badge/-development-blue) |
 | `upsert_memory` | Create or update memory records without the caller choosing which | ![Development](https://img.shields.io/badge/-development-blue) |
 
-**[26]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
+**[23]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
+
+---
+
+`gen_ai.provider.name` has the following list of well-known values. If one of them applies, then the respective value MUST be used; otherwise, a custom value MAY be used.
+
+| Value | Description | Stability |
+| --- | --- | --- |
+| `anthropic` | [Anthropic](https://www.anthropic.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `aws.bedrock` | [AWS Bedrock](https://aws.amazon.com/bedrock) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `azure.ai.inference` | Azure AI Inference | ![Development](https://img.shields.io/badge/-development-blue) |
+| `azure.ai.openai` | [Azure OpenAI](https://learn.microsoft.com/en-us/azure/ai-services/openai/overview) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `cohere` | [Cohere](https://cohere.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `deepseek` | [DeepSeek](https://www.deepseek.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `gcp.gemini` | [Gemini](https://cloud.google.com/products/gemini) [24] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `gcp.gen_ai` | Any Google generative AI endpoint [25] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `gcp.vertex_ai` | [Vertex AI](https://cloud.google.com/vertex-ai) [26] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `groq` | [Groq](https://groq.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `ibm.watsonx.ai` | [IBM Watsonx AI](https://www.ibm.com/products/watsonx-ai) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `mistral_ai` | [Mistral AI](https://mistral.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `moonshot_ai` | [Moonshot AI](https://www.moonshot.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `openai` | [OpenAI](https://openai.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `perplexity` | [Perplexity](https://www.perplexity.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `x_ai` | [xAI](https://x.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
+
+**[24]:** Used when accessing the 'generativelanguage.googleapis.com' endpoint. Also known as the AI Studio API.
+
+**[25]:** May be used when specific backend is unknown.
+
+**[26]:** Used when accessing the 'aiplatform.googleapis.com' endpoint.
 
 ---
 
@@ -623,16 +632,6 @@ and SHOULD be provided **at span creation time** (if provided at all):
 | `block` | The caller blocked the content or action. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `escalate` | The caller escalated the content or action for human review, approval, or another workflow. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `modify` | The caller modified the content or action before continuing. | ![Development](https://img.shields.io/badge/-development-blue) |
-
----
-
-`gen_ai.security.guardrail.provider.name` has the following list of well-known values. If one of them applies, then the respective value MUST be used; otherwise, a custom value MAY be used.
-
-| Value | Description | Stability |
-| --- | --- | --- |
-| `aws.bedrock` | [AWS Bedrock Guardrails](https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails.html) | ![Development](https://img.shields.io/badge/-development-blue) |
-| `azure.ai.content_safety` | [Azure AI Content Safety](https://azure.microsoft.com/products/ai-services/ai-content-safety) | ![Development](https://img.shields.io/badge/-development-blue) |
-| `gcp.model_armor` | [Google Cloud Model Armor](https://cloud.google.com/security-command-center/docs/model-armor-overview) | ![Development](https://img.shields.io/badge/-development-blue) |
 
 ---
 
@@ -691,10 +690,7 @@ Reports a specific security finding detected during guardrail evaluation.
 
 A finding is the semantic concept represented by this event/log signal.
 
-Multiple findings MAY be emitted for a single guardrail span.
-
-Findings SHOULD be emitted under a `gen_ai.run_guardrail.client` or
-`gen_ai.run_guardrail.internal` span when possible.
+Multiple findings MAY be reported for a single guardrail evaluation.
 
 **Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/general/signal-requirement-level.md).
 
@@ -708,18 +704,16 @@ Findings SHOULD be emitted under a `gen_ai.run_guardrail.client` or
 | [`gen_ai.security.external_finding_id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [3] | string | External correlation identifier for a security finding. [4] | `finding_abc123`; `incident-2024-001`; `sec-finding-xyz` |
 | [`gen_ai.security.target.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If available. | string | Identifier of the specific target the guardrail is applied to. [5] | `call_xyz789`; `msg_abc123`; `mem_abc456` |
 | [`gen_ai.security.target.subtype`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If available. | string | The subtype of content or action the guardrail is applied to. [6] | `llm`; `tool_call`; `tool_definition`; `retrieval`; `memory` |
-| [`gen_ai.security.action.type`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If available. | string | The actual enforcement action taken by the caller or framework. [7] | `allow`; `block`; `modify`; `escalate` |
-| [`gen_ai.security.finding.evidence`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If non-content evidence descriptors are available. | string[] | Non-content evidence descriptors for a security finding. [8] | `["field:bcc", "pattern:email"]`; `["count:2", "position:output.content"]` |
-| [`gen_ai.security.guardrail.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` [9] | string | The unique identifier of the security guardrail service or component. [10] | `content-safety`; `pii-filter-v3`; `custom-guardrail-001` |
-| [`gen_ai.security.guardrail.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` [11] | string | Human-readable name of the security guardrail service or component. [12] | `Azure Content Safety`; `Bedrock Guardrails`; `Custom PII Filter` |
-| [`gen_ai.security.guardrail.provider.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` [13] | string | The provider or vendor of the security guardrail service. [14] | `azure.ai.content_safety`; `aws.bedrock`; `gcp.model_armor`; `custom` |
+| [`gen_ai.provider.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If available. | string | The Generative AI provider as identified by the client or server instrumentation. [7] | `openai`; `gcp.gen_ai`; `gcp.vertex_ai` |
+| [`gen_ai.security.action.type`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If available. | string | The actual enforcement action taken by the caller or framework. [8] | `allow`; `block`; `modify`; `escalate` |
+| [`gen_ai.security.guardrail.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If available. | string | Human-readable name of the security guardrail service or component. [9] | `Azure Content Safety`; `Bedrock Guardrails`; `Custom PII Filter` |
 | [`gen_ai.security.policy.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | Human-readable name of the policy that produced the verdict. | `PII Protection Policy`; `Financial Advice Restriction` |
-| [`gen_ai.security.policy.rule.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If available. | string | Identifier of the policy rule, section, or control that produced the verdict. [15] | `rule-pii-email`; `section-4.2`; `detector-jailbreak` |
+| [`gen_ai.security.policy.rule.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If available. | string | Identifier of the policy rule, section, or control that produced the verdict. [10] | `rule-pii-email`; `section-4.2`; `detector-jailbreak` |
 | [`gen_ai.security.policy.version`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | Version of the policy that produced the verdict. | `1.0`; `2024-05-01` |
-| [`gen_ai.security.risk.score`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If a risk or confidence score is reported. | double | Numeric risk or confidence score. [16] | `0.85`; `0.95`; `0.42` |
+| [`gen_ai.security.risk.score`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If a risk or confidence score is reported. | double | Numeric risk or confidence score. [11] | `0.85`; `0.95`; `0.42` |
 | [`gen_ai.security.verdict.code`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If available. | string | Provider-specific code for the security verdict. | `112`; `403`; `AACS-PII`; `MODEL_ARMOR_SAFETY` |
-| [`gen_ai.security.verdict.reason`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If available. | string | Human-readable explanation for the security verdict. [17] | `PII detected in output`; `Prompt injection attempt detected`; `Action exceeds agent permission scope` |
-| [`gen_ai.security.verdict.type`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The verdict returned by the security guardrail evaluation. [18] | `allow`; `deny`; `modify`; `warn`; `escalate` |
+| [`gen_ai.security.verdict.reason`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If available. | string | Human-readable explanation for the security verdict. [12] | `PII detected in output`; `Prompt injection attempt detected`; `Action exceeds agent permission scope` |
+| [`gen_ai.security.verdict.type`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The verdict returned by the security guardrail evaluation. [13] | `allow`; `deny`; `modify`; `warn`; `escalate` |
 
 **[1] `gen_ai.security.risk.finding`:** This attribute is free-form to accommodate provider-specific,
 organization-specific, and emerging risk finding types.
@@ -755,51 +749,64 @@ happens alongside the LLM call.
 
 **[6] `gen_ai.security.target.subtype`:** This attribute refines `gen_ai.security.target.type`. For example, `gen_ai.security.target.type=input` and `gen_ai.security.target.subtype=tool_call` identifies tool call arguments or invocation requests, while `gen_ai.security.target.type=output` and `gen_ai.security.target.subtype=tool_call` identifies tool call results or responses.
 
-**[7] `gen_ai.security.action.type`:** Use this attribute when the guardrail verdict is enforced by the caller or framework and the action is known. For example, a guardrail may return a `warn` verdict while the caller chooses to `block` the operation.
+**[7] `gen_ai.provider.name`:** Semantic conventions for individual GenAI operations SHOULD clarify which
+kinds of providers (e.g. inference, embeddings, retrieval, memory, hosted
+agent providers) apply when it is not clear from context.
 
-**[8] `gen_ai.security.finding.evidence`:** This attribute is intended for low-cardinality, non-content descriptors
-that help locate or explain a finding without recording the evaluated
-content itself.
+The attribute SHOULD be set based on the instrumentation's best knowledge
+and may differ from the actual upstream provider. For example, a client SDK
+may be configured against a proxy or hosting platform that transparently
+relays requests to a different provider.
 
-> [!WARNING]
-> This attribute MUST NOT contain sensitive user content, PII, secrets, or
-> other high-risk data.
+The `gen_ai.provider.name` attribute acts as a discriminator that
+identifies the GenAI telemetry format flavor specific to that provider
+within GenAI semantic conventions.
+It SHOULD be set consistently with provider-specific attributes and signals.
+For example, GenAI spans, metrics, and events related to AWS Bedrock
+should have the `gen_ai.provider.name` set to `aws.bedrock` and include
+applicable `aws.bedrock.*` attributes and are not expected to include
+`openai.*` attributes.
 
-Example values include:
+**[8] `gen_ai.security.action.type`:** Use this attribute when the guardrail verdict is enforced by the caller or framework and the action is known. For example, a guardrail may return a `warn` verdict while the caller chooses to `block` the operation.
 
-- Field identifiers: `field:bcc`, `parameter:query`
-- Pattern types: `pattern:ssn`, `pattern:credit_card`
-- Counts: `count:3`
-- Positions: `position:input[0].content`
+**[9] `gen_ai.security.guardrail.name`:** This identifies the security evaluation service or component, not the policy name. For policy names, use `gen_ai.security.policy.name`.
 
-**[9] `gen_ai.security.guardrail.id`:** If available and not already present on the parent span.
+**[10] `gen_ai.security.policy.rule.id`:** Use this when `gen_ai.security.policy.id` identifies a broader policy and the guardrail reports a more specific rule, section, control, or detector within that policy.
 
-**[10] `gen_ai.security.guardrail.id`:** This identifies the service, component, or library performing the security
-evaluation, not the policy or configuration being applied.
+**[11] `gen_ai.security.risk.score`:** The value SHOULD be in the range `[0.0, 1.0]` when the guardrail provider reports a normalized score. Instrumentations SHOULD document the scoring scale when reporting provider-specific scores that are not normalized.
 
-For provider-specific guardrail or policy configuration identifiers (for
-example, an AWS Bedrock guardrail ARN or an Azure Content Safety blocklist
-ID), use `gen_ai.security.policy.id` instead.
+**[12] `gen_ai.security.verdict.reason`:** The value SHOULD be low-cardinality and MUST NOT contain sensitive user content or other high-risk data.
 
-**[11] `gen_ai.security.guardrail.name`:** If available and not already present on the parent span.
+**[13] `gen_ai.security.verdict.type`:** A verdict describes what the guardrail evaluation recommends or reports. It is not necessarily the action that the caller or framework enforces. When the actual enforcement action is known, especially if it differs from the verdict, use `gen_ai.security.action.type`.
 
-**[12] `gen_ai.security.guardrail.name`:** This identifies the security evaluation service or component, not the policy name. For policy names, use `gen_ai.security.policy.name`.
+---
 
-**[13] `gen_ai.security.guardrail.provider.name`:** If available and not already present on the parent span.
+`gen_ai.provider.name` has the following list of well-known values. If one of them applies, then the respective value MUST be used; otherwise, a custom value MAY be used.
 
-**[14] `gen_ai.security.guardrail.provider.name`:** This is distinct from `gen_ai.provider.name`, which identifies the GenAI
-provider for inference, embeddings, retrieval, memory, or agent operations.
+| Value | Description | Stability |
+| --- | --- | --- |
+| `anthropic` | [Anthropic](https://www.anthropic.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `aws.bedrock` | [AWS Bedrock](https://aws.amazon.com/bedrock) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `azure.ai.inference` | Azure AI Inference | ![Development](https://img.shields.io/badge/-development-blue) |
+| `azure.ai.openai` | [Azure OpenAI](https://learn.microsoft.com/en-us/azure/ai-services/openai/overview) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `cohere` | [Cohere](https://cohere.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `deepseek` | [DeepSeek](https://www.deepseek.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `gcp.gemini` | [Gemini](https://cloud.google.com/products/gemini) [14] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `gcp.gen_ai` | Any Google generative AI endpoint [15] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `gcp.vertex_ai` | [Vertex AI](https://cloud.google.com/vertex-ai) [16] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `groq` | [Groq](https://groq.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `ibm.watsonx.ai` | [IBM Watsonx AI](https://www.ibm.com/products/watsonx-ai) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `mistral_ai` | [Mistral AI](https://mistral.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `moonshot_ai` | [Moonshot AI](https://www.moonshot.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `openai` | [OpenAI](https://openai.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `perplexity` | [Perplexity](https://www.perplexity.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `x_ai` | [xAI](https://x.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 
-If one of the well-known values applies, then the respective value SHOULD
-be used. Otherwise, a custom value MAY be used.
+**[14]:** Used when accessing the 'generativelanguage.googleapis.com' endpoint. Also known as the AI Studio API.
 
-**[15] `gen_ai.security.policy.rule.id`:** Use this when `gen_ai.security.policy.id` identifies a broader policy and the guardrail reports a more specific rule, section, control, or detector within that policy.
+**[15]:** May be used when specific backend is unknown.
 
-**[16] `gen_ai.security.risk.score`:** The value SHOULD be in the range `[0.0, 1.0]` when the guardrail provider reports a normalized score. Instrumentations SHOULD document the scoring scale when reporting provider-specific scores that are not normalized.
-
-**[17] `gen_ai.security.verdict.reason`:** The value SHOULD be low-cardinality and MUST NOT contain sensitive user content or other high-risk data.
-
-**[18] `gen_ai.security.verdict.type`:** A verdict describes what the guardrail evaluation recommends or reports. It is not necessarily the action that the caller or framework enforces. When the actual enforcement action is known, especially if it differs from the verdict, use `gen_ai.security.action.type`.
+**[16]:** Used when accessing the 'aiplatform.googleapis.com' endpoint.
 
 ---
 
@@ -812,16 +819,6 @@ be used. Otherwise, a custom value MAY be used.
 | `block` | The caller blocked the content or action. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `escalate` | The caller escalated the content or action for human review, approval, or another workflow. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `modify` | The caller modified the content or action before continuing. | ![Development](https://img.shields.io/badge/-development-blue) |
-
----
-
-`gen_ai.security.guardrail.provider.name` has the following list of well-known values. If one of them applies, then the respective value MUST be used; otherwise, a custom value MAY be used.
-
-| Value | Description | Stability |
-| --- | --- | --- |
-| `aws.bedrock` | [AWS Bedrock Guardrails](https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails.html) | ![Development](https://img.shields.io/badge/-development-blue) |
-| `azure.ai.content_safety` | [Azure AI Content Safety](https://azure.microsoft.com/products/ai-services/ai-content-safety) | ![Development](https://img.shields.io/badge/-development-blue) |
-| `gcp.model_armor` | [Google Cloud Model Armor](https://cloud.google.com/security-command-center/docs/model-armor-overview) | ![Development](https://img.shields.io/badge/-development-blue) |
 
 ---
 

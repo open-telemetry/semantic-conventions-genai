@@ -22,11 +22,9 @@
 
 | Attribute | Supporting Libraries |
 | --- | --- |
+| gen_ai.provider.name | [openai] |
 | gen_ai.security.action.type | [openai] |
-| gen_ai.security.finding.evidence | [openai] |
-| gen_ai.security.guardrail.id | [openai] |
 | gen_ai.security.guardrail.name | [openai] |
-| gen_ai.security.guardrail.provider.name | [openai] |
 | gen_ai.security.policy.name | [openai] |
 | gen_ai.security.policy.rule.id | [openai] |
 | gen_ai.security.policy.version | [openai] |

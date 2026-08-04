@@ -19,7 +19,6 @@
 | gen_ai.security.content.input.hash | (none) |
 | gen_ai.security.content.modified | (none) |
 | gen_ai.security.external_finding_id | (none) |
-| gen_ai.security.guardrail.id | [openai] |
 | gen_ai.security.policy.id | [openai] |
 | gen_ai.security.target.id | [openai] |
 | gen_ai.security.target.subtype | [openai] |
@@ -30,10 +29,8 @@
 
 | Attribute | Supporting Libraries |
 | --- | --- |
-| gen_ai.security.finding.evidence | (none) |
+| gen_ai.provider.name | [openai] |
 | gen_ai.security.guardrail.name | [openai] |
-| gen_ai.security.guardrail.provider.name | [openai] |
-| gen_ai.security.guardrail.version | [openai] |
 | gen_ai.security.policy.name | [openai] |
 | gen_ai.security.policy.rule.id | (none) |
 | gen_ai.security.policy.version | [openai] |

@@ -180,7 +180,6 @@ SPAN_SPECS: dict[str, AttributeSpec] = {
         op_names=frozenset({"run_guardrail"}),
         discriminator_attrs=frozenset(
             {
-                "gen_ai.security.guardrail.id",
                 "gen_ai.security.guardrail.name",
                 "gen_ai.security.verdict.type",
             }
@@ -193,7 +192,6 @@ SPAN_SPECS: dict[str, AttributeSpec] = {
         op_names=frozenset({"run_guardrail"}),
         discriminator_attrs=frozenset(
             {
-                "gen_ai.security.guardrail.id",
                 "gen_ai.security.guardrail.name",
                 "gen_ai.security.verdict.type",
             }

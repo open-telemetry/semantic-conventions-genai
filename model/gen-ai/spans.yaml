@@ -155,11 +155,6 @@ attribute_groups:
     visibility: internal
     attributes:
       - ref_group: attributes.gen_ai.error
-      - ref: gen_ai.security.guardrail.id
-        requirement_level:
-          conditionally_required: If available.
-      - ref: gen_ai.security.guardrail.version
-        requirement_level: recommended
       - ref: gen_ai.security.verdict.reason
         requirement_level:
           conditionally_required: If `gen_ai.security.verdict.type` is not `allow` and a reason is available.
@@ -187,9 +182,6 @@ attribute_groups:
       - ref: gen_ai.security.risk.score
         requirement_level:
           recommended: If a risk or confidence score is reported.
-      - ref: gen_ai.security.finding.evidence
-        requirement_level:
-          recommended: If non-content evidence descriptors are available.
       - ref: gen_ai.security.external_finding_id
         requirement_level:
           conditionally_required: If correlation with external security systems is needed.
@@ -688,13 +680,6 @@ spans:
       This span SHOULD be used when the guardrail evaluation is performed by
       another process or service, especially when the call happens over an
       instrumented protocol such as HTTP.
-
-      Guardrail spans SHOULD be children of the GenAI span they protect, such as
-      [inference](/docs/gen-ai/gen-ai-spans.md#inference) or
-      [execute tool](/docs/gen-ai/gen-ai-spans.md#execute-tool-span) spans.
-
-      Multiple guardrail spans MAY exist under a single operation span if
-      multiple guardrails are chained.
     stability: development
     attributes:
       - ref_group: attributes.gen_ai.run_guardrail.common
@@ -704,7 +689,7 @@ spans:
       - ref: gen_ai.security.guardrail.name
         requirement_level: recommended
         sampling_relevant: true
-      - ref: gen_ai.security.guardrail.provider.name
+      - ref: gen_ai.provider.name
         requirement_level: recommended
         sampling_relevant: true
       - ref: gen_ai.security.verdict.type
@@ -759,7 +744,7 @@ spans:
       - ref: gen_ai.security.guardrail.name
         requirement_level: recommended
         sampling_relevant: true
-      - ref: gen_ai.security.guardrail.provider.name
+      - ref: gen_ai.provider.name
         requirement_level: recommended
         sampling_relevant: true
       - ref: gen_ai.security.verdict.type

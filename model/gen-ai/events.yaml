@@ -44,10 +44,7 @@ events:
     note: |
       A finding is the semantic concept represented by this event/log signal.
 
-      Multiple findings MAY be emitted for a single guardrail span.
-
-      Findings SHOULD be emitted under a `gen_ai.run_guardrail.client` or
-      `gen_ai.run_guardrail.internal` span when possible.
+      Multiple findings MAY be reported for a single guardrail evaluation.
     stability: development
     attributes:
       - ref: gen_ai.security.risk.finding
@@ -74,9 +71,6 @@ events:
       - ref: gen_ai.security.risk.score
         requirement_level:
           recommended: If a risk or confidence score is reported.
-      - ref: gen_ai.security.finding.evidence
-        requirement_level:
-          recommended: If non-content evidence descriptors are available.
       - ref: gen_ai.security.policy.id
         requirement_level: required
       - ref: gen_ai.security.policy.rule.id
@@ -86,15 +80,12 @@ events:
         requirement_level: recommended
       - ref: gen_ai.security.policy.version
         requirement_level: recommended
-      - ref: gen_ai.security.guardrail.id
-        requirement_level:
-          recommended: If available and not already present on the parent span.
       - ref: gen_ai.security.guardrail.name
         requirement_level:
-          recommended: If available and not already present on the parent span.
-      - ref: gen_ai.security.guardrail.provider.name
+          recommended: If available.
+      - ref: gen_ai.provider.name
         requirement_level:
-          recommended: If available and not already present on the parent span.
+          recommended: If available.
       - ref: gen_ai.security.external_finding_id
         requirement_level:
           conditionally_required: If correlation with external security systems is needed.
