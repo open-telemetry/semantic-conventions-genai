@@ -9,6 +9,16 @@ from ._common import mock_tool_arguments, sse
 
 bp = Blueprint("openai", __name__)
 
+# Stored responses from `POST /v1/responses` with `store=True`, served back by
+# `GET /v1/responses/{id}` so scenarios can fetch a previously generated
+# response by its identifier.
+_STORED_RESPONSES = {}
+
+# Ids of responses created as background streams. Only these may be resumed via
+# `GET /v1/responses/{id}?stream=true&starting_after=...`, mirroring OpenAI,
+# which rejects cursor-based resumption of non-background/non-streaming responses.
+_RESUMABLE_RESPONSES = set()
+
 
 CHAT_REFUSAL_RESPONSE = {
     "id": "chatcmpl-mock-refusal-001",
@@ -109,6 +119,8 @@ RESPONSES_RESPONSE = {
     "id": "resp-mock-001",
     "object": "response",
     "created_at": 1700000000,
+    "status": "completed",
+    "service_tier": "default",
     "model": "gpt-4o-mini",
     "output": [
         {
@@ -393,6 +405,8 @@ def responses():
     resp = dict(RESPONSES_RESPONSE)
     resp["model"] = body.get("model", resp["model"])
     resp["output"] = copy.deepcopy(resp["output"])
+    if body.get("instructions") is not None:
+        resp["instructions"] = body["instructions"]
     context_management = body.get("context_management") or []
     if any(item.get("type") == "compaction" for item in context_management if isinstance(item, dict)):
         resp["output"][0]["content"][0]["text"] = "Great question. Here is Jevons Paradox in simple terms."
@@ -404,4 +418,78 @@ def responses():
                 "created_by": "server",
             },
         )
+    if body.get("store"):
+        _STORED_RESPONSES[resp["id"]] = copy.deepcopy(resp)
+    if body.get("stream"):
+        # Background streaming create: emit lifecycle events then end before
+        # completion, as if the caller disconnected. Such a response can be
+        # resumed later via `GET .../{id}?stream=true&starting_after=<seq>`.
+        if body.get("background"):
+            _RESUMABLE_RESPONSES.add(resp["id"])
+        return Response(_stream_create(resp), mimetype="text/event-stream")
     return resp
+
+
+def _stream_create(response):
+    """Yield SSE lifecycle events for a background streaming create.
+
+    Ends after `response.in_progress` (before completion), modelling a caller
+    that disconnects mid-stream and later resumes the response by cursor.
+    """
+    in_progress = copy.deepcopy(response)
+    in_progress["status"] = "in_progress"
+    in_progress["output"] = []
+    in_progress["usage"] = None
+    yield sse({"type": "response.created", "sequence_number": 0, "response": in_progress})
+    yield sse({"type": "response.in_progress", "sequence_number": 1, "response": in_progress})
+
+
+@bp.route("/v1/responses/<response_id>", methods=["GET"])
+@bp.route("/openai/v1/responses/<response_id>", methods=["GET"])
+def retrieve_response(response_id):
+    # A `failed`-prefixed id lets scenarios fetch a response whose original
+    # generation failed, so the fetch_response instrumentation can be exercised
+    # against a non-completed status.
+    if response_id.startswith("resp-failed"):
+        failed = copy.deepcopy(RESPONSES_RESPONSE)
+        failed["id"] = response_id
+        failed["status"] = "failed"
+        failed["output"] = []
+        failed["usage"] = None
+        failed["error"] = {
+            "code": "server_error",
+            "message": "The model failed to generate a response.",
+        }
+        return dict(failed)
+    stored = _STORED_RESPONSES.get(response_id)
+    if stored is None:
+        stored = copy.deepcopy(RESPONSES_RESPONSE)
+        stored["id"] = response_id
+    # A streaming retrieve resumes the response stream from `starting_after`,
+    # OpenAI's cursor for the last event the caller already received. Only
+    # background streaming responses are resumable; reject cursor retrieval of
+    # any other response, as OpenAI does. Emit the terminal `response.completed`
+    # event carrying the full response object.
+    if request.args.get("stream", "").lower() in ("1", "true"):
+        if response_id not in _RESUMABLE_RESPONSES:
+            return {
+                "error": {
+                    "type": "invalid_request_error",
+                    "message": "Only background responses created with streaming can be resumed.",
+                }
+            }, 400
+        starting_after = request.args.get("starting_after")
+        return Response(_stream_retrieve(stored, starting_after), mimetype="text/event-stream")
+    return dict(stored)
+
+
+def _stream_retrieve(response, starting_after):
+    """Yield SSE events resuming a stored response stream after `starting_after`."""
+    sequence_number = int(starting_after) + 1 if starting_after is not None else 0
+    yield sse(
+        {
+            "type": "response.completed",
+            "sequence_number": sequence_number,
+            "response": response,
+        }
+    )

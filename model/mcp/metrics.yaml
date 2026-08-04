@@ -27,6 +27,7 @@ metrics:
     stability: development
     attributes:
       - ref_group: mcp.operation.metrics.attributes
+      - ref_group: mcp.client.status.attributes
       - ref_group: mcp.client.address_and_port.attributes
 
   - name: mcp.server.operation.duration
@@ -39,6 +40,8 @@ metrics:
     stability: development
     attributes:
       - ref_group: mcp.operation.metrics.attributes
+      - ref_group: mcp.server.status.attributes
+
   - name: mcp.client.session.duration
     requirement_level: recommended
     instrument: histogram

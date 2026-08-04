@@ -24,22 +24,23 @@ Run `uv run update-reports` to regenerate.
 
 | Span | Libraries |
 | --- | --- |
-| [Create Agent](reports/create-agent-span.md) | autogen, azure-ai-foundry, openai-assistants |
+| [Create Agent](reports/create-agent-span.md) | anthropic, aws-bedrock-agent, azure-ai-foundry, google-genai, mistralai, openai-assistants |
 | [Invoke Agent Client](reports/invoke-agent-client-span.md) | aws-bedrock-agent, azure-ai-foundry, google-genai, openai-assistants |
 | [Invoke Agent Internal](reports/invoke-agent-internal-span.md) | agent-framework, autogen, crewai, google-adk, openai-agents, pydantic-ai |
 | [Invoke Workflow](reports/invoke-workflow-span.md) | crewai, google-adk |
 | [Plan](reports/plan-span.md) | crewai, langchain |
-| [Inference](reports/inference-span.md) | agent-framework, anthropic, autogen, aws-bedrock, azure-ai-inference, azure-openai, claude-agent-sdk, cohere, crewai, dspy, google-adk, google-genai, groq, instructor, langchain, litellm, llamaindex, mistralai, openai, openai-agents, pydantic-ai, vertexai |
-| [Embeddings](reports/embeddings-span.md) | aws-bedrock, azure-ai-inference, azure-openai, cohere, google-genai, litellm, llamaindex, mistralai, openai |
+| [Inference](reports/inference-span.md) | agent-framework, anthropic, aws-bedrock, azure-ai-inference, azure-openai, claude-agent-sdk, cohere, google-genai, groq, litellm, mistralai, openai, vertexai |
+| [Embeddings](reports/embeddings-span.md) | aws-bedrock, azure-ai-inference, azure-openai, cohere, google-genai, litellm, mistralai, openai |
 | [Retrieval](reports/retrieval-span.md) | haystack, langchain, llamaindex |
+| [Fetch Response](reports/fetch-response-span.md) | openai |
 | [Memory](reports/memory-span.md) | aws-bedrock-agentcore, google-adk |
-| [Execute Tool](reports/execute-tool-span.md) | agent-framework, autogen, crewai, google-adk, groq, instructor, litellm, llamaindex, mistralai, openai, openai-agents, openai-assistants, pydantic-ai |
+| [Execute Tool](reports/execute-tool-span.md) | agent-framework, autogen, crewai, google-adk, google-genai, langchain, llamaindex, openai-agents, openai-assistants, pydantic-ai, vertexai |
 
 ### Events
 
 | Event | Libraries |
 | --- | --- |
-| [Inference Operation Details](reports/gen-ai-client-inference-operation-details-event.md) | anthropic, autogen, aws-bedrock, azure-ai-inference, cohere, dspy, google-genai, groq, instructor, litellm, llamaindex, mistralai, openai, pydantic-ai, vertexai |
+| [Inference Operation Details](reports/gen-ai-client-inference-operation-details-event.md) | anthropic, aws-bedrock, azure-ai-inference, cohere, google-genai, groq, litellm, mistralai, openai, vertexai |
 | [Evaluation Result](reports/gen-ai-evaluation-result-event.md) | azure-ai-evaluation, deepeval, dspy |
 
 ### Metrics

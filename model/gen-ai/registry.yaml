@@ -188,6 +188,15 @@ attributes:
       or `previous_interaction_id` in [Google GenAI Interactions API](https://ai.google.dev/gemini-api/docs/interactions-overview).
     examples: ['resp_0123456789aBCdef', 'interaction-123']
     stability: development
+  - key: gen_ai.request.stream_cursor
+    type: string
+    brief: The cursor identifying the last streamed event already received, used to resume a streamed response from that position.
+    note: |
+      Instrumentations SHOULD populate this attribute when a request resumes a streamed response from a prior position, for example when fetching a stored response with streaming enabled.
+      For example, `starting_after` in the [OpenAI Responses API](https://developers.openai.com/api/docs/guides/background#streaming-a-background-response)
+      or `last_event_id` in the [Google GenAI Interactions API](https://ai.google.dev/api/interactions-api).
+    examples: ['42', 'event-abc123']
+    stability: development
   - key: gen_ai.response.id
     type: string
     brief: The unique identifier for the completion.
@@ -204,6 +213,46 @@ attributes:
     examples:
       - [stop]
       - [stop, length]
+    stability: development
+  - key: gen_ai.response.status
+    type:
+      members:
+        - id: queued
+          value: "queued"
+          brief: The response has been accepted by the provider but generation has not started yet.
+          stability: development
+        - id: in_progress
+          value: "in_progress"
+          brief: The response is still being generated, for example a background or streamed response that has not finished.
+          stability: development
+        - id: completed
+          value: "completed"
+          brief: The response finished generating successfully.
+          stability: development
+        - id: incomplete
+          value: "incomplete"
+          brief: The response stopped before generation completed, for example because a token limit or content filter was reached.
+          stability: development
+        - id: failed
+          value: "failed"
+          brief: The response generation failed with an error.
+          stability: development
+        - id: cancelled
+          value: "cancelled"
+          brief: The response generation was cancelled before it completed.
+          stability: development
+    brief: The lifecycle status of a generated response, as reported by the provider when the response is fetched or polled.
+    note: >
+      This attribute captures the lifecycle state of a (possibly background or long-running)
+      generation, such as whether it is queued, still running, or has reached a terminal state.
+      It is distinct from `gen_ai.response.finish_reasons`, which describes why the model stopped
+      once it began producing output.
+
+      The value SHOULD be the provider's response status mapped onto the closest member of this
+      enum or a provider-specific value when none of these apply.
+      Semantic conventions for individual GenAI providers SHOULD document how their status
+      values map to this attribute.
+    examples: ['completed', 'in_progress']
     stability: development
   - key: gen_ai.response.time_to_first_chunk
     type: double
@@ -458,6 +507,12 @@ attributes:
         - id: retrieval
           value: "retrieval"
           brief: 'Retrieval operation such as [OpenAI Search Vector Store API](https://platform.openai.com/docs/api-reference/vector-stores/search)'
+          stability: development
+        - id: fetch_response
+          value: "fetch_response"
+          brief: 'Fetch a previously generated model response by its identifier, without performing inference, such as [OpenAI Get a model response](https://platform.openai.com/docs/api-reference/responses/get)'
+          note: >
+             Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
           stability: development
         - id: create_agent
           value: "create_agent"
