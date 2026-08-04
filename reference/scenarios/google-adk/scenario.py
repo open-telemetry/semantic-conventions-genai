@@ -31,6 +31,7 @@ _tool_calls = _reference_meter.create_histogram(
     description="The number of tool calls a GenAI agent makes during a single invocation.",
 )
 
+
 class SpanCounter(SpanProcessor):
     """Lightweight span counter for diagnosing whether instrumentation fires."""
 
@@ -275,7 +276,9 @@ def run_agent_reference():
                     if total_output_tokens > 0:
                         agent_span.set_attribute("gen_ai.usage.output_tokens", total_output_tokens)
                     agent_span.set_attribute("gen_ai.agent.iteration_budget.consumed", call_counts["inference"])
-                    agent_span.set_attribute("gen_ai.agent.token_budget.consumed", total_input_tokens + total_output_tokens)
+                    agent_span.set_attribute(
+                        "gen_ai.agent.token_budget.consumed", total_input_tokens + total_output_tokens
+                    )
                     if finish_reason is not None:
                         agent_span.set_attribute(
                             "gen_ai.response.finish_reasons",
