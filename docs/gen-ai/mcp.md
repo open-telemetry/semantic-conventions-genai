@@ -428,7 +428,7 @@ Instrumentations SHOULD NOT capture this attribute when the `id` is `null` or om
 returned in the error response.
 
 The following error codes indicate that the caller sent a request the
-server could not serve and SHOULD NOT be considered errors:
+receiver could not serve and SHOULD NOT be considered errors:
 
 - `-32700` (`Parse error`)
 - `-32600` (`Invalid Request`)
@@ -806,7 +806,7 @@ is returned with `isError` set to `true`, this attribute SHOULD be set to
 returned in the error response.
 
 The following error codes indicate that the caller sent a request the
-server could not serve and SHOULD NOT be considered errors:
+receiver could not serve and SHOULD NOT be considered errors:
 
 - `-32700` (`Parse error`)
 - `-32600` (`Invalid Request`)
