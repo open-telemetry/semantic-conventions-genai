@@ -1,15 +1,5 @@
 {
   "spans": {
-    "create_agent": [
-      "gen_ai.agent.description",
-      "gen_ai.agent.name",
-      "gen_ai.operation.name",
-      "gen_ai.provider.name",
-      "gen_ai.request.model",
-      "gen_ai.system_instructions",
-      "server.address",
-      "server.port"
-    ],
     "invoke_agent_internal": [
       "gen_ai.agent.description",
       "gen_ai.agent.name",

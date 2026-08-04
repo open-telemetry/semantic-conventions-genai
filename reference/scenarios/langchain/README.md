@@ -12,4 +12,4 @@ execution.
 | invoke_workflow | Yes — chain/graph execution | ❌ Not implemented |
 | retrieval | Yes — retriever runs the retrieval | ✅ Implemented |
 | plan | Yes — Plan-and-Execute planning phase | ✅ Implemented |
-| execute_tool | Yes — LangChain runs the tool | ❌ Not implemented |
+| execute_tool | Yes — `BaseTool.invoke()` runs the tool | ✅ Implemented |

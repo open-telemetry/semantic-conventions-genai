@@ -217,24 +217,9 @@ def run_chat_tool_call():
             span.set_attribute("gen_ai.usage.output_tokens", resp.usage.completion_tokens)
         tool_calls = getattr(resp.choices[0].message, "tool_calls", None)
         if tool_calls:
-            tool_call = tool_calls[0]
-            arguments_json = tool_call.function.arguments or "{}"
-            arguments = json.loads(arguments_json)
-            tool_span_attributes = {
-                "gen_ai.operation.name": "execute_tool",
-            }
-            with _reference_tracer.start_as_current_span(
-                "execute_tool get_weather", attributes=tool_span_attributes
-            ) as tool_span:
-                tool_span.set_attribute("gen_ai.tool.name", tool_call.function.name)
-                tool_span.set_attribute("gen_ai.tool.description", request_tool["function"]["description"])
-                tool_span.set_attribute("gen_ai.tool.type", request_tool["type"])
-                if getattr(tool_call, "id", None):
-                    tool_span.set_attribute("gen_ai.tool.call.id", tool_call.id)
-                tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps(arguments))
-                result = get_weather(arguments.get("location", "unknown"))
-                tool_span.set_attribute("gen_ai.tool.call.result", result)
-            print(f"    -> tool_call: {tool_call.function.name}")
+            # LiteLLM returns the tool call; running it is app code LiteLLM never
+            # sees, so there is no execute_tool span to emit here.
+            print(f"    -> tool_call: {tool_calls[0].function.name}")
         else:
             print(f"    -> {resp.choices[0].message.content[:60]}")
 

@@ -1,12 +1,17 @@
-"""Reference implementation for Anthropic using opentelemetry-util-genai."""
+"""Reference implementation for Anthropic using opentelemetry-util-genai.
+
+`create_agent` uses a manual span instead: util-genai has no create-agent helper.
+"""
 
 import base64
+import json
 import os
 
 import anthropic
+from opentelemetry.trace import SpanKind, StatusCode
 from opentelemetry.util.genai.handler import get_telemetry_handler
 from opentelemetry.util.genai.types import Blob, InputMessage, OutputMessage, Text
-from reference_shared import flush_and_shutdown, mock_server_host_port, setup_otel
+from reference_shared import flush_and_shutdown, mock_server_host_port, reference_tracer, setup_otel
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"]
 
@@ -260,6 +265,49 @@ def run_chat_with_document_input(handler):
     print(f"    -> {resp.content[0].text[:60]}")
 
 
+def run_create_agent():
+    """Scenario: create a remote agent via the Managed Agents API (`beta.agents.create`).
+
+    The agent runs server-side, so only the client operation is instrumentable here.
+    """
+    print("  [create_agent] Anthropic Managed Agents: create agent")
+    request_model = "claude-sonnet-5"
+    agent_name = "reference-agent"
+    agent_description = "Reference managed agent."
+    agent_system = "You are a helpful assistant. Answer the user's questions accurately and concisely."
+    client = anthropic.Anthropic(base_url=MOCK_BASE_URL, api_key="mock-key")
+
+    host, port = mock_server_host_port(MOCK_BASE_URL)
+    span_attributes = {
+        "gen_ai.operation.name": "create_agent",
+        "gen_ai.provider.name": "anthropic",
+        "gen_ai.request.model": request_model,
+        "gen_ai.agent.name": agent_name,
+    }
+    if host:
+        span_attributes["server.address"] = host
+    if port is not None:
+        span_attributes["server.port"] = port
+    with reference_tracer().start_as_current_span(
+        f"create_agent {agent_name}", kind=SpanKind.CLIENT, attributes=span_attributes
+    ) as span:
+        span.set_attribute("gen_ai.agent.description", agent_description)
+        span.set_attribute("gen_ai.system_instructions", json.dumps([{"type": "text", "content": agent_system}]))
+        try:
+            agent = client.beta.agents.create(
+                model=request_model,
+                name=agent_name,
+                description=agent_description,
+                system=agent_system,
+            )
+            span.set_attribute("gen_ai.agent.id", agent.id)
+            span.set_attribute("gen_ai.agent.version", str(agent.version))
+            print(f"    -> {agent.id}")
+        except Exception as e:
+            span.set_status(StatusCode.ERROR, str(e))
+            raise
+
+
 def main():
     """Run all Anthropic reference scenarios."""
     print("=== Reference Implementation: Anthropic (util-genai) ===")
@@ -277,6 +325,7 @@ def main():
     run_chat(handler)
     run_compaction(handler)
     run_chat_with_document_input(handler)
+    run_create_agent()
 
     flush_and_shutdown(tp, lp, mp)
 
