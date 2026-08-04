@@ -132,6 +132,9 @@ configured limit acts as a cumulative cap across the full
 invocation, not when it constrains a single inference call
 (use `gen_ai.request.max_tokens` for per-call limits).
 
+Examples of framework parameters that map to this attribute:
+AutoGen `TokenUsageTermination`.
+
 Instrumentations MUST NOT synthesize a token budget by multiplying
 iteration limits by per-call token limits.
 
