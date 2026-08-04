@@ -1,0 +1,8 @@
+{# Model YAML is data, not a template, so hand-written briefs and notes cannot
+   reference template params directly. Links into the upstream
+   semantic-conventions docs are therefore written in the model as
+   `{{upstream_docs_base}}/docs/...` and resolved here against the pinned
+   upstream ref that the Makefile passes in as `upstream_docs_base`. This keeps
+   those links on the same ref as the `model/manifest.yaml` dependency instead
+   of drifting on every version bump. #}
+{% macro resolve(text) %}{{ (text | default('', true)) | replace('{{upstream_docs_base}}', params.upstream_docs_base | trim) }}{% endmacro %}

@@ -125,7 +125,7 @@ It's reported by the MCP client when it initiates the request
 or notification or by the MCP server when server initiates the operation.
 It covers the time to receive the response or ack from the peer.
 
-**Span status**: refer to the [Recording Errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/general/recording-errors.md)
+**Span status**: refer to the [Recording Errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/recording-errors.md)
 document for details on how to record span status. See also `rpc.response.status_code` attribute
 for the details on which values classify as errors.
 
@@ -181,7 +181,7 @@ to avoid high cardinality span names.
 `error.type` SHOULD be set to the string representation of that code. See
 `rpc.response.status_code` for which codes classify as errors. Otherwise
 (for example on timeouts or transport errors) it SHOULD be set following the
-[`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/error.md)
+[`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/error.md)
 guidance.
 
 When JSON-RPC call is successful, but an error is returned within the
@@ -360,7 +360,7 @@ This span describes the processing of the MCP request or notification initiated 
 It's reported by the MCP server when client initiates the request
 (or notification) or by the MCP client when server initiates the operation.
 
-**Span status**: refer to the [Recording Errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/general/recording-errors.md)
+**Span status**: refer to the [Recording Errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/recording-errors.md)
 document for details on how to record span status. See also `rpc.response.status_code` attribute
 for the details on which values classify as errors.
 
@@ -407,7 +407,7 @@ to avoid high cardinality span names.
 `error.type` SHOULD be set to the string representation of that code. See
 `rpc.response.status_code` for which codes classify as errors. Otherwise
 (for example on timeouts or transport errors) it SHOULD be set following the
-[`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/error.md)
+[`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/error.md)
 guidance.
 
 When JSON-RPC call is successful, but an error is returned within the
@@ -625,7 +625,7 @@ of `[ 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30, 60, 120, 300 ]`.
 `error.type` SHOULD be set to the string representation of that code. See
 `rpc.response.status_code` for which codes classify as errors. Otherwise
 (for example on timeouts or transport errors) it SHOULD be set following the
-[`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/error.md)
+[`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/error.md)
 guidance.
 
 When JSON-RPC call is successful, but an error is returned within the
@@ -792,7 +792,7 @@ of `[ 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30, 60, 120, 300 ]`.
 `error.type` SHOULD be set to the string representation of that code. See
 `rpc.response.status_code` for which codes classify as errors. Otherwise
 (for example on timeouts or transport errors) it SHOULD be set following the
-[`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/error.md)
+[`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/error.md)
 guidance.
 
 When JSON-RPC call is successful, but an error is returned within the
