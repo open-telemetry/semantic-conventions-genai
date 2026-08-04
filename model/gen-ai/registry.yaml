@@ -377,6 +377,9 @@ attributes:
   - key: gen_ai.tool.description
     type: string
     brief: The tool description.
+    note: |
+      > [!WARNING]
+      > This attribute may contain sensitive information.
     examples: ["Multiply two numbers"]
     stability: development
   - key: gen_ai.tool.type
@@ -441,6 +444,9 @@ attributes:
       type:
         json_schema: model/gen-ai/gen-ai-tool-definitions.json
     note: |
+      > [!WARNING]
+      > This attribute may contain sensitive information.
+
       Since this attribute could be large, it's NOT RECOMMENDED to populate
       non-required properties by default. Instrumentations MAY provide a way
       to enable populating optional properties.
