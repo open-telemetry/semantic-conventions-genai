@@ -8,7 +8,7 @@ name: Auto-update generated files
 on:
   push:
     branches:
-      - 'renovate/**/*'
+      - 'renovate/**'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
