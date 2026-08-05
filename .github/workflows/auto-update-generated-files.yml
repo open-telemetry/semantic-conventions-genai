@@ -1,9 +1,9 @@
 name: Auto-update generated files
 
-# Renovate only edits the pin it manages, but several committed outputs are
-# derived from those pins (e.g. upstream doc links follow the semantic-conventions
-# tag in model/manifest.yaml). Regenerate them on the Renovate branch so its pull
-# requests don't need a manual `make generate-all` to go green.
+# Renovate bumps a pin but doesn't regenerate what derives from it — upstream doc
+# links, for example, follow the semantic-conventions tag in model/manifest.yaml.
+# CI's generated-docs check would fail, so regenerate here and push the result
+# back to the branch instead of leaving `make generate-all` to a maintainer.
 
 on:
   push:
