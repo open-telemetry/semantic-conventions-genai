@@ -170,6 +170,47 @@ def run_plan_and_execute_reference():
         print(f"    -> planned {len(plan.steps)} step(s)")
 
 
+def run_execute_tool_reference():
+    """Scenario: tool execution via LangChain's tool runner.
+
+    The model call that produces the tool call is issued by
+    `langchain_openai.ChatOpenAI` (backed by the `openai` client) and is captured
+    as an inference span by generic OpenAI instrumentation, so it is not emitted
+    here. Running the tool is LangChain's own work: `BaseTool.invoke()` executes
+    the function and builds the `ToolMessage`, so that is where generic LangChain
+    instrumentation produces the execute_tool span.
+    """
+    print("  [execute_tool] tool execution via LangChain tool runner (reference implementation)")
+    from langchain_openai import ChatOpenAI
+
+    chat_model = ChatOpenAI(
+        model="gpt-4o-mini",
+        base_url=MOCK_BASE_URL,
+        api_key="mock-key",
+    ).bind_tools([get_weather])
+
+    response = chat_model.invoke("What's the weather in Seattle?")
+    if not response.tool_calls:
+        print("    -> no tool call returned")
+        return
+
+    tool_call = response.tool_calls[0]
+    tool_span_attributes = {
+        "gen_ai.operation.name": "execute_tool",
+        "gen_ai.tool.name": get_weather.name,
+        "gen_ai.tool.description": get_weather.description,
+        "gen_ai.tool.type": "function",
+    }
+    with _reference_tracer.start_as_current_span(
+        f"execute_tool {get_weather.name}", attributes=tool_span_attributes
+    ) as tool_span:
+        tool_span.set_attribute("gen_ai.tool.call.id", tool_call["id"])
+        tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps(tool_call["args"]))
+        tool_message = get_weather.invoke(tool_call)
+        tool_span.set_attribute("gen_ai.tool.call.result", tool_message.content)
+    print(f"    -> {tool_message.content[:60]}")
+
+
 async def run_workflow_reference():
     """Scenario: graph execution via LangGraph wrapped in a workflow span."""
     print("  [workflow] LangGraph graph run (reference implementation)")
@@ -225,6 +266,7 @@ def main():
     tp, lp, mp = setup_otel()
     run_retrieval_reference()
     run_plan_and_execute_reference()
+    run_execute_tool_reference()
     asyncio.run(run_workflow_reference())
 
     flush_and_shutdown(tp, lp, mp)

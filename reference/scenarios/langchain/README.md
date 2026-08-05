@@ -13,4 +13,4 @@ execution.
 | invoke_agent (internal) | Yes — `create_agent` agent run | ✅ Implemented |
 | retrieval | Yes — retriever runs the retrieval | ✅ Implemented |
 | plan | Yes — Plan-and-Execute planning phase | ✅ Implemented |
-| execute_tool | Yes — LangChain runs the tool | ❌ Not implemented |
+| execute_tool | Yes — `BaseTool.invoke()` runs the tool | ✅ Implemented |

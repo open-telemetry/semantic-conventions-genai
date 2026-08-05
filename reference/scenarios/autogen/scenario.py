@@ -9,7 +9,6 @@ import time
 
 from reference_shared import (
     flush_and_shutdown,
-    mock_server_host_port,
     reference_tracer,
     setup_otel,
 )
@@ -110,28 +109,14 @@ def run_agent_reference():
     try:
         agent_name = "test_agent"
         agent_description = "Reference AutoGen assistant."
-        host, port = mock_server_host_port(MOCK_BASE_URL)
-        span_attributes_2 = {
-            "gen_ai.operation.name": "create_agent",
-            "gen_ai.provider.name": "openai",
-            "gen_ai.request.model": request_model,
-            "gen_ai.agent.name": agent_name,
-        }
-        if host:
-            span_attributes_2["server.address"] = host
-        if port is not None:
-            span_attributes_2["server.port"] = port
-        with _reference_tracer.start_as_current_span("create_agent test_agent", attributes=span_attributes_2) as span:
-            span.set_attribute("gen_ai.agent.description", agent_description)
-            span.set_attribute("gen_ai.system_instructions", json.dumps([{"type": "text", "content": system_message}]))
-            agent = AssistantAgent(
-                name=agent_name,
-                model_client=model_client,
-                description=agent_description,
-                system_message=system_message,
-                tools=[get_weather],
-                max_tool_iterations=2,
-            )
+        agent = AssistantAgent(
+            name=agent_name,
+            model_client=model_client,
+            description=agent_description,
+            system_message=system_message,
+            tools=[get_weather],
+            max_tool_iterations=2,
+        )
 
         async def _run():
             from autogen_agentchat.messages import TextMessage

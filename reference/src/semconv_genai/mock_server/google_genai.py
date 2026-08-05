@@ -183,6 +183,16 @@ def google_genai(model_action):
     return RESPONSE
 
 
+@bp.route("/v1beta/agents", methods=["POST"])
+def google_genai_agents():
+    """Handle Google GenAI Agents API requests."""
+    body = request.get_json(silent=True) or {}
+    return {
+        "name": f"agents/{body.get('name', 'mock-agent-123')}",
+        "displayName": body.get("display_name", "test-agent"),
+    }
+
+
 @bp.route("/v1beta/interactions", methods=["POST"])
 def google_genai_interactions():
     """Handle Google GenAI Interactions API requests."""
@@ -212,6 +222,7 @@ def google_genai_interactions():
 
 
 @bp.route("/v1/projects/<path:rest>", methods=["POST"])
+@bp.route("/v1beta1/projects/<path:rest>", methods=["POST"])
 def vertex_ai(rest):
     """Handle Vertex AI API requests (same response format as Google GenAI)."""
     body = request.get_json(silent=True) or {}

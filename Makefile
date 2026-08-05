@@ -4,7 +4,7 @@
 # the otel/weaver container image if a local weaver installation is not found.
 
 # Shared external version pins. Override on the command line when needed, e.g.
-# `make check-policies SEMCONV_VERSION=v1.40.0`.
+# `make check-policies WEAVER_VERSION=v0.25.0`.
 VERSION_PINS_FILE := versions.env
 include $(VERSION_PINS_FILE)
 
@@ -43,37 +43,12 @@ endif
 # command line to compare against a different ref or fork.
 BASELINE_REGISTRY := https://github.com/trask/semantic-conventions-genai.git[model]
 
-# Filtered copy of the upstream semantic-conventions model. We clone the
-# pinned upstream registry and delete the subdirectories that have been
-# migrated into this repo.
-#
-# This repo is the new home for GenAI (and MCP) semantic conventions. The
-# definitions here are the canonical ones going forward; the matching
-# definitions still living in open-telemetry/semantic-conventions will be
-# removed once the migration completes. Until then, the pinned upstream
-# registry we depend on for shared attributes (server.*, error.type, etc.)
-# also still contains GenAI/MCP/OpenAI groups that overlap with ours.
-# Feeding both copies to Weaver would mean resolving the same id twice, so
-# we strip the now-local subdirectories out of the upstream copy before
-# Weaver sees it. When upstream finishes removing these definitions this
-# filter becomes a no-op and can be deleted.
-SC_UPSTREAM_CHECKOUT := .build/sc-upstream-$(SEMCONV_VERSION)
-SC_UPSTREAM_FILTERED := .build/sc-upstream-filtered
-SC_UPSTREAM_STAMP := $(SC_UPSTREAM_FILTERED)/.stamp-$(SEMCONV_VERSION)
-
-# Upstream directories whose contents now live in this repo. Delete these
-# from the filtered copy so their group ids do not collide with ours.
-SC_UPSTREAM_MIGRATED_DIRS := gen-ai mcp openai
-
-# Group-level migrations: upstream namespaces where we own only a subset of
-# the groups inside a shared registry file. Each entry is `<file>:<group_id>`,
-# relative to upstream `model/`. The filtered upstream copy has each listed
-# group stripped from its file so Weaver does not see two definitions of the
-# same group id.
-SC_UPSTREAM_MIGRATED_GROUPS := aws/registry.yaml:registry.aws.bedrock
-
-.PHONY: check-policies generate-registry generate-docs generate-json-schemas generate-all clean filter-upstream package-dev \
+.PHONY: check-policies generate-registry generate-docs generate-json-schemas generate-all clean package-dev \
 	generate-reference-reports
+
+# Upstream semantic-conventions version, derived from the pinned git tag in the
+# model/manifest.yaml dependency (the single source of truth for that version).
+SEMCONV_VERSION := $(shell grep -oE 'semantic-conventions\.git@v[0-9]+\.[0-9]+\.[0-9]+' model/manifest.yaml | sed 's/.*@//')
 
 # Pinned upstream GitHub URL base, passed to templates as `upstream_docs_base`
 # so cross-registry links to upstream pages resolve to the pinned version.
@@ -85,36 +60,8 @@ VERSION := $(shell awk '/^schema_url:/ { n = split($$2, parts, "/"); print parts
 RESOLVED_SCHEMA_URI := https://github.com/open-telemetry/semantic-conventions-genai/releases/download/v$(VERSION)/resolved.yaml
 PACKAGE_OUTPUT := .build/package
 
-# Clone upstream semantic-conventions at the pinned version and drop the
-# subdirectories that have been migrated into this repo. See the long
-# comment on SC_UPSTREAM_FILTERED above.
-$(SC_UPSTREAM_STAMP): $(VERSION_PINS_FILE)
-	@mkdir -p .build
-	rm -rf $(SC_UPSTREAM_CHECKOUT) $(SC_UPSTREAM_FILTERED)
-	git clone --depth 1 --branch $(SEMCONV_VERSION) \
-		https://github.com/open-telemetry/semantic-conventions.git \
-		$(SC_UPSTREAM_CHECKOUT)
-	cp -r $(SC_UPSTREAM_CHECKOUT)/model $(SC_UPSTREAM_FILTERED)
-	cd $(SC_UPSTREAM_FILTERED) && rm -rf $(SC_UPSTREAM_MIGRATED_DIRS)
-	@# Strip group-level migrated entries (file:group_id) from the filtered
-	@# upstream copy. Awk slices out each `  - id: <group_id>` block up to the
-	@# next sibling group at the same indent (or EOF).
-	@for entry in $(SC_UPSTREAM_MIGRATED_GROUPS); do \
-		file=$${entry%%:*}; gid=$${entry##*:}; \
-		target=$(SC_UPSTREAM_FILTERED)/$$file; \
-		if [ -f "$$target" ]; then \
-			awk -v gid="$$gid" 'BEGIN{skip=0} \
-				/^  - id: / { skip = ($$0 == "  - id: " gid) } \
-				!skip { print }' "$$target" > "$$target.tmp" && \
-			mv "$$target.tmp" "$$target"; \
-		fi; \
-	done
-	touch $(SC_UPSTREAM_STAMP)
-
-filter-upstream: $(SC_UPSTREAM_STAMP)
-
 # Validate the model and run shared policies from otel-weaver-packages.
-check-policies: $(SC_UPSTREAM_STAMP)
+check-policies:
 	$(WEAVER) registry check \
 		-r ./model \
 		--v2 \
@@ -124,7 +71,7 @@ check-policies: $(SC_UPSTREAM_STAMP)
 
 # Generate the attribute registry pages under docs/registry/ from local
 # templates that consume the v2 resolved registry.
-generate-registry: $(SC_UPSTREAM_STAMP)
+generate-registry:
 	$(WEAVER) registry generate \
 		-r ./model \
 		--v2 \
@@ -135,7 +82,7 @@ generate-registry: $(SC_UPSTREAM_STAMP)
 
 # Refresh the weaver snippet tables embedded in hand-written signal docs under
 # docs/gen-ai/ (rewritten in place between <!-- weaver ... --> markers).
-generate-docs: $(SC_UPSTREAM_STAMP)
+generate-docs:
 	$(WEAVER) registry update-markdown \
 		-r ./model \
 		--v2 \
@@ -160,7 +107,7 @@ generate-all: generate-registry generate-docs generate-json-schemas generate-ref
 
 # Package the registry into a publication artifact. The version comes from
 # model/manifest.yaml's schema_url; bump it there to cut a new release.
-package-dev: $(SC_UPSTREAM_STAMP)
+package-dev:
 	@mkdir -p .build
 	rm -rf $(PACKAGE_OUTPUT)
 	$(WEAVER) registry package \
