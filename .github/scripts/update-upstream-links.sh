@@ -16,6 +16,12 @@
 
 set -euo pipefail
 
+if [ $# -ne 1 ]; then
+  echo "usage: $(basename "$0") <version>, e.g. v1.44.0" >&2
+  echo "run \`make update-upstream-links\`, which derives the version from model/manifest.yaml" >&2
+  exit 1
+fi
+
 VERSION=$1
 
 URL_PREFIX="https://github.com/open-telemetry/semantic-conventions/blob/"
