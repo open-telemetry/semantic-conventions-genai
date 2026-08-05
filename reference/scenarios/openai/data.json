@@ -52,15 +52,6 @@
       "gen_ai.system_instructions",
       "server.address",
       "server.port"
-    ],
-    "execute_tool": [
-      "gen_ai.operation.name",
-      "gen_ai.tool.call.arguments",
-      "gen_ai.tool.call.id",
-      "gen_ai.tool.call.result",
-      "gen_ai.tool.description",
-      "gen_ai.tool.name",
-      "gen_ai.tool.type"
     ]
   },
   "events": {

@@ -3,7 +3,7 @@ name = "aws-bedrock-agentcore-reference-test"
 version = "0.0.0"
 requires-python = ">=3.12"
 dependencies = [
-    "boto3==1.43.57",
+    "boto3==1.43.63",
     "genai-reference-shared",
 ]
 

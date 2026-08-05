@@ -171,21 +171,9 @@ def run_converse_tool_call_reference(client):
             span.set_attribute("gen_ai.usage.output_tokens", usage["outputTokens"])
         content = response["output"]["message"]["content"]
         if content and "toolUse" in content[0]:
-            tool_use = content[0]["toolUse"]
-            tool_span_attributes = {
-                "gen_ai.operation.name": "execute_tool",
-            }
-            with _reference_tracer.start_as_current_span(
-                "execute_tool get_weather", attributes=tool_span_attributes
-            ) as tool_span:
-                tool_span.set_attribute("gen_ai.tool.name", tool_use["name"])
-                tool_span.set_attribute("gen_ai.tool.description", tool_spec["toolSpec"]["description"])
-                tool_span.set_attribute("gen_ai.tool.type", "function")
-                tool_span.set_attribute("gen_ai.tool.call.id", tool_use["toolUseId"])
-                tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps(tool_use.get("input", {})))
-                result = f"Sunny in {tool_use.get('input', {}).get('location', 'unknown')}"
-                tool_span.set_attribute("gen_ai.tool.call.result", result)
-            print(f"    -> tool_call: {tool_use['name']}")
+            # Converse returns the tool-use request; running it is app code Bedrock
+            # never sees, so there is no execute_tool span to emit here.
+            print(f"    -> tool_call: {content[0]['toolUse']['name']}")
         else:
             print(f"    -> {content[0]['text'][:60]}")
 
