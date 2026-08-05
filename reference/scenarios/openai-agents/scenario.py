@@ -125,7 +125,7 @@ async def run_agent():
 
 
 async def run_workflow():
-    """Run a simple agent run wrapped in a workflow span representing the SDK workflow tracing."""
+    """Run a multi-agent handoff wrapped in a workflow span representing the SDK workflow tracing."""
     from agents import handoff
 
     client = openai.AsyncOpenAI(base_url=MOCK_BASE_URL, api_key="mock-key")
