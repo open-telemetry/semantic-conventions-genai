@@ -919,7 +919,7 @@ This metric SHOULD be specified with [ExplicitBucketBoundaries] of [1, 5, 10, 30
 **[1]:** Represents the end-to-end duration of a workflow execution, measured from the point where application code initiates the workflow to the point where the workflow completes, independent of workflow complexity.
 A workflow is a coordinated process composed of multiple agents or other operations involving generative AI.
 If instrumentation measures only a single provider-facing client operation (for example, one model API call), `gen_ai.client.operation.duration` SHOULD be used instead. Instrumentation MAY emit both metrics for the same request path when both boundaries are available.
-When this metric is reported alongside a `gen_ai.invoke_workflow` span, the metric value SHOULD be the same as the span duration.
+When this metric is reported alongside a `gen_ai.invoke_workflow.internal` span, the metric value SHOULD be the same as the span duration.
 Individual systems may include additional system-specific attributes. Refer to system-specific documentation, if available.
 
 **Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/general/signal-requirement-level.md).
