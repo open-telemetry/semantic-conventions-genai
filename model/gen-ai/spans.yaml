@@ -111,7 +111,7 @@ attribute_groups:
         requirement_level: recommended
       - ref: gen_ai.conversation.id
         requirement_level:
-          conditionally_required: When available.
+          conditionally_required: If and only if the instrumented library has one readily available, or the user application provides one through OpenTelemetry context or library-specific mechanisms.
       - ref: gen_ai.data_source.id
         requirement_level:
           conditionally_required: If applicable.
@@ -223,7 +223,7 @@ spans:
         requirement_level: opt_in
       - ref: gen_ai.conversation.id
         requirement_level:
-          conditionally_required: When available.
+          conditionally_required: If and only if the instrumented library has one readily available, or the user application provides one through OpenTelemetry context or library-specific mechanisms.
       - ref: gen_ai.conversation.compacted
         requirement_level:
           recommended: when available
