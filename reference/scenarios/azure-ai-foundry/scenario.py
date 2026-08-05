@@ -77,7 +77,9 @@ def run_invoke_agent(client):
         "server.address": _SERVER_ADDRESS,
         "server.port": _SERVER_PORT,
     }
-    with tracer.start_as_current_span("create_agent", kind=SpanKind.CLIENT, attributes=span_attributes) as span:
+    with tracer.start_as_current_span(
+        f"create_agent {AGENT_NAME}", kind=SpanKind.CLIENT, attributes=span_attributes
+    ) as span:
         span.set_attribute("gen_ai.agent.description", AGENT_DESCRIPTION)
         span.set_attribute("gen_ai.system_instructions", json.dumps([{"type": "text", "content": AGENT_INSTRUCTIONS}]))
         span.set_attribute("gen_ai.tool.definitions", json.dumps(tool_defs))
@@ -105,7 +107,9 @@ def run_invoke_agent(client):
         "server.address": _SERVER_ADDRESS,
         "server.port": _SERVER_PORT,
     }
-    with tracer.start_as_current_span("invoke_agent", kind=SpanKind.CLIENT, attributes=span_attributes_2) as span:
+    with tracer.start_as_current_span(
+        f"invoke_agent {agent.name}", kind=SpanKind.CLIENT, attributes=span_attributes_2
+    ) as span:
         span.set_attribute("gen_ai.request.max_tokens", REQUEST_MAX_TOKENS)
         span.set_attribute("gen_ai.request.temperature", REQUEST_TEMPERATURE)
         span.set_attribute("gen_ai.request.top_p", REQUEST_TOP_P)

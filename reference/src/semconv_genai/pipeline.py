@@ -254,7 +254,7 @@ def run_one_library(
         registry,
     )
     # Run weaver from the repo root so relative `registry_path` entries in
-    # `model/manifest.yaml` (e.g. `./.build/sc-upstream-filtered`) resolve
+    # `model/manifest.yaml` resolve
     # consistently regardless of where this Python process was launched.
     weaver_proc: subprocess.Popen | None = subprocess.Popen(weaver_cmd, cwd=SEMCONV_ROOT)
 

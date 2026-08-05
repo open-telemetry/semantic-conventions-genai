@@ -42,6 +42,9 @@ def _load_groups() -> dict[str, dict]:
         for event in doc.get("events", []) or []:
             if "name" in event:
                 groups[f"event.{event['name']}"] = event
+        for metric in doc.get("metrics", []) or []:
+            if "name" in metric:
+                groups[f"metric.{metric['name']}"] = metric
     return groups
 
 
@@ -136,6 +139,12 @@ SPAN_SPECS: dict[str, AttributeSpec] = {
         op_names=frozenset({"retrieval"}),
         discriminator_attrs=frozenset({"gen_ai.data_source.id"}),
     ),
+    "fetch_response": _from_yaml(
+        _groups,
+        "span.gen_ai.fetch_response.client",
+        label="Fetch Response",
+        op_names=frozenset({"fetch_response"}),
+    ),
     "memory": _from_yaml(
         _groups,
         "span.gen_ai.memory.client",
@@ -214,8 +223,18 @@ EVENT_SPECS: dict[str, AttributeSpec] = {
     ),
 }
 
-# No METRIC_SPECS yet: gen_ai.* metrics are deliberately omitted from the reference
-# coverage matrix because the two non-streaming metrics
-# (`gen_ai.client.operation.duration`, `gen_ai.client.token.usage`) are
-# derivable from data already present on inference spans (span start/end and
-# `gen_ai.usage.{input,output}_tokens`). Reference scenarios emit spans only.
+# The `gen_ai.client.operation.duration` and `gen_ai.client.token.usage`
+# metrics are deliberately omitted: they are trivially derivable from the same
+# information already present on spans.
+METRIC_SPECS: dict[str, AttributeSpec] = {
+    "gen_ai.invoke_agent.inference_calls": _from_yaml(
+        _groups,
+        "metric.gen_ai.invoke_agent.inference_calls",
+        label="Invoke Agent Inference Calls",
+    ),
+    "gen_ai.invoke_agent.tool_calls": _from_yaml(
+        _groups,
+        "metric.gen_ai.invoke_agent.tool_calls",
+        label="Invoke Agent Tool Calls",
+    ),
+}

@@ -19,15 +19,6 @@
       "gen_ai.request.model",
       "gen_ai.response.model",
       "gen_ai.usage.input_tokens"
-    ],
-    "execute_tool": [
-      "gen_ai.operation.name",
-      "gen_ai.tool.call.arguments",
-      "gen_ai.tool.call.id",
-      "gen_ai.tool.call.result",
-      "gen_ai.tool.description",
-      "gen_ai.tool.name",
-      "gen_ai.tool.type"
     ]
   },
   "events": {
