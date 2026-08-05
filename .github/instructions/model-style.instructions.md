@@ -10,8 +10,9 @@ first word and end with a period.
 
 # Links to upstream docs
 
-Model YAML is data, not a template, so a link hardcoded against a specific
-upstream ref goes stale on the next version bump. Write links into
-open-telemetry/semantic-conventions as `{{upstream_docs_base}}/docs/...`. The
-markdown templates substitute the placeholder with the ref pinned by the
-`model/manifest.yaml` dependency.
+Write links into open-telemetry/semantic-conventions as ordinary URLs pinned to
+a version, e.g. `https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/...`.
+Don't use a template placeholder — this YAML is published as-is and read
+directly by other repos. `make generate-all` rewrites the version in every such
+link to match the `model/manifest.yaml` dependency, so it stays current on its
+own.

@@ -4,7 +4,6 @@
    (e.g. "**Span name** SHOULD be `{gen_ai.operation.name} {gen_ai.request.model}`."). #}
 {% import 'stability.j2' as stability %}
 {% import 'signal_requirement_level.j2' as sr %}
-{% import 'upstream_links.j2' as upstream %}
 
 {# Span-name guidance is rendered from `span.name.note`. Refinements and imported
    spans inherit the base span's `name` (weaver PR 1403), so provider docs get it
@@ -12,13 +11,13 @@
 {% macro header(span) -%}
 **Status:** {{ stability.badge(span.stability, span.deprecated) }}
 
-{{ upstream.resolve(span.brief) | trim }}
+{{ span.brief | trim }}
 {%- if span.note %}
 
-{{ upstream.resolve(span.note) | trim }}{% endif %}
+{{ span.note | trim }}{% endif %}
 {%- if span.name and span.name.note %}
 
-{{ upstream.resolve(span.name.note) | trim }}{% endif %}
+{{ span.name.note | trim }}{% endif %}
 {%- if "**Span kind" not in (span.note or "") %}
 
 **Span kind** SHOULD be `{{ span.kind | upper }}`.{% endif %}

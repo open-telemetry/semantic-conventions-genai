@@ -30,7 +30,7 @@ linkTitle: Model Context Protocol
 
 [Model Context Protocol](https://github.com/modelcontextprotocol/modelcontextprotocol) (MCP) is based on JSON RPC.
 
-When instrumenting MCP calls, it's RECOMMENDED to follow MCP conventions instead of [RPC semantic conventions](https://github.com/open-telemetry/semantic-conventions/blob/v1.40.0/docs/rpc/README.md)
+When instrumenting MCP calls, it's RECOMMENDED to follow MCP conventions instead of [RPC semantic conventions](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/rpc/README.md)
 since MCP spans and metrics provide domain-specific context and record details
 that are not covered by the RPC conventions such as message exchanges within streaming calls.
 
@@ -1111,7 +1111,7 @@ consumers to deduce transport type.
 | Streamable HTTP    | `tcp` (or `quic`)                      | `network.protocol.name = http` <br> `network.protocol.version = 2`          | `2025-06-18` or newer            | `mcp.protocol.version` distinguishes streamable HTTP from SSE    |
 | HTTP with SSE      | `tcp` (or `quic`)                      | `network.protocol.name = http` <br> `network.protocol.version = 1.1` (or 2) | `2024-11-05` or older            | `mcp.protocol.version` distinguishes streamable HTTP from SSE    |
 | Custom: websockets | `tcp` (or another applicable protocol) | `network.protocol.name = websocket`                                         | any                              |                                                                  |
-| Custom: gRPC       | `tcp` (or another applicable protocol) | `network.protocol.name = http` <br> `network.protocol.version = 2`          | any                              | See [gRPC conventions](https://github.com/open-telemetry/semantic-conventions/blob/v1.40.0/docs/rpc/grpc.md) for additional details |
+| Custom: gRPC       | `tcp` (or another applicable protocol) | `network.protocol.name = http` <br> `network.protocol.version = 2`          | any                              | See [gRPC conventions](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/rpc/grpc.md) for additional details |
 
 Note: Applications may enable instrumentation for the underlying application protocol
 like HTTP (when applicable) alongside MCP instrumentation to capture additional
