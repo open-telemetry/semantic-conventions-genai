@@ -52,5 +52,24 @@
       "server.address",
       "server.port"
     ]
+  },
+  "metrics": {
+    "gen_ai.client.token.usage": [
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "gen_ai.request.model",
+      "gen_ai.response.model",
+      "gen_ai.token.type",
+      "server.address",
+      "server.port"
+    ],
+    "gen_ai.client.operation.duration": [
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "gen_ai.request.model",
+      "gen_ai.response.model",
+      "server.address",
+      "server.port"
+    ]
   }
 }

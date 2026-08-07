@@ -19,7 +19,7 @@ from semconv_genai import (
     reference_results_dir,
 )
 from semconv_genai.attribute_spec import AttributeSpec, RequirementLevel
-from semconv_genai.classify import classify_span
+from semconv_genai.classify import classify_metric, classify_span
 from semconv_genai.parse_results import (
     ScenarioResult,
     merge_signal_counts,
@@ -55,10 +55,7 @@ EVENT_TYPE_ORDER = [
 ]
 
 # Display order for metric types in reports.
-METRIC_TYPE_ORDER = [
-    "gen_ai.invoke_agent.inference_calls",
-    "gen_ai.invoke_agent.tool_calls",
-]
+METRIC_TYPE_ORDER = tuple(METRIC_SPECS)
 
 _REQUIREMENT_LEVELS = (
     RequirementLevel.REQUIRED,
@@ -185,10 +182,9 @@ def _metric_type_present_attributes(
     level: RequirementLevel,
 ) -> set[str]:
     """Return attrs present for a metric type at the requested requirement level."""
-    all_present = _present_attributes(result)
     if level is RequirementLevel.REQUIRED:
-        return result.detected.metric_attrs.get(metric_name, all_present)
-    return result.detected.metric_any_attrs.get(metric_name, all_present)
+        return result.detected.metric_attrs.get(metric_name, set())
+    return result.detected.metric_any_attrs.get(metric_name, set())
 
 
 def _build_metric_type_present_names(result: ScenarioResult) -> dict[str, list[str]]:
@@ -245,14 +241,13 @@ def _build_single_scenario_data(result: ScenarioResult) -> tuple[dict[str, objec
     if metrics:
         data["metrics"] = metrics
 
-    has_relevant_data = bool(spans) or bool(event_present) or bool(metrics)
-    return _normalize_generated_scenario_payload(data), has_relevant_data
+    return _normalize_generated_scenario_payload(data), bool(spans) or bool(event_present) or bool(metrics)
 
 
 def write_generated_scenario_data(library: str) -> Path:
     """Write committed status-report data for one library and return the data.json path."""
     result_dir = reference_results_dir(library)
-    result = parse_result_dir(result_dir, library, classify_span)
+    result = parse_result_dir(result_dir, library, classify_span, classify_metric)
     if result is None:
         raise ValueError(f"Could not parse Weaver results for library: {library}")
 
