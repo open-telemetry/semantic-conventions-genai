@@ -968,7 +968,7 @@ attributes:
     stability: development
   - key: gen_ai.agent.token_budget.consumed
     type: int
-    brief: Cumulative tokens consumed across all inference calls in this invocation.
+    brief: Cumulative tokens consumed by this agent's own inference calls, excluding sub-agent consumption.
     note: |
       Total tokens (input + output) consumed across all inference calls
       within this agent invocation. Instrumentations MUST NOT include
