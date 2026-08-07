@@ -44,7 +44,7 @@ endif
 BASELINE_REGISTRY := https://github.com/trask/semantic-conventions-genai.git[model]
 
 .PHONY: check-policies generate-registry generate-docs generate-json-schemas generate-all clean package-dev \
-	generate-reference-reports
+	generate-reference-reports update-upstream-links
 
 # Upstream semantic-conventions version, derived from the pinned git tag in the
 # model/manifest.yaml dependency (the single source of truth for that version).
@@ -92,6 +92,13 @@ generate-docs:
 		--param upstream_docs_base=$(UPSTREAM_DOCS_BASE) \
 		docs
 
+# Rewrite hardcoded upstream links in model and docs text to $(SEMCONV_VERSION).
+# Templates resolve their own links via `upstream_docs_base`, but links written
+# by hand in model `brief`/`note` text are published to downstream consumers, so
+# they have to be real URLs rather than a placeholder.
+update-upstream-links:
+	.github/scripts/update-upstream-links.sh $(SEMCONV_VERSION)
+
 # Regenerate the JSON schemas under model/gen-ai/ from the pydantic models in
 # docs/gen-ai/non-normative/models.py.
 generate-json-schemas:
@@ -103,7 +110,7 @@ generate-reference-reports:
 
 # Run every regeneration the repo owns (weaver-driven + pydantic-driven + reports).
 # CI checks that all committed outputs match what this target generates.
-generate-all: generate-registry generate-docs generate-json-schemas generate-reference-reports
+generate-all: update-upstream-links generate-registry generate-docs generate-json-schemas generate-reference-reports
 
 # Package the registry into a publication artifact. The version comes from
 # model/manifest.yaml's schema_url; bump it there to cut a new release.

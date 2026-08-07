@@ -52,11 +52,12 @@ class SpanCounter(SpanProcessor):
 
 
 @contextlib.contextmanager
-def _suppress_adk_native_tracing():
+def _suppress_adk_native_telemetry():
     from google.adk import runners as adk_runners
     from google.adk.agents import base_agent as adk_base_agent
     from google.adk.flows.llm_flows import base_llm_flow as adk_base_llm_flow
     from google.adk.flows.llm_flows import functions as adk_functions
+    from google.adk.telemetry import _metrics as adk_metrics
     from google.adk.telemetry import tracing as adk_tracing
 
     class _DisabledTracer:
@@ -64,7 +65,12 @@ def _suppress_adk_native_tracing():
         def start_as_current_span(self, *_args, **_kwargs):
             yield _trace.NonRecordingSpan(_trace.INVALID_SPAN_CONTEXT)
 
+    class _DisabledInstrument:
+        def record(self, *_args, **_kwargs):
+            pass
+
     disabled_tracer = _DisabledTracer()
+    disabled_instrument = _DisabledInstrument()
     patched_modules = (
         adk_tracing,
         adk_base_agent,
@@ -89,6 +95,13 @@ def _suppress_adk_native_tracing():
         patch_attribute(adk_base_llm_flow, "trace_call_llm", lambda *_args, **_kwargs: None)
         patch_attribute(adk_functions, "trace_tool_call", lambda *_args, **_kwargs: None)
         patch_attribute(adk_functions, "trace_merged_tool_calls", lambda *_args, **_kwargs: None)
+        # ADK records gen_ai.client.token.usage and gen_ai.client.operation.duration for the model
+        # call it hands to google-genai, but only as a fallback for when no model-client
+        # instrumentation is loaded (see tracing._should_emit_native_telemetry). That call belongs
+        # to google-genai, so drop those two instruments. Every other ADK instrument is left alone,
+        # including the invoke_agent inference/tool call counts, which describe ADK's own work.
+        patch_attribute(adk_metrics, "_client_operation_duration", disabled_instrument)
+        patch_attribute(adk_metrics, "_client_token_usage", disabled_instrument)
         yield
     finally:
         for owner, name, value in reversed(previous_attributes):
@@ -157,7 +170,7 @@ def run_agent_reference():
         }
     ]
 
-    with _suppress_adk_native_tracing():
+    with _suppress_adk_native_telemetry():
         agent = Agent(
             name="test_agent",
             model=Gemini(model=request_model, base_url=MOCK_BASE_URL),

@@ -32,7 +32,7 @@ attribute_groups:
           `error.type` SHOULD be set to the string representation of that code. See
           `rpc.response.status_code` for which codes classify as errors. Otherwise
           (for example on timeouts or transport errors) it SHOULD be set following the
-          [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/error.md)
+          [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/error.md)
           guidance.
 
           When JSON-RPC call is successful, but an error is returned within the

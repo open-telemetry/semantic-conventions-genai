@@ -30,7 +30,7 @@ linkTitle: Model Context Protocol
 
 [Model Context Protocol](https://github.com/modelcontextprotocol/modelcontextprotocol) (MCP) is based on JSON RPC.
 
-When instrumenting MCP calls, it's RECOMMENDED to follow MCP conventions instead of [RPC semantic conventions](https://github.com/open-telemetry/semantic-conventions/blob/v1.40.0/docs/rpc/README.md)
+When instrumenting MCP calls, it's RECOMMENDED to follow MCP conventions instead of [RPC semantic conventions](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/rpc/README.md)
 since MCP spans and metrics provide domain-specific context and record details
 that are not covered by the RPC conventions such as message exchanges within streaming calls.
 
@@ -125,7 +125,7 @@ It's reported by the MCP client when it initiates the request
 or notification or by the MCP server when server initiates the operation.
 It covers the time to receive the response or ack from the peer.
 
-**Span status**: refer to the [Recording Errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/general/recording-errors.md)
+**Span status**: refer to the [Recording Errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/recording-errors.md)
 document for details on how to record span status. See also `rpc.response.status_code` attribute
 for the details on which values classify as errors.
 
@@ -151,7 +151,7 @@ to avoid high cardinality span names.
 
 **Span kind** SHOULD be `CLIENT`.
 
-**Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/general/signal-requirement-level.md).
+**Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/signal-requirement-level.md).
 
 **Attributes:**
 
@@ -181,7 +181,7 @@ to avoid high cardinality span names.
 `error.type` SHOULD be set to the string representation of that code. See
 `rpc.response.status_code` for which codes classify as errors. Otherwise
 (for example on timeouts or transport errors) it SHOULD be set following the
-[`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/error.md)
+[`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/error.md)
 guidance.
 
 When JSON-RPC call is successful, but an error is returned within the
@@ -360,7 +360,7 @@ This span describes the processing of the MCP request or notification initiated 
 It's reported by the MCP server when client initiates the request
 (or notification) or by the MCP client when server initiates the operation.
 
-**Span status**: refer to the [Recording Errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/general/recording-errors.md)
+**Span status**: refer to the [Recording Errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/recording-errors.md)
 document for details on how to record span status. See also `rpc.response.status_code` attribute
 for the details on which values classify as errors.
 
@@ -377,7 +377,7 @@ to avoid high cardinality span names.
 
 **Span kind** SHOULD be `SERVER`.
 
-**Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/general/signal-requirement-level.md).
+**Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/signal-requirement-level.md).
 
 **Attributes:**
 
@@ -407,7 +407,7 @@ to avoid high cardinality span names.
 `error.type` SHOULD be set to the string representation of that code. See
 `rpc.response.status_code` for which codes classify as errors. Otherwise
 (for example on timeouts or transport errors) it SHOULD be set following the
-[`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/error.md)
+[`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/error.md)
 guidance.
 
 When JSON-RPC call is successful, but an error is returned within the
@@ -599,7 +599,7 @@ of `[ 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30, 60, 120, 300 ]`.
 | -------- | --------------- | ----------- | -------------- | --------- | ------ |
 | `mcp.client.operation.duration` | Histogram | `s` | The duration of the MCP request or notification as observed on the sender from the time it was sent until the response or ack is received. | ![Development](https://img.shields.io/badge/-development-blue) | |
 
-**Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/general/signal-requirement-level.md).
+**Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/signal-requirement-level.md).
 
 **Attributes:**
 
@@ -625,7 +625,7 @@ of `[ 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30, 60, 120, 300 ]`.
 `error.type` SHOULD be set to the string representation of that code. See
 `rpc.response.status_code` for which codes classify as errors. Otherwise
 (for example on timeouts or transport errors) it SHOULD be set following the
-[`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/error.md)
+[`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/error.md)
 guidance.
 
 When JSON-RPC call is successful, but an error is returned within the
@@ -768,7 +768,7 @@ of `[ 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30, 60, 120, 300 ]`.
 | -------- | --------------- | ----------- | -------------- | --------- | ------ |
 | `mcp.server.operation.duration` | Histogram | `s` | MCP request or notification duration as observed on the receiver from the time it was received until the result or ack is sent. | ![Development](https://img.shields.io/badge/-development-blue) | |
 
-**Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/general/signal-requirement-level.md).
+**Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/signal-requirement-level.md).
 
 **Attributes:**
 
@@ -792,7 +792,7 @@ of `[ 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30, 60, 120, 300 ]`.
 `error.type` SHOULD be set to the string representation of that code. See
 `rpc.response.status_code` for which codes classify as errors. Otherwise
 (for example on timeouts or transport errors) it SHOULD be set following the
-[`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/error.md)
+[`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/error.md)
 guidance.
 
 When JSON-RPC call is successful, but an error is returned within the
@@ -941,7 +941,7 @@ of `[ 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30, 60, 120, 300 ]`.
 | -------- | --------------- | ----------- | -------------- | --------- | ------ |
 | `mcp.client.session.duration` | Histogram | `s` | The duration of the MCP session as observed on the MCP client. | ![Development](https://img.shields.io/badge/-development-blue) | |
 
-**Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/general/signal-requirement-level.md).
+**Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/signal-requirement-level.md).
 
 **Attributes:**
 
@@ -1030,7 +1030,7 @@ of `[ 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30, 60, 120, 300 ]`.
 | -------- | --------------- | ----------- | -------------- | --------- | ------ |
 | `mcp.server.session.duration` | Histogram | `s` | The duration of the MCP session as observed on the MCP server. | ![Development](https://img.shields.io/badge/-development-blue) | |
 
-**Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/general/signal-requirement-level.md).
+**Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/signal-requirement-level.md).
 
 **Attributes:**
 
@@ -1111,7 +1111,7 @@ consumers to deduce transport type.
 | Streamable HTTP    | `tcp` (or `quic`)                      | `network.protocol.name = http` <br> `network.protocol.version = 2`          | `2025-06-18` or newer            | `mcp.protocol.version` distinguishes streamable HTTP from SSE    |
 | HTTP with SSE      | `tcp` (or `quic`)                      | `network.protocol.name = http` <br> `network.protocol.version = 1.1` (or 2) | `2024-11-05` or older            | `mcp.protocol.version` distinguishes streamable HTTP from SSE    |
 | Custom: websockets | `tcp` (or another applicable protocol) | `network.protocol.name = websocket`                                         | any                              |                                                                  |
-| Custom: gRPC       | `tcp` (or another applicable protocol) | `network.protocol.name = http` <br> `network.protocol.version = 2`          | any                              | See [gRPC conventions](https://github.com/open-telemetry/semantic-conventions/blob/v1.40.0/docs/rpc/grpc.md) for additional details |
+| Custom: gRPC       | `tcp` (or another applicable protocol) | `network.protocol.name = http` <br> `network.protocol.version = 2`          | any                              | See [gRPC conventions](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/rpc/grpc.md) for additional details |
 
 Note: Applications may enable instrumentation for the underlying application protocol
 like HTTP (when applicable) alongside MCP instrumentation to capture additional

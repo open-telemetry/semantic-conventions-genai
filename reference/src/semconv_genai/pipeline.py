@@ -35,7 +35,7 @@ from semconv_genai import (
     SEMCONV_ROOT,
     reference_results_dir,
 )
-from semconv_genai.classify import classify_span
+from semconv_genai.classify import classify_metric, classify_span
 from semconv_genai.data_files import write_generated_scenario_data
 from semconv_genai.parse_results import parse_result_dir
 from semconv_genai.uv_env import (
@@ -277,7 +277,7 @@ def run_one_library(
         weaver_proc = None
         logger.info("Weaver exit code: %s", weaver_exit)
         logger.info("Results in: %s", scenario_results_dir)
-        fresh_result = parse_result_dir(scenario_results_dir, library, classify_span)
+        fresh_result = parse_result_dir(scenario_results_dir, library, classify_span, classify_metric)
         if exit_code != 0:
             raise RunScenarioError(
                 f"Scenario exited with code {exit_code}.",
