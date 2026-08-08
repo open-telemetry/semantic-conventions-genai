@@ -32,10 +32,20 @@
 | gen_ai.request.temperature | [agent-framework], [autogen], [crewai], [google-adk], [pydantic-ai] |
 | gen_ai.request.top_p | [agent-framework], [autogen], [crewai], [google-adk], [pydantic-ai] |
 | gen_ai.response.finish_reasons | [autogen], [crewai], [google-adk], [openai-agents], [pydantic-ai] |
-| gen_ai.usage.cache_creation.input_tokens | (none) |
+| gen_ai.usage.audio.cache_read.input_tokens | (none) |
+| gen_ai.usage.audio.input_tokens | (none) |
+| gen_ai.usage.audio.output_tokens | (none) |
 | gen_ai.usage.cache_read.input_tokens | [agent-framework] |
+| gen_ai.usage.cache_write.input_tokens | (none) |
+| gen_ai.usage.image.cache_read.input_tokens | (none) |
+| gen_ai.usage.image.input_tokens | (none) |
+| gen_ai.usage.image.output_tokens | (none) |
 | gen_ai.usage.input_tokens | [agent-framework], [autogen], [crewai], [google-adk], [openai-agents], [pydantic-ai] |
 | gen_ai.usage.output_tokens | [agent-framework], [autogen], [crewai], [google-adk], [openai-agents], [pydantic-ai] |
+| gen_ai.usage.text.cache_read.input_tokens | (none) |
+| gen_ai.usage.text.input_tokens | (none) |
+| gen_ai.usage.text.output_tokens | (none) |
+| gen_ai.usage.tool.input_tokens | (none) |
 
 ## Opt-In
 
