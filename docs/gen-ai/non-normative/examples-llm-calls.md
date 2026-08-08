@@ -375,34 +375,28 @@ If tool call is [instrumented according to execute-tool span definition](/docs/g
 | `gen_ai.operation.name` | `"execute_tool"`                  |
 | `gen_ai.tool.type`      | `"function"`                      |
 
-#### Governed tool action metadata
+#### Application-specific custom attributes
 
-Applications that gate tool calls through an approval or policy checkpoint can
-attach additional application-specific attributes to the execute-tool span. The
-following attributes are non-normative examples; they illustrate how a system
-can correlate a tool execution with the action that was reviewed, the verdict
-that was returned, and the evidence that can be replayed later.
-These attributes are correlation claims, not authorization or verification
-evidence; consumers must independently validate the referenced approval,
-verifier, or proof material before treating them as governance evidence.
+Applications can attach additional custom attributes to spans when they need to
+correlate telemetry with application records outside the OpenTelemetry GenAI
+semantic conventions. Such attributes are not defined by this specification and
+should not be expected from OpenTelemetry GenAI instrumentations. Applications
+should namespace them to avoid conflicts, such as `acme.custom.attribute`.
 
-| Property                            | Value                                                                 |
-| ----------------------------------- | --------------------------------------------------------------------- |
-| `gen_ai.tool.call.id`               | `"call_VSPygqKTWdrhaFErNvMV18Yl"`                                      |
-| `gen_ai.tool.name`                  | `"send_email"`                                                        |
-| `gen_ai.operation.name`             | `"execute_tool"`                                                      |
-| `app.governance.action.ref`         | `"action:4f87b1e2"`                                                   |
-| `app.governance.action.hash`        | `"sha256:32fdc6a24364e58454e46e3c452562810b7b002b72d92f9eca20507d82180ca0"` |
-| `app.governance.verdict`            | `"require_approval"`                                                  |
-| `app.governance.approval.status`    | `"approved"`                                                          |
-| `app.governance.approval.id`        | `"approval_01J8R2N6T9Y4M7"`                                           |
-| `app.governance.proof.url`          | `"https://governance.example.com/proof/action:4f87b1e2"`              |
-| `app.governance.external_verifier`  | `"verifier:example-independent-mediator"`                             |
+Custom attributes can be added to any span, including GenAI client spans,
+execute-tool spans, or surrounding application spans. They are application
+claims only; consumers must independently validate any external record before
+treating a custom attribute as authorization, verification, or policy evidence.
 
-The reviewed action reference should be derived before the tool executes. If
-the eventual tool input or target resource changes, the application should emit
-a different action reference or mark the execution as no longer covered by the
-original approval.
+For example, an application could add its own custom correlation attributes to
+the execute-tool span:
+
+| Property                | Value                             |
+| ----------------------- | --------------------------------- |
+| `gen_ai.tool.call.id`   | `"call_VSPygqKTWdrhaFErNvMV18Yl"` |
+| `gen_ai.tool.name`      | `"get_weather"`                   |
+| `gen_ai.operation.name` | `"execute_tool"`                  |
+| `acme.custom.attribute` | `"custom-value"`                  |
 
 **GenAI client span 2:**
 
