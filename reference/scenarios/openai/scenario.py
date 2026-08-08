@@ -469,6 +469,7 @@ def run_chat_tool_call_reference(client):
         else:
             print(f"    -> {choice.message.content[:60]}")
 
+
 def run_chat_with_document_input_reference(client):
     """Scenario: chat with an inline PDF document attachment (document modality).
 

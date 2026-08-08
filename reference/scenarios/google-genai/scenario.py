@@ -384,6 +384,7 @@ def run_chat_multimodal():
     # Payload bytes are ignored by the mock, which only inspects the MIME type.
     blob = b"\x00" * 16
     import base64
+
     blob_b64 = base64.b64encode(blob).decode("ascii")
     span_attributes = {
         "gen_ai.operation.name": "chat",

@@ -56,7 +56,9 @@ def run_chat(handler):
             inv.input_tokens = resp.usage.input_tokens + cache_creation + cache_read  # -> gen_ai.usage.input_tokens
             inv.output_tokens = resp.usage.output_tokens  # -> gen_ai.usage.output_tokens
             if cache_creation:
-                inv.attributes["gen_ai.usage.cache_write.input_tokens"] = cache_creation  # -> gen_ai.usage.cache_write.input_tokens
+                inv.attributes["gen_ai.usage.cache_write.input_tokens"] = (
+                    cache_creation  # -> gen_ai.usage.cache_write.input_tokens
+                )
             if cache_read:
                 inv.cache_read_input_tokens = cache_read  # -> gen_ai.usage.cache_read.input_tokens
 
@@ -186,6 +188,7 @@ def run_compaction(handler):
 
     print(f"    -> compacted: {conversation_compacted}")
 
+
 def run_chat_with_document_input(handler):
     """Scenario: chat with a PDF document block (document modality)."""
     print("  [chat_document] chat with PDF document block (util-genai handler)")
@@ -247,7 +250,9 @@ def run_chat_with_document_input(handler):
             inv.input_tokens = resp.usage.input_tokens + cache_creation + cache_read  # -> gen_ai.usage.input_tokens
             inv.output_tokens = resp.usage.output_tokens  # -> gen_ai.usage.output_tokens
             if cache_creation:
-                inv.attributes["gen_ai.usage.cache_write.input_tokens"] = cache_creation  # -> gen_ai.usage.cache_write.input_tokens
+                inv.attributes["gen_ai.usage.cache_write.input_tokens"] = (
+                    cache_creation  # -> gen_ai.usage.cache_write.input_tokens
+                )
             if cache_read:
                 inv.cache_read_input_tokens = cache_read  # -> gen_ai.usage.cache_read.input_tokens
 
@@ -325,7 +330,9 @@ def run_chat_with_image_input(handler):
             inv.input_tokens = resp.usage.input_tokens + cache_creation + cache_read  # -> gen_ai.usage.input_tokens
             inv.output_tokens = resp.usage.output_tokens  # -> gen_ai.usage.output_tokens
             if cache_creation:
-                inv.attributes["gen_ai.usage.cache_write.input_tokens"] = cache_creation  # -> gen_ai.usage.cache_write.input_tokens
+                inv.attributes["gen_ai.usage.cache_write.input_tokens"] = (
+                    cache_creation  # -> gen_ai.usage.cache_write.input_tokens
+                )
             if cache_read:
                 inv.cache_read_input_tokens = cache_read  # -> gen_ai.usage.cache_read.input_tokens
 
