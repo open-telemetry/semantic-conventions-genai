@@ -14,9 +14,9 @@ from dataclasses import dataclass
 from semconv_genai import SCENARIOS_DIR
 from semconv_genai.attribute_spec import AttributeSpec, RequirementLevel
 from semconv_genai.semconv_model import (
-    EVENT_SPECS,
-    METRIC_SPECS,
-    SPAN_SPECS,
+    event_specs,
+    metric_specs,
+    span_specs,
 )
 
 # Display order for span types in reports.
@@ -40,8 +40,11 @@ EVENT_TYPE_ORDER = [
     "gen_ai.evaluation.result",
 ]
 
-# Display order for metric types in reports.
-METRIC_TYPE_ORDER = tuple(METRIC_SPECS)
+
+def metric_type_order() -> tuple[str, ...]:
+    """Display order for metric types in reports."""
+    return tuple(metric_specs())
+
 
 _REQUIREMENT_LEVELS = (
     RequirementLevel.REQUIRED,
@@ -95,9 +98,9 @@ def _normalize_attr_data(
 def _normalize_scenario_data_entry(entry: dict[str, object], library: str) -> ScenarioDataEntry:
     return ScenarioDataEntry(
         library=library,
-        spans=_normalize_attr_data(entry.get("spans"), SPAN_SPECS),
-        events=_normalize_attr_data(entry.get("events"), EVENT_SPECS),
-        metrics=_normalize_attr_data(entry.get("metrics"), METRIC_SPECS),
+        spans=_normalize_attr_data(entry.get("spans"), span_specs()),
+        events=_normalize_attr_data(entry.get("events"), event_specs()),
+        metrics=_normalize_attr_data(entry.get("metrics"), metric_specs()),
     )
 
 

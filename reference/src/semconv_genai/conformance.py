@@ -126,7 +126,7 @@ def coverage_model(output: Path = COVERAGE_MODEL) -> Path:
         return output
     script = checkout() / "tools" / "runner" / "src" / "opentelemetry" / "conformance" / "collect-coverage-model.sh"
     if not script.is_file():
-        raise RuntimeError(f"The pinned conformance checkout has no {script.name}")
+        raise RuntimeError(f"The pinned conformance checkout has no coverage model script at {script}")
     output.parent.mkdir(parents=True, exist_ok=True)
     logger.info("Resolving %s into %s", MODEL_ROOT, output)
     subprocess.run([str(script), str(MODEL_ROOT), str(output)], cwd=SEMCONV_ROOT, env=_environment(), check=True)

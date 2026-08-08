@@ -24,15 +24,15 @@ from semconv_genai import (
 from semconv_genai.attribute_spec import AttributeSpec, RequirementLevel
 from semconv_genai.data_files import (
     EVENT_TYPE_ORDER,
-    METRIC_TYPE_ORDER,
     SPAN_TYPE_ORDER,
     ScenarioDataEntry,
     load_scenario_data_files,
+    metric_type_order,
 )
 from semconv_genai.semconv_model import (
-    EVENT_SPECS,
-    METRIC_SPECS,
-    SPAN_SPECS,
+    event_specs,
+    metric_specs,
+    span_specs,
 )
 
 # ── Report page generation ───────────────────────────────────────────
@@ -224,7 +224,7 @@ def generate_index_markdown(
     ]
 
     for span_type in SPAN_TYPE_ORDER:
-        spec = SPAN_SPECS[span_type]
+        spec = span_specs()[span_type]
         filename = _report_filename(span_type, "span")
         supporting = _get_supporting_entries(entries, span_type, spec, _spans_of)
         lines.append(f"| [{spec.label}](reports/{filename}) | {_library_dir_links(supporting)} |")
@@ -240,7 +240,7 @@ def generate_index_markdown(
     )
 
     for event_type in EVENT_TYPE_ORDER:
-        spec = EVENT_SPECS[event_type]
+        spec = event_specs()[event_type]
         filename = _report_filename(event_type, "event")
         supporting = _get_supporting_entries(entries, event_type, spec, _events_of)
         lines.append(f"| [{spec.label}](reports/{filename}) | {_library_dir_links(supporting)} |")
@@ -255,8 +255,8 @@ def generate_index_markdown(
         ]
     )
 
-    for metric_type in METRIC_TYPE_ORDER:
-        spec = METRIC_SPECS[metric_type]
+    for metric_type in metric_type_order():
+        spec = metric_specs()[metric_type]
         filename = _report_filename(metric_type, "metric")
         # These metrics carry only recommended attributes, so support is keyed
         # on whether the library emits the metric at all (key present in data),
@@ -274,19 +274,19 @@ def write_report_pages(output_dir: Path) -> None:
     reports_dir.mkdir(parents=True, exist_ok=True)
 
     for span_type in SPAN_TYPE_ORDER:
-        spec = SPAN_SPECS[span_type]
+        spec = span_specs()[span_type]
         page_path = reports_dir / _report_filename(span_type, "span")
         page_lines = _render_signal_section(entries, span_type, spec, reports_dir, "Span", _spans_of)
         page_path.write_text(_generate_detail_page(page_lines), encoding="utf-8")
 
     for event_type in EVENT_TYPE_ORDER:
-        spec = EVENT_SPECS[event_type]
+        spec = event_specs()[event_type]
         page_path = reports_dir / _report_filename(event_type, "event")
         page_lines = _render_signal_section(entries, event_type, spec, reports_dir, "Event", _events_of)
         page_path.write_text(_generate_detail_page(page_lines), encoding="utf-8")
 
-    for metric_type in METRIC_TYPE_ORDER:
-        spec = METRIC_SPECS[metric_type]
+    for metric_type in metric_type_order():
+        spec = metric_specs()[metric_type]
         page_path = reports_dir / _report_filename(metric_type, "metric")
         page_lines = _render_signal_section(entries, metric_type, spec, reports_dir, "Metric", _metrics_of)
         page_path.write_text(_generate_detail_page(page_lines), encoding="utf-8")

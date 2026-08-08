@@ -101,11 +101,17 @@ def main(argv: list[str] | None = None) -> int:
     for index, library in enumerate(selected, start=1):
         if args.all:
             logger.info("[%s/%s] %s", index, len(selected), library)
-        exit_code = conformance.run(
-            reference_project_dir(library),
-            report_only=not args.strict,
-            extra_args=extra,
-        )
+        try:
+            exit_code = conformance.run(
+                reference_project_dir(library),
+                report_only=not args.strict,
+                extra_args=extra,
+            )
+        except RuntimeError as e:
+            # Fetching the runner, finding uv or installing weaver -- the
+            # scenario never got to run, so say so rather than trace.
+            logger.error("%s: %s", library, e)
+            exit_code = 1
         if exit_code != 0:
             failures.append((library, exit_code))
             if not args.all or not args.keep_going:

@@ -5,6 +5,10 @@ same view the conformance runner reduces a run against, so the reports and
 ``data.json`` can never disagree about what a signal declares. It is a build
 artifact, resolved into ``reference/.cache/`` whenever ``model/`` is newer.
 
+Resolving it shells out to weaver and may fetch the conformance checkout, so
+the specs are built on first use rather than at import: importing this module
+does no work and needs no network.
+
 Only the display labels are maintained here.
 
 Ordering convention: every attribute / signal list written to a committed
@@ -17,6 +21,7 @@ single deterministic order.
 from __future__ import annotations
 
 import json
+from functools import cache
 
 from semconv_genai.attribute_spec import AttributeSpec
 from semconv_genai.conformance import coverage_model
@@ -78,14 +83,24 @@ def _spec(model: dict[str, dict], kind: str, registry_id: str, label: str) -> At
     )
 
 
-_model = json.loads(coverage_model().read_text(encoding="utf-8"))
+@cache
+def _model() -> dict[str, dict]:
+    return json.loads(coverage_model().read_text(encoding="utf-8"))
 
-SPAN_SPECS: dict[str, AttributeSpec] = {
-    key: _spec(_model, "spans", registry_id, label) for key, (registry_id, label) in _SPANS.items()
-}
 
-EVENT_SPECS: dict[str, AttributeSpec] = {name: _spec(_model, "events", name, label) for name, label in _EVENTS.items()}
+@cache
+def span_specs() -> dict[str, AttributeSpec]:
+    model = _model()
+    return {key: _spec(model, "spans", registry_id, label) for key, (registry_id, label) in _SPANS.items()}
 
-METRIC_SPECS: dict[str, AttributeSpec] = {
-    name: _spec(_model, "metrics", name, label) for name, label in _METRICS.items()
-}
+
+@cache
+def event_specs() -> dict[str, AttributeSpec]:
+    model = _model()
+    return {name: _spec(model, "events", name, label) for name, label in _EVENTS.items()}
+
+
+@cache
+def metric_specs() -> dict[str, AttributeSpec]:
+    model = _model()
+    return {name: _spec(model, "metrics", name, label) for name, label in _METRICS.items()}
