@@ -9,7 +9,6 @@ import os
 import warnings
 from contextlib import contextmanager
 
-from opentelemetry.trace import SpanKind, StatusCode
 from reference_shared import flush_and_shutdown, reference_event_logger, reference_tracer, setup_otel
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"]
@@ -111,8 +110,6 @@ _MODALITY_MAP = {
     "TEXT": "text",
     "IMAGE": "image",
     "AUDIO": "audio",
-    "VIDEO": "video",
-    "DOCUMENT": "document",
 }
 
 
@@ -344,7 +341,7 @@ def run_chat_tool_call():
 
 
 def run_chat_multimodal():
-    """Scenario: multimodal (text + image + audio + video + document) input, per-modality usage."""
+    """Scenario: multimodal (text + image + audio) input, per-modality usage."""
     from vertexai.generative_models import GenerativeModel, Part
 
     print("  [chat_multimodal] multimodal input chat via Vertex AI (reference implementation)")

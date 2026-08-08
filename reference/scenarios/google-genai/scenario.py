@@ -371,7 +371,7 @@ def run_chat_tool_call():
 
 
 def run_chat_multimodal():
-    """Scenario: multimodal (text + image + audio + video + document) input, per-modality usage."""
+    """Scenario: multimodal (text + image + audio) input, per-modality usage."""
     from google import genai
     from google.genai import types
 
