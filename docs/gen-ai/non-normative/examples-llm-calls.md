@@ -11,7 +11,7 @@
   - [Multimodal output example](#multimodal-output-example)
 - [Tool calls (functions)](#tool-calls-functions)
   - [GenAI client spans when content capturing is disabled](#genai-client-spans-when-content-capturing-is-disabled)
-    - [Governed tool action metadata](#governed-tool-action-metadata)
+    - [Application-specific custom attributes](#application-specific-custom-attributes)
   - [GenAI client spans when content capturing is enabled on span attributes](#genai-client-spans-when-content-capturing-is-enabled-on-span-attributes)
 - [System instructions along with chat history (content enabled)](#system-instructions-along-with-chat-history-content-enabled)
 - [Chat completion with reasoning (content enabled)](#chat-completion-with-reasoning-content-enabled)
