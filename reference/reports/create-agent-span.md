@@ -6,32 +6,35 @@
 
 | Attribute | Supporting Libraries |
 | --- | --- |
-| gen_ai.operation.name | [autogen], [azure-ai-foundry], [openai-assistants] |
-| gen_ai.provider.name | [autogen], [azure-ai-foundry], [openai-assistants] |
+| gen_ai.operation.name | [anthropic], [aws-bedrock-agent], [azure-ai-foundry], [google-genai], [mistralai], [openai-assistants] |
+| gen_ai.provider.name | [anthropic], [aws-bedrock-agent], [azure-ai-foundry], [google-genai], [mistralai], [openai-assistants] |
 
 ## Conditionally Required
 
 | Attribute | Supporting Libraries |
 | --- | --- |
-| gen_ai.agent.description | [autogen], [azure-ai-foundry], [openai-assistants] |
-| gen_ai.agent.id | [azure-ai-foundry], [openai-assistants] |
-| gen_ai.agent.name | [autogen], [azure-ai-foundry], [openai-assistants] |
-| gen_ai.agent.version | [azure-ai-foundry] |
-| gen_ai.request.model | [autogen], [azure-ai-foundry], [openai-assistants] |
-| server.port | [autogen], [azure-ai-foundry], [openai-assistants] |
+| gen_ai.agent.description | [anthropic], [aws-bedrock-agent], [azure-ai-foundry], [google-genai], [mistralai], [openai-assistants] |
+| gen_ai.agent.id | [anthropic], [aws-bedrock-agent], [azure-ai-foundry], [google-genai], [mistralai], [openai-assistants] |
+| gen_ai.agent.name | [anthropic], [aws-bedrock-agent], [azure-ai-foundry], [google-genai], [mistralai], [openai-assistants] |
+| gen_ai.agent.version | [anthropic], [aws-bedrock-agent], [azure-ai-foundry], [mistralai] |
+| gen_ai.request.model | [anthropic], [aws-bedrock-agent], [azure-ai-foundry], [google-genai], [mistralai], [openai-assistants] |
+| server.port | [anthropic], [aws-bedrock-agent], [azure-ai-foundry], [mistralai], [openai-assistants] |
 
 ## Recommended
 
 | Attribute | Supporting Libraries |
 | --- | --- |
-| server.address | [autogen], [azure-ai-foundry], [openai-assistants] |
+| server.address | [anthropic], [aws-bedrock-agent], [azure-ai-foundry], [mistralai], [openai-assistants] |
 
 ## Opt-In
 
 | Attribute | Supporting Libraries |
 | --- | --- |
-| gen_ai.system_instructions | [autogen], [azure-ai-foundry], [openai-assistants] |
+| gen_ai.system_instructions | [anthropic], [aws-bedrock-agent], [azure-ai-foundry], [google-genai], [mistralai], [openai-assistants] |
 
-[autogen]: ../scenarios/autogen/scenario.py
+[anthropic]: ../scenarios/anthropic/scenario.py
+[aws-bedrock-agent]: ../scenarios/aws-bedrock-agent/scenario.py
 [azure-ai-foundry]: ../scenarios/azure-ai-foundry/scenario.py
+[google-genai]: ../scenarios/google-genai/scenario.py
+[mistralai]: ../scenarios/mistralai/scenario.py
 [openai-assistants]: ../scenarios/openai-assistants/scenario.py

@@ -28,8 +28,12 @@ attribute_groups:
         requirement_level:
           conditionally_required: If and only if the operation fails.
         note: |
-          This attribute SHOULD be set to the string representation of the JSON-RPC
-          error code, if one is returned.
+          When the response carries a JSON-RPC error code that classifies as an error,
+          `error.type` SHOULD be set to the string representation of that code. See
+          `rpc.response.status_code` for which codes classify as errors. Otherwise
+          (for example on timeouts or transport errors) it SHOULD be set following the
+          [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/error.md)
+          guidance.
 
           When JSON-RPC call is successful, but an error is returned within the
           result payload, this attribute SHOULD be set to the low-cardinality
@@ -40,11 +44,43 @@ attribute_groups:
       - ref: mcp.method.name
         requirement_level: required
       - ref: mcp.protocol.version
+      - ref_group: mcp.network.protocol.attributes
+
+  - id: mcp.client.status.attributes
+    visibility: internal
+    attributes:
       - ref: rpc.response.status_code
         brief: The error code from the JSON-RPC response.
         requirement_level:
           conditionally_required: If response contains an error code.
-      - ref_group: mcp.network.protocol.attributes
+        note: |
+          This attribute records the [JSON-RPC error code](https://www.jsonrpc.org/specification#error_object)
+          returned in the error response.
+
+          All JSON-RPC error codes SHOULD be considered errors.
+
+  - id: mcp.server.status.attributes
+    visibility: internal
+    attributes:
+      - ref: rpc.response.status_code
+        brief: The error code from the JSON-RPC response.
+        requirement_level:
+          conditionally_required: If response contains an error code.
+        note: |
+          This attribute records the [JSON-RPC error code](https://www.jsonrpc.org/specification#error_object)
+          returned in the error response.
+
+          The following error codes indicate that the caller sent a request the
+          receiver could not serve and SHOULD NOT be considered errors:
+
+          - `-32700` (`Parse error`)
+          - `-32600` (`Invalid Request`)
+          - `-32601` (`Method not found`)
+          - `-32602` (`Invalid params`) - also returned when the requested tool
+            does not exist
+          - `-32002` ([`Resource not found`](https://modelcontextprotocol.io/specification/2025-11-25/server/resources#error-handling))
+
+          Any other error code SHOULD be considered an error.
 
   - id: mcp.network.protocol.attributes
     visibility: internal

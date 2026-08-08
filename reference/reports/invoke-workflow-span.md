@@ -12,6 +12,7 @@
 
 | Attribute | Supporting Libraries |
 | --- | --- |
+| gen_ai.conversation.id | [google-adk] |
 | gen_ai.workflow.name | [crewai], [google-adk] |
 
 ## Opt-In

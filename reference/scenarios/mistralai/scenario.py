@@ -1,12 +1,13 @@
 """Reference implementation for Mistral AI.
 
-Exercises: chat, chat_streaming, embeddings
+Exercises: chat, chat_streaming, embeddings, create_agent
 against a mock server, with manual OTel spans.
 """
 
 import json
 import os
 
+from opentelemetry.trace import SpanKind, StatusCode
 from reference_shared import (
     flush_and_shutdown,
     mock_server_host_port,
@@ -16,6 +17,8 @@ from reference_shared import (
 )
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"]
+# The Mistral and Anthropic mocks both serve /v1/agents; this one is prefixed.
+MOCK_AGENTS_BASE_URL = MOCK_BASE_URL + "/mistral"
 
 _reference_tracer = reference_tracer()
 
@@ -156,23 +159,9 @@ def run_chat_tool_call(client):
             span.set_attribute("gen_ai.usage.output_tokens", resp.usage.completion_tokens)
         choice = resp.choices[0]
         if choice.message.tool_calls:
-            tool_call = choice.message.tool_calls[0]
-            arguments_json = tool_call.function.arguments or "{}"
-            arguments = json.loads(arguments_json)
-            tool_span_attributes = {
-                "gen_ai.operation.name": "execute_tool",
-            }
-            with _reference_tracer.start_as_current_span(
-                "execute_tool get_weather", attributes=tool_span_attributes
-            ) as tool_span:
-                tool_span.set_attribute("gen_ai.tool.name", tool_call.function.name)
-                tool_span.set_attribute("gen_ai.tool.description", request_tool["function"]["description"])
-                tool_span.set_attribute("gen_ai.tool.type", request_tool["type"])
-                tool_span.set_attribute("gen_ai.tool.call.id", tool_call.id)
-                tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps(arguments))
-                result = f"Sunny in {arguments.get('location', 'unknown')}"
-                tool_span.set_attribute("gen_ai.tool.call.result", result)
-            print(f"    -> tool_call: {tool_call.function.name}")
+            # The client returns the tool call; running it is app code the client
+            # never sees, so there is no execute_tool span to emit here.
+            print(f"    -> tool_call: {choice.message.tool_calls[0].function.name}")
         else:
             print(f"    -> {choice.message.content[:60]}")
 
@@ -273,6 +262,48 @@ def run_embeddings(client):
         print(f"    -> embedding dim: {len(resp.data[0].embedding)}")
 
 
+def run_create_agent(client):
+    """Scenario: create a remote agent via the hosted Agents API (`beta.agents.create`).
+
+    The agent runs server-side, so only the client operation is instrumentable here.
+    """
+    print("  [create_agent] Mistral Agents: create agent")
+    request_model = "mistral-medium-latest"
+    agent_name = "reference-agent"
+    agent_description = "Reference Mistral agent."
+    agent_instructions = "You are a helpful assistant. Answer the user's questions accurately and concisely."
+    host, port = mock_server_host_port(MOCK_AGENTS_BASE_URL)
+
+    span_attributes = {
+        "gen_ai.operation.name": "create_agent",
+        "gen_ai.provider.name": "mistral_ai",
+        "gen_ai.request.model": request_model,
+        "gen_ai.agent.name": agent_name,
+    }
+    if host:
+        span_attributes["server.address"] = host
+    if port is not None:
+        span_attributes["server.port"] = port
+    with _reference_tracer.start_as_current_span(
+        f"create_agent {agent_name}", kind=SpanKind.CLIENT, attributes=span_attributes
+    ) as span:
+        span.set_attribute("gen_ai.agent.description", agent_description)
+        span.set_attribute("gen_ai.system_instructions", json.dumps([{"type": "text", "content": agent_instructions}]))
+        try:
+            agent = client.beta.agents.create(
+                model=request_model,
+                name=agent_name,
+                description=agent_description,
+                instructions=agent_instructions,
+            )
+            span.set_attribute("gen_ai.agent.id", agent.id)
+            span.set_attribute("gen_ai.agent.version", str(agent.version))
+            print(f"    -> {agent.id}")
+        except Exception as e:
+            span.set_status(StatusCode.ERROR, str(e))
+            raise
+
+
 def main():
     print("=== Reference Implementation: Mistral AI ===")
 
@@ -292,6 +323,10 @@ def main():
     run_chat_streaming(client)
 
     run_embeddings(client)
+
+    agents_client = Mistral(api_key="mock-key", server_url=MOCK_AGENTS_BASE_URL)
+    _disable_sdk_tracing(agents_client)
+    run_create_agent(agents_client)
 
     flush_and_shutdown(tp, lp, mp)
 

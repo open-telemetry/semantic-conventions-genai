@@ -1,8 +1,8 @@
-"""GenAI span classification: map span attributes to declared span types."""
+"""GenAI signal classification: map observed telemetry to declared GenAI types."""
 
 from __future__ import annotations
 
-from .semconv_model import SPAN_SPECS
+from .semconv_model import METRIC_SPECS, SPAN_SPECS
 
 
 def _has_any_attr(attrs: dict[str, object], *names: str) -> bool:
@@ -41,3 +41,9 @@ def classify_span(span_name: str, span_kind: str, span_attrs: dict[str, object])
         detected.discard("invoke_agent_client" if not is_client_span else "invoke_agent_internal")
 
     return detected
+
+
+def classify_metric(metric_name: str, metric_attrs: dict[str, object]) -> set[str]:
+    """Classify a metric data point into GenAI metric types."""
+    del metric_attrs  # Metric identity is represented by the metric name.
+    return {metric_name} if metric_name in METRIC_SPECS else set()

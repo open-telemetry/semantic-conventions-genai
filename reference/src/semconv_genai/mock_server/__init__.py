@@ -1,8 +1,9 @@
 """Mock LLM server for reference implementation testing.
 
 Provides OpenAI-compatible, Anthropic-compatible, Google GenAI, AWS Bedrock,
-Cohere, and OpenAI Assistants endpoints that return deterministic responses.
-No real LLM calls are made.
+Cohere, OpenAI Assistants, and hosted-agent (Anthropic Managed Agents, Mistral
+Agents) endpoints that return deterministic responses. No real LLM calls are
+made.
 
 Provider endpoints are split across per-provider modules and registered as
 Flask blueprints on a single app.
@@ -12,11 +13,33 @@ import argparse
 
 from flask import Flask
 
-from . import anthropic, assistants, bedrock, bedrock_agent, bedrock_agentcore, cohere, google_genai, openai
+from . import (
+    anthropic,
+    anthropic_agents,
+    assistants,
+    bedrock,
+    bedrock_agent,
+    bedrock_agentcore,
+    cohere,
+    google_genai,
+    mistral_agents,
+    openai,
+)
 
 app = Flask(__name__)
 
-for module in (openai, anthropic, google_genai, bedrock, bedrock_agent, bedrock_agentcore, cohere, assistants):
+for module in (
+    openai,
+    anthropic,
+    anthropic_agents,
+    google_genai,
+    bedrock,
+    bedrock_agent,
+    bedrock_agentcore,
+    cohere,
+    assistants,
+    mistral_agents,
+):
     app.register_blueprint(module.bp)
 
 
