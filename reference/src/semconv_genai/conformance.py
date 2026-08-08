@@ -35,8 +35,8 @@ logger = logging.getLogger(__name__)
 FETCH_TIMEOUT_SECONDS = 120
 
 # What the registry declares, per span type, event and metric, as weaver
-# resolves it. Committed, and read by the report generation.
-COVERAGE_MODEL = REFERENCE_ROOT / "coverage-model.json"
+# resolves it. A build artifact: derived from model/, cached, never committed.
+COVERAGE_MODEL = REFERENCE_ROOT / ".cache" / "coverage-model.json"
 
 
 def cache_root() -> Path:
@@ -107,25 +107,30 @@ def _environment() -> dict[str, str]:
     return env
 
 
-def resolve_coverage_model(output: Path = COVERAGE_MODEL) -> Path:
-    """Resolve ``model/`` into the coverage model, the same way a run does.
+def _is_stale(model: Path) -> bool:
+    """True unless ``model`` is there and newer than every registry source."""
+    if not model.is_file():
+        return True
+    resolved_at = model.stat().st_mtime
+    return any(source.stat().st_mtime > resolved_at for source in MODEL_ROOT.rglob("*") if source.is_file())
 
-    The runner resolves this for itself to reduce a run into ``data.json``;
-    committing it as well is what lets the reports be built from the registry's
-    own resolution without weaver or a scenario run.
+
+def coverage_model(output: Path = COVERAGE_MODEL) -> Path:
+    """The coverage model for ``model/``, resolved if the cache is stale.
+
+    The runner resolves the same thing for itself to reduce a run into
+    ``data.json``; the reports read this one, so both are the registry's own
+    resolution rather than two readings of it.
     """
+    if not _is_stale(output):
+        return output
     script = checkout() / "tools" / "runner" / "src" / "opentelemetry" / "conformance" / "collect-coverage-model.sh"
     if not script.is_file():
         raise RuntimeError(f"The pinned conformance checkout has no {script.name}")
+    output.parent.mkdir(parents=True, exist_ok=True)
+    logger.info("Resolving %s into %s", MODEL_ROOT, output)
     subprocess.run([str(script), str(MODEL_ROOT), str(output)], cwd=SEMCONV_ROOT, env=_environment(), check=True)
     return output
-
-
-def main() -> int:
-    """Console-script entry point: refresh the committed coverage model."""
-    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
-    print(f"Coverage model written to {resolve_coverage_model()}")
-    return 0
 
 
 def run(directory: Path, *, report_only: bool, extra_args: list[str] | None = None) -> int:

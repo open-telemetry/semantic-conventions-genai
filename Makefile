@@ -104,18 +104,13 @@ update-upstream-links:
 generate-json-schemas:
 	cd docs/gen-ai/non-normative && uv run models.py $(CURDIR)/model/gen-ai
 
-# Resolve model/ into reference/coverage-model.json: what each span type,
-# event and metric declares, as weaver resolves it. The reports read it.
-generate-coverage-model:
-	cd reference && uv run --frozen generate-coverage-model
-
 # Update reference reports (README.md and reports/) from data.json files.
 generate-reference-reports:
 	cd reference && uv run --frozen update-reports
 
 # Run every regeneration the repo owns (weaver-driven + pydantic-driven + reports).
 # CI checks that all committed outputs match what this target generates.
-generate-all: update-upstream-links generate-registry generate-docs generate-json-schemas generate-coverage-model generate-reference-reports
+generate-all: update-upstream-links generate-registry generate-docs generate-json-schemas generate-reference-reports
 
 # Package the registry into a publication artifact. The version comes from
 # model/manifest.yaml's schema_url; bump it there to cut a new release.

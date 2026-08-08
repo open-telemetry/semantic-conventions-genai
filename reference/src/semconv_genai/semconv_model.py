@@ -1,10 +1,9 @@
 """What attributes each GenAI span, event, and metric type declares.
 
-Read from the committed coverage model at ``reference/coverage-model.json``,
-which is weaver's own resolution of ``model/`` -- the same view the conformance
-runner reduces a run against, so the reports and ``data.json`` can never
-disagree about what a signal declares. Refresh it with
-``uv run generate-coverage-model``.
+Read from the coverage model: weaver's own resolution of ``model/``, and the
+same view the conformance runner reduces a run against, so the reports and
+``data.json`` can never disagree about what a signal declares. It is a build
+artifact, resolved into ``reference/.cache/`` whenever ``model/`` is newer.
 
 Only the display labels are maintained here.
 
@@ -20,7 +19,7 @@ from __future__ import annotations
 import json
 
 from semconv_genai.attribute_spec import AttributeSpec
-from semconv_genai.conformance import COVERAGE_MODEL
+from semconv_genai.conformance import coverage_model
 
 # The signals the reports cover, as {report key: (registry name, label)}. A
 # registry signal absent from these is still resolved into the coverage model
@@ -57,19 +56,10 @@ _METRICS = {
 }
 
 
-def _load_coverage_model() -> dict[str, dict]:
-    try:
-        return json.loads(COVERAGE_MODEL.read_text(encoding="utf-8"))
-    except OSError as e:
-        raise RuntimeError(
-            f"{COVERAGE_MODEL} is missing -- run `uv run generate-coverage-model` to resolve it from model/."
-        ) from e
-
-
 def _spec(model: dict[str, dict], kind: str, registry_id: str, label: str) -> AttributeSpec:
     declared = model.get(kind, {}).get(registry_id)
     if declared is None:
-        raise RuntimeError(f"{COVERAGE_MODEL} declares no {kind[:-1]} {registry_id!r}; regenerate it from model/.")
+        raise RuntimeError(f"The coverage model declares no {kind[:-1]} {registry_id!r}; is it still in model/?")
     buckets: dict[str, list[str]] = {
         "required": [],
         "conditionally_required": [],
@@ -88,7 +78,7 @@ def _spec(model: dict[str, dict], kind: str, registry_id: str, label: str) -> At
     )
 
 
-_model = _load_coverage_model()
+_model = json.loads(coverage_model().read_text(encoding="utf-8"))
 
 SPAN_SPECS: dict[str, AttributeSpec] = {
     key: _spec(_model, "spans", registry_id, label) for key, (registry_id, label) in _SPANS.items()

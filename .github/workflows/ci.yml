@@ -87,12 +87,12 @@ jobs:
       - name: Regenerate and check committed outputs are in sync
         run: |
           make generate-all
-          if ! git diff --exit-code -- ./docs ./model AGENTS.md reference/coverage-model.json; then
+          if ! git diff --exit-code -- ./docs ./model AGENTS.md; then
             echo "FAIL: committed generated outputs are out of sync!"
             echo "Run 'make generate-all' and commit the changes."
             exit 1
           fi
-          untracked=$(git ls-files --others --exclude-standard -- ./docs ./model AGENTS.md reference/coverage-model.json)
+          untracked=$(git ls-files --others --exclude-standard -- ./docs ./model AGENTS.md)
           if [ -n "$untracked" ]; then
             echo "FAIL: untracked files under generated outputs:"
             echo "$untracked"
@@ -185,6 +185,17 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+
+      - name: Load shared version pins
+        id: versions
+        uses: ./.github/actions/load-version-pins
+
+      # The reports are built from weaver's resolution of model/, which is
+      # resolved on demand rather than committed.
+      - name: Install Weaver
+        uses: open-telemetry/weaver/.github/actions/setup-weaver@f8e1b42fbd1e09df5263c26b7df6011eaafd454d
+        with:
+          version: '${{ steps.versions.outputs.weaver_version }}'
 
       - uses: ./.github/actions/setup-reference-tooling
 

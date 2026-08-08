@@ -7,3 +7,4 @@ scenarios/*/output/
 __pycache__/
 .venv/
 *.egg-info/
+coverage-model.json

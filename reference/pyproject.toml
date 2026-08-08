@@ -20,7 +20,6 @@ dev = [
 update-reports = "semconv_genai.report:main"
 run-scenario = "semconv_genai.run_scenario:main"
 genai-run-scenario = "semconv_genai.run_scenario:main"
-generate-coverage-model = "semconv_genai.conformance:main"
 
 [tool.ruff]
 line-length = 120
