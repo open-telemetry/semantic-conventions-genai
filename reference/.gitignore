@@ -1,5 +1,5 @@
-# Weaver results (generated under scenarios/<lib>/results/<eco>/).
-scenarios/*/results/
+# Raw weaver live-check reports, one per scenario run.
+scenarios/*/output/
 
 # Python
 .cache/

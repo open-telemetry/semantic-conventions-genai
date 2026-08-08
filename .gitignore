@@ -9,7 +9,7 @@ __pycache__/
 
 # Reference scenario live output and per-scenario uv cache
 reference/.cache/
-reference/scenarios/*/results/
+reference/scenarios/*/output/
 
 # OS junk
 .DS_Store

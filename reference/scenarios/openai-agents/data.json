@@ -1,6 +1,16 @@
 {
   "spans": {
-    "invoke_agent_internal": [
+    "gen_ai.execute_tool.internal": [
+      "gen_ai.agent.name",
+      "gen_ai.operation.name",
+      "gen_ai.tool.call.arguments",
+      "gen_ai.tool.call.id",
+      "gen_ai.tool.call.result",
+      "gen_ai.tool.description",
+      "gen_ai.tool.name",
+      "gen_ai.tool.type"
+    ],
+    "gen_ai.invoke_agent.internal": [
       "gen_ai.agent.name",
       "gen_ai.input.messages",
       "gen_ai.operation.name",
@@ -11,16 +21,8 @@
       "gen_ai.tool.definitions",
       "gen_ai.usage.input_tokens",
       "gen_ai.usage.output_tokens"
-    ],
-    "execute_tool": [
-      "gen_ai.agent.name",
-      "gen_ai.operation.name",
-      "gen_ai.tool.call.arguments",
-      "gen_ai.tool.call.id",
-      "gen_ai.tool.call.result",
-      "gen_ai.tool.description",
-      "gen_ai.tool.name",
-      "gen_ai.tool.type"
     ]
-  }
+  },
+  "events": {},
+  "metrics": {}
 }

@@ -188,10 +188,10 @@ def run_interactions_continuation():
         if interaction.model:
             span.set_attribute("gen_ai.response.model", str(interaction.model))
         if interaction.usage:
-            if interaction.usage.prompt_tokens:
-                span.set_attribute("gen_ai.usage.input_tokens", interaction.usage.prompt_tokens)
-            if interaction.usage.candidates_tokens:
-                span.set_attribute("gen_ai.usage.output_tokens", interaction.usage.candidates_tokens)
+            if interaction.usage.total_input_tokens:
+                span.set_attribute("gen_ai.usage.input_tokens", interaction.usage.total_input_tokens)
+            if interaction.usage.total_output_tokens:
+                span.set_attribute("gen_ai.usage.output_tokens", interaction.usage.total_output_tokens)
 
         event_attrs = {
             "gen_ai.operation.name": "chat",
@@ -216,10 +216,10 @@ def run_interactions_continuation():
         if interaction.model:
             event_attrs["gen_ai.response.model"] = str(interaction.model)
         if interaction.usage:
-            if interaction.usage.prompt_tokens:
-                event_attrs["gen_ai.usage.input_tokens"] = interaction.usage.prompt_tokens
-            if interaction.usage.candidates_tokens:
-                event_attrs["gen_ai.usage.output_tokens"] = interaction.usage.candidates_tokens
+            if interaction.usage.total_input_tokens:
+                event_attrs["gen_ai.usage.input_tokens"] = interaction.usage.total_input_tokens
+            if interaction.usage.total_output_tokens:
+                event_attrs["gen_ai.usage.output_tokens"] = interaction.usage.total_output_tokens
         reference_event_logger().emit(
             event_name="gen_ai.client.inference.operation.details",
             body="Inference operation details",
