@@ -108,10 +108,13 @@ def _environment() -> dict[str, str]:
 
 
 def _is_stale(model: Path) -> bool:
-    """True unless ``model`` is there and newer than every registry source."""
+    """True unless ``model`` is there and newer than all source dependencies."""
     if not model.is_file():
         return True
     resolved_at = model.stat().st_mtime
+    versions_env = SEMCONV_ROOT / "versions.env"
+    if versions_env.is_file() and versions_env.stat().st_mtime > resolved_at:
+        return True
     return any(source.stat().st_mtime > resolved_at for source in MODEL_ROOT.rglob("*") if source.is_file())
 
 
