@@ -1,16 +1,6 @@
 {
   "spans": {
-    "plan": [
-      "gen_ai.operation.name"
-    ],
-    "retrieval": [
-      "gen_ai.data_source.id",
-      "gen_ai.operation.name",
-      "gen_ai.retrieval.documents",
-      "gen_ai.retrieval.query.text",
-      "gen_ai.retrieval.top_k"
-    ],
-    "execute_tool": [
+    "gen_ai.execute_tool.internal": [
       "gen_ai.operation.name",
       "gen_ai.tool.call.arguments",
       "gen_ai.tool.call.id",
@@ -18,6 +8,18 @@
       "gen_ai.tool.description",
       "gen_ai.tool.name",
       "gen_ai.tool.type"
+    ],
+    "gen_ai.plan.internal": [
+      "gen_ai.operation.name"
+    ],
+    "gen_ai.retrieval.client": [
+      "gen_ai.data_source.id",
+      "gen_ai.operation.name",
+      "gen_ai.retrieval.documents",
+      "gen_ai.retrieval.query.text",
+      "gen_ai.retrieval.top_k"
     ]
-  }
+  },
+  "events": {},
+  "metrics": {}
 }

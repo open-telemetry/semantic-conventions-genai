@@ -418,6 +418,7 @@ async def run_agent_with_handoff():
             tool_span_attributes = {
                 "gen_ai.operation.name": "execute_tool",
                 "gen_ai.tool.name": handoff_obj.tool_name,
+                "gen_ai.tool.type": "function",
             }
             with _reference_tracer.start_as_current_span(
                 f"execute_tool {handoff_obj.tool_name}",

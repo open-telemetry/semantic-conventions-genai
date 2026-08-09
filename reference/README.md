@@ -6,11 +6,13 @@ support which attributes.
 
 Each library under [scenarios/](scenarios/) contains a small reference implementation
 (`scenario.py`) that exercises the SDK against a deterministic local mock server
-and emits OpenTelemetry spans, metrics, and logs. The tooling validates the
-captured telemetry against the semantic conventions in [../model/](../model/)
-using [OTel Weaver](https://github.com/open-telemetry/weaver) and writes the
-per-library results to `scenarios/<library>/data.json`, which feed the status
-reports below.
+and emits OpenTelemetry spans, metrics, and logs, plus a `conformance.yaml`
+saying how to run it. The
+[conformance runner](https://github.com/open-telemetry/semantic-conventions-conformance)
+validates the captured telemetry against the semantic conventions in
+[../model/](../model/) using [OTel Weaver](https://github.com/open-telemetry/weaver)
+and writes the per-library results to `scenarios/<library>/data.json`, which
+feed the status reports below.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for how to run scenarios and add new libraries.
 

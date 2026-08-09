@@ -1,6 +1,6 @@
 {
   "spans": {
-    "create_agent": [
+    "gen_ai.create_agent.client": [
       "gen_ai.agent.description",
       "gen_ai.agent.id",
       "gen_ai.agent.name",
@@ -11,7 +11,16 @@
       "server.address",
       "server.port"
     ],
-    "invoke_agent_client": [
+    "gen_ai.execute_tool.internal": [
+      "gen_ai.operation.name",
+      "gen_ai.tool.call.arguments",
+      "gen_ai.tool.call.id",
+      "gen_ai.tool.call.result",
+      "gen_ai.tool.description",
+      "gen_ai.tool.name",
+      "gen_ai.tool.type"
+    ],
+    "gen_ai.invoke_agent.client": [
       "gen_ai.agent.description",
       "gen_ai.agent.id",
       "gen_ai.agent.name",
@@ -30,15 +39,8 @@
       "gen_ai.usage.output_tokens",
       "server.address",
       "server.port"
-    ],
-    "execute_tool": [
-      "gen_ai.operation.name",
-      "gen_ai.tool.call.arguments",
-      "gen_ai.tool.call.id",
-      "gen_ai.tool.call.result",
-      "gen_ai.tool.description",
-      "gen_ai.tool.name",
-      "gen_ai.tool.type"
     ]
-  }
+  },
+  "events": {},
+  "metrics": {}
 }
