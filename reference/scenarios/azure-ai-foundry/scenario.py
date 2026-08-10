@@ -54,16 +54,14 @@ def run_invoke_agent(client):
     tool_defs = [
         {
             "type": "function",
-            "function": {
-                "name": "get_weather",
-                "description": "Get the current weather",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "location": {"type": "string", "description": "City name"},
-                    },
-                    "required": ["location"],
+            "name": "get_weather",
+            "description": "Get the current weather",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "location": {"type": "string", "description": "City name"},
                 },
+                "required": ["location"],
             },
         }
     ]
@@ -139,18 +137,19 @@ def run_invoke_agent(client):
                 span.set_attribute("gen_ai.agent.id", response.assistant_id)
 
             response_text = None
-            for output in getattr(response, "output", []) or []:
-                if getattr(output, "type", None) != "message":
+            for output in response.output or []:
+                if output.type != "message":
                     continue
-                for content in getattr(output, "content", []) or []:
-                    if getattr(content, "type", None) == "output_text":
-                        response_text = getattr(content, "text", None)
+                for content in output.content or []:
+                    if content.type == "output_text":
+                        response_text = content.text
                         break
                 if response_text:
                     break
 
             if response_text:
                 span.set_attribute("gen_ai.output.type", "text")
+                response_finish_reason = "stop" if response.status == "completed" else response.status
                 span.set_attribute(
                     "gen_ai.output.messages",
                     json.dumps(
@@ -158,6 +157,7 @@ def run_invoke_agent(client):
                             {
                                 "role": "assistant",
                                 "parts": [{"type": "text", "content": response_text}],
+                                "finish_reason": response_finish_reason,
                             }
                         ]
                     ),

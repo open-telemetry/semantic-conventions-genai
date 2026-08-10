@@ -2,6 +2,7 @@
 
 import os
 
+from opentelemetry.trace import SpanKind
 from reference_shared import flush_and_shutdown, mock_server_host_port, reference_tracer, setup_otel
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"]
@@ -23,7 +24,9 @@ def run_chat_reference(client):
         span_attributes["server.address"] = host
     if port is not None:
         span_attributes["server.port"] = port
-    with _reference_tracer.start_as_current_span("chat gpt-4o-mini", attributes=span_attributes) as span:
+    with _reference_tracer.start_as_current_span(
+        "chat gpt-4o-mini", kind=SpanKind.CLIENT, attributes=span_attributes
+    ) as span:
         messages = [{"role": "user", "content": "Say hello."}]
         resp = client.chat.completions.create(
             model=request_model,
@@ -54,7 +57,7 @@ def run_embeddings_reference(client):
     if port is not None:
         span_attributes_2["server.port"] = port
     with _reference_tracer.start_as_current_span(
-        "embeddings text-embedding-3-small", attributes=span_attributes_2
+        "embeddings text-embedding-3-small", kind=SpanKind.CLIENT, attributes=span_attributes_2
     ) as span:
         span.set_attribute("gen_ai.request.encoding_formats", [request_encoding_format])
         resp = client.embeddings.create(

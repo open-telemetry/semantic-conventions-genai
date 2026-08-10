@@ -2,10 +2,13 @@
 
 import json
 import os
+from urllib.parse import urlparse
 
+from opentelemetry.trace import SpanKind
 from reference_shared import flush_and_shutdown, reference_event_logger, reference_tracer, setup_otel
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"]
+_SERVER_ADDRESS = urlparse(MOCK_BASE_URL).hostname
 
 _reference_tracer = reference_tracer()
 
@@ -18,8 +21,11 @@ def run_chat_reference(client):
         "gen_ai.operation.name": "chat",
         "gen_ai.provider.name": "groq",
         "gen_ai.request.model": request_model,
+        "server.address": _SERVER_ADDRESS,
     }
-    with _reference_tracer.start_as_current_span("chat llama-3.1-8b-instant", attributes=span_attributes) as span:
+    with _reference_tracer.start_as_current_span(
+        "chat llama-3.1-8b-instant", kind=SpanKind.CLIENT, attributes=span_attributes
+    ) as span:
         messages = [{"role": "user", "content": "Say hello."}]
         resp = client.chat.completions.create(
             model=request_model,
@@ -35,6 +41,7 @@ def run_chat_reference(client):
         # Emit inference operation details event
         event_attrs = {
             "gen_ai.operation.name": "chat",
+            "gen_ai.provider.name": "groq",
             "gen_ai.request.model": request_model,
             "gen_ai.response.id": resp.id,
             "gen_ai.response.model": resp.model,
@@ -74,8 +81,11 @@ def run_chat_streaming_reference(client):
         "gen_ai.operation.name": "chat",
         "gen_ai.provider.name": "groq",
         "gen_ai.request.model": request_model,
+        "server.address": _SERVER_ADDRESS,
     }
-    with _reference_tracer.start_as_current_span("chat llama-3.1-8b-instant", attributes=span_attributes_2) as span:
+    with _reference_tracer.start_as_current_span(
+        "chat llama-3.1-8b-instant", kind=SpanKind.CLIENT, attributes=span_attributes_2
+    ) as span:
         span.set_attribute(
             "gen_ai.input.messages",
             json.dumps(
@@ -130,9 +140,12 @@ def run_chat_tool_call_reference(client):
         "gen_ai.operation.name": "chat",
         "gen_ai.provider.name": "groq",
         "gen_ai.request.model": request_model,
+        "server.address": _SERVER_ADDRESS,
     }
-    with _reference_tracer.start_as_current_span("chat llama-3.1-8b-instant", attributes=span_attributes_3) as span:
-        span.set_attribute("gen_ai.tool.definitions", json.dumps(tools))
+    with _reference_tracer.start_as_current_span(
+        "chat llama-3.1-8b-instant", kind=SpanKind.CLIENT, attributes=span_attributes_3
+    ) as span:
+        span.set_attribute("gen_ai.tool.definitions", json.dumps([{"type": t["type"], **t["function"]} for t in tools]))
         resp = client.chat.completions.create(
             model=request_model,
             messages=[{"role": "user", "content": "What's the weather in Seattle?"}],

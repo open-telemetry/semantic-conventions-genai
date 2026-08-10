@@ -11,3 +11,11 @@ env:
 scenarios:
   reference:
     run: uv run --frozen --python 3.12 --project . python scenario.py
+    expected_violations:
+      # Memory operations are not yet in the semconv operation name enum
+      # TODO: add memory ops to _known_operation_names in the conformance runner's genai_span_validation.rego
+      - id: genai_operation_name_unknown
+        reason: Add memory ops to _known_operation_names in genai_span_validation.rego.
+      # TODO: fix metric unit emission for inference_calls and tool_calls histograms
+      - id: unit_mismatch
+        reason: OTel SDK emits unit '1' instead of '{inference_call}'/'{tool_call}'; fix histogram unit.

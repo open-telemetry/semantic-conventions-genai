@@ -7,6 +7,7 @@ against a mock Cohere server, with manual OTel spans.
 import json
 import os
 
+from opentelemetry.trace import SpanKind
 from reference_shared import (
     flush_and_shutdown,
     mock_server_host_port,
@@ -34,7 +35,9 @@ def run_chat(client):
         span_attributes["server.address"] = host
     if port is not None:
         span_attributes["server.port"] = port
-    with _reference_tracer.start_as_current_span("chat command-r-plus", attributes=span_attributes) as span:
+    with _reference_tracer.start_as_current_span(
+        "chat command-r-plus", kind=SpanKind.CLIENT, attributes=span_attributes
+    ) as span:
         messages = [{"role": "user", "content": "Say hello."}]
         resp = client.chat(
             model=request_model,
@@ -54,6 +57,7 @@ def run_chat(client):
         content = resp.message.content[0].text
         event_attrs = {
             "gen_ai.operation.name": "chat",
+            "gen_ai.provider.name": "cohere",
             "gen_ai.request.model": request_model,
             "gen_ai.input.messages": json.dumps(
                 [{"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]} for m in messages]
@@ -115,8 +119,10 @@ def run_chat_tool_call(client):
         span_attributes_2["server.address"] = host
     if port is not None:
         span_attributes_2["server.port"] = port
-    with _reference_tracer.start_as_current_span("chat command-r-plus", attributes=span_attributes_2) as span:
-        span.set_attribute("gen_ai.tool.definitions", json.dumps(tools))
+    with _reference_tracer.start_as_current_span(
+        "chat command-r-plus", kind=SpanKind.CLIENT, attributes=span_attributes_2
+    ) as span:
+        span.set_attribute("gen_ai.tool.definitions", json.dumps([{"type": t["type"], **t["function"]} for t in tools]))
         resp = client.chat(
             model=request_model,
             messages=[{"role": "user", "content": "What's the weather in Seattle?"}],
@@ -154,7 +160,9 @@ def run_embeddings(client):
         span_attributes_3["server.address"] = host
     if port is not None:
         span_attributes_3["server.port"] = port
-    with _reference_tracer.start_as_current_span("embeddings embed-v4.0", attributes=span_attributes_3) as span:
+    with _reference_tracer.start_as_current_span(
+        "embeddings embed-v4.0", kind=SpanKind.CLIENT, attributes=span_attributes_3
+    ) as span:
         resp = client.embed(
             model=request_model,
             texts=["Hello, world!"],
@@ -165,6 +173,8 @@ def run_embeddings(client):
             input_tokens = getattr(resp.meta.billed_units, "input_tokens", None)
             if input_tokens is not None:
                 span.set_attribute("gen_ai.usage.input_tokens", int(input_tokens))
+        if resp.embeddings and resp.embeddings.float_ and resp.embeddings.float_[0]:
+            span.set_attribute("gen_ai.embeddings.dimension.count", len(resp.embeddings.float_[0]))
         print(f"    -> embedding dim: {len(resp.embeddings.float_[0])}")
 
 

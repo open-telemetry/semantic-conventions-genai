@@ -11,3 +11,7 @@ env:
 scenarios:
   reference:
     run: uv run --frozen --python 3.12 --project . python scenario.py
+    expected_violations:
+      # TODO: add memory ops to _known_operation_names in the conformance runner's genai_span_validation.rego
+      - id: genai_operation_name_unknown
+        reason: Add memory ops to _known_operation_names in genai_span_validation.rego.

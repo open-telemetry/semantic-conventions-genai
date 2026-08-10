@@ -11,3 +11,7 @@ env:
 scenarios:
   reference:
     run: uv run --frozen --python 3.12 --project . python scenario.py
+    expected_violations:
+      # TODO: relax gen_ai.output.messages schema to make finish_reason optional, or expose agent stop reason
+      - id: genai_content_schema
+        reason: Bedrock Agent stream has no finish reason; make finish_reason optional in schema.

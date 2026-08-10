@@ -48,7 +48,9 @@ def run_chat(client):
         span_attributes["server.address"] = host
     if port is not None:
         span_attributes["server.port"] = port
-    with _reference_tracer.start_as_current_span("chat mistral-large-latest", attributes=span_attributes) as span:
+    with _reference_tracer.start_as_current_span(
+        "chat mistral-large-latest", kind=SpanKind.CLIENT, attributes=span_attributes
+    ) as span:
         span.set_attribute(
             "gen_ai.input.messages",
             json.dumps([{"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]} for m in messages]),
@@ -72,6 +74,7 @@ def run_chat(client):
         # Emit inference operation details event
         event_attrs = {
             "gen_ai.operation.name": "chat",
+            "gen_ai.provider.name": "mistral_ai",
             "gen_ai.request.model": request_model,
             "gen_ai.input.messages": json.dumps(
                 [{"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]} for m in messages]
@@ -135,8 +138,10 @@ def run_chat_tool_call(client):
         span_attributes_2["server.address"] = host
     if port is not None:
         span_attributes_2["server.port"] = port
-    with _reference_tracer.start_as_current_span("chat mistral-large-latest", attributes=span_attributes_2) as span:
-        span.set_attribute("gen_ai.tool.definitions", json.dumps(tools))
+    with _reference_tracer.start_as_current_span(
+        "chat mistral-large-latest", kind=SpanKind.CLIENT, attributes=span_attributes_2
+    ) as span:
+        span.set_attribute("gen_ai.tool.definitions", json.dumps([{"type": t["type"], **t["function"]} for t in tools]))
         span.set_attribute(
             "gen_ai.input.messages",
             json.dumps([{"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]} for m in messages]),
@@ -181,7 +186,9 @@ def run_chat_streaming(client):
         span_attributes_3["server.address"] = host
     if port is not None:
         span_attributes_3["server.port"] = port
-    with _reference_tracer.start_as_current_span("chat mistral-large-latest", attributes=span_attributes_3) as span:
+    with _reference_tracer.start_as_current_span(
+        "chat mistral-large-latest", kind=SpanKind.CLIENT, attributes=span_attributes_3
+    ) as span:
         span.set_attribute(
             "gen_ai.input.messages",
             json.dumps([{"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]} for m in messages]),
@@ -250,13 +257,17 @@ def run_embeddings(client):
         span_attributes_4["server.address"] = host
     if port is not None:
         span_attributes_4["server.port"] = port
-    with _reference_tracer.start_as_current_span("embeddings mistral-embed", attributes=span_attributes_4) as span:
+    with _reference_tracer.start_as_current_span(
+        "embeddings mistral-embed", kind=SpanKind.CLIENT, attributes=span_attributes_4
+    ) as span:
         resp = client.embeddings.create(
             model=request_model,
             inputs=["Hello, world!"],
         )
         if getattr(resp, "model", None):
             span.set_attribute("gen_ai.response.model", resp.model)
+        if resp.data and resp.data[0].embedding:
+            span.set_attribute("gen_ai.embeddings.dimension.count", len(resp.data[0].embedding))
         if resp.usage:
             span.set_attribute("gen_ai.usage.input_tokens", resp.usage.prompt_tokens)
         print(f"    -> embedding dim: {len(resp.data[0].embedding)}")

@@ -2,6 +2,7 @@
 
 import json
 
+from opentelemetry.trace import SpanKind
 from reference_shared import flush_and_shutdown, reference_tracer, setup_otel
 
 _reference_tracer = reference_tracer()
@@ -32,7 +33,7 @@ def run_retrieval():
     )
     retriever = InMemoryBM25Retriever(document_store=document_store, top_k=top_k)
 
-    with _reference_tracer.start_as_current_span("retrieval weather-knowledge-base") as span:
+    with _reference_tracer.start_as_current_span("retrieval weather-knowledge-base", kind=SpanKind.CLIENT) as span:
         span.set_attribute("gen_ai.operation.name", "retrieval")
         span.set_attribute("gen_ai.data_source.id", data_source_id)
         span.set_attribute("gen_ai.retrieval.top_k", top_k)

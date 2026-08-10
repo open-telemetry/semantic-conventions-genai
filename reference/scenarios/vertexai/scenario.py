@@ -8,10 +8,13 @@ import json
 import os
 import warnings
 from contextlib import contextmanager
+from urllib.parse import urlparse
 
+from opentelemetry.trace import SpanKind
 from reference_shared import flush_and_shutdown, reference_event_logger, reference_tracer, setup_otel
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"]
+_SERVER_ADDRESS = urlparse(MOCK_BASE_URL).hostname
 
 # The Vertex AI gapic REST transport defaults to HTTPS. Monkey-patch the
 # transport to use plain HTTP so we can talk to the local mock server.
@@ -134,8 +137,11 @@ def run_chat():
         "gen_ai.operation.name": "chat",
         "gen_ai.provider.name": "gcp.vertex_ai",
         "gen_ai.request.model": request_model,
+        "server.address": _SERVER_ADDRESS,
     }
-    with _reference_tracer.start_as_current_span("chat gemini-2.0-flash", attributes=span_attributes) as span:
+    with _reference_tracer.start_as_current_span(
+        "chat gemini-2.0-flash", kind=SpanKind.CLIENT, attributes=span_attributes
+    ) as span:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", DeprecationWarning)
             warnings.simplefilter("ignore", UserWarning)
@@ -143,6 +149,9 @@ def run_chat():
             prompt_text = "Say hello."
             response = model.generate_content(prompt_text)
         response_model = response.to_dict().get("modelVersion")
+        response_id = response.to_dict().get("responseId")
+        if response_id:
+            span.set_attribute("gen_ai.response.id", response_id)
         if response_model:
             span.set_attribute("gen_ai.response.model", response_model)
         if response.candidates and response.candidates[0].finish_reason:
@@ -156,6 +165,7 @@ def run_chat():
         # Emit inference operation details event
         event_attrs = {
             "gen_ai.operation.name": "chat",
+            "gen_ai.provider.name": "gcp.vertex_ai",
             "gen_ai.request.model": request_model,
             "gen_ai.input.messages": json.dumps(
                 [{"role": "user", "parts": [{"type": "text", "content": prompt_text}]}]
@@ -172,6 +182,8 @@ def run_chat():
                 ]
             ),
         }
+        if response_id:
+            event_attrs["gen_ai.response.id"] = response_id
         if response_model:
             event_attrs["gen_ai.response.model"] = response_model
         if response.candidates and response.candidates[0].finish_reason:
@@ -216,27 +228,27 @@ def run_chat_tool_call():
         "gen_ai.operation.name": "chat",
         "gen_ai.provider.name": "gcp.vertex_ai",
         "gen_ai.request.model": request_model,
+        "server.address": _SERVER_ADDRESS,
     }
     with (
         _patch_automatic_function_calling(),
-        _reference_tracer.start_as_current_span("chat gemini-2.0-flash", attributes=span_attributes_2) as span,
+        _reference_tracer.start_as_current_span(
+            "chat gemini-2.0-flash", kind=SpanKind.CLIENT, attributes=span_attributes_2
+        ) as span,
     ):
         span.set_attribute(
             "gen_ai.tool.definitions",
             json.dumps(
                 [
                     {
-                        "function_declarations": [
-                            {
-                                "name": "get_weather",
-                                "description": "Get the current weather",
-                                "parameters": {
-                                    "type": "object",
-                                    "properties": {"location": {"type": "string", "description": "City name"}},
-                                    "required": ["location"],
-                                },
-                            }
-                        ]
+                        "type": "function",
+                        "name": "get_weather",
+                        "description": "Get the current weather",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {"location": {"type": "string", "description": "City name"}},
+                            "required": ["location"],
+                        },
                     }
                 ]
             ),
@@ -277,8 +289,11 @@ def run_chat_streaming():
         "gen_ai.operation.name": "chat",
         "gen_ai.provider.name": "gcp.vertex_ai",
         "gen_ai.request.model": request_model,
+        "server.address": _SERVER_ADDRESS,
     }
-    with _reference_tracer.start_as_current_span("chat gemini-2.0-flash", attributes=span_attributes_3) as span:
+    with _reference_tracer.start_as_current_span(
+        "chat gemini-2.0-flash", kind=SpanKind.CLIENT, attributes=span_attributes_3
+    ) as span:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", DeprecationWarning)
             warnings.simplefilter("ignore", UserWarning)

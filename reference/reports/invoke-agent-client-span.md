@@ -41,7 +41,7 @@
 | gen_ai.usage.cache_read.input_tokens | (none) |
 | gen_ai.usage.input_tokens | [azure-ai-foundry], [google-genai], [openai-assistants] |
 | gen_ai.usage.output_tokens | [azure-ai-foundry], [google-genai], [openai-assistants] |
-| server.address | [aws-bedrock-agent], [azure-ai-foundry], [openai-assistants] |
+| server.address | [aws-bedrock-agent], [azure-ai-foundry], [google-genai], [openai-assistants] |
 
 ## Opt-In
 

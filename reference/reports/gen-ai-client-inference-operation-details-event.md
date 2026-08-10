@@ -7,7 +7,7 @@
 | Attribute | Supporting Libraries |
 | --- | --- |
 | gen_ai.operation.name | [anthropic], [aws-bedrock], [azure-ai-inference], [cohere], [google-genai], [groq], [litellm], [mistralai], [openai], [vertexai] |
-| gen_ai.provider.name | [anthropic], [google-genai], [openai] |
+| gen_ai.provider.name | [anthropic], [aws-bedrock], [azure-ai-inference], [cohere], [google-genai], [groq], [litellm], [mistralai], [openai], [vertexai] |
 
 ## Conditionally Required
 

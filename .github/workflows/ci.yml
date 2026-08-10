@@ -164,7 +164,7 @@ jobs:
       - name: Run implementation scenario
         env:
           SCENARIO_LIB: ${{ matrix.scenario.lib }}
-        run: uv run run-scenario "$SCENARIO_LIB"
+        run: uv run run-scenario "$SCENARIO_LIB" --strict
 
       - name: Check data file is up to date
         env:

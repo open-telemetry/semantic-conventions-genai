@@ -61,16 +61,14 @@ def run_agent_reference():
     tool_defs = [
         {
             "type": "function",
-            "function": {
-                "name": "get_weather",
-                "description": "Get the current weather.",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "location": {"type": "string", "description": "City name"},
-                    },
-                    "required": ["location"],
+            "name": "get_weather",
+            "description": "Get the current weather.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "location": {"type": "string", "description": "City name"},
                 },
+                "required": ["location"],
             },
         }
     ]
@@ -188,6 +186,7 @@ def run_agent_reference():
                         {
                             "role": "assistant",
                             "parts": [{"type": "text", "content": str(response.chat_message.content)}],
+                            "finish_reason": finish_reasons[-1] if finish_reasons else "stop",
                         }
                     ]
                 )

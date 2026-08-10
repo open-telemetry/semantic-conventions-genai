@@ -43,16 +43,14 @@ def run_invoke_agent(client):
     tool_defs = [
         {
             "type": "function",
-            "function": {
-                "name": "get_weather",
-                "description": "Get the current weather",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "location": {"type": "string", "description": "City name"},
-                    },
-                    "required": ["location"],
+            "name": "get_weather",
+            "description": "Get the current weather",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "location": {"type": "string", "description": "City name"},
                 },
+                "required": ["location"],
             },
         }
     ]
@@ -142,14 +140,6 @@ def run_invoke_agent(client):
                     function_call = getattr(tool_call, "function", None)
                     tool_call_id = getattr(tool_call, "id", None)
                     tool_name = getattr(function_call, "name", "get_weather")
-                    tool_definition = next(
-                        (
-                            definition
-                            for definition in tool_defs
-                            if definition.get("function", {}).get("name") == tool_name
-                        ),
-                        None,
-                    )
                     arguments_json = getattr(function_call, "arguments", "{}") or "{}"
                     arguments = json.loads(arguments_json)
 
@@ -157,12 +147,12 @@ def run_invoke_agent(client):
                         "gen_ai.operation.name": "execute_tool",
                     }
                     with tracer.start_as_current_span(
-                        "execute_tool", kind=SpanKind.CLIENT, attributes=tool_span_attributes
+                        f"execute_tool {tool_name}", kind=SpanKind.INTERNAL, attributes=tool_span_attributes
                     ) as tool_span:
                         tool_span.set_attribute("gen_ai.tool.name", tool_name)
                         tool_span.set_attribute(
                             "gen_ai.tool.description",
-                            (tool_definition or {}).get("function", {}).get("description", ""),
+                            next((d.get("description", "") for d in tool_defs if d.get("name") == tool_name), ""),
                         )
                         tool_span.set_attribute("gen_ai.tool.type", "function")
                         if tool_call_id:
@@ -200,6 +190,11 @@ def run_invoke_agent(client):
             assistant_messages = [m for m in messages.data if m.role == "assistant"]
             if assistant_messages:
                 text = assistant_messages[0].content[0].text.value
+                run_finish_reason = (
+                    "stop"
+                    if run.status == "completed"
+                    else ("error" if run.status in ("failed", "cancelled", "expired") else run.status)
+                )
                 span.set_attribute(
                     "gen_ai.output.messages",
                     json.dumps(
@@ -207,6 +202,7 @@ def run_invoke_agent(client):
                             {
                                 "role": "assistant",
                                 "parts": [{"type": "text", "content": text}],
+                                "finish_reason": run_finish_reason,
                             }
                         ]
                     ),

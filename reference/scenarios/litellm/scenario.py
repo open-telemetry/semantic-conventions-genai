@@ -6,10 +6,13 @@ against a mock OpenAI server, with manual OTel spans.
 
 import json
 import os
+from urllib.parse import urlparse
 
+from opentelemetry.trace import SpanKind
 from reference_shared import flush_and_shutdown, reference_event_logger, reference_tracer, setup_otel
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"] + "/v1"
+_SERVER_ADDRESS = urlparse(os.environ["MOCK_LLM_URL"]).hostname
 
 _reference_tracer = reference_tracer()
 
@@ -33,8 +36,11 @@ def run_chat():
         "gen_ai.operation.name": "chat",
         "gen_ai.provider.name": provider_name,
         "gen_ai.request.model": request_model,
+        "server.address": _SERVER_ADDRESS,
     }
-    with _reference_tracer.start_as_current_span("chat gpt-4o-mini", attributes=span_attributes) as span:
+    with _reference_tracer.start_as_current_span(
+        "chat gpt-4o-mini", kind=SpanKind.CLIENT, attributes=span_attributes
+    ) as span:
         span.set_attribute(
             "gen_ai.input.messages",
             json.dumps(
@@ -74,6 +80,7 @@ def run_chat():
         # Emit inference operation details event
         event_attrs = {
             "gen_ai.operation.name": "chat",
+            "gen_ai.provider.name": provider_name,
             "gen_ai.request.model": request_model,
             "gen_ai.response.id": resp.id,
             "gen_ai.response.model": resp.model,
@@ -119,8 +126,11 @@ def run_chat_streaming():
         "gen_ai.operation.name": "chat",
         "gen_ai.provider.name": provider_name,
         "gen_ai.request.model": request_model,
+        "server.address": _SERVER_ADDRESS,
     }
-    with _reference_tracer.start_as_current_span("chat gpt-4o-mini", attributes=span_attributes_2) as span:
+    with _reference_tracer.start_as_current_span(
+        "chat gpt-4o-mini", kind=SpanKind.CLIENT, attributes=span_attributes_2
+    ) as span:
         span.set_attribute(
             "gen_ai.input.messages",
             json.dumps(
@@ -139,11 +149,23 @@ def run_chat_streaming():
         )
         text = ""
         finish_reason = None
+        response_id = None
+        response_model = None
         for chunk in resp:
+            if not response_id:
+                response_id = chunk.id
+            if not response_model:
+                response_model = chunk.model
             if chunk.choices[0].delta.content:
                 text += chunk.choices[0].delta.content
             if chunk.choices[0].finish_reason is not None:
                 finish_reason = chunk.choices[0].finish_reason
+        if response_id:
+            span.set_attribute("gen_ai.response.id", response_id)
+        if response_model:
+            span.set_attribute("gen_ai.response.model", response_model)
+        if finish_reason:
+            span.set_attribute("gen_ai.response.finish_reasons", [finish_reason])
         span.set_attribute(
             "gen_ai.output.messages",
             json.dumps(
@@ -190,9 +212,14 @@ def run_chat_tool_call():
         "gen_ai.operation.name": "chat",
         "gen_ai.provider.name": provider_name,
         "gen_ai.request.model": request_model,
+        "server.address": _SERVER_ADDRESS,
     }
-    with _reference_tracer.start_as_current_span("chat gpt-4o-mini", attributes=span_attributes_3) as span:
-        span.set_attribute("gen_ai.tool.definitions", json.dumps([request_tool]))
+    with _reference_tracer.start_as_current_span(
+        "chat gpt-4o-mini", kind=SpanKind.CLIENT, attributes=span_attributes_3
+    ) as span:
+        span.set_attribute(
+            "gen_ai.tool.definitions", json.dumps([{"type": t["type"], **t["function"]} for t in [request_tool]])
+        )
         span.set_attribute(
             "gen_ai.input.messages",
             json.dumps(
@@ -236,9 +263,10 @@ def run_embeddings():
         "gen_ai.operation.name": "embeddings",
         "gen_ai.provider.name": provider_name,
         "gen_ai.request.model": request_model,
+        "server.address": _SERVER_ADDRESS,
     }
     with _reference_tracer.start_as_current_span(
-        "embeddings text-embedding-3-small", attributes=span_attributes_4
+        "embeddings text-embedding-3-small", kind=SpanKind.CLIENT, attributes=span_attributes_4
     ) as span:
         resp = litellm.embedding(
             model=litellm_model,
@@ -248,6 +276,8 @@ def run_embeddings():
         )
         if resp.model:
             span.set_attribute("gen_ai.response.model", resp.model)
+        if resp.data and resp.data[0].get("embedding"):
+            span.set_attribute("gen_ai.embeddings.dimension.count", len(resp.data[0]["embedding"]))
         if resp.usage:
             span.set_attribute("gen_ai.usage.input_tokens", resp.usage.prompt_tokens)
         print(f"    -> embedding dim: {len(resp.data[0]['embedding'])}")

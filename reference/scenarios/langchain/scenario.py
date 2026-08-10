@@ -3,6 +3,7 @@
 import json
 import os
 
+from opentelemetry.trace import SpanKind
 from reference_shared import flush_and_shutdown, reference_tracer, setup_otel
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"] + "/v1"
@@ -36,7 +37,7 @@ def run_retrieval_reference():
         top_k=top_k,
     )
 
-    with _reference_tracer.start_as_current_span("retrieval weather-knowledge-base") as span:
+    with _reference_tracer.start_as_current_span("retrieval weather-knowledge-base", kind=SpanKind.CLIENT) as span:
         span.set_attribute("gen_ai.operation.name", "retrieval")
         span.set_attribute("gen_ai.data_source.id", data_source_id)
         span.set_attribute("gen_ai.retrieval.top_k", top_k)

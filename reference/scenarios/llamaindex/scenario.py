@@ -3,6 +3,7 @@
 import json
 import os
 
+from opentelemetry.trace import SpanKind
 from reference_shared import (
     flush_and_shutdown,
     mock_server_host_port,
@@ -83,7 +84,7 @@ def run_retrieval_reference():
     retriever = index.as_retriever(similarity_top_k=top_k)
     query_text = "Seattle weather"
 
-    with _reference_tracer.start_as_current_span("retrieval weather-knowledge-base") as span:
+    with _reference_tracer.start_as_current_span("retrieval weather-knowledge-base", kind=SpanKind.CLIENT) as span:
         span.set_attribute("gen_ai.operation.name", "retrieval")
         span.set_attribute("gen_ai.data_source.id", data_source_id)
         span.set_attribute("gen_ai.provider.name", "openai")

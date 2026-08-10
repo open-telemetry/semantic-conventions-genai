@@ -11,3 +11,17 @@ env:
 scenarios:
   reference:
     run: uv run --frozen --python 3.12 --project . python scenario.py
+    expected_violations:
+      # Native telemetry gaps - issues in the library's own instrumentation
+      - id: genai_content_schema
+        reason: Library omits finish_reason; fix in library.
+      - id: genai_span_kind_unexpected
+        reason: Library uses INTERNAL instead of CLIENT; fix in library.
+      - id: missing_attribute
+        reason: Library uses proprietary namespaces not in the registry; fix in library.
+      - id: type_mismatch
+        reason: Library sets finish_reasons as string, not string[]; fix in library.
+      - id: unit_mismatch
+        reason: Library uses 'tokens' instead of '{token}'; fix in library.
+      - id: missing_metric
+        reason: Library emits custom metrics outside the registry; fix in library.

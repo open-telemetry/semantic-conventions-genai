@@ -218,11 +218,9 @@ def run_agent():
                 [
                     {
                         "type": "function",
-                        "function": {
-                            "name": t.name,
-                            "description": t.func.__doc__,
-                            "parameters": t.args_schema.model_json_schema(),
-                        },
+                        "name": t.name,
+                        "description": t.func.__doc__,
+                        "parameters": t.args_schema.model_json_schema(),
                     }
                     for t in researcher.tools
                 ]
@@ -260,6 +258,9 @@ def run_agent():
                     {
                         "role": "assistant",
                         "parts": [{"type": "text", "content": str(result)}],
+                        "finish_reason": captured_completion.choices[0].finish_reason
+                        if captured_completion and captured_completion.choices
+                        else "stop",
                     }
                 ]
             ),
