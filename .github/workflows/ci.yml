@@ -186,6 +186,17 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Load shared version pins
+        id: versions
+        uses: ./.github/actions/load-version-pins
+
+      # The reports are built from weaver's resolution of model/, which is
+      # resolved on demand rather than committed.
+      - name: Install Weaver
+        uses: open-telemetry/weaver/.github/actions/setup-weaver@f8e1b42fbd1e09df5263c26b7df6011eaafd454d
+        with:
+          version: '${{ steps.versions.outputs.weaver_version }}'
+
       - uses: ./.github/actions/setup-reference-tooling
 
       - name: Generate status report

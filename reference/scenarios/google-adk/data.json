@@ -1,6 +1,16 @@
 {
   "spans": {
-    "invoke_agent_internal": [
+    "gen_ai.execute_tool.internal": [
+      "gen_ai.agent.name",
+      "gen_ai.operation.name",
+      "gen_ai.tool.call.arguments",
+      "gen_ai.tool.call.id",
+      "gen_ai.tool.call.result",
+      "gen_ai.tool.description",
+      "gen_ai.tool.name",
+      "gen_ai.tool.type"
+    ],
+    "gen_ai.invoke_agent.internal": [
       "gen_ai.agent.name",
       "gen_ai.conversation.id",
       "gen_ai.input.messages",
@@ -20,32 +30,31 @@
       "gen_ai.usage.input_tokens",
       "gen_ai.usage.output_tokens"
     ],
-    "invoke_workflow": [
+    "gen_ai.invoke_workflow.internal": [
       "gen_ai.conversation.id",
       "gen_ai.input.messages",
       "gen_ai.operation.name",
       "gen_ai.output.messages",
       "gen_ai.workflow.name"
     ],
-    "memory": [
+    "gen_ai.memory.client": [
       "gen_ai.memory.query.text",
       "gen_ai.memory.record.count",
       "gen_ai.memory.records",
       "gen_ai.memory.store.id",
       "gen_ai.operation.name"
-    ],
-    "execute_tool": [
-      "gen_ai.agent.name",
-      "gen_ai.operation.name",
-      "gen_ai.tool.call.arguments",
-      "gen_ai.tool.call.id",
-      "gen_ai.tool.call.result",
-      "gen_ai.tool.description",
-      "gen_ai.tool.name",
-      "gen_ai.tool.type"
     ]
   },
+  "events": {},
   "metrics": {
+    "gen_ai.execute_tool.duration": [
+      "gen_ai.agent.name",
+      "gen_ai.tool.name",
+      "gen_ai.tool.type"
+    ],
+    "gen_ai.invoke_agent.duration": [
+      "gen_ai.agent.name"
+    ],
     "gen_ai.invoke_agent.inference_calls": [
       "gen_ai.agent.name"
     ],
