@@ -1,4 +1,5 @@
-# Weaver results (generated under scenarios/<lib>/results/<eco>/).
+# Raw weaver live-check reports, one per scenario run.
+scenarios/*/output/
 scenarios/*/results/
 
 # Python
@@ -7,3 +8,4 @@ scenarios/*/results/
 __pycache__/
 .venv/
 *.egg-info/
+coverage-model.json

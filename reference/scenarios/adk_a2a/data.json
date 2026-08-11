@@ -1,29 +1,35 @@
 {
   "spans": {
-    "invoke_agent_internal": [
+    "gen_ai.inference.client": [
+      "gen_ai.conversation.id",
+      "gen_ai.operation.name",
+      "gen_ai.request.model",
+      "gen_ai.response.finish_reasons",
+      "gen_ai.usage.input_tokens",
+      "gen_ai.usage.output_tokens",
+      "gen_ai.usage.reasoning.output_tokens"
+    ],
+    "gen_ai.invoke_agent.internal": [
       "gen_ai.agent.description",
       "gen_ai.agent.name",
       "gen_ai.conversation.id",
-      "gen_ai.operation.name",
-      "gen_ai.request.model",
-      "gen_ai.response.finish_reasons",
-      "gen_ai.usage.input_tokens",
-      "gen_ai.usage.output_tokens"
-    ],
-    "inference": [
-      "gen_ai.conversation.id",
-      "gen_ai.operation.name",
-      "gen_ai.request.model",
-      "gen_ai.response.finish_reasons",
-      "gen_ai.usage.input_tokens",
-      "gen_ai.usage.output_tokens"
+      "gen_ai.operation.name"
     ]
   },
-  "entities": {
-    "gen_ai.main_agent": [
-      "gen_ai.main_agent.description",
-      "gen_ai.main_agent.id",
-      "gen_ai.main_agent.name"
+  "events": {},
+  "metrics": {
+    "gen_ai.client.operation.duration": [
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "gen_ai.request.model",
+      "gen_ai.response.model"
+    ],
+    "gen_ai.client.token.usage": [
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "gen_ai.request.model",
+      "gen_ai.response.model",
+      "gen_ai.token.type"
     ]
   }
 }

@@ -16,33 +16,11 @@ import urllib.request
 import zipfile
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parent.parent.parent.parent
-VERSIONS_FILE = REPO_ROOT / "versions.env"
+from semconv_genai.versions import require_pin
 
 logger = logging.getLogger(__name__)
 
-
-def _load_version_pins() -> dict[str, str]:
-    """Load shared external version pins from the repository root."""
-    try:
-        content = VERSIONS_FILE.read_text(encoding="utf-8")
-    except OSError as e:
-        raise RuntimeError(f"Could not read version pins file: {VERSIONS_FILE}") from e
-
-    pins: dict[str, str] = {}
-    for raw_line in content.splitlines():
-        line = raw_line.strip()
-        if not line or line.startswith("#"):
-            continue
-        key, sep, value = line.partition("=")
-        if not sep:
-            raise RuntimeError(f"Invalid version pin line in {VERSIONS_FILE}: {raw_line!r}")
-        pins[key.strip()] = value.strip().strip('"').strip("'")
-
-    return pins
-
-
-WEAVER_VERSION = _load_version_pins()["WEAVER_VERSION"]
+WEAVER_VERSION = require_pin("WEAVER_VERSION")
 
 
 def _normalize_version(version: str) -> str:

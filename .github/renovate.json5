@@ -1,9 +1,9 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:recommended",
+    "config:best-practices",
     "helpers:pinGitHubActionDigestsToSemver",
-    "github>grafana/flint#v0.22.6",
+    "github>grafana/flint#v0.22.10",
   ],
   // Security updates are owned by Dependabot. See .github/DEPENDENCIES.md.
   "vulnerabilityAlerts": {
@@ -15,12 +15,15 @@
     {
       "customType": "regex",
       "managerFilePatterns": [
-        "/^versions\\.env$/"
+        "/^versions\\.env$/",
+        "/^model/manifest\\.yaml$/"
       ],
       "matchStrings": [
         "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+) versioning=(?<versioning>\\S+)\\s+WEAVER_VERSION=(?<currentValue>\\S+)",
-        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+) versioning=(?<versioning>\\S+)\\s+SEMCONV_VERSION=(?<currentValue>\\S+)",
-        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+) versioning=(?<versioning>\\S+)\\s+POLICY_REPO_URL=(?<packageName>\\S+)\\s+POLICY_REPO_REF=(?<currentValue>\\S+)"
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+) versioning=(?<versioning>\\S+)(?:\\s+ref=\\S+)?\\s+POLICY_REPO_URL=(?<packageName>\\S+)\\s+POLICY_REPO_REF=(?<currentValue>\\S+)",
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+) versioning=(?<versioning>\\S+)(?:\\s+ref=\\S+)?\\s+CONFORMANCE_REPO_URL=(?<packageName>\\S+)\\s+CONFORMANCE_REF=(?<currentValue>\\S+)",
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+) versioning=(?<versioning>\\S+)\\s+- schema_url: https://opentelemetry\\.io/schemas/(?<currentValue>\\d+\\.\\d+\\.\\d+)",
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+) versioning=(?<versioning>\\S+)\\s+- schema_url: \\S+\\s+registry_path:.*?\\.git@(?<currentValue>v\\d+\\.\\d+\\.\\d+)\\[model\\]"
       ]
     },
     {
@@ -37,6 +40,14 @@
     }
   ],
   "packageRules": [
+    {
+      // Bump the manifest git tag and its adjacent schema_url together.
+      "description": "Group upstream semantic-conventions manifest pins",
+      "matchDepNames": [
+        "open-telemetry/semantic-conventions"
+      ],
+      "groupName": "upstream semantic-conventions"
+    },
     {
       "description": "Allow opentelemetry-semantic-conventions pre-releases",
       "matchDepNames": [

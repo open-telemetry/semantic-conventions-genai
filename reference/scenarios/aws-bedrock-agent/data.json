@@ -1,6 +1,18 @@
 {
   "spans": {
-    "invoke_agent_client": [
+    "gen_ai.create_agent.client": [
+      "gen_ai.agent.description",
+      "gen_ai.agent.id",
+      "gen_ai.agent.name",
+      "gen_ai.agent.version",
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "gen_ai.request.model",
+      "gen_ai.system_instructions",
+      "server.address",
+      "server.port"
+    ],
+    "gen_ai.invoke_agent.client": [
       "gen_ai.agent.id",
       "gen_ai.agent.version",
       "gen_ai.conversation.id",
@@ -11,5 +23,7 @@
       "server.address",
       "server.port"
     ]
-  }
+  },
+  "events": {},
+  "metrics": {}
 }

@@ -1,0 +1,13 @@
+runner: genai-conformance
+instrumented_library: openai-assistants
+instrumentation_library: reference
+
+server:
+  run: genai-mock-server --host 127.0.0.1 --port ${PORT}
+
+env:
+  MOCK_LLM_URL: ${MOCK_SERVER_URL}
+
+scenarios:
+  reference:
+    run: uv run --frozen --python 3.12 --project . python scenario.py

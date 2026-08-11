@@ -11,17 +11,36 @@ If you are changing the semantic conventions themselves under `model/` or
 ```text
 pyproject.toml           # Tooling project metadata
 src/
-  semconv_genai/         # Shared framework, CLI modules, and mock server
+  semconv_genai/         # Scenario discovery, weaver install, report generation
 scenarios/
   <library>/             # Reference scenarios
 ```
 
 Within each scenario directory:
 
+- `conformance.yaml` — How to run the scenario and what it must produce
 - `scenario.py` — SDK invocation + manual OTel spans
 - `pyproject.toml` — Dependencies
 - `uv.lock` — Locked transitive dependency graph (committed)
 - `data.json` — Committed results
+
+## The conformance runner
+
+Scenarios run under the
+[conformance runner](https://github.com/open-telemetry/semantic-conventions-conformance),
+which owns the mock LLM server, the weaver live-check lifecycle, the GenAI
+advice policies, and the reduction that produces `data.json`. None of it is
+vendored here: it is fetched at the `CONFORMANCE_REF` pinned in the
+repository-root [versions.env](../versions.env) and cached under
+`~/.cache/semconv-genai/conformance/`.
+
+Runs are checked against the working tree's `model/`, not the registry that
+package pins, so a change to the conventions takes effect immediately.
+
+Violations are reported as warnings, not failures — the scenarios are not yet
+clean against the conventions and their gaps are not yet declared under
+`expected_violations`. Pass `--strict` to fail on them. A scenario that crashes
+or misses what its `conformance.yaml` declares fails either way.
 
 ## Prerequisites
 
@@ -48,6 +67,7 @@ uv run run-scenario --all --keep-going   # continue through failures, report at 
 `uv run run-scenario <library>` runs the selected scenario under
 [scenarios/](scenarios/) against a local mock LLM server, validates the
 emitted telemetry, and writes the results that feed the checked-in reports.
+The raw weaver report for each run is left under `scenarios/<library>/output/`.
 
 ## Linting
 
@@ -75,6 +95,29 @@ uv run update-reports
 - After regenerating `scenarios/*/data.json`, run `uv run update-reports` and
   commit both alongside your change.
 
+### Which operations a scenario should emit
+
+A scenario emits telemetry only for the operations the library itself performs.
+Two principles:
+
+- **Don't re-emit another library's telemetry.** If the library delegates an
+  operation to another instrumentable library (for example a framework that
+  calls `openai`, `anthropic`, or `google-genai` under the hood),
+  instrumentation for that operation belongs to the underlying library.
+- **Emit an operation only when the library has that concept.** Emit inference
+  or embeddings only when the library is itself the model-call boundary, an
+  agent span only when it models agents, a workflow span only when it models
+  workflows or graphs, and so on. Calling the provider's REST API directly (with
+  no separate instrumentable client library in between) makes the library the
+  model-call boundary, so it is a valid reason to emit inference.
+
+Agent-framework instrumentation SHOULD NOT emit inference spans by default; the
+underlying LLM library owns them. The exception is a framework that issues the
+model call in a way no other instrumentable library can observe — it calls the
+REST API directly, embeds a vendored model library, or similar. In that case the
+framework is the only place the inference call is visible, so it SHOULD emit the
+span.
+
 If a library emits unrelated native telemetry that obscures the intended
 validation surface, suppress that library-owned telemetry in the reference
 scenario rather than changing the semantic conventions to match it.
@@ -87,7 +130,9 @@ authors, so keep them minimal and readable.
 When adding a new reference scenario:
 
 1. Create `scenarios/<library>/scenario.py`.
-2. Create `scenarios/<library>/pyproject.toml` declaring the SDK dependencies plus
+2. Copy `conformance.yaml` from a neighbouring scenario and set
+   `instrumented_library` to the library slug.
+3. Create `scenarios/<library>/pyproject.toml` declaring the SDK dependencies plus
    `genai-reference-shared` (sourced from the shared project at `shared/`).
    The OTel SDK pin is provided transitively by `genai-reference-shared`; do
    not re-declare it here unless the library needs a non-default version.
@@ -123,8 +168,8 @@ When adding a new reference scenario:
    ]
    ```
 
-3. Run `uv lock` inside `scenarios/<library>/` to generate the committed
-   `uv.lock`. Re-run it whenever you change dependencies; `run-scenario` uses
-   `uv sync --frozen` and will fail if the lockfile is stale.
-4. Run `uv run run-scenario <library>` to generate `scenarios/<library>/data.json`.
-5. Regenerate `README.md` with `uv run update-reports`.
+4. Run `uv lock` inside `scenarios/<library>/` to generate the committed
+   `uv.lock`. Re-run it whenever you change dependencies; the scenario's `run`
+   command uses `uv run --frozen` and will fail if the lockfile is stale.
+5. Run `uv run run-scenario <library>` to generate `scenarios/<library>/data.json`.
+6. Regenerate `README.md` with `uv run update-reports`.

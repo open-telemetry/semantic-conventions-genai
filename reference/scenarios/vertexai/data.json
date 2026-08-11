@@ -1,6 +1,15 @@
 {
   "spans": {
-    "inference": [
+    "gen_ai.execute_tool.internal": [
+      "gen_ai.operation.name",
+      "gen_ai.tool.call.arguments",
+      "gen_ai.tool.call.id",
+      "gen_ai.tool.call.result",
+      "gen_ai.tool.description",
+      "gen_ai.tool.name",
+      "gen_ai.tool.type"
+    ],
+    "gen_ai.inference.client": [
       "gen_ai.operation.name",
       "gen_ai.provider.name",
       "gen_ai.request.model",
@@ -20,5 +29,6 @@
       "gen_ai.usage.input_tokens",
       "gen_ai.usage.output_tokens"
     ]
-  }
+  },
+  "metrics": {}
 }

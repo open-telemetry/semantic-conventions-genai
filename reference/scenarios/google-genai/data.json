@@ -1,6 +1,30 @@
 {
   "spans": {
-    "inference": [
+    "gen_ai.create_agent.client": [
+      "gen_ai.agent.description",
+      "gen_ai.agent.id",
+      "gen_ai.agent.name",
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "gen_ai.request.model",
+      "gen_ai.system_instructions"
+    ],
+    "gen_ai.embeddings.client": [
+      "gen_ai.embeddings.dimension.count",
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "gen_ai.request.model"
+    ],
+    "gen_ai.execute_tool.internal": [
+      "gen_ai.operation.name",
+      "gen_ai.tool.call.arguments",
+      "gen_ai.tool.call.id",
+      "gen_ai.tool.call.result",
+      "gen_ai.tool.description",
+      "gen_ai.tool.name",
+      "gen_ai.tool.type"
+    ],
+    "gen_ai.inference.client": [
       "gen_ai.operation.name",
       "gen_ai.provider.name",
       "gen_ai.request.model",
@@ -10,11 +34,14 @@
       "gen_ai.usage.input_tokens",
       "gen_ai.usage.output_tokens"
     ],
-    "embeddings": [
-      "gen_ai.embeddings.dimension.count",
+    "gen_ai.invoke_agent.client": [
+      "gen_ai.agent.name",
       "gen_ai.operation.name",
       "gen_ai.provider.name",
-      "gen_ai.request.model"
+      "gen_ai.request.model",
+      "gen_ai.request.previous_response.id",
+      "gen_ai.usage.input_tokens",
+      "gen_ai.usage.output_tokens"
     ]
   },
   "events": {
@@ -22,11 +49,15 @@
       "gen_ai.input.messages",
       "gen_ai.operation.name",
       "gen_ai.output.messages",
+      "gen_ai.provider.name",
       "gen_ai.request.model",
+      "gen_ai.request.previous_response.id",
       "gen_ai.response.finish_reasons",
+      "gen_ai.response.id",
       "gen_ai.response.model",
       "gen_ai.usage.input_tokens",
       "gen_ai.usage.output_tokens"
     ]
-  }
+  },
+  "metrics": {}
 }
