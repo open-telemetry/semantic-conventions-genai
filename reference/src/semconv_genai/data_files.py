@@ -41,6 +41,7 @@ SPAN_TYPE_ORDER = [
     "invoke_workflow",
     "plan",
     "inference",
+    "generate_live_content",
     "embeddings",
     "retrieval",
     "memory",
@@ -49,6 +50,8 @@ SPAN_TYPE_ORDER = [
 
 # Display order for event types in reports.
 EVENT_TYPE_ORDER = [
+    "gen_ai.client.live_session.started",
+    "gen_ai.client.live_session.ended",
     "gen_ai.client.inference.operation.details",
     "gen_ai.evaluation.result",
 ]

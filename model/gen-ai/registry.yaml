@@ -466,6 +466,17 @@ attributes:
           value: "generate_content"
           brief: 'Multimodal content generation operation such as [Gemini Generate Content](https://ai.google.dev/api/generate-content)'
           stability: development
+        - id: generate_live_content
+          value: "generate_live_content"
+          brief: 'Server-side model generation within a live, bidirectional speech-to-speech session such as [OpenAI Realtime](https://platform.openai.com/docs/guides/realtime) or [Gemini Live](https://ai.google.dev/gemini-api/docs/live).'
+          note: >
+            This operation describes a single server-side generation reconstructed from a
+            long-lived streaming session, not a single client request/response. It is distinct
+            from `chat` and `generate_content`: the request is streamed continuously and the
+            generation is bounded by provider events (first output chunk or a voice-activity
+            end anchor through generation completion or interruption) rather than by a client
+            call boundary.
+          stability: development
         - id: text_completion
           value: "text_completion"
           brief: 'Text completions operation such as [OpenAI Completions API (Legacy)](https://platform.openai.com/docs/api-reference/completions)'

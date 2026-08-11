@@ -120,6 +120,12 @@ SPAN_SPECS: dict[str, AttributeSpec] = {
         label="Inference",
         op_names=frozenset({"chat", "generate_content", "text_completion"}),
     ),
+    "generate_live_content": _from_yaml(
+        _groups,
+        "span.gen_ai.generate_live_content.client",
+        label="Generate Live Content",
+        op_names=frozenset({"generate_live_content"}),
+    ),
     "embeddings": _from_yaml(
         _groups,
         "span.gen_ai.embeddings.client",
@@ -205,6 +211,16 @@ SPAN_SPECS: dict[str, AttributeSpec] = {
 }
 
 EVENT_SPECS: dict[str, AttributeSpec] = {
+    "gen_ai.client.live_session.started": _from_yaml(
+        _groups,
+        "event.gen_ai.client.live_session.started",
+        label="Live Session Started",
+    ),
+    "gen_ai.client.live_session.ended": _from_yaml(
+        _groups,
+        "event.gen_ai.client.live_session.ended",
+        label="Live Session Ended",
+    ),
     "gen_ai.client.inference.operation.details": _from_yaml(
         _groups,
         "event.gen_ai.client.inference.operation.details",

@@ -1,6 +1,6 @@
 {
   "spans": {
-    "inference": [
+    "generate_live_content": [
       "gen_ai.input.messages",
       "gen_ai.operation.name",
       "gen_ai.output.messages",
@@ -8,10 +8,25 @@
       "gen_ai.provider.name",
       "gen_ai.request.model",
       "gen_ai.response.finish_reasons",
+      "gen_ai.response.time_to_first_chunk",
       "gen_ai.usage.audio.input_tokens",
       "gen_ai.usage.audio.output_tokens",
       "gen_ai.usage.input_tokens",
       "gen_ai.usage.output_tokens",
+      "server.address",
+      "server.port"
+    ]
+  },
+  "events": {
+    "gen_ai.client.live_session.started": [
+      "gen_ai.provider.name",
+      "gen_ai.request.model",
+      "server.address",
+      "server.port"
+    ],
+    "gen_ai.client.live_session.ended": [
+      "gen_ai.provider.name",
+      "gen_ai.request.model",
       "server.address",
       "server.port"
     ]

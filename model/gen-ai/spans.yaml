@@ -277,6 +277,85 @@ spans:
       - ref: gen_ai.request.model
         sampling_relevant: true
 
+  - type: gen_ai.generate_live_content.client
+    requirement_level: recommended
+    kind: client
+    name:
+      note: |
+        **Span name** SHOULD be `{gen_ai.operation.name} {gen_ai.request.model}`.
+        Semantic conventions for individual GenAI systems and frameworks MAY specify different span name format
+        and MUST follow the overall [guidelines for span names](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.56.0/specification/trace/api.md#span).
+    brief: >
+      Describes one server-side model generation within a live, bidirectional speech-to-speech
+      session (such as OpenAI Realtime or Gemini Live).
+    note: |
+      Unlike `gen_ai.inference.client`, this span is not a single client-timed request/response.
+      The client streams user audio continuously and the server streams incremental events; the
+      generation is reconstructed from those events. The span SHOULD start at the first output
+      chunk of the generation (or at an earlier voice-activity end anchor when the provider
+      exposes one) and end at the generation completion or interruption event. If usage is
+      reported after the completion event, instrumentation SHOULD wait for it before ending the
+      span.
+
+      The `gen_ai.operation.name` SHOULD be `generate_live_content`.
+
+      The live session itself is not modeled as a span. It is represented by the
+      `gen_ai.client.live_session.started` and `gen_ai.client.live_session.ended` events and by
+      `gen_ai.conversation.id` correlating the generations within it. Turn-level spans (a full
+      user-and-model exchange) are out of scope: turn boundaries cannot be detected reliably
+      across providers.
+    stability: development
+    attributes:
+      - ref_group: attributes.gen_ai.common
+      - ref_group: attributes.gen_ai.address_and_port
+      - ref_group: attributes.gen_ai.usage
+      - ref_group: attributes.gen_ai.content
+      - ref_group: attributes.gen_ai.error
+      - ref: gen_ai.request.max_tokens
+        requirement_level: recommended
+      - ref: gen_ai.request.reasoning.level
+        requirement_level:
+          recommended: When applicable.
+      - ref: gen_ai.output.type
+        requirement_level:
+          conditionally_required: When applicable and if the request includes an output format.
+      - ref: gen_ai.response.id
+        requirement_level:
+          recommended: When available. A live generation may not carry a response id on all providers.
+      - ref: gen_ai.response.model
+        requirement_level: recommended
+        note: >
+          If available. The name of the GenAI model that provided the response. If the model is supplied by a vendor,
+          then the value must be the exact name of the model actually used. If the model is a
+          fine-tuned custom model, the value should have a more specific name than the base model that's been fine-tuned.
+      - ref: gen_ai.response.finish_reasons
+        requirement_level: recommended
+      - ref: gen_ai.response.time_to_first_chunk
+        requirement_level: recommended
+      - ref: gen_ai.usage.reasoning.output_tokens
+        requirement_level:
+          recommended: When applicable.
+        note: >
+          The value SHOULD be included in `gen_ai.usage.output_tokens`.
+      - ref: gen_ai.conversation.id
+        requirement_level:
+          conditionally_required: If and only if the instrumented library has one readily available, or the user application provides one through OpenTelemetry context or library-specific mechanisms.
+        note: >
+          For a live session this correlates the generations that belong to the same session.
+          It is a within-session correlation key, not necessarily a durable, retrievable resource.
+      - ref: gen_ai.provider.name
+        # TODO: Not adding to common attributes because of https://github.com/open-telemetry/weaver/issues/479
+        requirement_level: required
+        sampling_relevant: true
+      - ref: gen_ai.operation.name
+        sampling_relevant: true
+      - ref: server.address
+        sampling_relevant: true
+      - ref: server.port
+        sampling_relevant: true
+      - ref: gen_ai.request.model
+        sampling_relevant: true
+
   - type: gen_ai.embeddings.client
     requirement_level: recommended
     kind: client
