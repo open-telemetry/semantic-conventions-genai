@@ -44,7 +44,7 @@ Run `uv run update-reports` to regenerate.
 | --- | --- |
 | [Inference Operation Details](reports/gen-ai-client-inference-operation-details-event.md) | anthropic, aws-bedrock, azure-ai-inference, cohere, google-genai, groq, litellm, mistralai, openai, vertexai |
 | [Evaluation Result](reports/gen-ai-evaluation-result-event.md) | azure-ai-evaluation, deepeval, dspy |
-| [Security Finding](reports/gen-ai-security-finding-event.md) | openai |
+| [Security Finding](reports/gen-ai-guardrail-security-finding-event.md) | openai |
 
 ### Metrics
 

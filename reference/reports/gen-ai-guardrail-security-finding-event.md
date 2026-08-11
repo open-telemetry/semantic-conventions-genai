@@ -1,47 +1,36 @@
-# Run Guardrail Internal Span
+# Security Finding Event
 
-> **[Semantic Convention](../../docs/gen-ai/gen-ai-security.md#run-guardrail-internal-span)**
+> **[Semantic Convention](../../docs/gen-ai/gen-ai-events.md#event-gen_aiguardrailsecurityfinding)**
 
 ## Required
 
 | Attribute | Supporting Libraries |
 | --- | --- |
+| gen_ai.guardrail.security.policy.id | [openai] |
+| gen_ai.guardrail.security.risk.category | [openai] |
 | gen_ai.guardrail.target.type | [openai] |
-| gen_ai.guardrail.verdict.type | [openai] |
-| gen_ai.operation.name | [openai] |
 
 ## Conditionally Required
 
 | Attribute | Supporting Libraries |
 | --- | --- |
-| gen_ai.conversation.id | [openai] |
-| gen_ai.guardrail.action.type | [openai] |
-| gen_ai.guardrail.security.content.input.hash | [openai] |
-| gen_ai.guardrail.security.content.modified | [openai] |
 | gen_ai.guardrail.security.external_finding_id | [openai] |
-| gen_ai.guardrail.security.policy.id | [openai] |
 | gen_ai.guardrail.target.id | [openai] |
 | gen_ai.guardrail.target.subtype | [openai] |
-| gen_ai.guardrail.verdict.reason | [openai] |
 
 ## Recommended
 
 | Attribute | Supporting Libraries |
 | --- | --- |
+| gen_ai.guardrail.action.type | [openai] |
 | gen_ai.guardrail.component.name | [openai] |
 | gen_ai.guardrail.security.policy.name | [openai] |
 | gen_ai.guardrail.security.policy.rule.id | [openai] |
 | gen_ai.guardrail.security.policy.version | [openai] |
-| gen_ai.guardrail.security.risk.category | [openai] |
 | gen_ai.guardrail.security.risk.score | [openai] |
 | gen_ai.guardrail.verdict.code | [openai] |
+| gen_ai.guardrail.verdict.reason | [openai] |
+| gen_ai.guardrail.verdict.type | [openai] |
 | gen_ai.provider.name | [openai] |
-
-## Opt-In
-
-| Attribute | Supporting Libraries |
-| --- | --- |
-| gen_ai.guardrail.security.content.input.value | (none) |
-| gen_ai.guardrail.security.content.output.value | (none) |
 
 [openai]: ../scenarios/openai/scenario.py

@@ -475,15 +475,15 @@ attributes:
         ]
 
     stability: development
-  - key: gen_ai.security.guardrail.name
+  - key: gen_ai.guardrail.component.name
     type: string
-    brief: Human-readable name of the security guardrail service or component.
+    brief: Human readable name of the guardrail service or component.
     note: >
-      This identifies the security evaluation service or component, not the
-      policy name. For policy names, use `gen_ai.security.policy.name`.
+      This identifies the guardrail evaluation service or component, not the
+      policy name. For policy names, use `gen_ai.guardrail.security.policy.name`.
     examples: ['Azure Content Safety', 'Bedrock Guardrails', 'Custom PII Filter']
     stability: development
-  - key: gen_ai.security.verdict.type
+  - key: gen_ai.guardrail.verdict.type
     type:
       members:
         - id: allow
@@ -510,17 +510,17 @@ attributes:
           value: "escalate"
           brief: The content or action requires human review, approval, or another escalation workflow.
           stability: development
-    brief: The verdict returned by the security guardrail evaluation.
+    brief: The verdict returned by the guardrail evaluation.
     note: >
       A verdict describes what the guardrail evaluation recommends or reports.
       It is not necessarily the action that the caller or framework enforces.
       When the actual enforcement action is known, especially if it differs from
-      the verdict, use `gen_ai.security.action.type`.
+      the verdict, use `gen_ai.guardrail.action.type`.
     examples: ['allow', 'deny', 'modify', 'warn', 'escalate']
     stability: development
-  - key: gen_ai.security.verdict.reason
+  - key: gen_ai.guardrail.verdict.reason
     type: string
-    brief: Human-readable explanation for the security verdict.
+    brief: Human-readable explanation for the guardrail verdict.
     note: >
       The value SHOULD be low-cardinality and MUST NOT contain sensitive user
       content or other high-risk data.
@@ -529,12 +529,12 @@ attributes:
       - 'Prompt injection attempt detected'
       - 'Action exceeds agent permission scope'
     stability: development
-  - key: gen_ai.security.verdict.code
+  - key: gen_ai.guardrail.verdict.code
     type: string
-    brief: Provider-specific code for the security verdict.
+    brief: Provider-specific code for the guardrail verdict.
     examples: ['112', '403', 'AACS-PII', 'MODEL_ARMOR_SAFETY']
     stability: development
-  - key: gen_ai.security.action.type
+  - key: gen_ai.guardrail.action.type
     type:
       members:
         - id: allow
@@ -564,7 +564,7 @@ attributes:
       `warn` verdict while the caller chooses to `block` the operation.
     examples: ['allow', 'block', 'modify', 'escalate']
     stability: development
-  - key: gen_ai.security.target.type
+  - key: gen_ai.guardrail.target.type
     type:
       members:
         - id: input
@@ -581,7 +581,7 @@ attributes:
       be used. Otherwise, a custom value MAY be used.
     examples: ['input', 'output']
     stability: development
-  - key: gen_ai.security.target.subtype
+  - key: gen_ai.guardrail.target.subtype
     type:
       members:
         - id: llm
@@ -614,15 +614,15 @@ attributes:
           stability: development
     brief: The subtype of content or action the guardrail is applied to.
     note: >
-      This attribute refines `gen_ai.security.target.type`. For example,
-      `gen_ai.security.target.type=input` and
-      `gen_ai.security.target.subtype=tool_call` identifies tool call
-      arguments or invocation requests, while `gen_ai.security.target.type=output`
-      and `gen_ai.security.target.subtype=tool_call` identifies tool call
+      This attribute refines `gen_ai.guardrail.target.type`. For example,
+      `gen_ai.guardrail.target.type=input` and
+      `gen_ai.guardrail.target.subtype=tool_call` identifies tool call
+      arguments or invocation requests, while `gen_ai.guardrail.target.type=output`
+      and `gen_ai.guardrail.target.subtype=tool_call` identifies tool call
       results or responses.
     examples: ['llm', 'tool_call', 'tool_definition', 'retrieval', 'memory']
     stability: development
-  - key: gen_ai.security.target.id
+  - key: gen_ai.guardrail.target.id
     type: string
     brief: Identifier of the specific target the guardrail is applied to.
     note: >
@@ -630,12 +630,12 @@ attributes:
       identifier, or message identifier, if applicable.
     examples: ['call_xyz789', 'msg_abc123', 'mem_abc456']
     stability: development
-  - key: gen_ai.security.risk.finding
+  - key: gen_ai.guardrail.security.risk.category
     type: string
-    brief: The security risk finding detected.
+    brief: The security risk category detected.
     note: |
       This attribute is free-form to accommodate provider-specific,
-      organization-specific, and emerging risk finding types.
+      organization-specific, and emerging risk categories.
 
       Suggested values aligned with OWASP LLM Top 10 2025 include:
 
@@ -658,7 +658,7 @@ attributes:
       - 'jailbreak'
       - 'custom:financial_advice_violation'
     stability: development
-  - key: gen_ai.security.risk.score
+  - key: gen_ai.guardrail.security.risk.score
     type: double
     brief: Numeric risk or confidence score.
     note: >
@@ -667,31 +667,31 @@ attributes:
       scale when reporting provider-specific scores that are not normalized.
     examples: [0.85, 0.95, 0.42]
     stability: development
-  - key: gen_ai.security.policy.id
+  - key: gen_ai.guardrail.security.policy.id
     type: string
     brief: Identifier of the policy that produced the verdict.
     examples: ['policy_pii_v2', 'deny-topic-financial-advice', 'org-compliance-001']
     stability: development
-  - key: gen_ai.security.policy.name
+  - key: gen_ai.guardrail.security.policy.name
     type: string
     brief: Human-readable name of the policy that produced the verdict.
     examples: ['PII Protection Policy', 'Financial Advice Restriction']
     stability: development
-  - key: gen_ai.security.policy.version
+  - key: gen_ai.guardrail.security.policy.version
     type: string
     brief: Version of the policy that produced the verdict.
     examples: ['1.0', '2024-05-01']
     stability: development
-  - key: gen_ai.security.policy.rule.id
+  - key: gen_ai.guardrail.security.policy.rule.id
     type: string
     brief: Identifier of the policy rule, section, or control that produced the verdict.
     note: >
-      Use this when `gen_ai.security.policy.id` identifies a broader policy and
+      Use this when `gen_ai.guardrail.security.policy.id` identifies a broader policy and
       the guardrail reports a more specific rule, section, control, or detector
       within that policy.
     examples: ['rule-pii-email', 'section-4.2', 'detector-jailbreak']
     stability: development
-  - key: gen_ai.security.content.input.value
+  - key: gen_ai.guardrail.security.content.input.value
     type: any
     brief: The input content that was evaluated by the guardrail.
     annotations:
@@ -704,11 +704,11 @@ attributes:
       > opt-in configuration only.
 
       This attribute MAY be truncated. For correlation without full content,
-      consider `gen_ai.security.content.input.hash`.
+      consider `gen_ai.guardrail.security.content.input.hash`.
     examples:
       - 'Send an email to customer@example.com'
     stability: development
-  - key: gen_ai.security.content.output.value
+  - key: gen_ai.guardrail.security.content.output.value
     type: any
     brief: The output content after guardrail processing, if modified.
     annotations:
@@ -724,7 +724,7 @@ attributes:
     examples:
       - 'Send an email to [REDACTED]'
     stability: development
-  - key: gen_ai.security.content.input.hash
+  - key: gen_ai.guardrail.security.content.input.hash
     type: string
     brief: Hash of the input content for forensic correlation.
     note: |
@@ -741,17 +741,17 @@ attributes:
       attack risk.
     examples: ['sha256:a3f2b8c9...', 'hmac-sha256:b7e4c2a1...']
     stability: development
-  - key: gen_ai.security.content.modified
+  - key: gen_ai.guardrail.security.content.modified
     type: boolean
     brief: Whether guardrail processing actually changed the content.
     note: >
       This describes the observed content change, not merely that
-      `gen_ai.security.verdict.type` or `gen_ai.security.action.type` was
+      `gen_ai.guardrail.verdict.type` or `gen_ai.guardrail.action.type` was
       `modify`. For example, a guardrail can run in modify mode but leave the
       content unchanged.
     examples: [true, false]
     stability: development
-  - key: gen_ai.security.external_finding_id
+  - key: gen_ai.guardrail.security.external_finding_id
     type: string
     brief: External correlation identifier for a security finding.
     note: |
@@ -816,7 +816,7 @@ attributes:
           stability: development
         - id: run_guardrail
           value: "run_guardrail"
-          brief: 'Run a security guardrail for content or an action'
+          brief: 'Run a guardrail for content or an action'
           stability: development
         - id: invoke_workflow
           value: "invoke_workflow"

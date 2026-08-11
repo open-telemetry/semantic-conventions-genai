@@ -54,7 +54,7 @@ SPAN_TYPE_ORDER = [
 EVENT_TYPE_ORDER = [
     "gen_ai.client.inference.operation.details",
     "gen_ai.evaluation.result",
-    "gen_ai.security.finding",
+    "gen_ai.guardrail.security.finding",
 ]
 
 # Display order for metric types in reports.

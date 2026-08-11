@@ -90,7 +90,7 @@ SEMCONV_DOC_LINKS: dict[str, str] = {
     "gen_ai.evaluation.result": "../../docs/gen-ai/gen-ai-events.md#event-gen_aievaluationresult",
     "gen_ai.invoke_agent.inference_calls": "../../docs/gen-ai/gen-ai-metrics.md#metric-gen_aiinvoke_agentinference_calls",
     "gen_ai.invoke_agent.tool_calls": "../../docs/gen-ai/gen-ai-metrics.md#metric-gen_aiinvoke_agenttool_calls",
-    "gen_ai.security.finding": "../../docs/gen-ai/gen-ai-events.md#event-gen_aisecurityfinding",
+    "gen_ai.guardrail.security.finding": "../../docs/gen-ai/gen-ai-events.md#event-gen_aiguardrailsecurityfinding",
 }
 
 

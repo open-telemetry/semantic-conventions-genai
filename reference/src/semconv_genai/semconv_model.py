@@ -180,8 +180,8 @@ SPAN_SPECS: dict[str, AttributeSpec] = {
         op_names=frozenset({"run_guardrail"}),
         discriminator_attrs=frozenset(
             {
-                "gen_ai.security.guardrail.name",
-                "gen_ai.security.verdict.type",
+                "gen_ai.guardrail.component.name",
+                "gen_ai.guardrail.verdict.type",
             }
         ),
     ),
@@ -192,8 +192,8 @@ SPAN_SPECS: dict[str, AttributeSpec] = {
         op_names=frozenset({"run_guardrail"}),
         discriminator_attrs=frozenset(
             {
-                "gen_ai.security.guardrail.name",
-                "gen_ai.security.verdict.type",
+                "gen_ai.guardrail.component.name",
+                "gen_ai.guardrail.verdict.type",
             }
         ),
     ),
@@ -245,9 +245,9 @@ EVENT_SPECS: dict[str, AttributeSpec] = {
         "event.gen_ai.evaluation.result",
         label="Evaluation Result",
     ),
-    "gen_ai.security.finding": _from_yaml(
+    "gen_ai.guardrail.security.finding": _from_yaml(
         _groups,
-        "event.gen_ai.security.finding",
+        "event.gen_ai.guardrail.security.finding",
         label="Security Finding",
     ),
 }

@@ -19,61 +19,61 @@
 | <a id="gen-ai-evaluation-name" href="#gen-ai-evaluation-name">`gen_ai.evaluation.name`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The name of the evaluation metric used for the GenAI response. | `Relevance`; `IntentResolution` |
 | <a id="gen-ai-evaluation-score-label" href="#gen-ai-evaluation-score-label">`gen_ai.evaluation.score.label`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | Human readable label for evaluation. [4] | `relevant`; `not_relevant`; `correct`; `incorrect`; `pass`; `fail` |
 | <a id="gen-ai-evaluation-score-value" href="#gen-ai-evaluation-score-value">`gen_ai.evaluation.score.value`</a> | ![Development](https://img.shields.io/badge/-development-blue) | double | The evaluation score returned by the evaluator. | `4.0` |
-| <a id="gen-ai-input-messages" href="#gen-ai-input-messages">`gen_ai.input.messages`</a> | ![Development](https://img.shields.io/badge/-development-blue) | any | The chat history provided to the model as an input. [5] | [<br>&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;"role": "user",<br>&nbsp;&nbsp;&nbsp;&nbsp;"parts": [<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"type": "text",<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"content": "Weather in Paris?"<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>&nbsp;&nbsp;&nbsp;&nbsp;]<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;"role": "assistant",<br>&nbsp;&nbsp;&nbsp;&nbsp;"parts": [<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"type": "tool_call",<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"id": "call_VSPygqKTWdrhaFErNvMV18Yl",<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"name": "get_weather",<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"arguments": {<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"location": "Paris"<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>&nbsp;&nbsp;&nbsp;&nbsp;]<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;"role": "tool",<br>&nbsp;&nbsp;&nbsp;&nbsp;"parts": [<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"type": "tool_call_response",<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"id": "call_VSPygqKTWdrhaFErNvMV18Yl",<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"response": "rainy, 57°F"<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>&nbsp;&nbsp;&nbsp;&nbsp;]<br>&nbsp;&nbsp;}<br>] |
-| <a id="gen-ai-memory-query-text" href="#gen-ai-memory-query-text">`gen_ai.memory.query.text`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The search query used to retrieve memories. [6] | `user dietary preferences`; `past flight bookings` |
-| <a id="gen-ai-memory-record-count" href="#gen-ai-memory-record-count">`gen_ai.memory.record.count`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The number of memory records relevant to the operation. [7] | `3` |
+| <a id="gen-ai-guardrail-action-type" href="#gen-ai-guardrail-action-type">`gen_ai.guardrail.action.type`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The actual enforcement action taken by the caller or framework. [5] | `allow`; `block`; `modify`; `escalate` |
+| <a id="gen-ai-guardrail-component-name" href="#gen-ai-guardrail-component-name">`gen_ai.guardrail.component.name`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | Human readable name of the guardrail service or component. [6] | `Azure Content Safety`; `Bedrock Guardrails`; `Custom PII Filter` |
+| <a id="gen-ai-guardrail-security-content-input-hash" href="#gen-ai-guardrail-security-content-input-hash">`gen_ai.guardrail.security.content.input.hash`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | Hash of the input content for forensic correlation. [7] | `sha256:a3f2b8c9...`; `hmac-sha256:b7e4c2a1...` |
+| <a id="gen-ai-guardrail-security-content-input-value" href="#gen-ai-guardrail-security-content-input-value">`gen_ai.guardrail.security.content.input.value`</a> | ![Development](https://img.shields.io/badge/-development-blue) | any | The input content that was evaluated by the guardrail. [8] | `Send an email to customer@example.com` |
+| <a id="gen-ai-guardrail-security-content-modified" href="#gen-ai-guardrail-security-content-modified">`gen_ai.guardrail.security.content.modified`</a> | ![Development](https://img.shields.io/badge/-development-blue) | boolean | Whether guardrail processing actually changed the content. [9] | `true`; `false` |
+| <a id="gen-ai-guardrail-security-content-output-value" href="#gen-ai-guardrail-security-content-output-value">`gen_ai.guardrail.security.content.output.value`</a> | ![Development](https://img.shields.io/badge/-development-blue) | any | The output content after guardrail processing, if modified. [10] | `Send an email to [REDACTED]` |
+| <a id="gen-ai-guardrail-security-external-finding-id" href="#gen-ai-guardrail-security-external-finding-id">`gen_ai.guardrail.security.external_finding_id`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | External correlation identifier for a security finding. [11] | `finding_abc123`; `incident-2024-001`; `sec-finding-xyz` |
+| <a id="gen-ai-guardrail-security-policy-id" href="#gen-ai-guardrail-security-policy-id">`gen_ai.guardrail.security.policy.id`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | Identifier of the policy that produced the verdict. | `policy_pii_v2`; `deny-topic-financial-advice`; `org-compliance-001` |
+| <a id="gen-ai-guardrail-security-policy-name" href="#gen-ai-guardrail-security-policy-name">`gen_ai.guardrail.security.policy.name`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | Human-readable name of the policy that produced the verdict. | `PII Protection Policy`; `Financial Advice Restriction` |
+| <a id="gen-ai-guardrail-security-policy-rule-id" href="#gen-ai-guardrail-security-policy-rule-id">`gen_ai.guardrail.security.policy.rule.id`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | Identifier of the policy rule, section, or control that produced the verdict. [12] | `rule-pii-email`; `section-4.2`; `detector-jailbreak` |
+| <a id="gen-ai-guardrail-security-policy-version" href="#gen-ai-guardrail-security-policy-version">`gen_ai.guardrail.security.policy.version`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | Version of the policy that produced the verdict. | `1.0`; `2024-05-01` |
+| <a id="gen-ai-guardrail-security-risk-category" href="#gen-ai-guardrail-security-risk-category">`gen_ai.guardrail.security.risk.category`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The security risk category detected. [13] | `prompt_injection`; `sensitive_info_disclosure`; `jailbreak`; `custom:financial_advice_violation` |
+| <a id="gen-ai-guardrail-security-risk-score" href="#gen-ai-guardrail-security-risk-score">`gen_ai.guardrail.security.risk.score`</a> | ![Development](https://img.shields.io/badge/-development-blue) | double | Numeric risk or confidence score. [14] | `0.85`; `0.95`; `0.42` |
+| <a id="gen-ai-guardrail-target-id" href="#gen-ai-guardrail-target-id">`gen_ai.guardrail.target.id`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | Identifier of the specific target the guardrail is applied to. [15] | `call_xyz789`; `msg_abc123`; `mem_abc456` |
+| <a id="gen-ai-guardrail-target-subtype" href="#gen-ai-guardrail-target-subtype">`gen_ai.guardrail.target.subtype`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The subtype of content or action the guardrail is applied to. [16] | `llm`; `tool_call`; `tool_definition`; `retrieval`; `memory` |
+| <a id="gen-ai-guardrail-target-type" href="#gen-ai-guardrail-target-type">`gen_ai.guardrail.target.type`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The direction of the content or action the guardrail is applied to. [17] | `input`; `output` |
+| <a id="gen-ai-guardrail-verdict-code" href="#gen-ai-guardrail-verdict-code">`gen_ai.guardrail.verdict.code`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | Provider-specific code for the guardrail verdict. | `112`; `403`; `AACS-PII`; `MODEL_ARMOR_SAFETY` |
+| <a id="gen-ai-guardrail-verdict-reason" href="#gen-ai-guardrail-verdict-reason">`gen_ai.guardrail.verdict.reason`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | Human-readable explanation for the guardrail verdict. [18] | `PII detected in output`; `Prompt injection attempt detected`; `Action exceeds agent permission scope` |
+| <a id="gen-ai-guardrail-verdict-type" href="#gen-ai-guardrail-verdict-type">`gen_ai.guardrail.verdict.type`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The verdict returned by the guardrail evaluation. [19] | `allow`; `deny`; `modify`; `warn`; `escalate` |
+| <a id="gen-ai-input-messages" href="#gen-ai-input-messages">`gen_ai.input.messages`</a> | ![Development](https://img.shields.io/badge/-development-blue) | any | The chat history provided to the model as an input. [20] | [<br>&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;"role": "user",<br>&nbsp;&nbsp;&nbsp;&nbsp;"parts": [<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"type": "text",<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"content": "Weather in Paris?"<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>&nbsp;&nbsp;&nbsp;&nbsp;]<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;"role": "assistant",<br>&nbsp;&nbsp;&nbsp;&nbsp;"parts": [<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"type": "tool_call",<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"id": "call_VSPygqKTWdrhaFErNvMV18Yl",<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"name": "get_weather",<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"arguments": {<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"location": "Paris"<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>&nbsp;&nbsp;&nbsp;&nbsp;]<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;"role": "tool",<br>&nbsp;&nbsp;&nbsp;&nbsp;"parts": [<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"type": "tool_call_response",<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"id": "call_VSPygqKTWdrhaFErNvMV18Yl",<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"response": "rainy, 57°F"<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>&nbsp;&nbsp;&nbsp;&nbsp;]<br>&nbsp;&nbsp;}<br>] |
+| <a id="gen-ai-memory-query-text" href="#gen-ai-memory-query-text">`gen_ai.memory.query.text`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The search query used to retrieve memories. [21] | `user dietary preferences`; `past flight bookings` |
+| <a id="gen-ai-memory-record-count" href="#gen-ai-memory-record-count">`gen_ai.memory.record.count`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The number of memory records relevant to the operation. [22] | `3` |
 | <a id="gen-ai-memory-record-id" href="#gen-ai-memory-record-id">`gen_ai.memory.record.id`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The unique identifier of the memory record. | `mem_5j66UpCpwteGg4YSxUnt7lPY` |
-| <a id="gen-ai-memory-records" href="#gen-ai-memory-records">`gen_ai.memory.records`</a> | ![Development](https://img.shields.io/badge/-development-blue) | any | The memory records stored or retrieved in a memory operation. [8] | [<br>&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;"content": "User prefers dark mode",<br>&nbsp;&nbsp;&nbsp;&nbsp;"id": "mem_123",<br>&nbsp;&nbsp;&nbsp;&nbsp;"score": 0.95<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;"content": {<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"preference": "vegetarian meals",<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"confidence": 0.9<br>&nbsp;&nbsp;&nbsp;&nbsp;},<br>&nbsp;&nbsp;&nbsp;&nbsp;"metadata": {<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"source": "profile"<br>&nbsp;&nbsp;&nbsp;&nbsp;}<br>&nbsp;&nbsp;}<br>] |
-| <a id="gen-ai-memory-store-id" href="#gen-ai-memory-store-id">`gen_ai.memory.store.id`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The unique identifier of the memory store. [9] | `ms_abc123`; `user-preferences-store` |
-| <a id="gen-ai-operation-name" href="#gen-ai-operation-name">`gen_ai.operation.name`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The name of the operation being performed. [10] | `chat`; `generate_content`; `text_completion` |
-| <a id="gen-ai-output-messages" href="#gen-ai-output-messages">`gen_ai.output.messages`</a> | ![Development](https://img.shields.io/badge/-development-blue) | any | Messages returned by the model where each message represents a specific model response (choice, candidate). [11] | [<br>&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;"role": "assistant",<br>&nbsp;&nbsp;&nbsp;&nbsp;"parts": [<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"type": "text",<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"content": "The weather in Paris is currently rainy with a temperature of 57°F."<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>&nbsp;&nbsp;&nbsp;&nbsp;],<br>&nbsp;&nbsp;&nbsp;&nbsp;"finish_reason": "stop"<br>&nbsp;&nbsp;}<br>] |
-| <a id="gen-ai-output-type" href="#gen-ai-output-type">`gen_ai.output.type`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | Represents the content type requested by the client. [12] | `text`; `json`; `image` |
+| <a id="gen-ai-memory-records" href="#gen-ai-memory-records">`gen_ai.memory.records`</a> | ![Development](https://img.shields.io/badge/-development-blue) | any | The memory records stored or retrieved in a memory operation. [23] | [<br>&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;"content": "User prefers dark mode",<br>&nbsp;&nbsp;&nbsp;&nbsp;"id": "mem_123",<br>&nbsp;&nbsp;&nbsp;&nbsp;"score": 0.95<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;"content": {<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"preference": "vegetarian meals",<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"confidence": 0.9<br>&nbsp;&nbsp;&nbsp;&nbsp;},<br>&nbsp;&nbsp;&nbsp;&nbsp;"metadata": {<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"source": "profile"<br>&nbsp;&nbsp;&nbsp;&nbsp;}<br>&nbsp;&nbsp;}<br>] |
+| <a id="gen-ai-memory-store-id" href="#gen-ai-memory-store-id">`gen_ai.memory.store.id`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The unique identifier of the memory store. [24] | `ms_abc123`; `user-preferences-store` |
+| <a id="gen-ai-operation-name" href="#gen-ai-operation-name">`gen_ai.operation.name`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The name of the operation being performed. [25] | `chat`; `generate_content`; `text_completion` |
+| <a id="gen-ai-output-messages" href="#gen-ai-output-messages">`gen_ai.output.messages`</a> | ![Development](https://img.shields.io/badge/-development-blue) | any | Messages returned by the model where each message represents a specific model response (choice, candidate). [26] | [<br>&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;"role": "assistant",<br>&nbsp;&nbsp;&nbsp;&nbsp;"parts": [<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"type": "text",<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"content": "The weather in Paris is currently rainy with a temperature of 57°F."<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>&nbsp;&nbsp;&nbsp;&nbsp;],<br>&nbsp;&nbsp;&nbsp;&nbsp;"finish_reason": "stop"<br>&nbsp;&nbsp;}<br>] |
+| <a id="gen-ai-output-type" href="#gen-ai-output-type">`gen_ai.output.type`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | Represents the content type requested by the client. [27] | `text`; `json`; `image` |
 | <a id="gen-ai-prompt-name" href="#gen-ai-prompt-name">`gen_ai.prompt.name`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The name of the prompt that uniquely identifies it. | `analyze-code` |
-| <a id="gen-ai-prompt-variable" href="#gen-ai-prompt-variable">`gen_ai.prompt.variable`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The variables supplied to the prompt template, the `<key>` being the variable name, the value being the variable value. [13] | `Alice`; `French` |
-| <a id="gen-ai-prompt-version" href="#gen-ai-prompt-version">`gen_ai.prompt.version`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The version of the prompt template used. [14] | `1.0.0`; `2025-05-01`; `prod`; `v2` |
-| <a id="gen-ai-provider-name" href="#gen-ai-provider-name">`gen_ai.provider.name`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The Generative AI provider as identified by the client or server instrumentation. [15] | `openai`; `gcp.gen_ai`; `gcp.vertex_ai` |
+| <a id="gen-ai-prompt-variable" href="#gen-ai-prompt-variable">`gen_ai.prompt.variable`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The variables supplied to the prompt template, the `<key>` being the variable name, the value being the variable value. [28] | `Alice`; `French` |
+| <a id="gen-ai-prompt-version" href="#gen-ai-prompt-version">`gen_ai.prompt.version`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The version of the prompt template used. [29] | `1.0.0`; `2025-05-01`; `prod`; `v2` |
+| <a id="gen-ai-provider-name" href="#gen-ai-provider-name">`gen_ai.provider.name`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The Generative AI provider as identified by the client or server instrumentation. [30] | `openai`; `gcp.gen_ai`; `gcp.vertex_ai` |
 | <a id="gen-ai-request-choice-count" href="#gen-ai-request-choice-count">`gen_ai.request.choice.count`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The target number of candidate completions to return. | `3` |
-| <a id="gen-ai-request-encoding-formats" href="#gen-ai-request-encoding-formats">`gen_ai.request.encoding_formats`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string[] | The encoding formats requested in an embeddings operation, if specified. [16] | `["base64"]`; `["float", "binary"]` |
+| <a id="gen-ai-request-encoding-formats" href="#gen-ai-request-encoding-formats">`gen_ai.request.encoding_formats`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string[] | The encoding formats requested in an embeddings operation, if specified. [31] | `["base64"]`; `["float", "binary"]` |
 | <a id="gen-ai-request-frequency-penalty" href="#gen-ai-request-frequency-penalty">`gen_ai.request.frequency_penalty`</a> | ![Development](https://img.shields.io/badge/-development-blue) | double | The frequency penalty setting for the GenAI request. | `0.1` |
 | <a id="gen-ai-request-max-tokens" href="#gen-ai-request-max-tokens">`gen_ai.request.max_tokens`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The maximum number of tokens the model generates for a request. | `100` |
 | <a id="gen-ai-request-model" href="#gen-ai-request-model">`gen_ai.request.model`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The name of the GenAI model a request is being made to. | `gpt-4` |
 | <a id="gen-ai-request-presence-penalty" href="#gen-ai-request-presence-penalty">`gen_ai.request.presence_penalty`</a> | ![Development](https://img.shields.io/badge/-development-blue) | double | The presence penalty setting for the GenAI request. | `0.1` |
-| <a id="gen-ai-request-previous-response-id" href="#gen-ai-request-previous-response-id">`gen_ai.request.previous_response.id`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The unique identifier of a previous response or interaction used to provide context for the current operation. [17] | `resp_0123456789aBCdef`; `interaction-123` |
-| <a id="gen-ai-request-reasoning-level" href="#gen-ai-request-reasoning-level">`gen_ai.request.reasoning.level`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The reasoning or thinking effort level requested for a GenAI model. [18] | `low`; `medium`; `high` |
+| <a id="gen-ai-request-previous-response-id" href="#gen-ai-request-previous-response-id">`gen_ai.request.previous_response.id`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The unique identifier of a previous response or interaction used to provide context for the current operation. [32] | `resp_0123456789aBCdef`; `interaction-123` |
+| <a id="gen-ai-request-reasoning-level" href="#gen-ai-request-reasoning-level">`gen_ai.request.reasoning.level`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The reasoning or thinking effort level requested for a GenAI model. [33] | `low`; `medium`; `high` |
 | <a id="gen-ai-request-seed" href="#gen-ai-request-seed">`gen_ai.request.seed`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | Requests with same seed value more likely to return same result. | `100` |
 | <a id="gen-ai-request-stop-sequences" href="#gen-ai-request-stop-sequences">`gen_ai.request.stop_sequences`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string[] | List of sequences that the model will use to stop generating further tokens. | `["forest", "lived"]` |
 | <a id="gen-ai-request-stream" href="#gen-ai-request-stream">`gen_ai.request.stream`</a> | ![Development](https://img.shields.io/badge/-development-blue) | boolean | Indicates whether the GenAI request was made in streaming mode. | |
-| <a id="gen-ai-request-stream-cursor" href="#gen-ai-request-stream-cursor">`gen_ai.request.stream_cursor`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The cursor identifying the last streamed event already received, used to resume a streamed response from that position. [19] | `42`; `event-abc123` |
+| <a id="gen-ai-request-stream-cursor" href="#gen-ai-request-stream-cursor">`gen_ai.request.stream_cursor`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The cursor identifying the last streamed event already received, used to resume a streamed response from that position. [34] | `42`; `event-abc123` |
 | <a id="gen-ai-request-temperature" href="#gen-ai-request-temperature">`gen_ai.request.temperature`</a> | ![Development](https://img.shields.io/badge/-development-blue) | double | The temperature setting for the GenAI request. | `0.0` |
-| <a id="gen-ai-request-top-k" href="#gen-ai-request-top-k">`gen_ai.request.top_k`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The top-K sampling setting for the GenAI request: restricts token generation at each step to the K most likely next tokens. [20] | `40` |
+| <a id="gen-ai-request-top-k" href="#gen-ai-request-top-k">`gen_ai.request.top_k`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The top-K sampling setting for the GenAI request: restricts token generation at each step to the K most likely next tokens. [35] | `40` |
 | <a id="gen-ai-request-top-p" href="#gen-ai-request-top-p">`gen_ai.request.top_p`</a> | ![Development](https://img.shields.io/badge/-development-blue) | double | The top_p sampling setting for the GenAI request. | `1.0` |
 | <a id="gen-ai-response-finish-reasons" href="#gen-ai-response-finish-reasons">`gen_ai.response.finish_reasons`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string[] | Array of reasons the model stopped generating tokens, corresponding to each generation received. | `["stop"]`; `["stop", "length"]` |
 | <a id="gen-ai-response-id" href="#gen-ai-response-id">`gen_ai.response.id`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The unique identifier for the completion. | `chatcmpl-123` |
 | <a id="gen-ai-response-model" href="#gen-ai-response-model">`gen_ai.response.model`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The name of the model that generated the response. | `gpt-4-0613` |
-| <a id="gen-ai-response-status" href="#gen-ai-response-status">`gen_ai.response.status`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The lifecycle status of a generated response, as reported by the provider when the response is fetched or polled. [21] | `completed`; `in_progress` |
+| <a id="gen-ai-response-status" href="#gen-ai-response-status">`gen_ai.response.status`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The lifecycle status of a generated response, as reported by the provider when the response is fetched or polled. [36] | `completed`; `in_progress` |
 | <a id="gen-ai-response-time-to-first-chunk" href="#gen-ai-response-time-to-first-chunk">`gen_ai.response.time_to_first_chunk`</a> | ![Development](https://img.shields.io/badge/-development-blue) | double | Time to first chunk in a streaming response, measured from request issuance, in seconds. The value is measured from when the client issues the generation request to when the first chunk is received in the response stream. | `0.5`; `1.2` |
-| <a id="gen-ai-retrieval-documents" href="#gen-ai-retrieval-documents">`gen_ai.retrieval.documents`</a> | ![Development](https://img.shields.io/badge/-development-blue) | any | The documents retrieved. [22] | [<br>&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;"id": "doc_123",<br>&nbsp;&nbsp;&nbsp;&nbsp;"score": 0.95<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;"id": "doc_456",<br>&nbsp;&nbsp;&nbsp;&nbsp;"score": 0.87<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;"id": "doc_789",<br>&nbsp;&nbsp;&nbsp;&nbsp;"score": 0.82<br>&nbsp;&nbsp;}<br>] |
-| <a id="gen-ai-retrieval-query-text" href="#gen-ai-retrieval-query-text">`gen_ai.retrieval.query.text`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The query text used for retrieval. [23] | `What is the capital of France?`; `weather in Paris` |
+| <a id="gen-ai-retrieval-documents" href="#gen-ai-retrieval-documents">`gen_ai.retrieval.documents`</a> | ![Development](https://img.shields.io/badge/-development-blue) | any | The documents retrieved. [37] | [<br>&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;"id": "doc_123",<br>&nbsp;&nbsp;&nbsp;&nbsp;"score": 0.95<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;"id": "doc_456",<br>&nbsp;&nbsp;&nbsp;&nbsp;"score": 0.87<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;"id": "doc_789",<br>&nbsp;&nbsp;&nbsp;&nbsp;"score": 0.82<br>&nbsp;&nbsp;}<br>] |
+| <a id="gen-ai-retrieval-query-text" href="#gen-ai-retrieval-query-text">`gen_ai.retrieval.query.text`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The query text used for retrieval. [38] | `What is the capital of France?`; `weather in Paris` |
 | <a id="gen-ai-retrieval-top-k" href="#gen-ai-retrieval-top-k">`gen_ai.retrieval.top_k`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The maximum number of documents the retriever was asked to return for the query (also known as `k`, `limit`, or `max_num_results`). | `5` |
-| <a id="gen-ai-security-action-type" href="#gen-ai-security-action-type">`gen_ai.security.action.type`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The actual enforcement action taken by the caller or framework. [24] | `allow`; `block`; `modify`; `escalate` |
-| <a id="gen-ai-security-content-input-hash" href="#gen-ai-security-content-input-hash">`gen_ai.security.content.input.hash`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | Hash of the input content for forensic correlation. [25] | `sha256:a3f2b8c9...`; `hmac-sha256:b7e4c2a1...` |
-| <a id="gen-ai-security-content-input-value" href="#gen-ai-security-content-input-value">`gen_ai.security.content.input.value`</a> | ![Development](https://img.shields.io/badge/-development-blue) | any | The input content that was evaluated by the guardrail. [26] | `Send an email to customer@example.com` |
-| <a id="gen-ai-security-content-modified" href="#gen-ai-security-content-modified">`gen_ai.security.content.modified`</a> | ![Development](https://img.shields.io/badge/-development-blue) | boolean | Whether guardrail processing actually changed the content. [27] | `true`; `false` |
-| <a id="gen-ai-security-content-output-value" href="#gen-ai-security-content-output-value">`gen_ai.security.content.output.value`</a> | ![Development](https://img.shields.io/badge/-development-blue) | any | The output content after guardrail processing, if modified. [28] | `Send an email to [REDACTED]` |
-| <a id="gen-ai-security-external-finding-id" href="#gen-ai-security-external-finding-id">`gen_ai.security.external_finding_id`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | External correlation identifier for a security finding. [29] | `finding_abc123`; `incident-2024-001`; `sec-finding-xyz` |
-| <a id="gen-ai-security-guardrail-name" href="#gen-ai-security-guardrail-name">`gen_ai.security.guardrail.name`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | Human-readable name of the security guardrail service or component. [30] | `Azure Content Safety`; `Bedrock Guardrails`; `Custom PII Filter` |
-| <a id="gen-ai-security-policy-id" href="#gen-ai-security-policy-id">`gen_ai.security.policy.id`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | Identifier of the policy that produced the verdict. | `policy_pii_v2`; `deny-topic-financial-advice`; `org-compliance-001` |
-| <a id="gen-ai-security-policy-name" href="#gen-ai-security-policy-name">`gen_ai.security.policy.name`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | Human-readable name of the policy that produced the verdict. | `PII Protection Policy`; `Financial Advice Restriction` |
-| <a id="gen-ai-security-policy-rule-id" href="#gen-ai-security-policy-rule-id">`gen_ai.security.policy.rule.id`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | Identifier of the policy rule, section, or control that produced the verdict. [31] | `rule-pii-email`; `section-4.2`; `detector-jailbreak` |
-| <a id="gen-ai-security-policy-version" href="#gen-ai-security-policy-version">`gen_ai.security.policy.version`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | Version of the policy that produced the verdict. | `1.0`; `2024-05-01` |
-| <a id="gen-ai-security-risk-finding" href="#gen-ai-security-risk-finding">`gen_ai.security.risk.finding`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The security risk finding detected. [32] | `prompt_injection`; `sensitive_info_disclosure`; `jailbreak`; `custom:financial_advice_violation` |
-| <a id="gen-ai-security-risk-score" href="#gen-ai-security-risk-score">`gen_ai.security.risk.score`</a> | ![Development](https://img.shields.io/badge/-development-blue) | double | Numeric risk or confidence score. [33] | `0.85`; `0.95`; `0.42` |
-| <a id="gen-ai-security-target-id" href="#gen-ai-security-target-id">`gen_ai.security.target.id`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | Identifier of the specific target the guardrail is applied to. [34] | `call_xyz789`; `msg_abc123`; `mem_abc456` |
-| <a id="gen-ai-security-target-subtype" href="#gen-ai-security-target-subtype">`gen_ai.security.target.subtype`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The subtype of content or action the guardrail is applied to. [35] | `llm`; `tool_call`; `tool_definition`; `retrieval`; `memory` |
-| <a id="gen-ai-security-target-type" href="#gen-ai-security-target-type">`gen_ai.security.target.type`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The direction of the content or action the guardrail is applied to. [36] | `input`; `output` |
-| <a id="gen-ai-security-verdict-code" href="#gen-ai-security-verdict-code">`gen_ai.security.verdict.code`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | Provider-specific code for the security verdict. | `112`; `403`; `AACS-PII`; `MODEL_ARMOR_SAFETY` |
-| <a id="gen-ai-security-verdict-reason" href="#gen-ai-security-verdict-reason">`gen_ai.security.verdict.reason`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | Human-readable explanation for the security verdict. [37] | `PII detected in output`; `Prompt injection attempt detected`; `Action exceeds agent permission scope` |
-| <a id="gen-ai-security-verdict-type" href="#gen-ai-security-verdict-type">`gen_ai.security.verdict.type`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The verdict returned by the security guardrail evaluation. [38] | `allow`; `deny`; `modify`; `warn`; `escalate` |
 | <a id="gen-ai-system-instructions" href="#gen-ai-system-instructions">`gen_ai.system_instructions`</a> | ![Development](https://img.shields.io/badge/-development-blue) | any | The system message or instructions provided to the GenAI model separately from the chat history. [39] | [<br>&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;"type": "text",<br>&nbsp;&nbsp;&nbsp;&nbsp;"content": "You are an Agent that greet users, always use greetings tool to respond"<br>&nbsp;&nbsp;}<br>]; [<br>&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;"type": "text",<br>&nbsp;&nbsp;&nbsp;&nbsp;"content": "You are a language translator."<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;"type": "text",<br>&nbsp;&nbsp;&nbsp;&nbsp;"content": "Your mission is to translate text in English to French."<br>&nbsp;&nbsp;}<br>] |
 | <a id="gen-ai-token-type" href="#gen-ai-token-type">`gen_ai.token.type`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The type of token being counted. | `input`; `output` |
 | <a id="gen-ai-tool-call-arguments" href="#gen-ai-tool-call-arguments">`gen_ai.tool.call.arguments`</a> | ![Development](https://img.shields.io/badge/-development-blue) | any | Parameters passed to the tool call. [40] | {<br>&nbsp;&nbsp;&nbsp;&nbsp;"location": "San Francisco?",<br>&nbsp;&nbsp;&nbsp;&nbsp;"date": "2025-10-01"<br>} |
@@ -103,135 +103,11 @@ SHOULD leave it unset otherwise.
 
 **[4] `gen_ai.evaluation.score.label`:** This attribute provides a human-readable interpretation of the evaluation score produced by an evaluator. For example, a score value of 1 could mean "relevant" in one evaluation system and "not relevant" in another, depending on the scoring range and evaluator. The label SHOULD have low cardinality. Possible values depend on the evaluation metric and evaluator used; implementations SHOULD document the possible values.
 
-**[5] `gen_ai.input.messages`:** Messages MUST be provided in the order they were sent to the model.
-Instrumentations MAY provide a way for users to filter or truncate
-input messages.
+**[5] `gen_ai.guardrail.action.type`:** Use this attribute when the guardrail verdict is enforced by the caller or framework and the action is known. For example, a guardrail may return a `warn` verdict while the caller chooses to `block` the operation.
 
-> [!Warning]
-> This attribute is likely to contain sensitive information including user/PII data.
+**[6] `gen_ai.guardrail.component.name`:** This identifies the guardrail evaluation service or component, not the policy name. For policy names, use `gen_ai.guardrail.security.policy.name`.
 
-See [Recording content on attributes](/docs/gen-ai/gen-ai-spans.md#recording-content-on-attributes)
-section for more details.
-
-Instrumentations MUST follow [JSON schema](/model/gen-ai/gen-ai-input-messages.json).
-
-When the attribute is recorded on events, it MUST be recorded in structured form. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
-
-**[6] `gen_ai.memory.query.text`:** Instrumentations SHOULD NOT capture this attribute by default. Capture SHOULD be gated
-by an explicit user opt-in, for example `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT`.
-
-> [!Warning]
-> This attribute may contain sensitive information.
-
-**[7] `gen_ai.memory.record.count`:** For `search_memory` operations, this is the number of memory records returned by the operation. For `create_memory` operations, this is the number of memory records the operation attempted to create. For `update_memory` operations, this is the number of memory records the operation attempted to modify. For `upsert_memory` operations, this is the number of memory records the operation attempted to create or update. For `delete_memory` operations, this is the number of memory records the operation attempted to delete.
-
-**[8] `gen_ai.memory.records`:** Instrumentations SHOULD NOT capture this attribute by default. Capture SHOULD be gated
-by an explicit user opt-in, for example `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT`.
-
-> [!Warning]
-> This attribute may contain sensitive information including user/PII data.
-
-Instrumentations MUST follow [JSON schema](/model/gen-ai/gen-ai-memory-records.json).
-
-When the attribute is recorded on events, it MUST be recorded in structured form. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
-
-**[9] `gen_ai.memory.store.id`:** Semantic conventions for individual components SHOULD document what `gen_ai.memory.store.id` maps to within the implementation.
-
-**[10] `gen_ai.operation.name`:** If one of the predefined values applies, but specific system uses a different name it's RECOMMENDED to document it in the semantic conventions for specific GenAI system and use system-specific name in the instrumentation. If a different name is not documented, instrumentation libraries SHOULD use applicable predefined value.
-
-**[11] `gen_ai.output.messages`:** Each message represents a single output choice/candidate generated by
-the model. Each message corresponds to exactly one generation
-(choice/candidate) and vice versa - one choice cannot be split across
-multiple messages or one message cannot contain parts from multiple choices.
-
-Instrumentations MAY provide a way for users to filter or truncate
-output messages.
-
-> [!Warning]
-> This attribute is likely to contain sensitive information including user/PII data.
-
-See [Recording content on attributes](/docs/gen-ai/gen-ai-spans.md#recording-content-on-attributes)
-section for more details.
-
-Instrumentations MUST follow [JSON schema](/model/gen-ai/gen-ai-output-messages.json).
-
-When the attribute is recorded on events, it MUST be recorded in structured form. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
-
-**[12] `gen_ai.output.type`:** This attribute SHOULD be used when the client requests output of a specific type. The model may return zero or more outputs of this type.
-This attribute specifies the output modality and not the actual output format. For example, if an image is requested, the actual output could be a URL pointing to an image file.
-Additional output format details may be recorded in the future in the `gen_ai.output.{type}.*` attributes.
-
-**[13] `gen_ai.prompt.variable`:** Prompt templates are parameterized with variables that are filled in
-at runtime. This attribute records the variable values passed to the
-template. The attribute name defines the variable name, and the
-attribute value is the variable value serialized as a string.
-
-Examples:
-
-- A variable `user_name` with value `Alice` SHOULD be recorded as
-  the `gen_ai.prompt.variable.user_name` attribute with value `"Alice"`.
-- A variable `language` with value `French` SHOULD be recorded as
-  the `gen_ai.prompt.variable.language` attribute with value `"French"`.
-
-> [!Warning]
-> This attribute may contain sensitive information.
-
-**[14] `gen_ai.prompt.version`:** The version string can follow any versioning scheme chosen by the
-application (e.g., SemVer, date-based, or platform-specific tags).
-When a prompt management system is in use, this SHOULD match the
-version identifier used by that system.
-
-**[15] `gen_ai.provider.name`:** Semantic conventions for individual GenAI operations SHOULD clarify which
-kinds of providers (e.g. inference, embeddings, retrieval, memory, hosted
-agent providers) apply when it is not clear from context.
-
-The attribute SHOULD be set based on the instrumentation's best knowledge
-and may differ from the actual upstream provider. For example, a client SDK
-may be configured against a proxy or hosting platform that transparently
-relays requests to a different provider.
-
-The `gen_ai.provider.name` attribute acts as a discriminator that
-identifies the GenAI telemetry format flavor specific to that provider
-within GenAI semantic conventions.
-It SHOULD be set consistently with provider-specific attributes and signals.
-For example, GenAI spans, metrics, and events related to AWS Bedrock
-should have the `gen_ai.provider.name` set to `aws.bedrock` and include
-applicable `aws.bedrock.*` attributes and are not expected to include
-`openai.*` attributes.
-
-**[16] `gen_ai.request.encoding_formats`:** In some GenAI systems the encoding formats are called embedding types. Also, some GenAI systems only accept a single format per request.
-
-**[17] `gen_ai.request.previous_response.id`:** Instrumentations SHOULD populate this attribute when the request references a previous response or interaction identifier to continue a conversation or pass prior context.
-For example, `previous_response_id` in [OpenAI Responses API](https://developers.openai.com/api/docs/guides/conversation-state#passing-context-from-the-previous-response)
-or `previous_interaction_id` in [Google GenAI Interactions API](https://ai.google.dev/gemini-api/docs/interactions-overview).
-
-**[18] `gen_ai.request.reasoning.level`:** The value SHOULD be the exact string value sent to the provider.
-Semantic conventions for individual providers SHOULD document which input parameter maps to this attribute.
-
-**[19] `gen_ai.request.stream_cursor`:** Instrumentations SHOULD populate this attribute when a request resumes a streamed response from a prior position, for example when fetching a stored response with streaming enabled.
-For example, `starting_after` in the [OpenAI Responses API](https://developers.openai.com/api/docs/guides/background#streaming-a-background-response)
-or `last_event_id` in the [Google GenAI Interactions API](https://ai.google.dev/api/interactions-api).
-
-**[20] `gen_ai.request.top_k`:** This is a decoding/sampling parameter (e.g., Anthropic `top_k`, Cohere `k`, Google `topK`), not an output-shaping parameter. In particular, OpenAI's `top_logprobs` controls how many per-token log-probabilities are returned in the response and does not change generation; it MUST NOT be reported as `gen_ai.request.top_k`.
-
-**[21] `gen_ai.response.status`:** This attribute captures the lifecycle state of a (possibly background or long-running) generation, such as whether it is queued, still running, or has reached a terminal state. It is distinct from `gen_ai.response.finish_reasons`, which describes why the model stopped once it began producing output.
-The value SHOULD be the provider's response status mapped onto the closest member of this enum or a provider-specific value when none of these apply. Semantic conventions for individual GenAI providers SHOULD document how their status values map to this attribute.
-
-**[22] `gen_ai.retrieval.documents`:** Each document object SHOULD contain the following properties when available:
-`id` (string): A unique identifier for the document, `score` (double): The relevance score of the document
-
-Instrumentations MUST follow [JSON schema](/model/gen-ai/gen-ai-retrieval-documents.json).
-
-When the attribute is recorded on events, it MUST be recorded in structured form. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
-
-**[23] `gen_ai.retrieval.query.text`:**
-
-> [!Warning]
-> This attribute may contain sensitive information.
-
-**[24] `gen_ai.security.action.type`:** Use this attribute when the guardrail verdict is enforced by the caller or framework and the action is known. For example, a guardrail may return a `warn` verdict while the caller chooses to `block` the operation.
-
-**[25] `gen_ai.security.content.input.hash`:** Use when full content capture is not desired but correlation is needed.
+**[7] `gen_ai.guardrail.security.content.input.hash`:** Use when full content capture is not desired but correlation is needed.
 
 Instrumentations SHOULD include the algorithm in the value and document
 the canonicalization used before hashing. For free-form text, use UTF-8
@@ -243,7 +119,7 @@ For sensitive content, instrumentations SHOULD use a keyed HMAC or another
 secret-keyed construction instead of a raw hash to reduce dictionary
 attack risk.
 
-**[26] `gen_ai.security.content.input.value`:**
+**[8] `gen_ai.guardrail.security.content.input.value`:**
 
 > [!WARNING]
 > This attribute may contain sensitive information including user/PII
@@ -251,15 +127,15 @@ attack risk.
 > opt-in configuration only.
 
 This attribute MAY be truncated. For correlation without full content,
-consider `gen_ai.security.content.input.hash`.
+consider `gen_ai.guardrail.security.content.input.hash`.
 
 Instrumentations MUST follow [JSON schema](/model/gen-ai/gen-ai-security-content.json).
 
 When the attribute is recorded on events, it MUST be recorded in structured form. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
 
-**[27] `gen_ai.security.content.modified`:** This describes the observed content change, not merely that `gen_ai.security.verdict.type` or `gen_ai.security.action.type` was `modify`. For example, a guardrail can run in modify mode but leave the content unchanged.
+**[9] `gen_ai.guardrail.security.content.modified`:** This describes the observed content change, not merely that `gen_ai.guardrail.verdict.type` or `gen_ai.guardrail.action.type` was `modify`. For example, a guardrail can run in modify mode but leave the content unchanged.
 
-**[28] `gen_ai.security.content.output.value`:**
+**[10] `gen_ai.guardrail.security.content.output.value`:**
 
 > [!WARNING]
 > This attribute may contain sensitive information. Instrumentations
@@ -272,19 +148,17 @@ Instrumentations MUST follow [JSON schema](/model/gen-ai/gen-ai-security-content
 
 When the attribute is recorded on events, it MUST be recorded in structured form. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
 
-**[29] `gen_ai.security.external_finding_id`:** This attribute links telemetry to an external security finding record in
+**[11] `gen_ai.guardrail.security.external_finding_id`:** This attribute links telemetry to an external security finding record in
 systems such as SIEM, incident management, or security dashboards.
 
 The value typically comes from the response of an external security
 inspection service or may be included in response headers when inspection
 happens alongside the LLM call.
 
-**[30] `gen_ai.security.guardrail.name`:** This identifies the security evaluation service or component, not the policy name. For policy names, use `gen_ai.security.policy.name`.
+**[12] `gen_ai.guardrail.security.policy.rule.id`:** Use this when `gen_ai.guardrail.security.policy.id` identifies a broader policy and the guardrail reports a more specific rule, section, control, or detector within that policy.
 
-**[31] `gen_ai.security.policy.rule.id`:** Use this when `gen_ai.security.policy.id` identifies a broader policy and the guardrail reports a more specific rule, section, control, or detector within that policy.
-
-**[32] `gen_ai.security.risk.finding`:** This attribute is free-form to accommodate provider-specific,
-organization-specific, and emerging risk finding types.
+**[13] `gen_ai.guardrail.security.risk.category`:** This attribute is free-form to accommodate provider-specific,
+organization-specific, and emerging risk categories.
 
 Suggested values aligned with OWASP LLM Top 10 2025 include:
 
@@ -302,17 +176,143 @@ Suggested values aligned with OWASP LLM Top 10 2025 include:
 Instrumentations MAY use additional values when appropriate, for example
 `jailbreak`, `toxicity`, `pii`, `custom:*`, or provider-specific values.
 
-**[33] `gen_ai.security.risk.score`:** The value SHOULD be in the range `[0.0, 1.0]` when the guardrail provider reports a normalized score. Instrumentations SHOULD document the scoring scale when reporting provider-specific scores that are not normalized.
+**[14] `gen_ai.guardrail.security.risk.score`:** The value SHOULD be in the range `[0.0, 1.0]` when the guardrail provider reports a normalized score. Instrumentations SHOULD document the scoring scale when reporting provider-specific scores that are not normalized.
 
-**[34] `gen_ai.security.target.id`:** For example, a tool call identifier, request identifier, memory record identifier, or message identifier, if applicable.
+**[15] `gen_ai.guardrail.target.id`:** For example, a tool call identifier, request identifier, memory record identifier, or message identifier, if applicable.
 
-**[35] `gen_ai.security.target.subtype`:** This attribute refines `gen_ai.security.target.type`. For example, `gen_ai.security.target.type=input` and `gen_ai.security.target.subtype=tool_call` identifies tool call arguments or invocation requests, while `gen_ai.security.target.type=output` and `gen_ai.security.target.subtype=tool_call` identifies tool call results or responses.
+**[16] `gen_ai.guardrail.target.subtype`:** This attribute refines `gen_ai.guardrail.target.type`. For example, `gen_ai.guardrail.target.type=input` and `gen_ai.guardrail.target.subtype=tool_call` identifies tool call arguments or invocation requests, while `gen_ai.guardrail.target.type=output` and `gen_ai.guardrail.target.subtype=tool_call` identifies tool call results or responses.
 
-**[36] `gen_ai.security.target.type`:** If one of the well-known values applies, then the respective value SHOULD be used. Otherwise, a custom value MAY be used.
+**[17] `gen_ai.guardrail.target.type`:** If one of the well-known values applies, then the respective value SHOULD be used. Otherwise, a custom value MAY be used.
 
-**[37] `gen_ai.security.verdict.reason`:** The value SHOULD be low-cardinality and MUST NOT contain sensitive user content or other high-risk data.
+**[18] `gen_ai.guardrail.verdict.reason`:** The value SHOULD be low-cardinality and MUST NOT contain sensitive user content or other high-risk data.
 
-**[38] `gen_ai.security.verdict.type`:** A verdict describes what the guardrail evaluation recommends or reports. It is not necessarily the action that the caller or framework enforces. When the actual enforcement action is known, especially if it differs from the verdict, use `gen_ai.security.action.type`.
+**[19] `gen_ai.guardrail.verdict.type`:** A verdict describes what the guardrail evaluation recommends or reports. It is not necessarily the action that the caller or framework enforces. When the actual enforcement action is known, especially if it differs from the verdict, use `gen_ai.guardrail.action.type`.
+
+**[20] `gen_ai.input.messages`:** Messages MUST be provided in the order they were sent to the model.
+Instrumentations MAY provide a way for users to filter or truncate
+input messages.
+
+> [!Warning]
+> This attribute is likely to contain sensitive information including user/PII data.
+
+See [Recording content on attributes](/docs/gen-ai/gen-ai-spans.md#recording-content-on-attributes)
+section for more details.
+
+Instrumentations MUST follow [JSON schema](/model/gen-ai/gen-ai-input-messages.json).
+
+When the attribute is recorded on events, it MUST be recorded in structured form. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
+
+**[21] `gen_ai.memory.query.text`:** Instrumentations SHOULD NOT capture this attribute by default. Capture SHOULD be gated
+by an explicit user opt-in, for example `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT`.
+
+> [!Warning]
+> This attribute may contain sensitive information.
+
+**[22] `gen_ai.memory.record.count`:** For `search_memory` operations, this is the number of memory records returned by the operation. For `create_memory` operations, this is the number of memory records the operation attempted to create. For `update_memory` operations, this is the number of memory records the operation attempted to modify. For `upsert_memory` operations, this is the number of memory records the operation attempted to create or update. For `delete_memory` operations, this is the number of memory records the operation attempted to delete.
+
+**[23] `gen_ai.memory.records`:** Instrumentations SHOULD NOT capture this attribute by default. Capture SHOULD be gated
+by an explicit user opt-in, for example `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT`.
+
+> [!Warning]
+> This attribute may contain sensitive information including user/PII data.
+
+Instrumentations MUST follow [JSON schema](/model/gen-ai/gen-ai-memory-records.json).
+
+When the attribute is recorded on events, it MUST be recorded in structured form. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
+
+**[24] `gen_ai.memory.store.id`:** Semantic conventions for individual components SHOULD document what `gen_ai.memory.store.id` maps to within the implementation.
+
+**[25] `gen_ai.operation.name`:** If one of the predefined values applies, but specific system uses a different name it's RECOMMENDED to document it in the semantic conventions for specific GenAI system and use system-specific name in the instrumentation. If a different name is not documented, instrumentation libraries SHOULD use applicable predefined value.
+
+**[26] `gen_ai.output.messages`:** Each message represents a single output choice/candidate generated by
+the model. Each message corresponds to exactly one generation
+(choice/candidate) and vice versa - one choice cannot be split across
+multiple messages or one message cannot contain parts from multiple choices.
+
+Instrumentations MAY provide a way for users to filter or truncate
+output messages.
+
+> [!Warning]
+> This attribute is likely to contain sensitive information including user/PII data.
+
+See [Recording content on attributes](/docs/gen-ai/gen-ai-spans.md#recording-content-on-attributes)
+section for more details.
+
+Instrumentations MUST follow [JSON schema](/model/gen-ai/gen-ai-output-messages.json).
+
+When the attribute is recorded on events, it MUST be recorded in structured form. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
+
+**[27] `gen_ai.output.type`:** This attribute SHOULD be used when the client requests output of a specific type. The model may return zero or more outputs of this type.
+This attribute specifies the output modality and not the actual output format. For example, if an image is requested, the actual output could be a URL pointing to an image file.
+Additional output format details may be recorded in the future in the `gen_ai.output.{type}.*` attributes.
+
+**[28] `gen_ai.prompt.variable`:** Prompt templates are parameterized with variables that are filled in
+at runtime. This attribute records the variable values passed to the
+template. The attribute name defines the variable name, and the
+attribute value is the variable value serialized as a string.
+
+Examples:
+
+- A variable `user_name` with value `Alice` SHOULD be recorded as
+  the `gen_ai.prompt.variable.user_name` attribute with value `"Alice"`.
+- A variable `language` with value `French` SHOULD be recorded as
+  the `gen_ai.prompt.variable.language` attribute with value `"French"`.
+
+> [!Warning]
+> This attribute may contain sensitive information.
+
+**[29] `gen_ai.prompt.version`:** The version string can follow any versioning scheme chosen by the
+application (e.g., SemVer, date-based, or platform-specific tags).
+When a prompt management system is in use, this SHOULD match the
+version identifier used by that system.
+
+**[30] `gen_ai.provider.name`:** Semantic conventions for individual GenAI operations SHOULD clarify which
+kinds of providers (e.g. inference, embeddings, retrieval, memory, hosted
+agent providers) apply when it is not clear from context.
+
+The attribute SHOULD be set based on the instrumentation's best knowledge
+and may differ from the actual upstream provider. For example, a client SDK
+may be configured against a proxy or hosting platform that transparently
+relays requests to a different provider.
+
+The `gen_ai.provider.name` attribute acts as a discriminator that
+identifies the GenAI telemetry format flavor specific to that provider
+within GenAI semantic conventions.
+It SHOULD be set consistently with provider-specific attributes and signals.
+For example, GenAI spans, metrics, and events related to AWS Bedrock
+should have the `gen_ai.provider.name` set to `aws.bedrock` and include
+applicable `aws.bedrock.*` attributes and are not expected to include
+`openai.*` attributes.
+
+**[31] `gen_ai.request.encoding_formats`:** In some GenAI systems the encoding formats are called embedding types. Also, some GenAI systems only accept a single format per request.
+
+**[32] `gen_ai.request.previous_response.id`:** Instrumentations SHOULD populate this attribute when the request references a previous response or interaction identifier to continue a conversation or pass prior context.
+For example, `previous_response_id` in [OpenAI Responses API](https://developers.openai.com/api/docs/guides/conversation-state#passing-context-from-the-previous-response)
+or `previous_interaction_id` in [Google GenAI Interactions API](https://ai.google.dev/gemini-api/docs/interactions-overview).
+
+**[33] `gen_ai.request.reasoning.level`:** The value SHOULD be the exact string value sent to the provider.
+Semantic conventions for individual providers SHOULD document which input parameter maps to this attribute.
+
+**[34] `gen_ai.request.stream_cursor`:** Instrumentations SHOULD populate this attribute when a request resumes a streamed response from a prior position, for example when fetching a stored response with streaming enabled.
+For example, `starting_after` in the [OpenAI Responses API](https://developers.openai.com/api/docs/guides/background#streaming-a-background-response)
+or `last_event_id` in the [Google GenAI Interactions API](https://ai.google.dev/api/interactions-api).
+
+**[35] `gen_ai.request.top_k`:** This is a decoding/sampling parameter (e.g., Anthropic `top_k`, Cohere `k`, Google `topK`), not an output-shaping parameter. In particular, OpenAI's `top_logprobs` controls how many per-token log-probabilities are returned in the response and does not change generation; it MUST NOT be reported as `gen_ai.request.top_k`.
+
+**[36] `gen_ai.response.status`:** This attribute captures the lifecycle state of a (possibly background or long-running) generation, such as whether it is queued, still running, or has reached a terminal state. It is distinct from `gen_ai.response.finish_reasons`, which describes why the model stopped once it began producing output.
+The value SHOULD be the provider's response status mapped onto the closest member of this enum or a provider-specific value when none of these apply. Semantic conventions for individual GenAI providers SHOULD document how their status values map to this attribute.
+
+**[37] `gen_ai.retrieval.documents`:** Each document object SHOULD contain the following properties when available:
+`id` (string): A unique identifier for the document, `score` (double): The relevance score of the document
+
+Instrumentations MUST follow [JSON schema](/model/gen-ai/gen-ai-retrieval-documents.json).
+
+When the attribute is recorded on events, it MUST be recorded in structured form. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
+
+**[38] `gen_ai.retrieval.query.text`:**
+
+> [!Warning]
+> This attribute may contain sensitive information.
 
 **[39] `gen_ai.system_instructions`:** This attribute SHOULD be used when the corresponding provider or API
 allows to provide system instructions or messages separately from the
@@ -405,6 +405,54 @@ If there is no low-cardinality workflow name available for a given framework, th
 
 ---
 
+`gen_ai.guardrail.action.type` has the following list of well-known values. If one of them applies, then the respective value MUST be used; otherwise, a custom value MAY be used.
+
+| Value | Description | Stability |
+| --- | --- | --- |
+| `allow` | The caller allowed the content or action to proceed. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `audit` | The caller recorded the result for audit purposes without changing execution. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `block` | The caller blocked the content or action. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `escalate` | The caller escalated the content or action for human review, approval, or another workflow. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `modify` | The caller modified the content or action before continuing. | ![Development](https://img.shields.io/badge/-development-blue) |
+
+---
+
+`gen_ai.guardrail.target.subtype` has the following list of well-known values. If one of them applies, then the respective value MUST be used; otherwise, a custom value MAY be used.
+
+| Value | Description | Stability |
+| --- | --- | --- |
+| `action` | Non-tool agent action. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `llm` | Prompt, messages, or response content for an LLM operation. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `memory` | Memory content being read or written. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `message` | Conversation message. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `retrieval` | Retrieval query or retrieval result. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `tool_call` | Tool call arguments, invocation request, result, or response. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `tool_definition` | Tool definition or schema. | ![Development](https://img.shields.io/badge/-development-blue) |
+
+---
+
+`gen_ai.guardrail.target.type` has the following list of well-known values. If one of them applies, then the respective value MUST be used; otherwise, a custom value MAY be used.
+
+| Value | Description | Stability |
+| --- | --- | --- |
+| `input` | Content or action entering the guarded operation. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `output` | Content or action emitted by the guarded operation. | ![Development](https://img.shields.io/badge/-development-blue) |
+
+---
+
+`gen_ai.guardrail.verdict.type` has the following list of well-known values. If one of them applies, then the respective value MUST be used; otherwise, a custom value MAY be used.
+
+| Value | Description | Stability |
+| --- | --- | --- |
+| `allow` | The content or action is permitted without modification. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `audit` | The content or action is recorded for audit purposes only. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `deny` | The content or action should not proceed. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `escalate` | The content or action requires human review, approval, or another escalation workflow. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `modify` | The content or action is permitted with modifications such as redaction or sanitization. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `warn` | The content or action is permitted but flagged for review or downstream handling. | ![Development](https://img.shields.io/badge/-development-blue) |
+
+---
+
 `gen_ai.operation.name` has the following list of well-known values. If one of them applies, then the respective value MUST be used; otherwise, a custom value MAY be used.
 
 | Value | Description | Stability |
@@ -423,7 +471,7 @@ If there is no low-cardinality workflow name available for a given framework, th
 | `invoke_workflow` | Invoke GenAI workflow | ![Development](https://img.shields.io/badge/-development-blue) |
 | `plan` | Agent planning or task decomposition phase | ![Development](https://img.shields.io/badge/-development-blue) |
 | `retrieval` | Retrieval operation such as [OpenAI Search Vector Store API](https://platform.openai.com/docs/api-reference/vector-stores/search) | ![Development](https://img.shields.io/badge/-development-blue) |
-| `run_guardrail` | Run a security guardrail for content or an action | ![Development](https://img.shields.io/badge/-development-blue) |
+| `run_guardrail` | Run a guardrail for content or an action | ![Development](https://img.shields.io/badge/-development-blue) |
 | `search_memory` | Search/query memories from a memory store | ![Development](https://img.shields.io/badge/-development-blue) |
 | `text_completion` | Text completions operation such as [OpenAI Completions API (Legacy)](https://platform.openai.com/docs/api-reference/completions) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `update_memory` | Update existing memory records | ![Development](https://img.shields.io/badge/-development-blue) |
@@ -483,54 +531,6 @@ If there is no low-cardinality workflow name available for a given framework, th
 | `in_progress` | The response is still being generated, for example a background or streamed response that has not finished. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `incomplete` | The response stopped before generation completed, for example because a token limit or content filter was reached. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `queued` | The response has been accepted by the provider but generation has not started yet. | ![Development](https://img.shields.io/badge/-development-blue) |
-
----
-
-`gen_ai.security.action.type` has the following list of well-known values. If one of them applies, then the respective value MUST be used; otherwise, a custom value MAY be used.
-
-| Value | Description | Stability |
-| --- | --- | --- |
-| `allow` | The caller allowed the content or action to proceed. | ![Development](https://img.shields.io/badge/-development-blue) |
-| `audit` | The caller recorded the result for audit purposes without changing execution. | ![Development](https://img.shields.io/badge/-development-blue) |
-| `block` | The caller blocked the content or action. | ![Development](https://img.shields.io/badge/-development-blue) |
-| `escalate` | The caller escalated the content or action for human review, approval, or another workflow. | ![Development](https://img.shields.io/badge/-development-blue) |
-| `modify` | The caller modified the content or action before continuing. | ![Development](https://img.shields.io/badge/-development-blue) |
-
----
-
-`gen_ai.security.target.subtype` has the following list of well-known values. If one of them applies, then the respective value MUST be used; otherwise, a custom value MAY be used.
-
-| Value | Description | Stability |
-| --- | --- | --- |
-| `action` | Non-tool agent action. | ![Development](https://img.shields.io/badge/-development-blue) |
-| `llm` | Prompt, messages, or response content for an LLM operation. | ![Development](https://img.shields.io/badge/-development-blue) |
-| `memory` | Memory content being read or written. | ![Development](https://img.shields.io/badge/-development-blue) |
-| `message` | Conversation message. | ![Development](https://img.shields.io/badge/-development-blue) |
-| `retrieval` | Retrieval query or retrieval result. | ![Development](https://img.shields.io/badge/-development-blue) |
-| `tool_call` | Tool call arguments, invocation request, result, or response. | ![Development](https://img.shields.io/badge/-development-blue) |
-| `tool_definition` | Tool definition or schema. | ![Development](https://img.shields.io/badge/-development-blue) |
-
----
-
-`gen_ai.security.target.type` has the following list of well-known values. If one of them applies, then the respective value MUST be used; otherwise, a custom value MAY be used.
-
-| Value | Description | Stability |
-| --- | --- | --- |
-| `input` | Content or action entering the guarded operation. | ![Development](https://img.shields.io/badge/-development-blue) |
-| `output` | Content or action emitted by the guarded operation. | ![Development](https://img.shields.io/badge/-development-blue) |
-
----
-
-`gen_ai.security.verdict.type` has the following list of well-known values. If one of them applies, then the respective value MUST be used; otherwise, a custom value MAY be used.
-
-| Value | Description | Stability |
-| --- | --- | --- |
-| `allow` | The content or action is permitted without modification. | ![Development](https://img.shields.io/badge/-development-blue) |
-| `audit` | The content or action is recorded for audit purposes only. | ![Development](https://img.shields.io/badge/-development-blue) |
-| `deny` | The content or action should not proceed. | ![Development](https://img.shields.io/badge/-development-blue) |
-| `escalate` | The content or action requires human review, approval, or another escalation workflow. | ![Development](https://img.shields.io/badge/-development-blue) |
-| `modify` | The content or action is permitted with modifications such as redaction or sanitization. | ![Development](https://img.shields.io/badge/-development-blue) |
-| `warn` | The content or action is permitted but flagged for review or downstream handling. | ![Development](https://img.shields.io/badge/-development-blue) |
 
 ---
 
