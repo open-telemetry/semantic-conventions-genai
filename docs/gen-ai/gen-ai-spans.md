@@ -406,6 +406,12 @@ each server-side generation is a `gen_ai.generate_live_content.client` span
 correlated by `gen_ai.conversation.id`. A simple session with a single
 generation looks like this:
 
+```text
+[event] gen_ai.client.live_session.started
+        generate_live_content {model}          (span, correlated by gen_ai.conversation.id)
+[event] gen_ai.client.live_session.ended
+```
+
 ```mermaid
 flowchart TD
     E0["event: gen_ai.client.live_session.started"]
@@ -419,6 +425,15 @@ providers close the generation, run the tool, then open a second generation for
 the answer (**sibling pattern** — OpenAI Realtime, Gemini Live 2.5); others keep
 a single generation open and nest the tool call inside it (**child pattern** —
 Gemini Live 3.x):
+
+```text
+Sibling pattern                        Child pattern
+(OpenAI Realtime, Gemini Live 2.5)     (Gemini Live 3.x)
+
+generate_live_content {model} (call)   generate_live_content {model}
+execute_tool {tool}                    └─ execute_tool {tool}
+generate_live_content {model} (answer)
+```
 
 ```mermaid
 flowchart TD
