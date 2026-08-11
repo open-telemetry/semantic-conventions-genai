@@ -750,6 +750,8 @@ and SHOULD be provided **at span creation time** (if provided at all):
 The following aspects are intentionally left unresolved in this iteration and
 are expected to be settled as instrumentation matures across providers:
 
+- **Session modeling.** Will a session also get a long-lived session or conversation span parenting all generations, or stay events + `gen_ai.conversation.id` only?
+- **Grouping generations by user input.** Without turn spans, how does a consumer tell which generation(s) answer a given user input?
 - **Turn spans.** A logical turn (user speaks, model replies) is not modeled.
   Turn boundaries cannot be detected reliably across providers (silence between
   turns, interruption/cancel churn, and mid-turn tool calls all blur the
@@ -774,6 +776,33 @@ are expected to be settled as instrumentation matures across providers:
   turn (Gemini), and when it arrives after the generation-completion event,
   attributing it to the correct `gen_ai.generate_live_content.client` span needs
   provider-specific handling.
+
+#### Other voice-agent vendors
+
+##### ElevenLabs
+
+```text
+elevenlabs.conversation
+├── elevenlabs.turn.0
+│   ├── elevenlabs.event.user_transcript
+│   └── elevenlabs.tool.{name}
+└── elevenlabs.turn.1
+```
+
+##### PipeCat
+
+```text
+Conversation (conversation)
+├── turn
+│   ├── llm_setup (session configuration)
+│   ├── stt (user input)
+│   ├── llm_response (complete response with usage)
+│   └── llm_tool_call/llm_tool_result (for function calls)
+└── turn
+    ├── stt (user input)
+    └── llm_response (complete response)
+    turn...
+```
 
 ### Embeddings
 
