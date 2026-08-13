@@ -148,10 +148,7 @@ def run_chat_streaming():
         if seen_choice_indexes:
             span.set_attribute(
                 "gen_ai.response.finish_reasons",
-                [
-                    finish_reasons_by_index.get(index, "error")
-                    for index in range(max(seen_choice_indexes) + 1)
-                ],
+                [finish_reasons_by_index.get(index, "error") for index in range(max(seen_choice_indexes) + 1)],
             )
         span.set_attribute(
             "gen_ai.output.messages",

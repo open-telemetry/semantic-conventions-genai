@@ -62,9 +62,7 @@ def run_chat(client):
         if resp.id:
             span.set_attribute("gen_ai.response.id", resp.id)
         if resp.choices:
-            span.set_attribute(
-                "gen_ai.response.finish_reasons", [c.finish_reason or "error" for c in resp.choices]
-            )
+            span.set_attribute("gen_ai.response.finish_reasons", [c.finish_reason or "error" for c in resp.choices])
         if resp.usage:
             span.set_attribute("gen_ai.usage.input_tokens", resp.usage.prompt_tokens)
             span.set_attribute("gen_ai.usage.output_tokens", resp.usage.completion_tokens)
@@ -150,9 +148,7 @@ def run_chat_tool_call(client):
         if resp.id:
             span.set_attribute("gen_ai.response.id", resp.id)
         if resp.choices:
-            span.set_attribute(
-                "gen_ai.response.finish_reasons", [c.finish_reason or "error" for c in resp.choices]
-            )
+            span.set_attribute("gen_ai.response.finish_reasons", [c.finish_reason or "error" for c in resp.choices])
         if resp.usage:
             span.set_attribute("gen_ai.usage.input_tokens", resp.usage.prompt_tokens)
             span.set_attribute("gen_ai.usage.output_tokens", resp.usage.completion_tokens)
