@@ -361,21 +361,24 @@ attributes:
     type: int
     brief: The number of text input tokens served from a provider-managed cache.
     note: >
-      The value SHOULD be included in `gen_ai.usage.cache_read.input_tokens`.
+      The value SHOULD be included in `gen_ai.usage.cache_read.input_tokens`
+      and in `gen_ai.usage.text.input_tokens`.
     examples: [40]
     stability: development
   - key: gen_ai.usage.image.cache_read.input_tokens
     type: int
     brief: The number of image input tokens served from a provider-managed cache.
     note: >
-      The value SHOULD be included in `gen_ai.usage.cache_read.input_tokens`.
+      The value SHOULD be included in `gen_ai.usage.cache_read.input_tokens`
+      and in `gen_ai.usage.image.input_tokens`.
     examples: [128]
     stability: development
   - key: gen_ai.usage.audio.cache_read.input_tokens
     type: int
     brief: The number of audio input tokens served from a provider-managed cache.
     note: >
-      The value SHOULD be included in `gen_ai.usage.cache_read.input_tokens`.
+      The value SHOULD be included in `gen_ai.usage.cache_read.input_tokens`
+      and in `gen_ai.usage.audio.input_tokens`.
     examples: [60]
     stability: development
   - key: gen_ai.token.type

@@ -694,7 +694,8 @@ def run_chat_audio_reference(client):
             [
                 {
                     "role": c.message.role,
-                    "parts": [{"type": "text", "content": c.message.content}],
+                    # Audio output puts the text in the transcript, not in content.
+                    "parts": [{"type": "text", "content": c.message.content or c.message.audio.transcript}],
                     "finish_reason": c.finish_reason,
                 }
                 for c in resp.choices
