@@ -63,7 +63,7 @@ def run_chat(client):
             span.set_attribute("gen_ai.response.id", resp.id)
         if resp.choices:
             span.set_attribute(
-                "gen_ai.response.finish_reasons", [c.finish_reason for c in resp.choices if c.finish_reason]
+                "gen_ai.response.finish_reasons", [c.finish_reason or "error" for c in resp.choices]
             )
         if resp.usage:
             span.set_attribute("gen_ai.usage.input_tokens", resp.usage.prompt_tokens)
@@ -91,7 +91,7 @@ def run_chat(client):
         if resp.id:
             event_attrs["gen_ai.response.id"] = resp.id
         if resp.choices:
-            event_attrs["gen_ai.response.finish_reasons"] = [c.finish_reason for c in resp.choices if c.finish_reason]
+            event_attrs["gen_ai.response.finish_reasons"] = [c.finish_reason or "error" for c in resp.choices]
         if resp.usage:
             event_attrs["gen_ai.usage.input_tokens"] = resp.usage.prompt_tokens
             event_attrs["gen_ai.usage.output_tokens"] = resp.usage.completion_tokens
@@ -151,7 +151,7 @@ def run_chat_tool_call(client):
             span.set_attribute("gen_ai.response.id", resp.id)
         if resp.choices:
             span.set_attribute(
-                "gen_ai.response.finish_reasons", [c.finish_reason for c in resp.choices if c.finish_reason]
+                "gen_ai.response.finish_reasons", [c.finish_reason or "error" for c in resp.choices]
             )
         if resp.usage:
             span.set_attribute("gen_ai.usage.input_tokens", resp.usage.prompt_tokens)
@@ -188,7 +188,8 @@ def run_chat_streaming(client):
         text = ""
         response_model = None
         response_id = None
-        finish_reasons = []
+        seen_choice_indexes = set()
+        finish_reasons_by_index = {}
         input_tokens = None
         output_tokens = None
         stream = client.chat.stream(
@@ -205,15 +206,20 @@ def run_chat_streaming(client):
             if usage is not None:
                 input_tokens = getattr(usage, "prompt_tokens", input_tokens)
                 output_tokens = getattr(usage, "completion_tokens", output_tokens)
-            if data.choices and data.choices[0].delta.content:
-                text += data.choices[0].delta.content
-            if data.choices and data.choices[0].finish_reason:
-                finish_reasons.append(data.choices[0].finish_reason)
+            for choice in data.choices:
+                seen_choice_indexes.add(choice.index)
+                if choice.index == 0 and choice.delta.content:
+                    text += choice.delta.content
+                if choice.finish_reason is not None:
+                    finish_reasons_by_index[choice.index] = choice.finish_reason
         if response_model:
             span.set_attribute("gen_ai.response.model", response_model)
         if response_id:
             span.set_attribute("gen_ai.response.id", response_id)
-        if finish_reasons:
+        if seen_choice_indexes:
+            finish_reasons = [
+                finish_reasons_by_index.get(index, "error") for index in range(max(seen_choice_indexes) + 1)
+            ]
             span.set_attribute("gen_ai.response.finish_reasons", finish_reasons)
         if input_tokens is not None:
             span.set_attribute("gen_ai.usage.input_tokens", input_tokens)

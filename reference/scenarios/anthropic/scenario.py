@@ -63,7 +63,7 @@ def run_chat(handler):
         output_parts = [Text(content=block.text) for block in resp.content if hasattr(block, "text")]
         if output_parts:
             inv.output_messages = [  # -> gen_ai.output.messages
-                OutputMessage(role="assistant", parts=output_parts, finish_reason=resp.stop_reason)
+                OutputMessage(role="assistant", parts=output_parts)
             ]
 
     print(f"    -> {resp.content[0].text[:60]}")
@@ -181,7 +181,7 @@ def run_compaction(handler):
                 output_parts.append({"type": "compaction"})
         if output_parts:
             inv.output_messages = [  # -> gen_ai.output.messages
-                OutputMessage(role="assistant", parts=output_parts, finish_reason=resp.stop_reason),
+                OutputMessage(role="assistant", parts=output_parts),
             ]
 
     print(f"    -> compacted: {conversation_compacted}")
@@ -256,7 +256,6 @@ def run_chat_with_document_input(handler):
             OutputMessage(
                 role="assistant",
                 parts=[Text(content=block.text)],
-                finish_reason=resp.stop_reason,
             )
             for block in resp.content
             if hasattr(block, "text")

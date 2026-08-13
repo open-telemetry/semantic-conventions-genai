@@ -205,7 +205,6 @@ def run_interactions_continuation():
                     {
                         "role": "assistant",
                         "parts": [{"type": "text", "content": "This is a response from the mock interactions server."}],
-                        "finish_reason": "stop",
                     }
                 ]
             ),

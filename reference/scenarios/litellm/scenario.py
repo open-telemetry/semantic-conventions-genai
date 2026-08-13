@@ -136,9 +136,23 @@ def run_chat_streaming():
             stream=True,
         )
         text = ""
+        seen_choice_indexes = set()
+        finish_reasons_by_index = {}
         for chunk in resp:
-            if chunk.choices[0].delta.content:
-                text += chunk.choices[0].delta.content
+            for choice in chunk.choices:
+                seen_choice_indexes.add(choice.index)
+                if choice.index == 0 and choice.delta.content:
+                    text += choice.delta.content
+                if choice.finish_reason is not None:
+                    finish_reasons_by_index[choice.index] = choice.finish_reason
+        if seen_choice_indexes:
+            span.set_attribute(
+                "gen_ai.response.finish_reasons",
+                [
+                    finish_reasons_by_index.get(index, "error")
+                    for index in range(max(seen_choice_indexes) + 1)
+                ],
+            )
         span.set_attribute(
             "gen_ai.output.messages",
             json.dumps(
