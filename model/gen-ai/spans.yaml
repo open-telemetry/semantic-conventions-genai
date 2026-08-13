@@ -46,6 +46,15 @@ attribute_groups:
       - ref: gen_ai.usage.cache_write.input_tokens
         requirement_level:
           recommended: When applicable.
+      - ref: gen_ai.usage.output_tokens
+        requirement_level: recommended
+
+  # Kept out of `attributes.gen_ai.usage`: an internal agent span reports the
+  # usage its own call tree accumulated, and summing breakdowns across that
+  # tree would count the same tokens more than once.
+  - id: attributes.gen_ai.usage.breakdown
+    visibility: internal
+    attributes:
       - ref: gen_ai.usage.tool.input_tokens
         requirement_level:
           recommended: When applicable.
@@ -67,8 +76,6 @@ attribute_groups:
       - ref: gen_ai.usage.audio.cache_read.input_tokens
         requirement_level:
           recommended: When applicable.
-      - ref: gen_ai.usage.output_tokens
-        requirement_level: recommended
       - ref: gen_ai.usage.text.output_tokens
         requirement_level:
           recommended: When applicable.
@@ -188,6 +195,7 @@ spans:
       - ref_group: attributes.gen_ai.common
       - ref_group: attributes.gen_ai.address_and_port
       - ref_group: attributes.gen_ai.usage
+      - ref_group: attributes.gen_ai.usage.breakdown
       - ref_group: attributes.gen_ai.content
       - ref_group: attributes.gen_ai.error
       - ref: gen_ai.request.max_tokens
@@ -517,6 +525,7 @@ spans:
     stability: development
     attributes:
       - ref_group: attributes.gen_ai.invoke_agent.common
+      - ref_group: attributes.gen_ai.usage.breakdown
       - ref_group: attributes.gen_ai.address_and_port
       - ref: gen_ai.provider.name
         requirement_level: required
