@@ -1,54 +1,53 @@
 """Reference implementation for OpenAI Agents.
 
-Exercises: agent run with tool calling
-against a mock OpenAI server, with manual OTel spans.
+Exercises: agent run with tool calling and a multi-agent run with handoffs
+wrapped in a workflow span, against a mock OpenAI server, with manual OTel spans.
 """
 
 import asyncio
 import json
 import os
 
-from reference_shared import flush_and_shutdown, mock_server_host_port, reference_tracer, setup_otel
+import openai
+from agents import Agent, RunConfig, Runner, function_tool
+from agents.models.openai_chatcompletions import OpenAIChatCompletionsModel
+from agents.tool import FunctionTool, ToolContext
+from reference_shared import flush_and_shutdown, reference_tracer, setup_otel
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"] + "/v1"
 
 _reference_tracer = reference_tracer()
 
 
+@function_tool
+def get_weather(ctx: ToolContext[None], location: str) -> str:
+    """Get the current weather for a location."""
+    tool_span_attributes = {
+        "gen_ai.operation.name": "execute_tool",
+        "gen_ai.tool.name": "get_weather",
+        "gen_ai.tool.type": "function",
+    }
+    with _reference_tracer.start_as_current_span(
+        "execute_tool get_weather", attributes=tool_span_attributes
+    ) as tool_span:
+        tool_span.set_attribute("gen_ai.tool.description", get_weather.description)
+        if ctx.agent is not None and ctx.agent.name:
+            tool_span.set_attribute("gen_ai.agent.name", ctx.agent.name)
+        tool_span.set_attribute("gen_ai.tool.call.id", ctx.tool_call_id)
+        tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps({"location": location}))
+        result = "Sunny, 72°F"
+        tool_span.set_attribute("gen_ai.tool.call.result", result)
+        return result
+
+
 async def run_agent():
     """Run a simple agent with the OpenAI Agents SDK, with manual spans."""
-    import openai
-    from agents import Agent, Runner, function_tool
-    from agents.models.openai_chatcompletions import OpenAIChatCompletionsModel
-    from agents.tool import FunctionTool, ToolContext
-
-    @function_tool
-    def get_weather(ctx: ToolContext[None], location: str) -> str:
-        """Get the current weather for a location."""
-        tool_span_attributes = {
-            "gen_ai.operation.name": "execute_tool",
-            "gen_ai.tool.name": "get_weather",
-            "gen_ai.tool.type": "function",
-        }
-        with _reference_tracer.start_as_current_span(
-            "execute_tool get_weather", attributes=tool_span_attributes
-        ) as tool_span:
-            tool_span.set_attribute("gen_ai.tool.description", get_weather.description)
-            if ctx.agent is not None and ctx.agent.name:
-                tool_span.set_attribute("gen_ai.agent.name", ctx.agent.name)
-            tool_span.set_attribute("gen_ai.tool.call.id", ctx.tool_call_id)
-            tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps({"location": location}))
-            result = "Sunny, 72°F"
-            tool_span.set_attribute("gen_ai.tool.call.result", result)
-            return result
-
     client = openai.AsyncOpenAI(base_url=MOCK_BASE_URL, api_key="mock-key")
     request_model = "gpt-4o-mini"
     model = OpenAIChatCompletionsModel(model=request_model, openai_client=client)
 
     tools = [get_weather]
     captured_responses = []
-    host, port = mock_server_host_port(MOCK_BASE_URL)
     agent = Agent(
         name="test-agent",
         instructions="You are a helpful assistant.",
@@ -85,77 +84,95 @@ async def run_agent():
                 ]
             ),
         )
-        span_attributes = {
-            "gen_ai.operation.name": "chat",
-            "gen_ai.provider.name": "openai",
-            "gen_ai.request.model": request_model,
-        }
-        if host:
-            span_attributes["server.address"] = host
-        if port is not None:
-            span_attributes["server.port"] = port
-        with _reference_tracer.start_as_current_span("chat gpt-4o-mini", attributes=span_attributes) as span:
-            span.set_attribute(
-                "gen_ai.tool.definitions",
+        original_create = client.chat.completions.create
+
+        async def _capture_create(*args, **kwargs):
+            response = await original_create(*args, **kwargs)
+            captured_responses.append(response)
+            return response
+
+        client.chat.completions.create = _capture_create
+        try:
+            result = await Runner.run(agent, input_text)
+        finally:
+            client.chat.completions.create = original_create
+        usage = result.context_wrapper.usage
+        if usage.total_tokens:
+            agent_span.set_attribute("gen_ai.usage.input_tokens", usage.input_tokens)
+            agent_span.set_attribute("gen_ai.usage.output_tokens", usage.output_tokens)
+        if captured_responses:
+            last_response = captured_responses[-1]
+            finish_reasons = [
+                choice.finish_reason
+                for choice in getattr(last_response, "choices", []) or []
+                if getattr(choice, "finish_reason", None)
+            ]
+            if finish_reasons:
+                agent_span.set_attribute("gen_ai.response.finish_reasons", finish_reasons)
+        if result.final_output:
+            agent_span.set_attribute(
+                "gen_ai.output.messages",
                 json.dumps(
                     [
                         {
-                            "type": "function",
-                            "function": {
-                                "name": t.name,
-                                "description": t.description,
-                                "parameters": t.params_json_schema,
-                            },
+                            "role": "assistant",
+                            "parts": [{"type": "text", "content": str(result.final_output)}],
                         }
-                        for t in tools
-                        if isinstance(t, FunctionTool)
                     ]
                 ),
             )
-            original_create = client.chat.completions.create
+        print(f"    -> {str(result.final_output)[:60]}")
 
-            async def _capture_create(*args, **kwargs):
-                response = await original_create(*args, **kwargs)
-                captured_responses.append(response)
-                return response
 
-            client.chat.completions.create = _capture_create
-            try:
-                result = await Runner.run(agent, input_text)
-            finally:
-                client.chat.completions.create = original_create
-            usage = result.context_wrapper.usage
-            if usage.total_tokens:
-                span.set_attribute("gen_ai.usage.input_tokens", usage.input_tokens)
-                span.set_attribute("gen_ai.usage.output_tokens", usage.output_tokens)
-                agent_span.set_attribute("gen_ai.usage.input_tokens", usage.input_tokens)
-                agent_span.set_attribute("gen_ai.usage.output_tokens", usage.output_tokens)
-            if captured_responses:
-                last_response = captured_responses[-1]
-                if getattr(last_response, "id", None):
-                    span.set_attribute("gen_ai.response.id", last_response.id)
-                if getattr(last_response, "model", None):
-                    span.set_attribute("gen_ai.response.model", last_response.model)
-                finish_reasons = [
-                    choice.finish_reason
-                    for choice in getattr(last_response, "choices", []) or []
-                    if getattr(choice, "finish_reason", None)
+async def run_workflow():
+    """Run a multi-agent handoff wrapped in a workflow span representing the SDK workflow tracing."""
+    from agents import handoff
+
+    client = openai.AsyncOpenAI(base_url=MOCK_BASE_URL, api_key="mock-key")
+    request_model = "gpt-4o-mini"
+    model = OpenAIChatCompletionsModel(model=request_model, openai_client=client)
+
+    agent_b = Agent(
+        name="agent-b",
+        instructions="You are agent B, tell the user the weather is sunny.",
+        model=model,
+    )
+    agent_a = Agent(
+        name="agent-a",
+        instructions="You are agent A. Handoff to agent-b immediately to answer the user's weather question.",
+        model=model,
+        handoffs=[handoff(agent_b)],
+    )
+    input_text = "What's the weather in Seattle?"
+
+    print("  [workflow_run] agent run as workflow (reference implementation)")
+    workflow_name = "sequential-agents"
+    workflow_span_attributes = {
+        "gen_ai.operation.name": "invoke_workflow",
+    }
+    with _reference_tracer.start_as_current_span(
+        f"invoke_workflow {workflow_name}", attributes=workflow_span_attributes
+    ) as workflow_span:
+        workflow_span.set_attribute("gen_ai.workflow.name", workflow_name)
+        workflow_span.set_attribute(
+            "gen_ai.input.messages", json.dumps([{"role": "user", "parts": [{"type": "text", "content": input_text}]}])
+        )
+
+        # Note: Agent spans (invoke_agent) are expected to be children of the
+        # workflow span but are omitted for brevity in this scenario.
+        result = await Runner.run(agent_a, input_text, run_config=RunConfig(workflow_name=workflow_name))
+
+        if result.final_output:
+            output_messages = json.dumps(
+                [
+                    {
+                        "role": "assistant",
+                        "parts": [{"type": "text", "content": str(result.final_output)}],
+                    }
                 ]
-                if finish_reasons:
-                    agent_span.set_attribute("gen_ai.response.finish_reasons", finish_reasons)
-            if result.final_output:
-                agent_span.set_attribute(
-                    "gen_ai.output.messages",
-                    json.dumps(
-                        [
-                            {
-                                "role": "assistant",
-                                "parts": [{"type": "text", "content": str(result.final_output)}],
-                            }
-                        ]
-                    ),
-                )
-            print(f"    -> {str(result.final_output)[:60]}")
+            )
+            workflow_span.set_attribute("gen_ai.output.messages", output_messages)
+        print(f"    -> {str(result.final_output)[:60]}")
 
 
 def main():
@@ -164,6 +181,7 @@ def main():
     tp, lp, mp = setup_otel()
 
     asyncio.run(run_agent())
+    asyncio.run(run_workflow())
 
     flush_and_shutdown(tp, lp, mp)
 

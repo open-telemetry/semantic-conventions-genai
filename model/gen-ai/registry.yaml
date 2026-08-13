@@ -188,6 +188,15 @@ attributes:
       or `previous_interaction_id` in [Google GenAI Interactions API](https://ai.google.dev/gemini-api/docs/interactions-overview).
     examples: ['resp_0123456789aBCdef', 'interaction-123']
     stability: development
+  - key: gen_ai.request.stream_cursor
+    type: string
+    brief: The cursor identifying the last streamed event already received, used to resume a streamed response from that position.
+    note: |
+      Instrumentations SHOULD populate this attribute when a request resumes a streamed response from a prior position, for example when fetching a stored response with streaming enabled.
+      For example, `starting_after` in the [OpenAI Responses API](https://developers.openai.com/api/docs/guides/background#streaming-a-background-response)
+      or `last_event_id` in the [Google GenAI Interactions API](https://ai.google.dev/api/interactions-api).
+    examples: ['42', 'event-abc123']
+    stability: development
   - key: gen_ai.response.id
     type: string
     brief: The unique identifier for the completion.
@@ -215,6 +224,46 @@ attributes:
       - [stop]
       - [stop, length]
       - [stop, length, error]
+    stability: development
+  - key: gen_ai.response.status
+    type:
+      members:
+        - id: queued
+          value: "queued"
+          brief: The response has been accepted by the provider but generation has not started yet.
+          stability: development
+        - id: in_progress
+          value: "in_progress"
+          brief: The response is still being generated, for example a background or streamed response that has not finished.
+          stability: development
+        - id: completed
+          value: "completed"
+          brief: The response finished generating successfully.
+          stability: development
+        - id: incomplete
+          value: "incomplete"
+          brief: The response stopped before generation completed, for example because a token limit or content filter was reached.
+          stability: development
+        - id: failed
+          value: "failed"
+          brief: The response generation failed with an error.
+          stability: development
+        - id: cancelled
+          value: "cancelled"
+          brief: The response generation was cancelled before it completed.
+          stability: development
+    brief: The lifecycle status of a generated response, as reported by the provider when the response is fetched or polled.
+    note: >
+      This attribute captures the lifecycle state of a (possibly background or long-running)
+      generation, such as whether it is queued, still running, or has reached a terminal state.
+      It is distinct from `gen_ai.response.finish_reasons`, which describes why the model stopped
+      once it began producing output.
+
+      The value SHOULD be the provider's response status mapped onto the closest member of this
+      enum or a provider-specific value when none of these apply.
+      Semantic conventions for individual GenAI providers SHOULD document how their status
+      values map to this attribute.
+    examples: ['completed', 'in_progress']
     stability: development
   - key: gen_ai.response.time_to_first_chunk
     type: double
@@ -287,6 +336,25 @@ attributes:
   - key: gen_ai.conversation.id
     type: string
     brief: The unique identifier for a conversation (session, thread), used to store and correlate messages within this conversation.
+    note: |
+      Instrumentations SHOULD populate conversation id when they have an identifier
+      for the conversation readily available for a given operation, for example:
+
+      - when the client framework being instrumented manages conversation history
+      (see [LlamaIndex chat store](https://docs.llamaindex.ai/en/stable/module_guides/storing/chat_stores/),
+      [LangChain `session_id`](https://reference.langchain.com/python/langchain-core/runnables/history/RunnableWithMessageHistory),
+      and [Google ADK sessions](https://adk.dev/sessions/session))
+      - when instrumenting GenAI client libraries that maintain a conversation on the backend
+      (see [AWS Bedrock agent sessions](https://docs.aws.amazon.com/bedrock/latest/userguide/agents-session-state.html),
+      [OpenAI Assistant threads](https://platform.openai.com/docs/api-reference/threads))
+
+      When no identifier for the conversation is available, instrumentations SHOULD NOT
+      populate conversation id. For example, a new UUID, a trace identifier, or a hash
+      of request content SHOULD NOT be used as a fallback value.
+
+      Application developers that manage conversation history MAY add conversation id to GenAI and other
+      spans or logs using custom span or log record processors or hooks provided by instrumentation
+      libraries.
     examples: ["conv_5j66UpCpwteGg4YSxUnt7lPY"]
     stability: development
   - key: gen_ai.conversation.compacted
@@ -339,6 +407,9 @@ attributes:
   - key: gen_ai.tool.description
     type: string
     brief: The tool description.
+    note: |
+      > [!WARNING]
+      > This attribute may contain sensitive information.
     examples: ["Multiply two numbers"]
     stability: development
   - key: gen_ai.tool.type
@@ -403,6 +474,9 @@ attributes:
       type:
         json_schema: model/gen-ai/gen-ai-tool-definitions.json
     note: |
+      > [!WARNING]
+      > This attribute may contain sensitive information.
+
       Since this attribute could be large, it's NOT RECOMMENDED to populate
       non-required properties by default. Instrumentations MAY provide a way
       to enable populating optional properties.
@@ -469,6 +543,12 @@ attributes:
         - id: retrieval
           value: "retrieval"
           brief: 'Retrieval operation such as [OpenAI Search Vector Store API](https://platform.openai.com/docs/api-reference/vector-stores/search)'
+          stability: development
+        - id: fetch_response
+          value: "fetch_response"
+          brief: 'Fetch a previously generated model response by its identifier, without performing inference, such as [OpenAI Get a model response](https://platform.openai.com/docs/api-reference/responses/get)'
+          note: >
+             Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
           stability: development
         - id: create_agent
           value: "create_agent"
@@ -865,12 +945,19 @@ attributes:
     type: string
     brief: Human-readable name of the GenAI workflow provided by the application.
     note: |
-      This attribute can be populated in different frameworks; for example, as the name of the first chain in LangChain or the name of the crew in CrewAI.
-      The workflow name is usually provided by the application in a way that is specific to the generative AI framework or library that orchestrates the workflow.
-      It is usually a static name that is expected to be unique within an application.
+      The workflow name is usually a static, application-unique identifier defined
+      in a framework-specific way.
 
-      `gen_ai.workflow.name` MUST have low cardinality.
-      Semantic conventions for individual Generative AI frameworks SHOULD document what `gen_ai.workflow.name` means in the context of that framework.
-      If there is no low-cardinality workflow name available for a given framework, this attribute MUST NOT be captured by default.
+      For example, it can be the name of the first chain in LangChain,
+      the name of the crew in CrewAI, or the entry point agent in ADK or
+      OpenAI Agents when no explicit workflow name is provided.
+
+      This attribute MUST have low cardinality. It is NOT RECOMMENDED to use
+      instrumentation-time constants or names of types representing the workflow,
+      such as "StateGraph". When no meaningful, low-cardinality workflow name is
+      available for a given framework, this attribute MUST NOT be captured by default.
+
+      Semantic conventions for individual Generative AI frameworks SHOULD document
+      what `gen_ai.workflow.name` means in the context of that framework.
     examples: ["multi_agent_rag", "customer_support_pipeline"]
     stability: development

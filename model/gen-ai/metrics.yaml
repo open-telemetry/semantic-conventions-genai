@@ -119,18 +119,28 @@ metrics:
         metric_value_type: double
     attributes:
       - ref_group: metric_attributes.gen_ai
-  - name: gen_ai.workflow.duration
+  - name: gen_ai.invoke_workflow.duration
     requirement_level: recommended
     annotations:
       code_generation:
         metric_value_type: double
-    brief: 'GenAI workflow duration.'
+    brief: 'Records duration of GenAI workflow.'
     note: >
-      This metric instrument describes an operation that executes a coordinated process
-      composed of multiple agents or other operations involving generative AI.
+      Represents the end-to-end duration of a workflow execution, measured from the point
+      where application code initiates the workflow to the point where the workflow completes,
+      independent of workflow complexity.
 
-      When this metric is reported alongside a `gen_ai.invoke_workflow` span, the metric
-      value SHOULD be the same as the span duration.
+      A workflow is a coordinated process composed of multiple agents or other
+      operations involving generative AI.
+
+      If instrumentation measures only a single provider-facing client operation
+      (for example, one model API call), `gen_ai.client.operation.duration` SHOULD be used instead.
+      Instrumentation MAY emit both metrics for the same request path when both boundaries are available.
+
+      When this metric is reported alongside a `gen_ai.invoke_workflow.internal` span, the metric value SHOULD be the same as the span duration.
+
+      Individual systems may include additional system-specific attributes.
+      Refer to system-specific documentation, if available.
     instrument: histogram
     unit: "s"
     stability: development
@@ -157,7 +167,7 @@ metrics:
       operation (for example, one model API call),
       `gen_ai.client.operation.duration` SHOULD be used instead. If
       instrumentation can reliably bound a higher-level workflow that
-      coordinates multiple agents, `gen_ai.workflow.duration` SHOULD be
+      coordinates multiple agents, `gen_ai.invoke_workflow.duration` SHOULD be
       used for that workflow. Instrumentation MAY emit several of these
       metrics for the same request path when more than one boundary is
       available.
