@@ -7,10 +7,7 @@ name = "semconv-genai-reference"
 version = "0.1.0"
 description = "Reference implementations that validate OpenTelemetry Semantic Conventions for Generative AI against real LLM client libraries in Python"
 requires-python = ">=3.12"
-dependencies = [
-    "flask>=3.0",
-    "pyyaml>=6.0",
-]
+dependencies = []
 
 [project.optional-dependencies]
 dev = [
@@ -23,7 +20,6 @@ dev = [
 update-reports = "semconv_genai.report:main"
 run-scenario = "semconv_genai.run_scenario:main"
 genai-run-scenario = "semconv_genai.run_scenario:main"
-mock-server = "semconv_genai.mock_server:main"
 
 [tool.ruff]
 line-length = 120

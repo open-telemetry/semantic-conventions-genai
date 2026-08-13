@@ -6,21 +6,23 @@
 
 | Attribute | Supporting Libraries |
 | --- | --- |
-| gen_ai.operation.name | [crewai], [google-adk] |
+| gen_ai.operation.name | [crewai], [google-adk], [langchain], [openai-agents] |
 
 ## Conditionally Required
 
 | Attribute | Supporting Libraries |
 | --- | --- |
 | gen_ai.conversation.id | [google-adk] |
-| gen_ai.workflow.name | [crewai], [google-adk] |
+| gen_ai.workflow.name | [crewai], [google-adk], [langchain], [openai-agents] |
 
 ## Opt-In
 
 | Attribute | Supporting Libraries |
 | --- | --- |
-| gen_ai.input.messages | [crewai], [google-adk] |
-| gen_ai.output.messages | [crewai], [google-adk] |
+| gen_ai.input.messages | [crewai], [google-adk], [langchain], [openai-agents] |
+| gen_ai.output.messages | [crewai], [google-adk], [langchain], [openai-agents] |
 
 [crewai]: ../scenarios/crewai/scenario.py
 [google-adk]: ../scenarios/google-adk/scenario.py
+[langchain]: ../scenarios/langchain/scenario.py
+[openai-agents]: ../scenarios/openai-agents/scenario.py

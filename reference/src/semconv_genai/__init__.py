@@ -22,10 +22,6 @@ def reference_scenario_file(library: str) -> Path:
     return SCENARIOS_DIR / library / "scenario.py"
 
 
-def reference_results_dir(library: str) -> Path:
-    return SCENARIOS_DIR / library / "results"
-
-
 __all__ = [
     "MODEL_ROOT",
     "REFERENCE_ROOT",
@@ -33,6 +29,5 @@ __all__ = [
     "SEMCONV_ROOT",
     "reference_data_file",
     "reference_project_dir",
-    "reference_results_dir",
     "reference_scenario_file",
 ]

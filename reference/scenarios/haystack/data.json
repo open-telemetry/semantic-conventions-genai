@@ -1,11 +1,13 @@
 {
   "spans": {
-    "retrieval": [
+    "gen_ai.retrieval.client": [
       "gen_ai.data_source.id",
       "gen_ai.operation.name",
       "gen_ai.retrieval.documents",
       "gen_ai.retrieval.query.text",
       "gen_ai.retrieval.top_k"
     ]
-  }
+  },
+  "events": {},
+  "metrics": {}
 }
