@@ -7,7 +7,7 @@
 | Attribute | Supporting Libraries |
 | --- | --- |
 | gen_ai.operation.name | [anthropic], [aws-bedrock], [azure-ai-inference], [cohere], [google-genai], [groq], [litellm], [mistralai], [openai], [vertexai] |
-| gen_ai.provider.name | [anthropic], [google-genai] |
+| gen_ai.provider.name | [anthropic], [google-genai], [openai] |
 
 ## Conditionally Required
 
@@ -52,7 +52,7 @@
 
 | Attribute | Supporting Libraries |
 | --- | --- |
-| gen_ai.input.messages | [anthropic], [aws-bedrock], [azure-ai-inference], [cohere], [groq], [litellm], [mistralai], [openai], [vertexai] |
+| gen_ai.input.messages | [anthropic], [aws-bedrock], [azure-ai-inference], [cohere], [google-genai], [groq], [litellm], [mistralai], [openai], [vertexai] |
 | gen_ai.input.messages_delta | [anthropic], [google-genai], [openai], [vertexai] |
 | gen_ai.output.messages | [anthropic], [aws-bedrock], [azure-ai-inference], [cohere], [google-genai], [groq], [litellm], [mistralai], [openai], [vertexai] |
 | gen_ai.prompt.variable | (none) |
