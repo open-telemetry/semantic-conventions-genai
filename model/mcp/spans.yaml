@@ -34,7 +34,7 @@ spans:
       or notification or by the MCP server when server initiates the operation.
       It covers the time to receive the response or ack from the peer.
 
-      **Span status**: refer to the [Recording Errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/general/recording-errors.md)
+      **Span status**: refer to the [Recording Errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/recording-errors.md)
       document for details on how to record span status. See also `rpc.response.status_code` attribute
       for the details on which values classify as errors.
 
@@ -96,7 +96,7 @@ spans:
       It's reported by the MCP server when client initiates the request
       (or notification) or by the MCP client when server initiates the operation.
 
-      **Span status**: refer to the [Recording Errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/general/recording-errors.md)
+      **Span status**: refer to the [Recording Errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/recording-errors.md)
       document for details on how to record span status. See also `rpc.response.status_code` attribute
       for the details on which values classify as errors.
 

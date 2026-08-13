@@ -111,24 +111,7 @@ attribute_groups:
         requirement_level: recommended
       - ref: gen_ai.conversation.id
         requirement_level:
-          conditionally_required: When available.
-        note: |
-          Instrumentations SHOULD populate conversation id when they have an identifier
-          for the conversation readily available for a given operation, for example:
-
-          - when client framework being instrumented manages conversation history
-          (see [LlamaIndex chat store](https://docs.llamaindex.ai/en/stable/module_guides/storing/chat_stores/))
-          - when instrumenting GenAI client libraries that maintain conversation on the backend side
-          (see [AWS Bedrock agent sessions](https://docs.aws.amazon.com/bedrock/latest/userguide/agents-session-state.html),
-          [OpenAI Assistant threads](https://platform.openai.com/docs/api-reference/threads))
-
-          When no identifier for the conversation is available, instrumentations SHOULD NOT
-          populate conversation id. For example, a new UUID, a trace identifier, or a hash
-          of request content SHOULD NOT be used as a fallback value.
-
-          Application developers that manage conversation history MAY add conversation id to GenAI and other
-          spans or logs using custom span or log record processors or hooks provided by instrumentation
-          libraries.
+          conditionally_required: If and only if the instrumented library has one readily available, or the user application provides one through OpenTelemetry context or library-specific mechanisms.
       - ref: gen_ai.data_source.id
         requirement_level:
           conditionally_required: If applicable.
@@ -236,24 +219,7 @@ spans:
         requirement_level: opt_in
       - ref: gen_ai.conversation.id
         requirement_level:
-          conditionally_required: When available.
-        note: |
-          Instrumentations SHOULD populate conversation id when they have an identifier
-          for the conversation readily available for a given operation, for example:
-
-          - when client framework being instrumented manages conversation history
-          (see [LlamaIndex chat store](https://docs.llamaindex.ai/en/stable/module_guides/storing/chat_stores/))
-          - when instrumenting GenAI client libraries that maintain conversation on the backend side
-          (see [AWS Bedrock agent sessions](https://docs.aws.amazon.com/bedrock/latest/userguide/agents-session-state.html),
-          [OpenAI Assistant threads](https://platform.openai.com/docs/api-reference/threads))
-
-          When no identifier for the conversation is available, instrumentations SHOULD NOT
-          populate conversation id. For example, a new UUID, a trace identifier, or a hash
-          of request content SHOULD NOT be used as a fallback value.
-
-          Application developers that manage conversation history MAY add conversation id to GenAI and other
-          spans or logs using custom span or log record processors or hooks provided by instrumentation
-          libraries.
+          conditionally_required: If and only if the instrumented library has one readily available, or the user application provides one through OpenTelemetry context or library-specific mechanisms.
       - ref: gen_ai.conversation.compacted
         requirement_level:
           recommended: when available
@@ -622,14 +588,27 @@ spans:
     note: |
       The `gen_ai.operation.name` SHOULD be `invoke_workflow`.
 
-      This span SHOULD be reported by the instrumentations when they can
-      reliably determine that invocation is a workflow (i.e. groups several agent
-      invocations) and SHOULD NOT be reported by instrumentations that
-      can't distinguish it `invoke_workflow` from `invoke_agent`.
-      eg: Some frameworks like ADK have workflow agents that orchestrate other agents
-      and report `invoke_agent` spans, so `invoke_workflow` SHOULD NOT be reported by such instrumentations.
-      Conversely, frameworks like CrewAI have a distinct concept of crew (similar to workflow)
-      that is separate from individual agents, so they SHOULD report `invoke_workflow` spans.
+      The workflow span SHOULD be reported for operations that trigger the execution
+      of composable processes (e.g., graphs, orchestrators) coordinating multiple
+      agents or GenAI calls. It SHOULD NOT be reported for standalone agent invocations.
+
+      The `invoke_workflow` span SHOULD NOT be reported when the workflow invocation is
+      an internal implementation detail of another operation (e.g., an agent or tool that
+      spins up a runner/workflow under the hood to delegate to a sub-agent) rather than
+      a user-facing entry point. Workflows defined by the application SHOULD be reported
+      even when nested, for example a sub-graph invoked as a node of another graph.
+
+      Framework-specific semantic conventions SHOULD define which operations to report
+      as workflows and MAY specify heuristics to distinguish them from standalone
+      agent invocations and internal operations.
+
+      Examples of workflow invocations in different frameworks include:
+
+      - **ADK**: [`Runner.run(...)`](https://adk.dev/workflows/) with multi-agent or graph workflow.
+      - **CrewAI**: [`Crew.kickoff()`](https://docs.crewai.com/concepts/crews)
+      - **LangChain / LangGraph**: [`*Graph*.invoke(...)`](https://reference.langchain.com/python/langgraph/graphs)
+      - **Microsoft Agent Framework**: [`Workflow*.run(...)`](https://learn.microsoft.com/agent-framework/workflows/)
+      - **OpenAI Agents**: [`Runner.run(starting_agent=...)`](https://openai.github.io/openai-agents-python/ref/run/#agents.run.Runner.run) with handoffs, sub-agents, or agents-as-tools.
     stability: development
     attributes:
       - ref_group: attributes.gen_ai.error
@@ -639,6 +618,9 @@ spans:
       - ref: gen_ai.workflow.name
         requirement_level:
           conditionally_required: When available.
+      - ref: gen_ai.conversation.id
+        requirement_level:
+          conditionally_required: If and only if the instrumented library has one readily available, or the user application provides one through OpenTelemetry context or library-specific mechanisms.
       - ref: gen_ai.input.messages
         requirement_level: opt_in
       - ref: gen_ai.output.messages
