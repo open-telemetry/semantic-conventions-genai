@@ -17,7 +17,7 @@
 | gen_ai.agent.id | [aws-bedrock-agent], [openai-assistants] |
 | gen_ai.agent.name | [azure-ai-foundry], [google-genai], [openai-assistants] |
 | gen_ai.agent.version | [aws-bedrock-agent] |
-| gen_ai.conversation.id | [aws-bedrock-agent], [openai-assistants] |
+| gen_ai.conversation.id | [aws-bedrock-agent], [google-genai], [openai-assistants] |
 | gen_ai.data_source.id | (none) |
 | gen_ai.output.type | [azure-ai-foundry] |
 | gen_ai.request.choice.count | (none) |
@@ -48,8 +48,8 @@
 | Attribute | Supporting Libraries |
 | --- | --- |
 | gen_ai.input.messages | [aws-bedrock-agent], [azure-ai-foundry], [openai-assistants] |
-| gen_ai.input.messages_delta | (none) |
-| gen_ai.output.messages | [aws-bedrock-agent], [azure-ai-foundry], [openai-assistants] |
+| gen_ai.input.messages_delta | [google-genai] |
+| gen_ai.output.messages | [aws-bedrock-agent], [azure-ai-foundry], [google-genai], [openai-assistants] |
 | gen_ai.system_instructions | [azure-ai-foundry], [openai-assistants] |
 | gen_ai.tool.definitions | [azure-ai-foundry], [openai-assistants] |
 

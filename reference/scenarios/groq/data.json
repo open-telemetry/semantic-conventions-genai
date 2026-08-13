@@ -1,6 +1,6 @@
 {
   "spans": {
-    "inference": [
+    "gen_ai.inference.client": [
       "gen_ai.input.messages",
       "gen_ai.operation.name",
       "gen_ai.provider.name",
@@ -11,15 +11,6 @@
       "gen_ai.tool.definitions",
       "gen_ai.usage.input_tokens",
       "gen_ai.usage.output_tokens"
-    ],
-    "execute_tool": [
-      "gen_ai.operation.name",
-      "gen_ai.tool.call.arguments",
-      "gen_ai.tool.call.id",
-      "gen_ai.tool.call.result",
-      "gen_ai.tool.description",
-      "gen_ai.tool.name",
-      "gen_ai.tool.type"
     ]
   },
   "events": {
@@ -34,5 +25,6 @@
       "gen_ai.usage.input_tokens",
       "gen_ai.usage.output_tokens"
     ]
-  }
+  },
+  "metrics": {}
 }

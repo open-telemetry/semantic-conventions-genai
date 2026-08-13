@@ -1,7 +1,8 @@
-"""Reference implementation: AWS Bedrock Agent invoke_agent with manual instrumentation.
+"""Reference implementation: AWS Bedrock Agent create_agent / invoke_agent with manual instrumentation.
 
-Exercises: invoke_agent (Bedrock Agent Runtime InvokeAgent API)
-against a mock Bedrock server, with manual span instrumentation.
+Exercises: create_agent (Bedrock Agent CreateAgent API) and invoke_agent
+(Bedrock Agent Runtime InvokeAgent API) against a mock Bedrock server, with
+manual span instrumentation.
 """
 
 import json
@@ -20,13 +21,53 @@ _SERVER_PORT = _parsed.port or 443
 
 tracer = trace.get_tracer("gen_ai.client.aws_bedrock")
 
-AGENT_ID = "MOCK_AGENT_ID"
 AGENT_ALIAS_ID = "MOCK_ALIAS_ID"
 SESSION_ID = "mock-session-001"
 USER_INPUT = "Hello, agent!"
 
 
-def run_invoke_agent(client):
+def run_create_agent(client):
+    """Exercise Bedrock Agent CreateAgent with manual OTel spans.
+
+    Creates a CLIENT span with gen_ai create_agent attributes to demonstrate
+    what an instrumentation library should capture. Returns the new agent id.
+    """
+    print("  [create_agent] Bedrock Agent CreateAgent")
+    agent_name = "reference-agent"
+    agent_description = "Reference Bedrock agent."
+    agent_instruction = "You are a helpful assistant. Answer the user's questions accurately and concisely."
+    foundation_model = "anthropic.claude-3-5-sonnet-20240620-v1:0"
+
+    span_attributes = {
+        "gen_ai.operation.name": "create_agent",
+        "gen_ai.provider.name": "aws.bedrock",
+        "gen_ai.request.model": foundation_model,
+        "gen_ai.agent.name": agent_name,
+        "server.address": _SERVER_ADDRESS,
+        "server.port": _SERVER_PORT,
+    }
+    with tracer.start_as_current_span(
+        f"create_agent {agent_name}", kind=SpanKind.CLIENT, attributes=span_attributes
+    ) as span:
+        span.set_attribute("gen_ai.agent.description", agent_description)
+        span.set_attribute("gen_ai.system_instructions", json.dumps([{"type": "text", "content": agent_instruction}]))
+        try:
+            agent = client.create_agent(
+                agentName=agent_name,
+                description=agent_description,
+                instruction=agent_instruction,
+                foundationModel=foundation_model,
+            )["agent"]
+            span.set_attribute("gen_ai.agent.id", agent["agentId"])
+            span.set_attribute("gen_ai.agent.version", agent["agentVersion"])
+            print(f"    -> {agent['agentId']}")
+            return agent["agentId"]
+        except Exception as e:
+            span.set_status(StatusCode.ERROR, str(e))
+            raise
+
+
+def run_invoke_agent(client, agent_id):
     """Exercise Bedrock Agent Runtime InvokeAgent with manual OTel spans.
 
     Creates a CLIENT span with gen_ai invoke_agent attributes to demonstrate
@@ -40,14 +81,14 @@ def run_invoke_agent(client):
         "server.port": _SERVER_PORT,
     }
     with tracer.start_as_current_span("invoke_agent", kind=SpanKind.CLIENT, attributes=span_attributes) as span:
-        span.set_attribute("gen_ai.agent.id", AGENT_ID)
+        span.set_attribute("gen_ai.agent.id", agent_id)
         span.set_attribute("gen_ai.conversation.id", SESSION_ID)
         span.set_attribute(
             "gen_ai.input.messages", json.dumps([{"role": "user", "parts": [{"type": "text", "content": USER_INPUT}]}])
         )
         try:
             response = client.invoke_agent(
-                agentId=AGENT_ID,
+                agentId=agent_id,
                 agentAliasId=AGENT_ALIAS_ID,
                 sessionId=SESSION_ID,
                 inputText=USER_INPUT,
@@ -81,10 +122,17 @@ def run_invoke_agent(client):
 
 
 if __name__ == "__main__":
-    print("=== Manual: AWS Bedrock Agent Invoke Agent Reference Implementation ===")
+    print("=== Manual: AWS Bedrock Agent Reference Implementation ===")
     tp, lp, mp = setup_otel()
 
-    client = boto3.client(
+    control_client = boto3.client(
+        "bedrock-agent",
+        endpoint_url=MOCK_BASE_URL,
+        region_name="us-east-1",
+        aws_access_key_id="mock",
+        aws_secret_access_key="mock",
+    )
+    runtime_client = boto3.client(
         "bedrock-agent-runtime",
         endpoint_url=MOCK_BASE_URL,
         region_name="us-east-1",
@@ -92,6 +140,7 @@ if __name__ == "__main__":
         aws_secret_access_key="mock",
     )
 
-    run_invoke_agent(client)
+    agent_id = run_create_agent(control_client)
+    run_invoke_agent(runtime_client, agent_id)
 
     flush_and_shutdown(tp, lp, mp)

@@ -5,11 +5,9 @@
 {% import 'stability.j2' as stability %}
 {% import 'signal_requirement_level.j2' as sr %}
 
-{# Span-name rendering is disabled until weaver PR 1401 ships:
-   https://github.com/open-telemetry/weaver/pull/1401
-   Until then `span.name.note` collapses to the span's id instead of the
-   model-defined markdown, so the output would be wrong. Re-enable the
-   `if span.name and span.name.note` block below once weaver is upgraded. #}
+{# Span-name guidance is rendered from `span.name.note`. Refinements and imported
+   spans inherit the base span's `name` (weaver PR 1403), so provider docs get it
+   without repeating it in their own `note`. #}
 {% macro header(span) -%}
 **Status:** {{ stability.badge(span.stability, span.deprecated) }}
 
@@ -17,9 +15,9 @@
 {%- if span.note %}
 
 {{ span.note | trim }}{% endif %}
-{#- if span.name and span.name.note %}
+{%- if span.name and span.name.note %}
 
-**Span name** SHOULD be {{ span.name.note | trim }}.{% endif #}
+{{ span.name.note | trim }}{% endif %}
 {%- if "**Span kind" not in (span.note or "") %}
 
 **Span kind** SHOULD be `{{ span.kind | upper }}`.{% endif %}

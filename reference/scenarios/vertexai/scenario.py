@@ -7,6 +7,7 @@ against a mock Vertex AI server, with manual OTel spans.
 import json
 import os
 import warnings
+from contextlib import contextmanager
 
 from reference_shared import flush_and_shutdown, reference_event_logger, reference_tracer, setup_otel
 
@@ -14,21 +15,94 @@ MOCK_BASE_URL = os.environ["MOCK_LLM_URL"]
 
 # The Vertex AI gapic REST transport defaults to HTTPS. Monkey-patch the
 # transport to use plain HTTP so we can talk to the local mock server.
+# The preview (automatic function calling) surface goes through v1beta1, so both
+# transports need patching.
 from google.cloud.aiplatform_v1.services.prediction_service.transports.rest import (  # noqa: E402
     PredictionServiceRestTransport,
 )
-
-_original_rest_init = PredictionServiceRestTransport.__init__
-
-
-def _patched_rest_init(self, **kwargs):
-    kwargs.setdefault("url_scheme", "http")
-    return _original_rest_init(self, **kwargs)
+from google.cloud.aiplatform_v1beta1.services.prediction_service.transports.rest import (  # noqa: E402
+    PredictionServiceRestTransport as PredictionServiceRestTransportV1Beta1,
+)
 
 
-PredictionServiceRestTransport.__init__ = _patched_rest_init
+def _patch_http(transport_cls):
+    original_init = transport_cls.__init__
+
+    def _patched_rest_init(self, **kwargs):
+        kwargs.setdefault("url_scheme", "http")
+        return original_init(self, **kwargs)
+
+    transport_cls.__init__ = _patched_rest_init
+
+
+_patch_http(PredictionServiceRestTransport)
+_patch_http(PredictionServiceRestTransportV1Beta1)
 
 _reference_tracer = reference_tracer()
+
+
+@contextmanager
+def _patch_automatic_function_calling():
+    """Emit execute_tool spans from the SDK's automatic-function-calling dispatch.
+
+    `_MessageResponder.respond_to_model_response` is where the SDK invokes the
+    application's callable: the `FunctionCall` (id, name, args) and the callable
+    declaration are both in scope, so this is the hook generic instrumentation
+    would patch. Wrapping the callable itself would lose the tool call id.
+    """
+    from vertexai.generative_models import _generative_models
+
+    responder_cls = _generative_models.AutomaticFunctionCallingResponder._MessageResponder
+    original = responder_cls.respond_to_model_response
+
+    def traced(declaration, function_call):
+        raw_call = function_call.to_dict()
+        function = declaration._function
+
+        def instrumented_function(**kwargs):
+            tool_span_attributes = {
+                "gen_ai.operation.name": "execute_tool",
+                "gen_ai.tool.name": raw_call["name"],
+                "gen_ai.tool.type": "function",
+            }
+            description = declaration._raw_function_declaration.description
+            if description:
+                tool_span_attributes["gen_ai.tool.description"] = description
+            with _reference_tracer.start_as_current_span(
+                f"execute_tool {raw_call['name']}", attributes=tool_span_attributes
+            ) as tool_span:
+                if raw_call.get("id"):
+                    tool_span.set_attribute("gen_ai.tool.call.id", raw_call["id"])
+                tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps(raw_call.get("args") or {}))
+                result = function(**kwargs)
+                tool_span.set_attribute(
+                    "gen_ai.tool.call.result", result if isinstance(result, str) else json.dumps(result)
+                )
+                return result
+
+        return instrumented_function
+
+    def instrumented(self, *, response, **kwargs):
+        candidate = response.candidates[0] if response.candidates else None
+        calls = {call.name: call for call in (candidate.function_calls if candidate else [])}
+        restore = []
+        for tool in self._tools or []:
+            for name, declaration in tool._callable_functions.items():
+                if name not in calls:
+                    continue
+                restore.append((declaration, declaration._function))
+                declaration._function = traced(declaration, calls[name])
+        try:
+            return original(self, response=response, **kwargs)
+        finally:
+            for declaration, function in restore:
+                declaration._function = function
+
+    responder_cls.respond_to_model_response = instrumented
+    try:
+        yield
+    finally:
+        responder_cls.respond_to_model_response = original
 
 
 def _mock_host():
@@ -118,28 +192,35 @@ def run_chat():
 
 def run_chat_tool_call():
     """Scenario: chat with tool calling with reference implementation."""
-    from vertexai.generative_models import FunctionDeclaration, GenerativeModel, Tool
+    # Automatic function calling lives under `preview` in google-cloud-aiplatform 2.x.
+    from vertexai.preview.generative_models import (
+        AutomaticFunctionCallingResponder,
+        CallableFunctionDeclaration,
+        GenerativeModel,
+        Tool,
+    )
 
     print("  [chat_tool_call] chat with tool calling via Vertex AI (reference implementation)")
     request_model = "gemini-2.0-flash"
-    get_weather_func = FunctionDeclaration(
-        name="get_weather",
-        description="Get the current weather",
-        parameters={
-            "type": "object",
-            "properties": {
-                "location": {"type": "string", "description": "City name"},
-            },
-            "required": ["location"],
-        },
-    )
-    tool = Tool(function_declarations=[get_weather_func])
+
+    def get_weather(location: str) -> str:
+        """Get the current weather.
+
+        Args:
+            location: City name
+        """
+        return f"Sunny in {location}"
+
+    tool = Tool(function_declarations=[CallableFunctionDeclaration.from_func(get_weather)])
     span_attributes_2 = {
         "gen_ai.operation.name": "chat",
         "gen_ai.provider.name": "gcp.vertex_ai",
         "gen_ai.request.model": request_model,
     }
-    with _reference_tracer.start_as_current_span("chat gemini-2.0-flash", attributes=span_attributes_2) as span:
+    with (
+        _patch_automatic_function_calling(),
+        _reference_tracer.start_as_current_span("chat gemini-2.0-flash", attributes=span_attributes_2) as span,
+    ):
         span.set_attribute(
             "gen_ai.tool.definitions",
             json.dumps(
@@ -164,7 +245,8 @@ def run_chat_tool_call():
             warnings.simplefilter("ignore", DeprecationWarning)
             warnings.simplefilter("ignore", UserWarning)
             model = GenerativeModel(request_model)
-            response = model.generate_content(
+            chat = model.start_chat(responder=AutomaticFunctionCallingResponder(max_automatic_function_calls=1))
+            response = chat.send_message(
                 "What's the weather in Seattle?",
                 tools=[tool],
             )
