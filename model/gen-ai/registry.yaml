@@ -383,6 +383,16 @@ attributes:
     brief: The version of the GenAI agent.
     examples: ["1.0.0", "2025-05-01"]
     stability: development
+  - key: gen_ai.agent.turn.count
+    type: int
+    brief: The number of agent turns completed during the agent invocation.
+    note: >
+      A turn is one cycle of the agent loop: a model inference together with the
+      tool executions it requested. Instrumentations SHOULD record the total on
+      the `invoke_agent` span when the invocation ends, so a single-turn
+      invocation reports `1`.
+    examples: [1, 3]
+    stability: development
   - key: gen_ai.tool.name
     type: string
     brief: Name of the tool utilized by the agent.

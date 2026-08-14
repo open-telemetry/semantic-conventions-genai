@@ -100,6 +100,10 @@ async def run_agent():
         if usage.total_tokens:
             agent_span.set_attribute("gen_ai.usage.input_tokens", usage.input_tokens)
             agent_span.set_attribute("gen_ai.usage.output_tokens", usage.output_tokens)
+        # One turn per model inference in the run loop; raw_responses holds one
+        # entry per inference the Runner performed.
+        if result.raw_responses:
+            agent_span.set_attribute("gen_ai.agent.turn.count", len(result.raw_responses))
         if captured_responses:
             last_response = captured_responses[-1]
             finish_reasons = [
