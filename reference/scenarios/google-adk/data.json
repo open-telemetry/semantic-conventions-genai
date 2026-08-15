@@ -43,6 +43,11 @@
       "gen_ai.memory.records",
       "gen_ai.memory.store.id",
       "gen_ai.operation.name"
+    ],
+    "gen_ai.run_step.internal": [
+      "gen_ai.conversation.id",
+      "gen_ai.operation.name",
+      "gen_ai.step.name"
     ]
   },
   "events": {},

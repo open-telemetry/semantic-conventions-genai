@@ -35,6 +35,10 @@
       "gen_ai.retrieval.documents",
       "gen_ai.retrieval.query.text",
       "gen_ai.retrieval.top_k"
+    ],
+    "gen_ai.run_step.internal": [
+      "gen_ai.operation.name",
+      "gen_ai.step.name"
     ]
   },
   "events": {},

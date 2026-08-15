@@ -78,9 +78,16 @@ async def agent_node(state: GraphState) -> GraphState:
 
 
 def format_node(state: GraphState) -> GraphState:
+    """Deterministic graph node: no other GenAI span covers it, so run_step does."""
     print("  [format] formatting agent result")
-    last_message = state["messages"][-1]
-    return {"messages": state["messages"] + [f"Weather report: {last_message}"]}
+    step_name = "format"
+    step_span_attributes = {
+        "gen_ai.operation.name": "run_step",
+        "gen_ai.step.name": step_name,
+    }
+    with _reference_tracer.start_as_current_span(f"run_step {step_name}", attributes=step_span_attributes):
+        last_message = state["messages"][-1]
+        return {"messages": state["messages"] + [f"Weather report: {last_message}"]}
 
 
 def run_retrieval_reference():

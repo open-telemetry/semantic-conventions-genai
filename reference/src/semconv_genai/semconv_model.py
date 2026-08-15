@@ -40,6 +40,7 @@ _SPANS = {
     "invoke_agent_client": ("gen_ai.invoke_agent.client", "Invoke Agent Client"),
     "invoke_agent_internal": ("gen_ai.invoke_agent.internal", "Invoke Agent Internal"),
     "invoke_workflow": ("gen_ai.invoke_workflow.internal", "Invoke Workflow"),
+    "run_step": ("gen_ai.run_step.internal", "Run Step"),
     "plan": ("gen_ai.plan.internal", "Plan"),
 }
 
@@ -72,7 +73,9 @@ def _spec(model: dict[str, dict], kind: str, registry_id: str, label: str) -> At
         "opt_in": [],
     }
     for name, level in sorted(declared["attributes"].items()):
-        buckets[level].append(name)
+        # A conditional level is written {level: "when ..."} in the registry and
+        # reaches the coverage model suffixed, e.g. conditionally_required_conditional.
+        buckets[level.removesuffix("_conditional")].append(name)
     return AttributeSpec(
         label=label,
         required=tuple(buckets["required"]),

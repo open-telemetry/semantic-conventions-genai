@@ -555,6 +555,10 @@ attributes:
           value: "invoke_workflow"
           brief: 'Invoke GenAI workflow'
           stability: development
+        - id: run_step
+          value: "run_step"
+          brief: 'Run a step of a GenAI workflow that is not one of the known GenAI operations'
+          stability: development
         - id: plan
           value: "plan"
           brief: 'Agent planning or task decomposition phase'
@@ -950,4 +954,28 @@ attributes:
       Semantic conventions for individual Generative AI frameworks SHOULD document
       what `gen_ai.workflow.name` means in the context of that framework.
     examples: ["multi_agent_rag", "customer_support_pipeline"]
+    stability: development
+  - key: gen_ai.step.name
+    type: string
+    brief: Human-readable name of a step within a GenAI workflow.
+    note: |
+      A step is a unit of a GenAI workflow that hands control to application- or
+      framework-defined code. Frameworks name this concept differently - a node in
+      graph-based frameworks (LangGraph, ADK, pydantic-graph), a step in
+      LlamaIndex Workflows, CrewAI Flows, or Agno, a component in Haystack.
+      Known operations (e.g., `invoke_workflow`, `execute_tool`, inference) use
+      specific attributes like `gen_ai.workflow.name` to describe the step.
+
+      This attribute along with the corresponding `run_step` operation SHOULD NOT
+      be used for known operations. They SHOULD act only as a fallback for unknown
+      step types.
+
+      `gen_ai.step.name` SHOULD have low cardinality. It is usually a static name assigned by the
+      application or framework when the workflow is defined and is expected to be unique
+      within a given workflow.
+
+      Semantic conventions for individual GenAI frameworks SHOULD document what `gen_ai.step.name`
+      means in the context of that framework. If there is no low-cardinality step name available
+      for a given framework, this attribute MUST NOT be captured by default.
+    examples: ["validate_input", "route_query", "format_output"]
     stability: development

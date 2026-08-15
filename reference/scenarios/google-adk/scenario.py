@@ -208,6 +208,19 @@ def run_agent_reference():
                     "gen_ai.input.messages",
                     json.dumps([{"role": "user", "parts": [{"type": "text", "content": input_text}]}]),
                 )
+                # A deterministic validation node between workflow start and
+                # the agent invocation. A real ADK instrumentation reads
+                # gen_ai.step.name off the graph, as the key the node is
+                # registered under.
+                step_name = "validate_input"
+                step_span_attributes = {
+                    "gen_ai.operation.name": "run_step",
+                    "gen_ai.step.name": step_name,
+                    "gen_ai.conversation.id": session.id,
+                }
+                with _reference_tracer.start_as_current_span(f"run_step {step_name}", attributes=step_span_attributes):
+                    if not input_text.strip():
+                        raise ValueError("input must not be empty")
                 agent_span_attributes = {
                     "gen_ai.operation.name": "invoke_agent",
                     "gen_ai.request.model": request_model,
