@@ -383,6 +383,31 @@ attributes:
     brief: The version of the GenAI agent.
     examples: ["1.0.0", "2025-05-01"]
     stability: development
+  - key: gen_ai.agent.governance.ref
+    type: string
+    brief: >
+      An opaque, producer-scoped token that references the governance record for
+      a decision point, for example a policy, approval, or execution-context record.
+    note: >
+      The reference is intended to be compared for equality only within the
+      producer's scope. Consumers MUST NOT parse it or infer meaning from its
+      format.
+
+      The reference MUST identify the governance record as it stood when it
+      governed the decision. It MUST be version-pinned and MUST NOT point to a
+      mutable latest version. Otherwise, policy edits or superseded approvals
+      could silently change the meaning of an older trace.
+
+      The referenced record's schema, lifecycle, and validation behavior are
+      implementation-defined and out of scope for this convention. This attribute
+      defines only a payload-free join surface; it does not carry the referenced
+      record's contents.
+
+      This attribute is recorded on the span that represents the decision
+      operation itself (for example, a guardrail evaluation), not copied onto
+      surrounding agent spans.
+    examples: ["ctx_7f3a9c"]
+    stability: development
   - key: gen_ai.tool.name
     type: string
     brief: Name of the tool utilized by the agent.
