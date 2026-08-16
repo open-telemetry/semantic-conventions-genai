@@ -5,30 +5,16 @@
             "description": "Represents a single document retrieved from a vector database or search system.",
             "properties": {
                 "id": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
                     "default": null,
                     "description": "A unique identifier for the document.",
-                    "title": "Id"
+                    "title": "Id",
+                    "type": "string"
                 },
                 "score": {
-                    "anyOf": [
-                        {
-                            "type": "number"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
                     "default": null,
                     "description": "The relevance score of the document.",
-                    "title": "Score"
+                    "title": "Score",
+                    "type": "number"
                 }
             },
             "title": "RetrievalDocument",

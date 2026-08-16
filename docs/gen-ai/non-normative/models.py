@@ -63,7 +63,7 @@ class ToolCallRequestPart(BaseModel):
     type: Literal["tool_call"] = Field(
         description="The type of the content captured in this part."
     )
-    id: Optional[str] = Field(
+    id: str = Field(
         default=None, description="Unique identifier for the tool call."
     )
     name: str = Field(description="Name of the tool.")
@@ -80,7 +80,7 @@ class ToolCallResponsePart(BaseModel):
     type: Literal["tool_call_response"] = Field(
         description="The type of the content captured in this part."
     )
-    id: Optional[str] = Field(default=None, description="Unique tool call identifier.")
+    id: str = Field(default=None, description="Unique tool call identifier.")
     response: Any = Field(description="Tool call response.")
 
     model_config = ConfigDict(extra="allow")
@@ -122,7 +122,7 @@ class ServerToolCallPart(BaseModel):
     type: Literal["server_tool_call"] = Field(
         description="The type of the content captured in this part."
     )
-    id: Optional[str] = Field(
+    id: str = Field(
         default=None, description="Unique identifier for the server tool call."
     )
     name: str = Field(description="Name of the server tool.")
@@ -139,7 +139,7 @@ class ServerToolCallResponsePart(BaseModel):
     type: Literal["server_tool_call_response"] = Field(
         description="The type of the content captured in this part."
     )
-    id: Optional[str] = Field(
+    id: str = Field(
         default=None,
         description="Unique server tool call identifier matching the original call.",
     )
@@ -180,11 +180,11 @@ class CompactionPart(BaseModel):
     type: Literal["compaction"] = Field(
         description="The type of the content captured in this part."
     )
-    id: Optional[str] = Field(
+    id: str = Field(
         default=None,
         description="Provider-assigned identifier for the compaction item or block.",
     )
-    content: Optional[str] = Field(
+    content: str = Field(
         default=None,
         description="The unencrypted compacted conversation summary, when available.",
     )
@@ -198,7 +198,7 @@ class BlobPart(BaseModel):
     type: Literal["blob"] = Field(
         description="The type of the content captured in this part."
     )
-    mime_type: Optional[str] = Field(
+    mime_type: str = Field(
         default=None, description="The IANA MIME type of the attached data."
     )
     modality: Union[Modality, str] = Field(
@@ -215,7 +215,7 @@ class FilePart(BaseModel):
     type: Literal["file"] = Field(
         description="The type of the content captured in this part."
     )
-    mime_type: Optional[str] = Field(
+    mime_type: str = Field(
         default=None, description="The IANA MIME type of the attached data."
     )
     modality: Union[Modality, str] = Field(
@@ -234,7 +234,7 @@ class UriPart(BaseModel):
     type: Literal["uri"] = Field(
         description="The type of the content captured in this part."
     )
-    mime_type: Optional[str] = Field(
+    mime_type: str = Field(
         default=None, description="The IANA MIME type of the attached data."
     )
     modality: Union[Modality, str] = Field(
@@ -349,7 +349,7 @@ class ChatMessage(BaseModel):
     parts: List[MessagePart] = Field(
         description="List of message parts that make up the message content."
     )
-    name: Optional[str] = Field(
+    name: str = Field(
         default=None, description="The name of the participant."
     )
 
@@ -457,7 +457,7 @@ class FunctionToolDefinition(BaseModel):
 
     type: Literal["function"] = Field(description="The type of the tool.")
     name: str = Field(description="The name of the tool.")
-    description: Optional[str] = Field(
+    description: str = Field(
         default=None,
         description=(
             "The description of the tool. "
@@ -465,7 +465,7 @@ class FunctionToolDefinition(BaseModel):
             "Instrumentations MAY provide a way to enable populating this property."
         ),
     )
-    parameters: Optional[JsonSchemaDraft7Dict] = Field(
+    parameters: JsonSchemaDraft7Dict = Field(
         default=None,
         description=(
             "JSON Schema document describing the parameters accepted by the tool. "
@@ -530,10 +530,10 @@ class RetrievalDocument(BaseModel):
     Represents a single document retrieved from a vector database or search system.
     """
 
-    id: str | None = Field(
+    id: str = Field(
         default=None, description="A unique identifier for the document."
     )
-    score: float | None = Field(
+    score: float = Field(
         default=None, description="The relevance score of the document."
     )
 
@@ -561,14 +561,14 @@ class MemoryRecord(BaseModel):
     """
 
     content: Any = Field(description="The content of the memory record.")
-    id: Optional[str] = Field(
+    id: str = Field(
         default=None, description="A unique identifier for the memory record."
     )
-    metadata: Optional[dict[str, Any]] = Field(
+    metadata: dict[str, Any] = Field(
         default=None,
         description="Provider-specific metadata associated with the memory record.",
     )
-    score: Optional[float] = Field(
+    score: float = Field(
         default=None,
         description="The relevance score of the memory record when populated on search results.",
     )
