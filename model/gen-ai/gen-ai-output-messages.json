@@ -10,7 +10,6 @@
                     "type": "string"
                 },
                 "mime_type": {
-                    "default": null,
                     "description": "The IANA MIME type of the attached data.",
                     "title": "Mime Type",
                     "type": "string"
@@ -53,13 +52,11 @@
                     "type": "string"
                 },
                 "id": {
-                    "default": null,
                     "description": "Provider-assigned identifier for the compaction item or block.",
                     "title": "Id",
                     "type": "string"
                 },
                 "content": {
-                    "default": null,
                     "description": "The unencrypted compacted conversation summary, when available.",
                     "title": "Content",
                     "type": "string"
@@ -82,7 +79,6 @@
                     "type": "string"
                 },
                 "mime_type": {
-                    "default": null,
                     "description": "The IANA MIME type of the attached data.",
                     "title": "Mime Type",
                     "type": "string"
@@ -257,7 +253,6 @@
                     "type": "array"
                 },
                 "name": {
-                    "default": null,
                     "description": "The name of the participant.",
                     "title": "Name",
                     "type": "string"
@@ -331,7 +326,6 @@
                     "type": "string"
                 },
                 "id": {
-                    "default": null,
                     "description": "Unique identifier for the server tool call.",
                     "title": "Id",
                     "type": "string"
@@ -365,7 +359,6 @@
                     "type": "string"
                 },
                 "id": {
-                    "default": null,
                     "description": "Unique server tool call identifier matching the original call.",
                     "title": "Id",
                     "type": "string"
@@ -416,7 +409,6 @@
                     "type": "string"
                 },
                 "id": {
-                    "default": null,
                     "description": "Unique identifier for the tool call.",
                     "title": "Id",
                     "type": "string"
@@ -427,7 +419,6 @@
                     "type": "string"
                 },
                 "arguments": {
-                    "default": null,
                     "description": "Arguments for the tool call.",
                     "title": "Arguments"
                 }
@@ -450,7 +441,6 @@
                     "type": "string"
                 },
                 "id": {
-                    "default": null,
                     "description": "Unique tool call identifier.",
                     "title": "Id",
                     "type": "string"
@@ -478,7 +468,6 @@
                     "type": "string"
                 },
                 "mime_type": {
-                    "default": null,
                     "description": "The IANA MIME type of the attached data.",
                     "title": "Mime Type",
                     "type": "string"

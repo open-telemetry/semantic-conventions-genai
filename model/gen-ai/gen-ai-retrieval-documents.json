@@ -5,13 +5,11 @@
             "description": "Represents a single document retrieved from a vector database or search system.",
             "properties": {
                 "id": {
-                    "default": null,
                     "description": "A unique identifier for the document.",
                     "title": "Id",
                     "type": "string"
                 },
                 "score": {
-                    "default": null,
                     "description": "The relevance score of the document.",
                     "title": "Score",
                     "type": "number"

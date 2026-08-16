@@ -37,6 +37,16 @@ from pydantic import (
 from pydantic_core import core_schema
 
 
+def omittable_field(**kwargs: Any):
+    """Define an optional, non-nullable JSON property."""
+
+    return Field(
+        default=None,
+        json_schema_extra=lambda schema: schema.pop("default", None),
+        **kwargs,
+    )
+
+
 # --------------------------------------------------------------------------
 # Common message-part models
 # --------------------------------------------------------------------------
@@ -63,11 +73,11 @@ class ToolCallRequestPart(BaseModel):
     type: Literal["tool_call"] = Field(
         description="The type of the content captured in this part."
     )
-    id: str = Field(
-        default=None, description="Unique identifier for the tool call."
+    id: str = omittable_field(
+        description="Unique identifier for the tool call."
     )
     name: str = Field(description="Name of the tool.")
-    arguments: Any = Field(default=None, description="Arguments for the tool call.")
+    arguments: Any = omittable_field(description="Arguments for the tool call.")
 
     model_config = ConfigDict(extra="allow")
 
@@ -80,7 +90,7 @@ class ToolCallResponsePart(BaseModel):
     type: Literal["tool_call_response"] = Field(
         description="The type of the content captured in this part."
     )
-    id: str = Field(default=None, description="Unique tool call identifier.")
+    id: str = omittable_field(description="Unique tool call identifier.")
     response: Any = Field(description="Tool call response.")
 
     model_config = ConfigDict(extra="allow")
@@ -122,8 +132,8 @@ class ServerToolCallPart(BaseModel):
     type: Literal["server_tool_call"] = Field(
         description="The type of the content captured in this part."
     )
-    id: str = Field(
-        default=None, description="Unique identifier for the server tool call."
+    id: str = omittable_field(
+        description="Unique identifier for the server tool call."
     )
     name: str = Field(description="Name of the server tool.")
     server_tool_call: ServerToolCall = Field(
@@ -139,8 +149,7 @@ class ServerToolCallResponsePart(BaseModel):
     type: Literal["server_tool_call_response"] = Field(
         description="The type of the content captured in this part."
     )
-    id: str = Field(
-        default=None,
+    id: str = omittable_field(
         description="Unique server tool call identifier matching the original call.",
     )
     server_tool_call_response: ServerToolCallResponse = Field(
@@ -180,12 +189,10 @@ class CompactionPart(BaseModel):
     type: Literal["compaction"] = Field(
         description="The type of the content captured in this part."
     )
-    id: str = Field(
-        default=None,
+    id: str = omittable_field(
         description="Provider-assigned identifier for the compaction item or block.",
     )
-    content: str = Field(
-        default=None,
+    content: str = omittable_field(
         description="The unencrypted compacted conversation summary, when available.",
     )
 
@@ -198,8 +205,8 @@ class BlobPart(BaseModel):
     type: Literal["blob"] = Field(
         description="The type of the content captured in this part."
     )
-    mime_type: str = Field(
-        default=None, description="The IANA MIME type of the attached data."
+    mime_type: str = omittable_field(
+        description="The IANA MIME type of the attached data."
     )
     modality: Union[Modality, str] = Field(
         description="The general modality of the data if it is known. Instrumentations SHOULD also set the mimeType field if the specific type is known."
@@ -215,8 +222,8 @@ class FilePart(BaseModel):
     type: Literal["file"] = Field(
         description="The type of the content captured in this part."
     )
-    mime_type: str = Field(
-        default=None, description="The IANA MIME type of the attached data."
+    mime_type: str = omittable_field(
+        description="The IANA MIME type of the attached data."
     )
     modality: Union[Modality, str] = Field(
         description="The general modality of the data if it is known. Instrumentations SHOULD also set the mimeType field if the specific type is known."
@@ -234,8 +241,8 @@ class UriPart(BaseModel):
     type: Literal["uri"] = Field(
         description="The type of the content captured in this part."
     )
-    mime_type: str = Field(
-        default=None, description="The IANA MIME type of the attached data."
+    mime_type: str = omittable_field(
+        description="The IANA MIME type of the attached data."
     )
     modality: Union[Modality, str] = Field(
         description="The general modality of the data if it is known. Instrumentations SHOULD also set the mimeType field if the specific type is known."
@@ -349,8 +356,8 @@ class ChatMessage(BaseModel):
     parts: List[MessagePart] = Field(
         description="List of message parts that make up the message content."
     )
-    name: str = Field(
-        default=None, description="The name of the participant."
+    name: str = omittable_field(
+        description="The name of the participant."
     )
 
     model_config = ConfigDict(extra="allow")
@@ -457,16 +464,14 @@ class FunctionToolDefinition(BaseModel):
 
     type: Literal["function"] = Field(description="The type of the tool.")
     name: str = Field(description="The name of the tool.")
-    description: str = Field(
-        default=None,
+    description: str = omittable_field(
         description=(
             "The description of the tool. "
             "Since this attribute could be large, it's NOT RECOMMENDED to be populated by default. "
             "Instrumentations MAY provide a way to enable populating this property."
         ),
     )
-    parameters: JsonSchemaDraft7Dict = Field(
-        default=None,
+    parameters: JsonSchemaDraft7Dict = omittable_field(
         description=(
             "JSON Schema document describing the parameters accepted by the tool. "
             "The value MUST conform to JSON Schema draft-07. "
@@ -530,11 +535,11 @@ class RetrievalDocument(BaseModel):
     Represents a single document retrieved from a vector database or search system.
     """
 
-    id: str = Field(
-        default=None, description="A unique identifier for the document."
+    id: str = omittable_field(
+        description="A unique identifier for the document."
     )
-    score: float = Field(
-        default=None, description="The relevance score of the document."
+    score: float = omittable_field(
+        description="The relevance score of the document."
     )
 
     model_config = ConfigDict(
@@ -561,15 +566,13 @@ class MemoryRecord(BaseModel):
     """
 
     content: Any = Field(description="The content of the memory record.")
-    id: str = Field(
-        default=None, description="A unique identifier for the memory record."
+    id: str = omittable_field(
+        description="A unique identifier for the memory record."
     )
-    metadata: dict[str, Any] = Field(
-        default=None,
+    metadata: dict[str, Any] = omittable_field(
         description="Provider-specific metadata associated with the memory record.",
     )
-    score: float = Field(
-        default=None,
+    score: float = omittable_field(
         description="The relevance score of the memory record when populated on search results.",
     )
 

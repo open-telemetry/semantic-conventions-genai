@@ -16,7 +16,6 @@
                     "type": "string"
                 },
                 "description": {
-                    "default": null,
                     "description": "The description of the tool. Since this attribute could be large, it's NOT RECOMMENDED to be populated by default. Instrumentations MAY provide a way to enable populating this property.",
                     "title": "Description",
                     "type": "string"
@@ -27,7 +26,6 @@
                             "$ref": "http://json-schema.org/draft-07/schema#"
                         }
                     ],
-                    "default": null,
                     "description": "JSON Schema document describing the parameters accepted by the tool. The value MUST conform to JSON Schema draft-07. Since this attribute could be large, it's NOT RECOMMENDED to be populated by default. Instrumentations MAY provide a way to enable populating this property.",
                     "title": "Parameters"
                 }
