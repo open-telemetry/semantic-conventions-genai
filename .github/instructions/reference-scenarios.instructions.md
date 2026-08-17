@@ -1,63 +1,72 @@
 ---
-applyTo: "reference/scenarios/**/scenario.py"
+applyTo: "reference/scenarios/**"
 ---
 
 # Reference scenarios
 
-Reference scenarios are runnable Python instrumentation that prove proposed
-GenAI conventions are capturable. They should be easy to scan: a reader
-should see, at the instrumentation site, exactly what attributes get emitted
-and where each value comes from.
+A scenario is evidence that a real library, driven through its public API,
+produces the data a convention asks instrumentation to record. A reader should
+see, at the emission site, which library expression produced each value.
 
-## Attribute emission
+## Which library
 
-- Set emitted attributes inline at the instrumentation site. Do not move
-  emission into helper methods such as `_set_request_attributes`,
-  `_set_response_attributes`, or similar wrappers.
-- If a method owns its own span boundary, set that span's attributes inline
-  in that method.
-- Keep base attributes, derived attributes, and result attributes together
-  in the same span.
-- Small local parsing or derivation that exists only to support nearby
-  emitted attributes is fine; keep it next to the emission.
+- One directory per library, named for the library or SDK it drives: `openai`,
+  `langchain`, `google-adk`.
+- Put new behavior in the scenario of a library that already has it.
+- Drive the library's real feature: for an approvals convention, run the
+  library's approval API; for interrupts, run its interrupt API and let its own
+  objects carry the outcome.
+- Call the library's public entry point. Patching private methods to open spans
+  around them is fine.
 
-## Attribute values
+## Where values come from
 
-- For attributes whose value is not truly static for the scenario, do not
-  hardcode the emitted value. Use a local variable or field read from the
-  current request or response.
-- Request-side attributes such as `gen_ai.request.model` should come from
-  the same variable or object field passed into the SDK call.
-- Response-side attributes such as `gen_ai.response.model`, response ids,
-  finish reasons, and token counts should come from the current response or
-  streamed result object, optionally via a small nearby local.
-- If the same non-static value is needed in both the SDK call and span
-  attributes, bind it once locally and reuse it. Avoid throwaway forwarding
-  locals that only mirror an existing constant, argument, or SDK field.
+Instrumentation lives inside the library and sees only the library's own API.
+Every emitted value must be readable from there, so it comes from one of two
+places:
 
-## Span boundaries
+- input the scenario passes through a parameter the library defines and
+  interprets: `model=`, `tools=`, an agent's `name=`
+- output the library or the mock server returns: response model, ids, finish
+  reasons, token counts, a checkpoint id from `get_state`
 
-- The span must be open around the library invocation. `sampling_relevant`
-  request attributes go in the span-start `attributes` argument to
-  `start_as_current_span`; other request attributes and response attributes
-  are set inline inside the same `with` block.
-- Setting attributes on a separately opened or post-hoc span after the call
-  returns is a defect even if the final attribute set looks correct.
+`x = obj.field` counts when the library defined `obj` and gave `field` its
+meaning. Bind a value needed by both the SDK call and the span once, and reuse
+it. Small local parsing feeding a nearby attribute is fine; keep it at the
+emission site.
 
-## Library entry points
+A value is a literal when the library only carries it - when the meaning lives
+in the scenario's own keys, dict shape, or classes rather than in the library's
+API:
 
-- Scenarios must call the library's public entry point. Patching private
-  methods to open spans around them is acceptable, but the scenario itself
-  must not invoke private APIs directly.
+- `interrupt({"reason": "human_input"})` then emitting `intr.value["reason"]`:
+  `interrupt()` takes any payload, and `reason` is the scenario's key
+- `Command(resume={"approved": True})` driving an emitted `resolution: approved`:
+  the resume value is opaque to the library
+- fields of a `Gate`, `Decision`, or `Result` type the scenario declares and no
+  library API reads
+- a clock set past a deadline the scenario chose
+  (`now = deadline + timedelta(minutes=1)`), making the branch always true
 
-## What not to flag in review
+Noting any of this in a comment or README leaves it a literal.
 
-- Library-native sibling spans, retries, converter spans, or extra LLM
-  round-trips produced by invoking a library's public entry point. These
-  are honest reference data, not noise.
+## How attributes are set
 
-## After editing a scenario
+- Set attributes inline at the emission site, not in helpers like
+  `_set_request_attributes`.
+- Keep the span open around the library call. `sampling_relevant` request
+  attributes go in the `attributes` argument to `start_as_current_span`; the
+  rest, and all response attributes, go inside the same `with` block.
+- Keep base, derived, and result attributes on the same span.
+- A method that owns a span sets that span's attributes inline.
+
+## Honest reference data
+
+Sibling spans the library itself emits - retries, converter spans, worker tasks,
+fall-through paths, extra LLM round-trips from a public entry point.
+
+## After editing
 
 Regenerate the scenario's `data.json` and the affected `reference/reports/*.md`
-files per [reference/README.md](../../reference/README.md) before pushing. CI
-enforces that generated outputs match the scenario.
+per [reference/README.md](../../reference/README.md) before pushing. CI enforces
+that generated output matches the scenario.

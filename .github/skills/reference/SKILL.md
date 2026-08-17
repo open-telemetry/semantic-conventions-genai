@@ -57,7 +57,7 @@ If the value would have to be guessed, carried forward from an unrelated call, o
 2. Identify every changed signal, entity, attribute, and requirement level.
 3. Apply [evaluate-reference.instructions.md](../../instructions/evaluate-reference.instructions.md) to each changed field.
 4. Classify each field as `direct`, `derivable`, `weak`, or `capture gap`.
-5. Verify emitted values come from the current call and spans wrap real library operations.
+5. Verify spans wrap real library operations, and that each emitted value is readable from inside the library: either a parameter the library defines and interprets, or something the library or mock server returns. A value the library only carries - meaning supplied by the scenario's own keys, payloads, or types - is a literal and does not demonstrate the field.
 6. Inventory every existing scenario that credibly supports the change, including unchanged scenarios.
 7. Report implementation defects separately from honest capture gaps and missing coverage.
 

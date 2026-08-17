@@ -2,66 +2,68 @@
 applyTo: "model/**,docs/gen-ai/**,reference/scenarios/**"
 ---
 
-# Reference Evaluation
+# Reference evaluation
 
-Use when evaluating whether semantic-convention changes are supported by reference scenarios.
+Judge whether the scenarios in a changeset back its convention changes. Read the
+changeset whole: for each field changed under `model/**`, read the scenarios
+that should emit it, including ones this PR did not touch.
 
-When reviewing a pull request, perform a cross-file evaluation rather than reviewing
-each changed file in isolation. For each signal or entity changed under `model/**`,
-inspect the relevant reference scenarios, including unchanged scenarios for other
-supporting libraries.
+Scenario rules live in
+[reference-scenarios.instructions.md](reference-scenarios.instructions.md).
+Flag each violation and name the rule.
 
-Goal: for each signal, entity, or attribute changed under `model/**`, confirm at least one reference scenario credibly demonstrates it; for each scenario change, confirm it mirrors the model. Flag any changed field with no scenario coverage as `add reference for supporting library`.
+## Trace every value
 
-A missing or partial reference is not automatically an implementation bug. It may be a capture gap: a legitimate limitation in what the library exposes from its public call boundary.
+Instrumentation lives inside the library and sees only the library's own API, so
+each value must be readable from there: either a parameter the library defines
+and interprets, or something the library or mock server returns.
 
-## Evaluation Stance
+For each attribute the PR adds or changes, name that parameter or return value.
+Flag the field when:
 
-- Judge each library on what its current call boundary honestly exposes.
-- Distinguish `implementation needs fixing` from `library cannot demonstrate this field`.
-- Prefer honest capture gaps over superficial compliance.
-- Evaluate coverage across all supporting libraries, not just the first that passes.
+- the library only carries the value: it went in through an opaque or
+  app-defined payload, and its meaning comes from the scenario's keys or types
+- it was read from a type the scenario declares that no library API interprets
+- you cannot name the argument, return value, response field, streamed event,
+  exception, or library state behind it
+- the author states instrumentation cannot derive it, and the scenario emits it
+  anyway
 
-## Core Rule
+Each of these means the field is not demonstrated, however many attribute reads
+sit between the literal and the emission. Ask for the emission to be dropped, or
+for the field to ship with `(none)` supporting libraries.
 
-Ask whether native instrumentation can populate the attribute correctly and consistently from information the library already owns at the current call boundary. If you cannot name the concrete argument, return value, response field, streamed event, exception, or library-owned state that produces the value, treat the field as not credibly demonstrated.
+Finding the attribute name in a scenario or in `data.json` proves only that a
+string was emitted.
 
-## Attribute Classes
+## Also flag
 
-Classify each candidate field and tag inline comments accordingly:
+- a scenario directory named for the proposed convention instead of the library
+- a scenario calling the library's private API directly
+- a library whose existing scenario could emit the field and does not
 
-- `direct` — readable from the call boundary: arguments, return values, streamed chunks, exceptions, request/response objects, or configuration of the current client.
-- `derivable` — computable from library-owned semantics without app-specific guesswork.
-- `weak` — depends on app-specific naming, opaque ids, cached state from another call, test-only scaffolding, or guessing an enum from arbitrary strings.
-- `capture gap` — the model asks for something the library boundary cannot honestly produce.
+## Classify each field
 
-## For Each Weak, Missing, Or Capture-Gap Field
+- `direct` - read at the call boundary: arguments, return values, streamed
+  chunks, exceptions, the current client's config
+- `derivable` - computed from what the library means, no app-specific guessing
+- `weak` - app-specific naming, opaque ids, state cached from another call,
+  test-only scaffolding, an enum guessed from free text, or a value the library
+  only passes through
+- `capture gap` - the library cannot produce it
 
-State:
+Judge each library on its own call boundary. Check every library that could
+support the change.
 
-- why it is weak, missing, or a capture gap
-- the exact current-call source that would be needed to support it
-- whether that source is actually available in the library example
+## Report
 
-Then recommend one of: `fix implementation`, `add reference for supporting library`, `leave unchanged; honest capture gap`. Prefer them in that order.
+For each `weak`, missing, or `capture gap` field, say why, name the
+call-boundary source that would support it, and say whether that source exists
+today. Then pick one, preferring the first that fits: `fix implementation`,
+`add reference for supporting library`, `leave unchanged; honest capture gap`.
 
-## Implementation Defects To Flag
-
-See [reference-scenarios.instructions.md](reference-scenarios.instructions.md) for the positive form of these rules; violations are defects.
-
-- **Span not wrapping the SDK call.** The span must be open around the library invocation, with request attributes set inline before the call and response attributes set from the returned object inside the same `with` block. Setting attributes on a separately opened or post-hoc span after the call returns is a defect even if the final attribute set looks correct.
-- **Private API as scenario entry point.** The scenario must invoke the library's public API. Patching private methods to open spans around them is acceptable, but the scenario calling private methods directly is a defect — it does not credibly demonstrate what native instrumentation could capture.
-
-## Not Defects
-
-- **Library-native sibling spans.** Library-native sibling spans, retries, converter spans, worker tasks, fall-through paths, or extra LLM round-trips produced by invoking a library's public entry point are honest reference data, not noise.
-
-## Do Not Conflate
-
-Keep these judgments separate, and state them separately when they coexist:
+State these separately when they coexist in one review:
 
 - `library reference supports this field`
 - `library reference does not support this field`
 - `supporting library was never implemented`
-
-A correct evaluation can say at once: one library should be fixed; another cannot emit the field; a third supporting library still needs reference coverage.

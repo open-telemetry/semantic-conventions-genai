@@ -19,7 +19,9 @@ GenAI clients, MCP, and provider-specific conventions. Attributes live in
    by a span, metric, or event that defines when and how it is recorded. No
    orphan attributes.
 5. **No convention without a reference scenario.** A new convention
-   needs a `reference/scenarios/<library>/` scenario that emits it. See
+   needs a `reference/scenarios/<library>/` scenario that emits it, with every
+   emitted value readable from inside the library: a parameter it interprets, or
+   something it returns. Values the library only carries are not evidence. See
    [reference/CONTRIBUTING.md](reference/CONTRIBUTING.md).
 6. **Only model what generic instrumentation can record at runtime.** A
    reference scenario must plausibly show how generic instrumentation captures
