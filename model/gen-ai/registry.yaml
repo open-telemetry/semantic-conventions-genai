@@ -951,3 +951,25 @@ attributes:
       what `gen_ai.workflow.name` means in the context of that framework.
     examples: ["multi_agent_rag", "customer_support_pipeline"]
     stability: development
+  - key: gen_ai.agent.invocation.status
+    type:
+      members:
+        - id: completed
+          stability: development
+          value: "completed"
+          brief: 'The agent invocation completed successfully.'
+    brief: The terminal status of an agent invocation.
+    note: |
+      This attribute records the terminal outcome of an agent invocation. It MUST
+      only be set when the agent invocation has terminated; in-flight spans MUST
+      NOT set it.
+
+      When an invocation fails, instrumentations SHOULD mark the span as an error
+      and set `error.type` to record the failure cause. The `gen_ai.agent.invocation.status`
+      attribute is not set on failed invocations because `error.type` and span error
+      status already convey that information.
+
+      Detection is framework-specific. Instrumentations set `completed` when
+      the framework reaches its normal successful exit path.
+    examples: ['completed']
+    stability: development

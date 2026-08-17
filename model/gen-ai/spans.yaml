@@ -119,6 +119,9 @@ attribute_groups:
         brief: The free-form description of the invoked GenAI agent.
         requirement_level:
           conditionally_required: When available.
+      - ref: gen_ai.agent.invocation.status
+        requirement_level:
+          conditionally_required: When the agent loop has terminated successfully.
 
 
   - id: attributes.gen_ai.execute_tool.common
