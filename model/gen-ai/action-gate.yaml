@@ -1,0 +1,60 @@
+file_format: definition/2
+attributes:
+  - key: gen_ai.agent.tool.disposition
+    type:
+      members:
+        - id: allow
+          stability: development
+          value: "allow"
+          brief: "The tool invocation was permitted and executed."
+        - id: simulate
+          stability: development
+          value: "simulate"
+          brief: "The tool invocation was executed in safe, non-destructive simulation mode."
+        - id: deny
+          stability: development
+          value: "deny"
+          brief: "The tool invocation was rejected by the Gate/Prove policy."
+    stability: development
+    brief: "The operational decision disposition for an agent tool execution."
+
+  - key: gen_ai.agent.tool.tier
+    type:
+      members:
+        - id: read
+          stability: development
+          value: "read"
+          brief: "Safe, non-mutating inspection or retrieval tool."
+        - id: write
+          stability: development
+          value: "write"
+          brief: "State-mutating tool (defaults to simulation if unapproved)."
+        - id: destructive
+          stability: development
+          value: "destructive"
+          brief: "High-blast operation requiring explicit human-in-the-loop prove token."
+        - id: provision
+          stability: development
+          value: "provision"
+          brief: "Infrastructure/resource provisioning tool."
+        - id: decommission
+          stability: development
+          value: "decommission"
+          brief: "Infrastructure/resource teardown tool."
+    stability: development
+    brief: "The sensitivity tier assigned to the agent tool."
+
+  - key: gen_ai.agent.tool.never_equate_intent_to_approval
+    type: boolean
+    stability: development
+    brief: "Policy invariant flag verifying model confidence was not equated to execution authorization."
+
+  - key: gen_ai.agent.action_ledger.receipt_hash
+    type: string
+    stability: development
+    brief: "Cryptographic SHA-256 hash chaining this tool execution into an immutable action ledger."
+
+  - key: gen_ai.agent.kill_switch_engaged
+    type: boolean
+    stability: development
+    brief: "Flag indicating whether an atomic kill-switch was active during tool evaluation."
