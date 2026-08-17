@@ -16,17 +16,27 @@
                     "type": "string"
                 },
                 "description": {
-                    "description": "The description of the tool. Since this attribute could be large, it's NOT RECOMMENDED to be populated by default. Instrumentations MAY provide a way to enable populating this property.",
-                    "title": "Description",
-                    "type": "string"
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "description": "The description of the tool. Omit when it is not captured; record null when the provider reports that the tool has no description. Since this attribute could be large, it's NOT RECOMMENDED to be populated by default. Instrumentations MAY provide a way to enable populating this property.",
+                    "title": "Description"
                 },
                 "parameters": {
                     "anyOf": [
                         {
                             "$ref": "http://json-schema.org/draft-07/schema#"
+                        },
+                        {
+                            "type": "null"
                         }
                     ],
-                    "description": "JSON Schema document describing the parameters accepted by the tool. The value MUST conform to JSON Schema draft-07. Since this attribute could be large, it's NOT RECOMMENDED to be populated by default. Instrumentations MAY provide a way to enable populating this property.",
+                    "description": "JSON Schema document describing the parameters accepted by the tool. Omit when it is not captured; record null when the provider reports that the tool has no parameters. The value MUST conform to JSON Schema draft-07. Since this attribute could be large, it's NOT RECOMMENDED to be populated by default. Instrumentations MAY provide a way to enable populating this property.",
                     "title": "Parameters"
                 }
             },

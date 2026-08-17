@@ -388,7 +388,7 @@
                     "type": "string"
                 },
                 "arguments": {
-                    "description": "Arguments for the tool call.",
+                    "description": "Arguments for the tool call. Omit when they are not captured; record null when the call has null arguments.",
                     "title": "Arguments"
                 }
             },
@@ -415,7 +415,7 @@
                     "type": "string"
                 },
                 "response": {
-                    "description": "Tool call response.",
+                    "description": "Tool call response. Null represents a captured null response.",
                     "title": "Response"
                 }
             },
