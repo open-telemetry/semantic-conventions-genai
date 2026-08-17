@@ -13,6 +13,7 @@
 | Attribute | Supporting Libraries |
 | --- | --- |
 | gen_ai.agent.description | [agent-framework], [autogen] |
+| gen_ai.agent.invocation.status | [openai-agents], [pydantic-ai] |
 | gen_ai.agent.name | [agent-framework], [autogen], [crewai], [google-adk], [langchain], [openai-agents], [pydantic-ai] |
 | gen_ai.conversation.id | [google-adk] |
 | gen_ai.data_source.id | (none) |
