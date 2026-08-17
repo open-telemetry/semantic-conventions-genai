@@ -1,11 +1,18 @@
 """Reference implementation for Google Gemini Live (voice-native) inference.
 
-Exercises a speech-to-speech turn against the mock Gemini Live WebSocket server.
-The user utterance and the model response form a single
+Exercises two speech-to-speech turns within one live session against the mock
+Gemini Live WebSocket server. Each server-side generation is a
 ``generate_live_content`` span that carries the audio-modality messages and,
 crucially, the audio token usage (``gen_ai.usage.audio.input_tokens`` /
 ``gen_ai.usage.audio.output_tokens``) alongside the transcript of the spoken
 audio.
+
+The second turn exercises the sibling tool-call pattern: the first generation
+resolves to a tool call, the tool runs as a sibling ``execute_tool`` span, and a
+second generation speaks the answer. On Gemini Live the tool call surfaces as a
+top-level ``toolCall`` message rather than nested inside the generation, so the
+generation span closes before the tool runs and the answer is a separate
+generation — the tool span is a sibling, not a child.
 
 A live session is long-lived and mostly idle, so it is not modeled as a span.
 Instead the session is represented by the ``gen_ai.client.live_session.started``
@@ -13,13 +20,18 @@ and ``gen_ai.client.live_session.ended`` events. Gemini Live does not expose a
 session identifier to the client, so ``gen_ai.conversation.id`` is left unset
 here (an honest capture gap for this provider).
 
-This proves that a Gemini Live server-side generation, its audio token usage,
-its audio transcript, and its session lifecycle are capturable by generic
-instrumentation of ``client.aio.live.connect``. It is the second provider (after
-OpenAI Realtime) demonstrating the same convention against a differently-shaped
-bidi protocol. Turn-level containers (a full user-and-model exchange) are
-intentionally out of scope: turn boundaries cannot be detected reliably across
-providers.
+The Gemini Developer API also exposes no user voice-activity (VAD) events, so
+there is no ``user_input`` span here (another honest capture gap for this
+provider); the user's spoken input is carried on the generation span through
+``gen_ai.input.messages`` instead.
+
+This proves that Gemini Live server-side generations, their audio token usage,
+their audio transcripts, sibling tool calls, and their session lifecycle are
+capturable by generic instrumentation of ``client.aio.live.connect``. It is the
+second provider (after OpenAI Realtime) demonstrating the same convention
+against a differently-shaped bidi protocol. Turn-level containers (a full
+user-and-model exchange) are intentionally out of scope: turn boundaries cannot
+be detected reliably across providers.
 """
 
 import asyncio
@@ -68,11 +80,9 @@ def _audio_modality_tokens(details):
     return None
 
 
-async def _run_inference(session, request_model, host, port):
-    """Drive one Gemini Live voice turn and emit its generate_live_content span."""
-    from google.genai import types
-
-    input_messages = json.dumps(
+def _user_audio_message():
+    """The user's spoken input as an audio-modality input message."""
+    return json.dumps(
         [
             {
                 "role": "user",
@@ -87,36 +97,78 @@ async def _run_inference(session, request_model, host, port):
             }
         ]
     )
-    span_attributes = {
-        "gen_ai.operation.name": "generate_live_content",
+
+
+def _live_attributes(request_model, host, port, operation, output_type=None):
+    """Common attributes shared by the generate_live_content spans."""
+    attributes = {
+        "gen_ai.operation.name": operation,
         "gen_ai.provider.name": "gcp.gemini",
         "gen_ai.request.model": request_model,
-        # The live session produces speech output for this turn.
-        "gen_ai.output.type": "speech",
     }
+    if output_type:
+        attributes["gen_ai.output.type"] = output_type
     if host:
-        span_attributes["server.address"] = host
+        attributes["server.address"] = host
     if port is not None:
-        span_attributes["server.port"] = port
+        attributes["server.port"] = port
+    return attributes
 
+
+def _tool_result_message(function_call, result):
+    """The tool result as the input message for the answer generation."""
+    return json.dumps(
+        [
+            {
+                "role": "tool",
+                "parts": [
+                    {
+                        "type": "tool_call_response",
+                        "id": function_call["id"],
+                        "result": result,
+                    }
+                ],
+            }
+        ]
+    )
+
+
+def _run_execute_tool(function_call):
+    """Run the requested tool and emit its execute_tool span (sibling of the generations)."""
+    tool_attributes = {
+        "gen_ai.operation.name": "execute_tool",
+        "gen_ai.provider.name": "gcp.gemini",
+        "gen_ai.tool.name": function_call["name"],
+        "gen_ai.tool.call.id": function_call["id"],
+        "gen_ai.tool.type": "function",
+    }
     with _reference_tracer.start_as_current_span(
-        f"generate_live_content {request_model}", attributes=span_attributes
+        f"execute_tool {function_call['name']}", attributes=tool_attributes
+    ) as span:
+        span.set_attribute("gen_ai.tool.call.arguments", json.dumps(function_call["args"]))
+        result = {"location": function_call["args"].get("location"), "temperature_f": 72, "conditions": "sunny"}
+        span.set_attribute("gen_ai.tool.call.result", json.dumps(result))
+    return result
+
+
+async def _run_generation(session, request_model, host, port, input_messages, break_on_tool_call):
+    """Consume one server-side generation and emit its generate_live_content span.
+
+    Returns the function call requested by the model, if any.
+    """
+    output_type = None if break_on_tool_call else "speech"
+    attributes = _live_attributes(request_model, host, port, "generate_live_content", output_type=output_type)
+    request_time = time.monotonic()
+    with _reference_tracer.start_as_current_span(
+        f"generate_live_content {request_model}", attributes=attributes
     ) as span:
         span.set_attribute("gen_ai.input.messages", input_messages)
 
-        # The user speaks: stream their audio, then signal the end of the
-        # utterance so the model responds.
-        await session.send_realtime_input(
-            audio=types.Blob(data=base64.b64decode(INPUT_AUDIO_B64), mime_type="audio/pcm")
-        )
-        request_time = time.monotonic()
-        await session.send_realtime_input(audio_stream_end=True)
-
         transcript_deltas = []
         audio_chunks = []
-        response_model = None
         usage = None
         time_to_first_chunk = None
+        function_call = None
         async for message in session.receive():
             server_content = message.server_content
             if server_content is not None:
@@ -132,29 +184,49 @@ async def _run_inference(session, request_model, host, port):
                             audio_chunks.append(part.inline_data.data)
             if message.usage_metadata is not None:
                 usage = message.usage_metadata
+            if break_on_tool_call and message.tool_call is not None and message.tool_call.function_calls:
+                call = message.tool_call.function_calls[0]
+                function_call = {"id": call.id, "name": call.name, "args": dict(call.args or {})}
+                break
 
-        transcript = "".join(transcript_deltas)
-        output_audio = base64.b64encode(b"".join(audio_chunks)).decode() if audio_chunks else ""
-        output_messages = [
-            {
-                "role": "assistant",
-                "parts": [
-                    {
-                        "type": "blob",
-                        "modality": "audio",
-                        "mime_type": "audio/pcm",
-                        "content": output_audio,
-                        "transcript": transcript,
-                    },
-                ],
-                "finish_reason": "stop",
-            }
-        ]
-        if response_model:
-            span.set_attribute("gen_ai.response.model", response_model)
+        if function_call is not None:
+            output_messages = [
+                {
+                    "role": "assistant",
+                    "parts": [
+                        {
+                            "type": "tool_call",
+                            "id": function_call["id"],
+                            "name": function_call["name"],
+                            "arguments": function_call["args"],
+                        }
+                    ],
+                    "finish_reason": "tool_call",
+                }
+            ]
+            span.set_attribute("gen_ai.response.finish_reasons", ["tool_call"])
+        else:
+            transcript = "".join(transcript_deltas)
+            output_audio = base64.b64encode(b"".join(audio_chunks)).decode() if audio_chunks else ""
+            output_messages = [
+                {
+                    "role": "assistant",
+                    "parts": [
+                        {
+                            "type": "blob",
+                            "modality": "audio",
+                            "mime_type": "audio/pcm",
+                            "content": output_audio,
+                            "transcript": transcript,
+                        },
+                    ],
+                    "finish_reason": "stop",
+                }
+            ]
+            span.set_attribute("gen_ai.response.finish_reasons", ["stop"])
+            print(f"    -> {transcript[:60]}")
         if time_to_first_chunk is not None:
             span.set_attribute("gen_ai.response.time_to_first_chunk", time_to_first_chunk)
-        span.set_attribute("gen_ai.response.finish_reasons", ["stop"])
         span.set_attribute("gen_ai.output.messages", json.dumps(output_messages))
         if usage:
             if usage.prompt_token_count:
@@ -167,11 +239,21 @@ async def _run_inference(session, request_model, host, port):
             output_audio_tokens = _audio_modality_tokens(usage.response_tokens_details)
             if output_audio_tokens:
                 span.set_attribute("gen_ai.usage.audio.output_tokens", output_audio_tokens)
-        print(f"    -> {transcript[:60]}")
+        return function_call
+
+
+async def _send_user_audio(session):
+    """Stream the user's audio and signal the end of the utterance."""
+    from google.genai import types
+
+    await session.send_realtime_input(
+        audio=types.Blob(data=base64.b64decode(INPUT_AUDIO_B64), mime_type="audio/pcm")
+    )
+    await session.send_realtime_input(audio_stream_end=True)
 
 
 async def run_gemini_live_reference():
-    """Scenario: a single Gemini Live voice-native inference turn."""
+    """Scenario: two Gemini Live voice-native turns within a single live session."""
     from google import genai
     from google.genai import types
 
@@ -214,7 +296,38 @@ async def run_gemini_live_reference():
             attributes=session_attributes,
         )
         try:
-            await _run_inference(session, request_model, host, live_port)
+            # Turn 1: a simple voice exchange. The Gemini Developer API exposes no
+            # user voice-activity events, so there is no user_input span (an honest
+            # capture gap for this provider); the user input is carried on the
+            # generation span through gen_ai.input.messages instead.
+            await _send_user_audio(session)
+            await _run_generation(
+                session, request_model, host, live_port, _user_audio_message(), break_on_tool_call=False
+            )
+
+            # Turn 2: a tool-calling exchange (sibling pattern, Gemini Live 2.5).
+            # The first generation resolves to a tool call, the tool runs as a
+            # sibling span, then a second generation speaks the answer.
+            await _send_user_audio(session)
+            function_call = await _run_generation(
+                session, request_model, host, live_port, _user_audio_message(), break_on_tool_call=True
+            )
+            result = _run_execute_tool(function_call)
+            await session.send_tool_response(
+                function_responses=[
+                    types.FunctionResponse(
+                        id=function_call["id"], name=function_call["name"], response=result
+                    )
+                ]
+            )
+            await _run_generation(
+                session,
+                request_model,
+                host,
+                live_port,
+                _tool_result_message(function_call, result),
+                break_on_tool_call=False,
+            )
         finally:
             # The session is closed: record its end as an event.
             reference_event_logger().emit(
@@ -222,7 +335,6 @@ async def run_gemini_live_reference():
                 body="Live session ended",
                 attributes=session_attributes,
             )
-
 
 def main():
     print("=== Reference Implementation: Google Gemini Live (voice-native) Reference Implementation ===")

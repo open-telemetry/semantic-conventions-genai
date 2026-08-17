@@ -297,8 +297,11 @@ and SHOULD be provided **at span creation time** (if provided at all):
 | `text_completion` | Text completions operation such as [OpenAI Completions API (Legacy)](https://platform.openai.com/docs/api-reference/completions) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `update_memory` | Update existing memory records | ![Development](https://img.shields.io/badge/-development-blue) |
 | `upsert_memory` | Create or update memory records without the caller choosing which | ![Development](https://img.shields.io/badge/-development-blue) |
+| `user_input` | Client-side capture of a user input (utterance) within a live, bidirectional speech-to-speech session, delimited by the provider's user voice-activity (start/stop) events. [32] | ![Development](https://img.shields.io/badge/-development-blue) |
 
 **[31]:** This operation describes a single server-side generation reconstructed from a long-lived streaming session, not a single client request/response. It is distinct from `chat` and `generate_content`: the request is streamed continuously and the generation is bounded by provider events (first output chunk or a voice-activity end anchor through generation completion or interruption) rather than by a client call boundary.
+
+**[32]:** This operation is optional and provider-dependent. It is recorded only when the provider exposes user voice-activity detection (VAD) events that bracket when the user started and stopped speaking (for example OpenAI Realtime `input_audio_buffer.speech_started` / `input_audio_buffer.speech_stopped`). Providers without user VAD events (such as the Gemini Developer API) cannot record it; the user input is then carried on the `generate_live_content` operation through `gen_ai.input.messages` instead.
 
 ---
 

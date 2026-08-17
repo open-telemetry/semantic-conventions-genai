@@ -18,6 +18,23 @@
       "gen_ai.usage.output_tokens",
       "server.address",
       "server.port"
+    ],
+    "user_input": [
+      "gen_ai.conversation.id",
+      "gen_ai.input.messages",
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "gen_ai.request.model",
+      "server.address",
+      "server.port"
+    ],
+    "execute_tool": [
+      "gen_ai.operation.name",
+      "gen_ai.tool.call.arguments",
+      "gen_ai.tool.call.id",
+      "gen_ai.tool.call.result",
+      "gen_ai.tool.name",
+      "gen_ai.tool.type"
     ]
   },
   "events": {

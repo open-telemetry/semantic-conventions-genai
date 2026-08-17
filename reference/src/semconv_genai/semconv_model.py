@@ -126,6 +126,12 @@ SPAN_SPECS: dict[str, AttributeSpec] = {
         label="Generate Live Content",
         op_names=frozenset({"generate_live_content"}),
     ),
+    "user_input": _from_yaml(
+        _groups,
+        "span.gen_ai.user_input.client",
+        label="User Input",
+        op_names=frozenset({"user_input"}),
+    ),
     "embeddings": _from_yaml(
         _groups,
         "span.gen_ai.embeddings.client",

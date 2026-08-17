@@ -30,18 +30,19 @@ Run `uv run update-reports` to regenerate.
 | [Invoke Workflow](reports/invoke-workflow-span.md) | crewai, google-adk |
 | [Plan](reports/plan-span.md) | crewai, langchain |
 | [Inference](reports/inference-span.md) | agent-framework, anthropic, autogen, aws-bedrock, azure-ai-inference, azure-openai, claude-agent-sdk, cohere, crewai, dspy, google-adk, google-genai, groq, instructor, langchain, litellm, llamaindex, mistralai, openai, openai-agents, pydantic-ai, vertexai |
-| [Generate Live Content](reports/generate-live-content-span.md) | gemini-live, openai-realtime |
+| [Generate Live Content](reports/generate-live-content-span.md) | gemini-live, gemini-live-3, openai-realtime |
+| [User Input](reports/user-input-span.md) | openai-realtime |
 | [Embeddings](reports/embeddings-span.md) | aws-bedrock, azure-ai-inference, azure-openai, cohere, google-genai, litellm, llamaindex, mistralai, openai |
 | [Retrieval](reports/retrieval-span.md) | haystack, langchain, llamaindex |
 | [Memory](reports/memory-span.md) | aws-bedrock-agentcore, google-adk |
-| [Execute Tool](reports/execute-tool-span.md) | agent-framework, autogen, crewai, google-adk, groq, instructor, litellm, llamaindex, mistralai, openai, openai-agents, openai-assistants, pydantic-ai |
+| [Execute Tool](reports/execute-tool-span.md) | agent-framework, autogen, crewai, gemini-live, gemini-live-3, google-adk, groq, instructor, litellm, llamaindex, mistralai, openai, openai-agents, openai-assistants, openai-realtime, pydantic-ai |
 
 ### Events
 
 | Event | Libraries |
 | --- | --- |
-| [Live Session Started](reports/gen-ai-client-live-session-started-event.md) | gemini-live, openai-realtime |
-| [Live Session Ended](reports/gen-ai-client-live-session-ended-event.md) | gemini-live, openai-realtime |
+| [Live Session Started](reports/gen-ai-client-live-session-started-event.md) | gemini-live, gemini-live-3, openai-realtime |
+| [Live Session Ended](reports/gen-ai-client-live-session-ended-event.md) | gemini-live, gemini-live-3, openai-realtime |
 | [Inference Operation Details](reports/gen-ai-client-inference-operation-details-event.md) | anthropic, autogen, aws-bedrock, azure-ai-inference, cohere, dspy, google-genai, groq, instructor, litellm, llamaindex, mistralai, openai, pydantic-ai, vertexai |
 | [Evaluation Result](reports/gen-ai-evaluation-result-event.md) | azure-ai-evaluation, deepeval, dspy |
 

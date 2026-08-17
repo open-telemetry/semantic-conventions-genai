@@ -13,10 +13,18 @@ server for permessage-deflate negotiation.
 The scenario selects the per-turn behavior by setting
 ``response.metadata.mock_behavior`` on the ``response.create`` client event:
 
-- ``complete``    -> the turn finishes normally (``response.done`` completed).
-- ``interrupted`` -> the user barges in mid-response; the server emits
+- ``complete``      -> the turn finishes normally (``response.done`` completed).
+- ``function_call`` -> the generation emits a function-call output item and ends
+  (``response.done`` completed); the scenario then runs the tool and asks for a
+  second ``complete`` response. This is the sibling tool-call pattern.
+- ``interrupted``   -> the user barges in mid-response; the server emits
   ``input_audio_buffer.speech_started`` and a cancelled ``response.done`` with
   ``status_details.reason == "turn_detected"``.
+
+When the client commits the input audio buffer (``input_audio_buffer.commit``),
+the server emits the user voice-activity events
+(``input_audio_buffer.speech_started`` / ``input_audio_buffer.speech_stopped``)
+that bracket the user's utterance, followed by ``input_audio_buffer.committed``.
 """
 
 import asyncio
@@ -51,6 +59,52 @@ def _usage():
 async def _run_response(ws, behavior):
     response_id = "resp_mock_realtime_001"
     item_id = "item_mock_assistant_001"
+
+    if behavior == "function_call":
+        # The generation resolves to a tool call and then ends. The tool runs on
+        # the client (sibling pattern); a subsequent response.create produces the
+        # spoken answer.
+        await _send(
+            ws,
+            {
+                "type": "response.created",
+                "event_id": _event_id(),
+                "response": {"id": response_id, "object": "realtime.response", "status": "in_progress"},
+            },
+        )
+        await _send(
+            ws,
+            {
+                "type": "response.output_item.done",
+                "event_id": _event_id(),
+                "response_id": response_id,
+                "output_index": 0,
+                "item": {
+                    "id": "item_mock_function_call_001",
+                    "object": "realtime.item",
+                    "type": "function_call",
+                    "status": "completed",
+                    "name": "get_weather",
+                    "call_id": "call_mock_realtime_001",
+                    "arguments": json.dumps({"location": "Seattle"}),
+                },
+            },
+        )
+        await _send(
+            ws,
+            {
+                "type": "response.done",
+                "event_id": _event_id(),
+                "response": {
+                    "id": response_id,
+                    "object": "realtime.response",
+                    "status": "completed",
+                    "usage": _usage(),
+                },
+            },
+        )
+        return
+
     await _send(
         ws,
         {
@@ -141,6 +195,37 @@ async def _run_response(ws, behavior):
     )
 
 
+async def _emit_user_vad(ws):
+    """Emit the server-side user voice-activity events bracketing an utterance."""
+    user_item_id = f"item_mock_user_{next(_event_counter)}"
+    await _send(
+        ws,
+        {
+            "type": "input_audio_buffer.speech_started",
+            "event_id": _event_id(),
+            "audio_start_ms": 0,
+            "item_id": user_item_id,
+        },
+    )
+    await _send(
+        ws,
+        {
+            "type": "input_audio_buffer.speech_stopped",
+            "event_id": _event_id(),
+            "audio_end_ms": 800,
+            "item_id": user_item_id,
+        },
+    )
+    await _send(
+        ws,
+        {
+            "type": "input_audio_buffer.committed",
+            "event_id": _event_id(),
+            "item_id": user_item_id,
+        },
+    )
+
+
 async def _handler(ws):
     await _send(
         ws,
@@ -157,7 +242,10 @@ async def _handler(ws):
     )
     async for raw in ws:
         message = json.loads(raw)
-        if message.get("type") == "response.create":
+        message_type = message.get("type")
+        if message_type == "input_audio_buffer.commit":
+            await _emit_user_vad(ws)
+        elif message_type == "response.create":
             behavior = ((message.get("response") or {}).get("metadata") or {}).get("mock_behavior", "complete")
             await _run_response(ws, behavior)
 

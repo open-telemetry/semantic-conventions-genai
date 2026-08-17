@@ -23,6 +23,17 @@ Server -> client turn sequence for one voice response:
 4. ``{"serverContent": {"turnComplete": true}, "usageMetadata": {...}}`` -- ends
    the turn and reports token usage with an ``AUDIO`` / ``TEXT`` modality
    breakdown for both prompt and response.
+
+The first ``audioStreamEnd`` drives a simple spoken turn. A subsequent
+``audioStreamEnd`` drives a tool-calling turn: the server emits a ``toolCall``
+(and nothing else) so the client runs the tool and replies with a
+``toolResponse``; the server then produces the spoken answer turn. This is the
+sibling tool-call pattern used by Gemini Live 2.5.
+
+When the requested model is a Gemini Live 3.x model, the very first
+``audioStreamEnd`` drives the tool-calling turn directly (a single utterance
+that resolves to a tool call and then the spoken answer), letting the client
+model the tool call as a child of one generation.
 """
 
 import asyncio
@@ -41,6 +52,9 @@ _KEY_FILE = Path(__file__).with_name("gemini_live_key.pem")
 OUTPUT_AUDIO_B64 = "bW9jay1nZW1pbmktYXVkaW8="
 
 TRANSCRIPT_DELTAS = ["It is ", "sunny and ", "about 72 degrees ", "in Seattle."]
+
+# The tool the model asks the client to run on the tool-calling turn.
+FUNCTION_CALL = {"id": "fc_mock_gemini_001", "name": "get_weather", "args": {"location": "Seattle"}}
 
 
 async def _send(ws, obj):
@@ -82,17 +96,39 @@ async def _run_turn(ws):
     await _send(ws, {"serverContent": {"turnComplete": True}, "usageMetadata": _usage()})
 
 
+async def _run_tool_call(ws):
+    """Emit a tool call and nothing else; the client must reply with a toolResponse."""
+    await _send(ws, {"toolCall": {"functionCalls": [FUNCTION_CALL]}})
+
+
 async def _handler(ws):
+    audio_turns = 0
+    is_child_pattern = False
     async for raw in ws:
         message = json.loads(raw)
         if "setup" in message:
+            # Gemini Live 3.x resolves a tool call within a single generation
+            # (child pattern); 2.5 splits it into sibling generations. The mock
+            # picks the behavior from the requested model.
+            model = str((message["setup"] or {}).get("model", ""))
+            is_child_pattern = "gemini-3" in model
             await _send(ws, {"setupComplete": {}})
+        elif "tool_response" in message or "toolResponse" in message:
+            # The client returned the tool result; the model now speaks its answer.
+            await _run_turn(ws)
         elif "realtime_input" in message:
             realtime_input = message["realtime_input"] or {}
             # The client signals the end of the user's utterance; the model then
             # generates its spoken response for the accumulated audio.
             if realtime_input.get("audioStreamEnd"):
-                await _run_turn(ws)
+                audio_turns += 1
+                if is_child_pattern:
+                    # A single utterance that immediately requires a tool call.
+                    await _run_tool_call(ws)
+                elif audio_turns == 1:
+                    await _run_turn(ws)
+                else:
+                    await _run_tool_call(ws)
 
 
 async def _serve(host, port):

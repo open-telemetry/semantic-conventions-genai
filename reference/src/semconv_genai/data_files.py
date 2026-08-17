@@ -42,6 +42,7 @@ SPAN_TYPE_ORDER = [
     "plan",
     "inference",
     "generate_live_content",
+    "user_input",
     "embeddings",
     "retrieval",
     "memory",

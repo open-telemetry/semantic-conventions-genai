@@ -1,21 +1,27 @@
 """Reference implementation for OpenAI Realtime (voice-native) inference.
 
-Exercises a speech-to-speech turn against the mock realtime WebSocket server.
-The user utterance and the model response form a single
-``generate_live_content`` span that carries the audio-modality messages and,
-crucially, the audio token usage (``gen_ai.usage.audio.input_tokens`` /
-``gen_ai.usage.audio.output_tokens``).
+Exercises a live speech-to-speech session against the mock realtime WebSocket
+server. The session emits ``gen_ai.client.live_session.started`` /
+``gen_ai.client.live_session.ended`` events (a live session is long-lived and
+mostly idle, so it is not modeled as a span) and ``gen_ai.conversation.id`` (the
+OpenAI realtime session id) correlates everything within it.
 
-A live session is long-lived and mostly idle, so it is not modeled as a span.
-Instead the session is represented by the ``gen_ai.client.live_session.started``
-and ``gen_ai.client.live_session.ended`` events, while ``gen_ai.conversation.id``
-(the OpenAI realtime session id) correlates the generation to its session.
+Two turns run inside the one session:
 
-This proves that a realtime (``gpt-realtime``) server-side generation, its audio
-token usage, and its session lifecycle are capturable by generic instrumentation
-of ``client.realtime.connect``. Turn-level containers (a full user-and-model
-exchange) are intentionally out of scope: turn boundaries cannot be detected
-reliably across providers.
+1. A simple voice turn. The user's utterance is captured as a
+   ``gen_ai.user_input.client`` span -- OpenAI Realtime exposes user
+   voice-activity events (``input_audio_buffer.speech_started`` /
+   ``speech_stopped``) that bracket the utterance -- and the model response is a
+   ``generate_live_content`` span carrying the audio-modality messages and audio
+   token usage.
+2. A tool-calling turn demonstrating the **sibling** tool-call pattern: the
+   first ``generate_live_content`` span resolves to a function call and ends, an
+   ``execute_tool`` span runs the tool, then a second ``generate_live_content``
+   span speaks the answer. The tool span is a sibling of the two generations, so
+   client-side tool runtime does not inflate model-generation latency.
+
+Turn-level containers (a full user-and-model exchange) are intentionally out of
+scope: turn boundaries cannot be detected reliably across providers.
 """
 
 import json
@@ -50,9 +56,9 @@ def _realtime_ws_url(http_base_url):
     return f"ws://{host}:{port + 1}/v1"
 
 
-def _run_inference(conn, request_model, response_model, session_id, host, port):
-    """Drive one realtime turn and emit its generate_live_content span."""
-    input_messages = json.dumps(
+def _user_audio_message():
+    """The user's spoken input as an audio-modality input message."""
+    return json.dumps(
         [
             {
                 "role": "user",
@@ -67,31 +73,62 @@ def _run_inference(conn, request_model, response_model, session_id, host, port):
             }
         ]
     )
-    span_attributes = {
-        "gen_ai.operation.name": "generate_live_content",
-        "gen_ai.provider.name": "openai",
+
+
+def _live_attributes(provider, request_model, session_id, host, port, operation, output_type=None):
+    """Common attributes shared by the user_input and generate_live_content spans."""
+    attributes = {
+        "gen_ai.operation.name": operation,
+        "gen_ai.provider.name": provider,
         "gen_ai.request.model": request_model,
-        # The realtime session produces speech output for this turn.
-        "gen_ai.output.type": "speech",
     }
+    if output_type:
+        attributes["gen_ai.output.type"] = output_type
     if session_id:
-        span_attributes["gen_ai.conversation.id"] = session_id
+        attributes["gen_ai.conversation.id"] = session_id
     if host:
-        span_attributes["server.address"] = host
+        attributes["server.address"] = host
     if port is not None:
-        span_attributes["server.port"] = port
+        attributes["server.port"] = port
+    return attributes
 
-    with _reference_tracer.start_as_current_span(
-        f"generate_live_content {request_model}", attributes=span_attributes
-    ) as span:
-        span.set_attribute("gen_ai.input.messages", input_messages)
 
-        # The user speaks: append their audio to the input buffer, commit it,
-        # then ask the model to respond.
+def _capture_user_input(conn, provider, request_model, session_id, host, port):
+    """Bracket the user's utterance with a user_input span using server VAD events.
+
+    OpenAI Realtime emits ``input_audio_buffer.speech_started`` /
+    ``speech_stopped`` (and ``committed``) for the input buffer, which delimit
+    when the user was speaking. The span wraps that interval.
+    """
+    attributes = _live_attributes(provider, request_model, session_id, host, port, "user_input")
+    with _reference_tracer.start_as_current_span("user_input", attributes=attributes) as span:
+        # The user speaks: append their audio and commit it. The server responds
+        # with the voice-activity events that delimit the utterance.
         conn.send({"type": "input_audio_buffer.append", "audio": INPUT_AUDIO_B64})
         conn.send({"type": "input_audio_buffer.commit"})
-        request_time = time.monotonic()
-        conn.send({"type": "response.create", "response": {"metadata": {"mock_behavior": "complete"}}})
+        for event in conn:
+            if event.type == "input_audio_buffer.committed":
+                break
+        span.set_attribute("gen_ai.input.messages", _user_audio_message())
+
+
+def _run_generation(
+    conn, provider, request_model, response_model, session_id, host, port, behavior, input_messages
+):
+    """Drive one server-side generation and emit its generate_live_content span.
+
+    Returns the function call requested by the model, if any.
+    """
+    output_type = None if behavior == "function_call" else "speech"
+    attributes = _live_attributes(
+        provider, request_model, session_id, host, port, "generate_live_content", output_type=output_type
+    )
+    request_time = time.monotonic()
+    conn.send({"type": "response.create", "response": {"metadata": {"mock_behavior": behavior}}})
+    with _reference_tracer.start_as_current_span(
+        f"generate_live_content {request_model}", attributes=attributes
+    ) as span:
+        span.set_attribute("gen_ai.input.messages", input_messages)
 
         response_id = None
         transcript_deltas = []
@@ -100,6 +137,7 @@ def _run_inference(conn, request_model, response_model, session_id, host, port):
         status = None
         usage = None
         time_to_first_chunk = None
+        function_call = None
         for event in conn:
             if event.type == "response.created":
                 response_id = event.response.id
@@ -113,34 +151,59 @@ def _run_inference(conn, request_model, response_model, session_id, host, port):
                 audio_deltas.append(event.delta)
             elif event.type == "response.output_audio_transcript.done":
                 final_transcript = event.transcript
+            elif event.type == "response.output_item.done" and getattr(event.item, "type", None) == "function_call":
+                function_call = {
+                    "name": event.item.name,
+                    "call_id": event.item.call_id,
+                    "arguments": event.item.arguments,
+                }
             elif event.type == "response.done":
                 status = event.response.status
                 usage = event.response.usage
                 break
 
-        transcript = final_transcript if final_transcript is not None else "".join(transcript_deltas)
-        output_audio = "".join(audio_deltas)
-        output_messages = [
-            {
-                "role": "assistant",
-                "parts": [
-                    {
-                        "type": "blob",
-                        "modality": "audio",
-                        "mime_type": "audio/pcm",
-                        "content": output_audio,
-                        "transcript": transcript,
-                    },
-                ],
-                "finish_reason": status,
-            }
-        ]
         span.set_attribute("gen_ai.response.model", response_model)
         if response_id:
             span.set_attribute("gen_ai.response.id", response_id)
         if time_to_first_chunk is not None:
             span.set_attribute("gen_ai.response.time_to_first_chunk", time_to_first_chunk)
-        span.set_attribute("gen_ai.response.finish_reasons", [status])
+
+        if function_call is not None:
+            output_messages = [
+                {
+                    "role": "assistant",
+                    "parts": [
+                        {
+                            "type": "tool_call",
+                            "id": function_call["call_id"],
+                            "name": function_call["name"],
+                            "arguments": json.loads(function_call["arguments"]),
+                        }
+                    ],
+                    "finish_reason": "tool_call",
+                }
+            ]
+            span.set_attribute("gen_ai.response.finish_reasons", ["tool_call"])
+        else:
+            transcript = final_transcript if final_transcript is not None else "".join(transcript_deltas)
+            output_audio = "".join(audio_deltas)
+            output_messages = [
+                {
+                    "role": "assistant",
+                    "parts": [
+                        {
+                            "type": "blob",
+                            "modality": "audio",
+                            "mime_type": "audio/pcm",
+                            "content": output_audio,
+                            "transcript": transcript,
+                        },
+                    ],
+                    "finish_reason": status,
+                }
+            ]
+            span.set_attribute("gen_ai.response.finish_reasons", [status])
+            print(f"    -> {transcript[:60]}")
         span.set_attribute("gen_ai.output.messages", json.dumps(output_messages))
         if usage:
             span.set_attribute("gen_ai.usage.input_tokens", usage.input_tokens)
@@ -149,11 +212,48 @@ def _run_inference(conn, request_model, response_model, session_id, host, port):
                 span.set_attribute("gen_ai.usage.audio.input_tokens", usage.input_token_details.audio_tokens)
             if usage.output_token_details and usage.output_token_details.audio_tokens:
                 span.set_attribute("gen_ai.usage.audio.output_tokens", usage.output_token_details.audio_tokens)
-        print(f"    -> {transcript[:60]}")
+        return function_call
+
+
+def _run_execute_tool(provider, function_call):
+    """Run the requested tool and emit its execute_tool span (sibling of the generations)."""
+    arguments = json.loads(function_call["arguments"])
+    tool_attributes = {
+        "gen_ai.operation.name": "execute_tool",
+        "gen_ai.provider.name": provider,
+        "gen_ai.tool.name": function_call["name"],
+        "gen_ai.tool.call.id": function_call["call_id"],
+        "gen_ai.tool.type": "function",
+    }
+    with _reference_tracer.start_as_current_span(
+        f"execute_tool {function_call['name']}", attributes=tool_attributes
+    ) as span:
+        span.set_attribute("gen_ai.tool.call.arguments", json.dumps(arguments))
+        result = {"location": arguments.get("location"), "temperature_f": 72, "conditions": "sunny"}
+        span.set_attribute("gen_ai.tool.call.result", json.dumps(result))
+    return result
+
+
+def _tool_result_message(function_call, result):
+    """The tool result as the input message for the answer generation."""
+    return json.dumps(
+        [
+            {
+                "role": "tool",
+                "parts": [
+                    {
+                        "type": "tool_call_response",
+                        "id": function_call["call_id"],
+                        "result": result,
+                    }
+                ],
+            }
+        ]
+    )
 
 
 def run_realtime_reference(client):
-    """Scenario: a single realtime voice-native inference turn within a live session."""
+    """Scenario: two voice-native turns within a single live session."""
     print("  [realtime] voice-native inference (reference implementation)")
     request_model = "gpt-realtime"
     provider = "openai"
@@ -164,7 +264,7 @@ def run_realtime_reference(client):
         session_id = session_event.session.id
 
         # The live session is established: record its start as an event,
-        # correlated to the generation via conversation id.
+        # correlated to the generations via conversation id.
         session_attributes = {
             "gen_ai.provider.name": provider,
             "gen_ai.request.model": request_model,
@@ -182,7 +282,57 @@ def run_realtime_reference(client):
         )
 
         try:
-            _run_inference(conn, request_model, response_model, session_id, host, port)
+            # Turn 1: a simple voice exchange -- user utterance then spoken answer.
+            _capture_user_input(conn, provider, request_model, session_id, host, port)
+            _run_generation(
+                conn,
+                provider,
+                request_model,
+                response_model,
+                session_id,
+                host,
+                port,
+                behavior="complete",
+                input_messages=_user_audio_message(),
+            )
+
+            # Turn 2: a tool-calling exchange (sibling pattern). The first
+            # generation resolves to a function call, the tool runs as a sibling
+            # span, then a second generation speaks the answer.
+            _capture_user_input(conn, provider, request_model, session_id, host, port)
+            function_call = _run_generation(
+                conn,
+                provider,
+                request_model,
+                response_model,
+                session_id,
+                host,
+                port,
+                behavior="function_call",
+                input_messages=_user_audio_message(),
+            )
+            result = _run_execute_tool(provider, function_call)
+            conn.send(
+                {
+                    "type": "conversation.item.create",
+                    "item": {
+                        "type": "function_call_output",
+                        "call_id": function_call["call_id"],
+                        "output": json.dumps(result),
+                    },
+                }
+            )
+            _run_generation(
+                conn,
+                provider,
+                request_model,
+                response_model,
+                session_id,
+                host,
+                port,
+                behavior="complete",
+                input_messages=_tool_result_message(function_call, result),
+            )
         finally:
             # The session is closed: record its end as an event.
             reference_event_logger().emit(
@@ -190,7 +340,6 @@ def run_realtime_reference(client):
                 body="Live session ended",
                 attributes=session_attributes,
             )
-
 
 def main():
     print("=== Reference Implementation: OpenAI Realtime (voice-native) Reference Implementation ===")
