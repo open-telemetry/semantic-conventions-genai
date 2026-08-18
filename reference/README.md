@@ -6,11 +6,13 @@ support which attributes.
 
 Each library under [scenarios/](scenarios/) contains a small reference implementation
 (`scenario.py`) that exercises the SDK against a deterministic local mock server
-and emits OpenTelemetry spans, metrics, and logs. The tooling validates the
-captured telemetry against the semantic conventions in [../model/](../model/)
-using [OTel Weaver](https://github.com/open-telemetry/weaver) and writes the
-per-library results to `scenarios/<library>/data.json`, which feed the status
-reports below.
+and emits OpenTelemetry spans, metrics, and logs, plus a `conformance.yaml`
+saying how to run it. The
+[conformance runner](https://github.com/open-telemetry/semantic-conventions-conformance)
+validates the captured telemetry against the semantic conventions in
+[../model/](../model/) using [OTel Weaver](https://github.com/open-telemetry/weaver)
+and writes the per-library results to `scenarios/<library>/data.json`, which
+feed the status reports below.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for how to run scenarios and add new libraries.
 
@@ -24,10 +26,10 @@ Run `uv run update-reports` to regenerate.
 
 | Span | Libraries |
 | --- | --- |
-| [Create Agent](reports/create-agent-span.md) | autogen, azure-ai-foundry, openai-assistants |
+| [Create Agent](reports/create-agent-span.md) | anthropic, aws-bedrock-agent, azure-ai-foundry, google-genai, mistralai, openai-assistants |
 | [Invoke Agent Client](reports/invoke-agent-client-span.md) | aws-bedrock-agent, azure-ai-foundry, google-genai, openai-assistants |
-| [Invoke Agent Internal](reports/invoke-agent-internal-span.md) | agent-framework, autogen, crewai, google-adk, openai-agents, pydantic-ai |
-| [Invoke Workflow](reports/invoke-workflow-span.md) | crewai, google-adk |
+| [Invoke Agent Internal](reports/invoke-agent-internal-span.md) | agent-framework, autogen, crewai, google-adk, langchain, openai-agents, pydantic-ai |
+| [Invoke Workflow](reports/invoke-workflow-span.md) | crewai, google-adk, langchain, openai-agents |
 | [Plan](reports/plan-span.md) | crewai, langchain |
 | [Inference](reports/inference-span.md) | agent-framework, anthropic, aws-bedrock, azure-ai-inference, azure-openai, claude-agent-sdk, cohere, google-genai, groq, litellm, mistralai, openai, vertexai |
 | [Embeddings](reports/embeddings-span.md) | aws-bedrock, azure-ai-inference, azure-openai, cohere, google-genai, litellm, mistralai, openai |
@@ -50,6 +52,8 @@ Run `uv run update-reports` to regenerate.
 
 | Metric | Libraries |
 | --- | --- |
+| [Client Token Usage](reports/gen-ai-client-token-usage-metric.md) | agent-framework, anthropic |
+| [Client Operation Duration](reports/gen-ai-client-operation-duration-metric.md) | agent-framework, anthropic |
 | [Invoke Agent Inference Calls](reports/gen-ai-invoke-agent-inference-calls-metric.md) | google-adk |
 | [Invoke Agent Tool Calls](reports/gen-ai-invoke-agent-tool-calls-metric.md) | google-adk |
 <!-- status:end -->

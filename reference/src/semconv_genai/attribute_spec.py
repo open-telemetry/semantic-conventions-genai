@@ -20,13 +20,9 @@ class AttributeSpec:
     conditionally_required: tuple[str, ...]
     recommended: tuple[str, ...]
     opt_in: tuple[str, ...]
-    # For span specs: values of ``gen_ai.operation.name`` that identify this
-    # span type. Empty for event/metric specs.
-    op_names: frozenset[str] = frozenset()
-    # For span specs: attribute names whose presence identifies this span
-    # type in the absence of (or to complement) ``op_names``. Empty when the
-    # span type is identified by ``op_names`` only.
-    discriminator_attrs: frozenset[str] = frozenset()
+    # How the signal is named in the registry, and so in a committed
+    # ``data.json``: a span ``type:``, or an event / metric ``name:``.
+    registry_id: str = ""
 
     def attrs_for_requirement_level(self, level: RequirementLevel) -> tuple[str, ...]:
         if level is RequirementLevel.REQUIRED:

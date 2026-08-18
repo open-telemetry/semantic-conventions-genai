@@ -1,9 +1,11 @@
 {
+  "spans": {},
   "events": {
     "gen_ai.evaluation.result": [
       "gen_ai.evaluation.name",
       "gen_ai.evaluation.score.label",
       "gen_ai.evaluation.score.value"
     ]
-  }
+  },
+  "metrics": {}
 }

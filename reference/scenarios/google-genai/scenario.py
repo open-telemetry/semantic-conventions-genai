@@ -8,7 +8,7 @@ import json
 import os
 from contextlib import contextmanager
 
-from opentelemetry.trace import SpanKind
+from opentelemetry.trace import SpanKind, StatusCode
 from reference_shared import flush_and_shutdown, reference_event_logger, reference_tracer, setup_otel
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"]
@@ -188,10 +188,10 @@ def run_interactions_continuation():
         if interaction.model:
             span.set_attribute("gen_ai.response.model", str(interaction.model))
         if interaction.usage:
-            if interaction.usage.prompt_tokens:
-                span.set_attribute("gen_ai.usage.input_tokens", interaction.usage.prompt_tokens)
-            if interaction.usage.candidates_tokens:
-                span.set_attribute("gen_ai.usage.output_tokens", interaction.usage.candidates_tokens)
+            if interaction.usage.total_input_tokens:
+                span.set_attribute("gen_ai.usage.input_tokens", interaction.usage.total_input_tokens)
+            if interaction.usage.total_output_tokens:
+                span.set_attribute("gen_ai.usage.output_tokens", interaction.usage.total_output_tokens)
 
         event_attrs = {
             "gen_ai.operation.name": "chat",
@@ -216,10 +216,10 @@ def run_interactions_continuation():
         if interaction.model:
             event_attrs["gen_ai.response.model"] = str(interaction.model)
         if interaction.usage:
-            if interaction.usage.prompt_tokens:
-                event_attrs["gen_ai.usage.input_tokens"] = interaction.usage.prompt_tokens
-            if interaction.usage.candidates_tokens:
-                event_attrs["gen_ai.usage.output_tokens"] = interaction.usage.candidates_tokens
+            if interaction.usage.total_input_tokens:
+                event_attrs["gen_ai.usage.input_tokens"] = interaction.usage.total_input_tokens
+            if interaction.usage.total_output_tokens:
+                event_attrs["gen_ai.usage.output_tokens"] = interaction.usage.total_output_tokens
         reference_event_logger().emit(
             event_name="gen_ai.client.inference.operation.details",
             body="Inference operation details",
@@ -384,6 +384,53 @@ def run_embeddings():
         print(f"    -> embedding dim: {len(response.embeddings[0].values)}")
 
 
+def run_create_agent():
+    """Scenario: create a remote agent via Google GenAI (`client.agents.create`).
+
+    The agent runs server-side, so only the client operation is instrumentable here.
+    """
+    from google import genai
+    from google.genai import types
+
+    print("  [create_agent] Google GenAI: create agent")
+    request_model = "gemini-2.0-flash"
+    agent_name = "reference-agent"
+    agent_description = "Reference managed agent."
+    agent_system = "You are a helpful assistant."
+
+    client = genai.Client(
+        api_key="mock-key",
+        http_options=types.HttpOptions(
+            base_url=MOCK_BASE_URL,
+            api_version="v1beta",
+        ),
+    )
+
+    span_attributes = {
+        "gen_ai.operation.name": "create_agent",
+        "gen_ai.provider.name": "gcp.gemini",
+        "gen_ai.request.model": request_model,
+        "gen_ai.agent.name": agent_name,
+    }
+    with _reference_tracer.start_as_current_span(
+        f"create_agent {agent_name}", kind=SpanKind.CLIENT, attributes=span_attributes
+    ) as span:
+        span.set_attribute("gen_ai.agent.description", agent_description)
+        span.set_attribute("gen_ai.system_instructions", json.dumps([{"type": "text", "content": agent_system}]))
+        try:
+            agent = client.agents.create(
+                id=agent_name,
+                description=agent_description,
+                system_instruction=agent_system,
+            )
+            if agent.name:
+                span.set_attribute("gen_ai.agent.id", agent.name.split("/")[-1])
+            print(f"    -> {agent.name}")
+        except Exception as e:
+            span.set_status(StatusCode.ERROR, str(e))
+            raise
+
+
 def main():
     print("=== Reference Implementation: Google GenAI ===")
 
@@ -395,6 +442,7 @@ def main():
     run_chat_tool_call()
     run_chat_streaming()
     run_embeddings()
+    run_create_agent()
 
     flush_and_shutdown(tp, lp, mp)
 

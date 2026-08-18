@@ -325,6 +325,25 @@ attributes:
   - key: gen_ai.conversation.id
     type: string
     brief: The unique identifier for a conversation (session, thread), used to store and correlate messages within this conversation.
+    note: |
+      Instrumentations SHOULD populate conversation id when they have an identifier
+      for the conversation readily available for a given operation, for example:
+
+      - when the client framework being instrumented manages conversation history
+      (see [LlamaIndex chat store](https://docs.llamaindex.ai/en/stable/module_guides/storing/chat_stores/),
+      [LangChain `session_id`](https://reference.langchain.com/python/langchain-core/runnables/history/RunnableWithMessageHistory),
+      and [Google ADK sessions](https://adk.dev/sessions/session))
+      - when instrumenting GenAI client libraries that maintain a conversation on the backend
+      (see [AWS Bedrock agent sessions](https://docs.aws.amazon.com/bedrock/latest/userguide/agents-session-state.html),
+      [OpenAI Assistant threads](https://platform.openai.com/docs/api-reference/threads))
+
+      When no identifier for the conversation is available, instrumentations SHOULD NOT
+      populate conversation id. For example, a new UUID, a trace identifier, or a hash
+      of request content SHOULD NOT be used as a fallback value.
+
+      Application developers that manage conversation history MAY add conversation id to GenAI and other
+      spans or logs using custom span or log record processors or hooks provided by instrumentation
+      libraries.
     examples: ["conv_5j66UpCpwteGg4YSxUnt7lPY"]
     stability: development
   - key: gen_ai.conversation.compacted
@@ -377,6 +396,9 @@ attributes:
   - key: gen_ai.tool.description
     type: string
     brief: The tool description.
+    note: |
+      > [!WARNING]
+      > This attribute may contain sensitive information.
     examples: ["Multiply two numbers"]
     stability: development
   - key: gen_ai.tool.type
@@ -441,6 +463,9 @@ attributes:
       type:
         json_schema: model/gen-ai/gen-ai-tool-definitions.json
     note: |
+      > [!WARNING]
+      > This attribute may contain sensitive information.
+
       Since this attribute could be large, it's NOT RECOMMENDED to populate
       non-required properties by default. Instrumentations MAY provide a way
       to enable populating optional properties.
@@ -1193,12 +1218,19 @@ attributes:
     type: string
     brief: Human-readable name of the GenAI workflow provided by the application.
     note: |
-      This attribute can be populated in different frameworks; for example, as the name of the first chain in LangChain or the name of the crew in CrewAI.
-      The workflow name is usually provided by the application in a way that is specific to the generative AI framework or library that orchestrates the workflow.
-      It is usually a static name that is expected to be unique within an application.
+      The workflow name is usually a static, application-unique identifier defined
+      in a framework-specific way.
 
-      `gen_ai.workflow.name` MUST have low cardinality.
-      Semantic conventions for individual Generative AI frameworks SHOULD document what `gen_ai.workflow.name` means in the context of that framework.
-      If there is no low-cardinality workflow name available for a given framework, this attribute MUST NOT be captured by default.
+      For example, it can be the name of the first chain in LangChain,
+      the name of the crew in CrewAI, or the entry point agent in ADK or
+      OpenAI Agents when no explicit workflow name is provided.
+
+      This attribute MUST have low cardinality. It is NOT RECOMMENDED to use
+      instrumentation-time constants or names of types representing the workflow,
+      such as "StateGraph". When no meaningful, low-cardinality workflow name is
+      available for a given framework, this attribute MUST NOT be captured by default.
+
+      Semantic conventions for individual Generative AI frameworks SHOULD document
+      what `gen_ai.workflow.name` means in the context of that framework.
     examples: ["multi_agent_rag", "customer_support_pipeline"]
     stability: development

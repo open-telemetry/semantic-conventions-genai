@@ -1,4 +1,4 @@
-{%- set signal_requirement_level_base_url = "https://github.com/open-telemetry/semantic-conventions/blob/main/docs/general/signal-requirement-level.md" -%}
+{%- set signal_requirement_level_base_url = params.upstream_docs_base ~ "/docs/general/signal-requirement-level.md" -%}
 {% macro render(requirement_level) -%}
 {%- set level = requirement_level | default("recommended", true) -%}
 {%- if level == "opt_in" -%}
