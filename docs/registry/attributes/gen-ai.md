@@ -7,9 +7,14 @@
 
 | Key | Stability | Value Type | Description | Example Values |
 | --- | --- | --- | --- | --- |
+| <a id="gen-ai-agent-action-ledger-receipt-hash" href="#gen-ai-agent-action-ledger-receipt-hash">`gen_ai.agent.action_ledger.receipt_hash`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | Cryptographic SHA-256 hash chaining this tool execution into an immutable action ledger. | |
 | <a id="gen-ai-agent-description" href="#gen-ai-agent-description">`gen_ai.agent.description`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | Free-form description of the GenAI agent provided by the application. | `Helps with math problems`; `Generates fiction stories` |
 | <a id="gen-ai-agent-id" href="#gen-ai-agent-id">`gen_ai.agent.id`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The unique and stable identifier of the GenAI hosted agent resource. [1] | `asst_5j66UpCpwteGg4YSxUnt7lPY`; `arn:aws:bedrock:us-east-1:123:agent/42`; `urn:agent:projects-123:projects:123:locations:us-east1:aiplatform:reasoningEngines:456` |
+| <a id="gen-ai-agent-kill-switch-engaged" href="#gen-ai-agent-kill-switch-engaged">`gen_ai.agent.kill_switch_engaged`</a> | ![Development](https://img.shields.io/badge/-development-blue) | boolean | Flag indicating whether an atomic kill-switch was active during tool evaluation. | |
 | <a id="gen-ai-agent-name" href="#gen-ai-agent-name">`gen_ai.agent.name`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | Human-readable name of the GenAI agent provided by the application. | `Math Tutor`; `Fiction Writer` |
+| <a id="gen-ai-agent-tool-disposition" href="#gen-ai-agent-tool-disposition">`gen_ai.agent.tool.disposition`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The operational decision disposition for an agent tool execution. | `allow`; `simulate`; `deny` |
+| <a id="gen-ai-agent-tool-never-equate-intent-to-approval" href="#gen-ai-agent-tool-never-equate-intent-to-approval">`gen_ai.agent.tool.never_equate_intent_to_approval`</a> | ![Development](https://img.shields.io/badge/-development-blue) | boolean | Policy invariant flag verifying model confidence was not equated to execution authorization. | |
+| <a id="gen-ai-agent-tool-tier" href="#gen-ai-agent-tool-tier">`gen_ai.agent.tool.tier`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The sensitivity tier assigned to the agent tool. | `read`; `write`; `destructive` |
 | <a id="gen-ai-agent-version" href="#gen-ai-agent-version">`gen_ai.agent.version`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The version of the GenAI agent. | `1.0.0`; `2025-05-01` |
 | <a id="gen-ai-conversation-compacted" href="#gen-ai-conversation-compacted">`gen_ai.conversation.compacted`</a> | ![Development](https://img.shields.io/badge/-development-blue) | boolean | Indicates whether the effective conversation context used for this operation is a compacted view of a prior conversation. [2] | `true` |
 | <a id="gen-ai-conversation-id" href="#gen-ai-conversation-id">`gen_ai.conversation.id`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The unique identifier for a conversation (session, thread), used to store and correlate messages within this conversation. [3] | `conv_5j66UpCpwteGg4YSxUnt7lPY` |
@@ -334,6 +339,28 @@ available for a given framework, this attribute MUST NOT be captured by default.
 
 Semantic conventions for individual Generative AI frameworks SHOULD document
 what `gen_ai.workflow.name` means in the context of that framework.
+
+---
+
+`gen_ai.agent.tool.disposition` has the following list of well-known values. If one of them applies, then the respective value MUST be used; otherwise, a custom value MAY be used.
+
+| Value | Description | Stability |
+| --- | --- | --- |
+| `allow` | The tool invocation was permitted and executed. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `deny` | The tool invocation was rejected by the Gate/Prove policy. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `simulate` | The tool invocation was executed in safe, non-destructive simulation mode. | ![Development](https://img.shields.io/badge/-development-blue) |
+
+---
+
+`gen_ai.agent.tool.tier` has the following list of well-known values. If one of them applies, then the respective value MUST be used; otherwise, a custom value MAY be used.
+
+| Value | Description | Stability |
+| --- | --- | --- |
+| `decommission` | Infrastructure/resource teardown tool. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `destructive` | High-blast operation requiring explicit human-in-the-loop prove token. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `provision` | Infrastructure/resource provisioning tool. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `read` | Safe, non-mutating inspection or retrieval tool. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `write` | State-mutating tool (defaults to simulation if unapproved). | ![Development](https://img.shields.io/badge/-development-blue) |
 
 ---
 
