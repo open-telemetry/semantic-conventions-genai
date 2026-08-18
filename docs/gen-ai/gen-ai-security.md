@@ -106,9 +106,7 @@ Semantic conventions for individual guardrail services and frameworks MAY specif
 | [`gen_ai.guardrail.verdict.reason`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [14] | string | Human-readable explanation for the guardrail verdict. [15] | `PII detected in output`; `Prompt injection attempt detected`; `Action exceeds agent permission scope` |
 | [`server.port`](https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If `server.address` is set. | int | Guardrail service port. [16] | `80`; `8080`; `443` |
 | [`gen_ai.guardrail.component.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | Human readable name of the guardrail service or component. [17] | `Azure Content Safety`; `Bedrock Guardrails`; `Custom PII Filter` |
-| [`gen_ai.guardrail.security.policy.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | Human-readable name of the policy that produced the verdict. | `PII Protection Policy`; `Financial Advice Restriction` |
 | [`gen_ai.guardrail.security.policy.rule.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If available. | string | Identifier of the policy rule, section, or control that produced the verdict. [18] | `rule-pii-email`; `section-4.2`; `detector-jailbreak` |
-| [`gen_ai.guardrail.security.policy.version`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | Version of the policy that produced the verdict. | `1.0`; `2024-05-01` |
 | [`gen_ai.guardrail.security.risk.category`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If a risk finding is reported. | string | The security risk category detected. [19] | `prompt_injection`; `sensitive_info_disclosure`; `jailbreak`; `custom:financial_advice_violation` |
 | [`gen_ai.guardrail.security.risk.score`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If a risk or confidence score is reported. | double | Numeric risk or confidence score. [20] | `0.85`; `0.95`; `0.42` |
 | [`gen_ai.guardrail.verdict.code`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | Provider-specific code for the guardrail verdict. | `112`; `403`; `AACS-PII`; `MODEL_ARMOR_SAFETY` |
@@ -166,7 +164,7 @@ happens alongside the LLM call.
 
 **[16] `server.port`:** When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries, for example proxies, if it's available.
 
-**[17] `gen_ai.guardrail.component.name`:** This identifies the guardrail evaluation service or component, not the policy name. For policy names, use `gen_ai.guardrail.security.policy.name`.
+**[17] `gen_ai.guardrail.component.name`:** This identifies the guardrail evaluation service or component, not the policy. For the policy that produced the verdict, use `gen_ai.guardrail.security.policy.id`.
 
 **[18] `gen_ai.guardrail.security.policy.rule.id`:** Use this when `gen_ai.guardrail.security.policy.id` identifies a broader policy and the guardrail reports a more specific rule, section, control, or detector within that policy.
 
@@ -419,9 +417,7 @@ Semantic conventions for individual guardrail services and frameworks MAY specif
 | [`gen_ai.guardrail.target.subtype`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If available. | string | The subtype of content or action the guardrail is applied to. [13] | `llm`; `tool_call`; `tool_definition`; `retrieval`; `memory` |
 | [`gen_ai.guardrail.verdict.reason`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [14] | string | Human-readable explanation for the guardrail verdict. [15] | `PII detected in output`; `Prompt injection attempt detected`; `Action exceeds agent permission scope` |
 | [`gen_ai.guardrail.component.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | Human readable name of the guardrail service or component. [16] | `Azure Content Safety`; `Bedrock Guardrails`; `Custom PII Filter` |
-| [`gen_ai.guardrail.security.policy.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | Human-readable name of the policy that produced the verdict. | `PII Protection Policy`; `Financial Advice Restriction` |
 | [`gen_ai.guardrail.security.policy.rule.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If available. | string | Identifier of the policy rule, section, or control that produced the verdict. [17] | `rule-pii-email`; `section-4.2`; `detector-jailbreak` |
-| [`gen_ai.guardrail.security.policy.version`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | Version of the policy that produced the verdict. | `1.0`; `2024-05-01` |
 | [`gen_ai.guardrail.security.risk.category`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If a risk finding is reported. | string | The security risk category detected. [18] | `prompt_injection`; `sensitive_info_disclosure`; `jailbreak`; `custom:financial_advice_violation` |
 | [`gen_ai.guardrail.security.risk.score`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If a risk or confidence score is reported. | double | Numeric risk or confidence score. [19] | `0.85`; `0.95`; `0.42` |
 | [`gen_ai.guardrail.verdict.code`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | Provider-specific code for the guardrail verdict. | `112`; `403`; `AACS-PII`; `MODEL_ARMOR_SAFETY` |
@@ -476,7 +472,7 @@ happens alongside the LLM call.
 
 **[15] `gen_ai.guardrail.verdict.reason`:** The value SHOULD be low-cardinality and MUST NOT contain sensitive user content or other high-risk data.
 
-**[16] `gen_ai.guardrail.component.name`:** This identifies the guardrail evaluation service or component, not the policy name. For policy names, use `gen_ai.guardrail.security.policy.name`.
+**[16] `gen_ai.guardrail.component.name`:** This identifies the guardrail evaluation service or component, not the policy. For the policy that produced the verdict, use `gen_ai.guardrail.security.policy.id`.
 
 **[17] `gen_ai.guardrail.security.policy.rule.id`:** Use this when `gen_ai.guardrail.security.policy.id` identifies a broader policy and the guardrail reports a more specific rule, section, control, or detector within that policy.
 
@@ -706,9 +702,7 @@ Multiple findings MAY be reported for a single guardrail evaluation.
 | [`gen_ai.guardrail.target.subtype`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If available. | string | The subtype of content or action the guardrail is applied to. [6] | `llm`; `tool_call`; `tool_definition`; `retrieval`; `memory` |
 | [`gen_ai.guardrail.action.type`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If available. | string | The actual enforcement action taken by the caller or framework. [7] | `allow`; `block`; `modify`; `escalate` |
 | [`gen_ai.guardrail.component.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If available. | string | Human readable name of the guardrail service or component. [8] | `Azure Content Safety`; `Bedrock Guardrails`; `Custom PII Filter` |
-| [`gen_ai.guardrail.security.policy.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | Human-readable name of the policy that produced the verdict. | `PII Protection Policy`; `Financial Advice Restriction` |
 | [`gen_ai.guardrail.security.policy.rule.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If available. | string | Identifier of the policy rule, section, or control that produced the verdict. [9] | `rule-pii-email`; `section-4.2`; `detector-jailbreak` |
-| [`gen_ai.guardrail.security.policy.version`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | Version of the policy that produced the verdict. | `1.0`; `2024-05-01` |
 | [`gen_ai.guardrail.security.risk.score`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If a risk or confidence score is reported. | double | Numeric risk or confidence score. [10] | `0.85`; `0.95`; `0.42` |
 | [`gen_ai.guardrail.verdict.code`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If available. | string | Provider-specific code for the guardrail verdict. | `112`; `403`; `AACS-PII`; `MODEL_ARMOR_SAFETY` |
 | [`gen_ai.guardrail.verdict.reason`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If available. | string | Human-readable explanation for the guardrail verdict. [11] | `PII detected in output`; `Prompt injection attempt detected`; `Action exceeds agent permission scope` |
@@ -751,7 +745,7 @@ happens alongside the LLM call.
 
 **[7] `gen_ai.guardrail.action.type`:** Use this attribute when the guardrail verdict is enforced by the caller or framework and the action is known. For example, a guardrail may return a `warn` verdict while the caller chooses to `block` the operation.
 
-**[8] `gen_ai.guardrail.component.name`:** This identifies the guardrail evaluation service or component, not the policy name. For policy names, use `gen_ai.guardrail.security.policy.name`.
+**[8] `gen_ai.guardrail.component.name`:** This identifies the guardrail evaluation service or component, not the policy. For the policy that produced the verdict, use `gen_ai.guardrail.security.policy.id`.
 
 **[9] `gen_ai.guardrail.security.policy.rule.id`:** Use this when `gen_ai.guardrail.security.policy.id` identifies a broader policy and the guardrail reports a more specific rule, section, control, or detector within that policy.
 
