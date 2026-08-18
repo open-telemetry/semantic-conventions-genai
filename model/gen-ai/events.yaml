@@ -76,10 +76,6 @@ events:
       - ref: gen_ai.guardrail.security.policy.rule.id
         requirement_level:
           recommended: If available.
-      - ref: gen_ai.guardrail.security.policy.name
-        requirement_level: recommended
-      - ref: gen_ai.guardrail.security.policy.version
-        requirement_level: recommended
       - ref: gen_ai.guardrail.component.name
         requirement_level:
           recommended: If available.

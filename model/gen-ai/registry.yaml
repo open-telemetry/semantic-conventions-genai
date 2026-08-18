@@ -480,7 +480,8 @@ attributes:
     brief: Human readable name of the guardrail service or component.
     note: >
       This identifies the guardrail evaluation service or component, not the
-      policy name. For policy names, use `gen_ai.guardrail.security.policy.name`.
+      policy. For the policy that produced the verdict, use
+      `gen_ai.guardrail.security.policy.id`.
     examples: ['Azure Content Safety', 'Bedrock Guardrails', 'Custom PII Filter']
     stability: development
   - key: gen_ai.guardrail.verdict.type
@@ -671,16 +672,6 @@ attributes:
     type: string
     brief: Identifier of the policy that produced the verdict.
     examples: ['policy_pii_v2', 'deny-topic-financial-advice', 'org-compliance-001']
-    stability: development
-  - key: gen_ai.guardrail.security.policy.name
-    type: string
-    brief: Human-readable name of the policy that produced the verdict.
-    examples: ['PII Protection Policy', 'Financial Advice Restriction']
-    stability: development
-  - key: gen_ai.guardrail.security.policy.version
-    type: string
-    brief: Version of the policy that produced the verdict.
-    examples: ['1.0', '2024-05-01']
     stability: development
   - key: gen_ai.guardrail.security.policy.rule.id
     type: string

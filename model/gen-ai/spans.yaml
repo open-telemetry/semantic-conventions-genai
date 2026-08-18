@@ -151,6 +151,9 @@ attribute_groups:
         requirement_level:
           conditionally_required: When applicable.
 
+  # Base tier: generic guardrail-evaluation attributes any guardrail
+  # instrumentation can record. Contains no security-specific fields, so it
+  # stands on its own independently of the separable security overlay below.
   - id: attributes.gen_ai.run_guardrail.common
     visibility: internal
     attributes:
@@ -166,16 +169,23 @@ attribute_groups:
       - ref: gen_ai.guardrail.target.id
         requirement_level:
           conditionally_required: If available.
+      - ref: gen_ai.conversation.id
+        requirement_level:
+          conditionally_required: When available.
+
+  # Security overlay: opt-in enrichment recorded only by security-aware
+  # instrumentation. Separable from the base tier above (generic
+  # instrumentation cannot know a guardrail is security-related), and intended
+  # to ship as a follow-up to the base guardrail span.
+  - id: attributes.gen_ai.guardrail.security
+    visibility: internal
+    attributes:
       - ref: gen_ai.guardrail.security.policy.id
         requirement_level:
           conditionally_required: If a policy produced the verdict.
       - ref: gen_ai.guardrail.security.policy.rule.id
         requirement_level:
           recommended: If available.
-      - ref: gen_ai.guardrail.security.policy.name
-        requirement_level: recommended
-      - ref: gen_ai.guardrail.security.policy.version
-        requirement_level: recommended
       - ref: gen_ai.guardrail.security.risk.category
         requirement_level:
           recommended: If a risk finding is reported.
@@ -195,9 +205,6 @@ attribute_groups:
       - ref: gen_ai.guardrail.security.content.modified
         requirement_level:
           conditionally_required: If content was redacted or otherwise modified.
-      - ref: gen_ai.conversation.id
-        requirement_level:
-          conditionally_required: When available.
 spans:
   - type: gen_ai.inference.client
     requirement_level: recommended
@@ -683,6 +690,8 @@ spans:
     stability: development
     attributes:
       - ref_group: attributes.gen_ai.run_guardrail.common
+      # Security overlay — separable seam; omit for a base-only guardrail span.
+      - ref_group: attributes.gen_ai.guardrail.security
       - ref: gen_ai.operation.name
         requirement_level: required
         sampling_relevant: true
@@ -738,6 +747,8 @@ spans:
     stability: development
     attributes:
       - ref_group: attributes.gen_ai.run_guardrail.common
+      # Security overlay — separable seam; omit for a base-only guardrail span.
+      - ref_group: attributes.gen_ai.guardrail.security
       - ref: gen_ai.operation.name
         requirement_level: required
         sampling_relevant: true
