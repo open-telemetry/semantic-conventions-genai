@@ -72,6 +72,22 @@
       "gen_ai.usage.output_tokens",
       "server.address",
       "server.port"
+    ],
+    "gen_ai.guardrail.security.finding": [
+      "gen_ai.guardrail.action.type",
+      "gen_ai.guardrail.component.name",
+      "gen_ai.guardrail.security.external_finding_id",
+      "gen_ai.guardrail.security.policy.id",
+      "gen_ai.guardrail.security.policy.rule.id",
+      "gen_ai.guardrail.security.risk.category",
+      "gen_ai.guardrail.security.risk.score",
+      "gen_ai.guardrail.target.id",
+      "gen_ai.guardrail.target.subtype",
+      "gen_ai.guardrail.target.type",
+      "gen_ai.guardrail.verdict.code",
+      "gen_ai.guardrail.verdict.reason",
+      "gen_ai.guardrail.verdict.type",
+      "gen_ai.provider.name"
     ]
   },
   "metrics": {}

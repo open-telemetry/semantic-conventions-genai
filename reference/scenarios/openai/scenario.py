@@ -1,8 +1,11 @@
 """Reference implementation for OpenAI."""
 
+import hashlib
+import hmac
 import json
 import os
 
+from opentelemetry.trace import SpanKind
 from reference_shared import (
     flush_and_shutdown,
     mock_server_host_port,
@@ -12,6 +15,7 @@ from reference_shared import (
 )
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"] + "/v1"
+REFERENCE_HASH_KEY = b"reference-scenario-only-hmac-key"
 
 _reference_tracer = reference_tracer()
 
@@ -457,6 +461,101 @@ def run_chat_tool_call_reference(client):
             print(f"    -> {choice.message.content[:60]}")
 
 
+def run_security_guardrail_reference():
+    """Scenario: application-level guardrail before a chat request."""
+    print("  [security_guardrail] application-level input guardrail (reference implementation)")
+    request_model = "gpt-4o-mini"
+    input_text = "Please email jane@example.com about the travel booking."
+    sanitized_text = "Please email [REDACTED] about the travel booking."
+    # Reference-only fixed key for deterministic output. Production
+    # instrumentations should use a secret HMAC key, not a raw content hash.
+    input_hash = f"hmac-sha256:{hmac.new(REFERENCE_HASH_KEY, input_text.encode('utf-8'), hashlib.sha256).hexdigest()}"
+    parent_attrs = {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "openai",
+        "gen_ai.request.model": request_model,
+    }
+    with _reference_tracer.start_as_current_span("chat gpt-4o-mini", attributes=parent_attrs) as parent_span:
+        parent_span.set_attribute(
+            "gen_ai.input.messages",
+            json.dumps([{"role": "user", "parts": [{"type": "text", "content": sanitized_text}]}]),
+        )
+        guardrail_attrs = {
+            "gen_ai.operation.name": "run_guardrail",
+            "gen_ai.guardrail.action.type": "modify",
+            "gen_ai.guardrail.security.content.input.hash": input_hash,
+            "gen_ai.guardrail.security.content.modified": True,
+            "gen_ai.guardrail.security.external_finding_id": "finding_pii_001",
+            "gen_ai.guardrail.component.name": "Custom PII Filter",
+            "gen_ai.provider.name": "azure.ai.content_safety",
+            "gen_ai.guardrail.security.policy.id": "policy_pii_v2",
+            "gen_ai.guardrail.security.policy.rule.id": "rule-email",
+            "gen_ai.guardrail.security.risk.category": "sensitive_info_disclosure",
+            "gen_ai.guardrail.security.risk.score": 0.92,
+            "gen_ai.guardrail.target.id": "msg_user_1",
+            "gen_ai.guardrail.target.subtype": "llm",
+            "gen_ai.guardrail.target.type": "input",
+            "gen_ai.guardrail.verdict.code": "PII_EMAIL",
+            "gen_ai.guardrail.verdict.reason": "PII detected in user message",
+            "gen_ai.guardrail.verdict.type": "warn",
+            "gen_ai.conversation.id": "conv_security_reference",
+        }
+        with _reference_tracer.start_as_current_span("run_guardrail Custom PII Filter", attributes=guardrail_attrs):
+            finding_attrs = {
+                "gen_ai.guardrail.action.type": "modify",
+                "gen_ai.guardrail.security.external_finding_id": "finding_pii_001",
+                "gen_ai.guardrail.component.name": "Custom PII Filter",
+                "gen_ai.provider.name": "azure.ai.content_safety",
+                "gen_ai.guardrail.security.policy.id": "policy_pii_v2",
+                "gen_ai.guardrail.security.policy.rule.id": "rule-email",
+                "gen_ai.guardrail.security.risk.category": "sensitive_info_disclosure",
+                "gen_ai.guardrail.security.risk.score": 0.92,
+                "gen_ai.guardrail.target.id": "msg_user_1",
+                "gen_ai.guardrail.target.subtype": "llm",
+                "gen_ai.guardrail.target.type": "input",
+                "gen_ai.guardrail.verdict.code": "PII_EMAIL",
+                "gen_ai.guardrail.verdict.reason": "PII detected in user message",
+                "gen_ai.guardrail.verdict.type": "warn",
+            }
+            reference_event_logger().emit(
+                event_name="gen_ai.guardrail.security.finding",
+                body="Security finding",
+                attributes=finding_attrs,
+            )
+        print(f"    -> {input_text} -> {sanitized_text}")
+
+
+def run_remote_security_guardrail_reference():
+    """Scenario: remote guardrail service call before a chat request."""
+    from urllib.request import urlopen
+
+    print("  [remote_security_guardrail] remote input guardrail (reference implementation)")
+    host, port = mock_server_host_port(MOCK_BASE_URL)
+    health_url = f"{MOCK_BASE_URL.removesuffix('/v1')}/health"
+    guardrail_attrs = {
+        "gen_ai.operation.name": "run_guardrail",
+        "gen_ai.guardrail.action.type": "allow",
+        "gen_ai.guardrail.component.name": "Azure Content Safety",
+        "gen_ai.provider.name": "azure.ai.content_safety",
+        "gen_ai.guardrail.security.policy.id": "policy_safety_v1",
+        "gen_ai.guardrail.target.id": "msg_user_2",
+        "gen_ai.guardrail.target.subtype": "llm",
+        "gen_ai.guardrail.target.type": "input",
+        "gen_ai.guardrail.verdict.type": "allow",
+    }
+    if host and port is not None:
+        guardrail_attrs["server.address"] = host
+        guardrail_attrs["server.port"] = port
+    with _reference_tracer.start_as_current_span(
+        "run_guardrail Azure Content Safety",
+        kind=SpanKind.CLIENT,
+        attributes=guardrail_attrs,
+    ):
+        with urlopen(health_url, timeout=5) as response:
+            response.read()
+        print("    -> remote guardrail allowed request")
+
+
 def run_chat_with_document_input_reference(client):
     """Scenario: chat with an inline PDF document attachment (document modality).
 
@@ -848,6 +947,8 @@ def main():
     run_responses_continuation_reference(client)
     run_chat_streaming_reference(client)
     run_chat_tool_call_reference(client)
+    run_security_guardrail_reference()
+    run_remote_security_guardrail_reference()
     run_chat_with_document_input_reference(client)
     run_responses_with_prompt_template_reference(client)
     run_fetch_response_reference(client)

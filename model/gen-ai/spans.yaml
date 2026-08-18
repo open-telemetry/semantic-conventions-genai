@@ -66,7 +66,7 @@ attribute_groups:
         brief: The human-readable name of the invoked GenAI agent.
         requirement_level:
           conditionally_required: When available.
-      # not including agent description since this group is shared between 
+      # not including agent description since this group is shared between
       # spans and metrics and description is not needed on metrics
       - ref: gen_ai.request.model
         brief: The name of the GenAI model configured for the agent.
@@ -134,6 +134,60 @@ attribute_groups:
         requirement_level:
           conditionally_required: When applicable.
 
+  # Base tier: generic guardrail-evaluation attributes any guardrail
+  # instrumentation can record. Contains no security-specific fields, so it
+  # stands on its own independently of the separable security overlay below.
+  - id: attributes.gen_ai.run_guardrail.common
+    visibility: internal
+    attributes:
+      - ref_group: attributes.gen_ai.error
+      - ref: gen_ai.guardrail.verdict.reason
+        requirement_level:
+          conditionally_required: If `gen_ai.guardrail.verdict.type` is not `allow` and a reason is available.
+      - ref: gen_ai.guardrail.verdict.code
+        requirement_level: recommended
+      - ref: gen_ai.guardrail.action.type
+        requirement_level:
+          conditionally_required: If the actual enforcement action is known, especially if it differs from `gen_ai.guardrail.verdict.type`.
+      - ref: gen_ai.guardrail.target.id
+        requirement_level:
+          conditionally_required: If available.
+      - ref: gen_ai.conversation.id
+        requirement_level:
+          conditionally_required: When available.
+
+  # Security overlay: opt-in enrichment recorded only by security-aware
+  # instrumentation. Separable from the base tier above (generic
+  # instrumentation cannot know a guardrail is security-related), and intended
+  # to ship as a follow-up to the base guardrail span.
+  - id: attributes.gen_ai.guardrail.security
+    visibility: internal
+    attributes:
+      - ref: gen_ai.guardrail.security.policy.id
+        requirement_level:
+          conditionally_required: If a policy produced the verdict.
+      - ref: gen_ai.guardrail.security.policy.rule.id
+        requirement_level:
+          recommended: If available.
+      - ref: gen_ai.guardrail.security.risk.category
+        requirement_level:
+          recommended: If a risk finding is reported.
+      - ref: gen_ai.guardrail.security.risk.score
+        requirement_level:
+          recommended: If a risk or confidence score is reported.
+      - ref: gen_ai.guardrail.security.external_finding_id
+        requirement_level:
+          conditionally_required: If correlation with external security systems is needed.
+      - ref: gen_ai.guardrail.security.content.input.value
+        requirement_level: opt_in
+      - ref: gen_ai.guardrail.security.content.output.value
+        requirement_level: opt_in
+      - ref: gen_ai.guardrail.security.content.input.hash
+        requirement_level:
+          conditionally_required: If correlation is needed and available without recording full content.
+      - ref: gen_ai.guardrail.security.content.modified
+        requirement_level:
+          conditionally_required: If content was redacted or otherwise modified.
 spans:
   - type: gen_ai.inference.client
     requirement_level: recommended
@@ -575,6 +629,111 @@ spans:
         requirement_level: opt_in
       - ref: gen_ai.tool.call.result
         requirement_level: opt_in
+
+  - type: gen_ai.run_guardrail.client
+    kind: client
+    name:
+      note: |
+        **Span name** SHOULD be `run_guardrail {gen_ai.guardrail.component.name}` when
+        `gen_ai.guardrail.component.name` is readily available. When it is not available,
+        it SHOULD be `run_guardrail {gen_ai.guardrail.target.type} {gen_ai.guardrail.target.subtype}`
+        if `gen_ai.guardrail.target.subtype` is available, otherwise `run_guardrail {gen_ai.guardrail.target.type}`.
+        Semantic conventions for individual guardrail services and frameworks MAY specify a different span name format.
+    brief: >
+      Describes a remote guardrail evaluation.
+    note: |
+      The `gen_ai.operation.name` SHOULD be `run_guardrail`.
+
+      **Span name** SHOULD be `run_guardrail {gen_ai.guardrail.component.name}` when
+      `gen_ai.guardrail.component.name` is readily available. When it is not available,
+      it SHOULD be `run_guardrail {gen_ai.guardrail.target.type} {gen_ai.guardrail.target.subtype}`
+      if `gen_ai.guardrail.target.subtype` is available, otherwise `run_guardrail {gen_ai.guardrail.target.type}`.
+      Semantic conventions for individual guardrail services and frameworks MAY specify a different span name format.
+
+      This span SHOULD be used when the guardrail evaluation is performed by
+      another process or service, especially when the call happens over an
+      instrumented protocol such as HTTP.
+    stability: development
+    attributes:
+      - ref_group: attributes.gen_ai.run_guardrail.common
+      # Security overlay — separable seam; omit for a base-only guardrail span.
+      - ref_group: attributes.gen_ai.guardrail.security
+      - ref: gen_ai.operation.name
+        requirement_level: required
+        sampling_relevant: true
+      - ref: gen_ai.guardrail.component.name
+        requirement_level: recommended
+        sampling_relevant: true
+      - ref: gen_ai.provider.name
+        requirement_level: recommended
+        sampling_relevant: true
+      - ref: gen_ai.guardrail.verdict.type
+        requirement_level: required
+        sampling_relevant: true
+      - ref: gen_ai.guardrail.target.type
+        requirement_level: required
+        sampling_relevant: true
+      - ref: gen_ai.guardrail.target.subtype
+        requirement_level:
+          conditionally_required: If available.
+        sampling_relevant: true
+      - ref: server.address
+        brief: Guardrail service address.
+        requirement_level: recommended
+        sampling_relevant: true
+      - ref: server.port
+        brief: Guardrail service port.
+        requirement_level:
+          conditionally_required: If `server.address` is set.
+        sampling_relevant: true
+
+  - type: gen_ai.run_guardrail.internal
+    kind: internal
+    name:
+      note: |
+        **Span name** SHOULD be `run_guardrail {gen_ai.guardrail.component.name}` when
+        `gen_ai.guardrail.component.name` is readily available. When it is not available,
+        it SHOULD be `run_guardrail {gen_ai.guardrail.target.type} {gen_ai.guardrail.target.subtype}`
+        if `gen_ai.guardrail.target.subtype` is available, otherwise `run_guardrail {gen_ai.guardrail.target.type}`.
+        Semantic conventions for individual guardrail services and frameworks MAY specify a different span name format.
+    brief: >
+      Describes an in-process guardrail evaluation.
+    note: |
+      The `gen_ai.operation.name` SHOULD be `run_guardrail`.
+
+      **Span name** SHOULD be `run_guardrail {gen_ai.guardrail.component.name}` when
+      `gen_ai.guardrail.component.name` is readily available. When it is not available,
+      it SHOULD be `run_guardrail {gen_ai.guardrail.target.type} {gen_ai.guardrail.target.subtype}`
+      if `gen_ai.guardrail.target.subtype` is available, otherwise `run_guardrail {gen_ai.guardrail.target.type}`.
+      Semantic conventions for individual guardrail services and frameworks MAY specify a different span name format.
+
+      This span SHOULD be used when the guardrail evaluation is performed in the
+      same process as the instrumented GenAI operation.
+
+    stability: development
+    attributes:
+      - ref_group: attributes.gen_ai.run_guardrail.common
+      # Security overlay — separable seam; omit for a base-only guardrail span.
+      - ref_group: attributes.gen_ai.guardrail.security
+      - ref: gen_ai.operation.name
+        requirement_level: required
+        sampling_relevant: true
+      - ref: gen_ai.guardrail.component.name
+        requirement_level: recommended
+        sampling_relevant: true
+      - ref: gen_ai.provider.name
+        requirement_level: recommended
+        sampling_relevant: true
+      - ref: gen_ai.guardrail.verdict.type
+        requirement_level: required
+        sampling_relevant: true
+      - ref: gen_ai.guardrail.target.type
+        requirement_level: required
+        sampling_relevant: true
+      - ref: gen_ai.guardrail.target.subtype
+        requirement_level:
+          conditionally_required: If available.
+        sampling_relevant: true
 
   - type: gen_ai.invoke_workflow.internal
     requirement_level: recommended

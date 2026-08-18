@@ -41,11 +41,14 @@ _SPANS = {
     "invoke_agent_internal": ("gen_ai.invoke_agent.internal", "Invoke Agent Internal"),
     "invoke_workflow": ("gen_ai.invoke_workflow.internal", "Invoke Workflow"),
     "plan": ("gen_ai.plan.internal", "Plan"),
+    "run_guardrail_client": ("gen_ai.run_guardrail.client", "Run Guardrail Client"),
+    "run_guardrail_internal": ("gen_ai.run_guardrail.internal", "Run Guardrail Internal"),
 }
 
 _EVENTS = {
     "gen_ai.client.inference.operation.details": "Inference Operation Details",
     "gen_ai.evaluation.result": "Evaluation Result",
+    "gen_ai.guardrail.security.finding": "Security Finding",
 }
 
 # `gen_ai.client.operation.duration` and `gen_ai.client.token.usage` are a
