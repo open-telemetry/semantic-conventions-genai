@@ -24,9 +24,7 @@
 | --- | --- |
 | gen_ai.guardrail.action.type | [openai] |
 | gen_ai.guardrail.component.name | [openai] |
-| gen_ai.guardrail.security.policy.name | [openai] |
 | gen_ai.guardrail.security.policy.rule.id | [openai] |
-| gen_ai.guardrail.security.policy.version | [openai] |
 | gen_ai.guardrail.security.risk.score | [openai] |
 | gen_ai.guardrail.verdict.code | [openai] |
 | gen_ai.guardrail.verdict.reason | [openai] |

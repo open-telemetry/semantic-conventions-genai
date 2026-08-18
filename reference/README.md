@@ -36,7 +36,7 @@ Run `uv run update-reports` to regenerate.
 | [Memory](reports/memory-span.md) | aws-bedrock-agentcore, google-adk |
 | [Execute Tool](reports/execute-tool-span.md) | agent-framework, autogen, crewai, google-adk, google-genai, langchain, llamaindex, openai-agents, openai-assistants, pydantic-ai, vertexai |
 | [Run Guardrail Client](reports/run-guardrail-client-span.md) | openai |
-| [Run Guardrail Internal](reports/run-guardrail-internal-span.md) | openai |
+| [Run Guardrail Internal](reports/run-guardrail-internal-span.md) | openai, openai-guardrails |
 
 ### Events
 
