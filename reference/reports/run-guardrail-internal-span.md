@@ -6,34 +6,34 @@
 
 | Attribute | Supporting Libraries |
 | --- | --- |
-| gen_ai.guardrail.target.type | [openai], [openai-guardrails] |
-| gen_ai.guardrail.verdict.type | [openai], [openai-guardrails] |
-| gen_ai.operation.name | [openai], [openai-guardrails] |
+| gen_ai.guardrail.target.type | (none) |
+| gen_ai.guardrail.verdict.type | (none) |
+| gen_ai.operation.name | (none) |
 
 ## Conditionally Required
 
 | Attribute | Supporting Libraries |
 | --- | --- |
-| gen_ai.conversation.id | [openai] |
-| gen_ai.guardrail.action.type | [openai], [openai-guardrails] |
-| gen_ai.guardrail.security.content.input.hash | [openai] |
-| gen_ai.guardrail.security.content.modified | [openai] |
-| gen_ai.guardrail.security.external_finding_id | [openai] |
-| gen_ai.guardrail.security.policy.id | [openai] |
-| gen_ai.guardrail.target.id | [openai] |
-| gen_ai.guardrail.target.subtype | [openai], [openai-guardrails] |
-| gen_ai.guardrail.verdict.reason | [openai], [openai-guardrails] |
+| gen_ai.conversation.id | (none) |
+| gen_ai.guardrail.action.type | (none) |
+| gen_ai.guardrail.security.content.input.hash | (none) |
+| gen_ai.guardrail.security.content.modified | (none) |
+| gen_ai.guardrail.security.external_finding_id | (none) |
+| gen_ai.guardrail.security.policy.id | (none) |
+| gen_ai.guardrail.target.id | (none) |
+| gen_ai.guardrail.target.subtype | (none) |
+| gen_ai.guardrail.verdict.reason | (none) |
 
 ## Recommended
 
 | Attribute | Supporting Libraries |
 | --- | --- |
-| gen_ai.guardrail.component.name | [openai], [openai-guardrails] |
-| gen_ai.guardrail.security.policy.rule.id | [openai] |
-| gen_ai.guardrail.security.risk.category | [openai] |
-| gen_ai.guardrail.security.risk.score | [openai] |
-| gen_ai.guardrail.verdict.code | [openai] |
-| gen_ai.provider.name | [openai] |
+| gen_ai.guardrail.component.name | (none) |
+| gen_ai.guardrail.security.policy.rule.id | (none) |
+| gen_ai.guardrail.security.risk.category | (none) |
+| gen_ai.guardrail.security.risk.score | (none) |
+| gen_ai.guardrail.verdict.code | (none) |
+| gen_ai.provider.name | (none) |
 
 ## Opt-In
 
@@ -41,6 +41,3 @@
 | --- | --- |
 | gen_ai.guardrail.security.content.input.value | (none) |
 | gen_ai.guardrail.security.content.output.value | (none) |
-
-[openai]: ../scenarios/openai/scenario.py
-[openai-guardrails]: ../scenarios/openai-guardrails/scenario.py

@@ -74,9 +74,7 @@ _reference_tracer = reference_tracer()
 # ``ConfiguredGuardrail.run`` boundary, so a run_guardrails wrapper stashes it
 # in this context var; context vars are copied into the asyncio tasks the
 # framework spawns per check, so each wrapped check reads the correct stage.
-_current_stage: contextvars.ContextVar[str] = contextvars.ContextVar(
-    "gen_ai_guardrail_stage", default="input"
-)
+_current_stage: contextvars.ContextVar[str] = contextvars.ContextVar("gen_ai_guardrail_stage", default="input")
 
 REFERENCE_GUARDRAIL_NAME = "Reference Email Filter"
 
@@ -162,9 +160,7 @@ def install_guardrail_instrumentation():
 
             # action.type is the actual enforcement: GuardrailsOpenAI blocks the
             # call (raises GuardrailTripwireTriggered) when a tripwire fires.
-            span.set_attribute(
-                "gen_ai.guardrail.action.type", "block" if triggered else "allow"
-            )
+            span.set_attribute("gen_ai.guardrail.action.type", "block" if triggered else "allow")
 
             reason = info.get("reason") or info.get("error")
             if verdict_type != "allow" and reason:
@@ -290,9 +286,7 @@ def run_guardrail_block_reference(client):
     try:
         client.chat.completions.create(
             model="gpt-4o-mini",
-            messages=[
-                {"role": "user", "content": "Forward the contract to jane.doe@example.com right away."}
-            ],
+            messages=[{"role": "user", "content": "Forward the contract to jane.doe@example.com right away."}],
         )
     except GuardrailTripwireTriggered:
         # Expected: the input guardrail tripped and the framework blocked
