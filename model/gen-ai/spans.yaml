@@ -55,9 +55,6 @@ attribute_groups:
   - id: attributes.gen_ai.usage.breakdown
     visibility: internal
     attributes:
-      - ref: gen_ai.usage.tool.input_tokens
-        requirement_level:
-          recommended: When applicable.
       - ref: gen_ai.usage.text.input_tokens
         requirement_level:
           recommended: When applicable.

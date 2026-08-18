@@ -43,8 +43,7 @@
       "gen_ai.usage.reasoning.output_tokens",
       "gen_ai.usage.text.cache_read.input_tokens",
       "gen_ai.usage.text.input_tokens",
-      "gen_ai.usage.text.output_tokens",
-      "gen_ai.usage.tool.input_tokens"
+      "gen_ai.usage.text.output_tokens"
     ],
     "gen_ai.invoke_agent.client": [
       "gen_ai.agent.name",
@@ -79,8 +78,7 @@
       "gen_ai.usage.reasoning.output_tokens",
       "gen_ai.usage.text.cache_read.input_tokens",
       "gen_ai.usage.text.input_tokens",
-      "gen_ai.usage.text.output_tokens",
-      "gen_ai.usage.tool.input_tokens"
+      "gen_ai.usage.text.output_tokens"
     ]
   },
   "metrics": {}

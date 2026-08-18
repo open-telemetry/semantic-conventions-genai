@@ -50,7 +50,6 @@
 | gen_ai.usage.text.cache_read.input_tokens | (none) |
 | gen_ai.usage.text.input_tokens | (none) |
 | gen_ai.usage.text.output_tokens | (none) |
-| gen_ai.usage.tool.input_tokens | (none) |
 | server.address | [aws-bedrock-agent], [azure-ai-foundry], [openai-assistants] |
 
 ## Opt-In

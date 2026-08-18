@@ -275,6 +275,14 @@ attributes:
       token counts (for example, Cohere exposes both `usage.billed_units` and
       `usage.tokens`), instrumentations SHOULD report the billed count so the
       value matches the units the customer is charged for.
+
+      Detailed usage attributes are subsets of total and aggregate counts. For example,
+      if a request has 100 text tokens (40 cached) and 200 image tokens:
+      - `gen_ai.usage.input_tokens`: 300
+      - `gen_ai.usage.cache_read.input_tokens`: 40
+      - `gen_ai.usage.text.input_tokens`: 100
+      - `gen_ai.usage.text.cache_read.input_tokens`: 40
+      - `gen_ai.usage.image.input_tokens`: 200
     examples: [100]
     stability: development
   - key: gen_ai.usage.cache_read.input_tokens
@@ -290,13 +298,6 @@ attributes:
     note: >
       The value SHOULD be included in `gen_ai.usage.input_tokens`.
     examples: [25]
-    stability: development
-  - key: gen_ai.usage.tool.input_tokens
-    type: int
-    brief: The number of input tokens used for tool definitions and tool call results.
-    note: >
-      The value SHOULD be included in `gen_ai.usage.input_tokens`.
-    examples: [30]
     stability: development
   - key: gen_ai.usage.text.input_tokens
     type: int

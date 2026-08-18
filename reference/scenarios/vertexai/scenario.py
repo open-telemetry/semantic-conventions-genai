@@ -148,8 +148,6 @@ def _usage_attributes(um):
         attrs["gen_ai.usage.output_tokens"] = output_tokens
     if cache_read_tokens:
         attrs["gen_ai.usage.cache_read.input_tokens"] = cache_read_tokens
-    if tool_use_tokens:
-        attrs["gen_ai.usage.tool.input_tokens"] = tool_use_tokens
     if reasoning_tokens:
         attrs["gen_ai.usage.reasoning.output_tokens"] = reasoning_tokens
     attrs.update(_modality_usage_attributes(um))
