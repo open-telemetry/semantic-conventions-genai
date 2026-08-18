@@ -10,9 +10,11 @@ result, and the *same* generation then speaks its answer. The
 
 A live session is long-lived and mostly idle, so it is not modeled as a span.
 Instead the session is represented by the ``gen_ai.client.live_session.started``
-and ``gen_ai.client.live_session.ended`` events. Gemini Live does not expose a
-session identifier to the client, so ``gen_ai.conversation.id`` is left unset
-here (an honest capture gap for this provider).
+and ``gen_ai.client.live_session.ended`` events. The Gemini Developer API's
+``setupComplete`` message has no fields, so it exposes no server session
+identifier to the client and ``gen_ai.conversation.id`` is left unset here. When
+a provider session id is not available, instrumentation may instead mint a
+client-created per-connection id and use it as ``gen_ai.conversation.id``.
 
 The Gemini Developer API also exposes no user voice-activity (VAD) events, so
 there is no ``user_input`` span here (another honest capture gap for this

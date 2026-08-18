@@ -407,7 +407,12 @@ providers.
 
 A live session is bracketed by the `started` / `ended` events (not a span), and
 each server-side generation is a `gen_ai.generate_live_content.client` span
-correlated by `gen_ai.conversation.id`. When the provider exposes user
+correlated by `gen_ai.conversation.id`. The `gen_ai.conversation.id` is the
+provider session identifier when one is available; when the provider exposes no
+session identifier (for example, the Gemini Developer API `setupComplete`
+message has no fields), instrumentation may instead mint a client-created
+per-connection id — the live connection is the session boundary — and use it as
+`gen_ai.conversation.id`. When the provider exposes user
 voice-activity events, an optional [user input span](#user-input-span) may
 bracket the user's utterance that precedes a generation. A simple session with a
 single generation looks like this:
@@ -811,7 +816,8 @@ record this span. In that case the user input is carried on the
 
 The `gen_ai.operation.name` SHOULD be `user_input`. The generations that respond to this
 input are correlated through `gen_ai.conversation.id` when the provider exposes a session
-identifier.
+identifier; when it does not, instrumentation may mint a client-created per-connection id
+and use it as `gen_ai.conversation.id`.
 
 **Span kind** SHOULD be `CLIENT`.
 
