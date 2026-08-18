@@ -10,7 +10,7 @@ linkTitle: Events
 
 - [Event: `gen_ai.client.inference.operation.details`](#event-gen_aiclientinferenceoperationdetails)
 - [Event: `gen_ai.evaluation.result`](#event-gen_aievaluationresult)
-- [Event: `gen_ai.guardrail.security.finding`](#event-gen_aisecurityfinding)
+- [Event: `gen_ai.guardrail.security.finding`](#event-gen_aiguardrailsecurityfinding)
 
 <!-- tocstop -->
 
