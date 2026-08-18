@@ -730,14 +730,27 @@ Represents an operation that executes a coordinated process composed of multiple
 
 The `gen_ai.operation.name` SHOULD be `invoke_workflow`.
 
-This span SHOULD be reported by the instrumentations when they can
-reliably determine that invocation is a workflow (i.e. groups several agent
-invocations) and SHOULD NOT be reported by instrumentations that
-can't distinguish it `invoke_workflow` from `invoke_agent`.
-eg: Some frameworks like ADK have workflow agents that orchestrate other agents
-and report `invoke_agent` spans, so `invoke_workflow` SHOULD NOT be reported by such instrumentations.
-Conversely, frameworks like CrewAI have a distinct concept of crew (similar to workflow)
-that is separate from individual agents, so they SHOULD report `invoke_workflow` spans.
+The workflow span SHOULD be reported for operations that trigger the execution
+of composable processes (e.g., graphs, orchestrators) coordinating multiple
+agents or GenAI calls. It SHOULD NOT be reported for standalone agent invocations.
+
+The `invoke_workflow` span SHOULD NOT be reported when the workflow invocation is
+an internal implementation detail of another operation (e.g., an agent or tool that
+spins up a runner/workflow under the hood to delegate to a sub-agent) rather than
+a user-facing entry point. Workflows defined by the application SHOULD be reported
+even when nested, for example a sub-graph invoked as a node of another graph.
+
+Framework-specific semantic conventions SHOULD define which operations to report
+as workflows and MAY specify heuristics to distinguish them from standalone
+agent invocations and internal operations.
+
+Examples of workflow invocations in different frameworks include:
+
+- **ADK**: [`Runner.run(...)`](https://adk.dev/workflows/) with multi-agent or graph workflow.
+- **CrewAI**: [`Crew.kickoff()`](https://docs.crewai.com/concepts/crews)
+- **LangChain / LangGraph**: [`*Graph*.invoke(...)`](https://reference.langchain.com/python/langgraph/graphs)
+- **Microsoft Agent Framework**: [`Workflow*.run(...)`](https://learn.microsoft.com/agent-framework/workflows/)
+- **OpenAI Agents**: [`Runner.run(starting_agent=...)`](https://openai.github.io/openai-agents-python/ref/run/#agents.run.Runner.run) with handoffs, sub-agents, or agents-as-tools.
 
 **Span name** SHOULD be `invoke_workflow {gen_ai.workflow.name}`.
 
@@ -785,13 +798,20 @@ Application developers that manage conversation history MAY add conversation id 
 spans or logs using custom span or log record processors or hooks provided by instrumentation
 libraries.
 
-**[5] `gen_ai.workflow.name`:** This attribute can be populated in different frameworks; for example, as the name of the first chain in LangChain or the name of the crew in CrewAI.
-The workflow name is usually provided by the application in a way that is specific to the generative AI framework or library that orchestrates the workflow.
-It is usually a static name that is expected to be unique within an application.
+**[5] `gen_ai.workflow.name`:** The workflow name is usually a static, application-unique identifier defined
+in a framework-specific way.
 
-`gen_ai.workflow.name` MUST have low cardinality.
-Semantic conventions for individual Generative AI frameworks SHOULD document what `gen_ai.workflow.name` means in the context of that framework.
-If there is no low-cardinality workflow name available for a given framework, this attribute MUST NOT be captured by default.
+For example, it can be the name of the first chain in LangChain,
+the name of the crew in CrewAI, or the entry point agent in ADK or
+OpenAI Agents when no explicit workflow name is provided.
+
+This attribute MUST have low cardinality. It is NOT RECOMMENDED to use
+instrumentation-time constants or names of types representing the workflow,
+such as "StateGraph". When no meaningful, low-cardinality workflow name is
+available for a given framework, this attribute MUST NOT be captured by default.
+
+Semantic conventions for individual Generative AI frameworks SHOULD document
+what `gen_ai.workflow.name` means in the context of that framework.
 
 **[6] `gen_ai.input.messages`:** Messages MUST be provided in the order they were sent to the model.
 Instrumentations MAY provide a way for users to filter or truncate

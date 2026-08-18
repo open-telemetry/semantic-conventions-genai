@@ -1,7 +1,7 @@
 """Reference implementation for OpenAI Agents.
 
-Exercises: agent run with tool calling
-against a mock OpenAI server, with manual OTel spans.
+Exercises: agent run with tool calling and a multi-agent run with handoffs
+wrapped in a workflow span, against a mock OpenAI server, with manual OTel spans.
 """
 
 import asyncio
@@ -9,6 +9,10 @@ import copy
 import json
 import os
 
+import openai
+from agents import Agent, RunConfig, Runner, function_tool
+from agents.models.openai_chatcompletions import OpenAIChatCompletionsModel
+from agents.tool import FunctionTool, ToolContext
 from reference_shared import flush_and_shutdown, reference_tracer, setup_otel
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"] + "/v1"
@@ -16,33 +20,29 @@ MOCK_BASE_URL = os.environ["MOCK_LLM_URL"] + "/v1"
 _reference_tracer = reference_tracer()
 
 
+@function_tool
+def get_weather(ctx: ToolContext[None], location: str) -> str:
+    """Get the current weather for a location."""
+    tool_span_attributes = {
+        "gen_ai.operation.name": "execute_tool",
+        "gen_ai.tool.name": "get_weather",
+        "gen_ai.tool.type": "function",
+    }
+    with _reference_tracer.start_as_current_span(
+        "execute_tool get_weather", attributes=tool_span_attributes
+    ) as tool_span:
+        tool_span.set_attribute("gen_ai.tool.description", get_weather.description)
+        if ctx.agent is not None and ctx.agent.name:
+            tool_span.set_attribute("gen_ai.agent.name", ctx.agent.name)
+        tool_span.set_attribute("gen_ai.tool.call.id", ctx.tool_call_id)
+        tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps({"location": location}))
+        result = "Sunny, 72°F"
+        tool_span.set_attribute("gen_ai.tool.call.result", result)
+        return result
+
+
 async def run_agent():
     """Run a simple agent with the OpenAI Agents SDK, with manual spans."""
-    import openai
-    from agents import Agent, Runner, function_tool
-    from agents.models.openai_chatcompletions import OpenAIChatCompletionsModel
-    from agents.tool import FunctionTool, ToolContext
-
-    @function_tool
-    def get_weather(ctx: ToolContext[None], location: str) -> str:
-        """Get the current weather for a location."""
-        tool_span_attributes = {
-            "gen_ai.operation.name": "execute_tool",
-            "gen_ai.tool.name": "get_weather",
-            "gen_ai.tool.type": "function",
-        }
-        with _reference_tracer.start_as_current_span(
-            "execute_tool get_weather", attributes=tool_span_attributes
-        ) as tool_span:
-            tool_span.set_attribute("gen_ai.tool.description", get_weather.description)
-            if ctx.agent is not None and ctx.agent.name:
-                tool_span.set_attribute("gen_ai.agent.name", ctx.agent.name)
-            tool_span.set_attribute("gen_ai.tool.call.id", ctx.tool_call_id)
-            tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps({"location": location}))
-            result = "Sunny, 72°F"
-            tool_span.set_attribute("gen_ai.tool.call.result", result)
-            return result
-
     client = openai.AsyncOpenAI(base_url=MOCK_BASE_URL, api_key="mock-key")
     request_model = "gpt-4o-mini"
     model = OpenAIChatCompletionsModel(model=request_model, openai_client=client)
@@ -125,12 +125,64 @@ async def run_agent():
         print(f"    -> {str(result.final_output)[:60]}")
 
 
+async def run_workflow():
+    """Run a multi-agent handoff wrapped in a workflow span representing the SDK workflow tracing."""
+    from agents import handoff
+
+    client = openai.AsyncOpenAI(base_url=MOCK_BASE_URL, api_key="mock-key")
+    request_model = "gpt-4o-mini"
+    model = OpenAIChatCompletionsModel(model=request_model, openai_client=client)
+
+    agent_b = Agent(
+        name="agent-b",
+        instructions="You are agent B, tell the user the weather is sunny.",
+        model=model,
+    )
+    agent_a = Agent(
+        name="agent-a",
+        instructions="You are agent A. Handoff to agent-b immediately to answer the user's weather question.",
+        model=model,
+        handoffs=[handoff(agent_b)],
+    )
+    input_text = "What's the weather in Seattle?"
+
+    print("  [workflow_run] agent run as workflow (reference implementation)")
+    workflow_name = "sequential-agents"
+    workflow_span_attributes = {
+        "gen_ai.operation.name": "invoke_workflow",
+    }
+    with _reference_tracer.start_as_current_span(
+        f"invoke_workflow {workflow_name}", attributes=workflow_span_attributes
+    ) as workflow_span:
+        workflow_span.set_attribute("gen_ai.workflow.name", workflow_name)
+        workflow_span.set_attribute(
+            "gen_ai.input.messages", json.dumps([{"role": "user", "parts": [{"type": "text", "content": input_text}]}])
+        )
+
+        # Note: Agent spans (invoke_agent) are expected to be children of the
+        # workflow span but are omitted for brevity in this scenario.
+        result = await Runner.run(agent_a, input_text, run_config=RunConfig(workflow_name=workflow_name))
+
+        if result.final_output:
+            output_messages = json.dumps(
+                [
+                    {
+                        "role": "assistant",
+                        "parts": [{"type": "text", "content": str(result.final_output)}],
+                    }
+                ]
+            )
+            workflow_span.set_attribute("gen_ai.output.messages", output_messages)
+        print(f"    -> {str(result.final_output)[:60]}")
+
+
 def main():
     print("=== Reference Implementation: OpenAI Agents Reference Implementation ===")
 
     tp, lp, mp = setup_otel()
 
     asyncio.run(run_agent())
+    asyncio.run(run_workflow())
     asyncio.run(run_agent_with_handoff())
 
     flush_and_shutdown(tp, lp, mp)
@@ -141,15 +193,20 @@ async def run_agent_with_handoff():
 
     Scenario shape and mock behavior
     --------------------------------
-    A triage agent owns one Handoff to a billing specialist. The mock server
-    prefers ``transfer_to_*`` tools when present, so the SDK's handoff
-    machinery fires: it constructs a ``HandoffCallItem`` carrying the
-    function tool call the model produced (``agents/items.py``) and a
-    ``HandoffOutputItem`` carrying library-owned ``source_agent`` /
-    ``target_agent`` references (``agents/run_internal/turn_resolution.py:385``).
-    The SDK models handoff as a function tool call --- ``convert_handoff_tool``
-    at ``agents/models/chatcmpl_converter.py:864`` serializes each ``Handoff``
-    as a ``ChatCompletionToolParam`` with ``"type": "function"``.
+    A triage agent owns one Handoff to a billing specialist. The triage agent
+    exposes the handoff as its only tool, so the mock server selects it and
+    the SDK's handoff machinery fires: it constructs a ``HandoffCallItem``
+    carrying the function tool call the model produced (``agents/items.py``)
+    and a ``HandoffOutputItem`` carrying library-owned ``source_agent`` /
+    ``target_agent`` references
+    (``agents/run_internal/turn_resolution.py::execute_handoffs``).
+    The SDK models handoff as a function tool call:
+    ``agents/models/chatcmpl_converter.py::Converter.convert_handoff_tool``
+    serializes each ``Handoff`` as a ``ChatCompletionToolParam`` with
+    ``"type": "function"``.
+
+    SDK references below are symbol-qualified rather than line-numbered so
+    they survive dependency bumps; verified against ``openai-agents==0.21.0``.
 
     Telemetry shape
     ---------------
@@ -163,18 +220,18 @@ async def run_agent_with_handoff():
     Instrumentation boundary
     ------------------------
     The ``execute_tool`` span wraps exactly the SDK's awaited handoff
-    invocation at ``agents/run_internal/turn_resolution.py:369``
+    invocation inside ``turn_resolution.execute_handoffs``
     (``await handoff.on_invoke_handoff(...)``). To install that span without
     forking the SDK, the scenario monkey-patches
     ``agents.run_internal.turn_resolution.execute_handoffs`` to a wrapper
     that swaps ``actual_handoff.handoff`` for a shallow copy with a wrapped
     ``on_invoke_handoff``. ``copy.copy`` is required (not
     ``dataclasses.replace``) so that ``Handoff._agent_ref`` (an
-    ``init=False`` weakref set by the ``handoff()`` factory at
-    ``agents/handoffs/__init__.py:334``) survives the replacement. The
-    shared agent-owned ``Handoff`` object is never mutated;
-    ``ToolRunHandoff`` is constructed fresh per turn at
-    ``agents/run_internal/turn_resolution.py:1838``.
+    ``init=False`` weakref field on ``agents/handoffs/__init__.py::Handoff``,
+    set by the ``handoff()`` factory in the same module) survives the
+    replacement. The shared agent-owned ``Handoff`` object is never mutated;
+    ``ToolRunHandoff`` is constructed fresh per turn in
+    ``turn_resolution.process_model_response``.
 
     The user-facing entry point remains ``Runner.run(triage_agent, ...)``.
     The patch is scenario-internal, applied before ``Runner.run`` and
@@ -182,8 +239,9 @@ async def run_agent_with_handoff():
 
     Value sources (all from typed SDK state at the call boundary)
     -------------------------------------------------------------
-    * ``gen_ai.tool.name`` <- ``handoff_obj.tool_name`` (post-resolved per
-      ``agents/handoffs/__init__.py:307``; honors ``tool_name_override``)
+    * ``gen_ai.tool.name`` <- ``handoff_obj.tool_name`` (resolved by
+      ``agents/handoffs/__init__.py::handoff`` from
+      ``Handoff.default_tool_name``; honors ``tool_name_override``)
     * ``gen_ai.tool.call.id`` <- ``actual_handoff.tool_call.call_id``
     * ``gen_ai.tool.call.arguments`` <- ``actual_handoff.tool_call.arguments``
     * ``gen_ai.agent.handoff.source.name`` <- ``public_agent.name``
@@ -202,16 +260,13 @@ async def run_agent_with_handoff():
     ``on_handoff`` from ``agents/lifecycle.py``) open and close each
     agent's ``invoke_agent`` span around its real execution. ``on_handoff``
     closes the source agent's ``invoke_agent`` span because the SDK skips
-    ``on_agent_end`` on the ``NextStepHandoff`` path
-    (``turn_resolution.py:513``).
+    ``on_agent_end`` on the ``NextStepHandoff`` path that
+    ``turn_resolution.execute_handoffs`` returns.
     """
-    import openai
-    from agents import Agent, Runner, handoff
+    from agents import handoff
     from agents.items import HandoffOutputItem
     from agents.lifecycle import RunHooks
-    from agents.models.openai_chatcompletions import OpenAIChatCompletionsModel
     from agents.run_internal import turn_resolution as _turn_resolution
-    from agents.tool import FunctionTool
     from opentelemetry.trace import set_span_in_context
 
     client = openai.AsyncOpenAI(base_url=MOCK_BASE_URL, api_key="mock-key")
@@ -263,7 +318,7 @@ async def run_agent_with_handoff():
             open_spans[agent.name] = agent_span
             agent_span.set_attribute(
                 "gen_ai.system_instructions",
-                json.dumps([{"parts": [{"type": "text", "content": agent.instructions}]}]),
+                json.dumps([{"type": "text", "content": agent.instructions}]),
             )
             # Only the entry-point agent sees the user input directly; the
             # target of a handoff receives an SDK-rewritten transcript, not
@@ -336,17 +391,18 @@ async def run_agent_with_handoff():
 
         async def on_llm_end(self_hooks, context, agent, response):
             # Library-owned response state: ModelResponse.usage carries
-            # token counts (agents/items.py:651-666); response.output[].type
-            # discriminates whether the model produced a final answer
-            # ("message") or invoked a function/handoff ("function_call").
-            # The latter maps to chat-completion finish_reason="tool_calls"
-            # since the OpenAI Agents SDK serializes both function tools
-            # and handoffs as ChatCompletionToolParam (see
-            # chatcmpl_converter.convert_handoff_tool). We accumulate
-            # tokens across multiple LLM calls per agent (mirrors the
-            # SDK's own context_wrapper.usage.add accumulation at
-            # run_loop.py:1628,1909) so multi-turn agents land their full
-            # totals on their span at on_agent_end / on_handoff.
+            # token counts (agents/items.py::ModelResponse);
+            # response.output[].type discriminates whether the model produced
+            # a final answer ("message") or invoked a function/handoff
+            # ("function_call"). The latter maps to chat-completion
+            # finish_reason="tool_calls" since the OpenAI Agents SDK
+            # serializes both function tools and handoffs as
+            # ChatCompletionToolParam (see
+            # chatcmpl_converter.Converter.convert_handoff_tool). We
+            # accumulate tokens across multiple LLM calls per agent (mirrors
+            # the SDK's own context_wrapper.usage.add accumulation in
+            # agents/run_internal/run_loop.py) so multi-turn agents land
+            # their full totals on their span at on_agent_end / on_handoff.
             if agent.name not in open_spans:
                 return
             usage = getattr(response, "usage", None)
@@ -372,8 +428,8 @@ async def run_agent_with_handoff():
 
         async def on_handoff(self_hooks, context, from_agent, to_agent):
             # The SDK only fires on_agent_end on the NextStepFinalOutput
-            # path (turn_resolution.py:226 inside run_final_output_hooks);
-            # the NextStepHandoff path at turn_resolution.py:513 skips it.
+            # path (turn_resolution.run_final_output_hooks); the
+            # NextStepHandoff path that execute_handoffs returns skips it.
             # So for an agent that hands off, on_agent_end never fires.
             # Close the source agent's span here at the handoff boundary
             # so its duration honestly reflects the source agent's
@@ -395,7 +451,8 @@ async def run_agent_with_handoff():
     hooks = _SpanLifecycleHooks()
 
     # Install execute_tool span emission around the SDK's awaited handoff
-    # invocation at turn_resolution.py:369 (await handoff.on_invoke_handoff).
+    # invocation inside turn_resolution.execute_handoffs
+    # (await handoff.on_invoke_handoff).
     # See the function docstring for the full rationale.
     _original_execute_handoffs = _turn_resolution.execute_handoffs
     _handoff_spans_emitted: list[None] = []
@@ -434,25 +491,25 @@ async def run_agent_with_handoff():
                 return new_agent
 
         # copy.copy preserves init=False fields (Handoff._agent_ref weakref
-        # set by the handoff() factory at agents/handoffs/__init__.py:334).
+        # set by the handoff() factory in agents/handoffs/__init__.py).
         # dataclasses.replace would reset _agent_ref to None, breaking the
-        # run-state snapshot/restore path that reads it at run_state.py:2606.
-        # The shared agent-owned Handoff is never mutated; ToolRunHandoff is
-        # per-turn (agents/run_internal/run_steps.py:60).
+        # run-state snapshot/restore path in agents/run_state.py that reads
+        # it. The shared agent-owned Handoff is never mutated; ToolRunHandoff
+        # is per-turn (agents/run_internal/run_steps.py::ToolRunHandoff).
         wrapped = copy.copy(handoff_obj)
         wrapped.on_invoke_handoff = _on_invoke_with_span
         actual_handoff.handoff = wrapped
         return await _original_execute_handoffs(**kwargs)
 
     # The Runner.run call path re-reads `execute_handoffs` from this module
-    # on each call: turn_resolution.execute_tools_and_side_effects captures
-    # it locally at turn_resolution.py:573, and the post-interruption
-    # resume path does the same at :782. Monkey-patching the module
-    # attribute therefore takes effect on the next handoff.
-    # agents/run_internal/run_loop.py:187-196 imports and re-exports
-    # execute_handoffs at module import time but does not call it directly;
-    # the call path always goes through execute_tools_and_side_effects.
-    # Verified in openai-agents 0.4.x.
+    # on each call: turn_resolution.execute_tools_and_side_effects binds it
+    # to a local `execute_handoffs_call`, and the post-interruption
+    # turn_resolution.resolve_interrupted_turn does the same. Monkey-patching
+    # the module attribute therefore takes effect on the next handoff.
+    # agents/run_internal/run_loop.py imports and re-exports execute_handoffs
+    # at module import time but does not call it directly; the call path
+    # always goes through execute_tools_and_side_effects.
+    # Verified in openai-agents 0.21.0.
     _turn_resolution.execute_handoffs = _execute_handoffs_with_span
     try:
         result = await Runner.run(triage_agent, input_text, hooks=hooks)
@@ -481,11 +538,11 @@ async def run_agent_with_handoff():
             "on the fresh-Runner.run path used by this scenario; the "
             "execute_handoffs monkey-patch may not have been applied -- verify "
             "openai-agents SDK compatibility with execute_tools_and_side_effects "
-            "re-reading execute_handoffs per call (turn_resolution.py:573, also "
-            ":782 for the post-interruption resume path). Note: this 1:1 "
-            "invariant holds only for fresh Runner.run; run-state restore can "
-            "reconstruct HandoffOutputItem without invoking on_invoke_handoff "
-            "(run_state.py:3248-3255)."
+            "re-reading execute_handoffs per call (also resolve_interrupted_turn "
+            "for the post-interruption resume path). Note: this 1:1 invariant "
+            "holds only for fresh Runner.run; run-state restore can reconstruct "
+            "HandoffOutputItem without invoking on_invoke_handoff "
+            "(agents/run_state.py)."
         )
 
     target_name = handoff_output_items[0].target_agent.name

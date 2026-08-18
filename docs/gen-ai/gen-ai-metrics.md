@@ -935,13 +935,20 @@ Individual systems may include additional system-specific attributes. Refer to s
 the canonical name of exception that occurred, or another low-cardinality error identifier.
 Instrumentations SHOULD document the list of errors they report.
 
-**[2] `gen_ai.workflow.name`:** This attribute can be populated in different frameworks; for example, as the name of the first chain in LangChain or the name of the crew in CrewAI.
-The workflow name is usually provided by the application in a way that is specific to the generative AI framework or library that orchestrates the workflow.
-It is usually a static name that is expected to be unique within an application.
+**[2] `gen_ai.workflow.name`:** The workflow name is usually a static, application-unique identifier defined
+in a framework-specific way.
 
-`gen_ai.workflow.name` MUST have low cardinality.
-Semantic conventions for individual Generative AI frameworks SHOULD document what `gen_ai.workflow.name` means in the context of that framework.
-If there is no low-cardinality workflow name available for a given framework, this attribute MUST NOT be captured by default.
+For example, it can be the name of the first chain in LangChain,
+the name of the crew in CrewAI, or the entry point agent in ADK or
+OpenAI Agents when no explicit workflow name is provided.
+
+This attribute MUST have low cardinality. It is NOT RECOMMENDED to use
+instrumentation-time constants or names of types representing the workflow,
+such as "StateGraph". When no meaningful, low-cardinality workflow name is
+available for a given framework, this attribute MUST NOT be captured by default.
+
+Semantic conventions for individual Generative AI frameworks SHOULD document
+what `gen_ai.workflow.name` means in the context of that framework.
 
 ---
 
