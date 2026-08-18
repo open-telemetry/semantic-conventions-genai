@@ -1,0 +1,13 @@
+{
+  "spans": {
+    "run_guardrail_internal": [
+      "gen_ai.guardrail.action.type",
+      "gen_ai.guardrail.component.name",
+      "gen_ai.guardrail.target.subtype",
+      "gen_ai.guardrail.target.type",
+      "gen_ai.guardrail.verdict.reason",
+      "gen_ai.guardrail.verdict.type",
+      "gen_ai.operation.name"
+    ]
+  }
+}
