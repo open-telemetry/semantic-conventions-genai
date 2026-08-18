@@ -386,36 +386,63 @@ attributes:
   - key: gen_ai.agent.public_key.algorithm
     type: string
     brief: Cryptographic algorithm identifier of the agent's identity keypair.
-    note: >
-      Producer-emitted. The value is a case-sensitive algorithm identifier; producers
-      SHOULD draw from a consistent identifier set spanning the classical, post-quantum,
-      and symmetric families (for example `Ed25519`, `ML-DSA-44`, `ML-DSA-65`, `ML-DSA-87`,
-      `Falcon-512`, `Falcon-1024`, `SLH-DSA`), aligned with the JSON Web Key registries
-      (RFC 7517 section 4.1).
+    note: |
+      Producer-emitted. The value is a case-sensitive ASCII string. Producers SHOULD use an
+      identifier registered in the IANA "JSON Web Signature and Encryption Algorithms" registry
+      with `alg` in its usage location (for example `Ed25519`, `ML-DSA-44`, `ML-DSA-65`,
+      `ML-DSA-87`), as defined for the JWK `alg` member in RFC 7517 section 4.4. An identifier
+      that is not in that registry SHOULD take the collision-resistant-name form that section
+      prescribes, so unregistered algorithms stay distinguishable from registered ones. An
+      identifier the registry marks Deprecated (currently `EdDSA`) SHOULD NOT be emitted by new
+      producers.
 
-      Verifier behaviour on an unrecognized identifier SHOULD be fail-closed: treat the key
-      as opaque and refuse to verify, never best-effort. The attribute records which algorithm
-      a verification decision was made under, so a consumer can distinguish a
-      refused-unknown-algorithm decision from a verified one.
+      > [!Warning]
+      > This value is asserted by the producer of the telemetry, and nothing in the transport binds
+      > it to the scan, model, or verification it reports. The producer may be the same component
+      > that runs the agent it describes. A consumer that receives it SHOULD treat it as an
+      > observation of a decision already made, and SHOULD NOT re-derive an authorization decision
+      > from a received value. A component that computes such a value itself MAY use its own value
+      > as a decision input; the constraint is on provenance, not on the class of value.
     examples: ["Ed25519", "ML-DSA-65"]
     stability: development
   - key: gen_ai.agent.capability
     type: string
     brief: >
-      The capability the agent is attempting to invoke. Free-form string matching the
-      producer's capability namespace.
+      The capability the agent is attempting to invoke, named in the producer's capability
+      namespace.
+    note: |
+      This attribute MUST have low cardinality. The namespace is producer-defined, but which
+      capability is requested on a given invocation is selected by the caller, so a producer whose
+      namespace admits resource-scoped or otherwise unbounded values MUST NOT capture this
+      attribute. A capability value SHOULD NOT embed a resource path or a resource identifier.
+
+      > [!Warning]
+      > Since this attribute is derived from caller-supplied input, opting in to it may allow an
+      > attacker to trigger cardinality limits, degrading the usefulness of the telemetry.
     examples: ["database.read", "email.send", "code.execute"]
     stability: development
   - key: gen_ai.agent.trust.score
     type: double
     brief: >
       Producer-emitted trust score for the agent at decision time, in the range 0.0 to 1.0.
-    note: >
+    note: |
       A producer-defined decision input, analogous to a sampling decision: the producer computes
       it with whatever method suits its domain, and downstream observers correlate it against
-      outcomes. It is NOT a normative or cross-producer-comparable value. When emitted it SHOULD
+      outcomes. It is NOT a normative or cross-producer-comparable value. When emitted it MUST
       be accompanied by `gen_ai.agent.trust.method`, so a consumer can tell a change in the scoring
       method from a change in the agent's behaviour.
+
+      Values are producer-defined and are NOT comparable or aggregable across producers, or across
+      different `gen_ai.agent.trust.method` values from the same producer. Consumers SHOULD partition by
+      producer and by method token before comparing or aggregating.
+
+      > [!Warning]
+      > This value is asserted by the producer of the telemetry, and nothing in the transport binds
+      > it to the scan, model, or verification it reports. The producer may be the same component
+      > that runs the agent it describes. A consumer that receives it SHOULD treat it as an
+      > observation of a decision already made, and SHOULD NOT re-derive an authorization decision
+      > from a received value. A component that computes such a value itself MAY use its own value
+      > as a decision input; the constraint is on provenance, not on the class of value.
     examples: [0.92]
     stability: development
   - key: gen_ai.agent.trust.method
@@ -427,7 +454,7 @@ attributes:
       Consumers compare this token for equality only; its internal structure is producer-defined.
       When the token changes, the scoring function moved (re-fit, re-threshold, new model), not the
       agent, so a consumer SHOULD re-anchor outcome correlation rather than read the score change as
-      drift. Recommended wherever `gen_ai.agent.trust.score` is emitted.
+      drift. Emitted whenever `gen_ai.agent.trust.score` is emitted.
     examples: ["trust-model@2.3.1", "rules-v7"]
     stability: development
   - key: gen_ai.agent.drift.score
@@ -435,10 +462,22 @@ attributes:
     brief: >
       Producer-emitted behavioural drift score for the agent at decision time, in the range
       0.0 to 1.0.
-    note: >
+    note: |
       Same producer-defined, consumer-correlated pattern as `gen_ai.agent.trust.score`: a decision
-      input, not a normative value. When emitted it SHOULD be accompanied by
+      input, not a normative value. When emitted it MUST be accompanied by
       `gen_ai.agent.drift.method`.
+
+      Values are producer-defined and are NOT comparable or aggregable across producers, or across
+      different `gen_ai.agent.drift.method` values from the same producer. Consumers SHOULD partition by
+      producer and by method token before comparing or aggregating.
+
+      > [!Warning]
+      > This value is asserted by the producer of the telemetry, and nothing in the transport binds
+      > it to the scan, model, or verification it reports. The producer may be the same component
+      > that runs the agent it describes. A consumer that receives it SHOULD treat it as an
+      > observation of a decision already made, and SHOULD NOT re-derive an authorization decision
+      > from a received value. A component that computes such a value itself MAY use its own value
+      > as a decision input; the constraint is on provenance, not on the class of value.
     examples: [0.15]
     stability: development
   - key: gen_ai.agent.drift.method
@@ -448,19 +487,56 @@ attributes:
       `gen_ai.agent.drift.score`.
     note: >
       Equality-compared by consumers. A changed token signals the drift-scoring function moved, not
-      the agent, and is a cue to reset outcome correlation. Recommended wherever
+      the agent, and is a cue to reset outcome correlation. Emitted whenever
       `gen_ai.agent.drift.score` is emitted.
     examples: ["embedding-cosine@1.4", "kl-divergence-v2"]
     stability: development
   - key: gen_ai.agent.scan.verdict
-    type: string
+    type:
+      members:
+        - id: clean
+          value: "clean"
+          brief: The scan completed with no findings.
+          stability: development
+        - id: warnings
+          value: "warnings"
+          brief: The scan completed with findings the producer classifies as warnings.
+          stability: development
+        - id: findings
+          value: "findings"
+          brief: The scan completed with findings the producer classifies as actionable.
+          stability: development
+        - id: critical
+          value: "critical"
+          brief: The scan completed with findings the producer classifies as critical.
+          stability: development
+        - id: unknown
+          value: "unknown"
+          brief: No scan verdict was available at the time of the decision.
+          stability: development
     brief: Most recent producer-emitted security scan verdict for the agent.
-    note: >
-      Producer-defined provenance: the convention standardizes the attribute name and the recommended
-      value set (`clean`, `warnings`, `findings`, `critical`, `unknown`), not which scanner produced
-      the value or how often it is refreshed. When emitted it SHOULD be accompanied by
+    note: |
+      The convention standardizes the attribute name and the value set. It does not standardize
+      which scanner produced the value, how often it is refreshed, or the thresholds behind the
+      classification. When emitted with a verdict other than `unknown` it MUST be accompanied by
       `gen_ai.agent.scan.method`.
-    examples: ["clean", "warnings", "findings", "critical", "unknown"]
+
+      A verdict is a point-in-time observation and MAY be arbitrarily old.
+      `gen_ai.agent.scan.method` identifies the scanner, not when it ran, so a consumer MUST NOT
+      infer freshness from the presence of this attribute or from the verdict value.
+
+      The value set is standardized, but the classification behind `warnings`, `findings` and
+      `critical` is producer-defined and is NOT comparable across producers, or across different
+      `gen_ai.agent.scan.method` values from the same producer. Consumers SHOULD partition by
+      producer and by method token before comparing or aggregating.
+
+      > [!Warning]
+      > This value is asserted by the producer of the telemetry, and nothing in the transport binds
+      > it to the scan, model, or verification it reports. The producer may be the same component
+      > that runs the agent it describes. A consumer that receives it SHOULD treat it as an
+      > observation of a decision already made, and SHOULD NOT re-derive an authorization decision
+      > from a received value. A component that computes such a value itself MAY use its own value
+      > as a decision input; the constraint is on provenance, not on the class of value.
     stability: development
   - key: gen_ai.agent.scan.method
     type: string
@@ -469,7 +545,7 @@ attributes:
       `gen_ai.agent.scan.verdict`.
     note: >
       Equality-compared by consumers. A changed token signals the scanning method moved, not the
-      agent. Recommended wherever `gen_ai.agent.scan.verdict` is emitted.
+      agent. Emitted whenever `gen_ai.agent.scan.verdict` is emitted.
     examples: ["scanner@1.2.0", "policy-set-2026.06"]
     stability: development
   - key: gen_ai.tool.name

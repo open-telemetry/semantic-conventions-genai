@@ -13,7 +13,10 @@
 | Attribute | Supporting Libraries |
 | --- | --- |
 | gen_ai.agent.description | [agent-framework], [autogen] |
+| gen_ai.agent.drift.method | (none) |
 | gen_ai.agent.name | [agent-framework], [autogen], [crewai], [google-adk], [langchain], [openai-agents], [pydantic-ai] |
+| gen_ai.agent.scan.method | (none) |
+| gen_ai.agent.trust.method | (none) |
 | gen_ai.conversation.id | [google-adk] |
 | gen_ai.data_source.id | (none) |
 | gen_ai.output.type | (none) |
@@ -41,6 +44,11 @@
 
 | Attribute | Supporting Libraries |
 | --- | --- |
+| gen_ai.agent.capability | (none) |
+| gen_ai.agent.drift.score | (none) |
+| gen_ai.agent.public_key.algorithm | (none) |
+| gen_ai.agent.scan.verdict | (none) |
+| gen_ai.agent.trust.score | (none) |
 | gen_ai.input.messages | [agent-framework], [autogen], [crewai], [google-adk], [langchain], [openai-agents], [pydantic-ai] |
 | gen_ai.output.messages | [agent-framework], [autogen], [crewai], [google-adk], [langchain], [openai-agents], [pydantic-ai] |
 | gen_ai.system_instructions | [agent-framework], [autogen], [crewai], [google-adk], [langchain], [openai-agents], [pydantic-ai] |

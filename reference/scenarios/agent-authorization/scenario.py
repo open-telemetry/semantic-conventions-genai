@@ -23,6 +23,7 @@ behaviour.
 import json
 import os
 from dataclasses import dataclass
+from typing import Any, ClassVar
 
 from reference_shared import (
     flush_and_shutdown,
@@ -68,20 +69,34 @@ class AuthorizationGate:
     both visible.
     """
 
+    # Stands in for the stores a production gate reads: the agent's registered
+    # identity key, its current trust and drift scores, and the latest scan
+    # verdict. Keyed by agent id so the scenario stays deterministic while the
+    # decision is still derived from its input rather than bound at the call.
+    _AGENT_RECORDS: ClassVar[dict[str, dict[str, Any]]] = {
+        "asst_5j66UpCpwteGg4YSxUnt7lPY": {
+            "allow": True,
+            "public_key_algorithm": "Ed25519",
+            "trust_score": 0.93,
+            "trust_method": "trust-model@2.3.1",
+            "drift_score": 0.04,
+            "drift_method": "embedding-cosine@1.4",
+            "scan_verdict": "clean",
+            "scan_method": "scanner@1.2.0",
+        },
+    }
+
     def decide(self, *, agent_id: str, requested_capability: str) -> AuthorizationDecision:
-        # A production decision point would resolve the agent's identity key,
-        # score its trust and drift, and read the latest scan verdict here,
-        # then return them together as the basis for the allow / deny call.
+        # A production decision point resolves the agent's identity key, scores its
+        # trust and drift, and reads the latest scan verdict here, then returns them
+        # together as the basis for the allow / deny call. Every field below is read
+        # from the record for this agent_id, so the input-to-decision flow is visible.
+        record = self._AGENT_RECORDS.get(agent_id)
+        if record is None:
+            raise LookupError(f"no registered record for agent {agent_id}")
         return AuthorizationDecision(
-            allow=True,
             capability=requested_capability,
-            public_key_algorithm="ed25519",
-            trust_score=0.93,
-            trust_method="trust-model@2.3.1",
-            drift_score=0.04,
-            drift_method="embedding-cosine@1.4",
-            scan_verdict="clean",
-            scan_method="scanner@1.2.0",
+            **record,
         )
 
 
@@ -119,7 +134,7 @@ def run_agent_authorization_reference(client, gate):
     if port is not None:
         span_attributes["server.port"] = port
     with _reference_tracer.start_as_current_span(f"invoke_agent {agent_name}", attributes=span_attributes) as span:
-        # Authorization decision inputs, set from the decision the gate returned
+        # Signals recorded about the agent, set from the decision the gate returned
         # before the agent acts. Each is a field of `decision`, not a literal.
         span.set_attribute("gen_ai.agent.capability", decision.capability)
         span.set_attribute("gen_ai.agent.public_key.algorithm", decision.public_key_algorithm)

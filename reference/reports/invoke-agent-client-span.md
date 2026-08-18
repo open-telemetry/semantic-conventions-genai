@@ -14,8 +14,11 @@
 | Attribute | Supporting Libraries |
 | --- | --- |
 | gen_ai.agent.description | [openai-assistants] |
+| gen_ai.agent.drift.method | (none) |
 | gen_ai.agent.id | [aws-bedrock-agent], [openai-assistants] |
 | gen_ai.agent.name | [azure-ai-foundry], [google-genai], [openai-assistants] |
+| gen_ai.agent.scan.method | (none) |
+| gen_ai.agent.trust.method | (none) |
 | gen_ai.agent.version | [aws-bedrock-agent] |
 | gen_ai.conversation.id | [aws-bedrock-agent], [openai-assistants] |
 | gen_ai.data_source.id | (none) |
@@ -28,9 +31,6 @@
 
 | Attribute | Supporting Libraries |
 | --- | --- |
-| gen_ai.agent.drift.method | (none) |
-| gen_ai.agent.scan.method | (none) |
-| gen_ai.agent.trust.method | (none) |
 | gen_ai.request.frequency_penalty | (none) |
 | gen_ai.request.max_tokens | [azure-ai-foundry], [openai-assistants] |
 | gen_ai.request.model | [azure-ai-foundry], [google-genai], [openai-assistants] |
