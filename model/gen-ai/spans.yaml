@@ -119,6 +119,31 @@ attribute_groups:
         brief: The free-form description of the invoked GenAI agent.
         requirement_level:
           conditionally_required: When available.
+      # Producer-emitted signals recorded about the agent at decision time. The
+      # scores and verdicts are opt-in, emitted only by instrumentations that sit at
+      # an authorization/trust decision point for the agent invocation; each one
+      # requires its `.method` token so a consumer can tell a change in method from a
+      # change in the agent. These are observations of a decision already made, not
+      # authenticated facts; see the per-attribute notes.
+      - ref: gen_ai.agent.capability
+        requirement_level: opt_in
+      - ref: gen_ai.agent.public_key.algorithm
+        requirement_level: opt_in
+      - ref: gen_ai.agent.trust.score
+        requirement_level: opt_in
+      - ref: gen_ai.agent.trust.method
+        requirement_level:
+          conditionally_required: If `gen_ai.agent.trust.score` is set.
+      - ref: gen_ai.agent.drift.score
+        requirement_level: opt_in
+      - ref: gen_ai.agent.drift.method
+        requirement_level:
+          conditionally_required: If `gen_ai.agent.drift.score` is set.
+      - ref: gen_ai.agent.scan.verdict
+        requirement_level: opt_in
+      - ref: gen_ai.agent.scan.method
+        requirement_level:
+          conditionally_required: If `gen_ai.agent.scan.verdict` is set to a value other than `unknown`.
 
 
   - id: attributes.gen_ai.execute_tool.common
