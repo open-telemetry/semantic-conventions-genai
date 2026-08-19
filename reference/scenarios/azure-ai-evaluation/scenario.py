@@ -1,6 +1,5 @@
 """Reference implementation for Azure AI Evaluation."""
 
-import inspect
 import os
 
 from opentelemetry.trace import SpanKind, StatusCode
@@ -40,17 +39,12 @@ def run_evaluation():
                 "gen_ai.evaluation.name": evaluation_name,
                 "gen_ai.evaluation.score.label": score_label,
                 "gen_ai.evaluation.score.value": score,
-                "gen_ai.evaluation.evaluator.id": f"azure-{evaluation_name.lower()}-{model_config.get('model', 'unknown')}",
+                "gen_ai.evaluation.evaluator.type": "llm_judge",
             }
 
-            is_llm_judge = hasattr(evaluator, "_model_config")
-            attributes["gen_ai.evaluation.evaluator.type"] = "llm_judge" if is_llm_judge else "deterministic"
-
-            sig = inspect.signature(evaluator.__call__)
-            if "conversation" in sig.parameters or "messages" in sig.parameters:
-                attributes["gen_ai.evaluation.scope"] = "full_run"
-            else:
-                attributes["gen_ai.evaluation.scope"] = "single_output"
+            evaluator_id = getattr(evaluator, "id", None)
+            if evaluator_id:
+                attributes["gen_ai.evaluation.evaluator.id"] = evaluator_id
 
             reference_event_logger("gen_ai.evaluation.reference").emit(
                 event_name="gen_ai.evaluation.result",

@@ -898,16 +898,16 @@ attributes:
     stability: development
   - key: gen_ai.evaluation.evaluator.id
     type: string
-    brief: Stable identifier for the evaluator definition, not the invocation. Results with different evaluator ids must not be treated as comparable.
+    brief: Stable identifier for the evaluator definition, not the invocation.
     note: >
-      The evaluator id should be a stable identifier for the evaluator definition. To maintain valid comparability, results SHOULD be grouped by `(evaluator.id, evaluator.version)` to prevent invalid aggregations when querying the data.
-    examples: ["judge-v1", "accuracy-model-abc"]
+      The evaluator id SHOULD be a stable identifier for the evaluator definition. Instrumentations SHOULD use an identifier provided by the evaluation framework or application when available and SHOULD NOT synthesize this value by concatenating other evaluator properties such as the evaluation name, library name, or model name. The attribute SHOULD be omitted when no stable evaluator identifier is available. To maintain valid comparability, results SHOULD be grouped by `(evaluator.id, evaluator.version)` when both attributes are present.
+    examples: ["eval-7f3a9c2d", "accuracy-evaluator"]
     stability: development
   - key: gen_ai.evaluation.evaluator.version
     type: string
     brief: Version of the evaluator definition.
     note: >
-      The version MUST change when any score-affecting part of the definition changes (e.g., for an `llm_judge`: the model, rubric, or scoring config). To maintain valid comparability, results SHOULD be grouped by `(evaluator.id, evaluator.version)`.
+      The version SHOULD identify the revision of the evaluator definition and SHOULD change when a score-affecting part of the definition changes, such as the model, rubric, prompt, threshold, or scoring configuration. Instrumentations SHOULD use a version provided by the evaluation framework or application and SHOULD omit this attribute when no evaluator version is available. To maintain valid comparability, results SHOULD be grouped by `(evaluator.id, evaluator.version)` when both attributes are present.
     examples: ["1.0", "v2.5.1"]
     stability: development
   - key: gen_ai.evaluation.evaluator.type
@@ -915,48 +915,26 @@ attributes:
       members:
         - id: llm_judge
           value: "llm_judge"
-          brief: "Evaluation performed by a Large Language Model."
+          brief: "Evaluation result is determined by an LLM judgment."
           stability: development
         - id: deterministic
           value: "deterministic"
-          brief: "Evaluation performed by a deterministic script or rule-based system."
+          brief: "Evaluation result is determined by deterministic programmatic logic."
           stability: development
         - id: human
           value: "human"
-          brief: "Evaluation performed by a human reviewer."
+          brief: "Evaluation result is determined by human judgment."
           stability: development
-        - id: custom
-          value: "custom"
-          brief: "Custom or unspecified evaluator type."
-          stability: development
-    brief: The type of evaluator.
+    brief: The mechanism that determines the evaluation result.
     note: >
-      `gen_ai.evaluation.evaluator.type` describes who or what produced the score (e.g., a human or an LLM). This is independent of `gen_ai.evaluation.scope`, which describes the unit of the evaluation.
+      This attribute describes the mechanism that determines the evaluation result, not every component used by the evaluator. For example, auxiliary use of an LLM to generate an explanation does not make the evaluator an `llm_judge` when the score or verdict is determined by deterministic logic. Instrumentations SHOULD set this attribute only when the evaluator mechanism is known and SHOULD NOT infer it solely from the presence or absence of a model.
     stability: development
   - key: gen_ai.evaluation.reference_set.id
     type: string
-    brief: Identifier of the golden/reference set against which the score was produced.
-    note: Conditionally required when a reference set was used.
-    examples: ["dataset-123", "golden-set-v1"]
-    stability: development
-  - key: gen_ai.evaluation.scope
-    type:
-      members:
-        - id: single_output
-          value: "single_output"
-          brief: "The evaluation is scoped to a single output."
-          stability: development
-        - id: full_run
-          value: "full_run"
-          brief: "The evaluation is scoped to a full agent run or workflow."
-          stability: development
-        - id: human_interaction
-          value: "human_interaction"
-          brief: "The evaluation is scoped to a human interaction step."
-          stability: development
-    brief: The unit the result is about.
+    brief: Stable identifier for the reference set against which the evaluation result was produced.
     note: >
-      `gen_ai.evaluation.scope` describes the unit of the evaluation (e.g., a single output or a human interaction). This is independent of `gen_ai.evaluation.evaluator.type`, which describes who or what produced the score (e.g., a human or an LLM).
+      Instrumentations SHOULD use a stable identifier provided by the evaluation framework or application when available. The identifier SHOULD distinguish score-affecting revisions of the reference set. The attribute SHOULD be omitted when no stable reference set identifier is available.
+    examples: ["dataset-123", "golden-set-v1"]
     stability: development
   - key: gen_ai.prompt.name
     type: string

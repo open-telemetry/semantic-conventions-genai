@@ -64,12 +64,9 @@ def run_evaluation():
                 "gen_ai.evaluation.name": contains_mock_response.__name__,
                 "gen_ai.evaluation.score.label": score_label,
                 "gen_ai.evaluation.score.value": score,
-                "gen_ai.evaluation.evaluator.id": f"dspy-{contains_mock_response.__name__.lower()}",
+                "gen_ai.evaluation.evaluator.type": "deterministic",
             }
 
-            if type(evaluate).__name__ == "Evaluate":
-                attributes["gen_ai.evaluation.scope"] = "single_output"
-            attributes["gen_ai.evaluation.evaluator.type"] = "deterministic"
             reference_event_logger("gen_ai.evaluation.reference").emit(
                 event_name="gen_ai.evaluation.result",
                 body="Evaluation result",

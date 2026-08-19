@@ -2,11 +2,9 @@
   "spans": {},
   "events": {
     "gen_ai.evaluation.result": [
-      "gen_ai.evaluation.evaluator.id",
       "gen_ai.evaluation.evaluator.type",
       "gen_ai.evaluation.explanation",
       "gen_ai.evaluation.name",
-      "gen_ai.evaluation.scope",
       "gen_ai.evaluation.score.value"
     ]
   },

@@ -45,9 +45,7 @@ events:
         requirement_level: recommended
       - ref: gen_ai.evaluation.reference_set.id
         requirement_level:
-          conditionally_required: When a reference set was used.
-      - ref: gen_ai.evaluation.scope
-        requirement_level: recommended
+          conditionally_required: When a reference set was used and its stable identifier is available.
   - name: gen_ai.client.operation.exception
     requirement_level: recommended
     brief: >
