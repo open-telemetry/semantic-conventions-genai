@@ -64,7 +64,6 @@ def run_evaluation():
                 "gen_ai.evaluation.name": contains_mock_response.__name__,
                 "gen_ai.evaluation.score.label": score_label,
                 "gen_ai.evaluation.score.value": score,
-                "gen_ai.evaluation.evaluator.type": "deterministic",
             }
 
             reference_event_logger("gen_ai.evaluation.reference").emit(

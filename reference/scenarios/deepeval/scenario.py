@@ -57,8 +57,10 @@ def run_evaluation():
             attributes = {
                 "gen_ai.evaluation.name": metric.name,
                 "gen_ai.evaluation.score.value": score,
-                "gen_ai.evaluation.evaluator.type": "llm_judge",
             }
+
+            if isinstance(metric, GEval):
+                attributes["gen_ai.evaluation.evaluator.type"] = "llm_judge"
 
             if getattr(metric, "reason", None):
                 attributes["gen_ai.evaluation.explanation"] = metric.reason

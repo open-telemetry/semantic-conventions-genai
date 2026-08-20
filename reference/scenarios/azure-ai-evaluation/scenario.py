@@ -34,17 +34,20 @@ def run_evaluation():
             result = evaluator(query=query, response=response)
             score = float(result["relevance"])
             score_label = str(result["relevance_result"])
+
             attributes = {
                 "gen_ai.evaluation.explanation": str(result["relevance_reason"]),
                 "gen_ai.evaluation.name": evaluation_name,
                 "gen_ai.evaluation.score.label": score_label,
                 "gen_ai.evaluation.score.value": score,
-                "gen_ai.evaluation.evaluator.type": "llm_judge",
             }
 
             evaluator_id = getattr(evaluator, "id", None)
             if evaluator_id:
                 attributes["gen_ai.evaluation.evaluator.id"] = evaluator_id
+
+            if evaluator_id == "azureai://built-in/evaluators/relevance":
+                attributes["gen_ai.evaluation.evaluator.type"] = "llm_judge"
 
             reference_event_logger("gen_ai.evaluation.reference").emit(
                 event_name="gen_ai.evaluation.result",
