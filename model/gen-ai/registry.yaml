@@ -275,6 +275,14 @@ attributes:
       token counts (for example, Cohere exposes both `usage.billed_units` and
       `usage.tokens`), instrumentations SHOULD report the billed count so the
       value matches the units the customer is charged for.
+
+      Detailed usage attributes are subsets of total and aggregate counts. For example,
+      if a request has 100 text tokens (40 cached) and 200 image tokens:
+      - `gen_ai.usage.input_tokens`: 300
+      - `gen_ai.usage.cache_read.input_tokens`: 40
+      - `gen_ai.usage.text.input_tokens`: 100
+      - `gen_ai.usage.text.cache_read.input_tokens`: 40
+      - `gen_ai.usage.image.input_tokens`: 200
     examples: [100]
     stability: development
   - key: gen_ai.usage.cache_read.input_tokens
@@ -284,12 +292,33 @@ attributes:
       The value SHOULD be included in `gen_ai.usage.input_tokens`.
     examples: [50]
     stability: development
-  - key: gen_ai.usage.cache_creation.input_tokens
+  - key: gen_ai.usage.cache_write.input_tokens
     type: int
     brief: The number of input tokens written to a provider-managed cache.
     note: >
       The value SHOULD be included in `gen_ai.usage.input_tokens`.
     examples: [25]
+    stability: development
+  - key: gen_ai.usage.text.input_tokens
+    type: int
+    brief: The number of text input tokens.
+    note: >
+      The value SHOULD be included in `gen_ai.usage.input_tokens`.
+    examples: [100]
+    stability: development
+  - key: gen_ai.usage.image.input_tokens
+    type: int
+    brief: The number of image input tokens.
+    note: >
+      The value SHOULD be included in `gen_ai.usage.input_tokens`.
+    examples: [258]
+    stability: development
+  - key: gen_ai.usage.audio.input_tokens
+    type: int
+    brief: The number of audio input tokens.
+    note: >
+      The value SHOULD be included in `gen_ai.usage.input_tokens`.
+    examples: [120]
     stability: development
   - key: gen_ai.usage.output_tokens
     type: int
@@ -307,6 +336,51 @@ attributes:
     note: >
       The value SHOULD be included in `gen_ai.usage.output_tokens`.
     examples: [50]
+    stability: development
+  - key: gen_ai.usage.text.output_tokens
+    type: int
+    brief: The number of text output tokens.
+    note: >
+      The value SHOULD be included in `gen_ai.usage.output_tokens`.
+    examples: [180]
+    stability: development
+  - key: gen_ai.usage.image.output_tokens
+    type: int
+    brief: The number of image output tokens.
+    note: >
+      The value SHOULD be included in `gen_ai.usage.output_tokens`.
+    examples: [1290]
+    stability: development
+  - key: gen_ai.usage.audio.output_tokens
+    type: int
+    brief: The number of audio output tokens.
+    note: >
+      The value SHOULD be included in `gen_ai.usage.output_tokens`.
+    examples: [240]
+    stability: development
+  - key: gen_ai.usage.text.cache_read.input_tokens
+    type: int
+    brief: The number of text input tokens served from a provider-managed cache.
+    note: >
+      The value SHOULD be included in `gen_ai.usage.cache_read.input_tokens`
+      and in `gen_ai.usage.text.input_tokens`.
+    examples: [40]
+    stability: development
+  - key: gen_ai.usage.image.cache_read.input_tokens
+    type: int
+    brief: The number of image input tokens served from a provider-managed cache.
+    note: >
+      The value SHOULD be included in `gen_ai.usage.cache_read.input_tokens`
+      and in `gen_ai.usage.image.input_tokens`.
+    examples: [128]
+    stability: development
+  - key: gen_ai.usage.audio.cache_read.input_tokens
+    type: int
+    brief: The number of audio input tokens served from a provider-managed cache.
+    note: >
+      The value SHOULD be included in `gen_ai.usage.cache_read.input_tokens`
+      and in `gen_ai.usage.audio.input_tokens`.
+    examples: [60]
     stability: development
   - key: gen_ai.token.type
     type:
