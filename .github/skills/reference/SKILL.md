@@ -1,6 +1,6 @@
 ---
 name: reference
-description: 'Implement or update reference scenarios under reference/scenarios/ across Python libraries when GenAI semantic conventions change.'
+description: 'Use when implementing or evaluating reference coverage for a semantic-conventions changeset involving GenAI spans, attributes, entities, metrics, or events across Python libraries.'
 ---
 
 # Reference Scenarios Skill
@@ -11,8 +11,8 @@ Use this skill to add or update reference implementations under `reference/scena
 
 1. **Find libraries**: Check which scenarios under `reference/scenarios/` support the changed operation(s).
 2. **Update `scenario.py` and `README.md`**:
-   - Wrap real library calls in spans.
-   - Set attributes inline using only real values from SDK inputs, outputs, or errors.
+   - Invoke the library's public entry point and wrap the real library call in a span; patch private methods for instrumentation if needed, but do not call them directly from the scenario.
+   - Set attributes inline using only real values from SDK inputs, outputs, errors, or library state.
    - If the library cannot provide a value, do not fake it - record it as a capture gap.
    - Update `reference/scenarios/<library>/README.md` operation table and status.
 3. **Run and test**:
