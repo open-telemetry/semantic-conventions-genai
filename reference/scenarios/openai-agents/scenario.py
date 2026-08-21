@@ -5,6 +5,7 @@ wrapped in a workflow span, against a mock OpenAI server, with manual OTel spans
 """
 
 import asyncio
+import hashlib
 import json
 import os
 
@@ -22,10 +23,12 @@ _reference_tracer = reference_tracer()
 @function_tool
 def get_weather(ctx: ToolContext[None], location: str) -> str:
     """Get the current weather for a location."""
+    arguments = json.dumps({"location": location})
     tool_span_attributes = {
         "gen_ai.operation.name": "execute_tool",
         "gen_ai.tool.name": "get_weather",
         "gen_ai.tool.type": "function",
+        "gen_ai.tool.call.arguments_hash": f"sha256:{hashlib.sha256(arguments.encode()).hexdigest()}",
     }
     with _reference_tracer.start_as_current_span(
         "execute_tool get_weather", attributes=tool_span_attributes
@@ -34,9 +37,13 @@ def get_weather(ctx: ToolContext[None], location: str) -> str:
         if ctx.agent is not None and ctx.agent.name:
             tool_span.set_attribute("gen_ai.agent.name", ctx.agent.name)
         tool_span.set_attribute("gen_ai.tool.call.id", ctx.tool_call_id)
-        tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps({"location": location}))
+        tool_span.set_attribute("gen_ai.tool.call.arguments", arguments)
         result = "Sunny, 72°F"
         tool_span.set_attribute("gen_ai.tool.call.result", result)
+        tool_span.set_attribute(
+            "gen_ai.tool.call.result_hash",
+            f"sha256:{hashlib.sha256(result.encode()).hexdigest()}",
+        )
         return result
 
 
