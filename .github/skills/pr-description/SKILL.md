@@ -32,4 +32,7 @@ Treat the first draft as raw material, then shorten it.
 - Keep the body as short as the change allows. There is no target word count.
 - Do not hard-wrap prose.
 
-Before creating or updating the pull request, compare the final body with the diff once more. Every sentence must help a reviewer understand the purpose, user-visible behavior, compatibility, risk, or a decision that the diff cannot explain by itself.
+Before creating or updating the pull request:
+
+1. Apply the repository's [unslop skill](../unslop/SKILL.md) to the complete title and body.
+2. Compare the result with the diff once more. Every sentence must help a reviewer understand the purpose, user-visible behavior, compatibility, risk, or a decision that the diff cannot explain by itself.
