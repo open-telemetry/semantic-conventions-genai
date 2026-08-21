@@ -11,7 +11,7 @@ Use this skill to add or update reference implementations under `reference/scena
 
 1. **Find libraries**: Check which scenarios under `reference/scenarios/` support the changed operation(s).
 2. **Update `scenario.py` and `README.md`**:
-   - Invoke the library's public entry point and wrap the real library call in a span; patch private methods for instrumentation if needed, but do not call them directly from the scenario.
+   - Wrap real library calls in spans. Call or patch private methods if needed to instrument the library only when it's not possible to do so through the public API.
    - Set attributes inline using only real values from SDK inputs, outputs, errors, or library state.
    - If the library cannot provide a value, do not fake it - record it as a capture gap.
    - Update `reference/scenarios/<library>/README.md` operation table and status.
