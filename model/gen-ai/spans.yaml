@@ -155,6 +155,9 @@ attribute_groups:
         brief: The free-form description of the invoked GenAI agent.
         requirement_level:
           conditionally_required: When available.
+      - ref: gen_ai.agent.turn.count
+        requirement_level:
+          recommended: If the agent loop is observable to the instrumentation.
 
 
   - id: attributes.gen_ai.execute_tool.common

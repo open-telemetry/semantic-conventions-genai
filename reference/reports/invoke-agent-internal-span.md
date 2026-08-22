@@ -24,6 +24,7 @@
 
 | Attribute | Supporting Libraries |
 | --- | --- |
+| gen_ai.agent.turn.count | [openai-agents] |
 | gen_ai.request.frequency_penalty | [agent-framework], [autogen], [crewai], [google-adk], [pydantic-ai] |
 | gen_ai.request.max_tokens | [agent-framework], [autogen], [crewai], [google-adk], [pydantic-ai] |
 | gen_ai.request.model | [agent-framework], [autogen], [crewai], [google-adk], [langchain], [openai-agents], [pydantic-ai] |
