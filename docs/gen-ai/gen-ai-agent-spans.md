@@ -532,12 +532,6 @@ Describes GenAI agent invocation within the same process.
 
 The `gen_ai.operation.name` SHOULD be `invoke_agent`.
 
-Token usage attributes on this span report the usage accumulated by the
-agent call tree, which may span multiple models and inference calls.
-Cache and modality token breakdowns are not reported on this span - they
-are only meaningful per inference call and SHOULD be aggregated by the
-consumer from the `gen_ai.inference.client` spans in the tree.
-
 Examples: LangChain agents, CrewAI agents.
 
 **Span name** SHOULD be `invoke_agent {gen_ai.agent.name}` if `gen_ai.agent.name` is readily available.
