@@ -43,3 +43,8 @@ through several coupled surfaces:
   — review the model changes that produced them instead.
 - Generated tables inside `docs/gen-ai/*.md` — review the model changes
   that produced them instead.
+
+## Pull request descriptions
+
+When drafting or editing a pull request description, use the `pr-description`
+skill under [.github/skills/pr-description/](skills/pr-description/).

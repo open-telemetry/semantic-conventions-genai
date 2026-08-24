@@ -41,11 +41,47 @@ attribute_groups:
       - ref: gen_ai.usage.input_tokens
         requirement_level: recommended
       - ref: gen_ai.usage.cache_read.input_tokens
-        requirement_level: recommended
-      - ref: gen_ai.usage.cache_creation.input_tokens
-        requirement_level: recommended
+        requirement_level:
+          recommended: When applicable.
+      - ref: gen_ai.usage.cache_write.input_tokens
+        requirement_level:
+          recommended: When applicable.
       - ref: gen_ai.usage.output_tokens
         requirement_level: recommended
+
+  # Kept out of `attributes.gen_ai.usage`: an internal agent span reports the
+  # usage its own call tree accumulated, and summing breakdowns across that
+  # tree would count the same tokens more than once.
+  - id: attributes.gen_ai.usage.breakdown
+    visibility: internal
+    attributes:
+      - ref: gen_ai.usage.text.input_tokens
+        requirement_level:
+          recommended: When applicable.
+      - ref: gen_ai.usage.image.input_tokens
+        requirement_level:
+          recommended: When applicable.
+      - ref: gen_ai.usage.audio.input_tokens
+        requirement_level:
+          recommended: When applicable.
+      - ref: gen_ai.usage.text.cache_read.input_tokens
+        requirement_level:
+          recommended: When applicable.
+      - ref: gen_ai.usage.image.cache_read.input_tokens
+        requirement_level:
+          recommended: When applicable.
+      - ref: gen_ai.usage.audio.cache_read.input_tokens
+        requirement_level:
+          recommended: When applicable.
+      - ref: gen_ai.usage.text.output_tokens
+        requirement_level:
+          recommended: When applicable.
+      - ref: gen_ai.usage.image.output_tokens
+        requirement_level:
+          recommended: When applicable.
+      - ref: gen_ai.usage.audio.output_tokens
+        requirement_level:
+          recommended: When applicable.
 
   - id: attributes.gen_ai.content
     visibility: internal
@@ -156,6 +192,7 @@ spans:
       - ref_group: attributes.gen_ai.common
       - ref_group: attributes.gen_ai.address_and_port
       - ref_group: attributes.gen_ai.usage
+      - ref_group: attributes.gen_ai.usage.breakdown
       - ref_group: attributes.gen_ai.content
       - ref_group: attributes.gen_ai.error
       - ref: gen_ai.request.max_tokens
@@ -485,6 +522,7 @@ spans:
     stability: development
     attributes:
       - ref_group: attributes.gen_ai.invoke_agent.common
+      - ref_group: attributes.gen_ai.usage.breakdown
       - ref_group: attributes.gen_ai.address_and_port
       - ref: gen_ai.provider.name
         requirement_level: required
@@ -800,12 +838,12 @@ span_refinements:
       - ref: gen_ai.usage.input_tokens
         note: >
           Anthropic `input_tokens` excludes cached tokens. Compute:
-          `gen_ai.usage.input_tokens = input_tokens + cache_read_input_tokens + cache_creation_input_tokens`
+          `gen_ai.usage.input_tokens = input_tokens + cache_read_input_tokens + cache_write_input_tokens`
       - ref: gen_ai.usage.cache_read.input_tokens
         note: >
           Anthropic reports this separately from `input_tokens`.
           This value MUST be added to the Anthropic `input_tokens` to compute `gen_ai.usage.input_tokens`.
-      - ref: gen_ai.usage.cache_creation.input_tokens
+      - ref: gen_ai.usage.cache_write.input_tokens
         note: >
           Anthropic reports this separately from `input_tokens`.
           This value MUST be added to the Anthropic `input_tokens` to compute `gen_ai.usage.input_tokens`.

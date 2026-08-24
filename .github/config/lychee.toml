@@ -19,6 +19,8 @@ exclude = [
   '^https://openai\.com/$',
   '^https://www\.deepseek\.com/$',
   '^https://www\.perplexity\.ai/$',
+  # Slack requires a signed-in session and returns 403 to automated requests.
+  '^https://cloud-native\.slack\.com/',
   # Tool homepages that are unreliable under automated link-check requests.
   '^https://www\.gnu\.org/software/make/$',
   # The README points at the current GenAI schema version before it is published.
