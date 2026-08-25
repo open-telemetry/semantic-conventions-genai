@@ -22,5 +22,6 @@
     ]
   },
   "events": {},
-  "metrics": {}
+  "metrics": {},
+  "findings": []
 }
