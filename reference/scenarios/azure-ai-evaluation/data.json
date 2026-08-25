@@ -9,5 +9,6 @@
     ]
   },
   "metrics": {},
-  "findings": []
+  "findings": [],
+  "entities": {}
 }

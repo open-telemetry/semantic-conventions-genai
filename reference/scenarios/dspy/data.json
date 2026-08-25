@@ -8,5 +8,6 @@
     ]
   },
   "metrics": {},
-  "findings": []
+  "findings": [],
+  "entities": {}
 }

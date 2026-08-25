@@ -83,5 +83,6 @@
         "operation": "chat"
       }
     }
-  ]
+  ],
+  "entities": {}
 }

@@ -99,5 +99,6 @@
         "operation": "chat"
       }
     }
-  ]
+  ],
+  "entities": {}
 }

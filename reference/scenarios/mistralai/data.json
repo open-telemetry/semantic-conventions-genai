@@ -67,5 +67,6 @@
         "attribute_key": "gen_ai.provider.name"
       }
     }
-  ]
+  ],
+  "entities": {}
 }
