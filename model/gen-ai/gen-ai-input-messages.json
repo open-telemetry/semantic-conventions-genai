@@ -1,6 +1,7 @@
 {
     "$defs": {
         "BlobPart": {
+            "additionalProperties": true,
             "description": "Represents blob binary data sent inline to the model",
             "properties": {
                 "type": {
@@ -91,6 +92,9 @@
                             },
                             {
                                 "$ref": "#/$defs/UriPart"
+                            },
+                            {
+                                "$ref": "#/$defs/TranscriptionPart"
                             },
                             {
                                 "$ref": "#/$defs/ReasoningPart"
@@ -483,6 +487,29 @@
                 "response"
             ],
             "title": "ToolCallResponsePart",
+            "type": "object"
+        },
+        "TranscriptionPart": {
+            "additionalProperties": true,
+            "description": "Represents a text transcript of spoken audio, captured as a standalone part.\n\nAudio and its transcription are modeled as separate parts because providers\nstream and complete them on independent boundaries: OpenAI Realtime and Grok\nemit separate audio and transcript deltas with their own `.done` events, and\nGemini Live delivers `inputTranscription`/`outputTranscription` separately\nfrom the audio without guaranteed chunk alignment. A transcript attached to\nthe audio part cannot represent that, and reusing a `text` part would require\nan extra identifier to tell a transcript apart from ordinary text.",
+            "properties": {
+                "type": {
+                    "const": "transcription",
+                    "description": "The type of the content captured in this part.",
+                    "title": "Type",
+                    "type": "string"
+                },
+                "content": {
+                    "description": "The text transcript of spoken audio. For input audio this is the transcription of the user's speech; for output audio it is the transcript of the model's spoken response.",
+                    "title": "Content",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "type",
+                "content"
+            ],
+            "title": "TranscriptionPart",
             "type": "object"
         },
         "UriPart": {
