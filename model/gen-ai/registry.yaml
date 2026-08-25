@@ -443,6 +443,27 @@ attributes:
       SHOULD leave it unset otherwise.
     examples: [true]
     stability: development
+  - key: gen_ai.live_session.id
+    type: string
+    brief: The unique identifier for a live, bidirectional streaming session (such as OpenAI Realtime or Gemini Live), used to correlate the generations, user inputs, and lifecycle events that belong to the same session.
+    note: |
+      A live session is a single long-lived streaming connection during which the client
+      streams input continuously and the server streams incremental output. The session id
+      correlates the `gen_ai.realtime_inference.client` and `gen_ai.user_speech.internal`
+      spans and the `gen_ai.client.live_session.started` / `gen_ai.client.live_session.ended`
+      events that belong to the same session.
+
+      Instrumentations SHOULD populate the live session id when the provider exposes a session
+      identifier (for example the OpenAI Realtime `session.id`). When the provider exposes no
+      session identifier (for example the Gemini Developer API), instrumentations MAY use a
+      client-created per-connection identifier — the live connection is the session boundary —
+      or leave the attribute unset.
+
+      `gen_ai.live_session.id` is orthogonal to `gen_ai.conversation.id`: a single conversation
+      can span multiple live sessions, so the live session id is not a substitute for the
+      conversation id.
+    examples: ["sess_5j66UpCpwteGg4YSxUnt7lPY"]
+    stability: development
   - key: gen_ai.agent.id
     type: string
     brief: The unique and stable identifier of the GenAI hosted agent resource.
@@ -607,6 +628,30 @@ attributes:
         - id: generate_content
           value: "generate_content"
           brief: 'Multimodal content generation operation such as [Gemini Generate Content](https://ai.google.dev/api/generate-content)'
+          stability: development
+        - id: realtime_inference
+          value: "realtime_inference"
+          brief: 'Server-side model generation within a live, bidirectional streaming session such as [OpenAI Realtime](https://platform.openai.com/docs/guides/realtime) or [Gemini Live](https://ai.google.dev/gemini-api/docs/live).'
+          note: >
+            This operation describes a single server-side generation reconstructed from a
+            long-lived streaming session, not a single client request/response. It is distinct
+            from `chat` and `generate_content`: the request is streamed continuously and the
+            generation is bounded by provider events (first output chunk or a voice-activity
+            end anchor through generation completion or interruption) rather than by a client
+            call boundary.
+          stability: development
+        - id: user_speech
+          value: "user_speech"
+          brief: 'Client-side capture of a user speech utterance within a live, bidirectional speech-to-speech session, delimited by the provider''s user voice-activity (start/stop) events.'
+          note: >
+            This operation is optional and provider-dependent. It is recorded only when the provider
+            exposes user voice-activity detection (VAD) events that bracket when the user started and
+            stopped speaking (for example OpenAI Realtime `input_audio_buffer.speech_started` /
+            `input_audio_buffer.speech_stopped`). It is speech-specific: text and other non-speech
+            input have no such speaking interval and are carried on the `realtime_inference`
+            operation through `gen_ai.input.messages` instead. Providers without user VAD events
+            (such as the Gemini Developer API) likewise carry the user input on the
+            `realtime_inference` operation through `gen_ai.input.messages`.
           stability: development
         - id: text_completion
           value: "text_completion"

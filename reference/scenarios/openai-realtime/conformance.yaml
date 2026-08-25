@@ -1,0 +1,35 @@
+runner: genai-conformance
+instrumented_library: openai
+instrumentation_library: reference
+
+# The OpenAI Realtime client speaks WebSocket, but the runner health-probes over
+# plain HTTP, so this scenario ships its own mock: it answers /health on ${PORT}
+# and serves the realtime WebSocket on ${PORT} + 1 (see mock_server.py).
+# The runner launches the server from the repository root (it inherits the
+# runner's working directory, unlike the scenario command which runs in this
+# directory), so the project and script are named from the repository root.
+server:
+  run: uv run --frozen --python 3.12 --project reference/scenarios/openai-realtime python reference/scenarios/openai-realtime/mock_server.py --host 127.0.0.1 --port ${PORT}
+
+env:
+  MOCK_LLM_URL: ${MOCK_SERVER_URL}
+
+scenarios:
+  reference:
+    run: uv run --frozen --python 3.12 --project . python scenario.py
+    # The realtime / live voice operations are not yet recognised by the shared
+    # GenAI conformance classifier, so declare their span types here. Each emitted
+    # INTERNAL span carrying the given operation name maps to the span type below
+    # (`realtime_inference` to a client span, `user_speech` to an internal span).
+    # Remove once the classifier recognises these operations upstream.
+    spans:
+      - match:
+          attributes:
+            gen_ai.operation.name: realtime_inference
+          kind: internal
+          type: gen_ai.realtime_inference.client
+      - match:
+          attributes:
+            gen_ai.operation.name: user_speech
+          kind: internal
+          type: gen_ai.user_speech.internal

@@ -1,5 +1,57 @@
 file_format: definition/2
 events:
+  - name: gen_ai.client.live_session.started
+    requirement_level: recommended
+    brief: >
+      Recorded when a live, bidirectional streaming session (such as OpenAI Realtime
+      or Gemini Live) is established.
+    note: >
+      A live session is long-lived and mostly idle, so it is not modeled as a span.
+      This event marks the start of the session; the matching
+      `gen_ai.client.live_session.ended` event marks its end. Individual server-side
+      generations within the session are modeled by the `gen_ai.realtime_inference.client`
+      span and correlated through `gen_ai.live_session.id`.
+    stability: development
+    attributes:
+      - ref: gen_ai.provider.name
+        requirement_level: required
+      - ref: gen_ai.request.model
+        requirement_level:
+          conditionally_required: If available.
+      - ref: gen_ai.live_session.id
+        requirement_level:
+          conditionally_required: If the provider exposes a session identifier, or the instrumentation uses a client-created per-connection identifier.
+      - ref: server.address
+        requirement_level: recommended
+      - ref: server.port
+        requirement_level:
+          conditionally_required: If `server.address` is set.
+  - name: gen_ai.client.live_session.ended
+    requirement_level: recommended
+    brief: >
+      Recorded when a live, bidirectional streaming session is closed.
+    note: >
+      Emitted when the session connection is closed, whether normally or because of an error.
+      Paired with the `gen_ai.client.live_session.started` event through
+      `gen_ai.live_session.id`.
+    stability: development
+    attributes:
+      - ref: gen_ai.provider.name
+        requirement_level: required
+      - ref: gen_ai.request.model
+        requirement_level:
+          conditionally_required: If available.
+      - ref: gen_ai.live_session.id
+        requirement_level:
+          conditionally_required: If the provider exposes a session identifier, or the instrumentation uses a client-created per-connection identifier.
+      - ref: error.type
+        requirement_level:
+          conditionally_required: If the session ended because of an error.
+      - ref: server.address
+        requirement_level: recommended
+      - ref: server.port
+        requirement_level:
+          conditionally_required: If `server.address` is set.
   - name: gen_ai.client.inference.operation.details
     requirement_level: opt_in
     brief: >

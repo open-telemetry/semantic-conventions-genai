@@ -32,16 +32,20 @@ Run `uv run update-reports` to regenerate.
 | [Invoke Workflow](reports/invoke-workflow-span.md) | crewai, google-adk, langchain, openai-agents |
 | [Plan](reports/plan-span.md) | crewai, langchain |
 | [Inference](reports/inference-span.md) | agent-framework, anthropic, aws-bedrock, azure-ai-inference, azure-openai, claude-agent-sdk, cohere, google-genai, groq, litellm, mistralai, openai, vertexai |
+| [Realtime Inference](reports/realtime-inference-span.md) | gemini-live, gemini-live-3, openai-realtime |
+| [User Speech](reports/user-speech-span.md) | openai-realtime |
 | [Embeddings](reports/embeddings-span.md) | aws-bedrock, azure-ai-inference, azure-openai, cohere, google-genai, litellm, mistralai, openai |
 | [Retrieval](reports/retrieval-span.md) | haystack, langchain, llamaindex |
 | [Fetch Response](reports/fetch-response-span.md) | openai |
 | [Memory](reports/memory-span.md) | aws-bedrock-agentcore, google-adk |
-| [Execute Tool](reports/execute-tool-span.md) | agent-framework, autogen, crewai, google-adk, google-genai, langchain, llamaindex, openai-agents, openai-assistants, pydantic-ai, vertexai |
+| [Execute Tool](reports/execute-tool-span.md) | agent-framework, autogen, crewai, gemini-live, gemini-live-3, google-adk, google-genai, langchain, llamaindex, openai-agents, openai-assistants, openai-realtime, pydantic-ai, vertexai |
 
 ### Events
 
 | Event | Libraries |
 | --- | --- |
+| [Live Session Started](reports/gen-ai-client-live-session-started-event.md) | gemini-live, gemini-live-3, openai-realtime |
+| [Live Session Ended](reports/gen-ai-client-live-session-ended-event.md) | gemini-live, gemini-live-3, openai-realtime |
 | [Inference Operation Details](reports/gen-ai-client-inference-operation-details-event.md) | anthropic, aws-bedrock, azure-ai-inference, cohere, google-genai, groq, litellm, mistralai, openai, vertexai |
 | [Evaluation Result](reports/gen-ai-evaluation-result-event.md) | azure-ai-evaluation, deepeval, dspy |
 

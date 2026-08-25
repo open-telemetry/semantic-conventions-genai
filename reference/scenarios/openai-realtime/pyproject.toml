@@ -1,0 +1,14 @@
+[project]
+name = "openai-realtime-reference-test"
+version = "0.0.0"
+requires-python = ">=3.12"
+dependencies = [
+    "openai[realtime]==2.44.0",
+    "genai-reference-shared",
+]
+
+[tool.uv.sources]
+genai-reference-shared = { path = "../../shared", editable = true }
+
+[tool.uv]
+package = false

@@ -41,11 +41,15 @@ _SPANS = {
     "invoke_agent_internal": ("gen_ai.invoke_agent.internal", "Invoke Agent Internal"),
     "invoke_workflow": ("gen_ai.invoke_workflow.internal", "Invoke Workflow"),
     "plan": ("gen_ai.plan.internal", "Plan"),
+    "realtime_inference": ("gen_ai.realtime_inference.client", "Realtime Inference"),
+    "user_speech": ("gen_ai.user_speech.internal", "User Speech"),
 }
 
 _EVENTS = {
     "gen_ai.client.inference.operation.details": "Inference Operation Details",
     "gen_ai.evaluation.result": "Evaluation Result",
+    "gen_ai.client.live_session.started": "Live Session Started",
+    "gen_ai.client.live_session.ended": "Live Session Ended",
 }
 
 # `gen_ai.client.operation.duration` and `gen_ai.client.token.usage` are a
