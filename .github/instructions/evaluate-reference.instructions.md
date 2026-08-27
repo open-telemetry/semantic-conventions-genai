@@ -15,10 +15,12 @@ Flag each violation.
 ## Trace every value
 
 Instrumentation lives inside the library and sees only the library's own API, so
-each value must be readable from there: either a parameter the library defines
-and interprets, or something the library or mock server returns.
+each value must be readable from there: a parameter the library defines and
+interprets, something the library or mock server returns, an exception, or
+library state.
 
-For each attribute the PR adds or changes, name that parameter or return value.
+For each attribute or signal the PR adds or changes, name that parameter or
+return value.
 Flag the field when:
 
 - it was read from a type the scenario declares that is not passed to the library API
@@ -36,3 +38,6 @@ string was emitted.
 - a scenario that does not apply to a specific library
 - a scenario that instruments an arbitrary group of methods (i.e. span boundaries don't match specific library API)
 - a scenario that could emit an attribute or a signal but does not
+- a field, span, metric, or event added under `model/**` that no scenario in
+  the repo emits - name the libraries that should have covered it or suggest to 
+  remove it from the changeset if no library can cover it.

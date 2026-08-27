@@ -13,7 +13,7 @@ Use this skill to add or update reference implementations under `reference/scena
 2. **Update `scenario.py` and `README.md`**:
    - Wrap real library calls in spans. Call or patch private methods if needed to instrument the library only when it's not possible to do so through the public API.
    - Set attributes inline using only real values from SDK inputs, outputs, errors, or library state.
-   - If the library cannot provide a value, do not fake it - record it as a capture gap.
+   - If the library cannot provide a value, do not fake it, leave it unset.
    - Update `reference/scenarios/<library>/README.md` operation table and status.
 3. **Run and test**:
    ```bash

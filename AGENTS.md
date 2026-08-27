@@ -52,10 +52,10 @@ change. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 For PRs that change semantic conventions, use the `reference`
 skill in [.github/skills/reference/SKILL.md](.github/skills/reference/SKILL.md). For reviews
-of reference coverage, capturability, and honest capture gaps, see the
+of reference coverage and capturability, see the
 evaluation rubric in
-[.github/instructions/evaluate-reference.instructions.md](.github/instructions/evaluate-reference.instructions.md)
-- an instruction file that applies automatically to model, docs, and scenario
+[.github/instructions/evaluate-reference.instructions.md](.github/instructions/evaluate-reference.instructions.md) -
+an instruction file that applies automatically to model, docs, and scenario
 changes, not a skill to invoke.
 
 ## Further reading
