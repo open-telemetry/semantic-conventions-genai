@@ -141,6 +141,13 @@
     },
     {
       "id": "missing_attribute",
+      "message": "Attribute 'gen_ai.system' does not exist in the registry.",
+      "context": {
+        "attribute_key": "gen_ai.system"
+      }
+    },
+    {
+      "id": "missing_attribute",
       "message": "Attribute 'gen_ai.usage.cache_creation.input_tokens' does not exist in the registry.",
       "context": {
         "attribute_key": "gen_ai.usage.cache_creation.input_tokens"
@@ -215,6 +222,26 @@
       "context": {
         "attribute_key": "workflow_builder.name"
       }
+    },
+    {
+      "id": "missing_event",
+      "message": "Event 'gen_ai.assistant.message' does not exist in the registry."
+    },
+    {
+      "id": "missing_event",
+      "message": "Event 'gen_ai.choice' does not exist in the registry."
+    },
+    {
+      "id": "missing_event",
+      "message": "Event 'gen_ai.system.message' does not exist in the registry."
+    },
+    {
+      "id": "missing_event",
+      "message": "Event 'gen_ai.tool.message' does not exist in the registry."
+    },
+    {
+      "id": "missing_event",
+      "message": "Event 'gen_ai.user.message' does not exist in the registry."
     },
     {
       "id": "missing_metric",
