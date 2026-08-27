@@ -11,6 +11,7 @@
       "gen_ai.tool.type"
     ],
     "gen_ai.invoke_agent.internal": [
+      "gen_ai.agent.invocation.status",
       "gen_ai.agent.name",
       "gen_ai.input.messages",
       "gen_ai.operation.name",

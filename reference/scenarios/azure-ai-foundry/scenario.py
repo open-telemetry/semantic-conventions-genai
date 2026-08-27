@@ -168,6 +168,8 @@ def run_invoke_agent(client):
                 span.set_attribute("gen_ai.usage.output_tokens", response.usage.output_tokens)
 
             print(f"    -> {response_text or response.id}")
+            if response.status == "completed":
+                span.set_attribute("gen_ai.agent.invocation.status", "completed")
         except Exception as e:
             span.set_status(StatusCode.ERROR, str(e))
             raise

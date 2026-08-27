@@ -96,6 +96,7 @@ async def run_agent():
             result = await Runner.run(agent, input_text)
         finally:
             client.chat.completions.create = original_create
+        agent_span.set_attribute("gen_ai.agent.invocation.status", "completed")
         usage = result.context_wrapper.usage
         if usage.total_tokens:
             agent_span.set_attribute("gen_ai.usage.input_tokens", usage.input_tokens)

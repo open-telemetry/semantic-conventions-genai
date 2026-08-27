@@ -109,6 +109,7 @@ def run_tool_call():
             ),
         )
         result = agent.run_sync(prompt_text, model_settings=model_settings)
+        agent_span.set_attribute("gen_ai.agent.invocation.status", "completed")
         if result.response.finish_reason is not None:
             agent_span.set_attribute(
                 "gen_ai.response.finish_reasons",
