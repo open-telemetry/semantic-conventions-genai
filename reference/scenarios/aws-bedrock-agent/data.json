@@ -25,5 +25,40 @@
     ]
   },
   "events": {},
-  "metrics": {}
+  "metrics": {},
+  "findings": [
+    {
+      "id": "genai_content_schema",
+      "message": "Attribute 'gen_ai.output.messages' value does not conform to the GenAI schema: \"finish_reason\" is a required property",
+      "context": {
+        "attribute": "gen_ai.output.messages",
+        "errors": "\"finish_reason\" is a required property"
+      }
+    },
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'invoke_agent' (operation 'invoke_agent') is missing expected attribute 'gen_ai.response.finish_reasons'",
+      "context": {
+        "missing_attribute": "gen_ai.response.finish_reasons",
+        "operation": "invoke_agent"
+      }
+    },
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'invoke_agent' (operation 'invoke_agent') is missing expected attribute 'gen_ai.usage.input_tokens'",
+      "context": {
+        "missing_attribute": "gen_ai.usage.input_tokens",
+        "operation": "invoke_agent"
+      }
+    },
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'invoke_agent' (operation 'invoke_agent') is missing expected attribute 'gen_ai.usage.output_tokens'",
+      "context": {
+        "missing_attribute": "gen_ai.usage.output_tokens",
+        "operation": "invoke_agent"
+      }
+    }
+  ],
+  "entities": {}
 }

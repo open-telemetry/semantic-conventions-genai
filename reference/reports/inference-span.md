@@ -41,11 +41,20 @@
 | gen_ai.response.id | [agent-framework], [anthropic], [azure-ai-inference], [azure-openai], [claude-agent-sdk], [cohere], [groq], [litellm], [mistralai], [openai] |
 | gen_ai.response.model | [agent-framework], [anthropic], [azure-ai-inference], [azure-openai], [claude-agent-sdk], [google-genai], [groq], [litellm], [mistralai], [openai] |
 | gen_ai.response.time_to_first_chunk | (none) |
-| gen_ai.usage.cache_creation.input_tokens | [anthropic] |
-| gen_ai.usage.cache_read.input_tokens | [agent-framework], [anthropic] |
+| gen_ai.usage.audio.cache_read.input_tokens | [google-genai], [vertexai] |
+| gen_ai.usage.audio.input_tokens | [google-genai], [openai], [vertexai] |
+| gen_ai.usage.audio.output_tokens | [google-genai], [openai] |
+| gen_ai.usage.cache_read.input_tokens | [agent-framework], [anthropic], [google-genai], [openai], [vertexai] |
+| gen_ai.usage.cache_write.input_tokens | [anthropic], [openai] |
+| gen_ai.usage.image.cache_read.input_tokens | [google-genai], [vertexai] |
+| gen_ai.usage.image.input_tokens | [google-genai], [vertexai] |
+| gen_ai.usage.image.output_tokens | [google-genai] |
 | gen_ai.usage.input_tokens | [agent-framework], [anthropic], [aws-bedrock], [azure-ai-inference], [azure-openai], [claude-agent-sdk], [cohere], [google-genai], [groq], [litellm], [mistralai], [openai], [vertexai] |
 | gen_ai.usage.output_tokens | [agent-framework], [anthropic], [aws-bedrock], [azure-ai-inference], [azure-openai], [claude-agent-sdk], [cohere], [google-genai], [groq], [litellm], [mistralai], [openai], [vertexai] |
-| gen_ai.usage.reasoning.output_tokens | [agent-framework] |
+| gen_ai.usage.reasoning.output_tokens | [agent-framework], [google-genai], [openai], [vertexai] |
+| gen_ai.usage.text.cache_read.input_tokens | [google-genai], [vertexai] |
+| gen_ai.usage.text.input_tokens | [google-genai], [vertexai] |
+| gen_ai.usage.text.output_tokens | [google-genai], [vertexai] |
 | server.address | [agent-framework], [anthropic], [aws-bedrock], [azure-ai-inference], [azure-openai], [cohere], [mistralai], [openai] |
 
 ## Opt-In
