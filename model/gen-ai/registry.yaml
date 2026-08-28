@@ -530,6 +530,40 @@ attributes:
         }
 
     stability: development
+  - key: gen_ai.tool.call.arguments_hash
+    type: string
+    brief: Hash of the exact tool call arguments observed at the execution boundary.
+    note: |
+      The value MUST use the form `<algorithm>:<hex-digest>`, where `algorithm`
+      identifies the hash algorithm and `hex-digest` is lowercase hexadecimal.
+
+      Instrumentations MUST hash the exact serialized representation passed to
+      the tool. This attribute does not define canonicalization across
+      instrumentations and MUST NOT be used to compare semantically equivalent
+      arguments serialized differently.
+
+      A hash can still disclose information when the input space is small or
+      predictable. Instrumentations SHOULD provide a configuration option to
+      disable it.
+    examples: ['sha256:6a2f5c9e2c01813d9e3fc3e5f2468dd45158c84f5834a8f81b67347e069e2af8']
+    stability: development
+  - key: gen_ai.tool.call.result_hash
+    type: string
+    brief: Hash of the exact tool call result observed at the execution boundary.
+    note: |
+      The value MUST use the form `<algorithm>:<hex-digest>`, where `algorithm`
+      identifies the hash algorithm and `hex-digest` is lowercase hexadecimal.
+
+      Instrumentations MUST hash the exact serialized representation returned
+      by the tool. This attribute does not define canonicalization across
+      instrumentations and MUST NOT be used to compare semantically equivalent
+      results serialized differently.
+
+      A hash can still disclose information when the input space is small or
+      predictable. Instrumentations SHOULD provide a configuration option to
+      disable it.
+    examples: ['sha256:ad7b286b2d854d951d06f418f9a1624924a5a234d23363f96a181831c8c02eee']
+    stability: development
   - key: gen_ai.tool.definitions
     type: any
     brief: The list of tool definitions available to the GenAI agent or model.

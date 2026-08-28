@@ -610,6 +610,12 @@ spans:
         requirement_level: opt_in
       - ref: gen_ai.tool.call.result
         requirement_level: opt_in
+      - ref: gen_ai.tool.call.arguments_hash
+        requirement_level:
+          recommended: If available and enabled by configuration.
+      - ref: gen_ai.tool.call.result_hash
+        requirement_level:
+          recommended: If available and enabled by configuration.
 
   - type: gen_ai.invoke_workflow.internal
     requirement_level: recommended
