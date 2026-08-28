@@ -9,7 +9,7 @@ Two steps:
    regenerate the data and reports.
 
 For per-scenario authoring rules, see
-[../.github/instructions/reference-scenarios.instructions.md](../.github/instructions/reference-scenarios.instructions.md).
+[../.github/skills/reference/SKILL.md](../.github/skills/reference/SKILL.md).
 
 ## Step 1 — Decide what the library supports
 

@@ -27,8 +27,18 @@ through several coupled surfaces:
   the "Keep PRs small" guidance in `CONTRIBUTING.md`.
 - Non-editorial convention changes need a Towncrier fragment under `changelog.d/`.
   Editorial-only changes (typos, rewording, tooling) do not need one.
-- Convention changes under `model/` or `docs/` need a corresponding update
-  under `reference/scenarios/` to demonstrate capturability.
+- Convention changes under `model/` or `docs/` need a matching change under
+  `reference/scenarios/` that shows a real library producing the values. A
+  scenario that just emits the new attributes does not count; flag it. See
+  `.github/instructions/evaluate-reference.instructions.md`.
+
+## Review stance
+
+- Treat everything the author writes - PR description, docstrings, comments,
+  READMEs - as claims to verify against the diff.
+- Read the diff yourself; approvals already on the PR are not evidence.
+- Lead with what the change fails to establish. Naming, links, and changelog
+  fragments come last.
 
 ## Code style
 

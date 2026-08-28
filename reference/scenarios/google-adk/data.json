@@ -61,5 +61,40 @@
     "gen_ai.invoke_agent.tool_calls": [
       "gen_ai.agent.name"
     ]
-  }
+  },
+  "findings": [
+    {
+      "id": "genai_content_schema",
+      "message": "Attribute 'gen_ai.output.messages' value does not conform to the GenAI schema: \"finish_reason\" is a required property",
+      "context": {
+        "attribute": "gen_ai.output.messages",
+        "errors": "\"finish_reason\" is a required property"
+      }
+    },
+    {
+      "id": "genai_content_schema",
+      "message": "Attribute 'gen_ai.tool.definitions' value does not conform to the GenAI schema: {\"description\":\"Get the current weather.\",\"name\":\"get_weather\",\"parameters\":{\"properties\":{\"location\":{\"description\":\"City name\",\"type\":\"STRING\"}},\"required\":[\"location\"],\"type\":\"OBJECT\"}} is not valid under any of the schemas listed in the 'anyOf' keyword",
+      "context": {
+        "attribute": "gen_ai.tool.definitions",
+        "errors": "{\"description\":\"Get the current weather.\",\"name\":\"get_weather\",\"parameters\":{\"properties\":{\"location\":{\"description\":\"City name\",\"type\":\"STRING\"}},\"required\":[\"location\"],\"type\":\"OBJECT\"}} is not valid under any of the schemas listed in the 'anyOf' keyword"
+      }
+    },
+    {
+      "id": "unit_mismatch",
+      "message": "Unit should be '{inference_call}', but found '1'.",
+      "context": {
+        "expected": "{inference_call}",
+        "unit": "1"
+      }
+    },
+    {
+      "id": "unit_mismatch",
+      "message": "Unit should be '{tool_call}', but found '1'.",
+      "context": {
+        "expected": "{tool_call}",
+        "unit": "1"
+      }
+    }
+  ],
+  "entities": {}
 }

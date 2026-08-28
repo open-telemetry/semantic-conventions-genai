@@ -13,5 +13,25 @@
     ]
   },
   "events": {},
-  "metrics": {}
+  "metrics": {},
+  "findings": [
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'chat claude' (operation 'chat') is missing expected attribute 'server.address'",
+      "context": {
+        "missing_attribute": "server.address",
+        "operation": "chat"
+      }
+    },
+    {
+      "id": "genai_span_name_format",
+      "message": "chat span name should be 'chat' or 'chat <value of gen_ai.request.model>', got 'chat claude'",
+      "context": {
+        "expected_form": "chat or 'chat <gen_ai.request.model>'",
+        "keyed_attr": "gen_ai.request.model",
+        "operation": "chat"
+      }
+    }
+  ],
+  "entities": {}
 }

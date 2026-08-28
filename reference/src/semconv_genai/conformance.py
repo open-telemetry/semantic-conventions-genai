@@ -127,12 +127,23 @@ def coverage_model(output: Path = COVERAGE_MODEL) -> Path:
     """
     if not _is_stale(output):
         return output
-    script = checkout() / "tools" / "runner" / "src" / "opentelemetry" / "conformance" / "collect-coverage-model.sh"
-    if not script.is_file():
-        raise RuntimeError(f"The pinned conformance checkout has no coverage model script at {script}")
+    # Clear the stale model so the runner's resolver re-runs Weaver rather
+    # than returning the existing file early.
+    output.unlink(missing_ok=True)
     output.parent.mkdir(parents=True, exist_ok=True)
     logger.info("Resolving %s into %s", MODEL_ROOT, output)
-    subprocess.run([str(script), str(MODEL_ROOT), str(output)], cwd=SEMCONV_ROOT, env=_environment(), check=True)
+    command = [
+        _uv(),
+        "run",
+        "--project",
+        str(runner_project()),
+        "python",
+        "-c",
+        "import pathlib, sys; from opentelemetry.conformance import resolve_coverage_model; resolve_coverage_model(pathlib.Path(sys.argv[1]), pathlib.Path(sys.argv[2]))",
+        str(MODEL_ROOT),
+        str(output),
+    ]
+    subprocess.run(command, cwd=SEMCONV_ROOT, env=_environment(), check=True)
     return output
 
 
