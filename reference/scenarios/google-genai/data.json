@@ -31,8 +31,19 @@
       "gen_ai.response.finish_reasons",
       "gen_ai.response.model",
       "gen_ai.tool.definitions",
+      "gen_ai.usage.audio.cache_read.input_tokens",
+      "gen_ai.usage.audio.input_tokens",
+      "gen_ai.usage.audio.output_tokens",
+      "gen_ai.usage.cache_read.input_tokens",
+      "gen_ai.usage.image.cache_read.input_tokens",
+      "gen_ai.usage.image.input_tokens",
+      "gen_ai.usage.image.output_tokens",
       "gen_ai.usage.input_tokens",
-      "gen_ai.usage.output_tokens"
+      "gen_ai.usage.output_tokens",
+      "gen_ai.usage.reasoning.output_tokens",
+      "gen_ai.usage.text.cache_read.input_tokens",
+      "gen_ai.usage.text.input_tokens",
+      "gen_ai.usage.text.output_tokens"
     ],
     "gen_ai.invoke_agent.client": [
       "gen_ai.agent.name",
@@ -55,9 +66,79 @@
       "gen_ai.response.finish_reasons",
       "gen_ai.response.id",
       "gen_ai.response.model",
+      "gen_ai.usage.audio.cache_read.input_tokens",
+      "gen_ai.usage.audio.input_tokens",
+      "gen_ai.usage.audio.output_tokens",
+      "gen_ai.usage.cache_read.input_tokens",
+      "gen_ai.usage.image.cache_read.input_tokens",
+      "gen_ai.usage.image.input_tokens",
+      "gen_ai.usage.image.output_tokens",
       "gen_ai.usage.input_tokens",
-      "gen_ai.usage.output_tokens"
+      "gen_ai.usage.output_tokens",
+      "gen_ai.usage.reasoning.output_tokens",
+      "gen_ai.usage.text.cache_read.input_tokens",
+      "gen_ai.usage.text.input_tokens",
+      "gen_ai.usage.text.output_tokens"
     ]
   },
-  "metrics": {}
+  "metrics": {},
+  "findings": [
+    {
+      "id": "genai_content_schema",
+      "message": "Attribute 'gen_ai.tool.definitions' value does not conform to the GenAI schema: {\"function_declarations\":[{\"description\":\"Get the current weather\",\"name\":\"get_weather\",\"parameters\":{\"properties\":{\"location\":{\"description\":\"City name\",\"type\":\"string\"}},\"required\":[\"location\"],\"type\":\"object\"}}]} is not valid under any of the schemas listed in the 'anyOf' keyword",
+      "context": {
+        "attribute": "gen_ai.tool.definitions",
+        "errors": "{\"function_declarations\":[{\"description\":\"Get the current weather\",\"name\":\"get_weather\",\"parameters\":{\"properties\":{\"location\":{\"description\":\"City name\",\"type\":\"string\"}},\"required\":[\"location\"],\"type\":\"object\"}}]} is not valid under any of the schemas listed in the 'anyOf' keyword"
+      }
+    },
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'chat gemini-2.0-flash' (operation 'chat') is missing expected attribute 'gen_ai.response.id'",
+      "context": {
+        "missing_attribute": "gen_ai.response.id",
+        "operation": "chat"
+      }
+    },
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'chat gemini-2.0-flash' (operation 'chat') is missing expected attribute 'gen_ai.response.model'",
+      "context": {
+        "missing_attribute": "gen_ai.response.model",
+        "operation": "chat"
+      }
+    },
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'chat gemini-2.0-flash' (operation 'chat') is missing expected attribute 'server.address'",
+      "context": {
+        "missing_attribute": "server.address",
+        "operation": "chat"
+      }
+    },
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'create_agent reference-agent' (operation 'create_agent') is missing expected attribute 'server.address'",
+      "context": {
+        "missing_attribute": "server.address",
+        "operation": "create_agent"
+      }
+    },
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'invoke_agent interactions_agent' (operation 'invoke_agent') is missing expected attribute 'gen_ai.response.finish_reasons'",
+      "context": {
+        "missing_attribute": "gen_ai.response.finish_reasons",
+        "operation": "invoke_agent"
+      }
+    },
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'invoke_agent interactions_agent' (operation 'invoke_agent') is missing expected attribute 'server.address'",
+      "context": {
+        "missing_attribute": "server.address",
+        "operation": "invoke_agent"
+      }
+    }
+  ],
+  "entities": {}
 }

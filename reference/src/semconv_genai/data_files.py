@@ -97,7 +97,17 @@ def _normalize_attr_data(
         if spec.registry_id not in value:
             continue
         recorded = value[spec.registry_id]
-        present = set(recorded) if isinstance(recorded, (dict, list)) else set()
+        if isinstance(recorded, list):
+            present = set(recorded)
+        elif isinstance(recorded, dict):
+            present = set()
+            for k, v in recorded.items():
+                if isinstance(v, (list, tuple, set)):
+                    present.update(v)
+                else:
+                    present.add(k)
+        else:
+            present = set()
         normalized[type_key] = {name: "present" if name in present else "absent" for name in attr_names(spec)}
     return normalized
 

@@ -77,7 +77,9 @@ def _spec(model: dict[str, dict], kind: str, registry_id: str, label: str) -> At
         "opt_in": [],
     }
     for name, level in sorted(declared["attributes"].items()):
-        buckets[level].append(name)
+        # A level carrying a condition is written `<level>_conditional`; the
+        # reports bucket by the level itself.
+        buckets[level.removesuffix("_conditional")].append(name)
     return AttributeSpec(
         label=label,
         required=tuple(buckets["required"]),
@@ -171,6 +173,34 @@ def metric_specs() -> dict[str, AttributeSpec]:
     return {name: _spec(model, "metrics", name, label) for name, label in _METRICS.items()}
 
 
+def _entity_spec(model: dict[str, dict], registry_id: str, label: str) -> AttributeSpec:
+    declared = model.get("entities", {}).get(registry_id)
+    if declared is None:
+        raise RuntimeError(f"The coverage model declares no entity {registry_id!r}; is it still in model/?")
+    buckets: dict[str, list[str]] = {
+        "required": [],
+        "conditionally_required": [],
+        "recommended": [],
+        "opt_in": [],
+    }
+    if "attributes" in declared:
+        for name, level in sorted(declared["attributes"].items()):
+            buckets[level.removesuffix("_conditional")].append(name)
+    else:
+        for section in declared.values():
+            if isinstance(section, dict):
+                for name, level in sorted(section.items()):
+                    buckets[level.removesuffix("_conditional")].append(name)
+    return AttributeSpec(
+        label=label,
+        required=tuple(sorted(buckets["required"])),
+        conditionally_required=tuple(sorted(buckets["conditionally_required"])),
+        recommended=tuple(sorted(buckets["recommended"])),
+        opt_in=tuple(sorted(buckets["opt_in"])),
+        registry_id=registry_id,
+    )
+
+
 @cache
 def entity_specs() -> dict[str, AttributeSpec]:
     model = _model()
@@ -178,7 +208,7 @@ def entity_specs() -> dict[str, AttributeSpec]:
     specs: dict[str, AttributeSpec] = {}
     for name, label in _ENTITIES.items():
         if name in entities_model:
-            specs[name] = _spec(model, "entities", name, label)
+            specs[name] = _entity_spec(model, name, label)
         else:
             specs[name] = _entity_spec_from_yaml(name, label)
     return specs

@@ -54,6 +54,23 @@ def test_entities_keep_their_registry_names():
     assert entry.entities["gen_ai.main_agent"]["gen_ai.main_agent.id"] == "present"
 
 
+def test_entities_with_sections_round_trip():
+    entry = _normalize_scenario_data_entry(
+        {
+            "entities": {
+                "gen_ai.main_agent": {
+                    "identity": ["gen_ai.main_agent.id"],
+                    "description": ["gen_ai.main_agent.description", "gen_ai.main_agent.name"],
+                }
+            }
+        },
+        "fake",
+    )
+    assert entry.entities["gen_ai.main_agent"]["gen_ai.main_agent.id"] == "present"
+    assert entry.entities["gen_ai.main_agent"]["gen_ai.main_agent.description"] == "present"
+    assert entry.entities["gen_ai.main_agent"]["gen_ai.main_agent.name"] == "present"
+
+
 def test_registry_span_names_map_onto_report_keys():
     """A data file names spans as the registry does; reports use short keys."""
     entry = _normalize_scenario_data_entry(

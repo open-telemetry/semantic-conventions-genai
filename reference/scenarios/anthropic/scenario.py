@@ -56,7 +56,9 @@ def run_chat(handler):
             inv.input_tokens = resp.usage.input_tokens + cache_creation + cache_read  # -> gen_ai.usage.input_tokens
             inv.output_tokens = resp.usage.output_tokens  # -> gen_ai.usage.output_tokens
             if cache_creation:
-                inv.cache_creation_input_tokens = cache_creation  # -> gen_ai.usage.cache_creation.input_tokens
+                inv.attributes["gen_ai.usage.cache_write.input_tokens"] = (
+                    cache_creation  # -> gen_ai.usage.cache_write.input_tokens
+                )
             if cache_read:
                 inv.cache_read_input_tokens = cache_read  # -> gen_ai.usage.cache_read.input_tokens
 
@@ -248,7 +250,89 @@ def run_chat_with_document_input(handler):
             inv.input_tokens = resp.usage.input_tokens + cache_creation + cache_read  # -> gen_ai.usage.input_tokens
             inv.output_tokens = resp.usage.output_tokens  # -> gen_ai.usage.output_tokens
             if cache_creation:
-                inv.cache_creation_input_tokens = cache_creation  # -> gen_ai.usage.cache_creation.input_tokens
+                inv.attributes["gen_ai.usage.cache_write.input_tokens"] = (
+                    cache_creation  # -> gen_ai.usage.cache_write.input_tokens
+                )
+            if cache_read:
+                inv.cache_read_input_tokens = cache_read  # -> gen_ai.usage.cache_read.input_tokens
+
+        inv.output_messages = [  # -> gen_ai.output.messages
+            OutputMessage(
+                role="assistant",
+                parts=[Text(content=block.text)],
+                finish_reason=resp.stop_reason,
+            )
+            for block in resp.content
+            if hasattr(block, "text")
+        ]
+
+    print(f"    -> {resp.content[0].text[:60]}")
+
+
+def run_chat_with_image_input(handler):
+    """Scenario: chat with an image block (image modality)."""
+    print("  [chat_image] chat with image block (util-genai handler)")
+    request_model = "claude-sonnet-4-20250514"
+    request_max_tokens = 100
+    instruction = "Describe the attached image."
+    image_bytes = b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01"
+    image_b64 = base64.b64encode(image_bytes).decode("ascii")
+    mime_type = "image/png"
+    messages = [
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": instruction},
+                {
+                    "type": "image",
+                    "source": {
+                        "type": "base64",
+                        "media_type": mime_type,
+                        "data": image_b64,
+                    },
+                },
+            ],
+        }
+    ]
+    client = anthropic.Anthropic(base_url=MOCK_BASE_URL, api_key="mock-key")
+
+    host, port = mock_server_host_port(MOCK_BASE_URL)
+    with handler.inference(
+        provider="anthropic",
+        request_model=request_model,
+        server_address=host,
+        server_port=port,
+    ) as inv:
+        inv.max_tokens = request_max_tokens  # -> gen_ai.request.max_tokens
+        inv.input_messages = [  # -> gen_ai.input.messages
+            InputMessage(
+                role="user",
+                parts=[
+                    Text(content=instruction),
+                    Blob(mime_type=mime_type, modality="image", content=image_bytes),
+                ],
+            )
+        ]
+
+        resp = client.messages.create(
+            model=request_model,
+            max_tokens=request_max_tokens,
+            messages=messages,
+        )
+
+        inv.response_model_name = resp.model  # -> gen_ai.response.model
+        inv.response_id = resp.id  # -> gen_ai.response.id
+        inv.finish_reasons = [resp.stop_reason]  # -> gen_ai.response.finish_reasons
+
+        if resp.usage:
+            cache_creation = getattr(resp.usage, "cache_creation_input_tokens", None) or 0
+            cache_read = getattr(resp.usage, "cache_read_input_tokens", None) or 0
+            inv.input_tokens = resp.usage.input_tokens + cache_creation + cache_read  # -> gen_ai.usage.input_tokens
+            inv.output_tokens = resp.usage.output_tokens  # -> gen_ai.usage.output_tokens
+            if cache_creation:
+                inv.attributes["gen_ai.usage.cache_write.input_tokens"] = (
+                    cache_creation  # -> gen_ai.usage.cache_write.input_tokens
+                )
             if cache_read:
                 inv.cache_read_input_tokens = cache_read  # -> gen_ai.usage.cache_read.input_tokens
 
@@ -325,6 +409,7 @@ def main():
     run_chat(handler)
     run_compaction(handler)
     run_chat_with_document_input(handler)
+    run_chat_with_image_input(handler)
     run_create_agent()
 
     flush_and_shutdown(tp, lp, mp)

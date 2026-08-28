@@ -49,7 +49,7 @@ Run `uv run update-reports` to regenerate.
 
 | Entity | Libraries |
 | --- | --- |
-| [Main Agent](reports/gen-ai-main-agent-entity.md) | (none) |
+| [Main Agent](reports/gen-ai-main-agent-entity.md) | adk_a2a |
 
 ### Metrics
 
