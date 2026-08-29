@@ -129,6 +129,54 @@ def _usage_attributes(um):
     return attrs
 
 
+def _model_dict(value):
+    if isinstance(value, dict):
+        return value
+    if hasattr(value, "model_dump"):
+        return value.model_dump(mode="json", by_alias=True, exclude_none=True)
+    return {}
+
+
+def _execution_step_part(content):
+    item = _model_dict(content)
+    item_type = item.get("type")
+    if item_type == "text":
+        return {"type": "text", "content": item.get("text") or item.get("content", "")}
+    if item_type in {"function_call", "tool_call"}:
+        part = {
+            "type": "tool_call",
+            "name": item.get("name", ""),
+            "arguments": item.get("args") or item.get("arguments"),
+        }
+        if item.get("id"):
+            part["id"] = item["id"]
+        return part
+    if item_type in {"function_response", "function_result", "tool_call_response"}:
+        part = {
+            "type": "tool_call_response",
+            "response": item.get("response") or item.get("result"),
+        }
+        if item.get("id"):
+            part["id"] = item["id"]
+        return part
+    return item if item_type else None
+
+
+def _execution_steps(interaction):
+    steps = []
+    for raw_step in getattr(interaction, "steps", None) or []:
+        step = _model_dict(raw_step)
+        step_type = step.get("type")
+        content = step.get("content") or step.get("parts") or []
+        if isinstance(content, dict):
+            content = [content]
+        parts = [_execution_step_part(item) for item in content]
+        parts = [part for part in parts if part]
+        if step_type and parts:
+            steps.append({"type": step_type, "parts": parts})
+    return steps
+
+
 def _emit_inference_event(request_model, input_messages, output_messages, response, usage):
     """Emit an inference-details event carrying the same usage attributes as the span."""
     event_attrs = {
@@ -243,6 +291,9 @@ def run_interactions_continuation():
                 span.set_attribute("gen_ai.usage.input_tokens", interaction.usage.total_input_tokens)
             if interaction.usage.total_output_tokens:
                 span.set_attribute("gen_ai.usage.output_tokens", interaction.usage.total_output_tokens)
+        execution_steps = _execution_steps(interaction)
+        if execution_steps:
+            span.set_attribute("gen_ai.execution.steps", json.dumps(execution_steps))
 
         event_attrs = {
             "gen_ai.operation.name": "chat",
@@ -271,6 +322,8 @@ def run_interactions_continuation():
                 event_attrs["gen_ai.usage.input_tokens"] = interaction.usage.total_input_tokens
             if interaction.usage.total_output_tokens:
                 event_attrs["gen_ai.usage.output_tokens"] = interaction.usage.total_output_tokens
+        if execution_steps:
+            event_attrs["gen_ai.execution.steps"] = json.dumps(execution_steps)
         reference_event_logger().emit(
             event_name="gen_ai.client.inference.operation.details",
             body="Inference operation details",
