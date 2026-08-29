@@ -2,12 +2,52 @@
 
 import json
 import os
+import time
 
-from reference_shared import flush_and_shutdown, reference_event_logger, reference_tracer, setup_otel
+from reference_shared import (
+    flush_and_shutdown,
+    mock_server_host_port,
+    reference_event_logger,
+    reference_meter,
+    reference_tracer,
+    setup_otel,
+)
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"]
 
 _reference_tracer = reference_tracer()
+_meter = reference_meter()
+_token_usage = _meter.create_histogram(
+    "gen_ai.client.token.usage",
+    unit="{token}",
+    description="Number of input and output tokens used.",
+)
+_operation_duration = _meter.create_histogram(
+    "gen_ai.client.operation.duration",
+    unit="s",
+    description="GenAI operation duration.",
+)
+_SERVER_ADDRESS, _SERVER_PORT = mock_server_host_port(MOCK_BASE_URL)
+
+
+def _metric_attributes(request_model, response_model=None):
+    """Attribute set shared by both client metrics for this scenario."""
+    attributes = {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "groq",
+        "gen_ai.request.model": request_model,
+        "server.address": _SERVER_ADDRESS,
+        "server.port": _SERVER_PORT,
+    }
+    if response_model:
+        attributes["gen_ai.response.model"] = response_model
+    return attributes
+
+
+def _record_token_usage(attributes, input_tokens, output_tokens):
+    """Record gen_ai.client.token.usage once per token type."""
+    _token_usage.record(input_tokens, {**attributes, "gen_ai.token.type": "input"})
+    _token_usage.record(output_tokens, {**attributes, "gen_ai.token.type": "output"})
 
 
 def run_chat_reference(client):
@@ -21,16 +61,21 @@ def run_chat_reference(client):
     }
     with _reference_tracer.start_as_current_span("chat llama-3.1-8b-instant", attributes=span_attributes) as span:
         messages = [{"role": "user", "content": "Say hello."}]
+        start_time = time.perf_counter()
         resp = client.chat.completions.create(
             model=request_model,
             messages=messages,
         )
+        duration = time.perf_counter() - start_time
+        metric_attributes = _metric_attributes(request_model, resp.model)
+        _operation_duration.record(duration, metric_attributes)
         span.set_attribute("gen_ai.response.model", resp.model)
         span.set_attribute("gen_ai.response.id", resp.id)
         span.set_attribute("gen_ai.response.finish_reasons", [c.finish_reason for c in resp.choices])
         if resp.usage:
             span.set_attribute("gen_ai.usage.input_tokens", resp.usage.prompt_tokens)
             span.set_attribute("gen_ai.usage.output_tokens", resp.usage.completion_tokens)
+            _record_token_usage(metric_attributes, resp.usage.prompt_tokens, resp.usage.completion_tokens)
 
         # Emit inference operation details event
         event_attrs = {
@@ -82,6 +127,7 @@ def run_chat_streaming_reference(client):
                 [{"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]} for m in request_messages]
             ),
         )
+        start_time = time.perf_counter()
         stream = client.chat.completions.create(
             model=request_model,
             messages=request_messages,
@@ -104,6 +150,8 @@ def run_chat_streaming_reference(client):
             span.set_attribute("gen_ai.response.id", response_id)
         if finish_reasons:
             span.set_attribute("gen_ai.response.finish_reasons", finish_reasons)
+        # The stream carries no usage block, so token.usage MUST NOT be reported here.
+        _operation_duration.record(time.perf_counter() - start_time, _metric_attributes(request_model, model))
         print(f"    -> {text[:60]}")
 
 
@@ -133,17 +181,22 @@ def run_chat_tool_call_reference(client):
     }
     with _reference_tracer.start_as_current_span("chat llama-3.1-8b-instant", attributes=span_attributes_3) as span:
         span.set_attribute("gen_ai.tool.definitions", json.dumps(tools))
+        start_time = time.perf_counter()
         resp = client.chat.completions.create(
             model=request_model,
             messages=[{"role": "user", "content": "What's the weather in Seattle?"}],
             tools=tools,
         )
+        duration = time.perf_counter() - start_time
+        metric_attributes = _metric_attributes(request_model, resp.model)
+        _operation_duration.record(duration, metric_attributes)
         span.set_attribute("gen_ai.response.model", resp.model)
         span.set_attribute("gen_ai.response.id", resp.id)
         span.set_attribute("gen_ai.response.finish_reasons", [c.finish_reason for c in resp.choices])
         if resp.usage:
             span.set_attribute("gen_ai.usage.input_tokens", resp.usage.prompt_tokens)
             span.set_attribute("gen_ai.usage.output_tokens", resp.usage.completion_tokens)
+            _record_token_usage(metric_attributes, resp.usage.prompt_tokens, resp.usage.completion_tokens)
         choice = resp.choices[0]
         if choice.message.tool_calls:
             # The client returns the tool call; running it is app code the client
