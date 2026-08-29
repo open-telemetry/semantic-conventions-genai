@@ -98,6 +98,14 @@ attributes:
           brief: >
             Request to set the logging level.
           stability: development
+          deprecated:
+            reason: obsoleted
+            note: >
+              Removed as of the 2026-07-28 MCP protocol revision per
+              [SEP-2577](https://modelcontextprotocol.io/seps/2577-deprecate-roots-sampling-and-logging),
+              which names OpenTelemetry as the correct alternative to an
+              application-protocol logging channel. Replaced by the
+              `io.modelcontextprotocol/logLevel` request-meta field.
         - id: notifications_message
           value: notifications/message
           brief: >
@@ -108,6 +116,13 @@ attributes:
           brief: >
             Request to create a sampling message.
           stability: development
+          deprecated:
+            reason: uncategorized
+            note: >
+              Deprecated as of the 2026-07-28 MCP protocol revision per
+              [SEP-2577](https://modelcontextprotocol.io/seps/2577-deprecate-roots-sampling-and-logging).
+              Still present in the wire schema for backward compatibility;
+              new clients/servers should not rely on it.
         - id: completion_complete
           value: completion/complete
           brief: >
@@ -118,22 +133,54 @@ attributes:
           brief: >
             Request to list roots available on server.
           stability: development
+          deprecated:
+            reason: uncategorized
+            note: >
+              Deprecated as of the 2026-07-28 MCP protocol revision per
+              [SEP-2577](https://modelcontextprotocol.io/seps/2577-deprecate-roots-sampling-and-logging).
+              Still present in the wire schema for backward compatibility;
+              new clients/servers should not rely on it.
         - id: notifications_roots_list_changed
           value: notifications/roots/list_changed
           brief: >
             Notification indicating that the list of roots has changed.
           stability: development
+          deprecated:
+            reason: uncategorized
+            note: >
+              Deprecated alongside `roots/list` as of the 2026-07-28 MCP
+              protocol revision per
+              [SEP-2577](https://modelcontextprotocol.io/seps/2577-deprecate-roots-sampling-and-logging).
         - id: elicitation_create
           value: elicitation/create
           brief: >
             Request from the server to elicit additional information from the
             user via the client
           stability: development
+        - id: server_discover
+          value: server/discover
+          brief: >
+            Request used by a client to discover server metadata as part of
+            the Multi Round-Trip Request (MRTR) flow introduced in the
+            2026-07-28 protocol revision.
+          stability: development
+        - id: subscriptions_listen
+          value: subscriptions/listen
+          brief: >
+            Request to open a long-lived subscription channel, introduced in
+            the 2026-07-28 protocol revision.
+          stability: development
+        - id: notifications_subscriptions_acknowledged
+          value: notifications/subscriptions/acknowledged
+          brief: >
+            Notification acknowledging a subscription request, introduced in
+            the 2026-07-28 protocol revision.
+          stability: development
     brief: The name of the request or notification method.
     stability: development
   - key: mcp.session.id
     type: string
-    brief: Identifies [MCP session](https://modelcontextprotocol.io/specification/2025-06-18/basic/transports#session-management).
+    brief: Identifies [MCP session](https://modelcontextprotocol.io/specification/2026-07-28/basic/transports#session-management).
     examples: ["191c4850af6c49e08843a3f6c80e5046"]
     stability: development
   - key: mcp.resource.uri
@@ -147,5 +194,5 @@ attributes:
   - key: mcp.protocol.version
     type: string
     brief: The [version](https://modelcontextprotocol.io/specification/versioning) of the Model Context Protocol used.
-    examples: ["2025-06-18"]
+    examples: ["2026-07-28"]
     stability: development
