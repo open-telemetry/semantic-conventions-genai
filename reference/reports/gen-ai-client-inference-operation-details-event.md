@@ -61,6 +61,7 @@
 
 | Attribute | Supporting Libraries |
 | --- | --- |
+| gen_ai.execution.steps | [google-genai] |
 | gen_ai.input.messages | [anthropic], [aws-bedrock], [azure-ai-inference], [cohere], [google-genai], [groq], [litellm], [mistralai], [openai], [vertexai] |
 | gen_ai.output.messages | [anthropic], [aws-bedrock], [azure-ai-inference], [cohere], [google-genai], [groq], [litellm], [mistralai], [openai], [vertexai] |
 | gen_ai.prompt.variable | (none) |

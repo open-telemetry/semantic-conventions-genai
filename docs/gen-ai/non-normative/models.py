@@ -362,6 +362,32 @@ class OutputMessages(RootModel[List[OutputMessage]]):
 
 
 # --------------------------------------------------------------------------
+# `gen_ai.execution.steps` model
+# --------------------------------------------------------------------------
+
+
+class ExecutionStep(BaseModel):
+    """
+    Represents a single provider-reported execution step.
+    """
+
+    type: str = Field(description="Provider-specific type of execution step.")
+    parts: List[MessagePart] = Field(
+        description="List of message parts that make up the execution step."
+    )
+
+    model_config = ConfigDict(extra="allow")
+
+
+class ExecutionSteps(RootModel[List[ExecutionStep]]):
+    """
+    Represents the ordered execution steps reported by the model or agent provider.
+    """
+
+    pass
+
+
+# --------------------------------------------------------------------------
 # `gen_ai.system_instructions` model
 # --------------------------------------------------------------------------
 
@@ -547,6 +573,7 @@ class ToolCallResult(RootModel[dict[str, Any]]):
 SCHEMAS: dict[str, type[BaseModel]] = {
     "gen-ai-input-messages.json": InputMessages,
     "gen-ai-output-messages.json": OutputMessages,
+    "gen-ai-execution-steps.json": ExecutionSteps,
     "gen-ai-system-instructions.json": SystemInstructions,
     "gen-ai-tool-definitions.json": ToolDefinitions,
     "gen-ai-tool-call-arguments.json": ToolCallArguments,

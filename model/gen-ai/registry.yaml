@@ -945,6 +945,89 @@ attributes:
           }
         ]
     stability: development
+  - key: gen_ai.execution.steps
+    type: any
+    brief: The ordered execution steps reported by the model or agent provider.
+    annotations:
+      type:
+        json_schema: model/gen-ai/gen-ai-execution-steps.json
+    note: |
+      Execution steps capture provider-reported intermediate work, such as model
+      reasoning, provider-side tool calls and results, and final model output.
+      They MUST be recorded in the order returned by the provider.
+
+      Instrumentations SHOULD populate this attribute when the provider returns
+      execution steps without start or end timestamps. Instrumentations SHOULD NOT
+      create spans from steps that do not represent timed operations.
+
+      Client-executed tool steps MAY be correlated with `execute_tool` spans by
+      using matching tool call identifiers in `tool_call` and `tool_call_response`
+      parts. Provider-executed tools SHOULD use `server_tool_call` and
+      `server_tool_call_response` parts.
+
+      Instrumentations MAY provide a way for users to filter or truncate
+      execution steps.
+
+      > [!Warning]
+      > This attribute is likely to contain sensitive information including user/PII data.
+
+      See [Recording content on attributes](/docs/gen-ai/gen-ai-spans.md#recording-content-on-attributes)
+      section for more details.
+    examples:
+      - |
+        [
+          {
+            "type": "user_input",
+            "parts": [
+              {
+                "type": "text",
+                "content": "Weather in Paris?"
+              }
+            ]
+          },
+          {
+            "type": "thought",
+            "parts": [
+              {
+                "type": "reasoning",
+                "content": "The user needs current weather, so I should call the weather tool."
+              }
+            ]
+          },
+          {
+            "type": "function_call",
+            "parts": [
+              {
+                "type": "tool_call",
+                "id": "call_VSPygqKTWdrhaFErNvMV18Yl",
+                "name": "get_weather",
+                "arguments": {
+                  "location": "Paris"
+                }
+              }
+            ]
+          },
+          {
+            "type": "function_result",
+            "parts": [
+              {
+                "type": "tool_call_response",
+                "id": "call_VSPygqKTWdrhaFErNvMV18Yl",
+                "response": "rainy, 57°F"
+              }
+            ]
+          },
+          {
+            "type": "model_output",
+            "parts": [
+              {
+                "type": "text",
+                "content": "The weather in Paris is rainy and 57°F."
+              }
+            ]
+          }
+        ]
+    stability: development
   - key: gen_ai.evaluation.name
     type: string
     brief: The name of the evaluation metric used for the GenAI response.

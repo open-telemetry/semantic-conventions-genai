@@ -11,4 +11,4 @@ tool execution is instrumentable here.
 | embeddings | Yes — calls the model directly | ✅ Implemented |
 | execute_tool | Yes — automatic function calling executes the tool | ✅ Implemented |
 | create_agent | Yes — `google.genai.Client.agents` supports remote agent creation | ✅ Implemented |
-| invoke_agent (client) | Yes — `google.genai.Client.agents` supports remote agent invocation | ❌ Not implemented |
+| invoke_agent (client) | Yes — `google.genai.Client.interactions` supports remote agent invocation with provider-reported execution steps | ✅ Implemented |
