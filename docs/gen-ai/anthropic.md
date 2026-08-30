@@ -262,6 +262,20 @@ When the attribute is recorded on events, it MUST be recorded in structured form
 > [!WARNING]
 > This attribute may contain sensitive information.
 
+The scope of the recorded set depends on the signal it is reported on:
+
+- On spans and events that describe a single model request, this is the
+  effective set of tools provided to that request, recorded after any runtime
+  filtering, resolution, or name-collision handling has been applied.
+- On spans that cover an agent invocation spanning multiple model requests,
+  this is the set of tools configured for the agent. When the effective set
+  varies between requests, this attribute does not necessarily reflect the set
+  provided to any individual request.
+
+Consumers that depend on the exact set of tools provided to a specific model
+request SHOULD read this attribute from the corresponding inference span or
+event.
+
 Since this attribute could be large, it's NOT RECOMMENDED to populate
 non-required properties by default. Instrumentations MAY provide a way
 to enable populating optional properties.
