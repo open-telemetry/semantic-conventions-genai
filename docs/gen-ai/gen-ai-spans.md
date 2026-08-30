@@ -320,9 +320,10 @@ The scope of the recorded set depends on the signal it is reported on:
 - On spans that fetch a previously generated model response, this is the set
   of tools carried on the fetched response.
 - On spans that cover an agent invocation spanning multiple model requests,
-  this is the set of tools configured for the agent. When the effective set
-  varies between requests, this attribute does not necessarily reflect the set
-  provided to any individual request.
+  this is the set of tools configured for the agent; some instrumentations
+  instead record an effective set resolved for one of the constituent
+  requests. When the effective set varies between requests, this attribute
+  does not necessarily reflect the set provided to any individual request.
 
 Consumers that depend on the exact set of tools provided to a specific model
 request SHOULD read this attribute from the corresponding inference span or
@@ -852,9 +853,10 @@ The scope of the recorded set depends on the signal it is reported on:
 - On spans that fetch a previously generated model response, this is the set
   of tools carried on the fetched response.
 - On spans that cover an agent invocation spanning multiple model requests,
-  this is the set of tools configured for the agent. When the effective set
-  varies between requests, this attribute does not necessarily reflect the set
-  provided to any individual request.
+  this is the set of tools configured for the agent; some instrumentations
+  instead record an effective set resolved for one of the constituent
+  requests. When the effective set varies between requests, this attribute
+  does not necessarily reflect the set provided to any individual request.
 
 Consumers that depend on the exact set of tools provided to a specific model
 request SHOULD read this attribute from the corresponding inference span or
