@@ -317,6 +317,8 @@ The scope of the recorded set depends on the signal it is reported on:
 - On spans and events that describe a single model request, this is the
   effective set of tools provided to that request, recorded after any runtime
   filtering, resolution, or name-collision handling has been applied.
+- On spans that fetch a previously generated model response, this is the set
+  of tools carried on the fetched response.
 - On spans that cover an agent invocation spanning multiple model requests,
   this is the set of tools configured for the agent. When the effective set
   varies between requests, this attribute does not necessarily reflect the set
@@ -847,6 +849,8 @@ The scope of the recorded set depends on the signal it is reported on:
 - On spans and events that describe a single model request, this is the
   effective set of tools provided to that request, recorded after any runtime
   filtering, resolution, or name-collision handling has been applied.
+- On spans that fetch a previously generated model response, this is the set
+  of tools carried on the fetched response.
 - On spans that cover an agent invocation spanning multiple model requests,
   this is the set of tools configured for the agent. When the effective set
   varies between requests, this attribute does not necessarily reflect the set
