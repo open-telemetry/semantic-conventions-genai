@@ -13,11 +13,26 @@ attributes:
           brief: >
             Request to initialize the MCP client.
           stability: development
+          deprecated:
+            reason: obsoleted
+            note: >
+              Removed from the wire schema as of the 2026-07-28 MCP protocol
+              revision, which eliminates the connection-scoped session and
+              replaces the `initialize` handshake with a stateless,
+              capabilities-per-request model. See the
+              [Backward Compatibility](https://modelcontextprotocol.io/specification/2026-07-28/basic/transports#backward-compatibility)
+              section of the transports spec. Retained here only for peers
+              still interoperating with pre-2026-07-28 revisions.
         - id: notifications_initialized
           value: notifications/initialized
           brief: >
             Notification indicating that the MCP client has been initialized.
           stability: development
+          deprecated:
+            reason: obsoleted
+            note: >
+              Removed alongside `initialize` as of the 2026-07-28 MCP
+              protocol revision; see that member's note.
         - id: notifications_progress
           value: notifications/progress
           brief: >
@@ -28,6 +43,12 @@ attributes:
           brief: >
             Request to check that the other party is still alive.
           stability: development
+          deprecated:
+            reason: obsoleted
+            note: >
+              Not present in the 2026-07-28 MCP protocol revision's wire
+              schema. Retained here only for peers still interoperating
+              with pre-2026-07-28 revisions.
         - id: resources_list
           value: resources/list
           brief: >
@@ -53,11 +74,28 @@ attributes:
           brief: >
             Request to subscribe to a resource.
           stability: development
+          deprecated:
+            reason: renamed
+            renamed_to: subscriptions_listen
+            note: >
+              Replaced by `subscriptions/listen` as of the 2026-07-28 MCP
+              protocol revision, which generalizes per-resource
+              subscribe/unsubscribe into a single long-lived subscription
+              channel. Retained here only for peers still interoperating
+              with pre-2026-07-28 revisions.
         - id: resources_unsubscribe
           value: resources/unsubscribe
           brief: >
             Request to unsubscribe from resource updates.
           stability: development
+          deprecated:
+            reason: obsoleted
+            note: >
+              Superseded by the `subscriptions/listen` channel model as of
+              the 2026-07-28 MCP protocol revision; see `resources_subscribe`.
+              Unlike `resources/subscribe`, unsubscription has no direct
+              1:1 replacement method (it is a client-side channel close),
+              so this is marked obsoleted rather than renamed.
         - id: notifications_resources_updated
           value: notifications/resources/updated
           brief: >
@@ -180,7 +218,18 @@ attributes:
     stability: development
   - key: mcp.session.id
     type: string
-    brief: Identifies [MCP session](https://modelcontextprotocol.io/specification/2026-07-28/basic/transports#session-management).
+    brief: >
+      Identifies the connection-scoped session carried by an
+      `Mcp-Session-Id` header, when one is present.
+    note: >
+      The 2026-07-28 MCP protocol revision removes protocol-level sessions
+      and the `initialize` handshake in favor of a stateless,
+      capabilities-per-request model — see the
+      [Backward Compatibility](https://modelcontextprotocol.io/specification/2026-07-28/basic/transports/streamable-http#backward-compatibility)
+      section of the Streamable HTTP transport spec. This attribute now
+      applies only when a peer is interoperating with a pre-2026-07-28
+      revision that still assigns an `Mcp-Session-Id`; it MUST NOT be set
+      for a 2026-07-28-and-later session, since none exists to identify.
     examples: ["191c4850af6c49e08843a3f6c80e5046"]
     stability: development
   - key: mcp.resource.uri

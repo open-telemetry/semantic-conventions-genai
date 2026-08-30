@@ -157,7 +157,7 @@ to avoid high cardinality span names.
 
 | Key | Stability | [Requirement Level](https://opentelemetry.io/docs/specs/semconv/general/attribute-requirement-level/) | Value Type | Description | Example Values |
 | --- | --- | --- | --- | --- | --- |
-| [`mcp.method.name`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Required` | string | The name of the request or notification method. | `notifications/cancelled`; `initialize`; `notifications/initialized` |
+| [`mcp.method.name`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Required` | string | The name of the request or notification method. | `notifications/cancelled`; `notifications/progress`; `resources/list` |
 | [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/error.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If and only if the operation fails. | string | Describes a class of error the operation ended with. [1] | `timeout`; `java.net.UnknownHostException`; `server_certificate_invalid`; `500` |
 | [`gen_ai.prompt.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When operation is related to a specific prompt. | string | The name of the prompt or prompt template provided in the request or response. | `analyze-code` |
 | [`gen_ai.tool.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When operation is related to a specific tool. | string | Name of the tool utilized by the agent. | `Flights` |
@@ -166,16 +166,16 @@ to avoid high cardinality span names.
 | [`rpc.response.status_code`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/rpc.md) | ![Release Candidate](https://img.shields.io/badge/-rc-mediumorchid) | `Conditionally Required` If response contains an error code. | string | The error code from the JSON-RPC response. [5] | `OK`; `DEADLINE_EXCEEDED`; `-32602` |
 | [`gen_ai.operation.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` [6] | string | The name of the GenAI operation being performed. [7] | `execute_tool` |
 | [`jsonrpc.protocol.version`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/jsonrpc.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` When it's not `2.0`. | string | Protocol version, as specified in the `jsonrpc` property of the request and its corresponding response. | `2.0`; `1.0` |
-| [`mcp.protocol.version`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The [version](https://modelcontextprotocol.io/specification/versioning) of the Model Context Protocol used. | `2025-06-18` |
-| [`mcp.session.id`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` [8] | string | Identifies [MCP session](https://modelcontextprotocol.io/specification/2025-06-18/basic/transports#session-management). | `191c4850af6c49e08843a3f6c80e5046` |
-| [`network.protocol.name`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When applicable. | string | [OSI application layer](https://wikipedia.org/wiki/Application_layer) or non-OSI equivalent. [9] | `http`; `websocket` |
+| [`mcp.protocol.version`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The [version](https://modelcontextprotocol.io/specification/versioning) of the Model Context Protocol used. | `2026-07-28` |
+| [`mcp.session.id`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` [8] | string | Identifies the connection-scoped session carried by an `Mcp-Session-Id` header, when one is present. [9] | `191c4850af6c49e08843a3f6c80e5046` |
+| [`network.protocol.name`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When applicable. | string | [OSI application layer](https://wikipedia.org/wiki/Application_layer) or non-OSI equivalent. [10] | `http`; `websocket` |
 | [`network.protocol.version`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When applicable. | string | The actual version of the protocol used for network communication. | `1.1`; `2` |
-| [`network.transport`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | The transport protocol used for the MCP session. [10] | `tcp`; `quic`; `pipe` |
-| [`server.address`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` If applicable. | string | Server domain name if available without reverse DNS lookup; otherwise, IP address or UNIX domain socket name. [11] | `example.com`; `10.1.2.80`; `/tmp/my.sock` |
-| [`server.port`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When `server.address` is set. | int | Server port number. [12] | `80`; `8080`; `443` |
-| [`gen_ai.prompt.variable`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | string | The variables supplied to the prompt template in the request. [13] | `Alice`; `French` |
-| [`gen_ai.tool.call.arguments`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | Parameters passed to the tool call. [14] | {<br>&nbsp;&nbsp;&nbsp;&nbsp;"location": "San Francisco?",<br>&nbsp;&nbsp;&nbsp;&nbsp;"date": "2025-10-01"<br>} |
-| [`gen_ai.tool.call.result`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | The result returned by the tool call (if any and if execution was successful). [15] | {<br>&nbsp;&nbsp;"temperature_range": {<br>&nbsp;&nbsp;&nbsp;&nbsp;"high": 75,<br>&nbsp;&nbsp;&nbsp;&nbsp;"low": 60<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;"conditions": "sunny"<br>} |
+| [`network.transport`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | The transport protocol used for the MCP session. [11] | `tcp`; `quic`; `pipe` |
+| [`server.address`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` If applicable. | string | Server domain name if available without reverse DNS lookup; otherwise, IP address or UNIX domain socket name. [12] | `example.com`; `10.1.2.80`; `/tmp/my.sock` |
+| [`server.port`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When `server.address` is set. | int | Server port number. [13] | `80`; `8080`; `443` |
+| [`gen_ai.prompt.variable`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | string | The variables supplied to the prompt template in the request. [14] | `Alice`; `French` |
+| [`gen_ai.tool.call.arguments`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | Parameters passed to the tool call. [15] | {<br>&nbsp;&nbsp;&nbsp;&nbsp;"location": "San Francisco?",<br>&nbsp;&nbsp;&nbsp;&nbsp;"date": "2025-10-01"<br>} |
+| [`gen_ai.tool.call.result`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | The result returned by the tool call (if any and if execution was successful). [16] | {<br>&nbsp;&nbsp;"temperature_range": {<br>&nbsp;&nbsp;&nbsp;&nbsp;"high": 75,<br>&nbsp;&nbsp;&nbsp;&nbsp;"low": 60<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;"conditions": "sunny"<br>} |
 
 **[1] `error.type`:** When the response carries a JSON-RPC error code that classifies as an error,
 `error.type` SHOULD be set to the string representation of that code. See
@@ -209,16 +209,18 @@ All JSON-RPC error codes SHOULD be considered errors.
 
 **[8] `mcp.session.id`:** When the MCP request or notification is part of a session.
 
-**[9] `network.protocol.name`:** The value SHOULD be normalized to lowercase.
+**[9] `mcp.session.id`:** The 2026-07-28 MCP protocol revision removes protocol-level sessions and the `initialize` handshake in favor of a stateless, capabilities-per-request model — see the [Backward Compatibility](https://modelcontextprotocol.io/specification/2026-07-28/basic/transports/streamable-http#backward-compatibility) section of the Streamable HTTP transport spec. This attribute now applies only when a peer is interoperating with a pre-2026-07-28 revision that still assigns an `Mcp-Session-Id`; it MUST NOT be set for a 2026-07-28-and-later session, since none exists to identify.
 
-**[10] `network.transport`:** This attribute SHOULD be set to `tcp` or `quic` if the transport protocol
+**[10] `network.protocol.name`:** The value SHOULD be normalized to lowercase.
+
+**[11] `network.transport`:** This attribute SHOULD be set to `tcp` or `quic` if the transport protocol
 is HTTP. It SHOULD be set to `pipe` if the transport is stdio.
 
-**[11] `server.address`:** When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent the server address behind any intermediaries, for example proxies, if it's available.
+**[12] `server.address`:** When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent the server address behind any intermediaries, for example proxies, if it's available.
 
-**[12] `server.port`:** When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries, for example proxies, if it's available.
+**[13] `server.port`:** When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries, for example proxies, if it's available.
 
-**[13] `gen_ai.prompt.variable`:** Prompt templates are parameterized with variables that are filled in
+**[14] `gen_ai.prompt.variable`:** Prompt templates are parameterized with variables that are filled in
 at runtime. This attribute records the variable values passed to the
 template. The attribute name defines the variable name, and the
 attribute value is the variable value serialized as a string.
@@ -237,7 +239,7 @@ supplied in `prompts/get` requests SHOULD be recorded as
 > [!Warning]
 > This attribute may contain sensitive information.
 
-**[14] `gen_ai.tool.call.arguments`:**
+**[15] `gen_ai.tool.call.arguments`:**
 
 > [!WARNING]
 > This attribute may contain sensitive information.
@@ -250,7 +252,7 @@ Instrumentations MUST follow [JSON schema](/model/gen-ai/gen-ai-tool-call-argume
 
 When the attribute is recorded on events, it MUST be recorded in structured form. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
 
-**[15] `gen_ai.tool.call.result`:**
+**[16] `gen_ai.tool.call.result`:**
 
 > [!WARNING]
 > This attribute may contain sensitive information.
@@ -285,7 +287,7 @@ When the attribute is recorded on events, it MUST be recorded in structured form
 | `delete_memory_store` | Delete or deprovision a memory store | ![Development](https://img.shields.io/badge/-development-blue) |
 | `embeddings` | Embeddings operation such as [OpenAI Create embeddings API](https://platform.openai.com/docs/api-reference/embeddings/create) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `execute_tool` | Execute a tool | ![Development](https://img.shields.io/badge/-development-blue) |
-| `fetch_response` | Fetch a previously generated model response by its identifier, without performing inference, such as [OpenAI Get a model response](https://platform.openai.com/docs/api-reference/responses/get) [16] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `fetch_response` | Fetch a previously generated model response by its identifier, without performing inference, such as [OpenAI Get a model response](https://platform.openai.com/docs/api-reference/responses/get) [17] | ![Development](https://img.shields.io/badge/-development-blue) |
 | `generate_content` | Multimodal content generation operation such as [Gemini Generate Content](https://ai.google.dev/api/generate-content) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `invoke_agent` | Invoke GenAI agent | ![Development](https://img.shields.io/badge/-development-blue) |
 | `invoke_workflow` | Invoke GenAI workflow | ![Development](https://img.shields.io/badge/-development-blue) |
@@ -296,7 +298,7 @@ When the attribute is recorded on events, it MUST be recorded in structured form
 | `update_memory` | Update existing memory records | ![Development](https://img.shields.io/badge/-development-blue) |
 | `upsert_memory` | Create or update memory records without the caller choosing which | ![Development](https://img.shields.io/badge/-development-blue) |
 
-**[16]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
+**[17]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
 
 ---
 
@@ -306,27 +308,21 @@ When the attribute is recorded on events, it MUST be recorded in structured form
 | --- | --- | --- |
 | `completion/complete` | Request to complete a prompt. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `elicitation/create` | Request from the server to elicit additional information from the user via the client | ![Development](https://img.shields.io/badge/-development-blue) |
-| `initialize` | Request to initialize the MCP client. | ![Development](https://img.shields.io/badge/-development-blue) |
-| `logging/setLevel` | Request to set the logging level. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `notifications/cancelled` | Notification cancelling a previously-issued request. | ![Development](https://img.shields.io/badge/-development-blue) |
-| `notifications/initialized` | Notification indicating that the MCP client has been initialized. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `notifications/message` | Notification indicating that a message has been received. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `notifications/progress` | Notification indicating the progress for a long-running operation. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `notifications/prompts/list_changed` | Notification indicating that the list of prompts has changed. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `notifications/resources/list_changed` | Notification indicating that the list of resources has changed. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `notifications/resources/updated` | Notification indicating that a resource has been updated. | ![Development](https://img.shields.io/badge/-development-blue) |
-| `notifications/roots/list_changed` | Notification indicating that the list of roots has changed. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `notifications/subscriptions/acknowledged` | Notification acknowledging a subscription request, introduced in the 2026-07-28 protocol revision. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `notifications/tools/list_changed` | Notification indicating that the list of tools has changed. | ![Development](https://img.shields.io/badge/-development-blue) |
-| `ping` | Request to check that the other party is still alive. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `prompts/get` | Request to get a prompt. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `prompts/list` | Request to list prompts available on server. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `resources/list` | Request to list resources available on server. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `resources/read` | Request to read a resource. | ![Development](https://img.shields.io/badge/-development-blue) |
-| `resources/subscribe` | Request to subscribe to a resource. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `resources/templates/list` | Request to list resource templates available on server. | ![Development](https://img.shields.io/badge/-development-blue) |
-| `resources/unsubscribe` | Request to unsubscribe from resource updates. | ![Development](https://img.shields.io/badge/-development-blue) |
-| `roots/list` | Request to list roots available on server. | ![Development](https://img.shields.io/badge/-development-blue) |
-| `sampling/createMessage` | Request to create a sampling message. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `server/discover` | Request used by a client to discover server metadata as part of the Multi Round-Trip Request (MRTR) flow introduced in the 2026-07-28 protocol revision. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `subscriptions/listen` | Request to open a long-lived subscription channel, introduced in the 2026-07-28 protocol revision. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `tools/call` | Request to call a tool. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `tools/list` | Request to list tools available on server. | ![Development](https://img.shields.io/badge/-development-blue) |
 
@@ -383,7 +379,7 @@ to avoid high cardinality span names.
 
 | Key | Stability | [Requirement Level](https://opentelemetry.io/docs/specs/semconv/general/attribute-requirement-level/) | Value Type | Description | Example Values |
 | --- | --- | --- | --- | --- | --- |
-| [`mcp.method.name`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Required` | string | The name of the request or notification method. | `notifications/cancelled`; `initialize`; `notifications/initialized` |
+| [`mcp.method.name`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Required` | string | The name of the request or notification method. | `notifications/cancelled`; `notifications/progress`; `resources/list` |
 | [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/error.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If and only if the operation fails. | string | Describes a class of error the operation ended with. [1] | `timeout`; `java.net.UnknownHostException`; `server_certificate_invalid`; `500` |
 | [`gen_ai.prompt.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When operation is related to a specific prompt. | string | The name of the prompt or prompt template provided in the request or response. | `analyze-code` |
 | [`gen_ai.tool.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When operation is related to a specific tool. | string | Name of the tool utilized by the agent. | `Flights` |
@@ -394,14 +390,14 @@ to avoid high cardinality span names.
 | [`client.port`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/client.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When `client.address` is set. | int | Client port number. [7] | `65123` |
 | [`gen_ai.operation.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` [8] | string | The name of the GenAI operation being performed. [9] | `execute_tool` |
 | [`jsonrpc.protocol.version`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/jsonrpc.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` When it's not `2.0`. | string | Protocol version, as specified in the `jsonrpc` property of the request and its corresponding response. | `2.0`; `1.0` |
-| [`mcp.protocol.version`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The [version](https://modelcontextprotocol.io/specification/versioning) of the Model Context Protocol used. | `2025-06-18` |
-| [`mcp.session.id`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` [10] | string | Identifies [MCP session](https://modelcontextprotocol.io/specification/2025-06-18/basic/transports#session-management). | `191c4850af6c49e08843a3f6c80e5046` |
-| [`network.protocol.name`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When applicable. | string | [OSI application layer](https://wikipedia.org/wiki/Application_layer) or non-OSI equivalent. [11] | `http`; `websocket` |
+| [`mcp.protocol.version`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The [version](https://modelcontextprotocol.io/specification/versioning) of the Model Context Protocol used. | `2026-07-28` |
+| [`mcp.session.id`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` [10] | string | Identifies the connection-scoped session carried by an `Mcp-Session-Id` header, when one is present. [11] | `191c4850af6c49e08843a3f6c80e5046` |
+| [`network.protocol.name`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When applicable. | string | [OSI application layer](https://wikipedia.org/wiki/Application_layer) or non-OSI equivalent. [12] | `http`; `websocket` |
 | [`network.protocol.version`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When applicable. | string | The actual version of the protocol used for network communication. | `1.1`; `2` |
-| [`network.transport`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | The transport protocol used for the MCP session. [12] | `tcp`; `quic`; `pipe` |
-| [`gen_ai.prompt.variable`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | string | The variables supplied to the prompt template in the request. [13] | `Alice`; `French` |
-| [`gen_ai.tool.call.arguments`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | Parameters passed to the tool call. [14] | {<br>&nbsp;&nbsp;&nbsp;&nbsp;"location": "San Francisco?",<br>&nbsp;&nbsp;&nbsp;&nbsp;"date": "2025-10-01"<br>} |
-| [`gen_ai.tool.call.result`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | The result returned by the tool call (if any and if execution was successful). [15] | {<br>&nbsp;&nbsp;"temperature_range": {<br>&nbsp;&nbsp;&nbsp;&nbsp;"high": 75,<br>&nbsp;&nbsp;&nbsp;&nbsp;"low": 60<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;"conditions": "sunny"<br>} |
+| [`network.transport`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | The transport protocol used for the MCP session. [13] | `tcp`; `quic`; `pipe` |
+| [`gen_ai.prompt.variable`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | string | The variables supplied to the prompt template in the request. [14] | `Alice`; `French` |
+| [`gen_ai.tool.call.arguments`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | Parameters passed to the tool call. [15] | {<br>&nbsp;&nbsp;&nbsp;&nbsp;"location": "San Francisco?",<br>&nbsp;&nbsp;&nbsp;&nbsp;"date": "2025-10-01"<br>} |
+| [`gen_ai.tool.call.result`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | The result returned by the tool call (if any and if execution was successful). [16] | {<br>&nbsp;&nbsp;"temperature_range": {<br>&nbsp;&nbsp;&nbsp;&nbsp;"high": 75,<br>&nbsp;&nbsp;&nbsp;&nbsp;"low": 60<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;"conditions": "sunny"<br>} |
 
 **[1] `error.type`:** When the response carries a JSON-RPC error code that classifies as an error,
 `error.type` SHOULD be set to the string representation of that code. See
@@ -449,12 +445,14 @@ Any other error code SHOULD be considered an error.
 
 **[10] `mcp.session.id`:** When the MCP request or notification is part of a session.
 
-**[11] `network.protocol.name`:** The value SHOULD be normalized to lowercase.
+**[11] `mcp.session.id`:** The 2026-07-28 MCP protocol revision removes protocol-level sessions and the `initialize` handshake in favor of a stateless, capabilities-per-request model — see the [Backward Compatibility](https://modelcontextprotocol.io/specification/2026-07-28/basic/transports/streamable-http#backward-compatibility) section of the Streamable HTTP transport spec. This attribute now applies only when a peer is interoperating with a pre-2026-07-28 revision that still assigns an `Mcp-Session-Id`; it MUST NOT be set for a 2026-07-28-and-later session, since none exists to identify.
 
-**[12] `network.transport`:** This attribute SHOULD be set to `tcp` or `quic` if the transport protocol
+**[12] `network.protocol.name`:** The value SHOULD be normalized to lowercase.
+
+**[13] `network.transport`:** This attribute SHOULD be set to `tcp` or `quic` if the transport protocol
 is HTTP. It SHOULD be set to `pipe` if the transport is stdio.
 
-**[13] `gen_ai.prompt.variable`:** Prompt templates are parameterized with variables that are filled in
+**[14] `gen_ai.prompt.variable`:** Prompt templates are parameterized with variables that are filled in
 at runtime. This attribute records the variable values passed to the
 template. The attribute name defines the variable name, and the
 attribute value is the variable value serialized as a string.
@@ -473,7 +471,7 @@ supplied in `prompts/get` requests SHOULD be recorded as
 > [!Warning]
 > This attribute may contain sensitive information.
 
-**[14] `gen_ai.tool.call.arguments`:**
+**[15] `gen_ai.tool.call.arguments`:**
 
 > [!WARNING]
 > This attribute may contain sensitive information.
@@ -486,7 +484,7 @@ Instrumentations MUST follow [JSON schema](/model/gen-ai/gen-ai-tool-call-argume
 
 When the attribute is recorded on events, it MUST be recorded in structured form. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
 
-**[15] `gen_ai.tool.call.result`:**
+**[16] `gen_ai.tool.call.result`:**
 
 > [!WARNING]
 > This attribute may contain sensitive information.
@@ -521,7 +519,7 @@ When the attribute is recorded on events, it MUST be recorded in structured form
 | `delete_memory_store` | Delete or deprovision a memory store | ![Development](https://img.shields.io/badge/-development-blue) |
 | `embeddings` | Embeddings operation such as [OpenAI Create embeddings API](https://platform.openai.com/docs/api-reference/embeddings/create) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `execute_tool` | Execute a tool | ![Development](https://img.shields.io/badge/-development-blue) |
-| `fetch_response` | Fetch a previously generated model response by its identifier, without performing inference, such as [OpenAI Get a model response](https://platform.openai.com/docs/api-reference/responses/get) [16] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `fetch_response` | Fetch a previously generated model response by its identifier, without performing inference, such as [OpenAI Get a model response](https://platform.openai.com/docs/api-reference/responses/get) [17] | ![Development](https://img.shields.io/badge/-development-blue) |
 | `generate_content` | Multimodal content generation operation such as [Gemini Generate Content](https://ai.google.dev/api/generate-content) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `invoke_agent` | Invoke GenAI agent | ![Development](https://img.shields.io/badge/-development-blue) |
 | `invoke_workflow` | Invoke GenAI workflow | ![Development](https://img.shields.io/badge/-development-blue) |
@@ -532,7 +530,7 @@ When the attribute is recorded on events, it MUST be recorded in structured form
 | `update_memory` | Update existing memory records | ![Development](https://img.shields.io/badge/-development-blue) |
 | `upsert_memory` | Create or update memory records without the caller choosing which | ![Development](https://img.shields.io/badge/-development-blue) |
 
-**[16]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
+**[17]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
 
 ---
 
@@ -542,27 +540,21 @@ When the attribute is recorded on events, it MUST be recorded in structured form
 | --- | --- | --- |
 | `completion/complete` | Request to complete a prompt. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `elicitation/create` | Request from the server to elicit additional information from the user via the client | ![Development](https://img.shields.io/badge/-development-blue) |
-| `initialize` | Request to initialize the MCP client. | ![Development](https://img.shields.io/badge/-development-blue) |
-| `logging/setLevel` | Request to set the logging level. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `notifications/cancelled` | Notification cancelling a previously-issued request. | ![Development](https://img.shields.io/badge/-development-blue) |
-| `notifications/initialized` | Notification indicating that the MCP client has been initialized. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `notifications/message` | Notification indicating that a message has been received. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `notifications/progress` | Notification indicating the progress for a long-running operation. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `notifications/prompts/list_changed` | Notification indicating that the list of prompts has changed. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `notifications/resources/list_changed` | Notification indicating that the list of resources has changed. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `notifications/resources/updated` | Notification indicating that a resource has been updated. | ![Development](https://img.shields.io/badge/-development-blue) |
-| `notifications/roots/list_changed` | Notification indicating that the list of roots has changed. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `notifications/subscriptions/acknowledged` | Notification acknowledging a subscription request, introduced in the 2026-07-28 protocol revision. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `notifications/tools/list_changed` | Notification indicating that the list of tools has changed. | ![Development](https://img.shields.io/badge/-development-blue) |
-| `ping` | Request to check that the other party is still alive. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `prompts/get` | Request to get a prompt. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `prompts/list` | Request to list prompts available on server. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `resources/list` | Request to list resources available on server. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `resources/read` | Request to read a resource. | ![Development](https://img.shields.io/badge/-development-blue) |
-| `resources/subscribe` | Request to subscribe to a resource. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `resources/templates/list` | Request to list resource templates available on server. | ![Development](https://img.shields.io/badge/-development-blue) |
-| `resources/unsubscribe` | Request to unsubscribe from resource updates. | ![Development](https://img.shields.io/badge/-development-blue) |
-| `roots/list` | Request to list roots available on server. | ![Development](https://img.shields.io/badge/-development-blue) |
-| `sampling/createMessage` | Request to create a sampling message. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `server/discover` | Request used by a client to discover server metadata as part of the Multi Round-Trip Request (MRTR) flow introduced in the 2026-07-28 protocol revision. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `subscriptions/listen` | Request to open a long-lived subscription channel, introduced in the 2026-07-28 protocol revision. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `tools/call` | Request to call a tool. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `tools/list` | Request to list tools available on server. | ![Development](https://img.shields.io/badge/-development-blue) |
 
@@ -605,14 +597,14 @@ of `[ 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30, 60, 120, 300 ]`.
 
 | Key | Stability | [Requirement Level](https://opentelemetry.io/docs/specs/semconv/general/attribute-requirement-level/) | Value Type | Description | Example Values |
 | --- | --- | --- | --- | --- | --- |
-| [`mcp.method.name`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Required` | string | The name of the request or notification method. | `notifications/cancelled`; `initialize`; `notifications/initialized` |
+| [`mcp.method.name`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Required` | string | The name of the request or notification method. | `notifications/cancelled`; `notifications/progress`; `resources/list` |
 | [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/error.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If and only if the operation fails. | string | Describes a class of error the operation ended with. [1] | `timeout`; `java.net.UnknownHostException`; `server_certificate_invalid`; `500` |
 | [`gen_ai.prompt.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When operation is related to a specific prompt. | string | The name of the prompt or prompt template provided in the request or response. | `analyze-code` |
 | [`gen_ai.tool.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When operation is related to a specific tool. | string | Name of the tool utilized by the agent. | `Flights` |
 | [`rpc.response.status_code`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/rpc.md) | ![Release Candidate](https://img.shields.io/badge/-rc-mediumorchid) | `Conditionally Required` If response contains an error code. | string | The error code from the JSON-RPC response. [2] | `OK`; `DEADLINE_EXCEEDED`; `-32602` |
 | [`gen_ai.operation.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` [3] | string | The name of the GenAI operation being performed. [4] | `execute_tool` |
 | [`jsonrpc.protocol.version`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/jsonrpc.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` When it's not `2.0`. | string | Protocol version, as specified in the `jsonrpc` property of the request and its corresponding response. | `2.0`; `1.0` |
-| [`mcp.protocol.version`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The [version](https://modelcontextprotocol.io/specification/versioning) of the Model Context Protocol used. | `2025-06-18` |
+| [`mcp.protocol.version`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The [version](https://modelcontextprotocol.io/specification/versioning) of the Model Context Protocol used. | `2026-07-28` |
 | [`network.protocol.name`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When applicable. | string | [OSI application layer](https://wikipedia.org/wiki/Application_layer) or non-OSI equivalent. [5] | `http`; `websocket` |
 | [`network.protocol.version`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When applicable. | string | The actual version of the protocol used for network communication. | `1.1`; `2` |
 | [`network.transport`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | The transport protocol used for the MCP session. [6] | `tcp`; `quic`; `pipe` |
@@ -713,27 +705,21 @@ Examples:
 | --- | --- | --- |
 | `completion/complete` | Request to complete a prompt. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `elicitation/create` | Request from the server to elicit additional information from the user via the client | ![Development](https://img.shields.io/badge/-development-blue) |
-| `initialize` | Request to initialize the MCP client. | ![Development](https://img.shields.io/badge/-development-blue) |
-| `logging/setLevel` | Request to set the logging level. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `notifications/cancelled` | Notification cancelling a previously-issued request. | ![Development](https://img.shields.io/badge/-development-blue) |
-| `notifications/initialized` | Notification indicating that the MCP client has been initialized. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `notifications/message` | Notification indicating that a message has been received. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `notifications/progress` | Notification indicating the progress for a long-running operation. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `notifications/prompts/list_changed` | Notification indicating that the list of prompts has changed. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `notifications/resources/list_changed` | Notification indicating that the list of resources has changed. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `notifications/resources/updated` | Notification indicating that a resource has been updated. | ![Development](https://img.shields.io/badge/-development-blue) |
-| `notifications/roots/list_changed` | Notification indicating that the list of roots has changed. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `notifications/subscriptions/acknowledged` | Notification acknowledging a subscription request, introduced in the 2026-07-28 protocol revision. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `notifications/tools/list_changed` | Notification indicating that the list of tools has changed. | ![Development](https://img.shields.io/badge/-development-blue) |
-| `ping` | Request to check that the other party is still alive. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `prompts/get` | Request to get a prompt. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `prompts/list` | Request to list prompts available on server. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `resources/list` | Request to list resources available on server. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `resources/read` | Request to read a resource. | ![Development](https://img.shields.io/badge/-development-blue) |
-| `resources/subscribe` | Request to subscribe to a resource. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `resources/templates/list` | Request to list resource templates available on server. | ![Development](https://img.shields.io/badge/-development-blue) |
-| `resources/unsubscribe` | Request to unsubscribe from resource updates. | ![Development](https://img.shields.io/badge/-development-blue) |
-| `roots/list` | Request to list roots available on server. | ![Development](https://img.shields.io/badge/-development-blue) |
-| `sampling/createMessage` | Request to create a sampling message. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `server/discover` | Request used by a client to discover server metadata as part of the Multi Round-Trip Request (MRTR) flow introduced in the 2026-07-28 protocol revision. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `subscriptions/listen` | Request to open a long-lived subscription channel, introduced in the 2026-07-28 protocol revision. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `tools/call` | Request to call a tool. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `tools/list` | Request to list tools available on server. | ![Development](https://img.shields.io/badge/-development-blue) |
 
@@ -774,14 +760,14 @@ of `[ 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30, 60, 120, 300 ]`.
 
 | Key | Stability | [Requirement Level](https://opentelemetry.io/docs/specs/semconv/general/attribute-requirement-level/) | Value Type | Description | Example Values |
 | --- | --- | --- | --- | --- | --- |
-| [`mcp.method.name`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Required` | string | The name of the request or notification method. | `notifications/cancelled`; `initialize`; `notifications/initialized` |
+| [`mcp.method.name`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Required` | string | The name of the request or notification method. | `notifications/cancelled`; `notifications/progress`; `resources/list` |
 | [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/error.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If and only if the operation fails. | string | Describes a class of error the operation ended with. [1] | `timeout`; `java.net.UnknownHostException`; `server_certificate_invalid`; `500` |
 | [`gen_ai.prompt.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When operation is related to a specific prompt. | string | The name of the prompt or prompt template provided in the request or response. | `analyze-code` |
 | [`gen_ai.tool.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When operation is related to a specific tool. | string | Name of the tool utilized by the agent. | `Flights` |
 | [`rpc.response.status_code`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/rpc.md) | ![Release Candidate](https://img.shields.io/badge/-rc-mediumorchid) | `Conditionally Required` If response contains an error code. | string | The error code from the JSON-RPC response. [2] | `OK`; `DEADLINE_EXCEEDED`; `-32602` |
 | [`gen_ai.operation.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` [3] | string | The name of the GenAI operation being performed. [4] | `execute_tool` |
 | [`jsonrpc.protocol.version`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/jsonrpc.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` When it's not `2.0`. | string | Protocol version, as specified in the `jsonrpc` property of the request and its corresponding response. | `2.0`; `1.0` |
-| [`mcp.protocol.version`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The [version](https://modelcontextprotocol.io/specification/versioning) of the Model Context Protocol used. | `2025-06-18` |
+| [`mcp.protocol.version`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The [version](https://modelcontextprotocol.io/specification/versioning) of the Model Context Protocol used. | `2026-07-28` |
 | [`network.protocol.name`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When applicable. | string | [OSI application layer](https://wikipedia.org/wiki/Application_layer) or non-OSI equivalent. [5] | `http`; `websocket` |
 | [`network.protocol.version`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When applicable. | string | The actual version of the protocol used for network communication. | `1.1`; `2` |
 | [`network.transport`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | The transport protocol used for the MCP session. [6] | `tcp`; `quic`; `pipe` |
@@ -886,27 +872,21 @@ Examples:
 | --- | --- | --- |
 | `completion/complete` | Request to complete a prompt. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `elicitation/create` | Request from the server to elicit additional information from the user via the client | ![Development](https://img.shields.io/badge/-development-blue) |
-| `initialize` | Request to initialize the MCP client. | ![Development](https://img.shields.io/badge/-development-blue) |
-| `logging/setLevel` | Request to set the logging level. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `notifications/cancelled` | Notification cancelling a previously-issued request. | ![Development](https://img.shields.io/badge/-development-blue) |
-| `notifications/initialized` | Notification indicating that the MCP client has been initialized. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `notifications/message` | Notification indicating that a message has been received. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `notifications/progress` | Notification indicating the progress for a long-running operation. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `notifications/prompts/list_changed` | Notification indicating that the list of prompts has changed. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `notifications/resources/list_changed` | Notification indicating that the list of resources has changed. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `notifications/resources/updated` | Notification indicating that a resource has been updated. | ![Development](https://img.shields.io/badge/-development-blue) |
-| `notifications/roots/list_changed` | Notification indicating that the list of roots has changed. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `notifications/subscriptions/acknowledged` | Notification acknowledging a subscription request, introduced in the 2026-07-28 protocol revision. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `notifications/tools/list_changed` | Notification indicating that the list of tools has changed. | ![Development](https://img.shields.io/badge/-development-blue) |
-| `ping` | Request to check that the other party is still alive. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `prompts/get` | Request to get a prompt. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `prompts/list` | Request to list prompts available on server. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `resources/list` | Request to list resources available on server. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `resources/read` | Request to read a resource. | ![Development](https://img.shields.io/badge/-development-blue) |
-| `resources/subscribe` | Request to subscribe to a resource. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `resources/templates/list` | Request to list resource templates available on server. | ![Development](https://img.shields.io/badge/-development-blue) |
-| `resources/unsubscribe` | Request to unsubscribe from resource updates. | ![Development](https://img.shields.io/badge/-development-blue) |
-| `roots/list` | Request to list roots available on server. | ![Development](https://img.shields.io/badge/-development-blue) |
-| `sampling/createMessage` | Request to create a sampling message. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `server/discover` | Request used by a client to discover server metadata as part of the Multi Round-Trip Request (MRTR) flow introduced in the 2026-07-28 protocol revision. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `subscriptions/listen` | Request to open a long-lived subscription channel, introduced in the 2026-07-28 protocol revision. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `tools/call` | Request to call a tool. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `tools/list` | Request to list tools available on server. | ![Development](https://img.shields.io/badge/-development-blue) |
 
@@ -949,7 +929,7 @@ of `[ 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30, 60, 120, 300 ]`.
 | --- | --- | --- | --- | --- | --- |
 | [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/error.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If and only if session ends with an error. | string | Describes a class of error the operation ended with. [1] | `timeout`; `java.net.UnknownHostException`; `server_certificate_invalid`; `500` |
 | [`jsonrpc.protocol.version`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/jsonrpc.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` When it's not `2.0`. | string | Protocol version, as specified in the `jsonrpc` property of the request and its corresponding response. | `2.0`; `1.0` |
-| [`mcp.protocol.version`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The [version](https://modelcontextprotocol.io/specification/versioning) of the Model Context Protocol used. | `2025-06-18` |
+| [`mcp.protocol.version`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The [version](https://modelcontextprotocol.io/specification/versioning) of the Model Context Protocol used. | `2026-07-28` |
 | [`network.protocol.name`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When applicable. | string | [OSI application layer](https://wikipedia.org/wiki/Application_layer) or non-OSI equivalent. [2] | `http`; `websocket` |
 | [`network.protocol.version`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When applicable. | string | The actual version of the protocol used for network communication. | `1.1`; `2` |
 | [`network.transport`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | The transport protocol used for the MCP session. [3] | `tcp`; `quic`; `pipe` |
@@ -1038,7 +1018,7 @@ of `[ 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30, 60, 120, 300 ]`.
 | --- | --- | --- | --- | --- | --- |
 | [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/error.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If and only if session ends with an error. | string | Describes a class of error the operation ended with. [1] | `timeout`; `java.net.UnknownHostException`; `server_certificate_invalid`; `500` |
 | [`jsonrpc.protocol.version`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/jsonrpc.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` When it's not `2.0`. | string | Protocol version, as specified in the `jsonrpc` property of the request and its corresponding response. | `2.0`; `1.0` |
-| [`mcp.protocol.version`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The [version](https://modelcontextprotocol.io/specification/versioning) of the Model Context Protocol used. | `2025-06-18` |
+| [`mcp.protocol.version`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The [version](https://modelcontextprotocol.io/specification/versioning) of the Model Context Protocol used. | `2026-07-28` |
 | [`network.protocol.name`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When applicable. | string | [OSI application layer](https://wikipedia.org/wiki/Application_layer) or non-OSI equivalent. [2] | `http`; `websocket` |
 | [`network.protocol.version`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When applicable. | string | The actual version of the protocol used for network communication. | `1.1`; `2` |
 | [`network.transport`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | The transport protocol used for the MCP session. [3] | `tcp`; `quic`; `pipe` |

@@ -7,13 +7,15 @@
 
 | Key | Stability | Value Type | Description | Example Values |
 | --- | --- | --- | --- | --- |
-| <a id="mcp-method-name" href="#mcp-method-name">`mcp.method.name`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The name of the request or notification method. | `notifications/cancelled`; `initialize`; `notifications/initialized` |
+| <a id="mcp-method-name" href="#mcp-method-name">`mcp.method.name`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The name of the request or notification method. | `notifications/cancelled`; `notifications/progress`; `resources/list` |
 | <a id="mcp-protocol-version" href="#mcp-protocol-version">`mcp.protocol.version`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The [version](https://modelcontextprotocol.io/specification/versioning) of the Model Context Protocol used. | `2026-07-28` |
 | <a id="mcp-resource-uri" href="#mcp-resource-uri">`mcp.resource.uri`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The value of the resource uri. [1] | `postgres://database/customers/schema`; `file:///home/user/documents/report.pdf` |
-| <a id="mcp-session-id" href="#mcp-session-id">`mcp.session.id`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | Identifies [MCP session](https://modelcontextprotocol.io/specification/2026-07-28/basic/transports#session-management). | `191c4850af6c49e08843a3f6c80e5046` |
+| <a id="mcp-session-id" href="#mcp-session-id">`mcp.session.id`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | Identifies the connection-scoped session carried by an `Mcp-Session-Id` header, when one is present. [2] | `191c4850af6c49e08843a3f6c80e5046` |
 
 
 **[1] `mcp.resource.uri`:** This is a URI of the resource provided in the following requests or notifications: `resources/read`, `resources/subscribe`, `resources/unsubscribe`, or `notifications/resources/updated`.
+
+**[2] `mcp.session.id`:** The 2026-07-28 MCP protocol revision removes protocol-level sessions and the `initialize` handshake in favor of a stateless, capabilities-per-request model — see the [Backward Compatibility](https://modelcontextprotocol.io/specification/2026-07-28/basic/transports/streamable-http#backward-compatibility) section of the Streamable HTTP transport spec. This attribute now applies only when a peer is interoperating with a pre-2026-07-28 revision that still assigns an `Mcp-Session-Id`; it MUST NOT be set for a 2026-07-28-and-later session, since none exists to identify.
 
 ---
 
@@ -23,9 +25,7 @@
 | --- | --- | --- |
 | `completion/complete` | Request to complete a prompt. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `elicitation/create` | Request from the server to elicit additional information from the user via the client | ![Development](https://img.shields.io/badge/-development-blue) |
-| `initialize` | Request to initialize the MCP client. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `notifications/cancelled` | Notification cancelling a previously-issued request. | ![Development](https://img.shields.io/badge/-development-blue) |
-| `notifications/initialized` | Notification indicating that the MCP client has been initialized. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `notifications/message` | Notification indicating that a message has been received. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `notifications/progress` | Notification indicating the progress for a long-running operation. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `notifications/prompts/list_changed` | Notification indicating that the list of prompts has changed. | ![Development](https://img.shields.io/badge/-development-blue) |
@@ -33,14 +33,11 @@
 | `notifications/resources/updated` | Notification indicating that a resource has been updated. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `notifications/subscriptions/acknowledged` | Notification acknowledging a subscription request, introduced in the 2026-07-28 protocol revision. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `notifications/tools/list_changed` | Notification indicating that the list of tools has changed. | ![Development](https://img.shields.io/badge/-development-blue) |
-| `ping` | Request to check that the other party is still alive. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `prompts/get` | Request to get a prompt. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `prompts/list` | Request to list prompts available on server. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `resources/list` | Request to list resources available on server. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `resources/read` | Request to read a resource. | ![Development](https://img.shields.io/badge/-development-blue) |
-| `resources/subscribe` | Request to subscribe to a resource. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `resources/templates/list` | Request to list resource templates available on server. | ![Development](https://img.shields.io/badge/-development-blue) |
-| `resources/unsubscribe` | Request to unsubscribe from resource updates. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `server/discover` | Request used by a client to discover server metadata as part of the Multi Round-Trip Request (MRTR) flow introduced in the 2026-07-28 protocol revision. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `subscriptions/listen` | Request to open a long-lived subscription channel, introduced in the 2026-07-28 protocol revision. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `tools/call` | Request to call a tool. | ![Development](https://img.shields.io/badge/-development-blue) |
