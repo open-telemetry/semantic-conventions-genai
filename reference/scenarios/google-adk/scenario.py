@@ -10,6 +10,7 @@ from opentelemetry import trace as _trace
 from opentelemetry.sdk.trace import SpanProcessor
 from reference_shared import (
     flush_and_shutdown,
+    reference_event_logger,
     reference_meter,
     reference_tracer,
     setup_otel,
@@ -296,6 +297,203 @@ def run_agent_reference():
         _tool_calls.record(call_counts["tool"], metric_attributes)
 
 
+def run_resumable_execution_reference():
+    """Scenario: ADK confirmation pause and resumable execution."""
+    from google.adk.agents import Agent
+    from google.adk.apps import App, ResumabilityConfig
+    from google.adk.models.google_llm import Gemini
+    from google.adk.runners import Runner
+    from google.adk.sessions import InMemorySessionService
+    from google.adk.tools import FunctionTool
+    from google.adk.tools.tool_context import ToolContext
+    from google.genai import types
+
+    print("  [resumable_execution] ADK confirmation pause and resume")
+
+    os.environ.setdefault("GOOGLE_API_KEY", "mock-key")
+    tool_execution_count = 0
+
+    def record_agent_response_attributes(span, event) -> None:
+        usage_metadata = getattr(event, "usage_metadata", None)
+        if usage_metadata is not None:
+            input_tokens = getattr(usage_metadata, "prompt_token_count", None)
+            output_tokens = getattr(usage_metadata, "candidates_token_count", None)
+            if input_tokens is not None:
+                span.set_attribute("gen_ai.usage.input_tokens", input_tokens)
+            if output_tokens is not None:
+                span.set_attribute("gen_ai.usage.output_tokens", output_tokens)
+        finish_reason = getattr(event, "finish_reason", None)
+        if finish_reason is not None:
+            span.set_attribute(
+                "gen_ai.response.finish_reasons",
+                [str(getattr(finish_reason, "value", finish_reason)).lower()],
+            )
+
+    def submit_change(tool_context: ToolContext) -> dict[str, str]:
+        """Submit the pending change after the caller confirms it."""
+        nonlocal tool_execution_count
+        tool_execution_count += 1
+        tool_context.state["approval_status"] = "accepted"
+        with _reference_tracer.start_as_current_span(
+            "execute_tool submit_change",
+            attributes={
+                "gen_ai.operation.name": "execute_tool",
+                "gen_ai.tool.name": "submit_change",
+                "gen_ai.tool.type": "function",
+            },
+        ) as tool_span:
+            if not tool_context.invocation_id:
+                raise RuntimeError("ADK did not expose an invocation ID to the tool.")
+            if tool_context.function_call_id:
+                tool_span.set_attribute("gen_ai.tool.call.id", tool_context.function_call_id)
+        # This return value is consumed by ADK, but is intentionally not recorded
+        # in telemetry.
+        return {"status": "accepted"}
+
+    with _suppress_adk_native_telemetry():
+        agent = Agent(
+            name="resumable_confirmation_agent",
+            model=Gemini(model="gemini-2.0-flash", base_url=MOCK_BASE_URL),
+            tools=[FunctionTool(submit_change, require_confirmation=True)],
+        )
+        app = App(
+            name="resumable_confirmation_app",
+            root_agent=agent,
+            resumability_config=ResumabilityConfig(is_resumable=True),
+        )
+        session_service = InMemorySessionService()
+        runner = Runner(app=app, session_service=session_service)
+
+        async def _run():
+            session = await session_service.create_session(
+                app_name=app.name,
+                user_id="test_user",
+            )
+            execution_id = None
+            original_tool_call_id = None
+            confirmation_call_id = None
+            confirmation_response_name = None
+            confirmation_calls = []
+
+            with _reference_tracer.start_as_current_span(
+                "invoke_workflow resumable_confirmation_app",
+                attributes={
+                    "gen_ai.operation.name": "invoke_workflow",
+                    "gen_ai.workflow.name": app.name,
+                },
+            ):
+                with _reference_tracer.start_as_current_span(
+                    "invoke_agent resumable_confirmation_agent",
+                    attributes={
+                        "gen_ai.operation.name": "invoke_agent",
+                        "gen_ai.agent.name": agent.name,
+                        "gen_ai.request.model": agent.model.model,
+                    },
+                ) as suspended_agent_span:
+                    async for event in runner.run_async(
+                        user_id="test_user",
+                        session_id=session.id,
+                        new_message=types.Content(
+                            role="user",
+                            parts=[types.Part(text="Submit the pending change.")],
+                        ),
+                    ):
+                        record_agent_response_attributes(suspended_agent_span, event)
+                        if not event.invocation_id:
+                            raise RuntimeError("ADK emitted an event without an invocation ID.")
+                        if execution_id is None:
+                            execution_id = event.invocation_id
+                        elif event.invocation_id != execution_id:
+                            raise RuntimeError("ADK changed the invocation ID before suspension.")
+
+                        if event.actions.requested_tool_confirmations:
+                            if len(event.actions.requested_tool_confirmations) != 1:
+                                raise RuntimeError("Expected one ADK tool confirmation request.")
+                            original_tool_call_id = next(iter(event.actions.requested_tool_confirmations))
+
+                        for function_call in event.get_function_calls():
+                            original_call = (function_call.args or {}).get("originalFunctionCall")
+                            if isinstance(original_call, dict):
+                                confirmation_calls.append(function_call)
+
+                matching_confirmation_calls = [
+                    call
+                    for call in confirmation_calls
+                    if (call.args or {}).get("originalFunctionCall", {}).get("id") == original_tool_call_id
+                ]
+                if len(matching_confirmation_calls) == 1:
+                    confirmation_call_id = matching_confirmation_calls[0].id
+                    confirmation_response_name = matching_confirmation_calls[0].name
+
+                if (
+                    execution_id is None
+                    or original_tool_call_id is None
+                    or confirmation_call_id is None
+                    or confirmation_response_name is None
+                ):
+                    raise RuntimeError("ADK did not emit a resumable confirmation event.")
+            confirmation_response = types.Part.from_function_response(
+                name=confirmation_response_name,
+                response={"confirmed": True},
+            )
+            confirmation_response.function_response.id = confirmation_call_id
+            resumed_final_response = False
+            resumed_event_seen = False
+            state_delta_seen = False
+
+            with _reference_tracer.start_as_current_span(
+                "invoke_workflow resumable_confirmation_app",
+                attributes={
+                    "gen_ai.operation.name": "invoke_workflow",
+                    "gen_ai.workflow.name": app.name,
+                },
+            ):
+                with _reference_tracer.start_as_current_span(
+                    "invoke_agent resumable_confirmation_agent",
+                    attributes={
+                        "gen_ai.operation.name": "invoke_agent",
+                        "gen_ai.agent.name": agent.name,
+                        "gen_ai.request.model": agent.model.model,
+                    },
+                ) as resumed_agent_span:
+                    async for event in runner.run_async(
+                        user_id="test_user",
+                        session_id=session.id,
+                        invocation_id=execution_id,
+                        new_message=types.Content(
+                            role="user",
+                            parts=[confirmation_response],
+                        ),
+                    ):
+                        record_agent_response_attributes(resumed_agent_span, event)
+                        if event.invocation_id != execution_id:
+                            raise RuntimeError("ADK resumed a different invocation.")
+                        if not resumed_event_seen:
+                            resumed_event_seen = True
+                        state_delta = event.actions.state_delta
+                        if state_delta:
+                            if state_delta_seen:
+                                raise RuntimeError("Expected one ADK state delta for the tool execution.")
+                            state_delta_seen = True
+                            reference_event_logger().emit(
+                                event_name="gen_ai.execution.state.changed",
+                                body="Execution state changed",
+                                attributes={
+                                    "gen_ai.execution.state.changed_key.count": len(state_delta),
+                                    "gen_ai.execution.state.changed_keys": sorted(state_delta),
+                                },
+                            )
+                        resumed_final_response = resumed_final_response or event.is_final_response()
+
+                if not resumed_event_seen or not resumed_final_response or not state_delta_seen:
+                    raise RuntimeError("ADK did not prove completion in the resumed event stream.")
+
+            if tool_execution_count != 1:
+                raise RuntimeError("Expected the confirmation-gated tool to execute once.")
+
+        asyncio.run(_run())
+
+
 def run_memory_reference():
     """Scenario: Google ADK memory add/search with reference implementation."""
     from google.adk.events.event import Event
@@ -388,6 +586,7 @@ def main():
     tp.add_span_processor(span_counter)
 
     run_agent_reference()
+    run_resumable_execution_reference()
     run_memory_reference()
 
     print(f"\n  [diagnostic] Spans generated: {span_counter.count}")

@@ -430,6 +430,40 @@ attributes:
       SHOULD leave it unset otherwise.
     examples: [true]
     stability: development
+  - key: gen_ai.execution.state.changed_key.count
+    type: int
+    brief: The number of state keys changed by a runtime-owned execution state update.
+    note: |
+      This count MUST be obtained from a non-empty runtime-owned state delta.
+      It MUST NOT be computed by comparing full state payloads.
+    examples: [1, 3]
+    stability: development
+  - key: gen_ai.execution.state.changed_keys
+    type: string[]
+    brief: The names of the state keys changed by a runtime-owned execution state update.
+    note: |
+      Instrumentations MUST NOT record state values in this attribute.
+
+      This attribute SHOULD contain only bounded, schema-defined keys exposed
+      by the instrumented runtime. Instrumentations MUST NOT record keys that
+      contain user identifiers, request content, tool arguments, secrets, or
+      other dynamically generated values. When key names cannot be recorded
+      safely, instrumentations MUST leave this attribute unset and record only
+      `gen_ai.execution.state.changed_key.count`.
+    examples: [["approval_status"], ["plan", "next_step"]]
+    stability: development
+  - key: gen_ai.execution.state.version
+    type: string
+    brief: The runtime-defined version of the execution state after a change.
+    note: |
+      This attribute MUST be populated only from a version exposed by the
+      instrumented runtime. It MUST NOT be derived from state values, content,
+      timestamps, trace or span identifiers, or a hash of any of those values.
+
+      This attribute is high-cardinality and MUST NOT be used in metric
+      dimensions, span names, or sampling decisions.
+    examples: ["12"]
+    stability: development
   - key: gen_ai.agent.id
     type: string
     brief: The unique and stable identifier of the GenAI hosted agent resource.
