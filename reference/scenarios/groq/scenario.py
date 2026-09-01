@@ -137,7 +137,6 @@ def run_chat_reference(client):
                     {
                         "role": c.message.role,
                         "parts": [{"type": "text", "content": c.message.content}],
-                        "finish_reason": c.finish_reason,
                     }
                     for c in resp.choices
                 ]

@@ -247,7 +247,7 @@ def run_agent():
             agent_span.set_attribute("gen_ai.response.id", captured_completion.id)
             agent_span.set_attribute(
                 "gen_ai.response.finish_reasons",
-                [choice.finish_reason for choice in captured_completion.choices if choice.finish_reason],
+                [choice.finish_reason or "error" for choice in captured_completion.choices],
             )
             if captured_completion.usage:
                 agent_span.set_attribute("gen_ai.usage.input_tokens", captured_completion.usage.prompt_tokens)
