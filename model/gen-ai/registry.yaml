@@ -457,6 +457,37 @@ attributes:
     brief: The version of the GenAI agent.
     examples: ["1.0.0", "2025-05-01"]
     stability: development
+  - key: gen_ai.main_agent.id
+    type: string
+    brief: The unique and stable identifier of the top-level Generative AI agent in the process
+    note: >
+      For main agents, this SHOULD be the provider-assigned stable identifier of the
+      agent resource such as [AWS Bedrock agent ARN](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_Agent.html)
+      or [GCP Agent Registry identifier](https://docs.cloud.google.com/agent-registry/concepts#agent-identifier).
+
+      Instrumentation MUST NOT generate `gen_ai.main_agent.id` from an in-memory or
+      process-local identifier. If no stable identifier is available, the agent entity
+      is not emitted, and instrumentation continues to report `gen_ai.agent.name` at
+      the span level when relevant.
+
+    examples: ['asst_5j66UpCpwteGg4YSxUnt7lPY', 'arn:aws:bedrock:us-east-1:123:agent/42', 'urn:agent:projects-123:projects:123:locations:us-east1:aiplatform:reasoningEngines:456']
+    stability: development
+  - key: gen_ai.main_agent.name
+    type: string
+    brief: The human-readable name of the top-level Generative AI agent in the process.
+    note: >
+      In Agent-to-Agent (A2A) communication, this maps to the `name` property declared
+      in the Agent Card.
+    examples: ["Math Tutor", "Fiction Writer"]
+    stability: development
+  - key: gen_ai.main_agent.description
+    type: string
+    brief: The free-form description of the top-level Generative AI agent in the process.
+    note: >
+      In Agent-to-Agent (A2A) communication, this maps to the `description` property declared
+      in the Agent Card.
+    examples: ["Helps with math problems", "Generates fiction stories"]
+    stability: development
   - key: gen_ai.tool.name
     type: string
     brief: Name of the tool utilized by the agent.

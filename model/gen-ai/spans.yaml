@@ -561,6 +561,8 @@ spans:
 
       Examples: LangChain agents, CrewAI agents.
     stability: development
+    entity_associations:
+      - "gen_ai.main_agent"
     attributes:
       - ref_group: attributes.gen_ai.invoke_agent.common
       - ref: gen_ai.operation.name
@@ -590,6 +592,8 @@ spans:
       own code and to manually instrument any tool calls that automatic
       instrumentations do not cover.
     stability: development
+    entity_associations:
+      - "gen_ai.main_agent"
     attributes:
       - ref_group: attributes.gen_ai.error
       - ref_group: attributes.gen_ai.execute_tool.common
@@ -645,6 +649,8 @@ spans:
       - **Microsoft Agent Framework**: [`Workflow*.run(...)`](https://learn.microsoft.com/agent-framework/workflows/)
       - **OpenAI Agents**: [`Runner.run(starting_agent=...)`](https://openai.github.io/openai-agents-python/ref/run/#agents.run.Runner.run) with handoffs, sub-agents, or agents-as-tools.
     stability: development
+    entity_associations:
+      - "gen_ai.main_agent"
     attributes:
       - ref_group: attributes.gen_ai.error
       - ref: gen_ai.operation.name
@@ -684,6 +690,8 @@ spans:
       NOT be reported when the instrumentation cannot distinguish planning from generic
       reasoning or normal inference.
     stability: development
+    entity_associations:
+      - "gen_ai.main_agent"
     attributes:
       - ref_group: attributes.gen_ai.error
       - ref: gen_ai.operation.name
@@ -692,7 +700,7 @@ spans:
       - ref: gen_ai.agent.name
         brief: The human-readable name of the agent performing the planning.
         requirement_level:
-          conditionally_required: When available.
+          recommended: When available.
 
 span_refinements:
   - id: openai.inference.client

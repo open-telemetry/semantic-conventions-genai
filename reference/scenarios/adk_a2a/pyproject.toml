@@ -1,0 +1,29 @@
+[project]
+name = "adk-a2a-reference-test"
+version = "0.0.0"
+requires-python = ">=3.12"
+dependencies = [
+    "google-adk[a2a]==2.3.0",
+    "google-genai==2.10.0",
+    "httpx>=0.28.0",
+    "starlette>=0.40.0",
+    "sse-starlette>=2.0.0",
+    "genai-reference-shared",
+]
+
+[dependency-groups]
+dev = ["pyright"]
+
+[tool.uv.sources]
+genai-reference-shared = { path = "../../shared", editable = true }
+
+[tool.uv]
+package = false
+override-dependencies = [
+    "opentelemetry-api==1.43.0",
+    "opentelemetry-sdk==1.43.0",
+    "opentelemetry-exporter-otlp-proto-grpc==1.43.0",
+]
+
+[tool.pyright]
+extraPaths = ["../../shared"]

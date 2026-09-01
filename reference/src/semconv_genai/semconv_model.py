@@ -23,6 +23,7 @@ from __future__ import annotations
 import json
 from functools import cache
 
+from semconv_genai import MODEL_ROOT
 from semconv_genai.attribute_spec import AttributeSpec
 from semconv_genai.conformance import coverage_model
 
@@ -60,6 +61,10 @@ _METRICS = {
     "gen_ai.invoke_agent.tool_calls": "Invoke Agent Tool Calls",
 }
 
+_ENTITIES = {
+    "gen_ai.main_agent": "Main Agent",
+}
+
 
 def _spec(model: dict[str, dict], kind: str, registry_id: str, label: str) -> AttributeSpec:
     declared = model.get(kind, {}).get(registry_id)
@@ -85,6 +90,66 @@ def _spec(model: dict[str, dict], kind: str, registry_id: str, label: str) -> At
     )
 
 
+def _entity_spec_from_yaml(registry_id: str, label: str) -> AttributeSpec:
+    """Fallback parser for entity definitions directly from model/ YAML files.
+
+    Used when the conformance runner's coverage model does not yet include entities.
+    """
+    entities_file = MODEL_ROOT / "gen-ai" / "entities.yaml"
+    if not entities_file.is_file():
+        return AttributeSpec(
+            label=label,
+            required=(),
+            conditionally_required=(),
+            recommended=(),
+            opt_in=(),
+            registry_id=registry_id,
+        )
+
+    lines = entities_file.read_text("utf-8").splitlines()
+    in_entity = False
+    in_section = None
+    buckets: dict[str, list[str]] = {
+        "required": [],
+        "conditionally_required": [],
+        "recommended": [],
+        "opt_in": [],
+    }
+    for raw_line in lines:
+        line = raw_line.strip()
+        if line.startswith("- type:"):
+            entity_type = line.split(":", 1)[1].strip()
+            in_entity = entity_type == registry_id
+            in_section = None
+            continue
+        if not in_entity:
+            continue
+        if line == "identity:":
+            in_section = "identity"
+            continue
+        if line == "description:":
+            in_section = "description"
+            continue
+        if not raw_line.startswith(" ") and ":" in line:
+            in_section = None
+
+        if in_section == "identity" and line.startswith("- ref:"):
+            ref = line.split(":", 1)[1].strip()
+            buckets["required"].append(ref)
+        elif in_section == "description" and line.startswith("- ref:"):
+            ref = line.split(":", 1)[1].strip()
+            buckets["recommended"].append(ref)
+
+    return AttributeSpec(
+        label=label,
+        required=tuple(sorted(buckets["required"])),
+        conditionally_required=tuple(sorted(buckets["conditionally_required"])),
+        recommended=tuple(sorted(buckets["recommended"])),
+        opt_in=tuple(sorted(buckets["opt_in"])),
+        registry_id=registry_id,
+    )
+
+
 @cache
 def _model() -> dict[str, dict]:
     return json.loads(coverage_model().read_text(encoding="utf-8"))
@@ -106,3 +171,44 @@ def event_specs() -> dict[str, AttributeSpec]:
 def metric_specs() -> dict[str, AttributeSpec]:
     model = _model()
     return {name: _spec(model, "metrics", name, label) for name, label in _METRICS.items()}
+
+
+def _entity_spec(model: dict[str, dict], registry_id: str, label: str) -> AttributeSpec:
+    declared = model.get("entities", {}).get(registry_id)
+    if declared is None:
+        raise RuntimeError(f"The coverage model declares no entity {registry_id!r}; is it still in model/?")
+    buckets: dict[str, list[str]] = {
+        "required": [],
+        "conditionally_required": [],
+        "recommended": [],
+        "opt_in": [],
+    }
+    if "attributes" in declared:
+        for name, level in sorted(declared["attributes"].items()):
+            buckets[level.removesuffix("_conditional")].append(name)
+    else:
+        for section in declared.values():
+            if isinstance(section, dict):
+                for name, level in sorted(section.items()):
+                    buckets[level.removesuffix("_conditional")].append(name)
+    return AttributeSpec(
+        label=label,
+        required=tuple(sorted(buckets["required"])),
+        conditionally_required=tuple(sorted(buckets["conditionally_required"])),
+        recommended=tuple(sorted(buckets["recommended"])),
+        opt_in=tuple(sorted(buckets["opt_in"])),
+        registry_id=registry_id,
+    )
+
+
+@cache
+def entity_specs() -> dict[str, AttributeSpec]:
+    model = _model()
+    entities_model = model.get("entities", {})
+    specs: dict[str, AttributeSpec] = {}
+    for name, label in _ENTITIES.items():
+        if name in entities_model:
+            specs[name] = _entity_spec(model, name, label)
+        else:
+            specs[name] = _entity_spec_from_yaml(name, label)
+    return specs

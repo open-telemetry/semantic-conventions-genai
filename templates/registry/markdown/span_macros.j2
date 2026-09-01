@@ -3,12 +3,13 @@
    and `name.note` -- a markdown blob describing the span name template
    (e.g. "**Span name** SHOULD be `{gen_ai.operation.name} {gen_ai.request.model}`."). #}
 {% import 'stability.j2' as stability %}
+{% import 'entity_macros.j2' as entities %}
 {% import 'signal_requirement_level.j2' as sr %}
 
 {# Span-name guidance is rendered from `span.name.note`. Refinements and imported
    spans inherit the base span's `name` (weaver PR 1403), so provider docs get it
    without repeating it in their own `note`. #}
-{% macro header(span) -%}
+{% macro header(span, entity_registry=none) -%}
 **Status:** {{ stability.badge(span.stability, span.deprecated) }}
 
 {{ span.brief | trim }}
@@ -24,6 +25,17 @@
 {%- if "**Span status" not in (span.note or "") %}
 
 **Span status** SHOULD follow the [Recording Errors]({{ params.upstream_docs_base }}/docs/general/recording-errors.md) document.{% endif %}
+{%- if span.entity_associations is sequence %}
+
+**Entity Associations** The span SHOULD be associated with one of the following entities:
+{% for e in span.entity_associations %}
+{%- if entity_registry %}
+- [`{{ e }}`]({{ entities.registry_url(e, entity_registry) }})
+{%- else %}
+- `{{ e }}`
+{%- endif %}
+{%- endfor %}
+{%- endif %}
 
 {{ sr.render(span.requirement_level) }}
 

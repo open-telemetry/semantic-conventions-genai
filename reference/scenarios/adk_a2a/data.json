@@ -1,0 +1,317 @@
+{
+  "spans": {
+    "gen_ai.inference.client": [
+      "gen_ai.conversation.id",
+      "gen_ai.operation.name",
+      "gen_ai.request.model",
+      "gen_ai.response.finish_reasons",
+      "gen_ai.usage.cache_read.input_tokens",
+      "gen_ai.usage.input_tokens",
+      "gen_ai.usage.output_tokens",
+      "gen_ai.usage.reasoning.output_tokens"
+    ],
+    "gen_ai.invoke_agent.internal": [
+      "gen_ai.agent.description",
+      "gen_ai.agent.name",
+      "gen_ai.conversation.id",
+      "gen_ai.operation.name"
+    ]
+  },
+  "events": {},
+  "metrics": {
+    "gen_ai.client.operation.duration": [
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "gen_ai.request.model",
+      "gen_ai.response.model"
+    ],
+    "gen_ai.client.token.usage": [
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "gen_ai.request.model",
+      "gen_ai.response.model",
+      "gen_ai.token.type"
+    ]
+  },
+  "findings": [
+    {
+      "id": "missing_attribute",
+      "message": "Attribute 'gcp.vertex.agent.event_id' does not exist in the registry.",
+      "context": {
+        "attribute_key": "gcp.vertex.agent.event_id"
+      }
+    },
+    {
+      "id": "missing_attribute",
+      "message": "Attribute 'gcp.vertex.agent.invocation_id' does not exist in the registry.",
+      "context": {
+        "attribute_key": "gcp.vertex.agent.invocation_id"
+      }
+    },
+    {
+      "id": "missing_attribute",
+      "message": "Attribute 'gcp.vertex.agent.llm_request' does not exist in the registry.",
+      "context": {
+        "attribute_key": "gcp.vertex.agent.llm_request"
+      }
+    },
+    {
+      "id": "missing_attribute",
+      "message": "Attribute 'gcp.vertex.agent.llm_response' does not exist in the registry.",
+      "context": {
+        "attribute_key": "gcp.vertex.agent.llm_response"
+      }
+    },
+    {
+      "id": "missing_attribute",
+      "message": "Attribute 'gcp.vertex.agent.session_id' does not exist in the registry.",
+      "context": {
+        "attribute_key": "gcp.vertex.agent.session_id"
+      }
+    },
+    {
+      "id": "missing_attribute",
+      "message": "Attribute 'gen_ai.system' does not exist in the registry.",
+      "context": {
+        "attribute_key": "gen_ai.system"
+      }
+    },
+    {
+      "id": "missing_event",
+      "message": "Event 'gen_ai.choice' does not exist in the registry."
+    },
+    {
+      "id": "missing_event",
+      "message": "Event 'gen_ai.system.message' does not exist in the registry."
+    },
+    {
+      "id": "missing_event",
+      "message": "Event 'gen_ai.user.message' does not exist in the registry."
+    },
+    {
+      "id": "missing_metric",
+      "message": "Metric does not exist in the registry."
+    },
+    {
+      "id": "span_status_ok_set_by_instrumentation",
+      "message": "Span 'a2a.client.transports.jsonrpc.JsonRpcTransport._apply_interceptors' has status.code='ok'; instrumentations must leave status UNSET on success (OK is reserved for application code).",
+      "context": {
+        "status_code": "ok"
+      }
+    },
+    {
+      "id": "span_status_ok_set_by_instrumentation",
+      "message": "Span 'a2a.client.transports.jsonrpc.JsonRpcTransport._get_http_args' has status.code='ok'; instrumentations must leave status UNSET on success (OK is reserved for application code).",
+      "context": {
+        "status_code": "ok"
+      }
+    },
+    {
+      "id": "span_status_ok_set_by_instrumentation",
+      "message": "Span 'a2a.client.transports.jsonrpc.JsonRpcTransport._send_request' has status.code='ok'; instrumentations must leave status UNSET on success (OK is reserved for application code).",
+      "context": {
+        "status_code": "ok"
+      }
+    },
+    {
+      "id": "span_status_ok_set_by_instrumentation",
+      "message": "Span 'a2a.client.transports.jsonrpc.JsonRpcTransport.send_message' has status.code='ok'; instrumentations must leave status UNSET on success (OK is reserved for application code).",
+      "context": {
+        "status_code": "ok"
+      }
+    },
+    {
+      "id": "span_status_ok_set_by_instrumentation",
+      "message": "Span 'a2a.server.events.event_consumer.EventConsumer.agent_task_callback' has status.code='ok'; instrumentations must leave status UNSET on success (OK is reserved for application code).",
+      "context": {
+        "status_code": "ok"
+      }
+    },
+    {
+      "id": "span_status_ok_set_by_instrumentation",
+      "message": "Span 'a2a.server.events.event_consumer.EventConsumer.consume_all' has status.code='ok'; instrumentations must leave status UNSET on success (OK is reserved for application code).",
+      "context": {
+        "status_code": "ok"
+      }
+    },
+    {
+      "id": "span_status_ok_set_by_instrumentation",
+      "message": "Span 'a2a.server.events.event_queue.EventQueue.clear_events' has status.code='ok'; instrumentations must leave status UNSET on success (OK is reserved for application code).",
+      "context": {
+        "status_code": "ok"
+      }
+    },
+    {
+      "id": "span_status_ok_set_by_instrumentation",
+      "message": "Span 'a2a.server.events.event_queue.EventQueue.close' has status.code='ok'; instrumentations must leave status UNSET on success (OK is reserved for application code).",
+      "context": {
+        "status_code": "ok"
+      }
+    },
+    {
+      "id": "span_status_ok_set_by_instrumentation",
+      "message": "Span 'a2a.server.events.event_queue.EventQueue.dequeue_event' has status.code='ok'; instrumentations must leave status UNSET on success (OK is reserved for application code).",
+      "context": {
+        "status_code": "ok"
+      }
+    },
+    {
+      "id": "span_status_ok_set_by_instrumentation",
+      "message": "Span 'a2a.server.events.event_queue.EventQueue.enqueue_event' has status.code='ok'; instrumentations must leave status UNSET on success (OK is reserved for application code).",
+      "context": {
+        "status_code": "ok"
+      }
+    },
+    {
+      "id": "span_status_ok_set_by_instrumentation",
+      "message": "Span 'a2a.server.events.event_queue.EventQueue.task_done' has status.code='ok'; instrumentations must leave status UNSET on success (OK is reserved for application code).",
+      "context": {
+        "status_code": "ok"
+      }
+    },
+    {
+      "id": "span_status_ok_set_by_instrumentation",
+      "message": "Span 'a2a.server.events.in_memory_queue_manager.InMemoryQueueManager.close' has status.code='ok'; instrumentations must leave status UNSET on success (OK is reserved for application code).",
+      "context": {
+        "status_code": "ok"
+      }
+    },
+    {
+      "id": "span_status_ok_set_by_instrumentation",
+      "message": "Span 'a2a.server.events.in_memory_queue_manager.InMemoryQueueManager.create_or_tap' has status.code='ok'; instrumentations must leave status UNSET on success (OK is reserved for application code).",
+      "context": {
+        "status_code": "ok"
+      }
+    },
+    {
+      "id": "span_status_ok_set_by_instrumentation",
+      "message": "Span 'a2a.server.request_handlers.default_request_handler.DefaultRequestHandler._cleanup_producer' has status.code='ok'; instrumentations must leave status UNSET on success (OK is reserved for application code).",
+      "context": {
+        "status_code": "ok"
+      }
+    },
+    {
+      "id": "span_status_ok_set_by_instrumentation",
+      "message": "Span 'a2a.server.request_handlers.default_request_handler.DefaultRequestHandler._register_producer' has status.code='ok'; instrumentations must leave status UNSET on success (OK is reserved for application code).",
+      "context": {
+        "status_code": "ok"
+      }
+    },
+    {
+      "id": "span_status_ok_set_by_instrumentation",
+      "message": "Span 'a2a.server.request_handlers.default_request_handler.DefaultRequestHandler._run_event_stream' has status.code='ok'; instrumentations must leave status UNSET on success (OK is reserved for application code).",
+      "context": {
+        "status_code": "ok"
+      }
+    },
+    {
+      "id": "span_status_ok_set_by_instrumentation",
+      "message": "Span 'a2a.server.request_handlers.default_request_handler.DefaultRequestHandler._send_push_notification_if_needed' has status.code='ok'; instrumentations must leave status UNSET on success (OK is reserved for application code).",
+      "context": {
+        "status_code": "ok"
+      }
+    },
+    {
+      "id": "span_status_ok_set_by_instrumentation",
+      "message": "Span 'a2a.server.request_handlers.default_request_handler.DefaultRequestHandler._setup_message_execution' has status.code='ok'; instrumentations must leave status UNSET on success (OK is reserved for application code).",
+      "context": {
+        "status_code": "ok"
+      }
+    },
+    {
+      "id": "span_status_ok_set_by_instrumentation",
+      "message": "Span 'a2a.server.request_handlers.default_request_handler.DefaultRequestHandler._validate_task_id_match' has status.code='ok'; instrumentations must leave status UNSET on success (OK is reserved for application code).",
+      "context": {
+        "status_code": "ok"
+      }
+    },
+    {
+      "id": "span_status_ok_set_by_instrumentation",
+      "message": "Span 'a2a.server.request_handlers.default_request_handler.DefaultRequestHandler.on_message_send' has status.code='ok'; instrumentations must leave status UNSET on success (OK is reserved for application code).",
+      "context": {
+        "status_code": "ok"
+      }
+    },
+    {
+      "id": "span_status_ok_set_by_instrumentation",
+      "message": "Span 'a2a.server.request_handlers.jsonrpc_handler.JSONRPCHandler.on_message_send' has status.code='ok'; instrumentations must leave status UNSET on success (OK is reserved for application code).",
+      "context": {
+        "status_code": "ok"
+      }
+    },
+    {
+      "id": "span_status_ok_set_by_instrumentation",
+      "message": "Span 'a2a.utils.helpers.append_artifact_to_task' has status.code='ok'; instrumentations must leave status UNSET on success (OK is reserved for application code).",
+      "context": {
+        "status_code": "ok"
+      }
+    },
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'generate_content gemini-2.0-flash' (operation 'generate_content') is missing expected attribute 'gen_ai.provider.name'",
+      "context": {
+        "missing_attribute": "gen_ai.provider.name",
+        "operation": "generate_content"
+      }
+    },
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'generate_content gemini-2.0-flash' (operation 'generate_content') is missing expected attribute 'gen_ai.response.id'",
+      "context": {
+        "missing_attribute": "gen_ai.response.id",
+        "operation": "generate_content"
+      }
+    },
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'generate_content gemini-2.0-flash' (operation 'generate_content') is missing expected attribute 'gen_ai.response.model'",
+      "context": {
+        "missing_attribute": "gen_ai.response.model",
+        "operation": "generate_content"
+      }
+    },
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'generate_content gemini-2.0-flash' (operation 'generate_content') is missing expected attribute 'server.address'",
+      "context": {
+        "missing_attribute": "server.address",
+        "operation": "generate_content"
+      }
+    },
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'invoke_agent travel_assistant' (operation 'invoke_agent') is missing expected attribute 'gen_ai.response.finish_reasons'",
+      "context": {
+        "missing_attribute": "gen_ai.response.finish_reasons",
+        "operation": "invoke_agent"
+      }
+    },
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'invoke_agent travel_assistant' (operation 'invoke_agent') is missing expected attribute 'gen_ai.usage.input_tokens'",
+      "context": {
+        "missing_attribute": "gen_ai.usage.input_tokens",
+        "operation": "invoke_agent"
+      }
+    },
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'invoke_agent travel_assistant' (operation 'invoke_agent') is missing expected attribute 'gen_ai.usage.output_tokens'",
+      "context": {
+        "missing_attribute": "gen_ai.usage.output_tokens",
+        "operation": "invoke_agent"
+      }
+    }
+  ],
+  "entities": {
+    "gen_ai.main_agent": {
+      "identity": [
+        "gen_ai.main_agent.id"
+      ],
+      "description": [
+        "gen_ai.main_agent.description",
+        "gen_ai.main_agent.name"
+      ]
+    }
+  }
+}

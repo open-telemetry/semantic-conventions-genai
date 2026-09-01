@@ -11,7 +11,7 @@ Runnable directly (``python tests/test_metrics.py``) or under pytest.
 from __future__ import annotations
 
 from semconv_genai.data_files import _normalize_scenario_data_entry, load_scenario_data_files
-from semconv_genai.semconv_model import metric_specs, span_specs
+from semconv_genai.semconv_model import entity_specs, metric_specs, span_specs
 
 _TOOL_CALLS = "gen_ai.invoke_agent.tool_calls"
 _INFERENCE_CALLS = "gen_ai.invoke_agent.inference_calls"
@@ -38,6 +38,37 @@ def test_committed_google_adk_metrics_round_trip():
     adk = entries["google-adk"]
     for name in (_INFERENCE_CALLS, _TOOL_CALLS):
         assert adk.metrics[name]["gen_ai.agent.name"] == "present", name
+
+
+def test_entity_specs_expose_required_id():
+    specs = entity_specs()
+    assert "gen_ai.main_agent" in specs
+    assert "gen_ai.main_agent.id" in specs["gen_ai.main_agent"].required
+
+
+def test_entities_keep_their_registry_names():
+    entry = _normalize_scenario_data_entry(
+        {"entities": {"gen_ai.main_agent": ["gen_ai.main_agent.id"]}},
+        "fake",
+    )
+    assert entry.entities["gen_ai.main_agent"]["gen_ai.main_agent.id"] == "present"
+
+
+def test_entities_with_sections_round_trip():
+    entry = _normalize_scenario_data_entry(
+        {
+            "entities": {
+                "gen_ai.main_agent": {
+                    "identity": ["gen_ai.main_agent.id"],
+                    "description": ["gen_ai.main_agent.description", "gen_ai.main_agent.name"],
+                }
+            }
+        },
+        "fake",
+    )
+    assert entry.entities["gen_ai.main_agent"]["gen_ai.main_agent.id"] == "present"
+    assert entry.entities["gen_ai.main_agent"]["gen_ai.main_agent.description"] == "present"
+    assert entry.entities["gen_ai.main_agent"]["gen_ai.main_agent.name"] == "present"
 
 
 def test_registry_span_names_map_onto_report_keys():
@@ -74,6 +105,8 @@ if __name__ == "__main__":
     test_metric_specs_expose_recommended_agent_name()
     test_metric_specs_are_named_as_the_registry_names_them()
     test_committed_google_adk_metrics_round_trip()
+    test_entity_specs_expose_required_id()
+    test_entities_keep_their_registry_names()
     test_registry_span_names_map_onto_report_keys()
     test_events_keep_their_registry_names()
     test_span_types_absent_from_a_data_file_are_not_reported()

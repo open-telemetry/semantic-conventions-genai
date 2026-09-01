@@ -23,6 +23,7 @@ from semconv_genai import (
 )
 from semconv_genai.attribute_spec import AttributeSpec, RequirementLevel
 from semconv_genai.data_files import (
+    ENTITY_TYPE_ORDER,
     EVENT_TYPE_ORDER,
     SPAN_TYPE_ORDER,
     ScenarioDataEntry,
@@ -30,6 +31,7 @@ from semconv_genai.data_files import (
     metric_type_order,
 )
 from semconv_genai.semconv_model import (
+    entity_specs,
     event_specs,
     metric_specs,
     span_specs,
@@ -66,6 +68,10 @@ def _events_of(entry: ScenarioDataEntry) -> dict[str, dict[str, str]]:
     return entry.events
 
 
+def _entities_of(entry: ScenarioDataEntry) -> dict[str, dict[str, str]]:
+    return entry.entities
+
+
 def _metrics_of(entry: ScenarioDataEntry) -> dict[str, dict[str, str]]:
     return entry.metrics
 
@@ -85,6 +91,7 @@ SEMCONV_DOC_LINKS: dict[str, str] = {
     "execute_tool": "../../docs/gen-ai/gen-ai-spans.md#execute-tool-span",
     "gen_ai.client.inference.operation.details": "../../docs/gen-ai/gen-ai-events.md#event-gen_aiclientinferenceoperationdetails",
     "gen_ai.evaluation.result": "../../docs/gen-ai/gen-ai-events.md#event-gen_aievaluationresult",
+    "gen_ai.main_agent": "../../docs/registry/entities/gen-ai.md#gen-ai-main-agent",
     "gen_ai.client.token.usage": "../../docs/gen-ai/gen-ai-metrics.md#metric-gen_aiclienttokenusage",
     "gen_ai.client.operation.duration": "../../docs/gen-ai/gen-ai-metrics.md#metric-gen_aiclientoperationduration",
     "gen_ai.invoke_agent.inference_calls": "../../docs/gen-ai/gen-ai-metrics.md#metric-gen_aiinvoke_agentinference_calls",
@@ -248,6 +255,22 @@ def generate_index_markdown(
     lines.extend(
         [
             "",
+            "### Entities",
+            "",
+            "| Entity | Libraries |",
+            "| --- | --- |",
+        ]
+    )
+
+    for entity_type in ENTITY_TYPE_ORDER:
+        spec = entity_specs()[entity_type]
+        filename = _report_filename(entity_type, "entity")
+        supporting = _get_supporting_entries(entries, entity_type, spec, _entities_of)
+        lines.append(f"| [{spec.label}](reports/{filename}) | {_library_dir_links(supporting)} |")
+
+    lines.extend(
+        [
+            "",
             "### Metrics",
             "",
             "| Metric | Libraries |",
@@ -283,6 +306,12 @@ def write_report_pages(output_dir: Path) -> None:
         spec = event_specs()[event_type]
         page_path = reports_dir / _report_filename(event_type, "event")
         page_lines = _render_signal_section(entries, event_type, spec, reports_dir, "Event", _events_of)
+        page_path.write_text(_generate_detail_page(page_lines), encoding="utf-8")
+
+    for entity_type in ENTITY_TYPE_ORDER:
+        spec = entity_specs()[entity_type]
+        page_path = reports_dir / _report_filename(entity_type, "entity")
+        page_lines = _render_signal_section(entries, entity_type, spec, reports_dir, "Entity", _entities_of)
         page_path.write_text(_generate_detail_page(page_lines), encoding="utf-8")
 
     for metric_type in metric_type_order():

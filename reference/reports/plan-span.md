@@ -8,7 +8,7 @@
 | --- | --- |
 | gen_ai.operation.name | [crewai], [langchain] |
 
-## Conditionally Required
+## Recommended
 
 | Attribute | Supporting Libraries |
 | --- | --- |

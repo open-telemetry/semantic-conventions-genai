@@ -3,7 +3,7 @@
 The files are written by the conformance runner, which keys every signal by its
 registry name (``gen_ai.inference.client``). Reports address span types by the
 shorter keys in :mod:`semconv_genai.semconv_model`, so span keys are mapped back
-on the way in; events and metrics are already named by the registry.
+on the way in; events, entities and metrics are already named by the registry.
 """
 
 from __future__ import annotations
@@ -14,6 +14,7 @@ from dataclasses import dataclass
 from semconv_genai import SCENARIOS_DIR
 from semconv_genai.attribute_spec import AttributeSpec, RequirementLevel
 from semconv_genai.semconv_model import (
+    entity_specs,
     event_specs,
     metric_specs,
     span_specs,
@@ -38,6 +39,11 @@ SPAN_TYPE_ORDER = [
 EVENT_TYPE_ORDER = [
     "gen_ai.client.inference.operation.details",
     "gen_ai.evaluation.result",
+]
+
+# Display order for entity types in reports.
+ENTITY_TYPE_ORDER = [
+    "gen_ai.main_agent",
 ]
 
 
@@ -74,6 +80,7 @@ class ScenarioDataEntry:
     library: str
     spans: dict[str, dict[str, str]]
     events: dict[str, dict[str, str]]
+    entities: dict[str, dict[str, str]]
     metrics: dict[str, dict[str, str]]
 
 
@@ -90,7 +97,17 @@ def _normalize_attr_data(
         if spec.registry_id not in value:
             continue
         recorded = value[spec.registry_id]
-        present = set(recorded) if isinstance(recorded, (dict, list)) else set()
+        if isinstance(recorded, list):
+            present = set(recorded)
+        elif isinstance(recorded, dict):
+            present = set()
+            for k, v in recorded.items():
+                if isinstance(v, (list, tuple, set)):
+                    present.update(v)
+                else:
+                    present.add(k)
+        else:
+            present = set()
         normalized[type_key] = {name: "present" if name in present else "absent" for name in attr_names(spec)}
     return normalized
 
@@ -100,6 +117,7 @@ def _normalize_scenario_data_entry(entry: dict[str, object], library: str) -> Sc
         library=library,
         spans=_normalize_attr_data(entry.get("spans"), span_specs()),
         events=_normalize_attr_data(entry.get("events"), event_specs()),
+        entities=_normalize_attr_data(entry.get("entities"), entity_specs()),
         metrics=_normalize_attr_data(entry.get("metrics"), metric_specs()),
     )
 
