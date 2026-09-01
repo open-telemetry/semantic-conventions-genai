@@ -89,8 +89,9 @@ uv run update-reports
 
 ## Contribution expectations
 
-- Keep reference coverage honest. Only emit spans and attributes that the
+- Keep reference coverage honest. Only emit signals and attributes that the
   library or reference code can actually produce.
+- Follow the authoring guidelines and patterns in the [reference skill](../.github/skills/reference/SKILL.md).
 - Prefer focused updates to the affected library under `scenarios/<library>/`.
 - After regenerating `scenarios/*/data.json`, run `uv run update-reports` and
   commit both alongside your change.

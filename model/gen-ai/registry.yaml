@@ -210,9 +210,22 @@ attributes:
   - key: gen_ai.response.finish_reasons
     type: string[]
     brief: Array of reasons the model stopped generating tokens, corresponding to each generation received.
+    note: |
+      Values correspond to generations in the same order as the returned
+      choices/candidates.
+
+      Each position SHOULD contain the finish reason for the corresponding
+      choice/candidate. If a finish reason was expected but not received, for
+      example because generation failed, was cancelled, or a stream ended before
+      the final event, instrumentations SHOULD report `error` for that position
+      instead of omitting it.
+
+      `error` indicates that the generation ended abnormally, whether reported
+      by the provider or inferred by the instrumentation.
     examples:
       - [stop]
       - [stop, length]
+      - [stop, length, error]
     stability: development
   - key: gen_ai.response.status
     type:
@@ -923,7 +936,9 @@ attributes:
       multiple messages or one message cannot contain parts from multiple choices.
 
       Instrumentations MAY provide a way for users to filter or truncate
-      output messages.
+      output messages. `gen_ai.response.finish_reasons` remains aligned with the
+      generations returned by the provider, not with a filtered or truncated
+      `gen_ai.output.messages` value.
 
       > [!Warning]
       > This attribute is likely to contain sensitive information including user/PII data.
@@ -940,8 +955,7 @@ attributes:
                 "type": "text",
                 "content": "The weather in Paris is currently rainy with a temperature of 57°F."
               }
-            ],
-            "finish_reason": "stop"
+            ]
           }
         ]
     stability: development

@@ -103,9 +103,8 @@ async def run_agent():
         if captured_responses:
             last_response = captured_responses[-1]
             finish_reasons = [
-                choice.finish_reason
+                getattr(choice, "finish_reason", None) or "error"
                 for choice in getattr(last_response, "choices", []) or []
-                if getattr(choice, "finish_reason", None)
             ]
             if finish_reasons:
                 agent_span.set_attribute("gen_ai.response.finish_reasons", finish_reasons)

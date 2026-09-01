@@ -3,7 +3,7 @@ name = "litellm-reference-test"
 version = "0.0.0"
 requires-python = ">=3.12"
 dependencies = [
-    "litellm==1.95.0",
+    "litellm==1.99.0",
     "genai-reference-shared",
 ]
 

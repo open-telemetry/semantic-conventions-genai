@@ -19,7 +19,8 @@ GenAI clients, MCP, and provider-specific conventions. Attributes live in
    by a span, metric, or event that defines when and how it is recorded. No
    orphan attributes.
 5. **No convention without a reference scenario.** A new convention
-   needs a `reference/scenarios/<library>/` scenario that emits it. See
+   needs a `reference/scenarios/<library>/` scenario that emits it, with every
+   emitted value readable from inside the library: a parameter it interprets, a return value, exception, or library state. See
    [reference/CONTRIBUTING.md](reference/CONTRIBUTING.md).
 6. **Only model what generic instrumentation can record at runtime.** A
    reference scenario must plausibly show how generic instrumentation captures
@@ -49,17 +50,17 @@ CI fails if committed generated output doesn't match `make generate-all`. Add a
 Towncrier fragment under [changelog.d/](changelog.d/) for any consumer-visible
 change. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
-For PR work that needs repository-wide reference coverage, use the `reference`
-skill under [.github/skills/reference/](.github/skills/reference/). For reviews
-of reference coverage, capturability, and honest capture gaps, see the
+For PRs that change semantic conventions, use the `reference`
+skill in [.github/skills/reference/SKILL.md](.github/skills/reference/SKILL.md). For reviews
+of reference coverage and capturability, see the
 evaluation rubric in
-[.github/instructions/evaluate-reference.instructions.md](.github/instructions/evaluate-reference.instructions.md)
-— an instruction file that applies automatically to model, docs, and scenario
+[.github/instructions/evaluate-reference.instructions.md](.github/instructions/evaluate-reference.instructions.md) -
+an instruction file that applies automatically to model, docs, and scenario
 changes, not a skill to invoke.
 
 ## Further reading
 
-- [How to write conventions — best practices](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/how-to-write-conventions/README.md#best-practices)
+- [How to write conventions - best practices](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/how-to-write-conventions/README.md#best-practices)
 - [Naming](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/naming.md)
 - [Events](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/events.md)
 - [Recording errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/recording-errors.md)

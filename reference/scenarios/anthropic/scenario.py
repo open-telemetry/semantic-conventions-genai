@@ -64,6 +64,8 @@ def run_chat(handler):
 
         output_parts = [Text(content=block.text) for block in resp.content if hasattr(block, "text")]
         if output_parts:
+            # opentelemetry-util-genai 1.0b0 still requires finish_reason on
+            # OutputMessage; keep the compatibility value until it is updated.
             inv.output_messages = [  # -> gen_ai.output.messages
                 OutputMessage(role="assistant", parts=output_parts, finish_reason=resp.stop_reason)
             ]

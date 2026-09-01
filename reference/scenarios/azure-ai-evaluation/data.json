@@ -10,5 +10,7 @@
       "gen_ai.evaluation.score.value"
     ]
   },
-  "metrics": {}
+  "metrics": {},
+  "findings": [],
+  "entities": {}
 }
