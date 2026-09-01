@@ -301,15 +301,6 @@ wheels = [
 ]
 
 [[package]]
-name = "colorama"
-version = "0.4.6"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/d8/53/6f443c9a4a8358a93a6792e2acffb9d9d5cb0a5cfd8802644b7b1c9a02e4/colorama-0.4.6.tar.gz", hash = "sha256:08695f5cb7ed6e0531a20572697297273c47b8cae5a63ffc6d6ed5c201be6e44", size = 27697, upload-time = "2022-10-25T02:36:22.414Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/d1/d6/3965ed04c63042e047cb6a3e6ed1a63a35087b6a609aa3a15ed8ac56c221/colorama-0.4.6-py2.py3-none-any.whl", hash = "sha256:4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6", size = 25335, upload-time = "2022-10-25T02:36:20.889Z" },
-]
-
-[[package]]
 name = "distro"
 version = "1.9.0"
 source = { registry = "https://pypi.org/simple" }
@@ -717,16 +708,16 @@ wheels = [
 
 [[package]]
 name = "langchain"
-version = "1.3.14"
+version = "1.3.18"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "langchain-core" },
     { name = "langgraph" },
     { name = "pydantic" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/29/68/a6dbad9c22df4087a0f9e79ddd46226c442b30128bfeee538d5889492a73/langchain-1.3.14.tar.gz", hash = "sha256:1b6696c72ba3bbbce54d745e0180742c9f6ece8bbc59ed5a46c3e20b9a435929", size = 645181, upload-time = "2026-07-16T13:28:18.29Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/31/e9/0e5425e522b624d7c5c0911957b467b82890b36b0099bf727951f2ee3059/langchain-1.3.18.tar.gz", hash = "sha256:74ce99294f6f2c82ee64c3df39daa6a22085ee1449a718065b3604a88d78bf4d", size = 637052, upload-time = "2026-08-27T17:33:12.702Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/a9/ec/0f942e78a621f8e3162ff1ed24284f469aaf51fb4607ee5831c626f2b2bc/langchain-1.3.14-py3-none-any.whl", hash = "sha256:4d10dbe91005952cddd56d0dc77aa108964da6bae90ab20063653957e901f782", size = 139560, upload-time = "2026-07-16T13:28:16.498Z" },
+    { url = "https://files.pythonhosted.org/packages/f7/04/374f6014ed6959dbdab92962c2b09e4d0223ed6a82f65694870b46d2c13f/langchain-1.3.18-py3-none-any.whl", hash = "sha256:f29cbef985848e5cfff5398f3c8c1568994a3a6f2a8f4fa720df30b6e0668b9c", size = 148007, upload-time = "2026-08-27T17:33:11.23Z" },
 ]
 
 [[package]]
@@ -805,7 +796,7 @@ wheels = [
 
 [[package]]
 name = "langchain-openai"
-version = "1.5.1"
+version = "1.6.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "certifi" },
@@ -813,9 +804,9 @@ dependencies = [
     { name = "openai" },
     { name = "tiktoken" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/6f/ed/8dea294b76f7cbda7baa8fcee10f6f448a2157c81c905ea8893ddf9ede19/langchain_openai-1.5.1.tar.gz", hash = "sha256:e7100c89a6180e3fdf8d02b29a0f2b6c532da91428fc1b57aa93ebbc8acc0ce9", size = 3286615, upload-time = "2026-08-14T15:47:30.765Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/58/aa/5b4dbe8f90c44729fb7800bfde113ce1bc7c9687115d2e0d20fb377671e9/langchain_openai-1.6.0.tar.gz", hash = "sha256:7c545cc1f2bee048a7e219f375b78cd820b32c876ccf825320e25e1e94132577", size = 3290712, upload-time = "2026-08-19T21:44:45.334Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/4a/3b/cf0811ade95747439a43e3537452fefca88dddadb9f2b6e862ec8961620c/langchain_openai-1.5.1-py3-none-any.whl", hash = "sha256:a4da6e507d2e867127f0d622797bca4b7e7e98f08b3bbdc8db46f0a0695d69cb", size = 123733, upload-time = "2026-08-14T15:47:29.674Z" },
+    { url = "https://files.pythonhosted.org/packages/2b/fd/e22f2ffa2e2cf6043eb56f6a6bc5e18ac24da9b48b92cd458ba54af24b9e/langchain_openai-1.6.0-py3-none-any.whl", hash = "sha256:648112bbd135aa51d60d4aa2fd4ad353628a8d92a2f8e779244a0d9869a16f18", size = 125078, upload-time = "2026-08-19T21:44:44.242Z" },
 ]
 
 [[package]]
@@ -845,10 +836,10 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "genai-reference-shared", editable = "../../shared" },
-    { name = "langchain", specifier = "==1.3.14" },
+    { name = "langchain", specifier = "==1.3.18" },
     { name = "langchain-experimental", specifier = "==0.4.2" },
-    { name = "langchain-openai", specifier = "==1.5.1" },
-    { name = "openai", specifier = "==3.1.0" },
+    { name = "langchain-openai", specifier = "==1.6.0" },
+    { name = "openai", specifier = "==3.6.0" },
 ]
 
 [[package]]
@@ -1121,21 +1112,19 @@ wheels = [
 
 [[package]]
 name = "openai"
-version = "3.1.0"
+version = "3.6.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
-    { name = "distro" },
     { name = "httpx2" },
     { name = "jiter" },
     { name = "pydantic" },
     { name = "sniffio" },
-    { name = "tqdm" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/58/9b/d45911bf9abfc5a754d800d79fe56e4dcf6e7b679d6ff4b7e9689b56bc02/openai-3.1.0.tar.gz", hash = "sha256:3ae7190da63f718727f9c525740d3f713e85553d2bf1d0cc9247346bd9063a4d", size = 1131016, upload-time = "2026-08-14T23:49:46.325Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/ac/76/913b755a1a6b54e2d9140eb8d488aa0d47c7359b1d7eac5e864cb7913bbf/openai-3.6.0.tar.gz", hash = "sha256:18fe3f6e96390ef41ee27b152fc9effefca321c33673bd9b956a572493d3ab9b", size = 1455376, upload-time = "2026-08-28T22:29:18.268Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d3/45/84b9e909968c0f4c3112a828bba9aa8be6a5ee322fcb3d781145ee53d88e/openai-3.1.0-py3-none-any.whl", hash = "sha256:f06d5a5c8d06a0aead3a67d33fe5a3c3c31540a0f7a8017b02ba8cd99bc5c736", size = 1670762, upload-time = "2026-08-14T23:49:43.998Z" },
+    { url = "https://files.pythonhosted.org/packages/a1/94/805b87ecc951c49ec8f247f5e8eb324ab064bd2ad73b6a0e704dd49aa073/openai-3.6.0-py3-none-any.whl", hash = "sha256:508e2158bf971687f953b62e44b02f207792c815aac306816386d7ba34d37f5f", size = 1699841, upload-time = "2026-08-28T22:29:16.436Z" },
 ]
 
 [[package]]
@@ -1807,18 +1796,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/4e/f6/80760e98a08e6649d2d68afb6035af713121dfb615acce8c4f73810ec438/tiktoken-0.14.0-cp315-cp315t-musllinux_1_2_aarch64.whl", hash = "sha256:86f66c85e796f5d05d5c4a60ec1d40cbfebc47a32464053528c797163fa9ab89", size = 1251479, upload-time = "2026-08-17T19:49:36.419Z" },
     { url = "https://files.pythonhosted.org/packages/c5/84/50966fb6918a0fb9b32721277e5342bf729a2d74350074d662fbedf9772e/tiktoken-0.14.0-cp315-cp315t-musllinux_1_2_x86_64.whl", hash = "sha256:149d97453c4c98c04b081d64a85e635921269b532710d6faf81e9e82b790e7d3", size = 1316673, upload-time = "2026-08-17T19:49:37.756Z" },
     { url = "https://files.pythonhosted.org/packages/35/5e/9b01afd037bfa22a0033963fa091e0f75b6fb15cd85bffb42ff86e697323/tiktoken-0.14.0-cp315-cp315t-win_amd64.whl", hash = "sha256:561e7580f84a79859af1ef6f676968e9030fcc3fe195700b15235bca64f009c9", size = 987929, upload-time = "2026-08-17T19:49:38.947Z" },
-]
-
-[[package]]
-name = "tqdm"
-version = "4.70.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "colorama", marker = "sys_platform == 'win32'" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/21/3b/6c24bec5be5e743ffd99576daa5cc077722fc7d5bbc00bd133fa0c698dc6/tqdm-4.70.0.tar.gz", hash = "sha256:55b0b0dbd97462d06ebee91e4dac24ed4d4702be82b24f07e6c1d27e08cea220", size = 795438, upload-time = "2026-07-27T11:33:15.271Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/f9/1c/01bfd571a64e7f270e6bab5e33777debe0edc56759233ce84f27dec92d14/tqdm-4.70.0-py3-none-any.whl", hash = "sha256:7f585706bfddbdebf89daac705b2dfcc16890130727d3197ca62c732b4310953", size = 80184, upload-time = "2026-07-27T11:33:13.167Z" },
 ]
 
 [[package]]

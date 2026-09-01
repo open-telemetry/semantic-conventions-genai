@@ -341,7 +341,7 @@ wheels = [
 
 [[package]]
 name = "deepeval"
-version = "4.1.5"
+version = "4.2.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiohttp" },
@@ -366,7 +366,6 @@ dependencies = [
     { name = "questionary" },
     { name = "requests" },
     { name = "rich" },
-    { name = "sentry-sdk" },
     { name = "setuptools" },
     { name = "tabulate" },
     { name = "tenacity" },
@@ -374,9 +373,9 @@ dependencies = [
     { name = "typer" },
     { name = "wheel" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/53/12/ec23bff209b1202e8cc342a6b50ec302f7cfa3e52edacd4372505fd31dea/deepeval-4.1.5.tar.gz", hash = "sha256:064bffc288b899d3ac010e0b7c5eaaba11232e93140d8aeb988bd3f9bb09ee3e", size = 783751, upload-time = "2026-07-31T10:04:38.252Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/7f/95/44596d1e9853756346b4f82f6d3fca9d3a35dc421f253b89382544fb40f1/deepeval-4.2.0.tar.gz", hash = "sha256:07840ef5bc6db3242866ffae0969cca7cafe4a8c3e4e19e3a508283053a0b968", size = 855681, upload-time = "2026-08-24T21:54:17.825Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/78/f4/249f70ecab6a64d3ce7b783f32aade32ed697f6a8179e3eb35ae90dba3e2/deepeval-4.1.5-py3-none-any.whl", hash = "sha256:402f0a0b5968162a7b3af1fb99d443130626f27442b768e20ac93986188ae280", size = 1120506, upload-time = "2026-07-31T10:04:40.143Z" },
+    { url = "https://files.pythonhosted.org/packages/02/09/18975670bcabf2fca174621db1f95bee79c091de1df0b6395e02b1f491b5/deepeval-4.2.0-py3-none-any.whl", hash = "sha256:7e10ea7ffdbe5506fde9e981c76184134079b586ef6bfc78049cd78112083a0e", size = 1216872, upload-time = "2026-08-24T21:54:19.532Z" },
 ]
 
 [[package]]
@@ -392,10 +391,10 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "deepeval", specifier = "==4.1.5" },
+    { name = "deepeval", specifier = "==4.2.0" },
     { name = "genai-reference-shared", editable = "../../shared" },
-    { name = "langchain", specifier = "==1.3.14" },
-    { name = "openai", specifier = "==3.1.0" },
+    { name = "langchain", specifier = "==1.3.18" },
+    { name = "openai", specifier = "==3.6.0" },
 ]
 
 [[package]]
@@ -772,16 +771,16 @@ wheels = [
 
 [[package]]
 name = "langchain"
-version = "1.3.14"
+version = "1.3.18"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "langchain-core" },
     { name = "langgraph" },
     { name = "pydantic" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/29/68/a6dbad9c22df4087a0f9e79ddd46226c442b30128bfeee538d5889492a73/langchain-1.3.14.tar.gz", hash = "sha256:1b6696c72ba3bbbce54d745e0180742c9f6ece8bbc59ed5a46c3e20b9a435929", size = 645181, upload-time = "2026-07-16T13:28:18.29Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/31/e9/0e5425e522b624d7c5c0911957b467b82890b36b0099bf727951f2ee3059/langchain-1.3.18.tar.gz", hash = "sha256:74ce99294f6f2c82ee64c3df39daa6a22085ee1449a718065b3604a88d78bf4d", size = 637052, upload-time = "2026-08-27T17:33:12.702Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/a9/ec/0f942e78a621f8e3162ff1ed24284f469aaf51fb4607ee5831c626f2b2bc/langchain-1.3.14-py3-none-any.whl", hash = "sha256:4d10dbe91005952cddd56d0dc77aa108964da6bae90ab20063653957e901f782", size = 139560, upload-time = "2026-07-16T13:28:16.498Z" },
+    { url = "https://files.pythonhosted.org/packages/f7/04/374f6014ed6959dbdab92962c2b09e4d0223ed6a82f65694870b46d2c13f/langchain-1.3.18-py3-none-any.whl", hash = "sha256:f29cbef985848e5cfff5398f3c8c1568994a3a6f2a8f4fa720df30b6e0668b9c", size = 148007, upload-time = "2026-08-27T17:33:11.23Z" },
 ]
 
 [[package]]
@@ -1095,21 +1094,19 @@ wheels = [
 
 [[package]]
 name = "openai"
-version = "3.1.0"
+version = "3.6.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
-    { name = "distro" },
     { name = "httpx2" },
     { name = "jiter" },
     { name = "pydantic" },
     { name = "sniffio" },
-    { name = "tqdm" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/58/9b/d45911bf9abfc5a754d800d79fe56e4dcf6e7b679d6ff4b7e9689b56bc02/openai-3.1.0.tar.gz", hash = "sha256:3ae7190da63f718727f9c525740d3f713e85553d2bf1d0cc9247346bd9063a4d", size = 1131016, upload-time = "2026-08-14T23:49:46.325Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/ac/76/913b755a1a6b54e2d9140eb8d488aa0d47c7359b1d7eac5e864cb7913bbf/openai-3.6.0.tar.gz", hash = "sha256:18fe3f6e96390ef41ee27b152fc9effefca321c33673bd9b956a572493d3ab9b", size = 1455376, upload-time = "2026-08-28T22:29:18.268Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d3/45/84b9e909968c0f4c3112a828bba9aa8be6a5ee322fcb3d781145ee53d88e/openai-3.1.0-py3-none-any.whl", hash = "sha256:f06d5a5c8d06a0aead3a67d33fe5a3c3c31540a0f7a8017b02ba8cd99bc5c736", size = 1670762, upload-time = "2026-08-14T23:49:43.998Z" },
+    { url = "https://files.pythonhosted.org/packages/a1/94/805b87ecc951c49ec8f247f5e8eb324ab064bd2ad73b6a0e704dd49aa073/openai-3.6.0-py3-none-any.whl", hash = "sha256:508e2158bf971687f953b62e44b02f207792c815aac306816386d7ba34d37f5f", size = 1699841, upload-time = "2026-08-28T22:29:16.436Z" },
 ]
 
 [[package]]
@@ -1741,19 +1738,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/e9/67/cae617f1351490c25a4b8ac3b8b63a4dda609295d8222bad12242dfdc629/rich-14.3.4.tar.gz", hash = "sha256:817e02727f2b25b40ef56f5aa2217f400c8489f79ca8f46ea2b70dd5e14558a9", size = 230524, upload-time = "2026-04-11T02:57:45.419Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/b3/76/6d163cfac87b632216f71879e6b2cf17163f773ff59c00b5ff4900a80fa3/rich-14.3.4-py3-none-any.whl", hash = "sha256:07e7adb4690f68864777b1450859253bed81a99a31ac321ac1817b2313558952", size = 310480, upload-time = "2026-04-11T02:57:47.484Z" },
-]
-
-[[package]]
-name = "sentry-sdk"
-version = "2.68.1"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "certifi" },
-    { name = "urllib3" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/9a/e7/c504a4bd2d95df2e0ab73714a9161ff1cf6ff1486922685e5f46dfd9eba8/sentry_sdk-2.68.1.tar.gz", hash = "sha256:6a97895230b04bc35d4d8d2e51e3b9e21902dfb0086ccf1f131a80c15c7b997a", size = 1019262, upload-time = "2026-08-24T13:09:38.108Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/2b/28/465ad9382be98f2172e691f5836cf87f936773913ad7ab85ba1ba1d6706e/sentry_sdk-2.68.1-py3-none-any.whl", hash = "sha256:775b78871783a0ffd758276ad01b3bb2b1ebcdad8f9d2f0a7723f76b73c99b65", size = 520851, upload-time = "2026-08-24T13:09:36.186Z" },
 ]
 
 [[package]]

@@ -273,15 +273,6 @@ wheels = [
 ]
 
 [[package]]
-name = "colorama"
-version = "0.4.6"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/d8/53/6f443c9a4a8358a93a6792e2acffb9d9d5cb0a5cfd8802644b7b1c9a02e4/colorama-0.4.6.tar.gz", hash = "sha256:08695f5cb7ed6e0531a20572697297273c47b8cae5a63ffc6d6ed5c201be6e44", size = 27697, upload-time = "2022-10-25T02:36:22.414Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/d1/d6/3965ed04c63042e047cb6a3e6ed1a63a35087b6a609aa3a15ed8ac56c221/colorama-0.4.6-py2.py3-none-any.whl", hash = "sha256:4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6", size = 25335, upload-time = "2022-10-25T02:36:20.889Z" },
-]
-
-[[package]]
 name = "cryptography"
 version = "50.0.1"
 source = { registry = "https://pypi.org/simple" }
@@ -329,15 +320,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/63/8e/f1f955e0921dd2b6d22eae7e8d24a4c4b638d10735ffbf6a71f99eb0fcb8/cryptography-50.0.1-cp39-abi3-musllinux_1_2_aarch64.whl", hash = "sha256:fd3718b960d0b5dd213cdf03f3bcb7000e69dda0de8b956061947ff6bcff5558", size = 4888413, upload-time = "2026-08-25T19:45:20.4Z" },
     { url = "https://files.pythonhosted.org/packages/1f/ab/89e2b798d2c3925f82e2bb72d5979f3d2f6da2dd22ef4a8cd8b70d920039/cryptography-50.0.1-cp39-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:2a93d05e34d5f67fba6f891fe85d929999baa7195e853923ea6d7576c9e68c5e", size = 5044355, upload-time = "2026-08-25T19:45:22.353Z" },
     { url = "https://files.pythonhosted.org/packages/99/89/87ef49ffe383ef4e147d27b7bf2088fb0b54ea409dd87b5a89442e5828a5/cryptography-50.0.1-cp39-abi3-win_amd64.whl", hash = "sha256:55d16b1ef3ee0958d893a977b19777887e546c9954ea81b200c3301a864013f2", size = 3875429, upload-time = "2026-08-25T19:45:24.418Z" },
-]
-
-[[package]]
-name = "distro"
-version = "1.9.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/fc/f8/98eea607f65de6527f8a2e8885fc8015d3e6f5775df186e443e0964a11c3/distro-1.9.0.tar.gz", hash = "sha256:2fa77c6fd8940f116ee1d6b94a2f90b13b5ea8d019b98bc8bafdcabcdd9bdbed", size = 60722, upload-time = "2023-12-24T09:54:32.31Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/12/b3/231ffd4ab1fc9d679809f356cebee130ac7daa00d6d6f3206dd4fd137e9e/distro-1.9.0-py3-none-any.whl", hash = "sha256:7bffd925d65168f85027d8da9af6bddab658135b840670a223589bc0c8ef02b2", size = 20277, upload-time = "2023-12-24T09:54:30.421Z" },
 ]
 
 [[package]]
@@ -611,26 +593,24 @@ wheels = [
 
 [[package]]
 name = "openai"
-version = "3.1.0"
+version = "3.6.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
-    { name = "distro" },
     { name = "httpx2" },
     { name = "jiter" },
     { name = "pydantic" },
     { name = "sniffio" },
-    { name = "tqdm" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/58/9b/d45911bf9abfc5a754d800d79fe56e4dcf6e7b679d6ff4b7e9689b56bc02/openai-3.1.0.tar.gz", hash = "sha256:3ae7190da63f718727f9c525740d3f713e85553d2bf1d0cc9247346bd9063a4d", size = 1131016, upload-time = "2026-08-14T23:49:46.325Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/ac/76/913b755a1a6b54e2d9140eb8d488aa0d47c7359b1d7eac5e864cb7913bbf/openai-3.6.0.tar.gz", hash = "sha256:18fe3f6e96390ef41ee27b152fc9effefca321c33673bd9b956a572493d3ab9b", size = 1455376, upload-time = "2026-08-28T22:29:18.268Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d3/45/84b9e909968c0f4c3112a828bba9aa8be6a5ee322fcb3d781145ee53d88e/openai-3.1.0-py3-none-any.whl", hash = "sha256:f06d5a5c8d06a0aead3a67d33fe5a3c3c31540a0f7a8017b02ba8cd99bc5c736", size = 1670762, upload-time = "2026-08-14T23:49:43.998Z" },
+    { url = "https://files.pythonhosted.org/packages/a1/94/805b87ecc951c49ec8f247f5e8eb324ab064bd2ad73b6a0e704dd49aa073/openai-3.6.0-py3-none-any.whl", hash = "sha256:508e2158bf971687f953b62e44b02f207792c815aac306816386d7ba34d37f5f", size = 1699841, upload-time = "2026-08-28T22:29:16.436Z" },
 ]
 
 [[package]]
 name = "openai-agents"
-version = "0.21.0"
+version = "0.22.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "griffelib" },
@@ -641,9 +621,9 @@ dependencies = [
     { name = "typing-extensions" },
     { name = "websockets" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/c0/2e/11705d2111e0d46d7a35df234f816a93ba542f6eb9a07e6a75c6576af896/openai_agents-0.21.0.tar.gz", hash = "sha256:79c6ac2b8e7cb01f9cda6a565131577f67b849b6cc0bc7cfedfb9c3df3195d8f", size = 6264573, upload-time = "2026-08-15T02:50:10.532Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/1c/17/2a92451547a66d56bd5f10128aa64aa0fc282420421775c390902e7dfa42/openai_agents-0.22.0.tar.gz", hash = "sha256:6c3d7b9e34d3ca4bf763d4557d01ec844685290f0d80cb72e10a304029c0d7ee", size = 6390140, upload-time = "2026-08-19T13:45:22.482Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/f5/2a/0903d04d448531a6d1f4f246ba72e184c11d8814cfc71f7082861efd6882/openai_agents-0.21.0-py3-none-any.whl", hash = "sha256:06cec842ed681ce51fbbf466891d194eb25771511067f927892b8689d75516ca", size = 1095655, upload-time = "2026-08-15T02:50:08.873Z" },
+    { url = "https://files.pythonhosted.org/packages/ca/88/220a5a9283fba72107db7cb549fd127a0e532dbcbc89dda82cd28b9765a1/openai_agents-0.22.0-py3-none-any.whl", hash = "sha256:985a74a8024123980c2d4dc329d19b2332a0f86919fa7b3f6b9c2abaae022680", size = 1117078, upload-time = "2026-08-19T13:45:19.876Z" },
 ]
 
 [[package]]
@@ -659,8 +639,8 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "genai-reference-shared", editable = "../../shared" },
-    { name = "openai", specifier = "==3.1.0" },
-    { name = "openai-agents", specifier = "==0.21.0" },
+    { name = "openai", specifier = "==3.6.0" },
+    { name = "openai-agents", specifier = "==0.22.0" },
 ]
 
 [[package]]
@@ -1058,18 +1038,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/b5/b4/205b0d5241d934e8add0c38aa924c4f9fb7330834ff11e5444db964ec3f9/starlette-1.6.0.tar.gz", hash = "sha256:d4e3ac5e546444960c710297a3c9fc3f7ebae1b7e963f3d36173b49da535be9b", size = 2716969, upload-time = "2026-08-08T18:27:57.512Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/c8/cb/6a6a47d5b464bd08695d254f3da6e7986cc70c9fa5d778eda57538edfe56/starlette-1.6.0-py3-none-any.whl", hash = "sha256:a86dd39d14bb45f85a3d18525215a9ef0cfd1f192ac793220e72598c90335f0c", size = 75969, upload-time = "2026-08-08T18:27:56.196Z" },
-]
-
-[[package]]
-name = "tqdm"
-version = "4.70.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "colorama", marker = "sys_platform == 'win32'" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/21/3b/6c24bec5be5e743ffd99576daa5cc077722fc7d5bbc00bd133fa0c698dc6/tqdm-4.70.0.tar.gz", hash = "sha256:55b0b0dbd97462d06ebee91e4dac24ed4d4702be82b24f07e6c1d27e08cea220", size = 795438, upload-time = "2026-07-27T11:33:15.271Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/f9/1c/01bfd571a64e7f270e6bab5e33777debe0edc56759233ce84f27dec92d14/tqdm-4.70.0-py3-none-any.whl", hash = "sha256:7f585706bfddbdebf89daac705b2dfcc16890130727d3197ca62c732b4310953", size = 80184, upload-time = "2026-07-27T11:33:13.167Z" },
 ]
 
 [[package]]
