@@ -1,83 +1,108 @@
 ---
 name: reference
-description: 'Use when implementing or evaluating reference coverage for a semantic-conventions changeset involving GenAI spans, attributes, entities, metrics, or events. Reviews capturability, inline emission, span boundaries, and coverage across every Python library that credibly supports the change.'
+description: 'Use when implementing or evaluating reference coverage for a semantic-conventions changeset involving GenAI spans, attributes, entities, metrics, or events across Python libraries.'
 ---
 
-# Reference Coverage
+# Reference Scenarios Skill
 
-Use this skill when a semantic-conventions change introduces or changes GenAI spans, attributes, entities, metrics, events, or requirement levels and the repository needs reference implementation or evaluation across all libraries that support the new behavior.
+Use this skill to add or update reference implementations under `reference/scenarios/<library>/` when conventions change.
 
-Per-scenario authoring rules — inline attribute emission, span boundaries, current-call values, public-entry-point usage, and what to ignore — live in [reference-scenarios.instructions.md](../../instructions/reference-scenarios.instructions.md). Follow that file when editing any `reference/scenarios/**/scenario.py`. This skill covers only the agent-level workflow around it.
+## Workflow
 
-## Goal
+1. **Find libraries**: Check which scenarios under `reference/scenarios/` support the changed operation(s).
+2. **Update `scenario.py` and `README.md`**:
+   - Wrap real library calls in spans. Call or patch private methods if needed to instrument the library only when it's not possible to do so through the public API.
+   - Set attributes inline using only real values from SDK inputs, outputs, errors, or library state.
+   - If the library cannot provide a value, do not fake it, leave it unset.
+   - Update `reference/scenarios/<library>/README.md` operation table and status.
+3. **Run and test**:
+   ```bash
+   cd reference
+   uv run run-scenario <library>       # run scenario and update data.json
+   uv run run-scenario --all           # run all scenarios
+   uv run update-reports               # update report tables in README.md
+   ```
+4. **Regenerate docs** (from repo root):
+   ```bash
+   make generate-all
+   ```
 
-Implement or evaluate concrete reference scenarios and emitted attributes that honestly exercise every supporting library without faking values the library cannot credibly expose.
+---
 
-## Non-Goals
+## Scenario README (`reference/scenarios/<library>/README.md`)
 
-This skill is not for deciding whether the convention itself is correct.
+When adding or updating a reference scenario, update its `README.md`:
+- **Libraries only**: Scenarios are for libraries and SDKs only. Do NOT add application examples.
+- **Short description**: 1-2 sentences explaining what the library is (e.g. model-call boundary, agent framework) and what it owns vs delegates.
+- **Operations table**: List relevant operations and their status:
 
-Use [evaluate-reference.instructions.md](../../instructions/evaluate-reference.instructions.md) for the final evaluation of capturability, coverage quality, and honest capture gaps.
+```markdown
+| Operation | Should be instrumented here | Status |
+| --- | --- | --- |
+| inference (`chat`) | Yes - calls model directly | ✅ Implemented |
+| execute_tool | No - app runs tools | ➖ Not instrumentable |
+| retrieval | Yes - Vector Stores search | ❌ Not implemented |
+```
 
-## Core Stance
+---
 
-- Start from the semantic-conventions change as written.
-- Add reference implementations for every library in this repository that supports the affected operation and can credibly expose the new fields at the current call boundary. Repository-wide coverage across all supporting libraries is the default, not a single illustrative example.
-- Do not skip a supported library just because the implementation is repetitive, and do not stop after the first passing library when the same change applies to multiple ecosystems.
-- Do not force unsupported libraries to emit guessed, hardcoded, cross-call, or app-specific values.
-- Prefer the library's natural execution shape over surgical paths that minimize trace output. Extra LLM round-trips or extra spans produced by invoking the public entry point are acceptable.
+## Good vs Bad Patterns
 
-## What Counts As Supporting The Change
+### 1. Where values come from
 
-A library should usually get a reference update when all of the following are true:
+**Good**: Read values from SDK arguments or response objects:
+```python
+# 'model' is an SDK parameter; response fields come from the SDK object
+with tracer.start_as_current_span("chat", attributes={"gen_ai.request.model": model}) as span:
+    response = client.chat.completions.create(model=model, messages=messages)
+    span.set_attribute("gen_ai.response.id", response.id)
+    span.set_attribute("gen_ai.usage.output_tokens", response.usage.completion_tokens)
+```
 
-1. The repository already has a scenario directory for the library under `reference/scenarios/`. If it does not, the library is `not yet implemented in this repo`, not a supporting library missing coverage.
-2. The existing scenario already exercises the relevant operation, or the operation can be added naturally within that scenario's structure.
-3. The library API or current response objects expose the information needed for the new span or attribute at the current call boundary.
-4. The reference implementation can emit the value from the current request, current response, current exception, or stable library-owned state.
+**Bad**: Hardcoding values or using fake test data:
+```python
+# Bad: hardcoded value not returned by SDK
+span.set_attribute("gen_ai.agent.name", "my-agent")
 
-If the value would have to be guessed, carried forward from an unrelated call, or synthesized from test-only scaffolding, do not force it into the reference implementation.
+# Bad: reading from test config instead of SDK request/response
+span.set_attribute("gen_ai.response.model", test_config["expected_model"])
+```
 
-## Implementation Procedure
+### 2. Set attributes inline
 
-1. Read the semantic-conventions change and extract the exact changed spans, attributes, requirement levels, and examples.
-2. Translate it into a concrete implementation worklist grouped by operation, not by prose section.
-3. Inventory the Python libraries in this repository that implement the affected operation.
-4. For each library, decide whether the changed fields are credibly available from the current call boundary.
-5. Add or update the reference scenario for every supporting library following [reference-scenarios.instructions.md](../../instructions/reference-scenarios.instructions.md).
-6. Regenerate downstream outputs:
-   - Refresh each updated scenario's `reference/scenarios/<library>/data.json` by running its scenario.
-   - Run `make generate-all` from the repository root to regenerate the registry, docs, and status reports.
-7. Keep unsupported libraries honest. If a library cannot credibly emit a field, leave it out and record it as a capture gap (see [evaluate-reference.instructions.md](../../instructions/evaluate-reference.instructions.md)).
-8. Run targeted validation for the changed libraries when feasible.
+**Good**: Set attributes right next to the SDK call:
+```python
+with tracer.start_as_current_span("invoke_agent") as span:
+    result = agent.invoke(prompt)
+    span.set_attribute("gen_ai.agent.id", agent.id)
+```
 
-## Evaluation Procedure
+**Bad**: Hiding attribute logic in helper functions:
+```python
+with tracer.start_as_current_span("invoke_agent") as span:
+    result = agent.invoke(prompt)
+    _set_attributes(span, agent, result)  # Hides where values come from
+```
 
-1. Identify the authoritative changeset. For a pull request, use the pull request diff.
-2. Identify every changed signal, entity, attribute, and requirement level.
-3. Apply [evaluate-reference.instructions.md](../../instructions/evaluate-reference.instructions.md) to each changed field.
-4. Classify each field as `direct`, `derivable`, `weak`, or `capture gap`.
-5. Verify emitted values come from the current call and spans wrap real library operations.
-6. Inventory every existing scenario that credibly supports the change, including unchanged scenarios.
-7. Report implementation defects separately from honest capture gaps and missing coverage.
+### 3. Span boundaries
 
-## Output Format
+**Good**: Span wraps the specific library call representing the operation:
+```python
+with tracer.start_as_current_span("chat") as span:
+    response = client.chat.completions.create(model=model, messages=messages)
+```
 
-When using this skill, summarize the work in five groups.
+**Bad**: Span wraps scenario setup, multiple calls, or application loops:
+```python
+# Bad: wraps multiple separate calls and setup code
+with tracer.start_as_current_span("chat"):
+    setup_environment()
+    resp1 = client.chat.completions.create(...)
+    resp2 = client.chat.completions.create(...)
 
-- `Convention changes`
-- `Libraries updated`
-- `Libraries not updated`
-- `Capture gaps`
-- `Validation`
+# Bad: wraps custom application logic instead of instrumenting library API
+with tracer.start_as_current_span("invoke_agent"):
+    for step in app_steps:
+        process_step(step)
+```
 
-Under `Libraries not updated`, state whether each library is:
-
-- `not applicable`
-- `not yet implemented in this repo`
-- `honest capture gap; evaluate separately`
-
-Under `Capture gaps`, list each library left without a reference implementation and the exact missing current-call source that prevented a credible implementation.
-
-For evaluations, report findings first in severity order, followed by capture gaps,
-missing supporting-library coverage, and validation performed.

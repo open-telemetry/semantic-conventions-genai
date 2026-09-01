@@ -290,16 +290,20 @@
                         },
                         {
                             "type": "string"
+                        },
+                        {
+                            "type": "null"
                         }
                     ],
-                    "description": "Reason for finishing the generation.",
+                    "default": null,
+                    "deprecated": true,
+                    "description": "Deprecated: report finish reasons in `gen_ai.response.finish_reasons` instead. Reason for finishing the generation.",
                     "title": "Finish Reason"
                 }
             },
             "required": [
                 "role",
-                "parts",
-                "finish_reason"
+                "parts"
             ],
             "title": "OutputMessage",
             "type": "object"

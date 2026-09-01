@@ -40,18 +40,9 @@ attribute_groups:
     attributes:
       - ref: gen_ai.usage.input_tokens
         requirement_level: recommended
-      - ref: gen_ai.usage.cache_read.input_tokens
-        requirement_level:
-          recommended: When applicable.
-      - ref: gen_ai.usage.cache_write.input_tokens
-        requirement_level:
-          recommended: When applicable.
       - ref: gen_ai.usage.output_tokens
         requirement_level: recommended
 
-  # Kept out of `attributes.gen_ai.usage`: an internal agent span reports the
-  # usage its own call tree accumulated, and summing breakdowns across that
-  # tree would count the same tokens more than once.
   - id: attributes.gen_ai.usage.breakdown
     visibility: internal
     attributes:
@@ -80,6 +71,12 @@ attribute_groups:
         requirement_level:
           recommended: When applicable.
       - ref: gen_ai.usage.audio.output_tokens
+        requirement_level:
+          recommended: When applicable.
+      - ref: gen_ai.usage.cache_read.input_tokens
+        requirement_level:
+          recommended: When applicable.
+      - ref: gen_ai.usage.cache_write.input_tokens
         requirement_level:
           recommended: When applicable.
 
