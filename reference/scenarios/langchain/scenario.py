@@ -331,6 +331,10 @@ async def run_durable_workflow_reference():
             raise RuntimeError("LangGraph did not expose one execution info value before suspension")
 
         suspended_execution_info = execution_infos[0]
+        suspended_snapshot = await graph.aget_state(initial_config)
+        suspended_checkpoint_id = suspended_snapshot.config["configurable"].get("checkpoint_id")
+        if not isinstance(suspended_checkpoint_id, str):
+            raise RuntimeError("LangGraph did not expose a checkpoint ID before suspension")
         suspended_span.set_attribute("gen_ai.workflow.name", "durable approval workflow")
     # This distinct span represents the later public resume call. Command is
     # accepted only because the prior invocation persisted an interrupt through
@@ -364,14 +368,17 @@ async def run_durable_workflow_reference():
         resumed_snapshot = await graph.aget_state(resumed_config)
         if resumed_snapshot.values.get("approval_status") != "approved":
             raise RuntimeError("LangGraph did not persist the resumed node state update")
+        resumed_checkpoint_id = resumed_snapshot.config["configurable"].get("checkpoint_id")
+        if not isinstance(resumed_checkpoint_id, str):
+            raise RuntimeError("LangGraph did not expose a checkpoint ID after resume")
+        if resumed_checkpoint_id == suspended_checkpoint_id:
+            raise RuntimeError("LangGraph did not advance the persisted state version")
 
         state_event_attributes = {
             "gen_ai.execution.state.changed_key.count": len(node_delta),
             "gen_ai.execution.state.changed_keys": sorted(node_delta),
+            "gen_ai.execution.state.version": resumed_checkpoint_id,
         }
-        state_version = resumed_snapshot.metadata.get("step")
-        if state_version is not None:
-            state_event_attributes["gen_ai.execution.state.version"] = str(state_version)
         reference_event_logger().emit(
             event_name="gen_ai.execution.state.changed",
             body="Execution state changed",
