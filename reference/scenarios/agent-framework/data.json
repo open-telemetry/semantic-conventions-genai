@@ -123,14 +123,6 @@
       }
     },
     {
-      "id": "genai_content_schema",
-      "message": "Attribute 'gen_ai.output.messages' value does not conform to the GenAI schema: \"finish_reason\" is a required property",
-      "context": {
-        "attribute": "gen_ai.output.messages",
-        "errors": "\"finish_reason\" is a required property"
-      }
-    },
-    {
       "id": "type_mismatch",
       "message": "Attribute 'gen_ai.response.finish_reasons' has type 'string'. Type should be 'string[]'.",
       "context": {
