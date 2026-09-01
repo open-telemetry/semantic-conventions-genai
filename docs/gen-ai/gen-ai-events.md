@@ -254,6 +254,12 @@ Emitters SHOULD also set `gen_ai.conversation.id` when available. If appended
 messages or their correlation cannot be reliably determined, emitters SHOULD
 use `gen_ai.input.messages`.
 
+Consumers reconstruct conversation state by processing correlated operations
+in order. For each operation, consumers replace the state with
+`gen_ai.input.messages` when present, otherwise append
+`gen_ai.input.messages_delta`, and then append the same operation's
+`gen_ai.output.messages` before processing the next operation.
+
 Instrumentations SHOULD require a separate opt-in for delta encoding.
 Enabling input message capture SHOULD NOT implicitly enable delta encoding.
 
