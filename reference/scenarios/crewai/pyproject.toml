@@ -3,7 +3,7 @@ name = "crewai-reference-test"
 version = "0.0.0"
 requires-python = ">=3.12"
 dependencies = [
-    "crewai==1.15.10",
+    "crewai==1.15.18",
     "genai-reference-shared",
 ]
 
