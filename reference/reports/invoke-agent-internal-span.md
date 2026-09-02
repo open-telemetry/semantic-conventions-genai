@@ -40,8 +40,11 @@
 | Attribute | Supporting Libraries |
 | --- | --- |
 | gen_ai.input.messages | [agent-framework], [autogen], [crewai], [google-adk], [langchain], [openai-agents], [pydantic-ai] |
+| gen_ai.input.messages_ref | (none) |
 | gen_ai.output.messages | [agent-framework], [autogen], [crewai], [google-adk], [langchain], [openai-agents], [pydantic-ai] |
+| gen_ai.output.messages_ref | (none) |
 | gen_ai.system_instructions | [agent-framework], [autogen], [crewai], [google-adk], [langchain], [openai-agents], [pydantic-ai] |
+| gen_ai.system_instructions_ref | (none) |
 | gen_ai.tool.definitions | [agent-framework], [autogen], [crewai], [google-adk], [langchain], [openai-agents], [pydantic-ai] |
 
 [agent-framework]: ../scenarios/agent-framework/scenario.py

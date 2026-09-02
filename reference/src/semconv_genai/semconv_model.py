@@ -45,6 +45,7 @@ _SPANS = {
 
 _EVENTS = {
     "gen_ai.client.inference.operation.details": "Inference Operation Details",
+    "gen_ai.content.storage.result": "Content Storage Result",
     "gen_ai.evaluation.result": "Evaluation Result",
 }
 

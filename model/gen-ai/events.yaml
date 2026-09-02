@@ -11,6 +11,38 @@ events:
     stability: development
     attributes:
       - ref_group: span.gen_ai.inference.client
+  - name: gen_ai.content.storage.result
+    requirement_level: opt_in
+    brief: Describes the terminal result of storing GenAI content externally.
+    note: |
+      This event SHOULD be recorded when an instrumentation or configured
+      content uploader observes a terminal result after creating an external
+      content reference. Exactly one of `gen_ai.system_instructions_ref`,
+      `gen_ai.input.messages_ref`, or `gen_ai.output.messages_ref` MUST be set.
+
+      The event SHOULD be associated with the GenAI operation span whose content
+      is being stored when trace context is available. It MUST NOT contain the
+      referenced content.
+
+      Instrumentations SHOULD set severity to INFO (severity number 9) when the
+      status is `stored` and WARN (severity number 13) when the status is
+      `failed` or `dropped`.
+    stability: development
+    attributes:
+      - ref: gen_ai.system_instructions_ref
+        requirement_level:
+          conditionally_required: If the event describes system instructions.
+      - ref: gen_ai.input.messages_ref
+        requirement_level:
+          conditionally_required: If the event describes input messages.
+      - ref: gen_ai.output.messages_ref
+        requirement_level:
+          conditionally_required: If the event describes output messages.
+      - ref: gen_ai.content.storage.status
+        requirement_level: required
+      - ref: error.type
+        requirement_level:
+          conditionally_required: If `gen_ai.content.storage.status` is `failed`.
   - name: gen_ai.evaluation.result
     requirement_level: recommended
     brief: >
