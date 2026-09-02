@@ -1,5 +1,12 @@
 {
-  "spans": {},
+  "spans": {
+    "gen_ai.inference.client": [
+      "gen_ai.input.messages_ref",
+      "gen_ai.operation.name",
+      "gen_ai.output.messages_ref",
+      "gen_ai.system_instructions_ref"
+    ]
+  },
   "events": {
     "gen_ai.content.storage.result": [
       "error.type",
@@ -10,6 +17,63 @@
     ]
   },
   "metrics": {},
-  "findings": [],
+  "findings": [
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'chat' (operation 'chat') is missing expected attribute 'gen_ai.provider.name'",
+      "context": {
+        "missing_attribute": "gen_ai.provider.name",
+        "operation": "chat"
+      }
+    },
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'chat' (operation 'chat') is missing expected attribute 'gen_ai.response.finish_reasons'",
+      "context": {
+        "missing_attribute": "gen_ai.response.finish_reasons",
+        "operation": "chat"
+      }
+    },
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'chat' (operation 'chat') is missing expected attribute 'gen_ai.response.id'",
+      "context": {
+        "missing_attribute": "gen_ai.response.id",
+        "operation": "chat"
+      }
+    },
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'chat' (operation 'chat') is missing expected attribute 'gen_ai.response.model'",
+      "context": {
+        "missing_attribute": "gen_ai.response.model",
+        "operation": "chat"
+      }
+    },
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'chat' (operation 'chat') is missing expected attribute 'gen_ai.usage.input_tokens'",
+      "context": {
+        "missing_attribute": "gen_ai.usage.input_tokens",
+        "operation": "chat"
+      }
+    },
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'chat' (operation 'chat') is missing expected attribute 'gen_ai.usage.output_tokens'",
+      "context": {
+        "missing_attribute": "gen_ai.usage.output_tokens",
+        "operation": "chat"
+      }
+    },
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'chat' (operation 'chat') is missing expected attribute 'server.address'",
+      "context": {
+        "missing_attribute": "server.address",
+        "operation": "chat"
+      }
+    }
+  ],
   "entities": {}
 }

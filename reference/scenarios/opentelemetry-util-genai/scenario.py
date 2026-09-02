@@ -151,9 +151,10 @@ def run_stored_and_dropped_content_storage() -> None:
             block_uploads=True,
         )
         with _reference_tracer.start_as_current_span(
-            "reference.content_storage.queue",
-            kind=SpanKind.INTERNAL,
-        ):
+            "chat",
+            kind=SpanKind.CLIENT,
+            attributes={"gen_ai.operation.name": "chat"},
+        ) as span:
             hook.on_completion(
                 inputs=[types.InputMessage(role="user", parts=[types.Text(content="Weather in Paris?")])],
                 outputs=[
@@ -164,7 +165,7 @@ def run_stored_and_dropped_content_storage() -> None:
                     )
                 ],
                 system_instruction=[types.Text(content="Answer weather questions concisely.")],
-                span=None,
+                span=span,
             )
 
         hook.release_upload()
@@ -186,14 +187,15 @@ def run_failed_content_storage() -> None:
         removed_upload_dir.rmdir()
 
         with _reference_tracer.start_as_current_span(
-            "reference.content_storage.failure",
-            kind=SpanKind.INTERNAL,
-        ):
+            "chat",
+            kind=SpanKind.CLIENT,
+            attributes={"gen_ai.operation.name": "chat"},
+        ) as span:
             hook.on_completion(
                 inputs=[types.InputMessage(role="user", parts=[types.Text(content="Will this be stored?")])],
                 outputs=[],
                 system_instruction=[],
-                span=None,
+                span=span,
             )
 
         hook.shutdown(timeout_sec=5)

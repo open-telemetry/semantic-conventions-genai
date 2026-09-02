@@ -140,7 +140,7 @@ The reference does not indicate whether storing the content succeeded or
 whether the content remains available.
 
 > [!Warning]
-> This attribute may contain sensitive information such as storage paths.
+> This attribute may contain sensitive information such as storage paths and may have high cardinality.
 
 **[9] `gen_ai.memory.query.text`:** Instrumentations SHOULD NOT capture this attribute by default. Capture SHOULD be gated
 by an explicit user opt-in, for example `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT`.
@@ -191,7 +191,7 @@ The reference does not indicate whether storing the content succeeded or
 whether the content remains available.
 
 > [!Warning]
-> This attribute may contain sensitive information such as storage paths.
+> This attribute may contain sensitive information such as storage paths and may have high cardinality.
 
 **[16] `gen_ai.output.type`:** This attribute SHOULD be used when the client requests output of a specific type. The model may return zero or more outputs of this type.
 This attribute specifies the output modality and not the actual output format. For example, if an image is requested, the actual output could be a URL pointing to an image file.
@@ -304,7 +304,7 @@ The reference does not indicate whether storing the content succeeded or
 whether the content remains available.
 
 > [!Warning]
-> This attribute may contain sensitive information such as storage paths.
+> This attribute may contain sensitive information such as storage paths and may have high cardinality.
 
 **[31] `gen_ai.tool.call.arguments`:**
 

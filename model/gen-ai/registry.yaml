@@ -880,7 +880,7 @@ attributes:
       whether the content remains available.
 
       > [!Warning]
-      > This attribute may contain sensitive information such as storage paths.
+      > This attribute may contain sensitive information such as storage paths and may have high cardinality.
     examples: ["s3://example-bucket/gen-ai/trace-123/system-instructions.json"]
     stability: development
   - key: gen_ai.input.messages
@@ -948,7 +948,7 @@ attributes:
       whether the content remains available.
 
       > [!Warning]
-      > This attribute may contain sensitive information such as storage paths.
+      > This attribute may contain sensitive information such as storage paths and may have high cardinality.
     examples: ["s3://example-bucket/gen-ai/trace-123/input-messages.json"]
     stability: development
   - key: gen_ai.output.messages
@@ -998,7 +998,7 @@ attributes:
       whether the content remains available.
 
       > [!Warning]
-      > This attribute may contain sensitive information such as storage paths.
+      > This attribute may contain sensitive information such as storage paths and may have high cardinality.
     examples: ["s3://example-bucket/gen-ai/trace-123/output-messages.json"]
     stability: development
   - key: gen_ai.content.storage.status
