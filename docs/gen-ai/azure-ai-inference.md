@@ -287,31 +287,7 @@ Instrumentations MUST follow [JSON schema](/model/gen-ai/gen-ai-system-instructi
 
 When the attribute is recorded on events, it MUST be recorded in structured form. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
 
-**[38] `gen_ai.tool.definitions`:**
-
-> [!WARNING]
-> This attribute may contain sensitive information.
-
-The scope of the recorded set depends on the signal it is reported on:
-
-- On spans and events that describe a single model request, this is the
-  effective set of tools provided to that request, recorded after any runtime
-  filtering, resolution, or name-collision handling has been applied.
-- On spans that fetch a previously generated model response, this is the set
-  of tools carried on the fetched response.
-- On spans that cover an agent invocation spanning multiple model requests,
-  this is the set of tools configured for the agent; some instrumentations
-  instead record an effective set resolved for one of the constituent
-  requests. When the effective set varies between requests, this attribute
-  does not necessarily reflect the set provided to any individual request.
-
-Consumers that depend on the exact set of tools provided to a specific model
-request SHOULD read this attribute from the corresponding inference span or
-event.
-
-Since this attribute could be large, it's NOT RECOMMENDED to populate
-non-required properties by default. Instrumentations MAY provide a way
-to enable populating optional properties.
+**[38] `gen_ai.tool.definitions`:** The effective set of tools provided to this model request, recorded after any runtime filtering, resolution, or name-collision handling has been applied.
 
 Instrumentations MUST follow [JSON schema](/model/gen-ai/gen-ai-tool-definitions.json).
 
