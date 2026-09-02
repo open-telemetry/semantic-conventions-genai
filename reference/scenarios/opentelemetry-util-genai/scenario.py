@@ -34,7 +34,10 @@ class _DroppedUploadHandler(logging.Handler):
             return
         path = record.args[0] if isinstance(record.args, tuple) else record.args
         if isinstance(path, str):
-            reference_attribute, receipt_context = self._hook.receipt_context(path)
+            receipt = self._hook.receipt_context(path)
+            if receipt is None:
+                return
+            reference_attribute, receipt_context = receipt
             token = context.attach(receipt_context)
             try:
                 reference_event_logger().emit(
@@ -80,6 +83,9 @@ class ReceiptUploadCompletionHook(UploadCompletionHook):
             "gen_ai.system_instructions_ref",
             current_context,
         )
+        # The current registry models receipts only for these three content
+        # references. The upstream hook may also upload tool definitions, but
+        # that path must not produce an unmodeled storage-result attribute.
         return refs
 
     def _submit_all(self, upload_data: UploadData) -> None:
@@ -89,8 +95,9 @@ class ReceiptUploadCompletionHook(UploadCompletionHook):
         finally:
             _upload_logger.removeHandler(self._dropped_upload_handler)
 
-    def receipt_context(self, path: str) -> tuple[str, context.Context]:
-        return self._receipt_context[path]
+    def receipt_context(self, path: str) -> tuple[str, context.Context] | None:
+        """Return receipt metadata only for references modeled by the registry."""
+        return self._receipt_context.get(path)
 
     def _do_upload(
         self,
@@ -104,7 +111,10 @@ class ReceiptUploadCompletionHook(UploadCompletionHook):
         try:
             super()._do_upload(path, contents_hashed_to_filename, json_encodeable)
         except Exception as error:
-            reference_attribute, receipt_context = self._receipt_context[path]
+            receipt = self.receipt_context(path)
+            if receipt is None:
+                raise
+            reference_attribute, receipt_context = receipt
             token = context.attach(receipt_context)
             try:
                 reference_event_logger().emit(
@@ -121,7 +131,10 @@ class ReceiptUploadCompletionHook(UploadCompletionHook):
                 context.detach(token)
             raise
         else:
-            reference_attribute, receipt_context = self._receipt_context[path]
+            receipt = self.receipt_context(path)
+            if receipt is None:
+                return
+            reference_attribute, receipt_context = receipt
             token = context.attach(receipt_context)
             try:
                 reference_event_logger().emit(
@@ -151,10 +164,9 @@ def run_stored_and_dropped_content_storage() -> None:
             block_uploads=True,
         )
         with _reference_tracer.start_as_current_span(
-            "chat",
-            kind=SpanKind.CLIENT,
-            attributes={"gen_ai.operation.name": "chat"},
-        ) as span:
+            "reference.content_storage.queue",
+            kind=SpanKind.INTERNAL,
+        ):
             hook.on_completion(
                 inputs=[types.InputMessage(role="user", parts=[types.Text(content="Weather in Paris?")])],
                 outputs=[
@@ -165,7 +177,18 @@ def run_stored_and_dropped_content_storage() -> None:
                     )
                 ],
                 system_instruction=[types.Text(content="Answer weather questions concisely.")],
-                span=span,
+                tool_definitions=[
+                    types.FunctionToolDefinition(
+                        name="get_weather",
+                        description="Get the weather for a city.",
+                        parameters={
+                            "type": "object",
+                            "properties": {"city": {"type": "string"}},
+                            "required": ["city"],
+                        },
+                    )
+                ],
+                span=None,
             )
 
         hook.release_upload()
@@ -187,17 +210,46 @@ def run_failed_content_storage() -> None:
         removed_upload_dir.rmdir()
 
         with _reference_tracer.start_as_current_span(
-            "chat",
-            kind=SpanKind.CLIENT,
-            attributes={"gen_ai.operation.name": "chat"},
-        ) as span:
+            "reference.content_storage.failure",
+            kind=SpanKind.INTERNAL,
+        ):
             hook.on_completion(
                 inputs=[types.InputMessage(role="user", parts=[types.Text(content="Will this be stored?")])],
                 outputs=[],
                 system_instruction=[],
-                span=span,
+                span=None,
             )
 
+        hook.shutdown(timeout_sec=5)
+
+
+def run_unmodeled_tool_definition_storage() -> None:
+    """Store a tool definition without emitting an unmodeled receipt event."""
+    print("  [content_storage] unmodeled tool definition storage")
+
+    with TemporaryDirectory() as upload_dir:
+        hook = ReceiptUploadCompletionHook(
+            base_path=upload_dir,
+            max_queue_size=1,
+            block_uploads=False,
+        )
+        hook.on_completion(
+            inputs=[],
+            outputs=[],
+            system_instruction=[],
+            tool_definitions=[
+                types.FunctionToolDefinition(
+                    name="get_weather",
+                    description="Get the weather for a city.",
+                    parameters={
+                        "type": "object",
+                        "properties": {"city": {"type": "string"}},
+                        "required": ["city"],
+                    },
+                )
+            ],
+            span=None,
+        )
         hook.shutdown(timeout_sec=5)
 
 
@@ -207,6 +259,7 @@ def main() -> None:
 
     run_stored_and_dropped_content_storage()
     run_failed_content_storage()
+    run_unmodeled_tool_definition_storage()
 
     flush_and_shutdown(tp, lp, mp)
 

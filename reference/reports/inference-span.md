@@ -6,7 +6,7 @@
 
 | Attribute | Supporting Libraries |
 | --- | --- |
-| gen_ai.operation.name | [agent-framework], [anthropic], [aws-bedrock], [azure-ai-inference], [azure-openai], [claude-agent-sdk], [cohere], [google-genai], [groq], [litellm], [mistralai], [openai], [opentelemetry-util-genai], [vertexai] |
+| gen_ai.operation.name | [agent-framework], [anthropic], [aws-bedrock], [azure-ai-inference], [azure-openai], [claude-agent-sdk], [cohere], [google-genai], [groq], [litellm], [mistralai], [openai], [vertexai] |
 | gen_ai.provider.name | [agent-framework], [anthropic], [aws-bedrock], [azure-ai-inference], [azure-openai], [claude-agent-sdk], [cohere], [google-genai], [groq], [litellm], [mistralai], [openai], [vertexai] |
 
 ## Conditionally Required
@@ -62,12 +62,12 @@
 | Attribute | Supporting Libraries |
 | --- | --- |
 | gen_ai.input.messages | [agent-framework], [anthropic], [aws-bedrock], [claude-agent-sdk], [groq], [litellm], [mistralai], [openai] |
-| gen_ai.input.messages_ref | [opentelemetry-util-genai] |
+| gen_ai.input.messages_ref | [anthropic] |
 | gen_ai.output.messages | [agent-framework], [anthropic], [aws-bedrock], [claude-agent-sdk], [litellm], [mistralai], [openai] |
-| gen_ai.output.messages_ref | [opentelemetry-util-genai] |
+| gen_ai.output.messages_ref | [anthropic] |
 | gen_ai.prompt.variable | (none) |
-| gen_ai.system_instructions | [agent-framework] |
-| gen_ai.system_instructions_ref | [opentelemetry-util-genai] |
+| gen_ai.system_instructions | [agent-framework], [anthropic] |
+| gen_ai.system_instructions_ref | [anthropic] |
 | gen_ai.tool.definitions | [aws-bedrock], [azure-ai-inference], [cohere], [google-genai], [groq], [litellm], [mistralai], [openai], [vertexai] |
 
 [agent-framework]: ../scenarios/agent-framework/scenario.py
@@ -82,5 +82,4 @@
 [litellm]: ../scenarios/litellm/scenario.py
 [mistralai]: ../scenarios/mistralai/scenario.py
 [openai]: ../scenarios/openai/scenario.py
-[opentelemetry-util-genai]: ../scenarios/opentelemetry-util-genai/scenario.py
 [vertexai]: ../scenarios/vertexai/scenario.py

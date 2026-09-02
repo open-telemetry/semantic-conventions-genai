@@ -62,12 +62,12 @@
 | Attribute | Supporting Libraries |
 | --- | --- |
 | gen_ai.input.messages | [anthropic], [aws-bedrock], [azure-ai-inference], [cohere], [google-genai], [groq], [litellm], [mistralai], [openai], [vertexai] |
-| gen_ai.input.messages_ref | (none) |
+| gen_ai.input.messages_ref | [anthropic] |
 | gen_ai.output.messages | [anthropic], [aws-bedrock], [azure-ai-inference], [cohere], [google-genai], [groq], [litellm], [mistralai], [openai], [vertexai] |
-| gen_ai.output.messages_ref | (none) |
+| gen_ai.output.messages_ref | [anthropic] |
 | gen_ai.prompt.variable | (none) |
-| gen_ai.system_instructions | (none) |
-| gen_ai.system_instructions_ref | (none) |
+| gen_ai.system_instructions | [anthropic] |
+| gen_ai.system_instructions_ref | [anthropic] |
 | gen_ai.tool.definitions | (none) |
 
 [anthropic]: ../scenarios/anthropic/scenario.py
