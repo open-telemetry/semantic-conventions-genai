@@ -340,9 +340,7 @@ def _run_crew_planning_scenario(*, header, task_description):
             "gen_ai.operation.name": "plan",
             "gen_ai.agent.name": planner_agent.role,
         }
-        with _reference_tracer.start_as_current_span(
-            f"plan {planner_agent.role}", attributes=plan_span_attributes
-        ):
+        with _reference_tracer.start_as_current_span(f"plan {planner_agent.role}", attributes=plan_span_attributes):
             self._create_planning_agent = lambda: planner_agent
             try:
                 return original_handle(self)
