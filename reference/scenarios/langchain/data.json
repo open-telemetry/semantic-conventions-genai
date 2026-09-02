@@ -37,13 +37,7 @@
       "gen_ai.retrieval.top_k"
     ]
   },
-  "events": {
-    "gen_ai.execution.state.changed": [
-      "gen_ai.execution.state.changed_key.count",
-      "gen_ai.execution.state.changed_keys",
-      "gen_ai.execution.state.version"
-    ]
-  },
+  "events": {},
   "metrics": {},
   "findings": [
     {

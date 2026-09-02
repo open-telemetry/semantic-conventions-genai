@@ -21,6 +21,6 @@ workflow, agent, and owned tool spans, and records the
 `EventActions.state_delta` produced when the confirmed tool updates
 `ToolContext.state`. It uses `Event.invocation_id` only to verify that ADK
 resumed the same execution; the identifier is not emitted. The event records
-the bounded key name and delta size, never the state value. It does not record
+only the delta size, never application-controlled key names or state values. It does not record
 messages, tool arguments or results, session state, or idempotency data for
 this path.

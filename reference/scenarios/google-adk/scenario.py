@@ -480,7 +480,6 @@ def run_resumable_execution_reference():
                                 body="Execution state changed",
                                 attributes={
                                     "gen_ai.execution.state.changed_key.count": len(state_delta),
-                                    "gen_ai.execution.state.changed_keys": sorted(state_delta),
                                 },
                             )
                         resumed_final_response = resumed_final_response or event.is_final_response()

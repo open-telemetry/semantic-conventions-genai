@@ -47,8 +47,7 @@
   },
   "events": {
     "gen_ai.execution.state.changed": [
-      "gen_ai.execution.state.changed_key.count",
-      "gen_ai.execution.state.changed_keys"
+      "gen_ai.execution.state.changed_key.count"
     ]
   },
   "metrics": {
