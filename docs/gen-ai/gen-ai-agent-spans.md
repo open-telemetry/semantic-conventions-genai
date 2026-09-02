@@ -429,6 +429,12 @@ When the effective set varies between requests, this attribute does not
 necessarily reflect the set provided to any individual request. Consumers
 that depend on the exact set of tools provided to a specific model request
 SHOULD read this attribute from the corresponding inference span or event.
+> [!WARNING]
+> This attribute may contain sensitive information.
+
+Since this attribute could be large, it's NOT RECOMMENDED to populate
+non-required properties by default. Instrumentations MAY provide a way
+to enable populating optional properties.
 
 Instrumentations MUST follow [JSON schema](/model/gen-ai/gen-ai-tool-definitions.json).
 
@@ -700,6 +706,12 @@ When the effective set varies between requests, this attribute does not
 necessarily reflect the set provided to any individual request. Consumers
 that depend on the exact set of tools provided to a specific model request
 SHOULD read this attribute from the corresponding inference span or event.
+> [!WARNING]
+> This attribute may contain sensitive information.
+
+Since this attribute could be large, it's NOT RECOMMENDED to populate
+non-required properties by default. Instrumentations MAY provide a way
+to enable populating optional properties.
 
 Instrumentations MUST follow [JSON schema](/model/gen-ai/gen-ai-tool-definitions.json).
 
