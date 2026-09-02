@@ -5,8 +5,8 @@ directly, so it owns inference. The API has no embeddings endpoint (Anthropic
 points users to third-party embedding providers), so embeddings is out of scope.
 Tool use is supported, but the tool itself runs in application code.
 This reference configures the util-genai upload completion hook so real Messages
-API inference spans carry external references for captured system, input, and
-output content.
+API inference spans carry external references for captured system instructions,
+input messages, output messages, and tool definitions.
 
 The same client also drives the **Managed Agents** service (`beta.agents`,
 `beta.sessions`, `beta.memory_stores`), where agents run server-side. The client

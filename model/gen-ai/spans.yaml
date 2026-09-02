@@ -197,6 +197,8 @@ spans:
         requirement_level: opt_in
       - ref: gen_ai.output.messages_ref
         requirement_level: opt_in
+      - ref: gen_ai.tool.definitions_ref
+        requirement_level: opt_in
       - ref_group: attributes.gen_ai.error
       - ref: gen_ai.request.max_tokens
         requirement_level: recommended

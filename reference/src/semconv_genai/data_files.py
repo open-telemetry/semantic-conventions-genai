@@ -37,7 +37,6 @@ SPAN_TYPE_ORDER = [
 # Display order for event types in reports.
 EVENT_TYPE_ORDER = [
     "gen_ai.client.inference.operation.details",
-    "gen_ai.content.storage.result",
     "gen_ai.evaluation.result",
 ]
 

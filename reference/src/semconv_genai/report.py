@@ -84,7 +84,6 @@ SEMCONV_DOC_LINKS: dict[str, str] = {
     "memory": "../../docs/gen-ai/gen-ai-spans.md#memory",
     "execute_tool": "../../docs/gen-ai/gen-ai-spans.md#execute-tool-span",
     "gen_ai.client.inference.operation.details": "../../docs/gen-ai/gen-ai-events.md#event-gen_aiclientinferenceoperationdetails",
-    "gen_ai.content.storage.result": "../../docs/gen-ai/gen-ai-events.md#event-gen_aicontentstorageresult",
     "gen_ai.evaluation.result": "../../docs/gen-ai/gen-ai-events.md#event-gen_aievaluationresult",
     "gen_ai.client.token.usage": "../../docs/gen-ai/gen-ai-metrics.md#metric-gen_aiclienttokenusage",
     "gen_ai.client.operation.duration": "../../docs/gen-ai/gen-ai-metrics.md#metric-gen_aiclientoperationduration",

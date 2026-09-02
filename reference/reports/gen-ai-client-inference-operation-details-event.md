@@ -68,7 +68,8 @@
 | gen_ai.prompt.variable | (none) |
 | gen_ai.system_instructions | [anthropic] |
 | gen_ai.system_instructions_ref | [anthropic] |
-| gen_ai.tool.definitions | (none) |
+| gen_ai.tool.definitions | [anthropic] |
+| gen_ai.tool.definitions_ref | [anthropic] |
 
 [anthropic]: ../scenarios/anthropic/scenario.py
 [aws-bedrock]: ../scenarios/aws-bedrock/scenario.py
