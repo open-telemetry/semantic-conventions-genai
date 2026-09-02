@@ -443,6 +443,7 @@ When the effective set varies between requests, this attribute does not
 necessarily reflect the set provided to any individual request. Consumers
 that depend on the exact set of tools provided to a specific model request
 SHOULD read this attribute from the corresponding inference span or event.
+
 > [!WARNING]
 > This attribute may contain sensitive information.
 
@@ -734,6 +735,7 @@ When the effective set varies between requests, this attribute does not
 necessarily reflect the set provided to any individual request. Consumers
 that depend on the exact set of tools provided to a specific model request
 SHOULD read this attribute from the corresponding inference span or event.
+
 > [!WARNING]
 > This attribute may contain sensitive information.
 
