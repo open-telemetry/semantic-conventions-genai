@@ -29,6 +29,7 @@ templates:
     file_name: README.md
 
 acronyms:
+  - A2A
   - AI
   - AWS
   - Bedrock

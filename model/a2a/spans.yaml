@@ -1,0 +1,52 @@
+file_format: definition/2
+spans:
+  - type: a2a.client
+    kind: client
+    name:
+      note: |
+        **Span name** SHOULD be `{a2a.method.name}`.
+    brief: This span describes an A2A call from the client side.
+    note: |
+      It covers the time to receive the response for non-streaming
+      calls and the time to consume the response stream for streaming calls.
+
+      A2A `SendMessage`, `SendStreamingMessage` and other operations may be performed
+      as part of a higher-level GenAI agent invocation. A2A instrumentations report
+      spans for A2A requests only and SHOULD NOT report telemetry describing
+      higher level GenAI agent operations.
+    stability: development
+    attributes:
+      - ref_group: a2a.common.attributes
+      - ref: gen_ai.agent.name
+        requirement_level:
+          conditionally_required: When available from the target Agent Card.
+      - ref: gen_ai.agent.description
+        requirement_level:
+          conditionally_required: When available from the target Agent Card.
+      - ref: gen_ai.agent.version
+        requirement_level:
+          conditionally_required: When available from the target Agent Card.
+      - ref_group: a2a.client.address_and_port.attributes
+
+  - type: a2a.server
+    kind: server
+    name:
+      note: |
+        **Span name** SHOULD be `{a2a.method.name}`.
+    brief: This span describes processing of an A2A request by the server.
+    note: |
+      It covers the time to produce the response for non-streaming
+      calls and the time to produce the response stream for streaming calls.
+    stability: development
+    attributes:
+      - ref_group: a2a.common.attributes
+      - ref: gen_ai.agent.name
+        requirement_level:
+          conditionally_required: When available from the local Agent Card.
+      - ref: gen_ai.agent.description
+        requirement_level:
+          conditionally_required: When available from the local Agent Card.
+      - ref: gen_ai.agent.version
+        requirement_level:
+          conditionally_required: When available from the local Agent Card.
+      - ref_group: a2a.server.address_and_port.attributes
