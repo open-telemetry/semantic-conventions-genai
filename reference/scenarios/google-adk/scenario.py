@@ -4,10 +4,14 @@ import asyncio
 import contextlib
 import json
 import os
+import pathlib
+import shutil
+import tempfile
 import time
 
 from opentelemetry import trace as _trace
 from opentelemetry.sdk.trace import SpanProcessor
+from opentelemetry.trace import StatusCode
 from reference_shared import (
     flush_and_shutdown,
     reference_meter,
@@ -16,6 +20,7 @@ from reference_shared import (
 )
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"]
+SKILLS_DIR = pathlib.Path(__file__).parent / "skills"
 
 _reference_tracer = reference_tracer()
 _reference_meter = reference_meter()
@@ -379,6 +384,300 @@ def run_memory_reference():
     asyncio.run(_run())
 
 
+def run_skills_reference():
+    """Scenario: Agent Skills usage via Google ADK's SkillToolset.
+
+    ADK implements the [Agent Skills](https://agentskills.io) lifecycle as a
+    toolset: `list_skills` for discovery, `load_skill` for activation, and
+    `load_skill_resource` / `run_skill_script` for execution. Every stage runs
+    through `BaseTool.run_async`, the same boundary ADK's own
+    `record_tool_execution` instruments, so skill telemetry is captured where
+    tool execution is captured.
+
+    The model drives every stage: each turn is one `runner.run_async`
+    invocation in which ADK's tool loop calls one skill tool.
+    """
+    from google.adk.agents import Agent
+    from google.adk.apps.app import App
+    from google.adk.environment import LocalEnvironment
+    from google.adk.models.google_llm import Gemini
+    from google.adk.runners import Runner
+    from google.adk.sessions import InMemorySessionService
+    from google.adk.skills import load_skill_from_dir
+    from google.adk.tools import skill_toolset as adk_skill_toolset
+    from google.adk.tools.skill_toolset import SkillToolset
+    from google.genai import types
+
+    print("  [skills] ADK Agent Skills toolset (reference implementation)")
+
+    os.environ.setdefault("GOOGLE_API_KEY", "mock-key")
+    request_model = "gemini-2.0-flash"
+    agent_name = "review_agent"
+    user_id = "test_user"
+
+    # `direct`: the application hands each skill folder to `load_skill_from_dir`,
+    # so the load boundary owns the location the skill came from, and ADK records
+    # it on the `Skill` it returns as `_uri`.
+    skills = [load_skill_from_dir((SKILLS_DIR / name).resolve()) for name in ("code-review",)]
+    skills_by_name = {skill.name: skill for skill in skills}
+
+    class _TracedSkillTool:
+        """Records an `execute_tool` span around `BaseTool.run_async`.
+
+        `run_async` is ADK's own tool-execution entry point — the one its
+        `record_tool_execution` hook wraps — so the span covers exactly one
+        library call and nothing of the scenario around it.
+        """
+
+        async def run_async(self, *, args, tool_context):
+            with _reference_tracer.start_as_current_span(
+                f"execute_tool {self.name}",
+                attributes={
+                    "gen_ai.operation.name": "execute_tool",
+                    "gen_ai.tool.name": self.name,
+                    "gen_ai.tool.type": "function",
+                },
+            ) as span:
+                span.set_attribute("gen_ai.tool.description", self.description)
+                span.set_attribute("gen_ai.agent.name", tool_context.agent_name)
+                if tool_context.function_call_id:
+                    span.set_attribute("gen_ai.tool.call.id", tool_context.function_call_id)
+                span.set_attribute("gen_ai.tool.call.arguments", json.dumps(args))
+                # `direct`: the model's function call names the skill it operates on.
+                # It is set even when no skill resolves, which is what makes a name
+                # the model invented visible.
+                skill_name = args.get("skill_name")
+                if skill_name:
+                    span.set_attribute("gen_ai.skill.name", skill_name)
+                # `direct`: the toolset holds the `Skill` the call names, so its
+                # frontmatter and the location ADK loaded it from are in hand.
+                skill = skills_by_name.get(skill_name)
+                if skill is not None:
+                    span.set_attribute("gen_ai.skill.description", skill.description)
+                    if skill._uri is not None:
+                        span.set_attribute("gen_ai.skill.source.uri", skill._uri)
+                result = await super().run_async(args=args, tool_context=tool_context)
+                # `direct`: every skill tool reports a failure as an `error_code` on
+                # its result, which is the value ADK's own telemetry hook reads too.
+                error_type = result.get("error_code") if isinstance(result, dict) else None
+                if error_type:
+                    span.set_attribute("error.type", error_type)
+                    span.set_status(StatusCode.ERROR, result.get("error", ""))
+                else:
+                    span.set_attribute("gen_ai.tool.call.result", json.dumps(result, default=str))
+                self._record_skill_signals(span, args, result, error_type, tool_context)
+                return result
+
+        def _record_skill_signals(self, span, args, result, error_type, tool_context):
+            """Hook for the per-tool skill attributes."""
+
+    def _with_enum(declaration, **enums):
+        """Narrows declared parameters to the values that exist.
+
+        The base declarations type `skill_name`, `file_path` and `command` as
+        open strings. Constraining them to what the toolset actually holds is
+        what a deployment does to stop a model inventing names, and it is what
+        lets the mock model server choose a resolvable value. Only the
+        declaration sent to the model changes; `run_async`, which the telemetry
+        reads, stays ADK's own.
+        """
+        for name, values in enums.items():
+            declaration.parameters_json_schema["properties"][name]["enum"] = list(values)
+        return declaration
+
+    class _ListSkillsTool(_TracedSkillTool, adk_skill_toolset.ListSkillsTool):
+        """Discovery. Operates on no single skill, so it carries no `gen_ai.skill.*`."""
+
+    class _LoadSkillTool(_TracedSkillTool, adk_skill_toolset.LoadSkillTool):
+        def __init__(self, toolset, skill_names):
+            super().__init__(toolset)
+            self.skill_names = skill_names
+
+        def _get_declaration(self):
+            return _with_enum(super()._get_declaration(), skill_name=self.skill_names)
+
+    class _LoadSkillResourceTool(_TracedSkillTool, adk_skill_toolset.LoadSkillResourceTool):
+        def __init__(self, toolset, skill_names, resource_paths):
+            super().__init__(toolset)
+            self.skill_names = skill_names
+            self.resource_paths = resource_paths
+
+        def _get_declaration(self):
+            return _with_enum(
+                super()._get_declaration(),
+                skill_name=self.skill_names,
+                file_path=self.resource_paths,
+            )
+
+        def _record_skill_signals(self, span, args, result, error_type, tool_context):
+            # `direct`: the resource path is a call argument.
+            span.set_attribute("gen_ai.skill.resource.path", args["file_path"])
+
+    class _RunSkillScriptTool(_TracedSkillTool, adk_skill_toolset.RunSkillScriptTool):
+        def __init__(self, toolset, skill_names, script_paths, commands):
+            super().__init__(toolset)
+            self.skill_names = skill_names
+            self.script_paths = script_paths
+            self.commands = commands
+
+        def _get_declaration(self):
+            return _with_enum(
+                super()._get_declaration(),
+                skill_name=self.skill_names,
+                file_path=self.script_paths,
+                command=self.commands,
+            )
+
+        def _record_skill_signals(self, span, args, result, error_type, tool_context):
+            # `direct`: the script path is a call argument.
+            span.set_attribute("gen_ai.skill.script.path", args["file_path"])
+            # `direct`: the environment reports the status the script exited with.
+            # Absent when the tool failed before running anything.
+            exit_code = result.get("exit_code") if isinstance(result, dict) else None
+            if exit_code is not None:
+                span.set_attribute("gen_ai.skill.script.exit_code", exit_code)
+
+    with _suppress_adk_native_telemetry():
+        # An explicit workspace, so the path the skills are materialized under is
+        # known before the first call rather than only once a script has run.
+        working_dir = pathlib.Path(tempfile.mkdtemp(prefix="adk_skills_"))
+        environment = LocalEnvironment(working_dir=working_dir)
+        toolset = SkillToolset(skills, environment=environment)
+        script_path = "scripts/run_checks.py"
+        # The environment materializes the skill's files under the toolset's
+        # `skills_folder`, and the toolset's system instruction tells the model to
+        # build the command from that path, so this is the command a model call
+        # carries.
+        script_command = f"python3 {toolset.skills_folder / 'code-review' / script_path}"
+        load_skill_tool = _LoadSkillTool(toolset, ["code-review"])
+        run_script_tool = _RunSkillScriptTool(toolset, ["code-review"], [script_path], [script_command])
+        toolset._tools = [
+            _ListSkillsTool(toolset),
+            load_skill_tool,
+            _LoadSkillResourceTool(toolset, ["code-review"], ["references/review_policy.md"]),
+            run_script_tool,
+        ]
+
+        agent = Agent(
+            name=agent_name,
+            model=Gemini(model=request_model, base_url=MOCK_BASE_URL),
+            instruction="You review code changes.",
+            tools=[toolset],
+        )
+        session_service = InMemorySessionService()
+
+        def build_runner():
+            return Runner(
+                app=App(name="test_app", root_agent=agent),
+                session_service=session_service,
+            )
+
+        async def invoke(runner, session_id, prompt, tool_name=None):
+            """One agent invocation, wrapped in its `invoke_agent` span.
+
+            Exposing a single skill tool for the turn is what makes the model's
+            choice deterministic; the call itself, its arguments and its
+            execution are all ADK's. A turn that names no tool exposes none, so
+            the model answers with text. The filter is a predicate rather than an
+            empty list, which ADK reads as *no filter* and would expose all four.
+            """
+            toolset.tool_filter = [tool_name] if tool_name else lambda tool, readonly_context=None: False
+            agent_span_attributes = {
+                "gen_ai.operation.name": "invoke_agent",
+                "gen_ai.request.model": request_model,
+                "gen_ai.agent.name": agent_name,
+            }
+            with _reference_tracer.start_as_current_span(
+                f"invoke_agent {agent_name}", attributes=agent_span_attributes
+            ) as agent_span:
+                agent_span.set_attribute("gen_ai.conversation.id", session_id)
+                agent_span.set_attribute(
+                    "gen_ai.system_instructions",
+                    json.dumps([{"type": "text", "content": agent.instruction}]),
+                )
+                agent_span.set_attribute(
+                    "gen_ai.input.messages",
+                    json.dumps([{"role": "user", "parts": [{"type": "text", "content": prompt}]}]),
+                )
+                usage_metadata = None
+                finish_reason = None
+                last_text = ""
+                async for event in runner.run_async(
+                    user_id=user_id,
+                    session_id=session_id,
+                    new_message=types.Content(role="user", parts=[types.Part(text=prompt)]),
+                ):
+                    if getattr(event, "usage_metadata", None) is not None:
+                        usage_metadata = event.usage_metadata
+                    if getattr(event, "finish_reason", None) is not None:
+                        finish_reason = getattr(event.finish_reason, "value", event.finish_reason)
+                    if event.content and event.content.parts and event.content.parts[0].text:
+                        last_text = event.content.parts[0].text
+                if usage_metadata is not None:
+                    if getattr(usage_metadata, "prompt_token_count", None) is not None:
+                        agent_span.set_attribute("gen_ai.usage.input_tokens", usage_metadata.prompt_token_count)
+                    if getattr(usage_metadata, "candidates_token_count", None) is not None:
+                        agent_span.set_attribute("gen_ai.usage.output_tokens", usage_metadata.candidates_token_count)
+                if finish_reason is not None:
+                    agent_span.set_attribute("gen_ai.response.finish_reasons", [str(finish_reason).lower()])
+                if last_text:
+                    agent_span.set_attribute(
+                        "gen_ai.output.messages",
+                        json.dumps(
+                            [
+                                {
+                                    "role": "assistant",
+                                    "parts": [{"type": "text", "content": last_text}],
+                                    "finish_reason": str(finish_reason or "stop").lower(),
+                                }
+                            ]
+                        ),
+                    )
+
+        async def _phases():
+            # The skill lifecycle. Each stage is its own conversation, so each
+            # turn is a first turn and the model reaches for the stage's tool.
+            lifecycle_runner = build_runner()
+            stages = [
+                ("What can you help me with?", "list_skills"),
+                ("Review the pending change.", "load_skill"),
+                ("What does the review policy require?", "load_skill_resource"),
+                ("Run the bundled checks.", "run_skill_script"),
+            ]
+            for prompt, tool_name in stages:
+                session = await session_service.create_session(app_name="test_app", user_id=user_id)
+                await invoke(lifecycle_runner, session.id, prompt, tool_name)
+
+            # A model can also name a skill that does not exist. No skill resolves,
+            # so the span carries the name the call asked for and the failure, and
+            # nothing else about a skill.
+            load_skill_tool.skill_names = ["ocr-tables"]
+            session = await session_service.create_session(app_name="test_app", user_id=user_id)
+            await invoke(lifecycle_runner, session.id, "Extract the tables from this PDF.", "load_skill")
+
+            # A script the skill does not bundle fails before anything runs, so the
+            # execution carries `error.type` and no exit code — the two describe
+            # different outcomes and neither substitutes for the other.
+            run_script_tool.script_paths = ["scripts/lint.sh"]
+            run_script_tool.commands = [f"bash {toolset.skills_folder / 'code-review' / 'scripts/lint.sh'}"]
+            session = await session_service.create_session(app_name="test_app", user_id=user_id)
+            await invoke(lifecycle_runner, session.id, "Lint it too.", "run_skill_script")
+
+        async def _run():
+            try:
+                await _phases()
+            finally:
+                # Releases the environment the scripts ran in. `close()` removes
+                # only a workspace it created itself, so the explicit one above is
+                # the scenario's to remove.
+                await toolset.close()
+
+        try:
+            asyncio.run(_run())
+        finally:
+            shutil.rmtree(working_dir, ignore_errors=True)
+
+
 def main():
     print("=== Reference Implementation: Google ADK Reference Implementation ===")
 
@@ -389,6 +688,7 @@ def main():
 
     run_agent_reference()
     run_memory_reference()
+    run_skills_reference()
 
     print(f"\n  [diagnostic] Spans generated: {span_counter.count}")
 

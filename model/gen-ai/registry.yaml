@@ -1039,3 +1039,59 @@ attributes:
       what `gen_ai.workflow.name` means in the context of that framework.
     examples: ["multi_agent_rag", "customer_support_pipeline"]
     stability: development
+  - key: gen_ai.skill.name
+    type: string
+    brief: The name of the [Agent Skill](https://agentskills.io) the operation names.
+    note: >
+      The name the call asked for, recorded whether or not it resolves to a
+      skill. Where it resolves, this is the `name` field of that skill's
+      `SKILL.md` frontmatter, which the specification requires to be unique
+      within the set of skills available to the agent.
+    examples: ["code-review", "pdf-processing"]
+    stability: development
+  - key: gen_ai.skill.description
+    type: string
+    brief: The description of the skill, stating what it does and when to use it.
+    note: |
+      This is the `description` field of the skill's `SKILL.md` frontmatter — the
+      text the agent matches a task against when deciding to load the skill.
+
+      > [!Warning]
+      > This attribute may contain sensitive information.
+    examples: ["Review a changelist against the team's review policy."]
+    stability: development
+  - key: gen_ai.skill.source.uri
+    type: string
+    brief: The [RFC 3986](https://www.rfc-editor.org/rfc/rfc3986) URI identifying the skill and where it was retrieved from.
+    note: |
+      Sensitive URI components, such as userinfo and access tokens in query parameters, SHOULD be scrubbed when instrumentations can identify them.
+
+      > [!Warning]
+      > This attribute may contain sensitive information.
+    examples:
+      ["https://skills.example.com/code-review", "gs://example-skills/code-review", "file:///opt/skills/code-review"]
+    stability: development
+  - key: gen_ai.skill.resource.path
+    type: string
+    brief: The path of the skill resource the call names, relative to the root of the skill folder.
+    note: >
+      The path the call asked for, recorded whether or not the resource
+      resolves. The [Agent Skills](https://agentskills.io) format bundles
+      resources under `references/`, `assets/`, and `scripts/`, so the path is
+      recorded with that prefix intact.
+    examples: ["references/review_policy.md", "assets/report_template.html"]
+    stability: development
+  - key: gen_ai.skill.script.path
+    type: string
+    brief: The path of the skill script the call names, relative to the root of the skill folder.
+    note: >
+      The path the call asked for, recorded whether or not the script ran. An
+      execution that failed before starting the script has `error.type` and no
+      `gen_ai.skill.script.exit_code`.
+    examples: ["scripts/run_checks.py"]
+    stability: development
+  - key: gen_ai.skill.script.exit_code
+    type: int
+    brief: The exit code the skill script terminated with.
+    examples: [0, 1, 10, 128]
+    stability: development

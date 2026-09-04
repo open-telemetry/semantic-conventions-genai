@@ -1,8 +1,15 @@
 {
   "spans": {
     "gen_ai.execute_tool.internal": [
+      "error.type",
       "gen_ai.agent.name",
       "gen_ai.operation.name",
+      "gen_ai.skill.description",
+      "gen_ai.skill.name",
+      "gen_ai.skill.resource.path",
+      "gen_ai.skill.script.exit_code",
+      "gen_ai.skill.script.path",
+      "gen_ai.skill.source.uri",
       "gen_ai.tool.call.arguments",
       "gen_ai.tool.call.id",
       "gen_ai.tool.call.result",
@@ -48,6 +55,7 @@
   "events": {},
   "metrics": {
     "gen_ai.execute_tool.duration": [
+      "error.type",
       "gen_ai.agent.name",
       "gen_ai.tool.name",
       "gen_ai.tool.type"

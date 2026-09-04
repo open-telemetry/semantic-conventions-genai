@@ -16,6 +16,7 @@ linkTitle: Agent spans
     - [Invoke workflow span](#invoke-workflow-span)
     - [Plan span](#plan-span)
   - [Execute tool span](#execute-tool-span)
+  - [Agent skills](#agent-skills)
 
 <!-- tocstop -->
 
@@ -1049,5 +1050,31 @@ and SHOULD be provided **at span creation time** (if provided at all):
 ## Execute tool span
 
 If you are using some tools in your agent, refer to [Execute Tool Span](./gen-ai-spans.md#execute-tool-span).
+
+## Agent skills
+
+An [Agent Skill](https://agentskills.io) is a folder holding a `SKILL.md` file —
+metadata (`name`, `description`) plus instructions — and, optionally, bundled
+`references/`, `assets/`, and `scripts/`. Agents load skills on demand in three
+stages: they know every available skill's name and description up front, read
+one skill's full instructions when a task matches its description, and then read
+that skill's bundled resources or run its bundled scripts as the instructions
+require.
+
+Frameworks implement all three stages by exposing a small set of tools to the
+model. The names differ — Google ADK offers `load_skill`, `load_skill_resource`
+and `run_skill_script`; Microsoft Agent Framework offers `load_skill`,
+`read_skill_resource` and `run_skill_script` — but the operations are the same.
+Instrumentation therefore observes skill usage exactly where it observes any
+other tool call, so skill telemetry is recorded on
+[execute tool spans](./gen-ai-spans.md#execute-tool-span) qualified by the
+`gen_ai.skill.*` attributes, rather than on a span type of its own, and is keyed
+on those attributes rather than on any framework's tool names:
+
+| Stage | Skill attributes on the `execute_tool` span |
+| --- | --- |
+| Load a skill's instructions | `gen_ai.skill.name`, `gen_ai.skill.description`, `gen_ai.skill.source.uri` |
+| Read a bundled resource | the above, plus `gen_ai.skill.resource.path` |
+| Run a bundled script | the above, plus `gen_ai.skill.script.path` and `gen_ai.skill.script.exit_code` |
 
 [DocumentStatus]: https://opentelemetry.io/docs/specs/otel/document-status
