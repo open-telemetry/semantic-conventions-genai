@@ -72,6 +72,15 @@
       "server.port"
     ]
   },
-  "findings": [],
+  "findings": [
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'chat claude-sonnet-4-20250514' (operation 'chat') is missing expected attribute 'gen_ai.usage.cost.amount'",
+      "context": {
+        "missing_attribute": "gen_ai.usage.cost.amount",
+        "operation": "chat"
+      }
+    }
+  ],
   "entities": {}
 }

@@ -57,6 +57,14 @@
         "missing_attribute": "gen_ai.response.model",
         "operation": "chat"
       }
+    },
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'chat command-r-plus' (operation 'chat') is missing expected attribute 'gen_ai.usage.cost.amount'",
+      "context": {
+        "missing_attribute": "gen_ai.usage.cost.amount",
+        "operation": "chat"
+      }
     }
   ],
   "entities": {}
