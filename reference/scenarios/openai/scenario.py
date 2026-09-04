@@ -295,9 +295,10 @@ def run_responses_compaction_reference(client):
 
 
 def run_responses_continuation_reference(client):
-    """Scenario: Responses API continuation with previous_response_id."""
-    print("  [responses_continuation] responses with previous_response_id (reference implementation)")
+    """Scenario: Responses API continuation with delta input capture."""
+    print("  [responses_continuation] responses with previous_response_id and messages_delta")
     request_model = "gpt-4o-mini"
+    conversation_id = "conv_openai_responses_delta"
     initial_conversation = [
         {
             "type": "message",
@@ -305,10 +306,60 @@ def run_responses_continuation_reference(client):
             "content": "Initial prompt.",
         }
     ]
-    initial_response = client.responses.create(
-        model=request_model,
-        input=initial_conversation,
+    host, port = mock_server_host_port(MOCK_BASE_URL)
+    initial_delta = json.dumps(
+        [{"role": "user", "parts": [{"type": "text", "content": initial_conversation[0]["content"]}]}]
     )
+    initial_attributes = {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "openai",
+        "gen_ai.request.model": request_model,
+        "gen_ai.conversation.id": conversation_id,
+        "openai.api.type": "responses",
+    }
+    if host:
+        initial_attributes["server.address"] = host
+    if port is not None:
+        initial_attributes["server.port"] = port
+
+    with _reference_tracer.start_as_current_span("chat gpt-4o-mini", attributes=initial_attributes) as span:
+        span.set_attribute("gen_ai.input.messages_delta", initial_delta)
+        initial_response = client.responses.create(
+            model=request_model,
+            input=initial_conversation,
+        )
+        span.set_attribute("gen_ai.response.model", initial_response.model)
+        span.set_attribute("gen_ai.response.id", initial_response.id)
+        initial_outputs = responses_output_messages(initial_response)
+        if initial_outputs:
+            span.set_attribute("gen_ai.output.messages", json.dumps(initial_outputs))
+        if initial_response.usage:
+            span.set_attribute("gen_ai.usage.input_tokens", initial_response.usage.input_tokens)
+            span.set_attribute("gen_ai.usage.output_tokens", initial_response.usage.output_tokens)
+
+        initial_event_attributes = {
+            "gen_ai.operation.name": "chat",
+            "gen_ai.conversation.id": conversation_id,
+            "gen_ai.request.model": request_model,
+            "gen_ai.response.id": initial_response.id,
+            "gen_ai.response.model": initial_response.model,
+            "gen_ai.input.messages_delta": initial_delta,
+        }
+        if initial_outputs:
+            initial_event_attributes["gen_ai.output.messages"] = json.dumps(initial_outputs)
+        if initial_response.usage:
+            initial_event_attributes["gen_ai.usage.input_tokens"] = initial_response.usage.input_tokens
+            initial_event_attributes["gen_ai.usage.output_tokens"] = initial_response.usage.output_tokens
+        if host:
+            initial_event_attributes["server.address"] = host
+        if port is not None:
+            initial_event_attributes["server.port"] = port
+        reference_event_logger().emit(
+            event_name="gen_ai.client.inference.operation.details",
+            body="Inference operation details",
+            attributes=initial_event_attributes,
+        )
+
     previous_response_id = initial_response.id
 
     continuation_conversation = [
@@ -318,11 +369,19 @@ def run_responses_continuation_reference(client):
             "content": "Follow up on previous response.",
         }
     ]
-    host, port = mock_server_host_port(MOCK_BASE_URL)
+    continuation_delta = json.dumps(
+        [
+            {
+                "role": "user",
+                "parts": [{"type": "text", "content": continuation_conversation[0]["content"]}],
+            }
+        ]
+    )
     span_attributes = {
         "gen_ai.operation.name": "chat",
         "gen_ai.provider.name": "openai",
         "gen_ai.request.model": request_model,
+        "gen_ai.conversation.id": conversation_id,
         "gen_ai.request.previous_response.id": previous_response_id,
         "openai.api.type": "responses",
     }
@@ -332,12 +391,7 @@ def run_responses_continuation_reference(client):
         span_attributes["server.port"] = port
 
     with _reference_tracer.start_as_current_span("chat gpt-4o-mini", attributes=span_attributes) as span:
-        span.set_attribute(
-            "gen_ai.input.messages",
-            json.dumps(
-                [{"role": "user", "parts": [{"type": "text", "content": continuation_conversation[0]["content"]}]}]
-            ),
-        )
+        span.set_attribute("gen_ai.input.messages_delta", continuation_delta)
         response = client.responses.create(
             model=request_model,
             previous_response_id=previous_response_id,
@@ -360,12 +414,11 @@ def run_responses_continuation_reference(client):
             "gen_ai.operation.name": "chat",
             "gen_ai.provider.name": "openai",
             "gen_ai.request.model": request_model,
+            "gen_ai.conversation.id": conversation_id,
             "gen_ai.request.previous_response.id": previous_response_id,
             "gen_ai.response.id": response.id,
             "gen_ai.response.model": response.model,
-            "gen_ai.input.messages": json.dumps(
-                [{"role": "user", "parts": [{"type": "text", "content": continuation_conversation[0]["content"]}]}]
-            ),
+            "gen_ai.input.messages_delta": continuation_delta,
         }
         if finish_reason is not None:
             event_attrs["gen_ai.response.finish_reasons"] = [finish_reason]
@@ -509,6 +562,196 @@ def run_chat_tool_call_reference(client):
             print(f"    -> tool_call: {choice.message.tool_calls[0].function.name}")
         else:
             print(f"    -> {choice.message.content[:60]}")
+
+
+def run_chat_multiturn_delta_reference(client):
+    """Scenario: multi-turn Chat Completions with delta input capture.
+
+    Chat Completions requests are stateless, so the second provider request
+    still includes the full conversation. The telemetry records only the new
+    tool result in `gen_ai.input.messages_delta`.
+    """
+    print("  [chat_multiturn_delta] multi-turn chat with messages_delta (reference implementation)")
+    request_model = "gpt-4o-mini"
+    conversation_id = "conv_openai_weather_delta"
+
+    def get_weather(location: str) -> str:
+        return f"Sunny in {location}"
+
+    request_tool = {
+        "type": "function",
+        "function": {
+            "name": "get_weather",
+            "description": "Get the current weather",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "location": {"type": "string", "description": "City name"},
+                },
+                "required": ["location"],
+            },
+        },
+    }
+    tools = [request_tool]
+    host, port = mock_server_host_port(MOCK_BASE_URL)
+    base_span_attributes = {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "openai",
+        "gen_ai.request.model": request_model,
+        "gen_ai.conversation.id": conversation_id,
+    }
+    if host:
+        base_span_attributes["server.address"] = host
+    if port is not None:
+        base_span_attributes["server.port"] = port
+
+    first_user_message = {"role": "user", "content": "What's the weather in Seattle?"}
+    first_input_delta = json.dumps(
+        [{"role": "user", "parts": [{"type": "text", "content": first_user_message["content"]}]}]
+    )
+    with _reference_tracer.start_as_current_span("chat gpt-4o-mini", attributes=base_span_attributes) as span:
+        span.set_attribute("gen_ai.tool.definitions", json.dumps(tools))
+        span.set_attribute("gen_ai.input.messages_delta", first_input_delta)
+        first_resp = client.chat.completions.create(
+            model=request_model,
+            messages=[first_user_message],
+            tools=tools,
+        )
+        span.set_attribute("gen_ai.response.model", first_resp.model)
+        span.set_attribute("gen_ai.response.id", first_resp.id)
+        span.set_attribute("gen_ai.response.finish_reasons", [c.finish_reason for c in first_resp.choices])
+        if first_resp.usage:
+            span.set_attribute("gen_ai.usage.input_tokens", first_resp.usage.prompt_tokens)
+            span.set_attribute("gen_ai.usage.output_tokens", first_resp.usage.completion_tokens)
+        first_choice = first_resp.choices[0]
+        tool_call = first_choice.message.tool_calls[0]
+        tool_call_part = {
+            "type": "tool_call",
+            "id": tool_call.id,
+            "name": tool_call.function.name,
+            "arguments": json.loads(tool_call.function.arguments or "{}"),
+        }
+        first_output_messages = json.dumps(
+            [
+                {
+                    "role": "assistant",
+                    "parts": [tool_call_part],
+                    "finish_reason": first_choice.finish_reason,
+                }
+            ]
+        )
+        span.set_attribute("gen_ai.output.messages", first_output_messages)
+
+        event_attrs = {
+            "gen_ai.operation.name": "chat",
+            "gen_ai.conversation.id": conversation_id,
+            "gen_ai.request.model": request_model,
+            "gen_ai.response.id": first_resp.id,
+            "gen_ai.response.model": first_resp.model,
+            "gen_ai.response.finish_reasons": [c.finish_reason for c in first_resp.choices],
+            "gen_ai.input.messages_delta": first_input_delta,
+            "gen_ai.output.messages": first_output_messages,
+        }
+        if first_resp.usage:
+            event_attrs["gen_ai.usage.input_tokens"] = first_resp.usage.prompt_tokens
+            event_attrs["gen_ai.usage.output_tokens"] = first_resp.usage.completion_tokens
+        if host:
+            event_attrs["server.address"] = host
+        if port is not None:
+            event_attrs["server.port"] = port
+        reference_event_logger().emit(
+            event_name="gen_ai.client.inference.operation.details",
+            body="Inference operation details",
+            attributes=event_attrs,
+        )
+
+    tool_result = get_weather(json.loads(tool_call.function.arguments or "{}")["location"])
+    assistant_message = {
+        "role": "assistant",
+        "content": None,
+        "tool_calls": [
+            {
+                "id": tool_call.id,
+                "type": "function",
+                "function": {
+                    "name": tool_call.function.name,
+                    "arguments": tool_call.function.arguments,
+                },
+            }
+        ],
+    }
+    tool_result_message = {
+        "role": "tool",
+        "tool_call_id": tool_call.id,
+        "content": tool_result,
+    }
+    second_input_delta = json.dumps(
+        [
+            {
+                "role": "tool",
+                "parts": [
+                    {
+                        "type": "tool_call_response",
+                        "id": tool_call.id,
+                        "response": tool_result,
+                    }
+                ],
+            }
+        ]
+    )
+
+    # The SDK request repeats the full conversation, while the telemetry above
+    # and below records only the newly appended message for each turn.
+    second_request_messages = [first_user_message, assistant_message, tool_result_message]
+    with _reference_tracer.start_as_current_span("chat gpt-4o-mini", attributes=base_span_attributes) as span:
+        span.set_attribute("gen_ai.input.messages_delta", second_input_delta)
+        second_resp = client.chat.completions.create(
+            model=request_model,
+            messages=second_request_messages,
+            tools=tools,
+        )
+        span.set_attribute("gen_ai.response.model", second_resp.model)
+        span.set_attribute("gen_ai.response.id", second_resp.id)
+        span.set_attribute("gen_ai.response.finish_reasons", [c.finish_reason for c in second_resp.choices])
+        second_output_messages = json.dumps(
+            [
+                {
+                    "role": c.message.role,
+                    "parts": [{"type": "text", "content": c.message.content}],
+                    "finish_reason": c.finish_reason,
+                }
+                for c in second_resp.choices
+            ]
+        )
+        span.set_attribute("gen_ai.output.messages", second_output_messages)
+        if second_resp.usage:
+            span.set_attribute("gen_ai.usage.input_tokens", second_resp.usage.prompt_tokens)
+            span.set_attribute("gen_ai.usage.output_tokens", second_resp.usage.completion_tokens)
+
+        event_attrs = {
+            "gen_ai.operation.name": "chat",
+            "gen_ai.conversation.id": conversation_id,
+            "gen_ai.request.model": request_model,
+            "gen_ai.response.id": second_resp.id,
+            "gen_ai.response.model": second_resp.model,
+            "gen_ai.response.finish_reasons": [c.finish_reason for c in second_resp.choices],
+            "gen_ai.input.messages_delta": second_input_delta,
+            "gen_ai.output.messages": second_output_messages,
+        }
+        if second_resp.usage:
+            event_attrs["gen_ai.usage.input_tokens"] = second_resp.usage.prompt_tokens
+            event_attrs["gen_ai.usage.output_tokens"] = second_resp.usage.completion_tokens
+        if host:
+            event_attrs["server.address"] = host
+        if port is not None:
+            event_attrs["server.port"] = port
+        reference_event_logger().emit(
+            event_name="gen_ai.client.inference.operation.details",
+            body="Inference operation details",
+            attributes=event_attrs,
+        )
+
+        print(f"    -> {second_resp.choices[0].message.content[:60]}")
 
 
 def run_chat_with_document_input_reference(client):
@@ -1045,6 +1288,7 @@ def main():
     run_responses_continuation_reference(client)
     run_chat_streaming_reference(client)
     run_chat_tool_call_reference(client)
+    run_chat_multiturn_delta_reference(client)
     run_chat_with_document_input_reference(client)
     run_chat_image_reference(client)
     run_chat_audio_reference(client)

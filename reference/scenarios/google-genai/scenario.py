@@ -198,7 +198,7 @@ def run_chat():
 
 
 def run_interactions_continuation():
-    """Scenario: Google GenAI Interactions API continuation."""
+    """Scenario: Google GenAI Interactions continuation with delta capture."""
     from google import genai
     from google.genai import types
 
@@ -211,28 +211,95 @@ def run_interactions_continuation():
         ),
     )
     request_model = "gemini-2.0-flash"
-    initial_interaction = client.interactions.create(
-        model=request_model,
-        input="Initial prompt.",
+    conversation_id = "conv_google_interactions_delta"
+    initial_prompt = "Initial prompt."
+    initial_delta = json.dumps([{"role": "user", "parts": [{"type": "text", "content": initial_prompt}]}])
+    initial_output = json.dumps(
+        [
+            {
+                "role": "assistant",
+                "parts": [{"type": "text", "content": "This is a response from the mock interactions server."}],
+            }
+        ]
     )
+    initial_span_attributes = {
+        "gen_ai.operation.name": "invoke_agent",
+        "gen_ai.provider.name": "gcp.gemini",
+        "gen_ai.request.model": request_model,
+        "gen_ai.agent.name": "interactions_agent",
+        "gen_ai.conversation.id": conversation_id,
+    }
+    with _reference_tracer.start_as_current_span(
+        "invoke_agent interactions_agent", kind=SpanKind.CLIENT, attributes=initial_span_attributes
+    ) as span:
+        span.set_attribute("gen_ai.input.messages_delta", initial_delta)
+        initial_interaction = client.interactions.create(
+            model=request_model,
+            input=initial_prompt,
+        )
+        span.set_attribute("gen_ai.output.messages", initial_output)
+        if initial_interaction.id:
+            span.set_attribute("gen_ai.response.id", initial_interaction.id)
+        if initial_interaction.model:
+            span.set_attribute("gen_ai.response.model", str(initial_interaction.model))
+        if initial_interaction.usage:
+            if initial_interaction.usage.total_input_tokens:
+                span.set_attribute("gen_ai.usage.input_tokens", initial_interaction.usage.total_input_tokens)
+            if initial_interaction.usage.total_output_tokens:
+                span.set_attribute("gen_ai.usage.output_tokens", initial_interaction.usage.total_output_tokens)
+
+        initial_event_attributes = {
+            "gen_ai.operation.name": "chat",
+            "gen_ai.conversation.id": conversation_id,
+            "gen_ai.request.model": request_model,
+            "gen_ai.input.messages_delta": initial_delta,
+            "gen_ai.output.messages": initial_output,
+        }
+        if initial_interaction.id:
+            initial_event_attributes["gen_ai.response.id"] = initial_interaction.id
+        if initial_interaction.model:
+            initial_event_attributes["gen_ai.response.model"] = str(initial_interaction.model)
+        if initial_interaction.usage:
+            if initial_interaction.usage.total_input_tokens:
+                initial_event_attributes["gen_ai.usage.input_tokens"] = initial_interaction.usage.total_input_tokens
+            if initial_interaction.usage.total_output_tokens:
+                initial_event_attributes["gen_ai.usage.output_tokens"] = initial_interaction.usage.total_output_tokens
+        reference_event_logger().emit(
+            event_name="gen_ai.client.inference.operation.details",
+            body="Inference operation details",
+            attributes=initial_event_attributes,
+        )
+
     previous_interaction_id = initial_interaction.id
 
     prompt_text = "Follow up prompt."
+    input_delta = json.dumps([{"role": "user", "parts": [{"type": "text", "content": prompt_text}]}])
+    output_messages = json.dumps(
+        [
+            {
+                "role": "assistant",
+                "parts": [{"type": "text", "content": "This is a response from the mock interactions server."}],
+            }
+        ]
+    )
     span_attributes = {
         "gen_ai.operation.name": "invoke_agent",
         "gen_ai.provider.name": "gcp.gemini",
         "gen_ai.request.model": request_model,
         "gen_ai.agent.name": "interactions_agent",
+        "gen_ai.conversation.id": conversation_id,
         "gen_ai.request.previous_response.id": previous_interaction_id,
     }
     with _reference_tracer.start_as_current_span(
         "invoke_agent interactions_agent", kind=SpanKind.CLIENT, attributes=span_attributes
     ) as span:
+        span.set_attribute("gen_ai.input.messages_delta", input_delta)
         interaction = client.interactions.create(
             model=request_model,
             previous_interaction_id=previous_interaction_id,
             input=prompt_text,
         )
+        span.set_attribute("gen_ai.output.messages", output_messages)
         if interaction.id:
             span.set_attribute("gen_ai.response.id", interaction.id)
         if interaction.model:
@@ -247,18 +314,10 @@ def run_interactions_continuation():
             "gen_ai.operation.name": "chat",
             "gen_ai.provider.name": "gcp.gemini",
             "gen_ai.request.model": request_model,
+            "gen_ai.conversation.id": conversation_id,
             "gen_ai.request.previous_response.id": previous_interaction_id,
-            "gen_ai.input.messages": json.dumps(
-                [{"role": "user", "parts": [{"type": "text", "content": prompt_text}]}]
-            ),
-            "gen_ai.output.messages": json.dumps(
-                [
-                    {
-                        "role": "assistant",
-                        "parts": [{"type": "text", "content": "This is a response from the mock interactions server."}],
-                    }
-                ]
-            ),
+            "gen_ai.input.messages_delta": input_delta,
+            "gen_ai.output.messages": output_messages,
         }
         if interaction.id:
             event_attrs["gen_ai.response.id"] = interaction.id
