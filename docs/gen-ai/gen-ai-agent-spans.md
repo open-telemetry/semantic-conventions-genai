@@ -1005,6 +1005,7 @@ Instrumentations SHOULD document the list of errors they report.
 The following attributes can be important for making sampling decisions
 and SHOULD be provided **at span creation time** (if provided at all):
 
+* [`gen_ai.agent.name`](/docs/registry/attributes/gen-ai.md)
 * [`gen_ai.operation.name`](/docs/registry/attributes/gen-ai.md)
 
 ---
