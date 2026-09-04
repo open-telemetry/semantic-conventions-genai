@@ -167,6 +167,19 @@ attribute_groups:
         requirement_level:
           conditionally_required: When applicable.
 
+  - id: attributes.gen_ai.skill.common
+    visibility: internal
+    attributes:
+      - ref: gen_ai.skill.name
+        requirement_level:
+          conditionally_required: If the call names a skill.
+      - ref: gen_ai.skill.description
+        requirement_level:
+          recommended: If the call resolves to a skill and the description is available.
+      - ref: gen_ai.skill.source.uri
+        requirement_level:
+          recommended: If the call resolves to a skill and the location it was retrieved from is available.
+
 spans:
   - type: gen_ai.inference.client
     requirement_level: recommended
@@ -589,6 +602,12 @@ spans:
       are encouraged to follow this semantic convention for tools invoked by their
       own code and to manually instrument any tool calls that automatic
       instrumentations do not cover.
+
+      Frameworks expose [Agent Skills](https://agentskills.io) to the model as tools —
+      typically one to load a skill's instructions, one to read a bundled resource, and
+      one to run a bundled script. Those executions are `execute_tool` spans like any
+      other, qualified by the `gen_ai.skill.*` attributes. Instrumentations SHOULD set
+      `gen_ai.skill.*` on the tool execution rather than emit a separate skill span.
     stability: development
     attributes:
       - ref_group: attributes.gen_ai.error
@@ -610,6 +629,16 @@ spans:
         requirement_level: opt_in
       - ref: gen_ai.tool.call.result
         requirement_level: opt_in
+      - ref_group: attributes.gen_ai.skill.common
+      - ref: gen_ai.skill.resource.path
+        requirement_level:
+          conditionally_required: If the call names a skill resource.
+      - ref: gen_ai.skill.script.path
+        requirement_level:
+          conditionally_required: If the call names a skill script.
+      - ref: gen_ai.skill.script.exit_code
+        requirement_level:
+          recommended: If the tool ran a skill script and reports the code it exited with.
 
   - type: gen_ai.invoke_workflow.internal
     requirement_level: recommended

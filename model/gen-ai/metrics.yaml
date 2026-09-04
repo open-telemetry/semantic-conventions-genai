@@ -248,6 +248,112 @@ metrics:
     attributes:
       - ref_group: attributes.gen_ai.error
       - ref_group: attributes.gen_ai.execute_tool.common
+  - name: gen_ai.skill.loads
+    requirement_level: recommended
+    brief: >
+      The number of times a skill was loaded.
+    note: |
+      Recorded at the same boundary as the `execute_tool` span for the
+      framework's load-skill tool: one sample each time the agent activates a
+      skill and reads its instructions into context. Counts every load the
+      instrumentation observes, including the ones that failed and the ones that
+      resolved a skill already loaded in the same invocation.
+
+      A load that resolved no skill is counted with `error.type` and without
+      `gen_ai.skill.name`, so a name the model invented cannot enter the
+      dimension. The name the call asked for is on the span.
+
+      `gen_ai.execute_tool.duration` is not dimensioned by `gen_ai.skill.*`, so
+      its count cannot answer which skills an agent loads; keeping the skill
+      dimensions on a separate instrument holds that cardinality off the
+      duration histogram.
+    instrument: counter
+    unit: "{load}"
+    stability: development
+    attributes:
+      - ref_group: attributes.gen_ai.error
+      - ref: gen_ai.agent.name
+        requirement_level: recommended
+      - ref: gen_ai.skill.name
+        requirement_level:
+          conditionally_required: If the name resolves to a skill available to the agent.
+    annotations:
+      code_generation:
+        metric_value_type: int
+  - name: gen_ai.skill.script.executions
+    requirement_level: recommended
+    brief: The number of times a skill's script was executed.
+    note: |
+      Recorded at the same boundary as the `execute_tool` span for the
+      framework's run-skill-script tool.
+
+      `error.type` and `gen_ai.skill.script.exited_with_error` report different
+      outcomes: the first says the execution itself failed, the second says the
+      script ran and exited non-zero. An execution that never reached the script
+      has no `gen_ai.skill.script.exited_with_error`, and neither does one whose
+      framework runs the script without reporting the status it exited with. That
+      keeps the script's own outcome low-cardinality; the exit code itself is
+      recorded on the span as `gen_ai.skill.script.exit_code`.
+    instrument: counter
+    unit: "{execution}"
+    stability: development
+    attributes:
+      - ref_group: attributes.gen_ai.error
+      - ref: gen_ai.agent.name
+        requirement_level: recommended
+      - ref: gen_ai.skill.name
+        requirement_level:
+          conditionally_required: If the name resolves to a skill available to the agent.
+      - ref: gen_ai.skill.script.path
+        requirement_level:
+          recommended: If the path resolves to a script bundled with the skill.
+      - ref: gen_ai.skill.script.exited_with_error
+        requirement_level:
+          conditionally_required: If the instrumentation can determine the status the script exited with.
+    annotations:
+      code_generation:
+        metric_value_type: int
+  - name: gen_ai.invoke_agent.skill.loads
+    requirement_level: recommended
+    brief: >
+      The number of skills a GenAI agent activates during a single invocation.
+    note: |
+      The distribution is scoped to a single agent invocation. A sample
+      SHOULD be recorded for every invocation, including one that ended in an
+      error.
+
+      This metric SHOULD be emitted together with the
+      `gen_ai.invoke_agent.internal` span for the same invocation.
+    instrument: histogram
+    unit: "{skill}"
+    stability: development
+    attributes:
+      - ref: gen_ai.agent.name
+        requirement_level: recommended
+    annotations:
+      code_generation:
+        metric_value_type: int
+  - name: gen_ai.invoke_workflow.skill.loads
+    requirement_level: recommended
+    brief: >
+      The number of skills activated during a single workflow invocation.
+    note: |
+      The distribution is scoped to a single workflow invocation.
+      A sample SHOULD be recorded for every workflow
+      invocation, including one that ended in an error.
+
+      This metric SHOULD be emitted together with the
+      `gen_ai.invoke_workflow.internal` span for the same invocation.
+    instrument: histogram
+    unit: "{skill}"
+    stability: development
+    attributes:
+      - ref: gen_ai.workflow.name
+        requirement_level:
+          conditionally_required: When available.
+    annotations:
+      code_generation:
+        metric_value_type: int
 
 metric_refinements:
   - id: openai.client.token.usage
