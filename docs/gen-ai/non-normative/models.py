@@ -545,6 +545,34 @@ class ToolCallResult(RootModel[dict[str, Any]]):
 
 
 # --------------------------------------------------------------------------
+# `gen_ai.skills` model
+# --------------------------------------------------------------------------
+
+
+class SkillInfo(BaseModel):
+    """
+    Represents a single skill whose instructions are in the agent's context.
+    """
+
+    name: str = Field(
+        description="Name of the skill, from its SKILL.md frontmatter."
+    )
+    compacted: bool = Field(
+        description="Whether the skill's instructions have been replaced by a summary."
+    )
+
+    model_config = ConfigDict(extra="allow")
+
+
+class Skills(RootModel[List[SkillInfo]]):
+    """
+    Represents the skills in the agent's context and their current compaction status.
+    """
+
+    pass
+
+
+# --------------------------------------------------------------------------
 # Schema generation entry point
 # --------------------------------------------------------------------------
 
@@ -558,6 +586,7 @@ SCHEMAS: dict[str, type[BaseModel]] = {
     "gen-ai-tool-call-result.json": ToolCallResult,
     "gen-ai-retrieval-documents.json": RetrievalDocuments,
     "gen-ai-memory-records.json": MemoryRecords,
+    "gen-ai-skills.json": Skills,
 }
 
 

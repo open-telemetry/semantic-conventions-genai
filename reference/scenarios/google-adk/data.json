@@ -1,8 +1,15 @@
 {
   "spans": {
     "gen_ai.execute_tool.internal": [
+      "error.type",
       "gen_ai.agent.name",
       "gen_ai.operation.name",
+      "gen_ai.skill.description",
+      "gen_ai.skill.name",
+      "gen_ai.skill.resource.path",
+      "gen_ai.skill.script.exit_code",
+      "gen_ai.skill.script.path",
+      "gen_ai.skill.source.uri",
       "gen_ai.tool.call.arguments",
       "gen_ai.tool.call.id",
       "gen_ai.tool.call.result",
@@ -25,6 +32,7 @@
       "gen_ai.request.temperature",
       "gen_ai.request.top_p",
       "gen_ai.response.finish_reasons",
+      "gen_ai.skills",
       "gen_ai.system_instructions",
       "gen_ai.tool.definitions",
       "gen_ai.usage.input_tokens",
@@ -48,6 +56,7 @@
   "events": {},
   "metrics": {
     "gen_ai.execute_tool.duration": [
+      "error.type",
       "gen_ai.agent.name",
       "gen_ai.tool.name",
       "gen_ai.tool.type"
@@ -58,8 +67,29 @@
     "gen_ai.invoke_agent.inference_calls": [
       "gen_ai.agent.name"
     ],
+    "gen_ai.invoke_agent.skill.loads": [
+      "gen_ai.agent.name"
+    ],
     "gen_ai.invoke_agent.tool_calls": [
       "gen_ai.agent.name"
+    ],
+    "gen_ai.invoke_workflow.duration": [
+      "gen_ai.workflow.name"
+    ],
+    "gen_ai.invoke_workflow.skill.loads": [
+      "gen_ai.workflow.name"
+    ],
+    "gen_ai.skill.loads": [
+      "error.type",
+      "gen_ai.agent.name",
+      "gen_ai.skill.name"
+    ],
+    "gen_ai.skill.script.executions": [
+      "error.type",
+      "gen_ai.agent.name",
+      "gen_ai.skill.name",
+      "gen_ai.skill.script.exited_with_error",
+      "gen_ai.skill.script.path"
     ]
   },
   "findings": [

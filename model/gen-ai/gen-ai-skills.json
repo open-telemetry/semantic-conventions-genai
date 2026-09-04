@@ -1,0 +1,32 @@
+{
+    "$defs": {
+        "SkillInfo": {
+            "additionalProperties": true,
+            "description": "Represents a single skill whose instructions are in the agent's context.",
+            "properties": {
+                "name": {
+                    "description": "Name of the skill, from its SKILL.md frontmatter.",
+                    "title": "Name",
+                    "type": "string"
+                },
+                "compacted": {
+                    "description": "Whether the skill's instructions have been replaced by a summary.",
+                    "title": "Compacted",
+                    "type": "boolean"
+                }
+            },
+            "required": [
+                "name",
+                "compacted"
+            ],
+            "title": "SkillInfo",
+            "type": "object"
+        }
+    },
+    "description": "Represents the skills in the agent's context and their current compaction status.",
+    "items": {
+        "$ref": "#/$defs/SkillInfo"
+    },
+    "title": "Skills",
+    "type": "array"
+}

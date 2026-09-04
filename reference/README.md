@@ -53,4 +53,8 @@ Run `uv run update-reports` to regenerate.
 | [Client Operation Duration](reports/gen-ai-client-operation-duration-metric.md) | agent-framework, anthropic, groq |
 | [Invoke Agent Inference Calls](reports/gen-ai-invoke-agent-inference-calls-metric.md) | google-adk |
 | [Invoke Agent Tool Calls](reports/gen-ai-invoke-agent-tool-calls-metric.md) | google-adk |
+| [Invoke Agent Skill Loads](reports/gen-ai-invoke-agent-skill-loads-metric.md) | agent-framework, google-adk |
+| [Invoke Workflow Skill Loads](reports/gen-ai-invoke-workflow-skill-loads-metric.md) | google-adk |
+| [Skill Loads](reports/gen-ai-skill-loads-metric.md) | agent-framework, google-adk |
+| [Skill Script Executions](reports/gen-ai-skill-script-executions-metric.md) | agent-framework, google-adk |
 <!-- status:end -->
