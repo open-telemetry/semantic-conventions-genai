@@ -470,6 +470,35 @@ attributes:
     brief: The version of the GenAI agent.
     examples: ["1.0.0", "2025-05-01"]
     stability: development
+  - key: gen_ai.agent.handoff.source.name
+    type: string
+    brief: Human-readable name of the GenAI agent that initiated a handoff.
+    note: |
+      Set on the `execute_tool` span that represents an agent-to-agent
+      handoff when the framework exposes a typed handoff primitive that
+      names the source agent (for example, OpenAI Agents SDK
+      `HandoffOutputItem.source_agent`).
+    examples: ["triage-agent"]
+    stability: development
+  - key: gen_ai.agent.handoff.target.name
+    type: string
+    brief: Human-readable name of the GenAI agent that received a handoff.
+    note: |
+      Set on the `execute_tool` span that represents an agent-to-agent
+      handoff when the framework exposes a typed handoff primitive that
+      names the target agent (for example, OpenAI Agents SDK
+      `HandoffOutputItem.target_agent`).
+
+      The receiving agent's `invoke_agent` span SHOULD be modeled as a
+      sibling of this `execute_tool` span; see the
+      [`execute_tool` span definition](/docs/gen-ai/gen-ai-spans.md#execute-tool-span)
+      for the full rationale.
+
+      MAY be absent if the handoff was interrupted before the target
+      agent was determined (for example, when the framework's handoff
+      invocation raised).
+    examples: ["billing-agent"]
+    stability: development
   - key: gen_ai.tool.name
     type: string
     brief: Name of the tool utilized by the agent.

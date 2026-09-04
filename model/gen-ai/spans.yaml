@@ -589,6 +589,16 @@ spans:
       are encouraged to follow this semantic convention for tools invoked by their
       own code and to manually instrument any tool calls that automatic
       instrumentations do not cover.
+
+      When the `execute_tool` span represents an agent-to-agent handoff
+      (typically signaled by `gen_ai.agent.handoff.source.name`), the receiving
+      agent's `invoke_agent` span SHOULD be modeled as a sibling of this
+      `execute_tool` span, NOT nested beneath it. Agent frameworks typically
+      continue executing the target agent at the top level of the run loop
+      rather than inside the handoff invocation, so nesting would force this
+      `execute_tool` span to remain open across the entire downstream
+      conversation and conflate handoff duration with the target agent's
+      own work.
     stability: development
     attributes:
       - ref_group: attributes.gen_ai.error
@@ -610,6 +620,12 @@ spans:
         requirement_level: opt_in
       - ref: gen_ai.tool.call.result
         requirement_level: opt_in
+      - ref: gen_ai.agent.handoff.source.name
+        requirement_level:
+          recommended: when the tool call represents an agent-to-agent handoff and the framework exposes the source agent.
+      - ref: gen_ai.agent.handoff.target.name
+        requirement_level:
+          recommended: when the tool call represents an agent-to-agent handoff and the framework exposes the target agent.
 
   - type: gen_ai.invoke_workflow.internal
     requirement_level: recommended

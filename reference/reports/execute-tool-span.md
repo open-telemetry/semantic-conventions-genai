@@ -19,6 +19,8 @@
 
 | Attribute | Supporting Libraries |
 | --- | --- |
+| gen_ai.agent.handoff.source.name | [openai-agents] |
+| gen_ai.agent.handoff.target.name | [openai-agents] |
 | gen_ai.tool.call.id | [agent-framework], [autogen], [google-adk], [google-genai], [langchain], [llamaindex], [openai-agents], [openai-assistants], [pydantic-ai], [vertexai] |
 | gen_ai.tool.description | [agent-framework], [autogen], [crewai], [google-adk], [google-genai], [langchain], [llamaindex], [openai-agents], [openai-assistants], [pydantic-ai], [vertexai] |
 | gen_ai.tool.type | [agent-framework], [autogen], [crewai], [google-adk], [google-genai], [langchain], [llamaindex], [openai-agents], [openai-assistants], [pydantic-ai], [vertexai] |
