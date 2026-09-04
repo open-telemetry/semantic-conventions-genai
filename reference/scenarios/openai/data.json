@@ -48,8 +48,13 @@
       "gen_ai.response.id",
       "gen_ai.response.model",
       "gen_ai.tool.definitions",
+      "gen_ai.usage.audio.input_tokens",
+      "gen_ai.usage.audio.output_tokens",
+      "gen_ai.usage.cache_read.input_tokens",
+      "gen_ai.usage.cache_write.input_tokens",
       "gen_ai.usage.input_tokens",
       "gen_ai.usage.output_tokens",
+      "gen_ai.usage.reasoning.output_tokens",
       "server.address",
       "server.port"
     ]
@@ -68,11 +73,27 @@
       "gen_ai.response.finish_reasons",
       "gen_ai.response.id",
       "gen_ai.response.model",
+      "gen_ai.usage.audio.input_tokens",
+      "gen_ai.usage.audio.output_tokens",
+      "gen_ai.usage.cache_read.input_tokens",
+      "gen_ai.usage.cache_write.input_tokens",
       "gen_ai.usage.input_tokens",
       "gen_ai.usage.output_tokens",
+      "gen_ai.usage.reasoning.output_tokens",
       "server.address",
       "server.port"
     ]
   },
-  "metrics": {}
+  "metrics": {},
+  "findings": [
+    {
+      "id": "genai_content_schema",
+      "message": "Attribute 'gen_ai.tool.definitions' value does not conform to the GenAI schema: {\"function\":{\"description\":\"Get the current weather\",\"name\":\"get_weather\",\"parameters\":{\"properties\":{\"location\":{\"description\":\"City name\",\"type\":\"string\"}},\"required\":[\"location\"],\"type\":\"object\"}},\"type\":\"function\"} is not valid under any of the schemas listed in the 'anyOf' keyword",
+      "context": {
+        "attribute": "gen_ai.tool.definitions",
+        "errors": "{\"function\":{\"description\":\"Get the current weather\",\"name\":\"get_weather\",\"parameters\":{\"properties\":{\"location\":{\"description\":\"City name\",\"type\":\"string\"}},\"required\":[\"location\"],\"type\":\"object\"}},\"type\":\"function\"} is not valid under any of the schemas listed in the 'anyOf' keyword"
+      }
+    }
+  ],
+  "entities": {}
 }

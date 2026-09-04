@@ -16,6 +16,33 @@ MOCK_BASE_URL = os.environ["MOCK_LLM_URL"] + "/v1"
 _reference_tracer = reference_tracer()
 
 
+def chat_finish_reasons(choices, expected_count=None):
+    """Return positional finish reasons, filling missing positions with error."""
+    finish_reasons_by_index = {choice.index: choice.finish_reason for choice in choices}
+    count = expected_count
+    if count is None:
+        count = max(finish_reasons_by_index, default=-1) + 1
+    return [finish_reasons_by_index.get(index) or "error" for index in range(count)]
+
+
+def responses_finish_reason(response):
+    """Map a terminal Responses API status to a finish reason."""
+    status = getattr(response, "status", None)
+    if status in (None, "queued", "in_progress"):
+        return None
+    if status == "completed":
+        return "stop"
+    if status == "incomplete":
+        details = getattr(response, "incomplete_details", None)
+        reason = getattr(details, "reason", None) if details else None
+        if reason == "max_output_tokens":
+            return "length"
+        if reason == "content_filter":
+            return "content_filter"
+        return "incomplete"
+    return "error"
+
+
 def response_has_compaction_item(response):
     """Return whether the Responses API output includes a ResponseCompactionItem."""
     for item in getattr(response, "output", []) or []:
@@ -55,9 +82,9 @@ def responses_output_messages(response):
             if text:
                 parts.append({"type": "text", "content": text})
         if parts:
-            output_messages.append({"role": role or "assistant", "parts": parts, "finish_reason": "stop"})
+            output_messages.append({"role": role or "assistant", "parts": parts})
     if pending_parts:
-        output_messages.append({"role": "assistant", "parts": pending_parts, "finish_reason": "compaction"})
+        output_messages.append({"role": "assistant", "parts": pending_parts})
     return output_messages
 
 
@@ -117,12 +144,12 @@ def run_chat_reference(client):
         )
         span.set_attribute("gen_ai.response.model", resp.model)
         span.set_attribute("gen_ai.response.id", resp.id)
-        span.set_attribute("gen_ai.response.finish_reasons", [c.finish_reason for c in resp.choices])
+        finish_reasons = chat_finish_reasons(resp.choices, expected_count=request_choice_count)
+        span.set_attribute("gen_ai.response.finish_reasons", finish_reasons)
         output_messages = [
             {
                 "role": c.message.role,
                 "parts": [{"type": "text", "content": c.message.content}],
-                "finish_reason": c.finish_reason,
             }
             for c in resp.choices
         ]
@@ -145,7 +172,7 @@ def run_chat_reference(client):
             "gen_ai.request.model": request_model,
             "gen_ai.response.id": resp.id,
             "gen_ai.response.model": resp.model,
-            "gen_ai.response.finish_reasons": [c.finish_reason for c in resp.choices],
+            "gen_ai.response.finish_reasons": finish_reasons,
             "gen_ai.input.messages": input_messages,
             "gen_ai.output.messages": json.dumps(output_messages),
         }
@@ -214,12 +241,30 @@ def run_responses_compaction_reference(client):
         span.set_attribute("gen_ai.conversation.compacted", conversation_compacted)
         span.set_attribute("gen_ai.response.model", response.model)
         span.set_attribute("gen_ai.response.id", response.id)
+        finish_reason = responses_finish_reason(response)
+        if finish_reason is not None:
+            span.set_attribute("gen_ai.response.finish_reasons", [finish_reason])
         output_messages = responses_output_messages(response)
         if output_messages:
             span.set_attribute("gen_ai.output.messages", json.dumps(output_messages))
+        # Build usage attributes once so the span and the event stay identical.
+        usage = {}
         if response.usage:
-            span.set_attribute("gen_ai.usage.input_tokens", response.usage.input_tokens)
-            span.set_attribute("gen_ai.usage.output_tokens", response.usage.output_tokens)
+            usage["gen_ai.usage.input_tokens"] = response.usage.input_tokens
+            usage["gen_ai.usage.output_tokens"] = response.usage.output_tokens
+            itd = response.usage.input_tokens_details
+            otd = response.usage.output_tokens_details
+            cached_tokens = getattr(itd, "cached_tokens", None) if itd else None
+            cache_write_tokens = getattr(itd, "cache_write_tokens", None) if itd else None
+            reasoning_tokens = getattr(otd, "reasoning_tokens", None) if otd else None
+            if cached_tokens:
+                usage["gen_ai.usage.cache_read.input_tokens"] = cached_tokens
+            if cache_write_tokens:
+                usage["gen_ai.usage.cache_write.input_tokens"] = cache_write_tokens
+            if reasoning_tokens:
+                usage["gen_ai.usage.reasoning.output_tokens"] = reasoning_tokens
+        for attr, value in usage.items():
+            span.set_attribute(attr, value)
 
         event_attrs = {
             "gen_ai.operation.name": "chat",
@@ -232,11 +277,11 @@ def run_responses_compaction_reference(client):
                 [{"role": "user", "parts": [{"type": "text", "content": conversation[0]["content"]}]}]
             ),
         }
+        if finish_reason is not None:
+            event_attrs["gen_ai.response.finish_reasons"] = [finish_reason]
         if output_messages:
             event_attrs["gen_ai.output.messages"] = json.dumps(output_messages)
-        if response.usage:
-            event_attrs["gen_ai.usage.input_tokens"] = response.usage.input_tokens
-            event_attrs["gen_ai.usage.output_tokens"] = response.usage.output_tokens
+        event_attrs.update(usage)
         if host:
             event_attrs["server.address"] = host
         if port is not None:
@@ -301,6 +346,9 @@ def run_responses_continuation_reference(client):
 
         span.set_attribute("gen_ai.response.model", response.model)
         span.set_attribute("gen_ai.response.id", response.id)
+        finish_reason = responses_finish_reason(response)
+        if finish_reason is not None:
+            span.set_attribute("gen_ai.response.finish_reasons", [finish_reason])
         output_messages = responses_output_messages(response)
         if output_messages:
             span.set_attribute("gen_ai.output.messages", json.dumps(output_messages))
@@ -319,6 +367,8 @@ def run_responses_continuation_reference(client):
                 [{"role": "user", "parts": [{"type": "text", "content": continuation_conversation[0]["content"]}]}]
             ),
         }
+        if finish_reason is not None:
+            event_attrs["gen_ai.response.finish_reasons"] = [finish_reason]
         if output_messages:
             event_attrs["gen_ai.output.messages"] = json.dumps(output_messages)
         if response.usage:
@@ -368,16 +418,19 @@ def run_chat_streaming_reference(client):
         text = ""
         model = None
         response_id = None
-        finish_reasons = []
+        seen_choice_indexes = set()
+        finish_reasons_by_index = {}
         input_tokens = None
         output_tokens = None
         for chunk in stream:
             model = model or getattr(chunk, "model", None)
             response_id = response_id or getattr(chunk, "id", None)
-            if chunk.choices and chunk.choices[0].delta.content:
-                text += chunk.choices[0].delta.content
-            if chunk.choices and chunk.choices[0].finish_reason:
-                finish_reasons.append(chunk.choices[0].finish_reason)
+            for choice in chunk.choices:
+                seen_choice_indexes.add(choice.index)
+                if choice.index == 0 and choice.delta.content:
+                    text += choice.delta.content
+                if choice.finish_reason is not None:
+                    finish_reasons_by_index[choice.index] = choice.finish_reason
             if chunk.usage:
                 input_tokens = chunk.usage.prompt_tokens
                 output_tokens = chunk.usage.completion_tokens
@@ -385,15 +438,16 @@ def run_chat_streaming_reference(client):
             span.set_attribute("gen_ai.response.model", model)
         if response_id:
             span.set_attribute("gen_ai.response.id", response_id)
-        if finish_reasons:
+        if seen_choice_indexes:
+            finish_reasons = [
+                finish_reasons_by_index.get(index, "error") for index in range(max(seen_choice_indexes) + 1)
+            ]
             span.set_attribute("gen_ai.response.finish_reasons", finish_reasons)
         if text:
             output_message = {
                 "role": "assistant",
                 "parts": [{"type": "text", "content": text}],
             }
-            if finish_reasons:
-                output_message["finish_reason"] = finish_reasons[-1]
             span.set_attribute("gen_ai.output.messages", json.dumps([output_message]))
         if input_tokens is not None:
             span.set_attribute("gen_ai.usage.input_tokens", input_tokens)
@@ -444,7 +498,7 @@ def run_chat_tool_call_reference(client):
         )
         span.set_attribute("gen_ai.response.model", resp.model)
         span.set_attribute("gen_ai.response.id", resp.id)
-        span.set_attribute("gen_ai.response.finish_reasons", [c.finish_reason for c in resp.choices])
+        span.set_attribute("gen_ai.response.finish_reasons", chat_finish_reasons(resp.choices))
         if resp.usage:
             span.set_attribute("gen_ai.usage.input_tokens", resp.usage.prompt_tokens)
             span.set_attribute("gen_ai.usage.output_tokens", resp.usage.completion_tokens)
@@ -525,12 +579,11 @@ def run_chat_with_document_input_reference(client):
         )
         span.set_attribute("gen_ai.response.model", resp.model)
         span.set_attribute("gen_ai.response.id", resp.id)
-        span.set_attribute("gen_ai.response.finish_reasons", [c.finish_reason for c in resp.choices])
+        span.set_attribute("gen_ai.response.finish_reasons", chat_finish_reasons(resp.choices))
         output_messages = [
             {
                 "role": c.message.role,
                 "parts": [{"type": "text", "content": c.message.content}],
-                "finish_reason": c.finish_reason,
             }
             for c in resp.choices
         ]
@@ -539,6 +592,176 @@ def run_chat_with_document_input_reference(client):
             span.set_attribute("gen_ai.usage.input_tokens", resp.usage.prompt_tokens)
             span.set_attribute("gen_ai.usage.output_tokens", resp.usage.completion_tokens)
         print(f"    -> {resp.choices[0].message.content[:60]}")
+
+
+def run_chat_image_reference(client):
+    """Scenario: chat with image input (image modality)."""
+    import base64
+
+    print("  [chat_image] chat with image input (reference implementation)")
+    request_model = "gpt-4o-mini"
+    instruction = "Describe the attached image."
+    image_bytes = b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01"
+    image_b64 = base64.b64encode(image_bytes).decode("ascii")
+    mime_type = "image/png"
+    messages = [
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": instruction},
+                {
+                    "type": "image_url",
+                    "image_url": {"url": f"data:{mime_type};base64,{image_b64}"},
+                },
+            ],
+        }
+    ]
+    input_parts = [
+        {"type": "text", "content": instruction},
+        {
+            "type": "blob",
+            "modality": "image",
+            "mime_type": mime_type,
+            "content": image_b64,
+        },
+    ]
+    input_messages = json.dumps([{"role": "user", "parts": input_parts}])
+
+    host, port = mock_server_host_port(MOCK_BASE_URL)
+    span_attributes_img = {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "openai",
+        "gen_ai.request.model": request_model,
+    }
+    if host:
+        span_attributes_img["server.address"] = host
+    if port is not None:
+        span_attributes_img["server.port"] = port
+    with _reference_tracer.start_as_current_span("chat gpt-4o-mini", attributes=span_attributes_img) as span:
+        span.set_attribute("gen_ai.input.messages", input_messages)
+        resp = client.chat.completions.create(
+            model=request_model,
+            messages=messages,
+        )
+        span.set_attribute("gen_ai.response.model", resp.model)
+        span.set_attribute("gen_ai.response.id", resp.id)
+        span.set_attribute("gen_ai.response.finish_reasons", chat_finish_reasons(resp.choices))
+        output_messages = [
+            {
+                "role": c.message.role,
+                "parts": [{"type": "text", "content": c.message.content}],
+            }
+            for c in resp.choices
+        ]
+        span.set_attribute("gen_ai.output.messages", json.dumps(output_messages))
+        if resp.usage:
+            span.set_attribute("gen_ai.usage.input_tokens", resp.usage.prompt_tokens)
+            span.set_attribute("gen_ai.usage.output_tokens", resp.usage.completion_tokens)
+            # OpenAI does not report per-modality image token counts in prompt_tokens_details
+        print(f"    -> {resp.choices[0].message.content[:60]}")
+
+
+def run_chat_audio_reference(client):
+    """Scenario: audio input/output chat, emitting per-modality (audio) token usage.
+
+    OpenAI reports audio tokens separately within the prompt/completion totals via
+    `prompt_tokens_details.audio_tokens` and `completion_tokens_details.audio_tokens`.
+    """
+    import base64
+
+    print("  [chat_audio] audio chat completion (reference implementation)")
+    request_model = "gpt-4o-audio-preview"
+    audio_b64 = base64.b64encode(b"\x00" * 16).decode()
+    messages = [
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": "Respond to this audio clip."},
+                {"type": "input_audio", "input_audio": {"data": audio_b64, "format": "wav"}},
+            ],
+        }
+    ]
+    host, port = mock_server_host_port(MOCK_BASE_URL)
+    span_attributes = {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "openai",
+        "gen_ai.request.model": request_model,
+    }
+    if host:
+        span_attributes["server.address"] = host
+    if port is not None:
+        span_attributes["server.port"] = port
+    input_messages = json.dumps(
+        [
+            {
+                "role": "user",
+                "parts": [
+                    {"type": "text", "content": "Respond to this audio clip."},
+                    {"type": "blob", "mime_type": "audio/wav", "content": audio_b64},
+                ],
+            }
+        ]
+    )
+    with _reference_tracer.start_as_current_span("chat gpt-4o-audio-preview", attributes=span_attributes) as span:
+        resp = client.chat.completions.create(
+            model=request_model,
+            modalities=["text", "audio"],
+            audio={"voice": "alloy", "format": "wav"},
+            messages=messages,
+        )
+        # Build usage attributes once so the span and the event stay identical.
+        usage = {}
+        if resp.usage:
+            usage["gen_ai.usage.input_tokens"] = resp.usage.prompt_tokens
+            usage["gen_ai.usage.output_tokens"] = resp.usage.completion_tokens
+            ptd = resp.usage.prompt_tokens_details
+            ctd = resp.usage.completion_tokens_details
+            if ptd and ptd.audio_tokens:
+                usage["gen_ai.usage.audio.input_tokens"] = ptd.audio_tokens
+            if ptd and ptd.cached_tokens:
+                usage["gen_ai.usage.cache_read.input_tokens"] = ptd.cached_tokens
+            if ctd and ctd.audio_tokens:
+                usage["gen_ai.usage.audio.output_tokens"] = ctd.audio_tokens
+            if ctd and ctd.reasoning_tokens:
+                usage["gen_ai.usage.reasoning.output_tokens"] = ctd.reasoning_tokens
+        span.set_attribute("gen_ai.response.model", resp.model)
+        span.set_attribute("gen_ai.response.id", resp.id)
+        finish_reasons = chat_finish_reasons(resp.choices)
+        span.set_attribute("gen_ai.response.finish_reasons", finish_reasons)
+        for attr, value in usage.items():
+            span.set_attribute(attr, value)
+
+        output_messages = json.dumps(
+            [
+                {
+                    "role": c.message.role,
+                    # Audio output puts the text in the transcript, not in content.
+                    "parts": [{"type": "text", "content": c.message.content or c.message.audio.transcript}],
+                }
+                for c in resp.choices
+            ]
+        )
+        event_attrs = {
+            "gen_ai.operation.name": "chat",
+            "gen_ai.provider.name": "openai",
+            "gen_ai.request.model": request_model,
+            "gen_ai.response.id": resp.id,
+            "gen_ai.response.model": resp.model,
+            "gen_ai.response.finish_reasons": finish_reasons,
+            "gen_ai.input.messages": input_messages,
+            "gen_ai.output.messages": output_messages,
+        }
+        event_attrs.update(usage)
+        if host:
+            event_attrs["server.address"] = host
+        if port is not None:
+            event_attrs["server.port"] = port
+        reference_event_logger().emit(
+            event_name="gen_ai.client.inference.operation.details",
+            body="Inference operation details",
+            attributes=event_attrs,
+        )
+        print("    -> audio usage captured")
 
 
 def run_embeddings_reference(client):
@@ -627,7 +850,6 @@ def run_responses_with_prompt_template_reference(client):
                         {
                             "role": "assistant",
                             "parts": [{"type": "text", "content": output_text}],
-                            "finish_reason": "stop",
                         }
                     ]
                 ),
@@ -635,7 +857,9 @@ def run_responses_with_prompt_template_reference(client):
         if resp.usage:
             span.set_attribute("gen_ai.usage.input_tokens", resp.usage.input_tokens)
             span.set_attribute("gen_ai.usage.output_tokens", resp.usage.output_tokens)
-        span.set_attribute("gen_ai.response.finish_reasons", ["stop"])
+        finish_reason = responses_finish_reason(resp)
+        if finish_reason is not None:
+            span.set_attribute("gen_ai.response.finish_reasons", [finish_reason])
 
         event_attrs = {
             "gen_ai.operation.name": "chat",
@@ -645,13 +869,14 @@ def run_responses_with_prompt_template_reference(client):
             "gen_ai.prompt.version": prompt_version,
             "gen_ai.response.id": resp.id,
             "gen_ai.response.model": resp.model,
-            "gen_ai.response.finish_reasons": ["stop"],
         }
+        if finish_reason is not None:
+            event_attrs["gen_ai.response.finish_reasons"] = [finish_reason]
         for var_name, var_value in prompt_variables.items():
             event_attrs[f"gen_ai.prompt.variable.{var_name}"] = var_value
         if output_text:
             event_attrs["gen_ai.output.messages"] = json.dumps(
-                [{"role": "assistant", "parts": [{"type": "text", "content": output_text}], "finish_reason": "stop"}]
+                [{"role": "assistant", "parts": [{"type": "text", "content": output_text}]}]
             )
         if resp.usage:
             event_attrs["gen_ai.usage.input_tokens"] = resp.usage.input_tokens
@@ -667,34 +892,6 @@ def run_responses_with_prompt_template_reference(client):
         )
 
         print(f"    -> {(output_text or '')[:60]}")
-
-
-def _fetch_response_finish_reason(fetched):
-    """Map a fetched Responses `status` to a `gen_ai.response.finish_reasons` value.
-
-    The fetch itself always succeeds here; this conveys the outcome of the
-    ORIGINAL generation recorded on the response. A completed generation maps to
-    its stop reason, an incomplete one to why it was cut short, and a failed or
-    cancelled generation to `error`.
-
-    Returns None for non-terminal statuses (`queued`, `in_progress`): generation
-    has not stopped yet, so there is no finish reason to record. The lifecycle
-    state is conveyed by `gen_ai.response.status` instead.
-    """
-    status = getattr(fetched, "status", None)
-    if status in ("queued", "in_progress"):
-        return None
-    if status == "completed":
-        return "stop"
-    if status == "incomplete":
-        details = getattr(fetched, "incomplete_details", None)
-        reason = getattr(details, "reason", None) if details else None
-        if reason == "max_output_tokens":
-            return "length"
-        if reason == "content_filter":
-            return "content_filter"
-        return "incomplete"
-    return "error"
 
 
 def _emit_fetch_response_span(client, response_id, starting_after=None):
@@ -754,7 +951,7 @@ def _emit_fetch_response_span(client, response_id, starting_after=None):
         status = getattr(fetched, "status", None)
         if status is not None:
             span.set_attribute("gen_ai.response.status", status)
-        finish_reason = _fetch_response_finish_reason(fetched)
+        finish_reason = responses_finish_reason(fetched)
         if finish_reason is not None:
             span.set_attribute("gen_ai.response.finish_reasons", [finish_reason])
         service_tier = getattr(fetched, "service_tier", None)
@@ -849,6 +1046,8 @@ def main():
     run_chat_streaming_reference(client)
     run_chat_tool_call_reference(client)
     run_chat_with_document_input_reference(client)
+    run_chat_image_reference(client)
+    run_chat_audio_reference(client)
     run_responses_with_prompt_template_reference(client)
     run_fetch_response_reference(client)
     run_embeddings_reference(client)

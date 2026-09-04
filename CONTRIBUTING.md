@@ -75,14 +75,14 @@ mise run links
 
 Changes under `model/` or `docs/` typically require updating the
 reference scenarios under `reference/` to demonstrate that the proposed
-updates are capturable. See
-[reference/CONTRIBUTING.md](reference/CONTRIBUTING.md).
+updates are capturable. See [reference/CONTRIBUTING.md](reference/CONTRIBUTING.md)
+and the [reference skill](.github/skills/reference/SKILL.md).
 
 ### 5. Update the changelog
 
 Add a Towncrier fragment under [changelog.d/](changelog.d/) for any change to
-the conventions that a consumer would care about. Editorial changes — typos,
-pure rewording, and repo tooling — don't need an entry.
+the conventions that a consumer would care about. Editorial changes - typos,
+pure rewording, and repo tooling - don't need an entry.
 
 Use a filename of `<pr-number>.<type>.md` once the pull request number is
 known, or `+.<type>.md` before then. Add a numeric counter before `.md` when

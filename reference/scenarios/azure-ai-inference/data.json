@@ -38,5 +38,39 @@
       "server.port"
     ]
   },
-  "metrics": {}
+  "metrics": {},
+  "findings": [
+    {
+      "id": "genai_content_schema",
+      "message": "Attribute 'gen_ai.tool.definitions' value does not conform to the GenAI schema: {\"function\":{\"description\":\"Get the current weather\",\"name\":\"get_weather\",\"parameters\":{\"properties\":{\"location\":{\"description\":\"City name\",\"type\":\"string\"}},\"required\":[\"location\"],\"type\":\"object\"}},\"type\":\"function\"} is not valid under any of the schemas listed in the 'anyOf' keyword",
+      "context": {
+        "attribute": "gen_ai.tool.definitions",
+        "errors": "{\"function\":{\"description\":\"Get the current weather\",\"name\":\"get_weather\",\"parameters\":{\"properties\":{\"location\":{\"description\":\"City name\",\"type\":\"string\"}},\"required\":[\"location\"],\"type\":\"object\"}},\"type\":\"function\"} is not valid under any of the schemas listed in the 'anyOf' keyword"
+      }
+    },
+    {
+      "id": "required_attribute_not_present",
+      "message": "Required attribute 'gen_ai.provider.name' is not present.",
+      "context": {
+        "attribute_key": "gen_ai.provider.name"
+      }
+    },
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'chat gpt-4o-mini' (operation 'chat') is missing expected attribute 'gen_ai.usage.input_tokens'",
+      "context": {
+        "missing_attribute": "gen_ai.usage.input_tokens",
+        "operation": "chat"
+      }
+    },
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'chat gpt-4o-mini' (operation 'chat') is missing expected attribute 'gen_ai.usage.output_tokens'",
+      "context": {
+        "missing_attribute": "gen_ai.usage.output_tokens",
+        "operation": "chat"
+      }
+    }
+  ],
+  "entities": {}
 }

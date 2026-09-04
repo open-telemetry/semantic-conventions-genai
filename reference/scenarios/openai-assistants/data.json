@@ -42,5 +42,33 @@
     ]
   },
   "events": {},
-  "metrics": {}
+  "metrics": {},
+  "findings": [
+    {
+      "id": "genai_content_schema",
+      "message": "Attribute 'gen_ai.tool.definitions' value does not conform to the GenAI schema: {\"function\":{\"description\":\"Get the current weather\",\"name\":\"get_weather\",\"parameters\":{\"properties\":{\"location\":{\"description\":\"City name\",\"type\":\"string\"}},\"required\":[\"location\"],\"type\":\"object\"}},\"type\":\"function\"} is not valid under any of the schemas listed in the 'anyOf' keyword",
+      "context": {
+        "attribute": "gen_ai.tool.definitions",
+        "errors": "{\"function\":{\"description\":\"Get the current weather\",\"name\":\"get_weather\",\"parameters\":{\"properties\":{\"location\":{\"description\":\"City name\",\"type\":\"string\"}},\"required\":[\"location\"],\"type\":\"object\"}},\"type\":\"function\"} is not valid under any of the schemas listed in the 'anyOf' keyword"
+      }
+    },
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'invoke_agent refimpl-test-assistant' (operation 'invoke_agent') is missing expected attribute 'gen_ai.response.finish_reasons'",
+      "context": {
+        "missing_attribute": "gen_ai.response.finish_reasons",
+        "operation": "invoke_agent"
+      }
+    },
+    {
+      "id": "genai_span_name_format",
+      "message": "execute_tool span name should be 'execute_tool' or 'execute_tool <value of gen_ai.tool.name>', got 'execute_tool'",
+      "context": {
+        "expected_form": "execute_tool or 'execute_tool <gen_ai.tool.name>'",
+        "keyed_attr": "gen_ai.tool.name",
+        "operation": "execute_tool"
+      }
+    }
+  ],
+  "entities": {}
 }
