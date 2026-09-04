@@ -64,21 +64,24 @@
 | <a id="gen-ai-tool-description" href="#gen-ai-tool-description">`gen_ai.tool.description`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The tool description. [30] | `Multiply two numbers` |
 | <a id="gen-ai-tool-name" href="#gen-ai-tool-name">`gen_ai.tool.name`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | Name of the tool utilized by the agent. | `Flights` |
 | <a id="gen-ai-tool-type" href="#gen-ai-tool-type">`gen_ai.tool.type`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | Type of the tool utilized by the agent [31] | `function`; `extension`; `datastore` |
-| <a id="gen-ai-usage-audio-cache-read-input-tokens" href="#gen-ai-usage-audio-cache-read-input-tokens">`gen_ai.usage.audio.cache_read.input_tokens`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The number of audio input tokens served from a provider-managed cache. [32] | `60` |
-| <a id="gen-ai-usage-audio-input-tokens" href="#gen-ai-usage-audio-input-tokens">`gen_ai.usage.audio.input_tokens`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The number of audio input tokens. [33] | `120` |
-| <a id="gen-ai-usage-audio-output-tokens" href="#gen-ai-usage-audio-output-tokens">`gen_ai.usage.audio.output_tokens`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The number of audio output tokens. [34] | `240` |
-| <a id="gen-ai-usage-cache-read-input-tokens" href="#gen-ai-usage-cache-read-input-tokens">`gen_ai.usage.cache_read.input_tokens`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The number of input tokens served from a provider-managed cache. [35] | `50` |
-| <a id="gen-ai-usage-cache-write-input-tokens" href="#gen-ai-usage-cache-write-input-tokens">`gen_ai.usage.cache_write.input_tokens`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The number of input tokens written to a provider-managed cache. [36] | `25` |
-| <a id="gen-ai-usage-image-cache-read-input-tokens" href="#gen-ai-usage-image-cache-read-input-tokens">`gen_ai.usage.image.cache_read.input_tokens`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The number of image input tokens served from a provider-managed cache. [37] | `128` |
-| <a id="gen-ai-usage-image-input-tokens" href="#gen-ai-usage-image-input-tokens">`gen_ai.usage.image.input_tokens`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The number of image input tokens. [38] | `258` |
-| <a id="gen-ai-usage-image-output-tokens" href="#gen-ai-usage-image-output-tokens">`gen_ai.usage.image.output_tokens`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The number of image output tokens. [39] | `1290` |
-| <a id="gen-ai-usage-input-tokens" href="#gen-ai-usage-input-tokens">`gen_ai.usage.input_tokens`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The number of tokens used in the GenAI input (prompt). [40] | `100` |
-| <a id="gen-ai-usage-output-tokens" href="#gen-ai-usage-output-tokens">`gen_ai.usage.output_tokens`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The number of tokens used in the GenAI response (completion). [41] | `180` |
-| <a id="gen-ai-usage-reasoning-output-tokens" href="#gen-ai-usage-reasoning-output-tokens">`gen_ai.usage.reasoning.output_tokens`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The number of output tokens used for reasoning (e.g. chain-of-thought, extended thinking). [42] | `50` |
-| <a id="gen-ai-usage-text-cache-read-input-tokens" href="#gen-ai-usage-text-cache-read-input-tokens">`gen_ai.usage.text.cache_read.input_tokens`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The number of text input tokens served from a provider-managed cache. [43] | `40` |
-| <a id="gen-ai-usage-text-input-tokens" href="#gen-ai-usage-text-input-tokens">`gen_ai.usage.text.input_tokens`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The number of text input tokens. [44] | `100` |
-| <a id="gen-ai-usage-text-output-tokens" href="#gen-ai-usage-text-output-tokens">`gen_ai.usage.text.output_tokens`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The number of text output tokens. [45] | `180` |
-| <a id="gen-ai-workflow-name" href="#gen-ai-workflow-name">`gen_ai.workflow.name`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | Human-readable name of the GenAI workflow provided by the application. [46] | `multi_agent_rag`; `customer_support_pipeline` |
+| <a id="gen-ai-transfer-mode" href="#gen-ai-transfer-mode">`gen_ai.transfer.mode`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | Describes how control passes to the transfer target. [32] | `return_to_caller`; `pass_control` |
+| <a id="gen-ai-transfer-target-name" href="#gen-ai-transfer-target-name">`gen_ai.transfer.target.name`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The human-readable name of the transfer target. | `weather_agent`; `human_support` |
+| <a id="gen-ai-transfer-target-type" href="#gen-ai-transfer-target-type">`gen_ai.transfer.target.type`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The type of the transfer target. | `agent`; `human`; `workflow` |
+| <a id="gen-ai-usage-audio-cache-read-input-tokens" href="#gen-ai-usage-audio-cache-read-input-tokens">`gen_ai.usage.audio.cache_read.input_tokens`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The number of audio input tokens served from a provider-managed cache. [33] | `60` |
+| <a id="gen-ai-usage-audio-input-tokens" href="#gen-ai-usage-audio-input-tokens">`gen_ai.usage.audio.input_tokens`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The number of audio input tokens. [34] | `120` |
+| <a id="gen-ai-usage-audio-output-tokens" href="#gen-ai-usage-audio-output-tokens">`gen_ai.usage.audio.output_tokens`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The number of audio output tokens. [35] | `240` |
+| <a id="gen-ai-usage-cache-read-input-tokens" href="#gen-ai-usage-cache-read-input-tokens">`gen_ai.usage.cache_read.input_tokens`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The number of input tokens served from a provider-managed cache. [36] | `50` |
+| <a id="gen-ai-usage-cache-write-input-tokens" href="#gen-ai-usage-cache-write-input-tokens">`gen_ai.usage.cache_write.input_tokens`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The number of input tokens written to a provider-managed cache. [37] | `25` |
+| <a id="gen-ai-usage-image-cache-read-input-tokens" href="#gen-ai-usage-image-cache-read-input-tokens">`gen_ai.usage.image.cache_read.input_tokens`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The number of image input tokens served from a provider-managed cache. [38] | `128` |
+| <a id="gen-ai-usage-image-input-tokens" href="#gen-ai-usage-image-input-tokens">`gen_ai.usage.image.input_tokens`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The number of image input tokens. [39] | `258` |
+| <a id="gen-ai-usage-image-output-tokens" href="#gen-ai-usage-image-output-tokens">`gen_ai.usage.image.output_tokens`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The number of image output tokens. [40] | `1290` |
+| <a id="gen-ai-usage-input-tokens" href="#gen-ai-usage-input-tokens">`gen_ai.usage.input_tokens`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The number of tokens used in the GenAI input (prompt). [41] | `100` |
+| <a id="gen-ai-usage-output-tokens" href="#gen-ai-usage-output-tokens">`gen_ai.usage.output_tokens`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The number of tokens used in the GenAI response (completion). [42] | `180` |
+| <a id="gen-ai-usage-reasoning-output-tokens" href="#gen-ai-usage-reasoning-output-tokens">`gen_ai.usage.reasoning.output_tokens`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The number of output tokens used for reasoning (e.g. chain-of-thought, extended thinking). [43] | `50` |
+| <a id="gen-ai-usage-text-cache-read-input-tokens" href="#gen-ai-usage-text-cache-read-input-tokens">`gen_ai.usage.text.cache_read.input_tokens`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The number of text input tokens served from a provider-managed cache. [44] | `40` |
+| <a id="gen-ai-usage-text-input-tokens" href="#gen-ai-usage-text-input-tokens">`gen_ai.usage.text.input_tokens`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The number of text input tokens. [45] | `100` |
+| <a id="gen-ai-usage-text-output-tokens" href="#gen-ai-usage-text-output-tokens">`gen_ai.usage.text.output_tokens`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The number of text output tokens. [46] | `180` |
+| <a id="gen-ai-workflow-name" href="#gen-ai-workflow-name">`gen_ai.workflow.name`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | Human-readable name of the GenAI workflow provided by the application. [47] | `multi_agent_rag`; `customer_support_pipeline` |
 
 
 **[1] `gen_ai.agent.id`:** For hosted agents, this SHOULD be the provider-assigned stable identifier of the agent resource such as [AWS Bedrock agent ARN](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_Agent.html) or [GCP Agent Registry identifier](https://docs.cloud.google.com/agent-registry/concepts#agent-identifier).
@@ -322,23 +325,26 @@ Function: A tool executed on the client-side, where the agent generates paramete
   Client-side operations are actions taken on the user's end or within the client application.
 Datastore: A tool used by the agent to access and query structured or unstructured external data for retrieval-augmented tasks or knowledge updates.
 
-**[32] `gen_ai.usage.audio.cache_read.input_tokens`:** The value SHOULD be included in `gen_ai.usage.cache_read.input_tokens` and in `gen_ai.usage.audio.input_tokens`.
+**[32] `gen_ai.transfer.mode`:** Instrumentations MUST NOT infer any `gen_ai.transfer.*` attribute from span
+hierarchy, tool names, timing, or application-specific conventions.
 
-**[33] `gen_ai.usage.audio.input_tokens`:** The value SHOULD be included in `gen_ai.usage.input_tokens`.
+**[33] `gen_ai.usage.audio.cache_read.input_tokens`:** The value SHOULD be included in `gen_ai.usage.cache_read.input_tokens` and in `gen_ai.usage.audio.input_tokens`.
 
-**[34] `gen_ai.usage.audio.output_tokens`:** The value SHOULD be included in `gen_ai.usage.output_tokens`.
+**[34] `gen_ai.usage.audio.input_tokens`:** The value SHOULD be included in `gen_ai.usage.input_tokens`.
 
-**[35] `gen_ai.usage.cache_read.input_tokens`:** The value SHOULD be included in `gen_ai.usage.input_tokens`.
+**[35] `gen_ai.usage.audio.output_tokens`:** The value SHOULD be included in `gen_ai.usage.output_tokens`.
 
-**[36] `gen_ai.usage.cache_write.input_tokens`:** The value SHOULD be included in `gen_ai.usage.input_tokens`.
+**[36] `gen_ai.usage.cache_read.input_tokens`:** The value SHOULD be included in `gen_ai.usage.input_tokens`.
 
-**[37] `gen_ai.usage.image.cache_read.input_tokens`:** The value SHOULD be included in `gen_ai.usage.cache_read.input_tokens` and in `gen_ai.usage.image.input_tokens`.
+**[37] `gen_ai.usage.cache_write.input_tokens`:** The value SHOULD be included in `gen_ai.usage.input_tokens`.
 
-**[38] `gen_ai.usage.image.input_tokens`:** The value SHOULD be included in `gen_ai.usage.input_tokens`.
+**[38] `gen_ai.usage.image.cache_read.input_tokens`:** The value SHOULD be included in `gen_ai.usage.cache_read.input_tokens` and in `gen_ai.usage.image.input_tokens`.
 
-**[39] `gen_ai.usage.image.output_tokens`:** The value SHOULD be included in `gen_ai.usage.output_tokens`.
+**[39] `gen_ai.usage.image.input_tokens`:** The value SHOULD be included in `gen_ai.usage.input_tokens`.
 
-**[40] `gen_ai.usage.input_tokens`:** This value SHOULD include all types of input tokens, including cached tokens.
+**[40] `gen_ai.usage.image.output_tokens`:** The value SHOULD be included in `gen_ai.usage.output_tokens`.
+
+**[41] `gen_ai.usage.input_tokens`:** This value SHOULD include all types of input tokens, including cached tokens.
 Instrumentations SHOULD make a best effort to populate this value, using a total
 provided by the provider when available or, depending on the provider API,
 by summing different token types parsed from the provider output.
@@ -356,20 +362,20 @@ if a request has 100 text tokens (40 cached) and 200 image tokens:
 - `gen_ai.usage.text.cache_read.input_tokens`: 40
 - `gen_ai.usage.image.input_tokens`: 200
 
-**[41] `gen_ai.usage.output_tokens`:** When the provider reports both billed token counts and model-consumed
+**[42] `gen_ai.usage.output_tokens`:** When the provider reports both billed token counts and model-consumed
 token counts (for example, Cohere exposes both `usage.billed_units` and
 `usage.tokens`), instrumentations SHOULD report the billed count so the
 value matches the units the customer is charged for.
 
-**[42] `gen_ai.usage.reasoning.output_tokens`:** The value SHOULD be included in `gen_ai.usage.output_tokens`.
+**[43] `gen_ai.usage.reasoning.output_tokens`:** The value SHOULD be included in `gen_ai.usage.output_tokens`.
 
-**[43] `gen_ai.usage.text.cache_read.input_tokens`:** The value SHOULD be included in `gen_ai.usage.cache_read.input_tokens` and in `gen_ai.usage.text.input_tokens`.
+**[44] `gen_ai.usage.text.cache_read.input_tokens`:** The value SHOULD be included in `gen_ai.usage.cache_read.input_tokens` and in `gen_ai.usage.text.input_tokens`.
 
-**[44] `gen_ai.usage.text.input_tokens`:** The value SHOULD be included in `gen_ai.usage.input_tokens`.
+**[45] `gen_ai.usage.text.input_tokens`:** The value SHOULD be included in `gen_ai.usage.input_tokens`.
 
-**[45] `gen_ai.usage.text.output_tokens`:** The value SHOULD be included in `gen_ai.usage.output_tokens`.
+**[46] `gen_ai.usage.text.output_tokens`:** The value SHOULD be included in `gen_ai.usage.output_tokens`.
 
-**[46] `gen_ai.workflow.name`:** The workflow name is usually a static, application-unique identifier defined
+**[47] `gen_ai.workflow.name`:** The workflow name is usually a static, application-unique identifier defined
 in a framework-specific way.
 
 For example, it can be the name of the first chain in LangChain,
@@ -398,7 +404,7 @@ what `gen_ai.workflow.name` means in the context of that framework.
 | `delete_memory_store` | Delete or deprovision a memory store | ![Development](https://img.shields.io/badge/-development-blue) |
 | `embeddings` | Embeddings operation such as [OpenAI Create embeddings API](https://platform.openai.com/docs/api-reference/embeddings/create) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `execute_tool` | Execute a tool | ![Development](https://img.shields.io/badge/-development-blue) |
-| `fetch_response` | Fetch a previously generated model response by its identifier, without performing inference, such as [OpenAI Get a model response](https://platform.openai.com/docs/api-reference/responses/get) [47] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `fetch_response` | Fetch a previously generated model response by its identifier, without performing inference, such as [OpenAI Get a model response](https://platform.openai.com/docs/api-reference/responses/get) [48] | ![Development](https://img.shields.io/badge/-development-blue) |
 | `generate_content` | Multimodal content generation operation such as [Gemini Generate Content](https://ai.google.dev/api/generate-content) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `invoke_agent` | Invoke GenAI agent | ![Development](https://img.shields.io/badge/-development-blue) |
 | `invoke_workflow` | Invoke GenAI workflow | ![Development](https://img.shields.io/badge/-development-blue) |
@@ -409,7 +415,7 @@ what `gen_ai.workflow.name` means in the context of that framework.
 | `update_memory` | Update existing memory records | ![Development](https://img.shields.io/badge/-development-blue) |
 | `upsert_memory` | Create or update memory records without the caller choosing which | ![Development](https://img.shields.io/badge/-development-blue) |
 
-**[47]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
+**[48]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
 
 ---
 
@@ -434,9 +440,9 @@ what `gen_ai.workflow.name` means in the context of that framework.
 | `azure.ai.openai` | [Azure OpenAI](https://learn.microsoft.com/en-us/azure/ai-services/openai/overview) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `cohere` | [Cohere](https://cohere.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `deepseek` | [DeepSeek](https://www.deepseek.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
-| `gcp.gemini` | [Gemini](https://cloud.google.com/products/gemini) [48] | ![Development](https://img.shields.io/badge/-development-blue) |
-| `gcp.gen_ai` | Any Google generative AI endpoint [49] | ![Development](https://img.shields.io/badge/-development-blue) |
-| `gcp.vertex_ai` | [Vertex AI](https://cloud.google.com/vertex-ai) [50] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `gcp.gemini` | [Gemini](https://cloud.google.com/products/gemini) [49] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `gcp.gen_ai` | Any Google generative AI endpoint [50] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `gcp.vertex_ai` | [Vertex AI](https://cloud.google.com/vertex-ai) [51] | ![Development](https://img.shields.io/badge/-development-blue) |
 | `groq` | [Groq](https://groq.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `ibm.watsonx.ai` | [IBM Watsonx AI](https://www.ibm.com/products/watsonx-ai) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `mistral_ai` | [Mistral AI](https://mistral.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
@@ -445,11 +451,11 @@ what `gen_ai.workflow.name` means in the context of that framework.
 | `perplexity` | [Perplexity](https://www.perplexity.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `x_ai` | [xAI](https://x.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 
-**[48]:** Used when accessing the 'generativelanguage.googleapis.com' endpoint. Also known as the AI Studio API.
+**[49]:** Used when accessing the 'generativelanguage.googleapis.com' endpoint. Also known as the AI Studio API.
 
-**[49]:** May be used when specific backend is unknown.
+**[50]:** May be used when specific backend is unknown.
 
-**[50]:** Used when accessing the 'aiplatform.googleapis.com' endpoint.
+**[51]:** Used when accessing the 'aiplatform.googleapis.com' endpoint.
 
 ---
 
@@ -472,3 +478,22 @@ what `gen_ai.workflow.name` means in the context of that framework.
 | --- | --- | --- |
 | `input` | Input tokens (prompt, input, etc.) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `output` | Output tokens (completion, response, etc.) | ![Development](https://img.shields.io/badge/-development-blue) |
+
+---
+
+`gen_ai.transfer.mode` has the following list of well-known values. If one of them applies, then the respective value MUST be used; otherwise, a custom value MAY be used.
+
+| Value | Description | Stability |
+| --- | --- | --- |
+| `pass_control` | The target takes control of the remaining work. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `return_to_caller` | The initiator waits for the target to finish and then resumes execution. | ![Development](https://img.shields.io/badge/-development-blue) |
+
+---
+
+`gen_ai.transfer.target.type` has the following list of well-known values. If one of them applies, then the respective value MUST be used; otherwise, a custom value MAY be used.
+
+| Value | Description | Stability |
+| --- | --- | --- |
+| `agent` | A GenAI agent. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `human` | A person or group of people. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `workflow` | A workflow or workflow step. | ![Development](https://img.shields.io/badge/-development-blue) |

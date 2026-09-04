@@ -470,6 +470,44 @@ attributes:
     brief: The version of the GenAI agent.
     examples: ["1.0.0", "2025-05-01"]
     stability: development
+  - key: gen_ai.transfer.mode
+    type:
+      members:
+        - id: return_to_caller
+          value: "return_to_caller"
+          brief: The initiator waits for the target to finish and then resumes execution.
+          stability: development
+        - id: pass_control
+          value: "pass_control"
+          brief: The target takes control of the remaining work.
+          stability: development
+    brief: Describes how control passes to the transfer target.
+    note: |
+      Instrumentations MUST NOT infer any `gen_ai.transfer.*` attribute from span
+      hierarchy, tool names, timing, or application-specific conventions.
+    stability: development
+  - key: gen_ai.transfer.target.name
+    type: string
+    brief: The human-readable name of the transfer target.
+    examples: ["weather_agent", "human_support"]
+    stability: development
+  - key: gen_ai.transfer.target.type
+    type:
+      members:
+        - id: agent
+          value: "agent"
+          brief: A GenAI agent.
+          stability: development
+        - id: human
+          value: "human"
+          brief: A person or group of people.
+          stability: development
+        - id: workflow
+          value: "workflow"
+          brief: A workflow or workflow step.
+          stability: development
+    brief: The type of the transfer target.
+    stability: development
   - key: gen_ai.tool.name
     type: string
     brief: Name of the tool utilized by the agent.

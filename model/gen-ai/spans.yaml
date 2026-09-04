@@ -589,6 +589,21 @@ spans:
       are encouraged to follow this semantic convention for tools invoked by their
       own code and to manually instrument any tool calls that automatic
       instrumentations do not cover.
+
+      Some tool calls transfer work or control to another target.
+      `gen_ai.transfer.mode` records whether the agent executing the tool waits
+      for a result and resumes or passes control to the target.
+      `gen_ai.transfer.target.*` identifies that target. `gen_ai.agent.*` continues
+      to identify the agent executing the tool.
+
+      When the framework or protocol performs the transfer through a remote agent
+      invocation rather than a tool execution, it is recorded as a
+      `gen_ai.invoke_agent` client operation instead; neither this span nor
+      `gen_ai.execute_tool.duration` is recorded for it.
+
+      These conventions do not define a caller-owned span for a dedicated in-process
+      non-tool transfer. When the source and target agent executions are observable,
+      each is recorded as a `gen_ai.invoke_agent` internal span.
     stability: development
     attributes:
       - ref_group: attributes.gen_ai.error
@@ -610,6 +625,15 @@ spans:
         requirement_level: opt_in
       - ref: gen_ai.tool.call.result
         requirement_level: opt_in
+      - ref: gen_ai.transfer.mode
+        requirement_level:
+          conditionally_required: When the instrumented framework or protocol explicitly exposes the tool call as a transfer.
+      - ref: gen_ai.transfer.target.type
+        requirement_level:
+          conditionally_required: When `gen_ai.transfer.mode` is present and the target type is known.
+      - ref: gen_ai.transfer.target.name
+        requirement_level:
+          conditionally_required: When `gen_ai.transfer.mode` is present and the target name is available.
 
   - type: gen_ai.invoke_workflow.internal
     requirement_level: recommended
