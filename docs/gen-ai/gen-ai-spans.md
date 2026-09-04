@@ -276,6 +276,11 @@ output messages. `gen_ai.response.finish_reasons` remains aligned with the
 generations returned by the provider, not with a filtered or truncated
 `gen_ai.output.messages` value.
 
+When an operation ends in an error, this attribute SHOULD only be set
+when the operation produced output, including partial streamed output.
+Instrumentation SHOULD NOT synthesize output content for a failed
+operation.
+
 > [!Warning]
 > This attribute is likely to contain sensitive information including user/PII data.
 
@@ -823,6 +828,11 @@ output messages. `gen_ai.response.finish_reasons` remains aligned with the
 generations returned by the provider, not with a filtered or truncated
 `gen_ai.output.messages` value.
 
+When an operation ends in an error, this attribute SHOULD only be set
+when the operation produced output, including partial streamed output.
+Instrumentation SHOULD NOT synthesize output content for a failed
+operation.
+
 > [!Warning]
 > This attribute is likely to contain sensitive information including user/PII data.
 
@@ -1326,6 +1336,9 @@ of the span sampling decision with:
   [outputs](/model/gen-ai/gen-ai-output-messages.json) object using formats defined in this convention
   and before they are serialized to JSON string;
 - the span instance
+
+The hook SHOULD receive the same instructions, inputs, and outputs that the
+instrumentation would record in these attributes.
 
 The hook implementation SHOULD be able to enrich and modify provided span, instructions,
 and message objects.
