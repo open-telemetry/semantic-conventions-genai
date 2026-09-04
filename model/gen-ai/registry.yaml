@@ -984,6 +984,46 @@ attributes:
     brief: A free-form explanation for the assigned score provided by the evaluator.
     examples: ["The response is factually accurate but lacks sufficient detail to fully address the question."]
     stability: development
+  - key: gen_ai.evaluation.evaluator.id
+    type: string
+    brief: Stable identifier for the evaluator definition, not the invocation.
+    note: >
+      The evaluator id SHOULD be a stable identifier for the evaluator definition. Instrumentations SHOULD use an identifier provided by the evaluation framework or application when available and SHOULD NOT synthesize this value by concatenating other evaluator properties such as the evaluation name, library name, or model name. The attribute SHOULD be omitted when no stable evaluator identifier is available. To maintain valid comparability, results SHOULD be grouped by `(evaluator.id, evaluator.version)` when both attributes are present.
+    examples: ["eval-7f3a9c2d", "accuracy-evaluator"]
+    stability: development
+  - key: gen_ai.evaluation.evaluator.version
+    type: string
+    brief: Version of the evaluator definition.
+    note: >
+      The version SHOULD identify the revision of the evaluator definition and SHOULD change when a score-affecting part of the definition changes, such as the model, rubric, prompt, threshold, or scoring configuration. Instrumentations SHOULD use a version provided by the evaluation framework or application and SHOULD omit this attribute when no evaluator version is available. To maintain valid comparability, results SHOULD be grouped by `(evaluator.id, evaluator.version)` when both attributes are present.
+    examples: ["1.0", "v2.5.1"]
+    stability: development
+  - key: gen_ai.evaluation.evaluator.type
+    type:
+      members:
+        - id: llm_judge
+          value: "llm_judge"
+          brief: "Evaluation result is determined by an LLM judgment."
+          stability: development
+        - id: deterministic
+          value: "deterministic"
+          brief: "Evaluation result is determined by deterministic programmatic logic."
+          stability: development
+        - id: human
+          value: "human"
+          brief: "Evaluation result is determined by human judgment."
+          stability: development
+    brief: The mechanism that determines the evaluation result.
+    note: >
+      This attribute describes the mechanism that determines the evaluation result, not every component used by the evaluator. For example, auxiliary use of an LLM to generate an explanation does not make the evaluator an `llm_judge` when the score or verdict is determined by deterministic logic. Instrumentations SHOULD set this attribute only when the evaluator mechanism is known and SHOULD NOT infer it solely from the presence or absence of a model.
+    stability: development
+  - key: gen_ai.evaluation.reference_set.id
+    type: string
+    brief: Stable identifier for the reference set against which the evaluation result was produced.
+    note: >
+      Instrumentations SHOULD use a stable identifier provided by the evaluation framework or application when available. The identifier SHOULD distinguish score-affecting revisions of the reference set. The attribute SHOULD be omitted when no stable reference set identifier is available.
+    examples: ["dataset-123", "golden-set-v1"]
+    stability: development
   - key: gen_ai.prompt.name
     type: string
     brief: The name of the prompt that uniquely identifies it.
