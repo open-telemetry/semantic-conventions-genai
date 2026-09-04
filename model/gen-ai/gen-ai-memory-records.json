@@ -5,48 +5,24 @@
             "description": "Represents a single memory record stored in or retrieved from a memory store.",
             "properties": {
                 "content": {
-                    "description": "The content of the memory record.",
+                    "description": "The content of the memory record. Null represents a captured null value.",
                     "title": "Content"
                 },
                 "id": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
                     "description": "A unique identifier for the memory record.",
-                    "title": "Id"
+                    "title": "Id",
+                    "type": "string"
                 },
                 "metadata": {
-                    "anyOf": [
-                        {
-                            "additionalProperties": true,
-                            "type": "object"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
+                    "additionalProperties": true,
                     "description": "Provider-specific metadata associated with the memory record.",
-                    "title": "Metadata"
+                    "title": "Metadata",
+                    "type": "object"
                 },
                 "score": {
-                    "anyOf": [
-                        {
-                            "type": "number"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
                     "description": "The relevance score of the memory record when populated on search results.",
-                    "title": "Score"
+                    "title": "Score",
+                    "type": "number"
                 }
             },
             "required": [
