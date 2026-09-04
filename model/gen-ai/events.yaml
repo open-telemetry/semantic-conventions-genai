@@ -5,9 +5,13 @@ events:
     brief: >
       Describes the details of a GenAI completion request including chat history
       and parameters.
-    note: >
+    note: |
       This event could be used to store input and output details
       independently from traces.
+
+      When capturing this event, instrumentation SHOULD store it in the OpenTelemetry
+      context using a language-defined context key. Downstream instrumentation MAY enrich
+      the existing event and SHOULD NOT emit duplicate events for the same call.
     stability: development
     attributes:
       - ref_group: span.gen_ai.inference.client
