@@ -207,6 +207,12 @@ class BlobPart(BaseModel):
     content: bytes = Field(
         description="Raw bytes of the attached data. This field SHOULD be encoded as a base64 string when serialized to JSON."
     )
+    transcript: Optional[str] = Field(
+        default=None,
+        description="The text transcript of the attached audio. Only applicable when `modality` is `audio`. For output audio this is the model-generated transcript of the spoken response; for input audio it is the transcription of the provided audio.",
+    )
+
+    model_config = ConfigDict(extra="allow")
 
 
 class FilePart(BaseModel):
@@ -223,6 +229,10 @@ class FilePart(BaseModel):
     )
     file_id: str = Field(
         description="An identifier referencing a file that was pre-uploaded to the provider."
+    )
+    transcript: Optional[str] = Field(
+        default=None,
+        description="The text transcript of the referenced audio. Only applicable when `modality` is `audio`. For output audio this is the model-generated transcript of the spoken response; for input audio it is the transcription of the provided audio.",
     )
 
     model_config = ConfigDict(extra="allow")
@@ -246,6 +256,10 @@ class UriPart(BaseModel):
             "which should use the `blob` part instead. The URI may use a scheme known to "
             "the provider api (e.g. `gs://bucket/object.png`), or be a publicly accessible location."
         )
+    )
+    transcript: Optional[str] = Field(
+        default=None,
+        description="The text transcript of the referenced audio. Only applicable when `modality` is `audio`. For output audio this is the model-generated transcript of the spoken response; for input audio it is the transcription of the provided audio.",
     )
 
     model_config = ConfigDict(extra="allow")

@@ -1,0 +1,30 @@
+runner: genai-conformance
+instrumented_library: google-genai
+instrumentation_library: reference
+
+# The Gemini Live client speaks a TLS WebSocket (wss), but the runner
+# health-probes over plain HTTP, so this scenario ships its own mock: it answers
+# /health on ${PORT} and serves the Gemini Live WebSocket (TLS) on ${PORT} + 1
+# (see mock_server.py).
+# The runner launches the server from the repository root (it inherits the
+# runner's working directory, unlike the scenario command which runs in this
+# directory), so the project and script are named from the repository root.
+server:
+  run: uv run --frozen --python 3.12 --project reference/scenarios/gemini-live-3 python reference/scenarios/gemini-live-3/mock_server.py --host 127.0.0.1 --port ${PORT}
+
+env:
+  MOCK_LLM_URL: ${MOCK_SERVER_URL}
+
+scenarios:
+  reference:
+    run: uv run --frozen --python 3.12 --project . python scenario.py
+    # The realtime / live voice operations are not yet recognised by the shared
+    # GenAI conformance classifier, so declare the span type here: an emitted
+    # INTERNAL span carrying the given operation name is the model's client span
+    # type. Remove once the classifier recognises this operation upstream.
+    spans:
+      - match:
+          attributes:
+            gen_ai.operation.name: realtime_inference
+          kind: internal
+          type: gen_ai.realtime_inference.client

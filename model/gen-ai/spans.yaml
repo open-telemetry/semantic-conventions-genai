@@ -270,6 +270,159 @@ spans:
       - ref: gen_ai.request.model
         sampling_relevant: true
 
+  - type: gen_ai.realtime_inference.client
+    requirement_level: recommended
+    kind: client
+    name:
+      note: |
+        **Span name** SHOULD be `{gen_ai.operation.name} {gen_ai.request.model}`.
+        Semantic conventions for individual GenAI systems and frameworks MAY specify different span name format
+        and MUST follow the overall [guidelines for span names](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.56.0/specification/trace/api.md#span).
+    brief: >
+      Describes one server-side model generation within a live, bidirectional streaming
+      session (such as OpenAI Realtime or Gemini Live).
+    note: |
+      Unlike `gen_ai.inference.client`, this span is not a single client-timed request/response.
+      A *generation* is one server-side model response within the live session (the model's
+      spoken or textual turn). The client streams user audio continuously and the server streams
+      incremental events; the generation is reconstructed from those events. The span SHOULD start
+      at the first output chunk of the generation (or at an earlier voice-activity end anchor when
+      the provider exposes one) and end at the generation completion or interruption event. If
+      token usage (`gen_ai.usage.*`) is reported after the completion event, instrumentation
+      SHOULD wait for it before ending the span.
+
+      The `gen_ai.operation.name` SHOULD be `realtime_inference`.
+
+      The live session itself is not modeled as a span. It is represented by the
+      `gen_ai.client.live_session.started` and `gen_ai.client.live_session.ended` events and by
+      `gen_ai.live_session.id` correlating the generations within it. Turn-level spans (a full
+      user-and-model exchange) are out of scope: turn boundaries cannot be detected reliably
+      across providers.
+
+      When a generation calls a tool, the relationship between the generation and the
+      `gen_ai.execute_tool.internal` span is provider-dependent:
+
+      - Sibling pattern (OpenAI Realtime, Gemini Live 2.5): the provider closes the generation,
+        the tool runs, then a second generation produces the answer. This is modeled as two
+        sibling `realtime_inference` spans with the `execute_tool` span between them, so
+        client-side tool runtime does not inflate model-generation latency.
+      - Child pattern (Gemini Live 3.x): a single generation stays open across the tool call and
+        the `execute_tool` span is nested as its child.
+
+      Both patterns are valid; a single normative recommendation across providers is not yet
+      established.
+
+      When the provider exposes user voice-activity events, the user speech MAY additionally be
+      modeled by an optional `gen_ai.user_speech.internal` span; otherwise the user input is carried
+      on this span through `gen_ai.input.messages`.
+    stability: development
+    attributes:
+      - ref_group: attributes.gen_ai.common
+      - ref_group: attributes.gen_ai.address_and_port
+      - ref_group: attributes.gen_ai.usage
+      - ref_group: attributes.gen_ai.usage.breakdown
+      - ref_group: attributes.gen_ai.content
+      - ref_group: attributes.gen_ai.error
+      - ref: gen_ai.request.max_tokens
+        requirement_level: recommended
+      - ref: gen_ai.request.reasoning.level
+        requirement_level:
+          recommended: When applicable.
+      - ref: gen_ai.output.type
+        requirement_level:
+          conditionally_required: When applicable and if the request includes an output format.
+      - ref: gen_ai.response.id
+        requirement_level:
+          recommended: When available. A live generation may not carry a response id on all providers.
+      - ref: gen_ai.response.model
+        requirement_level: recommended
+        note: >
+          If available. The name of the GenAI model that provided the response. If the model is supplied by a vendor,
+          then the value must be the exact name of the model actually used. If the model is a
+          fine-tuned custom model, the value should have a more specific name than the base model that's been fine-tuned.
+      - ref: gen_ai.response.finish_reasons
+        requirement_level: recommended
+      - ref: gen_ai.usage.reasoning.output_tokens
+        requirement_level:
+          recommended: When applicable.
+        note: >
+          The value SHOULD be included in `gen_ai.usage.output_tokens`.
+      - ref: gen_ai.live_session.id
+        requirement_level:
+          conditionally_required: If the provider exposes a session identifier, or the instrumentation uses a client-created per-connection identifier.
+        note: >
+          For a live session this correlates the generations that belong to the same session
+          with the session lifecycle events. It is a within-session correlation key, not
+          necessarily a durable, retrievable resource.
+      - ref: gen_ai.provider.name
+        # TODO: Not adding to common attributes because of https://github.com/open-telemetry/weaver/issues/479
+        requirement_level: required
+        sampling_relevant: true
+      - ref: gen_ai.operation.name
+        sampling_relevant: true
+      - ref: server.address
+        sampling_relevant: true
+      - ref: server.port
+        sampling_relevant: true
+      - ref: gen_ai.request.model
+        sampling_relevant: true
+
+  - type: gen_ai.user_speech.internal
+    requirement_level: opt_in
+    kind: internal
+    name:
+      note: |
+        **Span name** SHOULD be `{gen_ai.operation.name}`.
+        Semantic conventions for individual GenAI systems and frameworks MAY specify a different span name format.
+    brief: >
+      Describes the capture of a user speech utterance within a live,
+      bidirectional speech-to-speech session, delimited by the provider's user
+      voice-activity (start/stop) events.
+    note: |
+      This span is optional and provider-dependent. It SHOULD be recorded only when the provider
+      exposes user voice-activity detection (VAD) events that bracket when the user started and
+      stopped speaking (for example OpenAI Realtime `input_audio_buffer.speech_started` /
+      `input_audio_buffer.speech_stopped`). The span SHOULD start at the user-speech-start event
+      and end at the user-speech-stop event.
+
+      This span is speech-specific: its justification is the user's speaking interval reconstructed
+      from VAD events. Text and other non-speech input have no such interval and are not modeled by
+      this span; they are carried on the `gen_ai.realtime_inference.client` span through
+      `gen_ai.input.messages` instead.
+
+      Its duration is the user's speaking interval, not an outbound request, so the span kind is
+      `INTERNAL`. Session-scoped attributes (such as `server.address`, `server.port`, and
+      `gen_ai.request.model`) are not recorded on this span; the user speech is correlated to the
+      session and its generations through `gen_ai.live_session.id`.
+
+      Providers that do not expose user VAD events (such as the Gemini Developer API) cannot
+      record this span. In that case the user input is carried on the
+      `gen_ai.realtime_inference.client` span through `gen_ai.input.messages` instead.
+
+      The `gen_ai.operation.name` SHOULD be `user_speech`. The generations that respond to this
+      speech are correlated through `gen_ai.live_session.id` when the provider exposes a session
+      identifier.
+    stability: development
+    attributes:
+      - ref_group: attributes.gen_ai.error
+      - ref: gen_ai.input.messages
+        requirement_level: opt_in
+        note: >
+          When content capture is enabled and a transcript of the user's utterance is available,
+          it is carried here as the user input message.
+      - ref: gen_ai.live_session.id
+        requirement_level:
+          conditionally_required: If the provider exposes a session identifier, or the instrumentation uses a client-created per-connection identifier.
+        note: >
+          For a live session this correlates the user input with the generations that respond to it.
+      - ref: gen_ai.provider.name
+        # TODO: Not adding to common attributes because of https://github.com/open-telemetry/weaver/issues/479
+        requirement_level: required
+        sampling_relevant: true
+      - ref: gen_ai.operation.name
+        requirement_level: required
+        sampling_relevant: true
+
   - type: gen_ai.embeddings.client
     requirement_level: recommended
     kind: client
