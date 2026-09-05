@@ -18,31 +18,6 @@ attribute_groups:
       - ref: openai.response.system_fingerprint
         requirement_level: recommended
 metrics:
-  - name: gen_ai.client.token.usage
-    requirement_level: recommended
-    instrument: histogram
-    unit: "{token}"
-    brief: 'Number of input and output tokens used.'
-    note: > 
-      This metric SHOULD be reported when an operation involves the usage 
-      of tokens and the count is readily available.
-
-      For example, if GenAI system returns usage information in the streaming response, 
-      it SHOULD be used. Or if GenAI system returns each token independently, 
-      instrumentation SHOULD count number of output tokens and record the result.
-
-      If instrumentation cannot efficiently obtain number of input and/or output tokens,
-      it MAY allow users to enable offline token counting. Otherwise it MUST NOT report usage metric.
-
-      When systems report both used tokens and billable tokens, instrumentation MUST report billable tokens.
-    stability: development
-    annotations:
-      code_generation:
-        metric_value_type: int
-    attributes:
-      - ref_group: metric_attributes.gen_ai
-      - ref: gen_ai.token.type
-        requirement_level: required
   - name: gen_ai.client.operation.duration
     requirement_level: recommended
     instrument: histogram
@@ -250,19 +225,6 @@ metrics:
       - ref_group: attributes.gen_ai.execute_tool.common
 
 metric_refinements:
-  - id: openai.client.token.usage
-    ref: gen_ai.client.token.usage
-    brief: >
-      OpenAI-specific extension to `gen_ai.client.token.usage`. Adds
-      `openai.response.service_tier` and `openai.response.system_fingerprint`
-      when the provider is `openai`.
-    stability: development
-    attributes:
-      # - ref_group: metric_attributes.openai - does not work, https://github.com/open-telemetry/weaver/issues/1411
-      - ref: openai.response.service_tier
-        requirement_level: recommended
-      - ref: openai.response.system_fingerprint
-        requirement_level: recommended
   - id: openai.client.operation.duration
     ref: gen_ai.client.operation.duration
     brief: >

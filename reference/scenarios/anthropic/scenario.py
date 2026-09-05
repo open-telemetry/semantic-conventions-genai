@@ -11,9 +11,91 @@ import anthropic
 from opentelemetry.trace import SpanKind, StatusCode
 from opentelemetry.util.genai.handler import get_telemetry_handler
 from opentelemetry.util.genai.types import Blob, InputMessage, OutputMessage, Text
-from reference_shared import flush_and_shutdown, mock_server_host_port, reference_tracer, setup_otel
+from reference_shared import (
+    flush_and_shutdown,
+    mock_server_host_port,
+    reference_meter,
+    reference_tracer,
+    setup_otel,
+)
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"]
+
+_reference_meter = reference_meter()
+
+_operation_input_tokens = _reference_meter.create_histogram(
+    "gen_ai.client.inference.usage.input_tokens",
+    unit="{token}",
+    description="The number of input (prompt) tokens used per inference operation.",
+)
+_operation_output_tokens = _reference_meter.create_histogram(
+    "gen_ai.client.inference.usage.output_tokens",
+    unit="{token}",
+    description="The number of output (completion) tokens used per inference operation.",
+)
+_input_tokens = _reference_meter.create_counter(
+    "gen_ai.client.inference.usage.detailed.input_tokens",
+    unit="{token}",
+    description="The number of input (prompt) tokens used, including cached tokens.",
+)
+_output_tokens = _reference_meter.create_counter(
+    "gen_ai.client.inference.usage.detailed.output_tokens",
+    unit="{token}",
+    description="The number of output (completion) tokens used, including reasoning tokens.",
+)
+_cache_read_input_tokens = _reference_meter.create_counter(
+    "gen_ai.client.inference.usage.detailed.cache_read.input_tokens",
+    unit="{token}",
+    description="The number of input tokens served from a provider-managed cache.",
+)
+_cache_write_input_tokens = _reference_meter.create_counter(
+    "gen_ai.client.inference.usage.detailed.cache_write.input_tokens",
+    unit="{token}",
+    description="The number of input tokens written to a provider-managed cache.",
+)
+
+
+def usage_metric_attributes(inv):
+    """Build the attributes shared by every inference usage instrument.
+
+    They mirror what util-genai puts on `gen_ai.client.operation.duration` for the
+    same invocation.
+    """
+    attributes = {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "anthropic",
+        "gen_ai.request.model": inv.request_model,
+    }
+    if inv.response_model_name:
+        attributes["gen_ai.response.model"] = inv.response_model_name
+    if inv.server_address:
+        attributes["server.address"] = inv.server_address
+    if inv.server_port is not None:
+        attributes["server.port"] = inv.server_port
+    return attributes
+
+
+def record_inference_usage(inv):
+    """Record the usage instruments from the same values the span carries.
+
+    The Messages API reports no per-modality token breakdown - not even for the
+    document and image scenarios - so every counter point goes to the `unknown`
+    modality. Anthropic folds thinking tokens into `output_tokens` without a
+    separate count, so there is no reasoning counter to record.
+    """
+    metric_attributes = usage_metric_attributes(inv)
+    modality_attributes = {**metric_attributes, "gen_ai.token.modality": "unknown"}
+    if inv.input_tokens is not None:
+        _operation_input_tokens.record(inv.input_tokens, metric_attributes)
+        _input_tokens.add(inv.input_tokens, modality_attributes)
+    if inv.output_tokens is not None:
+        _operation_output_tokens.record(inv.output_tokens, metric_attributes)
+        _output_tokens.add(inv.output_tokens, modality_attributes)
+    if inv.cache_read_input_tokens:
+        _cache_read_input_tokens.add(inv.cache_read_input_tokens, modality_attributes)
+    cache_write = inv.attributes.get("gen_ai.usage.cache_write.input_tokens")
+    if cache_write:
+        _cache_write_input_tokens.add(cache_write, modality_attributes)
 
 
 def run_chat(handler):
@@ -69,6 +151,7 @@ def run_chat(handler):
             inv.output_messages = [  # -> gen_ai.output.messages
                 OutputMessage(role="assistant", parts=output_parts, finish_reason=resp.stop_reason)
             ]
+        record_inference_usage(inv)
 
     print(f"    -> {resp.content[0].text[:60]}")
 
@@ -187,6 +270,7 @@ def run_compaction(handler):
             inv.output_messages = [  # -> gen_ai.output.messages
                 OutputMessage(role="assistant", parts=output_parts, finish_reason=resp.stop_reason),
             ]
+        record_inference_usage(inv)
 
     print(f"    -> compacted: {conversation_compacted}")
 
@@ -267,6 +351,7 @@ def run_chat_with_document_input(handler):
             for block in resp.content
             if hasattr(block, "text")
         ]
+        record_inference_usage(inv)
 
     print(f"    -> {resp.content[0].text[:60]}")
 
@@ -347,6 +432,7 @@ def run_chat_with_image_input(handler):
             for block in resp.content
             if hasattr(block, "text")
         ]
+        record_inference_usage(inv)
 
     print(f"    -> {resp.content[0].text[:60]}")
 
