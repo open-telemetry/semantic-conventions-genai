@@ -1050,7 +1050,7 @@ attributes:
             contained the tool-call invocation that triggered this span.
             Used on `execute_tool` spans to record which generation caused the
             tool call. Addresses the open question in
-            [open-telemetry/semantic-conventions-genai#311](https://github.com/open-telemetry/semantic-conventions-genai/issues/311).
+            [open-telemetry/semantic-conventions-genai#309](https://github.com/open-telemetry/semantic-conventions-genai/issues/309).
         - id: retry_of
           stability: development
           value: "RETRY_OF"
@@ -1080,6 +1080,6 @@ attributes:
       reconstruct which generation triggered each tool invocation without
       relying on parent-child hierarchy alone.
 
-      See [Attribution via span links](./gen-ai-agent-spans.md#attribution-via-span-links)
+      See [Attribution via span links](/docs/gen-ai/gen-ai-agent-spans.md#attribution-via-span-links)
       for guidance and examples.
     stability: development

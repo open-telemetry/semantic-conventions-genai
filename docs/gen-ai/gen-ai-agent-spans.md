@@ -1053,7 +1053,7 @@ If you are using some tools in your agent, refer to [Execute Tool Span](./gen-ai
 
 ## Attribution via span links
 
-> **Status:** Development — addresses the open question in [issue #311](https://github.com/open-telemetry/semantic-conventions-genai/issues/311).
+> **Status:** Development — addresses the open question in [issue #309](https://github.com/open-telemetry/semantic-conventions-genai/issues/309).
 
 The parent-child span hierarchy records _when_ a tool was called but does not
 record _which LLM generation_ requested that call. In agentic pipelines an
@@ -1087,18 +1087,21 @@ whose completion contained the tool-call invocation, annotated with the
 When the LLM response contains a structured tool invocation with a stable
 `tool_call_id`, the instrumentation:
 
-1. SHOULD save the chat span's `SpanContext` before ending the span.
-2. SHOULD map each `tool_call_id` to that `SpanContext`.
-3. On `on_tool_start`, SHOULD look up the `SpanContext` by `tool_call_id` and
-   attach a `Link(ctx, attributes={"gen_ai.attribution.link_type": "CAUSED_BY_GENERATION"})`
-   to the `execute_tool` span at creation time.
+1. SHOULD retain the chat span's `SpanContext`, keyed by each `tool_call_id`
+   carried in the completion, when the chat span ends.
+2. SHOULD, when starting the `execute_tool` span, look up the `SpanContext` for
+   that `tool_call_id` and construct the link from it:
+   `Link(span_context, attributes={"gen_ai.attribution.link_type": "CAUSED_BY_GENERATION"})`.
+   The link MUST be attached at span creation time, since links cannot be added
+   to a span after it has started.
 
 **Text-based tool calls** (ReAct `Action: <tool_name>` patterns):
 
 When no `tool_call_id` is available, the instrumentation MAY fall back to
 linking the tool span to the most-recent chat span under the same parent run.
-The link MAY additionally carry `gen_ai.tool.call.arguments` token-range
-attributes to identify the exact token positions within the completion.
+The link MAY additionally carry implementation-specific attributes identifying
+the region of the completion that expressed the tool call. This document does
+not define such attributes.
 
 ### Example trace structure
 
