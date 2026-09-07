@@ -10,7 +10,7 @@ from contextlib import contextmanager
 from urllib.parse import urlparse
 
 from opentelemetry._logs import SeverityNumber
-from opentelemetry.trace import SpanKind, StatusCode
+from opentelemetry.trace import Link, SpanKind, StatusCode, get_current_span
 from reference_shared import (
     flush_and_shutdown,
     reference_event_logger,
@@ -118,6 +118,10 @@ def _patch_automatic_function_calling():
 
     def instrumented(response, function_map):
         parts = []
+        # The generating chat span is still the active span while the SDK
+        # dispatches automatic function calls, so its SpanContext is exactly what
+        # a CAUSED_BY_GENERATION link records on the execute_tool span.
+        generation_context = get_current_span().get_span_context()
         candidate = response.candidates[0] if response.candidates else None
         for part in (candidate.content.parts if candidate and candidate.content else None) or []:
             call = part.function_call
@@ -134,8 +138,13 @@ def _patch_automatic_function_calling():
             description = (getattr(func, "__doc__", "") or "").strip().splitlines()
             if description:
                 tool_span_attributes["gen_ai.tool.description"] = description[0]
+            links = (
+                [Link(generation_context, {"gen_ai.attribution.link_type": "CAUSED_BY_GENERATION"})]
+                if generation_context.is_valid
+                else []
+            )
             with _reference_tracer.start_as_current_span(
-                f"execute_tool {call.name}", attributes=tool_span_attributes, record_exception=False
+                f"execute_tool {call.name}", attributes=tool_span_attributes, links=links, record_exception=False
             ) as tool_span:
                 try:
                     if call.id:
