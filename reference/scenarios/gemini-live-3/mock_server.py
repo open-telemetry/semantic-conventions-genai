@@ -19,9 +19,10 @@ The WebSocket half speaks a deterministic subset of the Gemini Live
 (``client.aio.live.connect``). It runs as a standalone ``websockets`` asyncio
 server (not Flask) because the client uses the ``websockets`` library over its
 own bidi framing. The client always upgrades the connection to ``wss`` (TLS)
-regardless of the configured base URL, so this server terminates TLS using a
-checked-in self-signed certificate. The scenario connects with an unverified SSL
-context, so the certificate's contents and hostname are irrelevant.
+regardless of the configured base URL, so this server terminates TLS using an
+ephemeral self-signed certificate generated in memory at startup. The scenario
+connects with an unverified SSL context, so the certificate's contents and
+hostname are irrelevant, and nothing needs to be checked into the repository.
 
 Server -> client turn sequence for one voice response:
 
@@ -49,15 +50,14 @@ model the tool call as a child of one generation.
 import argparse
 import asyncio
 import json
+import os
 import ssl
+import tempfile
 import threading
+from datetime import UTC, datetime, timedelta
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from pathlib import Path
 
 import websockets
-
-_CERT_FILE = Path(__file__).with_name("mock_cert.pem")
-_KEY_FILE = Path(__file__).with_name("mock_key.pem")
 
 # Deterministic base64 stand-in for the PCM audio the model "speaks". The client
 # decodes it to bytes; the scenario re-encodes it for the output message.
@@ -170,9 +170,66 @@ def _start_health_server(host, port):
     return server
 
 
+def _generate_self_signed_cert():
+    """Generate an ephemeral self-signed certificate and key as PEM bytes.
+
+    The client connects with certificate validation disabled, so the
+    certificate's contents and hostname are irrelevant -- it only needs to
+    exist so the server can terminate TLS. Generating it at startup avoids
+    committing throwaway PEM files to the repository.
+    """
+    from cryptography import x509
+    from cryptography.hazmat.primitives import hashes, serialization
+    from cryptography.hazmat.primitives.asymmetric import rsa
+    from cryptography.x509.oid import NameOID
+
+    key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, "localhost")])
+    now = datetime.now(UTC)
+    cert = (
+        x509.CertificateBuilder()
+        .subject_name(name)
+        .issuer_name(name)
+        .public_key(key.public_key())
+        .serial_number(x509.random_serial_number())
+        .not_valid_before(now - timedelta(minutes=5))
+        .not_valid_after(now + timedelta(days=1))
+        .sign(key, hashes.SHA256())
+    )
+    cert_pem = cert.public_bytes(serialization.Encoding.PEM)
+    key_pem = key.private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.TraditionalOpenSSL,
+        encryption_algorithm=serialization.NoEncryption(),
+    )
+    return cert_pem, key_pem
+
+
+def _build_ssl_context():
+    """Build a server SSL context backed by a freshly generated certificate.
+
+    ``load_cert_chain`` only accepts file paths, so the generated PEMs are
+    written to temporary files that are deleted immediately after loading; the
+    context retains the parsed certificate and key in memory.
+    """
+    cert_pem, key_pem = _generate_self_signed_cert()
+    with tempfile.NamedTemporaryFile("wb", suffix=".pem", delete=False) as cert_file:
+        cert_file.write(cert_pem)
+        cert_path = cert_file.name
+    with tempfile.NamedTemporaryFile("wb", suffix=".pem", delete=False) as key_file:
+        key_file.write(key_pem)
+        key_path = key_file.name
+    try:
+        ssl_ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        ssl_ctx.load_cert_chain(certfile=cert_path, keyfile=key_path)
+    finally:
+        os.unlink(cert_path)
+        os.unlink(key_path)
+    return ssl_ctx
+
+
 async def _serve_ws(host, port):
-    ssl_ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-    ssl_ctx.load_cert_chain(certfile=_CERT_FILE, keyfile=_KEY_FILE)
+    ssl_ctx = _build_ssl_context()
     async with websockets.serve(_handler, host, port, ssl=ssl_ctx):
         await asyncio.Future()
 
