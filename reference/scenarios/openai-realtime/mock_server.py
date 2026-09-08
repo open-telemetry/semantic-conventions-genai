@@ -154,7 +154,9 @@ async def _run_response(ws, behavior):
     if behavior == "interrupted":
         # Barge-in: new user speech is detected while the response is in flight,
         # so the server cancels the response. The transcript survives only as the
-        # accumulated deltas above (no *.done transcript event fires).
+        # accumulated deltas above (no *.done transcript event fires). The server
+        # then finishes bracketing the barge-in utterance (speech_stopped +
+        # committed) so the client can answer it with a follow-up response.
         await _send(
             ws,
             {
@@ -176,6 +178,23 @@ async def _run_response(ws, behavior):
                     "status_details": {"type": "cancelled", "reason": "turn_detected"},
                     "usage": _usage(),
                 },
+            },
+        )
+        await _send(
+            ws,
+            {
+                "type": "input_audio_buffer.speech_stopped",
+                "event_id": _event_id(),
+                "audio_end_ms": 1200,
+                "item_id": "item_mock_user_002",
+            },
+        )
+        await _send(
+            ws,
+            {
+                "type": "input_audio_buffer.committed",
+                "event_id": _event_id(),
+                "item_id": "item_mock_user_002",
             },
         )
         return
