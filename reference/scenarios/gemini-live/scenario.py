@@ -8,11 +8,14 @@ crucially, the audio token usage (``gen_ai.usage.audio.input_tokens`` /
 audio.
 
 The second turn exercises the sibling tool-call pattern: the first generation
-resolves to a tool call, the tool runs as a sibling ``execute_tool`` span, and a
-second generation speaks the answer. On Gemini Live the tool call surfaces as a
-top-level ``toolCall`` message rather than nested inside the generation, so the
-generation span closes before the tool runs and the answer is a separate
-generation — the tool span is a sibling, not a child.
+resolves to a tool call, the client runs the tool, and a second generation
+speaks the answer. On Gemini Live the tool call surfaces as a top-level
+``toolCall`` message rather than nested inside the generation, so the generation
+span closes before the tool runs and the answer is a separate generation.
+Running the tool is application work, not a model operation, so it is not
+wrapped in a span; the model's request is captured as a ``tool_call`` output
+part on the first generation and the client's result as a ``tool_call_response``
+input part on the answer generation.
 
 A realtime session is long-lived and mostly idle, so it is not modeled as a span.
 Instead the session is represented by the ``gen_ai.client.realtime_session.started``
@@ -128,7 +131,7 @@ def _tool_result_message(function_call, result):
                     {
                         "type": "tool_call_response",
                         "id": function_call["id"],
-                        "result": result,
+                        "response": result,
                     }
                 ],
             }
@@ -136,22 +139,17 @@ def _tool_result_message(function_call, result):
     )
 
 
-def _run_execute_tool(function_call):
-    """Run the requested tool and emit its execute_tool span (sibling of the generations)."""
-    tool_attributes = {
-        "gen_ai.operation.name": "execute_tool",
-        "gen_ai.provider.name": "gcp.gemini",
-        "gen_ai.tool.name": function_call["name"],
-        "gen_ai.tool.call.id": function_call["id"],
-        "gen_ai.tool.type": "function",
-    }
-    with _reference_tracer.start_as_current_span(
-        f"execute_tool {function_call['name']}", attributes=tool_attributes
-    ) as span:
-        span.set_attribute("gen_ai.tool.call.arguments", json.dumps(function_call["args"]))
-        result = {"location": function_call["args"].get("location"), "temperature_f": 72, "conditions": "sunny"}
-        span.set_attribute("gen_ai.tool.call.result", json.dumps(result))
-    return result
+def _execute_tool(function_call):
+    """Run the requested tool on the client and return its result.
+
+    In the Gemini Live API the application executes tool calls and sends the
+    result back to the model, so this client-side work is not itself a model
+    operation and is not wrapped in a span. The request and result are captured
+    as message parts on the generations instead: a ``tool_call`` output part on
+    the requesting generation and a ``tool_call_response`` input part on the
+    answer generation.
+    """
+    return {"location": function_call["args"].get("location"), "temperature_f": 72, "conditions": "sunny"}
 
 
 async def _run_generation(session, request_model, host, port, input_messages, break_on_tool_call):
@@ -230,10 +228,10 @@ async def _run_generation(session, request_model, host, port, input_messages, br
             if usage.response_token_count:
                 span.set_attribute("gen_ai.usage.output_tokens", usage.response_token_count)
             input_audio_tokens = _audio_modality_tokens(usage.prompt_tokens_details)
-            if input_audio_tokens:
+            if input_audio_tokens is not None:
                 span.set_attribute("gen_ai.usage.audio.input_tokens", input_audio_tokens)
             output_audio_tokens = _audio_modality_tokens(usage.response_tokens_details)
-            if output_audio_tokens:
+            if output_audio_tokens is not None:
                 span.set_attribute("gen_ai.usage.audio.output_tokens", output_audio_tokens)
         return function_call
 
@@ -300,13 +298,15 @@ async def run_gemini_live_reference():
             )
 
             # Turn 2: a tool-calling exchange (sibling pattern, Gemini Live 2.5).
-            # The first generation resolves to a tool call, the tool runs as a
-            # sibling span, then a second generation speaks the answer.
+            # The first generation resolves to a tool call, the client runs the
+            # tool, then a second generation speaks the answer. The tool request
+            # and result are carried as message parts (tool_call /
+            # tool_call_response) rather than a client-side execute_tool span.
             await _send_user_audio(session)
             function_call = await _run_generation(
                 session, request_model, host, live_port, _user_audio_message(), break_on_tool_call=True
             )
-            result = _run_execute_tool(function_call)
+            result = _execute_tool(function_call)
             await session.send_tool_response(
                 function_responses=[
                     types.FunctionResponse(id=function_call["id"], name=function_call["name"], response=result)

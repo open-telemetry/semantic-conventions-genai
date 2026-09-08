@@ -5,8 +5,14 @@ Gemini Live WebSocket server. Unlike Gemini Live 2.5 (see the ``gemini-live``
 scenario, sibling pattern), a Gemini Live 3.x tool call is resolved *within* a
 single generation: the model asks for a tool, the client runs it and returns the
 result, and the *same* generation then speaks its answer. The
-``realtime_inference`` span therefore stays open across the tool call and the
-``execute_tool`` span is nested as its child.
+``realtime_inference`` span therefore stays open across the whole tool round-trip.
+
+Running the tool is application work, not a model operation, so it is not wrapped
+in a span. And because the request and result are resolved inside one generation
+(rather than across two, as in the sibling scenarios), they are not surfaced as
+separate ``tool_call`` / ``tool_call_response`` message parts either: the child
+pattern is an honest capture gap for the intermediate tool exchange, and generic
+instrumentation of ``client.aio.live.connect`` sees a single voice generation.
 
 A realtime session is long-lived and mostly idle, so it is not modeled as a span.
 Instead the session is represented by the ``gen_ai.client.realtime_session.started``
@@ -24,6 +30,8 @@ provider); the user's spoken input is carried on the generation span through
 This proves that the child tool-call pattern is capturable by generic
 instrumentation of ``client.aio.live.connect`` and complements the sibling
 pattern demonstrated by the ``openai-realtime`` and ``gemini-live`` scenarios.
+It also shows the child pattern's honest limit: the intermediate tool exchange
+is not separately capturable as message parts.
 """
 
 import asyncio
@@ -84,26 +92,21 @@ def _user_audio_message():
     )
 
 
-def _run_execute_tool(function_call):
-    """Run the requested tool and emit its execute_tool span (child of the generation)."""
-    tool_attributes = {
-        "gen_ai.operation.name": "execute_tool",
-        "gen_ai.provider.name": "gcp.gemini",
-        "gen_ai.tool.name": function_call["name"],
-        "gen_ai.tool.call.id": function_call["id"],
-        "gen_ai.tool.type": "function",
+def _execute_tool(function_call):
+    """Run the requested tool on the client and return its result.
+
+    In the Gemini Live API the application executes tool calls and sends the
+    result back to the model, so this client-side work is not itself a model
+    operation and is not wrapped in a span. In the child pattern the request and
+    result are resolved within a single generation, so — unlike the sibling
+    scenarios — they are not surfaced as separate ``tool_call`` /
+    ``tool_call_response`` message parts either.
+    """
+    return {
+        "location": function_call["args"].get("location"),
+        "temperature_f": 72,
+        "conditions": "sunny",
     }
-    with _reference_tracer.start_as_current_span(
-        f"execute_tool {function_call['name']}", attributes=tool_attributes
-    ) as span:
-        span.set_attribute("gen_ai.tool.call.arguments", json.dumps(function_call["args"]))
-        result = {
-            "location": function_call["args"].get("location"),
-            "temperature_f": 72,
-            "conditions": "sunny",
-        }
-        span.set_attribute("gen_ai.tool.call.result", json.dumps(result))
-    return result
 
 
 async def _run_generation(session, request_model, host, port):
@@ -146,8 +149,8 @@ async def _run_generation(session, request_model, host, port):
             if message.usage_metadata is not None:
                 usage = message.usage_metadata
 
-        # The tool runs as a child of this still-open generation span.
-        result = _run_execute_tool(function_call)
+        # The client runs the tool within this still-open generation span.
+        result = _execute_tool(function_call)
         await session.send_tool_response(
             function_responses=[
                 types.FunctionResponse(id=function_call["id"], name=function_call["name"], response=result)
@@ -195,10 +198,10 @@ async def _run_generation(session, request_model, host, port):
             if usage.response_token_count:
                 span.set_attribute("gen_ai.usage.output_tokens", usage.response_token_count)
             input_audio_tokens = _audio_modality_tokens(usage.prompt_tokens_details)
-            if input_audio_tokens:
+            if input_audio_tokens is not None:
                 span.set_attribute("gen_ai.usage.audio.input_tokens", input_audio_tokens)
             output_audio_tokens = _audio_modality_tokens(usage.response_tokens_details)
-            if output_audio_tokens:
+            if output_audio_tokens is not None:
                 span.set_attribute("gen_ai.usage.audio.output_tokens", output_audio_tokens)
         print(f"    -> {transcript[:60]}")
 

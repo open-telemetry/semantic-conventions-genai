@@ -305,18 +305,23 @@ spans:
       user-and-model exchange) are out of scope: turn boundaries cannot be detected reliably
       across providers.
 
-      When a generation calls a tool, the relationship between the generation and the
-      `gen_ai.execute_tool.internal` span is provider-dependent:
+      When a generation calls a tool, the realtime API returns the tool call to the client, which
+      runs the tool and sends the result back to the model. This client-side tool execution is
+      application code, not a model operation, so a realtime generation does not emit a
+      `gen_ai.execute_tool.internal` span. The tool exchange is instead captured as message parts:
+      the model's request as a `tool_call` output part and the client's result as a
+      `tool_call_response` input part.
 
-      - Sibling pattern (OpenAI Realtime, Gemini Live 2.5): the provider closes the generation,
-        the tool runs, then a second generation produces the answer. This is modeled as two
-        sibling `realtime_inference` spans with the `execute_tool` span between them, so
-        client-side tool runtime does not inflate model-generation latency.
-      - Child pattern (Gemini Live 3.x): a single generation stays open across the tool call and
-        the `execute_tool` span is nested as its child.
+      How those parts are distributed across generations is provider-dependent:
 
-      Both patterns are valid; a single normative recommendation across providers is not yet
-      established.
+      - Sibling pattern (OpenAI Realtime, Gemini Live 2.5): the provider closes the generation, the
+        client runs the tool, then a second generation produces the answer. The `tool_call` part is
+        on the first generation's output and the `tool_call_response` part is on the answer
+        generation's input.
+      - Child pattern (Gemini Live 3.x): a single generation stays open across the tool round-trip,
+        so the intermediate tool exchange is not surfaced as separate message parts.
+
+      A single normative recommendation across providers is not yet established.
 
       When the provider exposes user voice-activity events, the user speech MAY additionally be
       modeled by an optional `gen_ai.user_speech.internal` span; otherwise the user input is carried

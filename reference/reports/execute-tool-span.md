@@ -6,8 +6,8 @@
 
 | Attribute | Supporting Libraries |
 | --- | --- |
-| gen_ai.operation.name | [agent-framework], [autogen], [crewai], [google-adk], [google-genai], [langchain], [llamaindex], [openai], [openai-agents], [openai-assistants], [pydantic-ai], [vertexai] |
-| gen_ai.tool.name | [agent-framework], [autogen], [crewai], [google-adk], [google-genai], [langchain], [llamaindex], [openai], [openai-agents], [openai-assistants], [pydantic-ai], [vertexai] |
+| gen_ai.operation.name | [agent-framework], [autogen], [crewai], [google-adk], [google-genai], [langchain], [llamaindex], [openai-agents], [openai-assistants], [pydantic-ai], [vertexai] |
+| gen_ai.tool.name | [agent-framework], [autogen], [crewai], [google-adk], [google-genai], [langchain], [llamaindex], [openai-agents], [openai-assistants], [pydantic-ai], [vertexai] |
 
 ## Conditionally Required
 
@@ -19,16 +19,16 @@
 
 | Attribute | Supporting Libraries |
 | --- | --- |
-| gen_ai.tool.call.id | [agent-framework], [autogen], [google-adk], [google-genai], [langchain], [llamaindex], [openai], [openai-agents], [openai-assistants], [pydantic-ai], [vertexai] |
+| gen_ai.tool.call.id | [agent-framework], [autogen], [google-adk], [google-genai], [langchain], [llamaindex], [openai-agents], [openai-assistants], [pydantic-ai], [vertexai] |
 | gen_ai.tool.description | [agent-framework], [autogen], [crewai], [google-adk], [google-genai], [langchain], [llamaindex], [openai-agents], [openai-assistants], [pydantic-ai], [vertexai] |
-| gen_ai.tool.type | [agent-framework], [autogen], [crewai], [google-adk], [google-genai], [langchain], [llamaindex], [openai], [openai-agents], [openai-assistants], [pydantic-ai], [vertexai] |
+| gen_ai.tool.type | [agent-framework], [autogen], [crewai], [google-adk], [google-genai], [langchain], [llamaindex], [openai-agents], [openai-assistants], [pydantic-ai], [vertexai] |
 
 ## Opt-In
 
 | Attribute | Supporting Libraries |
 | --- | --- |
-| gen_ai.tool.call.arguments | [agent-framework], [autogen], [crewai], [google-adk], [google-genai], [langchain], [llamaindex], [openai], [openai-agents], [openai-assistants], [pydantic-ai], [vertexai] |
-| gen_ai.tool.call.result | [agent-framework], [autogen], [crewai], [google-adk], [google-genai], [langchain], [llamaindex], [openai], [openai-agents], [openai-assistants], [pydantic-ai], [vertexai] |
+| gen_ai.tool.call.arguments | [agent-framework], [autogen], [crewai], [google-adk], [google-genai], [langchain], [llamaindex], [openai-agents], [openai-assistants], [pydantic-ai], [vertexai] |
+| gen_ai.tool.call.result | [agent-framework], [autogen], [crewai], [google-adk], [google-genai], [langchain], [llamaindex], [openai-agents], [openai-assistants], [pydantic-ai], [vertexai] |
 
 [agent-framework]: ../scenarios/agent-framework/scenario.py
 [autogen]: ../scenarios/autogen/scenario.py
@@ -37,7 +37,6 @@
 [google-genai]: ../scenarios/google-genai/scenario.py
 [langchain]: ../scenarios/langchain/scenario.py
 [llamaindex]: ../scenarios/llamaindex/scenario.py
-[openai]: ../scenarios/openai/scenario.py
 [openai-agents]: ../scenarios/openai-agents/scenario.py
 [openai-assistants]: ../scenarios/openai-assistants/scenario.py
 [pydantic-ai]: ../scenarios/pydantic-ai/scenario.py

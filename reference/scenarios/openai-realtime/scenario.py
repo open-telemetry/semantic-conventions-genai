@@ -15,10 +15,12 @@ Two turns run inside the one session:
    ``realtime_inference`` span carrying the audio-modality messages and audio
    token usage.
 2. A tool-calling turn demonstrating the **sibling** tool-call pattern: the
-   first ``realtime_inference`` span resolves to a function call and ends, an
-   ``execute_tool`` span runs the tool, then a second ``realtime_inference``
-   span speaks the answer. The tool span is a sibling of the two generations, so
-   client-side tool runtime does not inflate model-generation latency.
+   first ``realtime_inference`` span resolves to a function call and ends, the
+   client runs the tool, then a second ``realtime_inference`` span speaks the
+   answer. Running the tool is application work, not a model operation, so it is
+   not wrapped in a span; instead the model's request is captured as a
+   ``tool_call`` output part on the first generation and the client's result as
+   a ``tool_call_response`` input part on the answer generation.
 
 Turn-level containers (a full user-and-model exchange) are intentionally out of
 scope: turn boundaries cannot be detected reliably across providers.
@@ -125,6 +127,21 @@ def _capture_user_speech(conn, provider, session_id):
             break
 
 
+# Realtime response ``status`` is a transport/lifecycle value; map it to a model
+# stop reason for ``gen_ai.response.finish_reasons`` so emitted values match the
+# semantic-convention definition rather than the raw protocol string.
+_STATUS_TO_FINISH_REASON = {
+    "completed": "stop",
+    "incomplete": "length",
+    "failed": "error",
+    "cancelled": "stop",
+}
+
+
+def _finish_reason(status):
+    return _STATUS_TO_FINISH_REASON.get(status, "stop")
+
+
 def _run_generation(conn, provider, request_model, response_model, session_id, host, port, behavior, input_messages):
     """Drive one server-side generation and emit its realtime_inference span.
 
@@ -203,39 +220,34 @@ def _run_generation(conn, provider, request_model, response_model, session_id, h
                             "content": transcript,
                         },
                     ],
-                    "finish_reason": status,
+                    "finish_reason": _finish_reason(status),
                 }
             ]
-            span.set_attribute("gen_ai.response.finish_reasons", [status])
+            span.set_attribute("gen_ai.response.finish_reasons", [_finish_reason(status)])
             print(f"    -> {transcript[:60]}")
         span.set_attribute("gen_ai.output.messages", json.dumps(output_messages))
         if usage:
             span.set_attribute("gen_ai.usage.input_tokens", usage.input_tokens)
             span.set_attribute("gen_ai.usage.output_tokens", usage.output_tokens)
-            if usage.input_token_details and usage.input_token_details.audio_tokens:
+            if usage.input_token_details and usage.input_token_details.audio_tokens is not None:
                 span.set_attribute("gen_ai.usage.audio.input_tokens", usage.input_token_details.audio_tokens)
-            if usage.output_token_details and usage.output_token_details.audio_tokens:
+            if usage.output_token_details and usage.output_token_details.audio_tokens is not None:
                 span.set_attribute("gen_ai.usage.audio.output_tokens", usage.output_token_details.audio_tokens)
         return function_call
 
 
-def _run_execute_tool(provider, function_call):
-    """Run the requested tool and emit its execute_tool span (sibling of the generations)."""
+def _execute_tool(function_call):
+    """Run the requested tool on the client and return its result.
+
+    In the realtime APIs the application executes tool calls and sends the
+    result back to the model, so this client-side work is not itself a model
+    operation and is not wrapped in a span. The request and result are captured
+    as message parts on the generations instead: a ``tool_call`` output part on
+    the requesting generation and a ``tool_call_response`` input part on the
+    answer generation.
+    """
     arguments = json.loads(function_call["arguments"])
-    tool_attributes = {
-        "gen_ai.operation.name": "execute_tool",
-        "gen_ai.provider.name": provider,
-        "gen_ai.tool.name": function_call["name"],
-        "gen_ai.tool.call.id": function_call["call_id"],
-        "gen_ai.tool.type": "function",
-    }
-    with _reference_tracer.start_as_current_span(
-        f"execute_tool {function_call['name']}", attributes=tool_attributes
-    ) as span:
-        span.set_attribute("gen_ai.tool.call.arguments", json.dumps(arguments))
-        result = {"location": arguments.get("location"), "temperature_f": 72, "conditions": "sunny"}
-        span.set_attribute("gen_ai.tool.call.result", json.dumps(result))
-    return result
+    return {"location": arguments.get("location"), "temperature_f": 72, "conditions": "sunny"}
 
 
 def _tool_result_message(function_call, result):
@@ -248,7 +260,7 @@ def _tool_result_message(function_call, result):
                     {
                         "type": "tool_call_response",
                         "id": function_call["call_id"],
-                        "result": result,
+                        "response": result,
                     }
                 ],
             }
@@ -261,7 +273,10 @@ def run_realtime_reference(client):
     print("  [realtime] voice-native inference (reference implementation)")
     request_model = "gpt-realtime"
     provider = "openai"
-    host, port = mock_server_host_port(MOCK_BASE_URL)
+    host, http_port = mock_server_host_port(MOCK_BASE_URL)
+    # The realtime inference runs over the WebSocket endpoint (health port + 1),
+    # so server.port reflects the actual remote endpoint the requests reach.
+    port = http_port + 1
     with client.realtime.connect(model=request_model) as conn:
         session_event = conn.recv()  # session.created
         response_model = session_event.session.model or request_model
@@ -301,8 +316,10 @@ def run_realtime_reference(client):
             )
 
             # Turn 2: a tool-calling exchange (sibling pattern). The first
-            # generation resolves to a function call, the tool runs as a sibling
-            # span, then a second generation speaks the answer.
+            # generation resolves to a function call, the client runs the tool,
+            # then a second generation speaks the answer. The tool request and
+            # result are carried as message parts (tool_call / tool_call_response)
+            # rather than a client-side execute_tool span.
             _capture_user_speech(conn, provider, session_id)
             function_call = _run_generation(
                 conn,
@@ -315,7 +332,7 @@ def run_realtime_reference(client):
                 behavior="function_call",
                 input_messages=_user_audio_message(),
             )
-            result = _run_execute_tool(provider, function_call)
+            result = _execute_tool(function_call)
             conn.send(
                 {
                     "type": "conversation.item.create",
