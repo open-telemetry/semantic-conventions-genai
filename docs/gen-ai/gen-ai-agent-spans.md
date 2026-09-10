@@ -16,6 +16,7 @@ linkTitle: Agent spans
     - [Invoke workflow span](#invoke-workflow-span)
     - [Plan span](#plan-span)
   - [Execute tool span](#execute-tool-span)
+  - [Attribution via span links](#attribution-via-span-links)
 
 <!-- tocstop -->
 
@@ -1050,5 +1051,71 @@ and SHOULD be provided **at span creation time** (if provided at all):
 ## Execute tool span
 
 If you are using some tools in your agent, refer to [Execute Tool Span](./gen-ai-spans.md#execute-tool-span).
+
+## Attribution via span links
+
+> **Status:** Development — addresses the open question in [issue #309](https://github.com/open-telemetry/semantic-conventions-genai/issues/309).
+
+The parent-child span hierarchy records _when_ a tool was called but does not
+record _which LLM generation_ requested that call. In agentic pipelines an
+`invoke_agent` span may contain many interleaved LLM calls and tool executions;
+the parent-child tree alone cannot distinguish whether a tool was triggered by
+the first or the third generation in a ReAct loop.
+
+OTel [span links](https://opentelemetry.io/docs/concepts/signals/traces/#span-links)
+fill this gap. An `execute_tool` span SHOULD carry a link to the chat span
+whose completion contained the tool-call invocation, annotated with the
+`gen_ai.attribution.link_type` attribute set to `CAUSED_BY_GENERATION`.
+
+### Attribute on span links
+
+| Attribute | Type | Description | Requirement Level |
+| --- | --- | --- | --- |
+| [`gen_ai.attribution.link_type`](/docs/registry/attributes/gen-ai.md) | string enum | Semantic type of the span link. | `Recommended` when a structured `tool_call_id` is available. |
+
+`gen_ai.attribution.link_type` has the following list of well-known values:
+
+| Value | Description |
+| --- | --- |
+| `CAUSED_BY_GENERATION` | The linked span is the LLM chat span whose completion contained the tool-call invocation that triggered this `execute_tool` span. |
+| `RETRY_OF` | The linked span is the previous attempt of the same operation that was retried. |
+| `INFORMED_BY` | The linked span is a tool-call result that informed a subsequent LLM generation. |
+
+### Guidance for framework instrumentations
+
+**Structured tool calls** (OpenAI `tool_calls`, Anthropic `tool_use`):
+
+When the LLM response contains a structured tool invocation with a stable
+`tool_call_id`, the instrumentation:
+
+1. SHOULD retain the chat span's `SpanContext`, keyed by each `tool_call_id`
+   carried in the completion, when the chat span ends.
+2. SHOULD, when starting the `execute_tool` span, look up the `SpanContext` for
+   that `tool_call_id` and construct the link from it:
+   `Link(span_context, attributes={"gen_ai.attribution.link_type": "CAUSED_BY_GENERATION"})`.
+   The link MUST be attached at span creation time, since links cannot be added
+   to a span after it has started.
+
+**Text-based tool calls** (ReAct `Action: <tool_name>` patterns):
+
+When no `tool_call_id` is available, the instrumentation MAY fall back to
+linking the tool span to the most-recent chat span under the same parent run.
+The link MAY additionally carry implementation-specific attributes identifying
+the region of the completion that expressed the tool call. This document does
+not define such attributes.
+
+### Example trace structure
+
+```
+invoke_agent "research_agent"            [INTERNAL]
+├── chat "gpt-4o"                        [CLIENT]  ← span A
+│   └── gen_ai.choice event (tool_calls: [search])
+└── execute_tool "search"                [INTERNAL]
+    └── link → span A  {gen_ai.attribution.link_type: "CAUSED_BY_GENERATION"}
+```
+
+The link from `execute_tool` to `chat` span A makes the provenance explicit and
+queryable even when both spans share the same parent. Backends such as Jaeger
+and Tempo render cross-span links as navigable edges in the trace graph.
 
 [DocumentStatus]: https://opentelemetry.io/docs/specs/otel/document-status
