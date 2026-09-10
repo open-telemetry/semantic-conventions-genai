@@ -29,6 +29,8 @@ The semantic conventions for GenAI agents extend and override the semantic conve
 
 ## Spans
 
+Non-inference spans (such as `invoke_agent` or `invoke_workflow`) MUST NOT be stored under the inference span context key. See [Handling existing inference spans](gen-ai-spans.md#handling-existing-inference-spans).
+
 ### Create agent span
 
 <!-- weaver .registry.spans[] | select(.type == "gen_ai.create_agent.client") -->
