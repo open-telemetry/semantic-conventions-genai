@@ -869,6 +869,23 @@ attributes:
           }
         ]
     stability: development
+  - key: gen_ai.system_instructions_ref
+    type: string
+    brief: A URI identifying the system instructions in external storage.
+    note: |
+      This attribute identifies an external representation of the complete
+      value that would otherwise be recorded in `gen_ai.system_instructions`.
+      Consumers MUST treat the URI as opaque.
+
+      The URI does not indicate whether storing the content succeeded or whether
+      the content remains available.
+
+      > [!Warning]
+      > The URI may expose sensitive storage metadata, such as storage provider,
+      > bucket or container names, tenant or object identifiers, or credentials
+      > in query parameters.
+    examples: ["s3://example-bucket/gen-ai/e68562472088cf0fec6124d5268608b01b1e248afb408e748738d39c6352d169_system_instruction.json"]
+    stability: development
   - key: gen_ai.input.messages
     type: any
     brief: >
@@ -923,6 +940,23 @@ attributes:
           }
         ]
     stability: development
+  - key: gen_ai.input.messages_ref
+    type: string
+    brief: A URI identifying the input messages in external storage.
+    note: |
+      This attribute identifies an external representation of the complete
+      value that would otherwise be recorded in `gen_ai.input.messages`.
+      Consumers MUST treat the URI as opaque.
+
+      The URI does not indicate whether storing the content succeeded or whether
+      the content remains available.
+
+      > [!Warning]
+      > The URI may expose sensitive storage metadata, such as storage provider,
+      > bucket or container names, tenant or object identifiers, or credentials
+      > in query parameters.
+    examples: ["s3://example-bucket/gen-ai/674f35f4-e3f6-41f5-b104-864b3964f6d3_inputs.json"]
+    stability: development
   - key: gen_ai.output.messages
     type: any
     brief: Messages returned by the model where each message represents a specific model response (choice, candidate).
@@ -958,6 +992,40 @@ attributes:
             ]
           }
         ]
+    stability: development
+  - key: gen_ai.output.messages_ref
+    type: string
+    brief: A URI identifying the output messages in external storage.
+    note: |
+      This attribute identifies an external representation of the complete
+      value that would otherwise be recorded in `gen_ai.output.messages`.
+      Consumers MUST treat the URI as opaque.
+
+      The URI does not indicate whether storing the content succeeded or whether
+      the content remains available.
+
+      > [!Warning]
+      > The URI may expose sensitive storage metadata, such as storage provider,
+      > bucket or container names, tenant or object identifiers, or credentials
+      > in query parameters.
+    examples: ["s3://example-bucket/gen-ai/674f35f4-e3f6-41f5-b104-864b3964f6d3_outputs.json"]
+    stability: development
+  - key: gen_ai.tool.definitions_ref
+    type: string
+    brief: A URI identifying the tool definitions in external storage.
+    note: |
+      This attribute identifies an external representation of the complete
+      value that would otherwise be recorded in `gen_ai.tool.definitions`.
+      Consumers MUST treat the URI as opaque.
+
+      The URI does not indicate whether storing the content succeeded or whether
+      the content remains available.
+
+      > [!Warning]
+      > The URI may expose sensitive storage metadata, such as storage provider,
+      > bucket or container names, tenant or object identifiers, or credentials
+      > in query parameters.
+    examples: ["s3://example-bucket/gen-ai/b61c3b21581c79d687c07f31970d1a9482dca47756ccf014d408fd6cd091ef66_tool.definitions.json"]
     stability: development
   - key: gen_ai.evaluation.name
     type: string

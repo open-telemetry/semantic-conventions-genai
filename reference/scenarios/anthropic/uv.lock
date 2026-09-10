@@ -41,14 +41,14 @@ source = { virtual = "." }
 dependencies = [
     { name = "anthropic" },
     { name = "genai-reference-shared" },
-    { name = "opentelemetry-util-genai" },
+    { name = "opentelemetry-util-genai", extra = ["upload"] },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "anthropic", specifier = "==1.2.0" },
     { name = "genai-reference-shared", editable = "../../shared" },
-    { name = "opentelemetry-util-genai", specifier = "==1.0b0" },
+    { name = "opentelemetry-util-genai", extras = ["upload"], specifier = "==1.0b0" },
 ]
 
 [[package]]
@@ -71,6 +71,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/e0/4d/f332313098c1de1b2d2ff91cf2674415cc7cddab2ca1b01ae29774bd5fdf/docstring_parser-0.18.0.tar.gz", hash = "sha256:292510982205c12b1248696f44959db3cdd1740237a968ea1e2e7a900eeb2015", size = 29341, upload-time = "2026-04-14T04:09:19.867Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/a7/5f/ed01f9a3cdffbd5a008556fc7b2a08ddb1cc6ace7effa7340604b1d16699/docstring_parser-0.18.0-py3-none-any.whl", hash = "sha256:b3fcbed555c47d8479be0796ef7e19c2670d428d72e96da63f3a40122860374b", size = 22484, upload-time = "2026-04-14T04:09:18.638Z" },
+]
+
+[[package]]
+name = "fsspec"
+version = "2026.7.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/00/78/f34251dadb8f3921264a1d9b8946f5e542014ee2614b285261b4e40e6775/fsspec-2026.7.0.tar.gz", hash = "sha256:c803c40f4cf860b49dea58ee3e1c33cb9c790520e233537e1340049f89b82a88", size = 317040, upload-time = "2026-07-28T16:34:51.052Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/fd/3c/6a2bf344106328fd04963664a60b9bb6496fc25df8e962fcdc1367285fb9/fsspec-2026.7.0-py3-none-any.whl", hash = "sha256:b57ddbafedfaef7018c1ecab32aa200a9d7ca26b77965f64e48b70061249d279", size = 206583, upload-time = "2026-07-28T16:34:49.538Z" },
 ]
 
 [[package]]
@@ -377,6 +386,11 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/88/1f/c667b221dcb84a8fcb5e3324753e1dfb295938cb71e10c979588605bd66d/opentelemetry_util_genai-1.0b0.tar.gz", hash = "sha256:d5f2ab950d08b965f4f090c415eca6f0b02a87a0f07814534c38ff9bdb407c11", size = 53584, upload-time = "2026-07-09T21:36:24.836Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ee/47/a512818b21940a99124432c2ba44c77b20505ef2b716b7bb426a9bdec7da/opentelemetry_util_genai-1.0b0-py3-none-any.whl", hash = "sha256:e6d27cb630bd99a265474a7bf3a91942ef701217906fc3b72aaf6a29526c0cc7", size = 42266, upload-time = "2026-07-09T21:36:23.539Z" },
+]
+
+[package.optional-dependencies]
+upload = [
+    { name = "fsspec" },
 ]
 
 [[package]]
