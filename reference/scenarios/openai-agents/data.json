@@ -8,7 +8,10 @@
       "gen_ai.tool.call.result",
       "gen_ai.tool.description",
       "gen_ai.tool.name",
-      "gen_ai.tool.type"
+      "gen_ai.tool.type",
+      "gen_ai.transfer.mode",
+      "gen_ai.transfer.target.name",
+      "gen_ai.transfer.target.type"
     ],
     "gen_ai.invoke_agent.internal": [
       "gen_ai.agent.name",
@@ -38,6 +41,54 @@
       "context": {
         "attribute": "gen_ai.tool.definitions",
         "errors": "{\"function\":{\"description\":\"Get the current weather for a location.\",\"name\":\"get_weather\",\"parameters\":{\"additionalProperties\":false,\"properties\":{\"location\":{\"title\":\"Location\",\"type\":\"string\"}},\"required\":[\"location\"],\"title\":\"get_weather_args\",\"type\":\"object\"}},\"type\":\"function\"} is not valid under any of the schemas listed in the 'anyOf' keyword"
+      }
+    },
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'invoke_agent assistant' (operation 'invoke_agent') is missing expected attribute 'gen_ai.response.finish_reasons'",
+      "context": {
+        "missing_attribute": "gen_ai.response.finish_reasons",
+        "operation": "invoke_agent"
+      }
+    },
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'invoke_agent assistant' (operation 'invoke_agent') is missing expected attribute 'gen_ai.usage.input_tokens'",
+      "context": {
+        "missing_attribute": "gen_ai.usage.input_tokens",
+        "operation": "invoke_agent"
+      }
+    },
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'invoke_agent assistant' (operation 'invoke_agent') is missing expected attribute 'gen_ai.usage.output_tokens'",
+      "context": {
+        "missing_attribute": "gen_ai.usage.output_tokens",
+        "operation": "invoke_agent"
+      }
+    },
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'invoke_agent weather-specialist' (operation 'invoke_agent') is missing expected attribute 'gen_ai.response.finish_reasons'",
+      "context": {
+        "missing_attribute": "gen_ai.response.finish_reasons",
+        "operation": "invoke_agent"
+      }
+    },
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'invoke_agent weather-specialist' (operation 'invoke_agent') is missing expected attribute 'gen_ai.usage.input_tokens'",
+      "context": {
+        "missing_attribute": "gen_ai.usage.input_tokens",
+        "operation": "invoke_agent"
+      }
+    },
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'invoke_agent weather-specialist' (operation 'invoke_agent') is missing expected attribute 'gen_ai.usage.output_tokens'",
+      "context": {
+        "missing_attribute": "gen_ai.usage.output_tokens",
+        "operation": "invoke_agent"
       }
     }
   ],

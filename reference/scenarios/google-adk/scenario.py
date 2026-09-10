@@ -4,10 +4,17 @@ import asyncio
 import contextlib
 import json
 import os
+import socket
+import subprocess
+import sys
 import time
+import urllib.request
+from pathlib import Path
+from urllib.parse import urlparse
 
 from opentelemetry import trace as _trace
-from opentelemetry.sdk.trace import SpanProcessor
+from opentelemetry.sdk.trace import ReadableSpan, SpanProcessor
+from opentelemetry.trace import SpanKind
 from reference_shared import (
     flush_and_shutdown,
     reference_meter,
@@ -16,6 +23,7 @@ from reference_shared import (
 )
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"]
+os.environ.setdefault("OTEL_INSTRUMENTATION_A2A_SDK_ENABLED", "false")
 
 _reference_tracer = reference_tracer()
 _reference_meter = reference_meter()
@@ -30,6 +38,22 @@ _tool_calls = _reference_meter.create_histogram(
     unit="{tool_call}",
     description="The number of tool calls a GenAI agent makes during a single invocation.",
 )
+
+
+@contextlib.contextmanager
+def _patched_method(obj, name, replacement):
+    """Temporarily replace the ``obj.name`` bound method with ``replacement`` as
+    an instrumentation seam, always restoring the original in ``finally`` --
+    including on exceptions. Repo rules allow patching a public or private method
+    as a seam as long as the scenario still enters through the library's public
+    API; this helper just guarantees the patch is symmetric.
+    """
+    original = getattr(obj, name)
+    setattr(obj, name, replacement)
+    try:
+        yield
+    finally:
+        setattr(obj, name, original)
 
 
 class SpanCounter(SpanProcessor):
@@ -49,6 +73,75 @@ class SpanCounter(SpanProcessor):
 
     def force_flush(self, timeout_millis=None):
         return True
+
+
+class A2ATopologyRecorder(SpanProcessor):
+    """Verify the remote-agent CLIENT span is nested under its ADK agent run."""
+
+    def __init__(self):
+        self.internal_span_id = None
+        self.client_parent_span_id = None
+
+    def on_start(self, span, parent_context=None):
+        pass
+
+    def on_end(self, span: ReadableSpan):
+        attributes = span.attributes or {}
+        if attributes.get("gen_ai.operation.name") != "invoke_agent":
+            return
+        if span.kind == SpanKind.INTERNAL and attributes.get("gen_ai.agent.name") == "remote_weather_agent":
+            self.internal_span_id = span.context.span_id
+        elif span.kind == SpanKind.CLIENT and attributes.get("gen_ai.agent.name") == "weather-agent":
+            self.client_parent_span_id = span.parent.span_id if span.parent else None
+
+    def assert_valid(self):
+        if self.internal_span_id is None:
+            raise AssertionError("RemoteA2aAgent INTERNAL span was not recorded")
+        if self.client_parent_span_id != self.internal_span_id:
+            raise AssertionError("A2A CLIENT span is not a child of the RemoteA2aAgent INTERNAL span")
+
+    def shutdown(self):
+        pass
+
+    def force_flush(self, timeout_millis=None):
+        return True
+
+
+@contextlib.contextmanager
+def _run_a2a_server():
+    host = "127.0.0.1"
+    with socket.socket() as sock:
+        sock.bind((host, 0))
+        port = sock.getsockname()[1]
+
+    server_path = Path(__file__).with_name("a2a_server.py")
+    process = subprocess.Popen(
+        [sys.executable, str(server_path), "--host", host, "--port", str(port)],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    base_url = f"http://{host}:{port}"
+    deadline = time.monotonic() + 30
+    try:
+        while time.monotonic() < deadline:
+            if process.poll() is not None:
+                raise RuntimeError(f"A2A server exited with code {process.returncode}")
+            try:
+                with urllib.request.urlopen(f"{base_url}/health", timeout=1):
+                    break
+            except OSError:
+                time.sleep(0.1)
+        else:
+            raise RuntimeError("A2A server did not become ready")
+        yield base_url
+    finally:
+        if process.poll() is None:
+            process.terminate()
+            try:
+                process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                process.wait(timeout=5)
 
 
 @contextlib.contextmanager
@@ -379,6 +472,232 @@ def run_memory_reference():
     asyncio.run(_run())
 
 
+def run_multi_agent_delegation_reference():
+    """Delegation: a caller agent invokes a sub-agent exposed via ``AgentTool``.
+
+    ``AgentTool`` runs the wrapped agent and returns its result to the caller.
+    The caller-owned ``execute_tool`` span records the transfer; the child
+    ``invoke_agent`` span records the target's execution.
+    """
+    from google.adk.agents import Agent
+    from google.adk.models.google_llm import Gemini
+    from google.adk.runners import Runner
+    from google.adk.sessions import InMemorySessionService
+    from google.adk.tools.agent_tool import AgentTool
+    from google.genai import types
+
+    print("  [delegation] agent-as-tool via AgentTool (reference implementation)")
+
+    os.environ.setdefault("GOOGLE_API_KEY", "mock-key")
+    request_model = "gemini-2.0-flash"
+    input_text = "What's the weather in Seattle?"
+
+    with _suppress_adk_native_telemetry():
+        # The target sub-agent has no tools, so its mock model call returns text.
+        specialist = Agent(
+            name="weather_specialist",
+            description="Answers weather questions for a given location.",
+            model=Gemini(model=request_model, base_url=MOCK_BASE_URL),
+            instruction="You report the weather.",
+        )
+        agent_tool = AgentTool(agent=specialist)
+
+        # Wrap the tool's public run_async to open the caller-owned execute_tool
+        # span around the real sub-agent invocation. The entry point stays
+        # runner.run_async; the patched method is installed and restored in
+        # `finally` by `_patched_method` below.
+        original_run_async = agent_tool.run_async
+
+        async def _traced_run_async(*, args, tool_context):
+            transfer_attributes = {
+                "gen_ai.agent.name": root_agent.name,
+                "gen_ai.transfer.mode": "return_to_caller",
+                "gen_ai.transfer.target.name": specialist.name,
+                "gen_ai.transfer.target.type": "agent",
+            }
+            assert transfer_attributes == {
+                "gen_ai.agent.name": "root_agent",
+                "gen_ai.transfer.mode": "return_to_caller",
+                "gen_ai.transfer.target.name": "weather_specialist",
+                "gen_ai.transfer.target.type": "agent",
+            }
+            tool_span_attributes = {
+                "gen_ai.operation.name": "execute_tool",
+                "gen_ai.tool.name": agent_tool.name,
+                "gen_ai.tool.type": "function",
+                **transfer_attributes,
+            }
+            with _reference_tracer.start_as_current_span(
+                f"execute_tool {agent_tool.name}", attributes=tool_span_attributes
+            ) as tool_span:
+                if tool_context.function_call_id:
+                    tool_span.set_attribute("gen_ai.tool.call.id", tool_context.function_call_id)
+                tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps(args))
+                sub_agent_span_attributes = {
+                    "gen_ai.operation.name": "invoke_agent",
+                    "gen_ai.request.model": request_model,
+                    "gen_ai.agent.name": specialist.name,
+                }
+                with _reference_tracer.start_as_current_span(
+                    f"invoke_agent {specialist.name}", attributes=sub_agent_span_attributes
+                ) as sub_agent_span:
+                    result = await original_run_async(args=args, tool_context=tool_context)
+                    sub_agent_span.set_attribute(
+                        "gen_ai.output.messages",
+                        json.dumps([{"role": "assistant", "parts": [{"type": "text", "content": str(result)}]}]),
+                    )
+                tool_span.set_attribute("gen_ai.tool.call.result", str(result))
+            return result
+
+        root_agent = Agent(
+            name="root_agent",
+            description="Routes questions to specialist agents.",
+            model=Gemini(model=request_model, base_url=MOCK_BASE_URL),
+            instruction="Delegate weather questions to the weather_specialist tool.",
+            tools=[agent_tool],
+        )
+        session_service = InMemorySessionService()
+        runner = Runner(agent=root_agent, app_name="delegation_app", session_service=session_service)
+
+        async def _run():
+            session = await session_service.create_session(app_name="delegation_app", user_id="test_user")
+            agent_span_attributes = {
+                "gen_ai.operation.name": "invoke_agent",
+                "gen_ai.request.model": request_model,
+                "gen_ai.agent.name": root_agent.name,
+            }
+            with _reference_tracer.start_as_current_span(
+                "invoke_agent root_agent", attributes=agent_span_attributes
+            ) as agent_span:
+                agent_span.set_attribute("gen_ai.conversation.id", session.id)
+                agent_span.set_attribute(
+                    "gen_ai.input.messages",
+                    json.dumps([{"role": "user", "parts": [{"type": "text", "content": input_text}]}]),
+                )
+                last_text = ""
+                async for event in runner.run_async(
+                    user_id="test_user",
+                    session_id=session.id,
+                    new_message=types.Content(role="user", parts=[types.Part(text=input_text)]),
+                ):
+                    if event.content and event.content.parts:
+                        text = event.content.parts[0].text
+                        if text:
+                            last_text = text
+                if last_text:
+                    agent_span.set_attribute(
+                        "gen_ai.output.messages",
+                        json.dumps([{"role": "assistant", "parts": [{"type": "text", "content": last_text}]}]),
+                    )
+                    print(f"    -> {last_text[:60]}")
+
+        # `_patched_method` installs the caller-owned execute_tool run_async seam
+        # and restores it in `finally`. The entry point stays runner.run_async.
+        with _patched_method(agent_tool, "run_async", _traced_run_async):
+            asyncio.run(_run())
+
+
+def run_remote_a2a_agent_reference(topology_recorder):
+    """Invoke a remote A2A agent from an ADK ``RemoteA2aAgent`` execution."""
+    from a2a.helpers import get_message_text
+    from google.adk.a2a import _compat as adk_a2a_compat
+    from google.adk.agents.remote_a2a_agent import AGENT_CARD_WELL_KNOWN_PATH, RemoteA2aAgent
+    from google.adk.runners import Runner
+    from google.adk.sessions import InMemorySessionService
+    from google.genai import types
+
+    print("  [invoke_agent] RemoteA2aAgent -> A2A remote agent")
+
+    with _run_a2a_server() as server_url, _suppress_adk_native_telemetry():
+        remote_agent = RemoteA2aAgent(
+            name="remote_weather_agent",
+            agent_card=f"{server_url}{AGENT_CARD_WELL_KNOWN_PATH}",
+        )
+        session_service = InMemorySessionService()
+        runner = Runner(agent=remote_agent, app_name="a2a_app", session_service=session_service)
+        original_send_message = adk_a2a_compat.send_message
+
+        async def _traced_send_message(client, *, request, request_metadata=None, context=None):
+            agent_card = remote_agent._agent_card
+            if agent_card is None:
+                raise RuntimeError("RemoteA2aAgent did not resolve its Agent Card")
+            target_url = urlparse(agent_card.supported_interfaces[0].url)
+            client_attributes = {
+                "gen_ai.operation.name": "invoke_agent",
+                "gen_ai.agent.name": agent_card.name,
+                "gen_ai.provider.name": agent_card.provider.organization,
+                "server.address": target_url.hostname or "localhost",
+                "server.port": target_url.port or 443,
+            }
+            with _reference_tracer.start_as_current_span(
+                f"invoke_agent {agent_card.name}",
+                kind=SpanKind.CLIENT,
+                attributes=client_attributes,
+            ) as client_span:
+                if agent_card.description:
+                    client_span.set_attribute("gen_ai.agent.description", agent_card.description)
+                if request.context_id:
+                    client_span.set_attribute("gen_ai.conversation.id", request.context_id)
+                input_text = get_message_text(request, delimiter=" ")
+                if input_text:
+                    client_span.set_attribute(
+                        "gen_ai.input.messages",
+                        json.dumps([{"role": "user", "parts": [{"type": "text", "content": input_text}]}]),
+                    )
+                async for response in original_send_message(
+                    client,
+                    request=request,
+                    request_metadata=request_metadata,
+                    context=context,
+                ):
+                    yield response
+
+        async def _invoke():
+            session = await session_service.create_session(app_name="a2a_app", user_id="test_user")
+            input_text = "What's the weather in Seattle?"
+            input_message = types.Content(role="user", parts=[types.Part(text=input_text)])
+            parent_attributes = {
+                "gen_ai.operation.name": "invoke_agent",
+                "gen_ai.agent.name": remote_agent.name,
+            }
+            with _reference_tracer.start_as_current_span(
+                f"invoke_agent {remote_agent.name}",
+                kind=SpanKind.INTERNAL,
+                attributes=parent_attributes,
+            ) as parent_span:
+                parent_span.set_attribute("gen_ai.conversation.id", session.id)
+                parent_span.set_attribute(
+                    "gen_ai.input.messages",
+                    json.dumps([{"role": "user", "parts": [{"type": "text", "content": input_text}]}]),
+                )
+                last_text = ""
+                async for event in runner.run_async(
+                    user_id="test_user",
+                    session_id=session.id,
+                    new_message=input_message,
+                ):
+                    if event.content and event.content.parts:
+                        text = event.content.parts[0].text
+                        if text:
+                            last_text = text
+                if last_text:
+                    parent_span.set_attribute(
+                        "gen_ai.output.messages",
+                        json.dumps([{"role": "assistant", "parts": [{"type": "text", "content": last_text}]}]),
+                    )
+                    print(f"    -> {last_text[:60]}")
+
+        async def _run():
+            try:
+                await _invoke()
+            finally:
+                await remote_agent.cleanup()
+
+        with _patched_method(adk_a2a_compat, "send_message", _traced_send_message):
+            asyncio.run(_run())
+        topology_recorder.assert_valid()
+
+
 def main():
     print("=== Reference Implementation: Google ADK Reference Implementation ===")
 
@@ -386,8 +705,12 @@ def main():
 
     span_counter = SpanCounter()
     tp.add_span_processor(span_counter)
+    topology_recorder = A2ATopologyRecorder()
+    tp.add_span_processor(topology_recorder)
 
     run_agent_reference()
+    run_multi_agent_delegation_reference()
+    run_remote_a2a_agent_reference(topology_recorder)
     run_memory_reference()
 
     print(f"\n  [diagnostic] Spans generated: {span_counter.count}")

@@ -13,7 +13,10 @@
 
 | Attribute | Supporting Libraries |
 | --- | --- |
-| gen_ai.agent.name | [google-adk], [openai-agents], [pydantic-ai] |
+| gen_ai.agent.name | [google-adk], [langchain], [openai-agents], [pydantic-ai] |
+| gen_ai.transfer.mode | [google-adk], [langchain], [openai-agents] |
+| gen_ai.transfer.target.name | [google-adk], [langchain], [openai-agents] |
+| gen_ai.transfer.target.type | [google-adk], [langchain], [openai-agents] |
 
 ## Recommended
 
