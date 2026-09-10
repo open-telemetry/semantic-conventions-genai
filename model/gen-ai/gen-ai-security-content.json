@@ -1,0 +1,5 @@
+{
+    "description": "Represents content evaluated or produced by a guardrail.",
+    "title": "SecurityGuardrailContent",
+    "type": ["string", "object", "array", "boolean", "number", "null"]
+}

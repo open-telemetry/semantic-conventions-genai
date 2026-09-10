@@ -1,0 +1,16 @@
+{
+  "spans": {},
+  "events": {},
+  "metrics": {},
+  "findings": [
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'run_guardrail Claude Code PreToolUse hook' (operation 'run_guardrail') is missing expected attribute 'gen_ai.guardrail.verdict.code'",
+      "context": {
+        "missing_attribute": "gen_ai.guardrail.verdict.code",
+        "operation": "run_guardrail"
+      }
+    }
+  ],
+  "entities": {}
+}

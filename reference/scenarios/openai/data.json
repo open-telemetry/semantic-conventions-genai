@@ -82,6 +82,22 @@
       "gen_ai.usage.reasoning.output_tokens",
       "server.address",
       "server.port"
+    ],
+    "gen_ai.guardrail.security.finding": [
+      "gen_ai.guardrail.action.type",
+      "gen_ai.guardrail.component.name",
+      "gen_ai.guardrail.security.external_finding_id",
+      "gen_ai.guardrail.security.policy.id",
+      "gen_ai.guardrail.security.policy.rule.id",
+      "gen_ai.guardrail.security.risk.category",
+      "gen_ai.guardrail.security.risk.score",
+      "gen_ai.guardrail.target.id",
+      "gen_ai.guardrail.target.subtype",
+      "gen_ai.guardrail.target.type",
+      "gen_ai.guardrail.verdict.code",
+      "gen_ai.guardrail.verdict.reason",
+      "gen_ai.guardrail.verdict.type",
+      "gen_ai.provider.name"
     ]
   },
   "metrics": {},
@@ -92,6 +108,14 @@
       "context": {
         "attribute": "gen_ai.tool.definitions",
         "errors": "{\"function\":{\"description\":\"Get the current weather\",\"name\":\"get_weather\",\"parameters\":{\"properties\":{\"location\":{\"description\":\"City name\",\"type\":\"string\"}},\"required\":[\"location\"],\"type\":\"object\"}},\"type\":\"function\"} is not valid under any of the schemas listed in the 'anyOf' keyword"
+      }
+    },
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'run_guardrail Azure Content Safety' (operation 'run_guardrail') is missing expected attribute 'gen_ai.guardrail.verdict.code'",
+      "context": {
+        "missing_attribute": "gen_ai.guardrail.verdict.code",
+        "operation": "run_guardrail"
       }
     }
   ],

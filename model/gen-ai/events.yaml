@@ -38,6 +38,54 @@ events:
           completion being evaluated. This attribute helps correlate the evaluation
           event with the corresponding operation when span id is not available.
 
+  - name: gen_ai.guardrail.security.finding
+    brief: >
+      Reports a specific security finding detected during guardrail evaluation.
+    note: |
+      A finding is the semantic concept represented by this event/log signal.
+
+      Multiple findings MAY be reported for a single guardrail evaluation.
+    stability: development
+    attributes:
+      - ref: gen_ai.guardrail.security.risk.category
+        requirement_level: required
+      - ref: gen_ai.guardrail.target.type
+        requirement_level: required
+      - ref: gen_ai.guardrail.target.id
+        requirement_level:
+          conditionally_required: If available.
+      - ref: gen_ai.guardrail.target.subtype
+        requirement_level:
+          conditionally_required: If available.
+      - ref: gen_ai.guardrail.verdict.type
+        requirement_level: recommended
+      - ref: gen_ai.guardrail.verdict.reason
+        requirement_level:
+          recommended: If available.
+      - ref: gen_ai.guardrail.verdict.code
+        requirement_level:
+          recommended: If available.
+      - ref: gen_ai.guardrail.action.type
+        requirement_level:
+          recommended: If available.
+      - ref: gen_ai.guardrail.security.risk.score
+        requirement_level:
+          recommended: If a risk or confidence score is reported.
+      - ref: gen_ai.guardrail.security.policy.id
+        requirement_level: required
+      - ref: gen_ai.guardrail.security.policy.rule.id
+        requirement_level:
+          recommended: If available.
+      - ref: gen_ai.guardrail.component.name
+        requirement_level:
+          recommended: If available.
+      - ref: gen_ai.provider.name
+        requirement_level:
+          recommended: If available.
+      - ref: gen_ai.guardrail.security.external_finding_id
+        requirement_level:
+          conditionally_required: If correlation with external security systems is needed.
+
   - name: gen_ai.client.operation.exception
     requirement_level: recommended
     brief: >

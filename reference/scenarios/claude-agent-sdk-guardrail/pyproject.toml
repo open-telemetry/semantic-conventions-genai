@@ -1,0 +1,15 @@
+[project]
+name = "claude-agent-sdk-guardrail-reference-test"
+version = "0.0.0"
+requires-python = ">=3.12"
+dependencies = [
+    "claude-agent-sdk==0.2.149",
+    "anyio",
+    "genai-reference-shared",
+]
+
+[tool.uv.sources]
+genai-reference-shared = { path = "../../shared", editable = true }
+
+[tool.uv]
+package = false
