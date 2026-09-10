@@ -45,7 +45,11 @@
       "gen_ai.operation.name"
     ]
   },
-  "events": {},
+  "events": {
+    "gen_ai.execution.state.changed": [
+      "gen_ai.execution.state.changed_key.count"
+    ]
+  },
   "metrics": {
     "gen_ai.execute_tool.duration": [
       "gen_ai.agent.name",

@@ -1,0 +1,14 @@
+[project]
+name = "langgraph-reference-test"
+version = "0.0.0"
+requires-python = ">=3.12"
+dependencies = [
+    "langgraph==1.2.11",
+    "genai-reference-shared",
+]
+
+[tool.uv.sources]
+genai-reference-shared = { path = "../../shared", editable = true }
+
+[tool.uv]
+package = false
