@@ -5,7 +5,7 @@ requires-python = ">=3.12"
 dependencies = [
     "a2a-sdk[http-server]==1.1.2",
     "google-adk==2.8.0",
-    "google-genai==2.21.0",
+    "google-genai==2.22.0",
     "genai-reference-shared",
     "uvicorn==0.52.4",
 ]
