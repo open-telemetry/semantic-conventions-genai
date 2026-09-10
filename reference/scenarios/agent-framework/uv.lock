@@ -25,15 +25,15 @@ wheels = [
 
 [[package]]
 name = "agent-framework-openai"
-version = "1.14.1"
+version = "1.14.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "agent-framework-core" },
     { name = "openai" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/1f/e1/85c4f4ae54440f950913d206be6de6c5e06e82c8cd76358c92bff791fe66/agent_framework_openai-1.14.1.tar.gz", hash = "sha256:b255ec3979aa4dcaf894144511ce08cca163f7e1bb5aa7d0fb6da4b44de92c38", size = 60966, upload-time = "2026-08-28T01:10:42.631Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/89/b2/c784f2c11b03f586a61775b1c5f61710379a1069257698dd803e7fbb03fa/agent_framework_openai-1.14.2.tar.gz", hash = "sha256:a09684d35bc0202b8fffea6fbd187480bc56a95027ed352d699a839d536a12ff", size = 63266, upload-time = "2026-09-03T09:53:52.239Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/68/fe/a5014f619abf032b48db78db3d1a3896f5ebf3830c6b451ab5714e79d0fa/agent_framework_openai-1.14.1-py3-none-any.whl", hash = "sha256:93dc402f90dd8f5c38acf17e720d1bbc202af29f279641caa206acbc84a14bb4", size = 66265, upload-time = "2026-08-28T01:10:34.354Z" },
+    { url = "https://files.pythonhosted.org/packages/43/de/6bdf51e5671b9f72ba83cc8b9ae3bc616c23bdb7f30365756c7d8baa0e74/agent_framework_openai-1.14.2-py3-none-any.whl", hash = "sha256:3da7d1f81bcd2bdbae8ba833647a4a8c2da1f1250bd3cc7947b2eb4e67e10c61", size = 68397, upload-time = "2026-09-03T09:53:41.964Z" },
 ]
 
 [[package]]
@@ -47,7 +47,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "agent-framework-openai", specifier = "==1.14.1" },
+    { name = "agent-framework-openai", specifier = "==1.14.2" },
     { name = "genai-reference-shared", editable = "../../shared" },
 ]
 
