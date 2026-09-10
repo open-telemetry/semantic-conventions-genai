@@ -43,6 +43,34 @@ metrics:
       - ref_group: metric_attributes.gen_ai
       - ref: gen_ai.token.type
         requirement_level: required
+  - name: gen_ai.client.operation.cost
+    requirement_level: recommended
+    instrument: histogram
+    unit: "{cost}"
+    brief: 'Monetary cost of a single GenAI client operation.'
+    note: |
+      Records the cost of a single GenAI operation (e.g. one inference call,
+      one embedding request) in the currency declared by
+      `gen_ai.usage.cost.currency`.
+
+      This metric SHOULD be reported when the cost is available from the
+      provider response or can be reliably computed from a user-supplied
+      pricing configuration. Instrumentations MUST NOT report this metric
+      when cost cannot be determined.
+
+      When both this metric and `gen_ai.client.token.usage` are available,
+      backends can correlate token volume with spend without requiring
+      offline pricing lookups.
+    stability: development
+    annotations:
+      code_generation:
+        metric_value_type: double
+    attributes:
+      - ref_group: metric_attributes.gen_ai
+      - ref: gen_ai.usage.cost.currency
+        requirement_level: required
+      - ref: gen_ai.usage.cost.source
+        requirement_level: recommended
   - name: gen_ai.client.operation.duration
     requirement_level: recommended
     instrument: histogram

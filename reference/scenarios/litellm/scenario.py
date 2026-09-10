@@ -7,11 +7,16 @@ against a mock OpenAI server, with manual OTel spans.
 import json
 import os
 
-from reference_shared import flush_and_shutdown, reference_event_logger, reference_tracer, setup_otel
+from reference_shared import flush_and_shutdown, reference_event_logger, reference_meter, reference_tracer, setup_otel
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"] + "/v1"
 
 _reference_tracer = reference_tracer()
+_cost_histogram = reference_meter().create_histogram(
+    name="gen_ai.client.operation.cost",
+    unit="{cost}",
+    description="Monetary cost of a single GenAI client operation.",
+)
 
 
 def _provider_name(model_name: str) -> str:
@@ -69,6 +74,23 @@ def run_chat():
         if resp.usage:
             span.set_attribute("gen_ai.usage.input_tokens", resp.usage.prompt_tokens)
             span.set_attribute("gen_ai.usage.output_tokens", resp.usage.completion_tokens)
+
+        # Cost: LiteLLM computes per-request cost from its internal pricing table
+        response_cost = resp._hidden_params.get("response_cost")
+        if response_cost is not None:
+            span.set_attribute("gen_ai.usage.cost.amount", response_cost)
+            span.set_attribute("gen_ai.usage.cost.currency", "USD")
+            span.set_attribute("gen_ai.usage.cost.source", "local")
+            _cost_histogram.record(
+                response_cost,
+                attributes={
+                    "gen_ai.operation.name": "chat",
+                    "gen_ai.provider.name": provider_name,
+                    "gen_ai.request.model": request_model,
+                    "gen_ai.usage.cost.currency": "USD",
+                    "gen_ai.usage.cost.source": "local",
+                },
+            )
 
         # Emit inference operation details event
         event_attrs = {

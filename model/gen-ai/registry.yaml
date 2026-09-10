@@ -1039,3 +1039,77 @@ attributes:
       what `gen_ai.workflow.name` means in the context of that framework.
     examples: ["multi_agent_rag", "customer_support_pipeline"]
     stability: development
+  - key: gen_ai.usage.cost.amount
+    type: double
+    brief: The monetary cost of a single GenAI operation.
+    note: |
+      The cost in the currency specified by `gen_ai.usage.cost.currency`.
+      When the cost is not present in the response, the emitting component
+      MAY compute it; see `gen_ai.usage.cost.source` for the two cases.
+
+      The recorded amount reflects the pricing data in force at recording
+      time and MUST NOT be recomputed against later pricing data. Backend
+      or collector-side enrichment that reconstructs cost after the fact is
+      out of scope for `gen_ai.usage.cost.*`.
+
+      Floating-point representation is acceptable for observability purposes.
+      This attribute is not intended for financial accounting.
+
+      For systems that distinguish multiple cost perspectives (list price,
+      contracted price, effective price after discounts), this attribute
+      SHOULD record the effective cost, the amount actually charged after
+      any applicable discounts or commitments.
+
+      For parent spans that invoke sub-operations (e.g. agent or workflow
+      spans), this attribute records only the cost of the span's own
+      operation. Cost of child spans is NOT included. This matches the
+      aggregation rule for `gen_ai.usage.input_tokens` and
+      `gen_ai.usage.output_tokens` and ensures the attribute is safely
+      summable across a trace without double-counting.
+
+      Different spans in the same trace MAY have different `cost.source`
+      values. Consumers summing cost across a trace should expect a mix of
+      provider-reported and locally-computed values.
+    examples: [0.0023, 0.015, 0.42]
+    stability: development
+  - key: gen_ai.usage.cost.currency
+    type: string
+    brief: ISO 4217 currency code for the cost value.
+    note: |
+      MUST be a three-letter ISO 4217 alphabetic code (e.g. "USD", "EUR").
+      When the cost source does not specify a currency, instrumentations
+      MUST obtain the currency from explicit user configuration. If no
+      currency can be determined, `gen_ai.usage.cost.amount` MUST NOT
+      be set.
+    examples: ["USD", "EUR", "GBP"]
+    stability: development
+  - key: gen_ai.usage.cost.source
+    type:
+      members:
+        - id: provider
+          stability: development
+          value: "provider"
+          brief: The cost value was present in the response the client received.
+          note: |
+            The cost value was present in the response the instrumented
+            client received, whether from the model provider directly or
+            from an intermediary (gateway, proxy, router) that priced the
+            request. From the client's perspective these are
+            indistinguishable; the value is passed through unmodified.
+        - id: local
+          stability: development
+          value: "local"
+          brief: The emitting component computed the value itself.
+          note: |
+            No cost was present in the response; the emitting component
+            computed the value at recording time from token counts and
+            pricing data it owns, such as a configured pricing table or
+            maintained pricing data bundled as a versioned dependency
+            (e.g. `genai-prices`). Client-library instrumentations are not
+            expected to emit cost unless it is present in the response.
+    brief: The source of the cost value.
+    note: |
+      Distinguishes cost values received in the response from cost values
+      computed at recording time by the emitting component. See the enum
+      member notes for the receive-vs-derive test.
+    stability: development

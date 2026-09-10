@@ -22,6 +22,8 @@
 | gen_ai.request.seed | (none) |
 | gen_ai.request.stream | (none) |
 | gen_ai.request.top_k | (none) |
+| gen_ai.usage.cost.currency | (none) |
+| gen_ai.usage.cost.source | (none) |
 | server.port | [anthropic], [azure-ai-inference], [openai] |
 
 ## Recommended
@@ -46,6 +48,7 @@
 | gen_ai.usage.audio.output_tokens | [google-genai], [openai] |
 | gen_ai.usage.cache_read.input_tokens | [anthropic], [google-genai], [openai], [vertexai] |
 | gen_ai.usage.cache_write.input_tokens | [anthropic], [openai] |
+| gen_ai.usage.cost.amount | (none) |
 | gen_ai.usage.image.cache_read.input_tokens | [google-genai], [vertexai] |
 | gen_ai.usage.image.input_tokens | [google-genai], [vertexai] |
 | gen_ai.usage.image.output_tokens | [google-genai] |

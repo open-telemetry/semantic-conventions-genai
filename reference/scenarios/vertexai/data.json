@@ -77,6 +77,14 @@
     },
     {
       "id": "genai_expected_attribute_missing",
+      "message": "Span 'chat gemini-2.0-flash' (operation 'chat') is missing expected attribute 'gen_ai.usage.cost.amount'",
+      "context": {
+        "missing_attribute": "gen_ai.usage.cost.amount",
+        "operation": "chat"
+      }
+    },
+    {
+      "id": "genai_expected_attribute_missing",
       "message": "Span 'chat gemini-2.0-flash' (operation 'chat') is missing expected attribute 'server.address'",
       "context": {
         "missing_attribute": "server.address",
