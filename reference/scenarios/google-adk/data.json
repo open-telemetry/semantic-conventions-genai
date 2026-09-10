@@ -76,6 +76,13 @@
   },
   "findings": [
     {
+      "id": "missing_attribute",
+      "message": "Attribute 'exception.escaped' does not exist in the registry.",
+      "context": {
+        "attribute_key": "exception.escaped"
+      }
+    },
+    {
       "id": "genai_content_schema",
       "message": "Attribute 'gen_ai.tool.definitions' value does not conform to the GenAI schema: {\"description\":\"Get the current weather.\",\"name\":\"get_weather\",\"parameters\":{\"properties\":{\"location\":{\"description\":\"City name\",\"type\":\"STRING\"}},\"required\":[\"location\"],\"type\":\"OBJECT\"}} is not valid under any of the schemas listed in the 'anyOf' keyword",
       "context": {
@@ -153,6 +160,13 @@
       "context": {
         "missing_attribute": "gen_ai.usage.output_tokens",
         "operation": "invoke_agent"
+      }
+    },
+    {
+      "id": "error_type_missing_on_error",
+      "message": "Span 'invoke_agent weather-agent' has status.code='error' but is missing 'error.type'; it MUST be set when the operation fails.",
+      "context": {
+        "status_code": "error"
       }
     },
     {
