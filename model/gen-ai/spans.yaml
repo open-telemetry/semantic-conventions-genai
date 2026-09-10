@@ -99,7 +99,7 @@ attribute_groups:
         brief: The human-readable name of the invoked GenAI agent.
         requirement_level:
           conditionally_required: When available.
-      # not including agent description since this group is shared between 
+      # not including agent description since this group is shared between
       # spans and metrics and description is not needed on metrics
       - ref: gen_ai.request.model
         brief: The name of the GenAI model configured for the agent.
@@ -863,3 +863,148 @@ span_refinements:
         requirement_level: required
       - ref: aws.bedrock.knowledge_base.id
         requirement_level: recommended
+  - id: gen_ai.execute_tool.load_skill.internal
+    ref: gen_ai.execute_tool.internal
+    brief: Describes a tool call that loads a skill into an agent's context.
+    name:
+      note: |
+        **Span name** SHOULD be `execute_tool {gen_ai.tool.name} {gen_ai.skill.name}`
+        when `gen_ai.skill.name` is available and `execute_tool {gen_ai.tool.name}`
+        otherwise.
+    note: |
+      This refinement applies when a dedicated tool loads a skill.
+      Examples include:
+
+      - [Google ADK](https://adk.dev/skills/) `load_skill`;
+      - [OpenAI Agents](https://openai.github.io/openai-agents-python/sandbox/guide/)
+        `load_skill` for a lazy skill source;
+      - [Strands Agents](https://strandsagents.com/docs/user-guide/concepts/plugins/skills/)
+        `skills`;
+      - [Agno](https://docs.agno.com/skills/overview)
+        `get_skill_instructions`.
+
+      Otherwise, the generic `execute_tool` span applies.
+    stability: development
+    attributes:
+      - ref: gen_ai.skill.name
+        requirement_level:
+          conditionally_required: If the skill name is available.
+        sampling_relevant: true
+      - ref: gen_ai.skill.description
+        requirement_level:
+          recommended: If the skill description is available.
+      - ref: gen_ai.skill.source.uri
+        requirement_level:
+          recommended: If the skill source URI is available.
+
+  - id: gen_ai.execute_tool.read_skill_resource.internal
+    ref: gen_ai.execute_tool.internal
+    brief: Describes a tool call that reads a resource belonging to a skill.
+    name:
+      note: |
+        **Span name** SHOULD be
+        `execute_tool {gen_ai.tool.name} {gen_ai.skill.name} {gen_ai.skill.resource.name}`
+        when the skill and resource names are available,
+        `execute_tool {gen_ai.tool.name} {gen_ai.skill.resource.name}` when only the
+        resource name is available, and `execute_tool {gen_ai.tool.name}` otherwise.
+
+        The skill name SHOULD NOT be appended by itself.
+    note: |
+      This refinement applies when a dedicated tool reads a skill resource.
+      Examples include:
+
+      - [Google ADK](https://adk.dev/skills/) `load_skill_resource`;
+      - [Microsoft Agent Framework](https://learn.microsoft.com/agent-framework/agents/skills)
+        `read_skill_resource`;
+      - [Agno](https://docs.agno.com/skills/overview)
+        `get_skill_reference` and `get_skill_script` when called with
+        `execute=false`.
+
+      Otherwise, the generic `execute_tool` span applies.
+    stability: development
+    attributes:
+      - ref: gen_ai.skill.name
+        requirement_level:
+          conditionally_required: If the skill name is available.
+        sampling_relevant: true
+      - ref: gen_ai.skill.resource.name
+        requirement_level:
+          conditionally_required: If the skill resource name is available.
+        sampling_relevant: true
+      - ref: gen_ai.skill.description
+        requirement_level:
+          recommended: If the skill description is available.
+      - ref: gen_ai.skill.source.uri
+        requirement_level:
+          recommended: If the skill source URI is available.
+
+  - id: gen_ai.execute_tool.command.internal
+    ref: gen_ai.execute_tool.internal
+    brief: Describes a tool call that executes one or more commands.
+    name:
+      note: |
+        **Span name** SHOULD be:
+
+        - `execute_tool {gen_ai.tool.name} {gen_ai.skill.name} {gen_ai.skill.resource.name}`
+          when the skill and resource names are both available;
+        - `execute_tool {gen_ai.tool.name} {gen_ai.skill.resource.name}` when only the
+          skill resource name is available;
+        - `execute_tool {gen_ai.tool.name} {process.executable.name}` when only the
+          executable name is available;
+        - `execute_tool {gen_ai.tool.name}` otherwise.
+
+        The skill name SHOULD NOT be appended without the resource name.
+    note: |
+      This refinement applies when a tool represents command execution,
+      whether or not it is associated with a skill.
+
+      Examples include:
+
+      - [OpenAI Agents](https://openai.github.io/openai-agents-python/sandbox/guide/)
+        `exec_command`, which runs both general commands and scripts from
+        materialized skills;
+      - [LangChain Deep Agents](https://docs.langchain.com/oss/python/deepagents/overview)
+        sandbox `execute`, which runs both general commands and skill scripts;
+      - [Strands Agents](https://strandsagents.com/docs/user-guide/concepts/plugins/skills/)
+        `shell`, which is used for both general commands and bundled skill
+        scripts;
+      - [Anthropic](https://platform.claude.com/docs/en/agents-and-tools/tool-use/bash-tool)
+        client `bash` for general commands;
+      - [Google ADK](https://adk.dev/skills/) `run_skill_script`, which is
+        dedicated to scripts bundled with skills;
+      - [Agno](https://docs.agno.com/skills/overview) `get_skill_script` when
+        called with `execute=true`.
+
+      The tool span covers framework processing such as validation, skill
+      resolution, approval, hooks, and result handling.
+
+      Instrumentations MAY also emit additional spans following the
+      [CLI client span conventions](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/cli/cli-spans.md#client-caller-spans)
+      for each observed command, script, or process execution.
+
+      Otherwise, the generic `execute_tool` span applies.
+    stability: development
+    attributes:
+      - ref: gen_ai.skill.name
+        requirement_level:
+          conditionally_required: If the command is associated with a skill and its name is available.
+        sampling_relevant: true
+      - ref: gen_ai.skill.resource.name
+        requirement_level:
+          conditionally_required: If the command executes a named skill resource and the name is available.
+        sampling_relevant: true
+      - ref: gen_ai.skill.description
+        requirement_level:
+          recommended: If the command is associated with a skill and its description is available.
+      - ref: gen_ai.skill.source.uri
+        requirement_level:
+          recommended: If the command is associated with a skill and its source URI is available.
+      - ref: process.executable.name
+        requirement_level:
+          conditionally_required: If the tool directly executes a single process and the executable name is available.
+      - ref: process.executable.path
+        requirement_level:
+          recommended: If the tool directly executes a single process and the executable path is available.
+      - ref: process.exit.code
+        requirement_level:
+          conditionally_required: If the tool reports a single command or process exit code.

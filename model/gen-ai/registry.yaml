@@ -174,7 +174,7 @@ attributes:
       The reasoning or thinking effort level requested for a GenAI model.
     note: >
       The value SHOULD be the exact string value sent to the provider.
-      
+
       Semantic conventions for individual providers SHOULD document
       which input parameter maps to this attribute.
     examples: ['low', 'medium', 'high']
@@ -1038,4 +1038,60 @@ attributes:
       Semantic conventions for individual Generative AI frameworks SHOULD document
       what `gen_ai.workflow.name` means in the context of that framework.
     examples: ["multi_agent_rag", "customer_support_pipeline"]
+    stability: development
+  - key: gen_ai.skill.name
+    type: string
+    brief: The name of the [Agent Skill](https://agentskills.io) the operation names.
+    note: >
+      The name the call asked for, recorded whether or not it resolves to a
+      skill. Where it resolves, this is the `name` field of that skill's
+      `SKILL.md` frontmatter, which the specification requires to be unique
+      within the set of skills available to the agent.
+    examples: ["code-review", "pdf-processing"]
+    stability: development
+  - key: gen_ai.skill.description
+    type: string
+    brief: The description of the skill, stating what it does and when to use it.
+    note: |
+      This is the `description` field of the skill's `SKILL.md` frontmatter — the
+      text the agent matches a task against when deciding to load the skill.
+
+      > [!Warning]
+      > This attribute may contain sensitive information.
+    examples: ["Review a changelist against the team's review policy."]
+    stability: development
+  - key: gen_ai.skill.source.uri
+    type: string
+    brief: The [RFC 3986](https://www.rfc-editor.org/rfc/rfc3986) URI of the source from which the skill was loaded.
+    note: |
+      This SHOULD identify the skill source, not a temporary location where the
+      skill was materialized for execution.
+
+      For file-based skills, this is the URI of the skill directory. A local
+      source path MAY be converted to a `file` URI.
+
+      > [!WARNING]
+      > This attribute may contain sensitive information.
+
+      Sensitive URI components, such as user information and access tokens in query
+      parameters, SHOULD be scrubbed when instrumentations can identify them.
+    examples:
+      ["https://skills.example.com/code-review", "gs://example-skills/code-review", "file:///opt/skills/code-review"]
+    stability: development
+  - key: gen_ai.skill.resource.name
+    type: string
+    brief: The skill-relative name of the resource accessed or executed by the tool.
+    note: |
+      This attribute records the logical resource name available from the tool
+      call or instrumented library state. It may be a skill-relative path when
+      the framework uses paths.
+    examples: ["references/review_policy.md", "assets/report_template.html"]
+    stability: development
+  - key: gen_ai.skill.script.exited_with_error
+    type: boolean
+    brief: Whether the skill script terminated with a non-zero exit code.
+    note: >
+      A low-cardinality companion to `process.exit.code`, for use as a
+      metric dimension where the exit code itself would be unbounded.
+    examples: [true]
     stability: development
