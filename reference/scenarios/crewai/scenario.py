@@ -243,6 +243,8 @@ def run_agent():
             researcher.llm._client.chat.completions.create = original_create
 
         if captured_completion is not None:
+            if hasattr(captured_completion, "parse"):
+                captured_completion = captured_completion.parse()
             agent_span.set_attribute("gen_ai.response.model", captured_completion.model)
             agent_span.set_attribute("gen_ai.response.id", captured_completion.id)
             agent_span.set_attribute(
