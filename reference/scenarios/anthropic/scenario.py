@@ -11,7 +11,13 @@ import anthropic
 from opentelemetry.trace import SpanKind, StatusCode
 from opentelemetry.util.genai.handler import get_telemetry_handler
 from opentelemetry.util.genai.types import Blob, InputMessage, OutputMessage, Text
-from reference_shared import flush_and_shutdown, mock_server_host_port, reference_tracer, setup_otel
+from reference_shared import (
+    flush_and_shutdown,
+    mock_server_host_port,
+    reference_event_logger,
+    reference_tracer,
+    setup_otel,
+)
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"]
 
@@ -189,6 +195,88 @@ def run_compaction(handler):
             ]
 
     print(f"    -> compacted: {conversation_compacted}")
+
+
+def run_chat_multiturn_delta():
+    """Scenario: stateless Anthropic requests with delta input capture."""
+    print("  [chat_multiturn_delta] stateless multi-turn chat with messages_delta")
+    request_model = "claude-sonnet-4-20250514"
+    request_max_tokens = 100
+    conversation_id = "conv_anthropic_delta"
+    client = anthropic.Anthropic(base_url=MOCK_BASE_URL, api_key="mock-key")
+    host, port = mock_server_host_port(MOCK_BASE_URL)
+    tracer = reference_tracer()
+
+    def record_turn(request_messages, delta_text):
+        delta = json.dumps([{"role": "user", "parts": [{"type": "text", "content": delta_text}]}])
+        attributes = {
+            "gen_ai.operation.name": "chat",
+            "gen_ai.provider.name": "anthropic",
+            "gen_ai.request.model": request_model,
+            "gen_ai.conversation.id": conversation_id,
+        }
+        if host:
+            attributes["server.address"] = host
+        if port is not None:
+            attributes["server.port"] = port
+
+        with tracer.start_as_current_span(f"chat {request_model}", attributes=attributes) as span:
+            span.set_attribute("gen_ai.request.max_tokens", request_max_tokens)
+            span.set_attribute("gen_ai.input.messages_delta", delta)
+            response = client.messages.create(
+                model=request_model,
+                max_tokens=request_max_tokens,
+                messages=request_messages,
+            )
+            span.set_attribute("gen_ai.response.model", response.model)
+            span.set_attribute("gen_ai.response.id", response.id)
+            span.set_attribute("gen_ai.response.finish_reasons", [response.stop_reason])
+            output = json.dumps(
+                [
+                    {
+                        "role": "assistant",
+                        "parts": [{"type": "text", "content": block.text}],
+                        "finish_reason": response.stop_reason,
+                    }
+                    for block in response.content
+                    if hasattr(block, "text")
+                ]
+            )
+            span.set_attribute("gen_ai.output.messages", output)
+            if response.usage:
+                span.set_attribute("gen_ai.usage.input_tokens", response.usage.input_tokens)
+                span.set_attribute("gen_ai.usage.output_tokens", response.usage.output_tokens)
+
+            event_attributes = {
+                **attributes,
+                "gen_ai.response.id": response.id,
+                "gen_ai.response.model": response.model,
+                "gen_ai.response.finish_reasons": [response.stop_reason],
+                "gen_ai.input.messages_delta": delta,
+                "gen_ai.output.messages": output,
+            }
+            if response.usage:
+                event_attributes["gen_ai.usage.input_tokens"] = response.usage.input_tokens
+                event_attributes["gen_ai.usage.output_tokens"] = response.usage.output_tokens
+            reference_event_logger().emit(
+                event_name="gen_ai.client.inference.operation.details",
+                body="Inference operation details",
+                attributes=event_attributes,
+            )
+            return response
+
+    first_user = {"role": "user", "content": "Say hello."}
+    first_response = record_turn([first_user], first_user["content"])
+    assistant_text = next(block.text for block in first_response.content if hasattr(block, "text"))
+    second_user = {"role": "user", "content": "Summarize that greeting in three words."}
+
+    # Anthropic requires the complete history again, while telemetry stores only
+    # the newly appended user message.
+    second_response = record_turn(
+        [first_user, {"role": "assistant", "content": assistant_text}, second_user],
+        second_user["content"],
+    )
+    print(f"    -> {second_response.content[0].text[:60]}")
 
 
 def run_chat_with_document_input(handler):
@@ -410,6 +498,7 @@ def main():
 
     run_chat(handler)
     run_compaction(handler)
+    run_chat_multiturn_delta()
     run_chat_with_document_input(handler)
     run_chat_with_image_input(handler)
     run_create_agent()

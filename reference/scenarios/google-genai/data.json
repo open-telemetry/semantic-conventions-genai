@@ -47,7 +47,10 @@
     ],
     "gen_ai.invoke_agent.client": [
       "gen_ai.agent.name",
+      "gen_ai.conversation.id",
+      "gen_ai.input.messages_delta",
       "gen_ai.operation.name",
+      "gen_ai.output.messages",
       "gen_ai.provider.name",
       "gen_ai.request.model",
       "gen_ai.request.previous_response.id",
@@ -57,7 +60,9 @@
   },
   "events": {
     "gen_ai.client.inference.operation.details": [
+      "gen_ai.conversation.id",
       "gen_ai.input.messages",
+      "gen_ai.input.messages_delta",
       "gen_ai.operation.name",
       "gen_ai.output.messages",
       "gen_ai.provider.name",
@@ -89,6 +94,13 @@
       "context": {
         "attribute": "gen_ai.tool.definitions",
         "errors": "{\"function_declarations\":[{\"description\":\"Get the current weather\",\"name\":\"get_weather\",\"parameters\":{\"properties\":{\"location\":{\"description\":\"City name\",\"type\":\"string\"}},\"required\":[\"location\"],\"type\":\"object\"}}]} is not valid under any of the schemas listed in the 'anyOf' keyword"
+      }
+    },
+    {
+      "id": "required_attribute_not_present",
+      "message": "Required attribute 'gen_ai.provider.name' is not present.",
+      "context": {
+        "attribute_key": "gen_ai.provider.name"
       }
     },
     {
