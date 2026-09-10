@@ -15,6 +15,12 @@
 | gen_ai.conversation.id | [google-adk] |
 | gen_ai.workflow.name | [crewai], [google-adk], [langchain], [openai-agents] |
 
+## Recommended
+
+| Attribute | Supporting Libraries |
+| --- | --- |
+| gen_ai.external_ref | (none) |
+
 ## Opt-In
 
 | Attribute | Supporting Libraries |

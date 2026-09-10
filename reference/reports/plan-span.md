@@ -14,5 +14,11 @@
 | --- | --- |
 | gen_ai.agent.name | [crewai] |
 
+## Recommended
+
+| Attribute | Supporting Libraries |
+| --- | --- |
+| gen_ai.external_ref | (none) |
+
 [crewai]: ../scenarios/crewai/scenario.py
 [langchain]: ../scenarios/langchain/scenario.py

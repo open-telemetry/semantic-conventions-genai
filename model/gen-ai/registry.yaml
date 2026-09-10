@@ -470,6 +470,21 @@ attributes:
     brief: The version of the GenAI agent.
     examples: ["1.0.0", "2025-05-01"]
     stability: development
+  - key: gen_ai.external_ref
+    type: string
+    brief: >
+      An opaque, producer-defined identifier of an out-of-band record
+      associated with the operation.
+    note: |
+      Consumers MUST compare this value for equality only and MUST NOT parse
+      it or infer meaning from its format.
+
+      The referenced record's format, lifecycle, retrieval, and validation
+      are outside this specification. This attribute defines only a
+      payload-free join surface between a span and that record; it does not
+      carry the record's contents.
+    examples: ["01J9Z2K3M4N5P6Q7R8S9T0V1W2"]
+    stability: development
   - key: gen_ai.tool.name
     type: string
     brief: Name of the tool utilized by the agent.

@@ -24,6 +24,7 @@
 
 | Attribute | Supporting Libraries |
 | --- | --- |
+| gen_ai.external_ref | (none) |
 | server.address | [anthropic], [aws-bedrock-agent], [azure-ai-foundry], [mistralai], [openai-assistants] |
 
 ## Opt-In

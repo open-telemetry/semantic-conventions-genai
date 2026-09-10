@@ -24,6 +24,13 @@ attribute_groups:
       - ref: gen_ai.operation.name
         requirement_level: required
 
+  - id: attributes.gen_ai.external_ref
+    visibility: internal
+    attributes:
+      - ref: gen_ai.external_ref
+        requirement_level:
+          recommended: If an out-of-band record exists for the operation.
+
   - id: attributes.gen_ai.address_and_port
     visibility: internal
     attributes:
@@ -192,6 +199,7 @@ spans:
       - ref_group: attributes.gen_ai.usage.breakdown
       - ref_group: attributes.gen_ai.content
       - ref_group: attributes.gen_ai.error
+      - ref_group: attributes.gen_ai.external_ref
       - ref: gen_ai.request.max_tokens
         requirement_level: recommended
       - ref: gen_ai.request.choice.count
@@ -286,6 +294,7 @@ spans:
       - ref_group: attributes.gen_ai.common
       - ref_group: attributes.gen_ai.address_and_port
       - ref_group: attributes.gen_ai.error
+      - ref_group: attributes.gen_ai.external_ref
       - ref: gen_ai.provider.name
         requirement_level: required
         sampling_relevant: true
@@ -323,6 +332,7 @@ spans:
       - ref_group: attributes.gen_ai.common
       - ref_group: attributes.gen_ai.address_and_port
       - ref_group: attributes.gen_ai.error
+      - ref_group: attributes.gen_ai.external_ref
       - ref: gen_ai.retrieval.query.text
         requirement_level: opt_in
       - ref: gen_ai.retrieval.top_k
@@ -353,6 +363,7 @@ spans:
     attributes:
       - ref_group: attributes.gen_ai.address_and_port
       - ref_group: attributes.gen_ai.error
+      - ref_group: attributes.gen_ai.external_ref
       - ref: gen_ai.provider.name
         requirement_level: required
         sampling_relevant: true
@@ -435,6 +446,7 @@ spans:
         requirement_level: required
       - ref_group: attributes.gen_ai.address_and_port
       - ref_group: attributes.gen_ai.error
+      - ref_group: attributes.gen_ai.external_ref
       - ref: gen_ai.provider.name
         requirement_level:
           conditionally_required: If the operation is handled by a named external GenAI provider or service.
@@ -469,6 +481,7 @@ spans:
       - ref_group: attributes.gen_ai.common
       - ref_group: attributes.gen_ai.address_and_port
       - ref_group: attributes.gen_ai.error
+      - ref_group: attributes.gen_ai.external_ref
       - ref: gen_ai.provider.name
         requirement_level: required
         sampling_relevant: true
@@ -521,6 +534,7 @@ spans:
       - ref_group: attributes.gen_ai.invoke_agent.common
       - ref_group: attributes.gen_ai.usage.breakdown
       - ref_group: attributes.gen_ai.address_and_port
+      - ref_group: attributes.gen_ai.external_ref
       - ref: gen_ai.provider.name
         requirement_level: required
         sampling_relevant: true
@@ -563,6 +577,7 @@ spans:
     stability: development
     attributes:
       - ref_group: attributes.gen_ai.invoke_agent.common
+      - ref_group: attributes.gen_ai.external_ref
       - ref: gen_ai.operation.name
         sampling_relevant: true
       - ref: gen_ai.request.model
@@ -593,6 +608,7 @@ spans:
     attributes:
       - ref_group: attributes.gen_ai.error
       - ref_group: attributes.gen_ai.execute_tool.common
+      - ref_group: attributes.gen_ai.external_ref
       - ref: gen_ai.operation.name
         requirement_level: required
         sampling_relevant: true
@@ -649,6 +665,7 @@ spans:
     stability: development
     attributes:
       - ref_group: attributes.gen_ai.error
+      - ref_group: attributes.gen_ai.external_ref
       - ref: gen_ai.operation.name
         requirement_level: required
         sampling_relevant: true
@@ -688,6 +705,7 @@ spans:
     stability: development
     attributes:
       - ref_group: attributes.gen_ai.error
+      - ref_group: attributes.gen_ai.external_ref
       - ref: gen_ai.operation.name
         requirement_level: required
         sampling_relevant: true
