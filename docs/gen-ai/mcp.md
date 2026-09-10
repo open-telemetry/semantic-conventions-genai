@@ -179,10 +179,11 @@ to avoid high cardinality span names.
 
 **[1] `error.type`:** When the response carries a JSON-RPC error code that classifies as an error,
 `error.type` SHOULD be set to the string representation of that code. See
-`rpc.response.status_code` for which codes classify as errors. Otherwise
-(for example on timeouts or transport errors) it SHOULD be set following the
-[`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/error.md)
-guidance.
+`rpc.response.status_code` for which codes classify as errors. When an HTTP
+response ends the operation in error without a JSON-RPC error code,
+`error.type` SHOULD be set to the string representation of the HTTP status
+code. Otherwise (for example on timeouts or other transport errors), it SHOULD be
+set to the canonical name of the exception or error that occurred.
 
 When JSON-RPC call is successful, but an error is returned within the
 result payload, this attribute SHOULD be set to the low-cardinality
@@ -405,10 +406,11 @@ to avoid high cardinality span names.
 
 **[1] `error.type`:** When the response carries a JSON-RPC error code that classifies as an error,
 `error.type` SHOULD be set to the string representation of that code. See
-`rpc.response.status_code` for which codes classify as errors. Otherwise
-(for example on timeouts or transport errors) it SHOULD be set following the
-[`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/error.md)
-guidance.
+`rpc.response.status_code` for which codes classify as errors. When an HTTP
+response ends the operation in error without a JSON-RPC error code,
+`error.type` SHOULD be set to the string representation of the HTTP status
+code. Otherwise (for example on timeouts or other transport errors), it SHOULD be
+set to the canonical name of the exception or error that occurred.
 
 When JSON-RPC call is successful, but an error is returned within the
 result payload, this attribute SHOULD be set to the low-cardinality
@@ -623,10 +625,11 @@ of `[ 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30, 60, 120, 300 ]`.
 
 **[1] `error.type`:** When the response carries a JSON-RPC error code that classifies as an error,
 `error.type` SHOULD be set to the string representation of that code. See
-`rpc.response.status_code` for which codes classify as errors. Otherwise
-(for example on timeouts or transport errors) it SHOULD be set following the
-[`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/error.md)
-guidance.
+`rpc.response.status_code` for which codes classify as errors. When an HTTP
+response ends the operation in error without a JSON-RPC error code,
+`error.type` SHOULD be set to the string representation of the HTTP status
+code. Otherwise (for example on timeouts or other transport errors), it SHOULD be
+set to the canonical name of the exception or error that occurred.
 
 When JSON-RPC call is successful, but an error is returned within the
 result payload, this attribute SHOULD be set to the low-cardinality
@@ -790,10 +793,11 @@ of `[ 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30, 60, 120, 300 ]`.
 
 **[1] `error.type`:** When the response carries a JSON-RPC error code that classifies as an error,
 `error.type` SHOULD be set to the string representation of that code. See
-`rpc.response.status_code` for which codes classify as errors. Otherwise
-(for example on timeouts or transport errors) it SHOULD be set following the
-[`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/error.md)
-guidance.
+`rpc.response.status_code` for which codes classify as errors. When an HTTP
+response ends the operation in error without a JSON-RPC error code,
+`error.type` SHOULD be set to the string representation of the HTTP status
+code. Otherwise (for example on timeouts or other transport errors), it SHOULD be
+set to the canonical name of the exception or error that occurred.
 
 When JSON-RPC call is successful, but an error is returned within the
 result payload, this attribute SHOULD be set to the low-cardinality
