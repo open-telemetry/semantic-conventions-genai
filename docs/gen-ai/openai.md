@@ -292,7 +292,9 @@ Instrumentations MUST follow [JSON schema](/model/gen-ai/gen-ai-system-instructi
 
 When the attribute is recorded on events, it MUST be recorded in structured form. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
 
-**[40] `gen_ai.tool.definitions`:**
+**[40] `gen_ai.tool.definitions`:** The effective set of tools provided to this model request, recorded after
+any runtime filtering, resolution, or name-collision handling has been
+applied.
 
 > [!WARNING]
 > This attribute may contain sensitive information.
@@ -481,7 +483,7 @@ Instrumentations MUST follow [JSON schema](/model/gen-ai/gen-ai-system-instructi
 
 When the attribute is recorded on events, it MUST be recorded in structured form. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
 
-**[14] `gen_ai.tool.definitions`:**
+**[14] `gen_ai.tool.definitions`:** The set of tools carried on the fetched response.
 
 > [!WARNING]
 > This attribute may contain sensitive information.

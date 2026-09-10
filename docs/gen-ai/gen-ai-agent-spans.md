@@ -431,7 +431,18 @@ Instrumentations MUST follow [JSON schema](/model/gen-ai/gen-ai-system-instructi
 
 When the attribute is recorded on events, it MUST be recorded in structured form. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
 
-**[32] `gen_ai.tool.definitions`:**
+**[32] `gen_ai.tool.definitions`:** The set of tools configured for the agent, which may span multiple model
+requests.
+
+Whether this is the agent's configured catalog or the effective set resolved
+for one of the constituent requests depends on the provider or framework.
+Instrumentations of the same provider or framework SHOULD record it
+consistently.
+
+When the effective set varies between requests, this attribute does not
+necessarily reflect the set provided to any individual request. Consumers
+that depend on the exact set of tools provided to a specific model request
+SHOULD read this attribute from the corresponding inference span or event.
 
 > [!WARNING]
 > This attribute may contain sensitive information.
@@ -712,7 +723,18 @@ Instrumentations MUST follow [JSON schema](/model/gen-ai/gen-ai-system-instructi
 
 When the attribute is recorded on events, it MUST be recorded in structured form. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
 
-**[15] `gen_ai.tool.definitions`:**
+**[15] `gen_ai.tool.definitions`:** The set of tools configured for the agent, which may span multiple model
+requests.
+
+Whether this is the agent's configured catalog or the effective set resolved
+for one of the constituent requests depends on the provider or framework.
+Instrumentations of the same provider or framework SHOULD record it
+consistently.
+
+When the effective set varies between requests, this attribute does not
+necessarily reflect the set provided to any individual request. Consumers
+that depend on the exact set of tools provided to a specific model request
+SHOULD read this attribute from the corresponding inference span or event.
 
 > [!WARNING]
 > This attribute may contain sensitive information.
