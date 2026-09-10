@@ -61,6 +61,7 @@
 
 | Attribute | Supporting Libraries |
 | --- | --- |
+| gen_ai.execution.steps | (none) |
 | gen_ai.input.messages | [agent-framework], [anthropic], [aws-bedrock], [claude-agent-sdk], [groq], [litellm], [mistralai], [openai] |
 | gen_ai.output.messages | [agent-framework], [anthropic], [aws-bedrock], [claude-agent-sdk], [litellm], [mistralai], [openai] |
 | gen_ai.prompt.variable | (none) |

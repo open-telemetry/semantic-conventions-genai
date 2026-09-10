@@ -367,6 +367,19 @@ class OutputMessages(RootModel[List[OutputMessage]]):
 
 
 # --------------------------------------------------------------------------
+# `gen_ai.execution.steps` model
+# --------------------------------------------------------------------------
+
+
+class ExecutionSteps(RootModel[List[MessagePart]]):
+    """
+    Represents provider-reported execution steps as an ordered list of message parts.
+    """
+
+    pass
+
+
+# --------------------------------------------------------------------------
 # `gen_ai.system_instructions` model
 # --------------------------------------------------------------------------
 
@@ -552,6 +565,7 @@ class ToolCallResult(RootModel[dict[str, Any]]):
 SCHEMAS: dict[str, type[BaseModel]] = {
     "gen-ai-input-messages.json": InputMessages,
     "gen-ai-output-messages.json": OutputMessages,
+    "gen-ai-execution-steps.json": ExecutionSteps,
     "gen-ai-system-instructions.json": SystemInstructions,
     "gen-ai-tool-definitions.json": ToolDefinitions,
     "gen-ai-tool-call-arguments.json": ToolCallArguments,
