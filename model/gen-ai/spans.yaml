@@ -606,6 +606,8 @@ spans:
           recommended: If available.
       - ref: gen_ai.tool.type
         sampling_relevant: true
+      - ref: gen_ai.agent.name
+        sampling_relevant: true
       - ref: gen_ai.tool.call.arguments
         requirement_level: opt_in
       - ref: gen_ai.tool.call.result
@@ -693,6 +695,7 @@ spans:
         brief: The human-readable name of the agent performing the planning.
         requirement_level:
           conditionally_required: When available.
+        sampling_relevant: true
 
 span_refinements:
   - id: openai.inference.client
