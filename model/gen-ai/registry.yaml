@@ -174,7 +174,7 @@ attributes:
       The reasoning or thinking effort level requested for a GenAI model.
     note: >
       The value SHOULD be the exact string value sent to the provider.
-      
+
       Semantic conventions for individual providers SHOULD document
       which input parameter maps to this attribute.
     examples: ['low', 'medium', 'high']
@@ -1038,4 +1038,37 @@ attributes:
       Semantic conventions for individual Generative AI frameworks SHOULD document
       what `gen_ai.workflow.name` means in the context of that framework.
     examples: ["multi_agent_rag", "customer_support_pipeline"]
+    stability: development
+  - key: gen_ai.skill.name
+    type: string
+    brief: The name of the [Agent Skill](https://agentskills.io/specification#skill-md-format).
+    examples: ["code-review", "pdf-processing"]
+    stability: development
+  - key: gen_ai.skill.description
+    type: string
+    brief: The [description of the Agent Skill](https://agentskills.io/specification#skill-md-format).
+    note: |
+      > [!WARNING]
+      > This attribute may contain sensitive information.
+    examples: ["Review a changelist against the team's review policy."]
+    stability: development
+  - key: gen_ai.skill.source.uri
+    type: string
+    brief: The source URI for loading the skill.
+    note: |
+      This SHOULD identify the skill source, not a temporary location where the
+      skill was materialized for execution.
+
+      > [!WARNING]
+      > This attribute may contain sensitive information.
+
+      Sensitive URI components, such as user information and access tokens in query
+      parameters, SHOULD be scrubbed when instrumentations can identify them.
+    examples:
+      ["https://skills.example.com/code-review", "gs://example-skills/code-review", "file:///opt/skills/code-review"]
+    stability: development
+  - key: gen_ai.skill.resource.name
+    type: string
+    brief: The skill-relative name of the resource (script, reference, or asset) being accessed or executed.
+    examples: ["references/review_policy.md", "assets/report_template.html"]
     stability: development

@@ -14,3 +14,4 @@ execution.
 | retrieval | Yes — retriever runs the retrieval | ✅ Implemented |
 | plan | Yes — Plan-and-Execute planning phase | ✅ Implemented |
 | execute_tool | Yes — `BaseTool.invoke()` runs the tool | ✅ Implemented |
+| execute_tool (command) | Yes — `ShellToolMiddleware`'s `shell` tool runs a general command | ✅ Implemented |
