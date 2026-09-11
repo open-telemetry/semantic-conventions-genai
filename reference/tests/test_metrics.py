@@ -65,9 +65,9 @@ def test_span_types_absent_from_a_data_file_are_not_reported():
     assert entry.spans == {}
 
 
-def test_span_specs_are_named_as_the_registry_names_them():
+def test_span_specs_are_named_in_recognized_registry_namespaces():
     for key, spec in span_specs().items():
-        assert spec.registry_id.startswith("gen_ai."), key
+        assert spec.registry_id.startswith(("a2a.", "gen_ai.")), key
 
 
 if __name__ == "__main__":
@@ -77,5 +77,5 @@ if __name__ == "__main__":
     test_registry_span_names_map_onto_report_keys()
     test_events_keep_their_registry_names()
     test_span_types_absent_from_a_data_file_are_not_reported()
-    test_span_specs_are_named_as_the_registry_names_them()
+    test_span_specs_are_named_in_recognized_registry_namespaces()
     print("ok")

@@ -30,6 +30,8 @@ from semconv_genai.conformance import coverage_model
 # registry signal absent from these is still resolved into the coverage model
 # and recorded in data.json; it just has no report page.
 _SPANS = {
+    "a2a_client": ("a2a.client", "A2A Client"),
+    "a2a_server": ("a2a.server", "A2A Server"),
     "inference": ("gen_ai.inference.client", "Inference"),
     "embeddings": ("gen_ai.embeddings.client", "Embeddings"),
     "retrieval": ("gen_ai.retrieval.client", "Retrieval"),

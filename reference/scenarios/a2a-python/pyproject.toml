@@ -1,0 +1,14 @@
+[project]
+name = "a2a-python-reference-test"
+version = "0.0.0"
+requires-python = ">=3.12"
+dependencies = [
+    "a2a-sdk==1.0.3",
+    "genai-reference-shared",
+]
+
+[tool.uv.sources]
+genai-reference-shared = { path = "../../shared", editable = true }
+
+[tool.uv]
+package = false

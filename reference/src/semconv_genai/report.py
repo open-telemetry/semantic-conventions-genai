@@ -72,6 +72,8 @@ def _metrics_of(entry: ScenarioDataEntry) -> dict[str, dict[str, str]]:
 
 # Relative paths from reports/ to the semantic convention doc page + anchor.
 SEMCONV_DOC_LINKS: dict[str, str] = {
+    "a2a_client": "../../docs/gen-ai/a2a.md#client",
+    "a2a_server": "../../docs/gen-ai/a2a.md#server",
     "create_agent": "../../docs/gen-ai/gen-ai-agent-spans.md#create-agent-span",
     "invoke_agent_client": "../../docs/gen-ai/gen-ai-agent-spans.md#invoke-agent-client-span",
     "invoke_agent_internal": "../../docs/gen-ai/gen-ai-agent-spans.md#invoke-agent-internal-span",

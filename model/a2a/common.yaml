@@ -1,0 +1,67 @@
+file_format: definition/2
+attribute_groups:
+  - id: a2a.common.attributes
+    visibility: internal
+    attributes:
+      - ref: a2a.method.name
+        requirement_level: required
+      - ref: error.type
+        requirement_level:
+          conditionally_required: If and only if the operation fails.
+        note: |
+          This attribute SHOULD be set to the string representation of the
+          JSON-RPC error code or protocol status code, if one is returned, or
+          the canonical name of the exception that occurred.
+
+          See the A2A specification for
+          [error handling](https://a2a-protocol.org/latest/specification/#332-error-handling)
+          and
+          [error code mappings](https://a2a-protocol.org/latest/specification/#54-error-code-mappings).
+      - ref: a2a.protocol.version
+      - ref: a2a.tenant
+        requirement_level:
+          conditionally_required: When the A2A request `tenant` field is set.
+      - ref: a2a.message.id
+        requirement_level:
+          conditionally_required: When the A2A request contains a message.
+      - ref: a2a.message.reference_task_ids
+        requirement_level:
+          recommended: When the request message references task IDs.
+      - ref: a2a.task.id
+        requirement_level:
+          conditionally_required: When the A2A request or response is task-scoped.
+      - ref: a2a.task.state
+        requirement_level:
+          conditionally_required: When the A2A response or event contains task state.
+      - ref: gen_ai.conversation.id
+        brief: Identifies the A2A [context identifier](https://a2a-protocol.org/latest/specification/#341-context-identifier-semantics).
+        requirement_level:
+          conditionally_required: When the A2A request or response contains context id.
+        note: Set from the A2A `contextId` field.
+  - id: a2a.client.address_and_port.attributes
+    visibility: internal
+    attributes:
+      - ref: server.address
+        brief: Host component of the selected Agent Card interface URL.
+        requirement_level:
+          recommended: If applicable.
+      - ref: server.port
+        brief: Port component of the selected Agent Card interface URL.
+        requirement_level:
+          recommended: When `server.address` is set.
+
+  - id: a2a.server.address_and_port.attributes
+    visibility: internal
+    attributes:
+      - ref: server.address
+        requirement_level:
+          recommended: If applicable.
+      - ref: server.port
+        requirement_level:
+          recommended: When `server.address` is set.
+      - ref: client.address
+        requirement_level:
+          recommended: If applicable.
+      - ref: client.port
+        requirement_level:
+          recommended: When `client.address` is set.
