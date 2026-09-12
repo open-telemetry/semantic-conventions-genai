@@ -243,6 +243,8 @@ def run_agent():
             researcher.llm._client.chat.completions.create = original_create
 
         if captured_completion is not None:
+            if hasattr(captured_completion, "parse"):
+                captured_completion = captured_completion.parse()
             agent_span.set_attribute("gen_ai.response.model", captured_completion.model)
             agent_span.set_attribute("gen_ai.response.id", captured_completion.id)
             agent_span.set_attribute(
@@ -336,9 +338,11 @@ def _run_crew_planning_scenario(*, header, task_description):
 
     def _wrapped_handle_crew_planning(self):
         planner_agent = original_create_planning_agent(self)
-        with _reference_tracer.start_as_current_span(f"plan {planner_agent.role}") as plan_span:
-            plan_span.set_attribute("gen_ai.operation.name", "plan")
-            plan_span.set_attribute("gen_ai.agent.name", planner_agent.role)
+        plan_span_attributes = {
+            "gen_ai.operation.name": "plan",
+            "gen_ai.agent.name": planner_agent.role,
+        }
+        with _reference_tracer.start_as_current_span(f"plan {planner_agent.role}", attributes=plan_span_attributes):
             self._create_planning_agent = lambda: planner_agent
             try:
                 return original_handle(self)
