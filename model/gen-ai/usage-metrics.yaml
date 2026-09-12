@@ -1,0 +1,177 @@
+file_format: definition/2
+attribute_groups:
+  - id: metric_attributes.gen_ai.inference_usage
+    visibility: internal
+    attributes:
+      - ref_group: metric_attributes.gen_ai
+      - ref: gen_ai.token.modality
+        requirement_level: required
+metrics:
+  - name: gen_ai.client.inference.usage.input_tokens
+    requirement_level: recommended
+    instrument: histogram
+    unit: "{token}"
+    brief: 'The number of input (prompt) tokens used per inference operation.'
+    note: &token_usage_note >
+      This metric SHOULD be reported when an operation involves the usage
+      of tokens and the count is readily available.
+
+      For example, if GenAI system returns usage information in the streaming response,
+      it SHOULD be used. Or if GenAI system returns each token independently,
+      instrumentation SHOULD count number of output tokens and record the result.
+
+      If instrumentation cannot efficiently obtain number of input and/or output tokens,
+      it MAY allow users to enable offline token counting. Otherwise it MUST NOT report usage metrics.
+
+      When systems report both used tokens and billable tokens, instrumentation MUST report billable tokens.
+    stability: development
+    annotations:
+      code_generation:
+        metric_value_type: int
+    attributes:
+      - ref_group: metric_attributes.gen_ai
+  - name: gen_ai.client.inference.usage.output_tokens
+    requirement_level: recommended
+    instrument: histogram
+    unit: "{token}"
+    brief: 'The number of output (completion) tokens used per inference operation.'
+    note: *token_usage_note
+    stability: development
+    annotations:
+      code_generation:
+        metric_value_type: int
+    attributes:
+      - ref_group: metric_attributes.gen_ai
+
+  - name: gen_ai.client.inference.usage.detailed.input_tokens
+    requirement_level: recommended
+    instrument: counter
+    unit: "{token}"
+    brief: 'The number of input (prompt) tokens used, including cached tokens.'
+    note: &inference_usage_note >
+      This metric SHOULD be reported when an operation involves the usage of
+      tokens and the count is readily available.
+
+      When systems report both used tokens and billable tokens, instrumentation
+      MUST report billable tokens.
+    stability: development
+    annotations:
+      code_generation:
+        metric_value_type: int
+    attributes:
+      - ref_group: metric_attributes.gen_ai.inference_usage
+  - name: gen_ai.client.inference.usage.detailed.output_tokens
+    requirement_level: recommended
+    instrument: counter
+    unit: "{token}"
+    brief: 'The number of output (completion) tokens used, including reasoning tokens.'
+    note: *inference_usage_note
+    stability: development
+    annotations:
+      code_generation:
+        metric_value_type: int
+    attributes:
+      - ref_group: metric_attributes.gen_ai.inference_usage
+  - name: gen_ai.client.inference.usage.detailed.cache_read.input_tokens
+    requirement_level: recommended
+    instrument: counter
+    unit: "{token}"
+    brief: 'The number of input tokens served from a provider-managed cache.'
+    note: >
+      This value is a subset of `gen_ai.client.inference.usage.detailed.input_tokens`.
+    stability: development
+    annotations:
+      code_generation:
+        metric_value_type: int
+    attributes:
+      - ref_group: metric_attributes.gen_ai.inference_usage
+  - name: gen_ai.client.inference.usage.detailed.cache_write.input_tokens
+    requirement_level: recommended
+    instrument: counter
+    unit: "{token}"
+    brief: 'The number of input tokens written to a provider-managed cache.'
+    note: >
+      This value is a subset of `gen_ai.client.inference.usage.detailed.input_tokens`.
+    stability: development
+    annotations:
+      code_generation:
+        metric_value_type: int
+    attributes:
+      - ref_group: metric_attributes.gen_ai.inference_usage
+  - name: gen_ai.client.inference.usage.detailed.reasoning.output_tokens
+    requirement_level: recommended
+    instrument: counter
+    unit: "{token}"
+    brief: 'The number of output tokens used for reasoning (e.g. chain-of-thought, extended thinking).'
+    note: >
+      This value is a subset of `gen_ai.client.inference.usage.detailed.output_tokens`.
+    stability: development
+    annotations:
+      code_generation:
+        metric_value_type: int
+    attributes:
+      - ref_group: metric_attributes.gen_ai.inference_usage
+metric_refinements:
+  - id: openai.client.inference.usage.input_tokens
+    ref: gen_ai.client.inference.usage.input_tokens
+    brief: >
+      OpenAI-specific extension to `gen_ai.client.inference.usage.input_tokens`. Adds
+      `openai.response.service_tier` and `openai.response.system_fingerprint`
+      when the provider is `openai`.
+    stability: development
+    attributes:
+      - ref_group: metric_attributes.openai
+  - id: openai.client.inference.usage.output_tokens
+    ref: gen_ai.client.inference.usage.output_tokens
+    brief: >
+      OpenAI-specific extension to `gen_ai.client.inference.usage.output_tokens`. Adds
+      `openai.response.service_tier` and `openai.response.system_fingerprint`
+      when the provider is `openai`.
+    stability: development
+    attributes:
+      - ref_group: metric_attributes.openai
+  - id: openai.client.inference.usage.detailed.input_tokens
+    ref: gen_ai.client.inference.usage.detailed.input_tokens
+    brief: >
+      OpenAI-specific extension to `gen_ai.client.inference.usage.detailed.input_tokens`. Adds
+      `openai.response.service_tier` and `openai.response.system_fingerprint`
+      when the provider is `openai`.
+    stability: development
+    attributes:
+      - ref_group: metric_attributes.openai
+  - id: openai.client.inference.usage.detailed.output_tokens
+    ref: gen_ai.client.inference.usage.detailed.output_tokens
+    brief: >
+      OpenAI-specific extension to `gen_ai.client.inference.usage.detailed.output_tokens`. Adds
+      `openai.response.service_tier` and `openai.response.system_fingerprint`
+      when the provider is `openai`.
+    stability: development
+    attributes:
+      - ref_group: metric_attributes.openai
+  - id: openai.client.inference.usage.detailed.cache_read.input_tokens
+    ref: gen_ai.client.inference.usage.detailed.cache_read.input_tokens
+    brief: >
+      OpenAI-specific extension to `gen_ai.client.inference.usage.detailed.cache_read.input_tokens`. Adds
+      `openai.response.service_tier` and `openai.response.system_fingerprint`
+      when the provider is `openai`.
+    stability: development
+    attributes:
+      - ref_group: metric_attributes.openai
+  - id: openai.client.inference.usage.detailed.cache_write.input_tokens
+    ref: gen_ai.client.inference.usage.detailed.cache_write.input_tokens
+    brief: >
+      OpenAI-specific extension to `gen_ai.client.inference.usage.detailed.cache_write.input_tokens`. Adds
+      `openai.response.service_tier` and `openai.response.system_fingerprint`
+      when the provider is `openai`.
+    stability: development
+    attributes:
+      - ref_group: metric_attributes.openai
+  - id: openai.client.inference.usage.detailed.reasoning.output_tokens
+    ref: gen_ai.client.inference.usage.detailed.reasoning.output_tokens
+    brief: >
+      OpenAI-specific extension to `gen_ai.client.inference.usage.detailed.reasoning.output_tokens`. Adds
+      `openai.response.service_tier` and `openai.response.system_fingerprint`
+      when the provider is `openai`.
+    stability: development
+    attributes:
+      - ref_group: metric_attributes.openai

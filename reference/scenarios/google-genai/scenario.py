@@ -9,11 +9,49 @@ import os
 from contextlib import contextmanager
 
 from opentelemetry.trace import SpanKind, StatusCode
-from reference_shared import flush_and_shutdown, reference_event_logger, reference_tracer, setup_otel
+from reference_shared import (
+    flush_and_shutdown,
+    reference_event_logger,
+    reference_meter,
+    reference_tracer,
+    setup_otel,
+)
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"]
 
 _reference_tracer = reference_tracer()
+_reference_meter = reference_meter()
+
+_operation_input_tokens = _reference_meter.create_histogram(
+    "gen_ai.client.inference.usage.input_tokens",
+    unit="{token}",
+    description="The number of input (prompt) tokens used per inference operation.",
+)
+_operation_output_tokens = _reference_meter.create_histogram(
+    "gen_ai.client.inference.usage.output_tokens",
+    unit="{token}",
+    description="The number of output (completion) tokens used per inference operation.",
+)
+_input_tokens = _reference_meter.create_counter(
+    "gen_ai.client.inference.usage.detailed.input_tokens",
+    unit="{token}",
+    description="The number of input (prompt) tokens used, including cached tokens.",
+)
+_output_tokens = _reference_meter.create_counter(
+    "gen_ai.client.inference.usage.detailed.output_tokens",
+    unit="{token}",
+    description="The number of output (completion) tokens used, including reasoning tokens.",
+)
+_cache_read_input_tokens = _reference_meter.create_counter(
+    "gen_ai.client.inference.usage.detailed.cache_read.input_tokens",
+    unit="{token}",
+    description="The number of input tokens served from a provider-managed cache.",
+)
+_reasoning_output_tokens = _reference_meter.create_counter(
+    "gen_ai.client.inference.usage.detailed.reasoning.output_tokens",
+    unit="{token}",
+    description="The number of output tokens used for reasoning.",
+)
 
 
 @contextmanager
@@ -129,6 +167,56 @@ def _usage_attributes(um):
     return attrs
 
 
+def _usage_metric_attributes(request_model, response):
+    """Build the attributes shared by every inference usage instrument."""
+    attributes = {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "gcp.gemini",
+        "gen_ai.request.model": request_model,
+    }
+    if response.model_version:
+        attributes["gen_ai.response.model"] = response.model_version
+    return attributes
+
+
+def _add_by_modality(counter, total, suffix, usage, metric_attributes):
+    """Split `total` across the modalities Google reported for `suffix`.
+
+    Whatever the per-modality entries leave unaccounted for goes to `unknown`:
+    tool-use prompt tokens and reasoning tokens are counted in the totals but
+    carry no modality of their own.
+    """
+    remainder = total
+    for modality in _MODALITY_MAP.values():
+        count = usage.get(f"gen_ai.usage.{modality}.{suffix}")
+        if count:
+            counter.add(count, {**metric_attributes, "gen_ai.token.modality": modality})
+            remainder -= count
+    if remainder > 0:
+        counter.add(remainder, {**metric_attributes, "gen_ai.token.modality": "unknown"})
+
+
+def _record_inference_usage(usage, metric_attributes):
+    """Record the usage instruments from the same `gen_ai.usage.*` values the span carries."""
+    input_tokens = usage.get("gen_ai.usage.input_tokens")
+    if input_tokens is not None:
+        _operation_input_tokens.record(input_tokens, metric_attributes)
+        _add_by_modality(_input_tokens, input_tokens, "input_tokens", usage, metric_attributes)
+    output_tokens = usage.get("gen_ai.usage.output_tokens")
+    if output_tokens is not None:
+        _operation_output_tokens.record(output_tokens, metric_attributes)
+        _add_by_modality(_output_tokens, output_tokens, "output_tokens", usage, metric_attributes)
+    cache_read_tokens = usage.get("gen_ai.usage.cache_read.input_tokens")
+    if cache_read_tokens:
+        _add_by_modality(
+            _cache_read_input_tokens, cache_read_tokens, "cache_read.input_tokens", usage, metric_attributes
+        )
+    reasoning_tokens = usage.get("gen_ai.usage.reasoning.output_tokens")
+    if reasoning_tokens:
+        # Google reports no modality for thoughts tokens.
+        _reasoning_output_tokens.add(reasoning_tokens, {**metric_attributes, "gen_ai.token.modality": "unknown"})
+
+
 def _emit_inference_event(request_model, input_messages, output_messages, response, usage):
     """Emit an inference-details event carrying the same usage attributes as the span."""
     event_attrs = {
@@ -184,6 +272,7 @@ def run_chat():
             usage = _usage_attributes(response.usage_metadata)
             for attr, value in usage.items():
                 span.set_attribute(attr, value)
+            _record_inference_usage(usage, _usage_metric_attributes(request_model, response))
 
         input_messages = [{"role": "user", "parts": [{"type": "text", "content": prompt_text}]}]
         output_messages = [
@@ -344,6 +433,7 @@ def run_chat_tool_call():
             usage = _usage_attributes(response.usage_metadata)
             for attr, value in usage.items():
                 span.set_attribute(attr, value)
+            _record_inference_usage(usage, _usage_metric_attributes(request_model, response))
 
         tool_call = None
         if response.candidates and response.candidates[0].content.parts:
@@ -404,6 +494,7 @@ def run_chat_multimodal():
             usage = _usage_attributes(response.usage_metadata)
             for attr, value in usage.items():
                 span.set_attribute(attr, value)
+            _record_inference_usage(usage, _usage_metric_attributes(request_model, response))
 
         input_messages = [
             {
@@ -458,6 +549,7 @@ def run_generate_media():
                 usage = _usage_attributes(response.usage_metadata)
                 for attr, value in usage.items():
                     span.set_attribute(attr, value)
+                _record_inference_usage(usage, _usage_metric_attributes(request_model, response))
 
             input_messages = [{"role": "user", "parts": [{"type": "text", "content": f"Generate {label} output."}]}]
             output_parts = []

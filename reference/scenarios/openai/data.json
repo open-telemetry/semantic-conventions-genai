@@ -84,7 +84,69 @@
       "server.port"
     ]
   },
-  "metrics": {},
+  "metrics": {
+    "gen_ai.client.inference.usage.detailed.cache_read.input_tokens": [
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "gen_ai.request.model",
+      "gen_ai.response.model",
+      "gen_ai.token.modality",
+      "server.address",
+      "server.port"
+    ],
+    "gen_ai.client.inference.usage.detailed.cache_write.input_tokens": [
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "gen_ai.request.model",
+      "gen_ai.response.model",
+      "gen_ai.token.modality",
+      "server.address",
+      "server.port"
+    ],
+    "gen_ai.client.inference.usage.detailed.input_tokens": [
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "gen_ai.request.model",
+      "gen_ai.response.model",
+      "gen_ai.token.modality",
+      "server.address",
+      "server.port"
+    ],
+    "gen_ai.client.inference.usage.detailed.output_tokens": [
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "gen_ai.request.model",
+      "gen_ai.response.model",
+      "gen_ai.token.modality",
+      "server.address",
+      "server.port"
+    ],
+    "gen_ai.client.inference.usage.detailed.reasoning.output_tokens": [
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "gen_ai.request.model",
+      "gen_ai.response.model",
+      "gen_ai.token.modality",
+      "server.address",
+      "server.port"
+    ],
+    "gen_ai.client.inference.usage.input_tokens": [
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "gen_ai.request.model",
+      "gen_ai.response.model",
+      "server.address",
+      "server.port"
+    ],
+    "gen_ai.client.inference.usage.output_tokens": [
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "gen_ai.request.model",
+      "gen_ai.response.model",
+      "server.address",
+      "server.port"
+    ]
+  },
   "findings": [
     {
       "id": "genai_content_schema",

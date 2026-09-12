@@ -395,19 +395,31 @@ attributes:
       and in `gen_ai.usage.audio.input_tokens`.
     examples: [60]
     stability: development
-  - key: gen_ai.token.type
+  - key: gen_ai.token.modality
     type:
       members:
-        - id: input
+        - id: text
           stability: development
-          value: "input"
-          brief: 'Input tokens (prompt, input, etc.)'
-        - id: output
+          value: "text"
+          brief: 'Text tokens.'
+        - id: image
           stability: development
-          value: "output"
-          brief: 'Output tokens (completion, response, etc.)'
-    brief: The type of token being counted.
-    examples: ['input', 'output']
+          value: "image"
+          brief: 'Image tokens.'
+        - id: audio
+          stability: development
+          value: "audio"
+          brief: 'Audio tokens.'
+        - id: unknown
+          stability: development
+          value: "unknown"
+          brief: 'The modality is not known.'
+    brief: The modality of the tokens being counted.
+    note: >
+      When the provider does not break usage down by modality and the modality
+      cannot be reliably determined, instrumentations SHOULD report the tokens
+      under the `unknown` modality.
+    examples: ['text', 'image', 'audio']
     stability: development
   - key: gen_ai.conversation.id
     type: string

@@ -7,6 +7,7 @@ from reference_shared import (
     flush_and_shutdown,
     mock_server_host_port,
     reference_event_logger,
+    reference_meter,
     reference_tracer,
     setup_otel,
 )
@@ -14,6 +15,95 @@ from reference_shared import (
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"] + "/v1"
 
 _reference_tracer = reference_tracer()
+_reference_meter = reference_meter()
+
+_operation_input_tokens = _reference_meter.create_histogram(
+    "gen_ai.client.inference.usage.input_tokens",
+    unit="{token}",
+    description="The number of input (prompt) tokens used per inference operation.",
+)
+_operation_output_tokens = _reference_meter.create_histogram(
+    "gen_ai.client.inference.usage.output_tokens",
+    unit="{token}",
+    description="The number of output (completion) tokens used per inference operation.",
+)
+_input_tokens = _reference_meter.create_counter(
+    "gen_ai.client.inference.usage.detailed.input_tokens",
+    unit="{token}",
+    description="The number of input (prompt) tokens used, including cached tokens.",
+)
+_output_tokens = _reference_meter.create_counter(
+    "gen_ai.client.inference.usage.detailed.output_tokens",
+    unit="{token}",
+    description="The number of output (completion) tokens used, including reasoning tokens.",
+)
+_cache_read_input_tokens = _reference_meter.create_counter(
+    "gen_ai.client.inference.usage.detailed.cache_read.input_tokens",
+    unit="{token}",
+    description="The number of input tokens served from a provider-managed cache.",
+)
+_cache_write_input_tokens = _reference_meter.create_counter(
+    "gen_ai.client.inference.usage.detailed.cache_write.input_tokens",
+    unit="{token}",
+    description="The number of input tokens written to a provider-managed cache.",
+)
+_reasoning_output_tokens = _reference_meter.create_counter(
+    "gen_ai.client.inference.usage.detailed.reasoning.output_tokens",
+    unit="{token}",
+    description="The number of output tokens used for reasoning.",
+)
+
+
+def usage_metric_attributes(request_model, response_model, host, port):
+    """Build the attributes shared by every inference usage instrument."""
+    attributes = {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "openai",
+        "gen_ai.request.model": request_model,
+    }
+    if response_model:
+        attributes["gen_ai.response.model"] = response_model
+    if host:
+        attributes["server.address"] = host
+    if port is not None:
+        attributes["server.port"] = port
+    return attributes
+
+
+def _add_by_modality(counter, total, audio_tokens, metric_attributes):
+    """Split `total` into its audio and unknown parts and add each to `counter`."""
+    if audio_tokens:
+        counter.add(audio_tokens, {**metric_attributes, "gen_ai.token.modality": "audio"})
+    remainder = total - (audio_tokens or 0)
+    if remainder:
+        counter.add(remainder, {**metric_attributes, "gen_ai.token.modality": "unknown"})
+
+
+def record_inference_usage(usage, metric_attributes):
+    """Record the usage instruments from the same `gen_ai.usage.*` values the span carries.
+
+    OpenAI only breaks usage down by audio tokens, so the rest of the input and output
+    goes to the `unknown` modality: the API gives no evidence that it is text. Cached,
+    cache-written, and reasoning tokens carry no modality breakdown at all.
+    """
+    input_tokens = usage.get("gen_ai.usage.input_tokens")
+    if input_tokens is not None:
+        _operation_input_tokens.record(input_tokens, metric_attributes)
+        _add_by_modality(_input_tokens, input_tokens, usage.get("gen_ai.usage.audio.input_tokens"), metric_attributes)
+    output_tokens = usage.get("gen_ai.usage.output_tokens")
+    if output_tokens is not None:
+        _operation_output_tokens.record(output_tokens, metric_attributes)
+        _add_by_modality(
+            _output_tokens, output_tokens, usage.get("gen_ai.usage.audio.output_tokens"), metric_attributes
+        )
+    for attribute, counter in (
+        ("gen_ai.usage.cache_read.input_tokens", _cache_read_input_tokens),
+        ("gen_ai.usage.cache_write.input_tokens", _cache_write_input_tokens),
+        ("gen_ai.usage.reasoning.output_tokens", _reasoning_output_tokens),
+    ):
+        value = usage.get(attribute)
+        if value is not None:
+            counter.add(value, {**metric_attributes, "gen_ai.token.modality": "unknown"})
 
 
 def chat_finish_reasons(choices, expected_count=None):
@@ -154,16 +244,21 @@ def run_chat_reference(client):
             for c in resp.choices
         ]
         span.set_attribute("gen_ai.output.messages", json.dumps(output_messages))
+        # Build usage attributes once so the span, the event, and the metrics stay identical.
+        usage = {}
         if resp.usage:
-            span.set_attribute("gen_ai.usage.input_tokens", resp.usage.prompt_tokens)
-            span.set_attribute("gen_ai.usage.output_tokens", resp.usage.completion_tokens)
+            usage["gen_ai.usage.input_tokens"] = resp.usage.prompt_tokens
+            usage["gen_ai.usage.output_tokens"] = resp.usage.completion_tokens
             cached_tokens = getattr(
                 getattr(resp.usage, "prompt_tokens_details", None),
                 "cached_tokens",
                 None,
             )
             if cached_tokens is not None:
-                span.set_attribute("gen_ai.usage.cache_read.input_tokens", cached_tokens)
+                usage["gen_ai.usage.cache_read.input_tokens"] = cached_tokens
+        for attr, value in usage.items():
+            span.set_attribute(attr, value)
+        record_inference_usage(usage, usage_metric_attributes(request_model, resp.model, host, port))
 
         # Emit inference operation details event
         event_attrs = {
@@ -176,16 +271,7 @@ def run_chat_reference(client):
             "gen_ai.input.messages": input_messages,
             "gen_ai.output.messages": json.dumps(output_messages),
         }
-        if resp.usage:
-            event_attrs["gen_ai.usage.input_tokens"] = resp.usage.prompt_tokens
-            event_attrs["gen_ai.usage.output_tokens"] = resp.usage.completion_tokens
-            cached_tokens = getattr(
-                getattr(resp.usage, "prompt_tokens_details", None),
-                "cached_tokens",
-                None,
-            )
-            if cached_tokens is not None:
-                event_attrs["gen_ai.usage.cache_read.input_tokens"] = cached_tokens
+        event_attrs.update(usage)
         if host:
             event_attrs["server.address"] = host
         if port is not None:
@@ -265,6 +351,7 @@ def run_responses_compaction_reference(client):
                 usage["gen_ai.usage.reasoning.output_tokens"] = reasoning_tokens
         for attr, value in usage.items():
             span.set_attribute(attr, value)
+        record_inference_usage(usage, usage_metric_attributes(request_model, response.model, host, port))
 
         event_attrs = {
             "gen_ai.operation.name": "chat",
@@ -352,9 +439,13 @@ def run_responses_continuation_reference(client):
         output_messages = responses_output_messages(response)
         if output_messages:
             span.set_attribute("gen_ai.output.messages", json.dumps(output_messages))
+        usage = {}
         if response.usage:
-            span.set_attribute("gen_ai.usage.input_tokens", response.usage.input_tokens)
-            span.set_attribute("gen_ai.usage.output_tokens", response.usage.output_tokens)
+            usage["gen_ai.usage.input_tokens"] = response.usage.input_tokens
+            usage["gen_ai.usage.output_tokens"] = response.usage.output_tokens
+        for attr, value in usage.items():
+            span.set_attribute(attr, value)
+        record_inference_usage(usage, usage_metric_attributes(request_model, response.model, host, port))
 
         event_attrs = {
             "gen_ai.operation.name": "chat",
@@ -371,9 +462,7 @@ def run_responses_continuation_reference(client):
             event_attrs["gen_ai.response.finish_reasons"] = [finish_reason]
         if output_messages:
             event_attrs["gen_ai.output.messages"] = json.dumps(output_messages)
-        if response.usage:
-            event_attrs["gen_ai.usage.input_tokens"] = response.usage.input_tokens
-            event_attrs["gen_ai.usage.output_tokens"] = response.usage.output_tokens
+        event_attrs.update(usage)
         if host:
             event_attrs["server.address"] = host
         if port is not None:
@@ -449,10 +538,14 @@ def run_chat_streaming_reference(client):
                 "parts": [{"type": "text", "content": text}],
             }
             span.set_attribute("gen_ai.output.messages", json.dumps([output_message]))
+        usage = {}
         if input_tokens is not None:
-            span.set_attribute("gen_ai.usage.input_tokens", input_tokens)
+            usage["gen_ai.usage.input_tokens"] = input_tokens
         if output_tokens is not None:
-            span.set_attribute("gen_ai.usage.output_tokens", output_tokens)
+            usage["gen_ai.usage.output_tokens"] = output_tokens
+        for attr, value in usage.items():
+            span.set_attribute(attr, value)
+        record_inference_usage(usage, usage_metric_attributes(request_model, model, host, port))
         print(f"    -> {text[:60]}")
 
 
@@ -499,9 +592,13 @@ def run_chat_tool_call_reference(client):
         span.set_attribute("gen_ai.response.model", resp.model)
         span.set_attribute("gen_ai.response.id", resp.id)
         span.set_attribute("gen_ai.response.finish_reasons", chat_finish_reasons(resp.choices))
+        usage = {}
         if resp.usage:
-            span.set_attribute("gen_ai.usage.input_tokens", resp.usage.prompt_tokens)
-            span.set_attribute("gen_ai.usage.output_tokens", resp.usage.completion_tokens)
+            usage["gen_ai.usage.input_tokens"] = resp.usage.prompt_tokens
+            usage["gen_ai.usage.output_tokens"] = resp.usage.completion_tokens
+        for attr, value in usage.items():
+            span.set_attribute(attr, value)
+        record_inference_usage(usage, usage_metric_attributes(request_model, resp.model, host, port))
         choice = resp.choices[0]
         if choice.message.tool_calls:
             # The base client returns the tool call; running it is app code the
@@ -588,9 +685,13 @@ def run_chat_with_document_input_reference(client):
             for c in resp.choices
         ]
         span.set_attribute("gen_ai.output.messages", json.dumps(output_messages))
+        usage = {}
         if resp.usage:
-            span.set_attribute("gen_ai.usage.input_tokens", resp.usage.prompt_tokens)
-            span.set_attribute("gen_ai.usage.output_tokens", resp.usage.completion_tokens)
+            usage["gen_ai.usage.input_tokens"] = resp.usage.prompt_tokens
+            usage["gen_ai.usage.output_tokens"] = resp.usage.completion_tokens
+        for attr, value in usage.items():
+            span.set_attribute(attr, value)
+        record_inference_usage(usage, usage_metric_attributes(request_model, resp.model, host, port))
         print(f"    -> {resp.choices[0].message.content[:60]}")
 
 
@@ -654,10 +755,15 @@ def run_chat_image_reference(client):
             for c in resp.choices
         ]
         span.set_attribute("gen_ai.output.messages", json.dumps(output_messages))
+        usage = {}
         if resp.usage:
-            span.set_attribute("gen_ai.usage.input_tokens", resp.usage.prompt_tokens)
-            span.set_attribute("gen_ai.usage.output_tokens", resp.usage.completion_tokens)
-            # OpenAI does not report per-modality image token counts in prompt_tokens_details
+            usage["gen_ai.usage.input_tokens"] = resp.usage.prompt_tokens
+            usage["gen_ai.usage.output_tokens"] = resp.usage.completion_tokens
+        for attr, value in usage.items():
+            span.set_attribute(attr, value)
+        # OpenAI does not report per-modality image token counts, so the counters put
+        # these tokens under the `unknown` modality even though the input is an image.
+        record_inference_usage(usage, usage_metric_attributes(request_model, resp.model, host, port))
         print(f"    -> {resp.choices[0].message.content[:60]}")
 
 
@@ -730,6 +836,7 @@ def run_chat_audio_reference(client):
         span.set_attribute("gen_ai.response.finish_reasons", finish_reasons)
         for attr, value in usage.items():
             span.set_attribute(attr, value)
+        record_inference_usage(usage, usage_metric_attributes(request_model, resp.model, host, port))
 
         output_messages = json.dumps(
             [
@@ -854,9 +961,13 @@ def run_responses_with_prompt_template_reference(client):
                     ]
                 ),
             )
+        usage = {}
         if resp.usage:
-            span.set_attribute("gen_ai.usage.input_tokens", resp.usage.input_tokens)
-            span.set_attribute("gen_ai.usage.output_tokens", resp.usage.output_tokens)
+            usage["gen_ai.usage.input_tokens"] = resp.usage.input_tokens
+            usage["gen_ai.usage.output_tokens"] = resp.usage.output_tokens
+        for attr, value in usage.items():
+            span.set_attribute(attr, value)
+        record_inference_usage(usage, usage_metric_attributes(request_model, resp.model, host, port))
         finish_reason = responses_finish_reason(resp)
         if finish_reason is not None:
             span.set_attribute("gen_ai.response.finish_reasons", [finish_reason])
@@ -878,9 +989,7 @@ def run_responses_with_prompt_template_reference(client):
             event_attrs["gen_ai.output.messages"] = json.dumps(
                 [{"role": "assistant", "parts": [{"type": "text", "content": output_text}]}]
             )
-        if resp.usage:
-            event_attrs["gen_ai.usage.input_tokens"] = resp.usage.input_tokens
-            event_attrs["gen_ai.usage.output_tokens"] = resp.usage.output_tokens
+        event_attrs.update(usage)
         if host:
             event_attrs["server.address"] = host
         if port is not None:
