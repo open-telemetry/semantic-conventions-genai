@@ -915,10 +915,10 @@ def _emit_fetch_response_span(client, response_id, starting_after=None):
     - `gen_ai.request.stream_cursor` is the resume cursor (OpenAI `starting_after`),
       a request-side parameter available at the call boundary, recorded only when
       the fetch resumes a streamed response from a prior position.
-    - Token usage is intentionally NOT recorded: no inference happens here, and
-      the fetched response's token counts belong to the original generation.
-      Recording them would double-count tokens when summing spans in a
-      multi-step run.
+    - `gen_ai.usage.input_tokens` and `gen_ai.usage.output_tokens` come from
+      `usage` on the fetched response object when present. They describe the
+      original generation identified by `gen_ai.response.id`, a snapshot that is
+      not additive across spans. A `failed` response without usage sets neither.
     - `openai.api.type` is `responses`; `openai.response.service_tier` comes from
       the fetched object.
     """
@@ -969,9 +969,10 @@ def _emit_fetch_response_span(client, response_id, starting_after=None):
         output_messages = responses_output_messages(fetched)
         if output_messages:
             span.set_attribute("gen_ai.output.messages", json.dumps(output_messages))
-        # Token usage is intentionally NOT recorded on this span: no inference
-        # happens on a fetch, and the fetched response's token counts belong to
-        # the original generation (already accounted for on that operation).
+        usage = getattr(fetched, "usage", None)
+        if usage is not None:
+            span.set_attribute("gen_ai.usage.input_tokens", usage.input_tokens)
+            span.set_attribute("gen_ai.usage.output_tokens", usage.output_tokens)
         print(f"    -> fetched {fetched.id} (status={getattr(fetched, 'status', None)})")
 
 

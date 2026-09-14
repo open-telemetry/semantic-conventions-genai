@@ -349,6 +349,18 @@ spans:
     note: |
       The `gen_ai.operation.name` SHOULD be `fetch_response`.
 
+      The fetch consumes no tokens, and token usage metrics are not reported for this operation.
+      Token usage carried on the fetched response describes the generation identified by
+      `gen_ai.response.id`. The same values may also be present on the inference span that
+      started that generation and on other `fetch_response` spans for the same identifier, so
+      `gen_ai.usage.*` attributes on this span MUST NOT be summed across spans. Consumers SHOULD
+      keep one value per `gen_ai.response.id`.
+
+      For background execution, where the client polls with `fetch_response` until the response
+      reaches a terminal status, the fetch that observes the terminal status is the first place
+      the client sees usage. A fetch of a response that is still `queued` or `in_progress`
+      carries no usage.
+
     stability: development
     attributes:
       - ref_group: attributes.gen_ai.address_and_port
@@ -400,6 +412,18 @@ spans:
           derived from its status: a completed generation maps to its stop reason, an incomplete
           one to why it was cut short (for example `length` or `content_filter`), and a failed or
           cancelled generation to `error`.
+      - ref: gen_ai.usage.input_tokens
+        requirement_level:
+          recommended: If the fetched response carries token usage.
+        note: >
+          The input token count of the generation identified by `gen_ai.response.id`, as carried
+          on the fetched response. A snapshot of that generation, not additive across spans.
+      - ref: gen_ai.usage.output_tokens
+        requirement_level:
+          recommended: If the fetched response carries token usage.
+        note: >
+          The output token count of the generation identified by `gen_ai.response.id`, as carried
+          on the fetched response. A snapshot of that generation, not additive across spans.
 
   - type: gen_ai.memory.client
     requirement_level: recommended
@@ -780,6 +804,14 @@ span_refinements:
       - ref: openai.response.service_tier
         requirement_level:
           conditionally_required: If the response was received and includes a service_tier.
+      - ref: gen_ai.usage.input_tokens
+        note: >
+          Corresponds to `usage.input_tokens` on the fetched response. Absent while the response
+          is `queued` or `in_progress`, and on a `failed` response without usage.
+      - ref: gen_ai.usage.output_tokens
+        note: >
+          Corresponds to `usage.output_tokens` on the fetched response. Absent while the response
+          is `queued` or `in_progress`, and on a `failed` response without usage.
 
   - id: azure.ai.inference.client
     ref: gen_ai.inference.client

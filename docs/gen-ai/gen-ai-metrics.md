@@ -127,7 +127,7 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 | `update_memory` | Update existing memory records | ![Development](https://img.shields.io/badge/-development-blue) |
 | `upsert_memory` | Create or update memory records without the caller choosing which | ![Development](https://img.shields.io/badge/-development-blue) |
 
-**[6]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
+**[6]:** The fetch itself consumes no tokens and instrumentations SHOULD NOT report token usage metrics for this operation. Token usage carried on the fetched response describes the original generation. The `fetch_response` span defines how it is recorded.
 
 ---
 
@@ -263,7 +263,7 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 | `update_memory` | Update existing memory records | ![Development](https://img.shields.io/badge/-development-blue) |
 | `upsert_memory` | Create or update memory records without the caller choosing which | ![Development](https://img.shields.io/badge/-development-blue) |
 
-**[8]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
+**[8]:** The fetch itself consumes no tokens and instrumentations SHOULD NOT report token usage metrics for this operation. Token usage carried on the fetched response describes the original generation. The `fetch_response` span defines how it is recorded.
 
 ---
 
@@ -377,7 +377,7 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 | `update_memory` | Update existing memory records | ![Development](https://img.shields.io/badge/-development-blue) |
 | `upsert_memory` | Create or update memory records without the caller choosing which | ![Development](https://img.shields.io/badge/-development-blue) |
 
-**[6]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
+**[6]:** The fetch itself consumes no tokens and instrumentations SHOULD NOT report token usage metrics for this operation. Token usage carried on the fetched response describes the original generation. The `fetch_response` span defines how it is recorded.
 
 ---
 
@@ -491,7 +491,7 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 | `update_memory` | Update existing memory records | ![Development](https://img.shields.io/badge/-development-blue) |
 | `upsert_memory` | Create or update memory records without the caller choosing which | ![Development](https://img.shields.io/badge/-development-blue) |
 
-**[6]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
+**[6]:** The fetch itself consumes no tokens and instrumentations SHOULD NOT report token usage metrics for this operation. Token usage carried on the fetched response describes the original generation. The `fetch_response` span defines how it is recorded.
 
 ---
 
@@ -625,7 +625,7 @@ Instrumentations SHOULD document the list of errors they report.
 | `update_memory` | Update existing memory records | ![Development](https://img.shields.io/badge/-development-blue) |
 | `upsert_memory` | Create or update memory records without the caller choosing which | ![Development](https://img.shields.io/badge/-development-blue) |
 
-**[7]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
+**[7]:** The fetch itself consumes no tokens and instrumentations SHOULD NOT report token usage metrics for this operation. Token usage carried on the fetched response describes the original generation. The `fetch_response` span defines how it is recorded.
 
 ---
 
@@ -746,7 +746,7 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 | `update_memory` | Update existing memory records | ![Development](https://img.shields.io/badge/-development-blue) |
 | `upsert_memory` | Create or update memory records without the caller choosing which | ![Development](https://img.shields.io/badge/-development-blue) |
 
-**[6]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
+**[6]:** The fetch itself consumes no tokens and instrumentations SHOULD NOT report token usage metrics for this operation. Token usage carried on the fetched response describes the original generation. The `fetch_response` span defines how it is recorded.
 
 ---
 
@@ -866,7 +866,7 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 | `update_memory` | Update existing memory records | ![Development](https://img.shields.io/badge/-development-blue) |
 | `upsert_memory` | Create or update memory records without the caller choosing which | ![Development](https://img.shields.io/badge/-development-blue) |
 
-**[6]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
+**[6]:** The fetch itself consumes no tokens and instrumentations SHOULD NOT report token usage metrics for this operation. Token usage carried on the fetched response describes the original generation. The `fetch_response` span defines how it is recorded.
 
 ---
 

@@ -624,7 +624,9 @@ attributes:
           value: "fetch_response"
           brief: 'Fetch a previously generated model response by its identifier, without performing inference, such as [OpenAI Get a model response](https://platform.openai.com/docs/api-reference/responses/get)'
           note: >
-             Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
+             The fetch itself consumes no tokens and instrumentations SHOULD NOT report token usage
+             metrics for this operation. Token usage carried on the fetched response describes the
+             original generation. The `fetch_response` span defines how it is recorded.
           stability: development
         - id: create_agent
           value: "create_agent"
