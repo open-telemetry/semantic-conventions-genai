@@ -362,6 +362,9 @@ spans:
           recommended: When applicable.
         note: >
           The value SHOULD be included in `gen_ai.usage.output_tokens`.
+      - ref: gen_ai.conversation.id
+        requirement_level:
+          conditionally_required: If and only if the instrumented library has one readily available, or the user application provides one through OpenTelemetry context or library-specific mechanisms.
       - ref: gen_ai.realtime_session.id
         requirement_level:
           conditionally_required: If the provider exposes a session identifier, or the instrumentation uses a client-created per-connection identifier.

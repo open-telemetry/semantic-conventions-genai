@@ -11,6 +11,7 @@
 
 | Attribute | Supporting Libraries |
 | --- | --- |
+| gen_ai.conversation.id | (none) |
 | gen_ai.output.type | [google-genai], [openai] |
 | gen_ai.realtime_session.id | [openai] |
 | gen_ai.request.model | [google-genai], [openai] |
