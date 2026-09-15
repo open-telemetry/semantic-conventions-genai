@@ -279,31 +279,18 @@ spans:
         Semantic conventions for individual GenAI systems and frameworks MAY specify different span name format
         and MUST follow the overall [guidelines for span names](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.56.0/specification/trace/api.md#span).
     brief: >
-      Describes one server-side model generation within a realtime, bidirectional streaming
-      session (such as OpenAI Realtime or Gemini Live).
+      This span represents one server-side model generation within a realtime, bidirectional
+      streaming session (such as OpenAI Realtime or Gemini Live).
     note: |
-      Unlike `gen_ai.inference.client`, this span is not a single client-timed request/response.
-      A *generation* is one server-side model response within the realtime session (the model's
-      spoken or textual turn). The client streams user audio continuously and the server streams
-      incremental events; the generation is reconstructed from those events. The span SHOULD start
-      at the first output chunk of the generation (or at an earlier voice-activity end anchor when
-      the provider exposes one) and end at the generation completion or interruption event. If
-      token usage (`gen_ai.usage.*`) is reported after the completion event, instrumentation
-      SHOULD wait for it before ending the span.
+      The span SHOULD start at the first output chunk of the generation (or at an earlier
+      voice-activity end anchor when the provider exposes one) and end at the generation completion
+      or interruption event. If token usage (`gen_ai.usage.*`) is reported after the completion
+      event, instrumentation SHOULD wait for it before ending the span.
 
-      Instrumentation SHOULD NOT create this span by default when the expected generation
-      duration can be long (for example minutes or more), such as speech translation or
-      transcription or other cases where there is no conversation between the user and the model.
-      Instrumentations MAY use the model name or other heuristics available in the instrumented
-      library to determine whether the call is expected to be conversational.
+      Instrumentation SHOULD NOT create this span by default for generations expected to be
+      long-running or non-conversational, such as speech translation or transcription.
 
       The `gen_ai.operation.name` SHOULD be `realtime_inference`.
-
-      The realtime session itself is not modeled as a span. It is represented by the
-      `gen_ai.client.realtime_session.started` and `gen_ai.client.realtime_session.ended` events and by
-      `gen_ai.realtime_session.id` correlating the generations within it. Turn-level spans (a full
-      user-and-model exchange) are out of scope: turn boundaries cannot be detected reliably
-      across providers.
 
       When a generation calls a tool, the realtime API returns the tool call to the client, which
       runs the tool and sends the result back to the model. Tool execution in a realtime session
@@ -311,25 +298,6 @@ spans:
       observe it and will not emit a `gen_ai.execute_tool.internal` span; the tool exchange is
       captured as `tool_call` / `tool_call_response` parts instead. Instrumentation at a layer that
       dispatches the tool, such as an agent framework, should emit it as usual.
-
-      How the tool exchange is distributed across generations is provider-dependent. It determines
-      where the `tool_call` / `tool_call_response` parts land and, when a dispatching layer emits
-      it, where the `gen_ai.execute_tool.internal` span sits:
-
-      - Sibling pattern (OpenAI Realtime, Gemini Live 2.5): the provider closes the generation, the
-        client runs the tool, then a second generation produces the answer. The `tool_call` part is
-        on the first generation's output and the `tool_call_response` part is on the answer
-        generation's input; a `gen_ai.execute_tool.internal` span, if emitted, is a sibling of the
-        two generations.
-      - Child pattern (Gemini Live 3.x): a single generation stays open across the tool round-trip,
-        so the intermediate tool exchange is not surfaced as separate message parts; a
-        `gen_ai.execute_tool.internal` span, if emitted, is a child of that single generation.
-
-      A single normative recommendation across providers is not yet established.
-
-      When the provider exposes user voice-activity events, the user speech MAY additionally be
-      modeled by an optional `gen_ai.user_speech.internal` span; otherwise the user input is carried
-      on this span through `gen_ai.input.messages`.
     stability: development
     attributes:
       - ref_group: attributes.gen_ai.common
