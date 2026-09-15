@@ -531,7 +531,7 @@ following `gen_ai.realtime_inference.client` span through
 
 **Status:** ![Development](https://img.shields.io/badge/-development-blue)
 
-Describes the capture of a user speech utterance within a realtime, bidirectional speech-to-speech session, delimited by the provider's user voice-activity (start/stop) events.
+This span represents the capture of a user speech utterance within a realtime, bidirectional speech-to-speech session, delimited by the provider's user voice-activity (start/stop) events.
 
 This span is optional and provider-dependent. It SHOULD be recorded only when the provider
 exposes user voice-activity detection (VAD) events that bracket when the user started and
@@ -539,23 +539,7 @@ stopped speaking (for example OpenAI Realtime `input_audio_buffer.speech_started
 `input_audio_buffer.speech_stopped`). The span SHOULD start at the user-speech-start event
 and end at the user-speech-stop event.
 
-This span is speech-specific: its justification is the user's speaking interval reconstructed
-from VAD events. Text and other non-speech input have no such interval and are not modeled by
-this span; they are carried on the `gen_ai.realtime_inference.client` span through
-`gen_ai.input.messages` instead.
-
-Its duration is the user's speaking interval, not an outbound request, so the span kind is
-`INTERNAL`. Session-scoped attributes (such as `server.address`, `server.port`, and
-`gen_ai.request.model`) are not recorded on this span; the user speech is correlated to the
-session and its generations through `gen_ai.realtime_session.id`.
-
-Providers that do not expose user VAD events (such as the Gemini Developer API) cannot
-record this span. In that case the user input is carried on the
-`gen_ai.realtime_inference.client` span through `gen_ai.input.messages` instead.
-
-The `gen_ai.operation.name` SHOULD be `user_speech`. The generations that respond to this
-speech are correlated through `gen_ai.realtime_session.id` when the provider exposes a session
-identifier.
+The `gen_ai.operation.name` SHOULD be `user_speech`.
 
 **Span name** SHOULD be `{gen_ai.operation.name}`.
 Semantic conventions for individual GenAI systems and frameworks MAY specify a different span name format.
