@@ -148,6 +148,7 @@ def run_agent_reference():
         with _reference_tracer.start_as_current_span(
             "execute_tool get_weather", attributes=tool_span_attributes
         ) as tool_span:
+            tool_span.set_attribute("gen_ai.conversation.id", tool_context.session.id)
             tool_span.set_attribute("gen_ai.tool.description", "Get the current weather.")
             if tool_context.function_call_id:
                 tool_span.set_attribute("gen_ai.tool.call.id", tool_context.function_call_id)

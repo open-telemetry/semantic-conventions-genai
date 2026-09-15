@@ -608,6 +608,9 @@ spans:
         sampling_relevant: true
       - ref: gen_ai.agent.name
         sampling_relevant: true
+      - ref: gen_ai.conversation.id
+        requirement_level:
+          conditionally_required: If and only if the instrumented library has one readily available, or the user application provides one through OpenTelemetry context or library-specific mechanisms.
       - ref: gen_ai.tool.call.arguments
         requirement_level: opt_in
       - ref: gen_ai.tool.call.result
