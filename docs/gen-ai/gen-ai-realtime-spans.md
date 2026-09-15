@@ -159,20 +159,24 @@ user-and-model exchange) are out of scope: turn boundaries cannot be detected re
 across providers.
 
 When a generation calls a tool, the realtime API returns the tool call to the client, which
-runs the tool and sends the result back to the model. This client-side tool execution is
-application code, not a model operation, so a realtime generation does not emit a
-`gen_ai.execute_tool.internal` span. The tool exchange is instead captured as message parts:
-the model's request as a `tool_call` output part and the client's result as a
-`tool_call_response` input part.
+runs the tool and sends the result back to the model. Tool execution in a realtime session
+for client-side tools is performed by the client, so a provider-SDK instrumentation cannot
+observe it and will not emit a `gen_ai.execute_tool.internal` span; the tool exchange is
+captured as `tool_call` / `tool_call_response` parts instead. Instrumentation at a layer that
+dispatches the tool, such as an agent framework, should emit it as usual.
 
-How those parts are distributed across generations is provider-dependent:
+How the tool exchange is distributed across generations is provider-dependent. It determines
+where the `tool_call` / `tool_call_response` parts land and, when a dispatching layer emits
+it, where the `gen_ai.execute_tool.internal` span sits:
 
 - Sibling pattern (OpenAI Realtime, Gemini Live 2.5): the provider closes the generation, the
   client runs the tool, then a second generation produces the answer. The `tool_call` part is
   on the first generation's output and the `tool_call_response` part is on the answer
-  generation's input.
+  generation's input; a `gen_ai.execute_tool.internal` span, if emitted, is a sibling of the
+  two generations.
 - Child pattern (Gemini Live 3.x): a single generation stays open across the tool round-trip,
-  so the intermediate tool exchange is not surfaced as separate message parts.
+  so the intermediate tool exchange is not surfaced as separate message parts; a
+  `gen_ai.execute_tool.internal` span, if emitted, is a child of that single generation.
 
 A single normative recommendation across providers is not yet established.
 
