@@ -54,7 +54,23 @@
     ]
   },
   "metrics": {
-    "gen_ai.client.inference.usage.detailed.cache_read.input_tokens": [
+    "gen_ai.client.inference.operation.input_tokens": [
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "gen_ai.request.model",
+      "gen_ai.response.model",
+      "server.address",
+      "server.port"
+    ],
+    "gen_ai.client.inference.operation.output_tokens": [
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "gen_ai.request.model",
+      "gen_ai.response.model",
+      "server.address",
+      "server.port"
+    ],
+    "gen_ai.client.inference.usage.cache_read.input_tokens": [
       "gen_ai.operation.name",
       "gen_ai.provider.name",
       "gen_ai.request.model",
@@ -63,25 +79,7 @@
       "server.address",
       "server.port"
     ],
-    "gen_ai.client.inference.usage.detailed.cache_write.input_tokens": [
-      "gen_ai.operation.name",
-      "gen_ai.provider.name",
-      "gen_ai.request.model",
-      "gen_ai.response.model",
-      "gen_ai.token.modality",
-      "server.address",
-      "server.port"
-    ],
-    "gen_ai.client.inference.usage.detailed.input_tokens": [
-      "gen_ai.operation.name",
-      "gen_ai.provider.name",
-      "gen_ai.request.model",
-      "gen_ai.response.model",
-      "gen_ai.token.modality",
-      "server.address",
-      "server.port"
-    ],
-    "gen_ai.client.inference.usage.detailed.output_tokens": [
+    "gen_ai.client.inference.usage.cache_write.input_tokens": [
       "gen_ai.operation.name",
       "gen_ai.provider.name",
       "gen_ai.request.model",
@@ -95,6 +93,7 @@
       "gen_ai.provider.name",
       "gen_ai.request.model",
       "gen_ai.response.model",
+      "gen_ai.token.modality",
       "server.address",
       "server.port"
     ],
@@ -103,6 +102,7 @@
       "gen_ai.provider.name",
       "gen_ai.request.model",
       "gen_ai.response.model",
+      "gen_ai.token.modality",
       "server.address",
       "server.port"
     ],

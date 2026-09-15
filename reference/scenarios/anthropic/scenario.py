@@ -24,32 +24,32 @@ MOCK_BASE_URL = os.environ["MOCK_LLM_URL"]
 _reference_meter = reference_meter()
 
 _operation_input_tokens = _reference_meter.create_histogram(
-    "gen_ai.client.inference.usage.input_tokens",
+    "gen_ai.client.inference.operation.input_tokens",
     unit="{token}",
     description="The number of input (prompt) tokens used per inference operation.",
 )
 _operation_output_tokens = _reference_meter.create_histogram(
-    "gen_ai.client.inference.usage.output_tokens",
+    "gen_ai.client.inference.operation.output_tokens",
     unit="{token}",
     description="The number of output (completion) tokens used per inference operation.",
 )
 _input_tokens = _reference_meter.create_counter(
-    "gen_ai.client.inference.usage.detailed.input_tokens",
+    "gen_ai.client.inference.usage.input_tokens",
     unit="{token}",
     description="The number of input (prompt) tokens used, including cached tokens.",
 )
 _output_tokens = _reference_meter.create_counter(
-    "gen_ai.client.inference.usage.detailed.output_tokens",
+    "gen_ai.client.inference.usage.output_tokens",
     unit="{token}",
     description="The number of output (completion) tokens used, including reasoning tokens.",
 )
 _cache_read_input_tokens = _reference_meter.create_counter(
-    "gen_ai.client.inference.usage.detailed.cache_read.input_tokens",
+    "gen_ai.client.inference.usage.cache_read.input_tokens",
     unit="{token}",
     description="The number of input tokens served from a provider-managed cache.",
 )
 _cache_write_input_tokens = _reference_meter.create_counter(
-    "gen_ai.client.inference.usage.detailed.cache_write.input_tokens",
+    "gen_ai.client.inference.usage.cache_write.input_tokens",
     unit="{token}",
     description="The number of input tokens written to a provider-managed cache.",
 )

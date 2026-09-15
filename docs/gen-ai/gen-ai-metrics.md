@@ -42,9 +42,9 @@ distinct action within a larger Generative AI workflow.
 Individual systems may include additional system-specific attributes.
 It is recommended to check system-specific documentation, if available.
 
-Inference token usage metrics (`gen_ai.client.inference.usage.*`
-histograms and `gen_ai.client.inference.usage.detailed.*` counters) are defined in
-[Inference Usage Metrics](gen-ai-inference-usage-metrics.md).
+Inference token metrics (`gen_ai.client.inference.usage.*` counters and
+`gen_ai.client.inference.operation.*` histograms) are defined in
+[Inference Token Metrics](gen-ai-token-metrics.md).
 
 ### Metric: `gen_ai.client.operation.duration`
 

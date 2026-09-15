@@ -53,13 +53,13 @@ _EVENTS = {
 # call attributed to exactly one invocation across the call tree (#336). This list
 # records what the reference scenarios emit, not what instrumentations should emit.
 _METRICS = {
-    "gen_ai.client.inference.usage.input_tokens": "Client Inference Input Tokens",
-    "gen_ai.client.inference.usage.output_tokens": "Client Inference Output Tokens",
-    "gen_ai.client.inference.usage.detailed.input_tokens": "Client Inference Detailed Input Tokens",
-    "gen_ai.client.inference.usage.detailed.output_tokens": "Client Inference Detailed Output Tokens",
-    "gen_ai.client.inference.usage.detailed.cache_read.input_tokens": "Client Inference Detailed Cache Read Input Tokens",
-    "gen_ai.client.inference.usage.detailed.cache_write.input_tokens": "Client Inference Detailed Cache Write Input Tokens",
-    "gen_ai.client.inference.usage.detailed.reasoning.output_tokens": "Client Inference Detailed Reasoning Output Tokens",
+    "gen_ai.client.inference.usage.input_tokens": "Client Inference Usage Input Tokens",
+    "gen_ai.client.inference.usage.output_tokens": "Client Inference Usage Output Tokens",
+    "gen_ai.client.inference.usage.cache_read.input_tokens": "Client Inference Cache Read Input Tokens",
+    "gen_ai.client.inference.usage.cache_write.input_tokens": "Client Inference Cache Write Input Tokens",
+    "gen_ai.client.inference.usage.reasoning.output_tokens": "Client Inference Reasoning Output Tokens",
+    "gen_ai.client.inference.operation.input_tokens": "Client Inference Operation Input Tokens",
+    "gen_ai.client.inference.operation.output_tokens": "Client Inference Operation Output Tokens",
     "gen_ai.client.operation.duration": "Client Operation Duration",
     "gen_ai.invoke_agent.inference_calls": "Invoke Agent Inference Calls",
     "gen_ai.invoke_agent.tool_calls": "Invoke Agent Tool Calls",

@@ -1,6 +1,6 @@
-# Client Inference Detailed Reasoning Output Tokens Metric
+# Client Inference Reasoning Output Tokens Metric
 
-> **[Semantic Convention](../../docs/gen-ai/gen-ai-inference-usage-metrics.md#metric-gen_aiclientinferenceusagedetailedreasoningoutput_tokens)**
+> **[Semantic Convention](../../docs/gen-ai/gen-ai-token-metrics.md#metric-gen_aiclientinferenceusagereasoningoutput_tokens)**
 
 ## Required
 

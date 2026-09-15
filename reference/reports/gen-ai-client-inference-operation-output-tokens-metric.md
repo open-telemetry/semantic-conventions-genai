@@ -1,6 +1,6 @@
-# Client Inference Detailed Cache Read Input Tokens Metric
+# Client Inference Operation Output Tokens Metric
 
-> **[Semantic Convention](../../docs/gen-ai/gen-ai-inference-usage-metrics.md#metric-gen_aiclientinferenceusagedetailedcache_readinput_tokens)**
+> **[Semantic Convention](../../docs/gen-ai/gen-ai-token-metrics.md#metric-gen_aiclientinferenceoperationoutput_tokens)**
 
 ## Required
 
@@ -8,7 +8,6 @@
 | --- | --- |
 | gen_ai.operation.name | [anthropic], [google-genai], [openai] |
 | gen_ai.provider.name | [anthropic], [google-genai], [openai] |
-| gen_ai.token.modality | [anthropic], [google-genai], [openai] |
 
 ## Conditionally Required
 
