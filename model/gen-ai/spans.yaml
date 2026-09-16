@@ -367,6 +367,9 @@ spans:
         requirement_level: required
         note: >
           The identifier of the response being fetched, as used in the request and returned in the response.
+      - ref: gen_ai.request.stream
+        requirement_level:
+          conditionally_required: If and only if the request is streaming. If unset, the request is assumed to be non-streaming.
       - ref: gen_ai.request.stream_cursor
         requirement_level:
           conditionally_required: When the fetch resumes a streamed response from a prior position.
@@ -534,6 +537,9 @@ spans:
         sampling_relevant: true
       - ref: server.port
         sampling_relevant: true
+      - ref: gen_ai.request.stream
+        requirement_level:
+          conditionally_required: If and only if the request is streaming. If unset, the request is assumed to be non-streaming.
       - ref: gen_ai.request.previous_response.id
         requirement_level:
           recommended: When available and if the request references a previous response.

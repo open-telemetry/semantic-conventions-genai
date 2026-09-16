@@ -277,6 +277,53 @@ def run_interactions_continuation():
         print(f"    -> previous_response_id: {previous_interaction_id}")
 
 
+def run_interactions_streaming():
+    """Scenario: Google GenAI Interactions API streaming."""
+    from google import genai
+    from google.genai import types
+    from google.genai.interactions import Interaction
+
+    print("  [interactions_streaming] interactions streaming via Google GenAI (reference implementation)")
+    client = genai.Client(
+        api_key="mock-key",
+        http_options=types.HttpOptions(
+            base_url=MOCK_BASE_URL,
+            api_version="v1beta",
+        ),
+    )
+    request_model = "gemini-2.0-flash"
+    prompt_text = "Tell me a joke."
+    span_attributes = {
+        "gen_ai.operation.name": "invoke_agent",
+        "gen_ai.provider.name": "gcp.gemini",
+        "gen_ai.request.model": request_model,
+        "gen_ai.agent.name": "interactions_agent",
+        "gen_ai.request.stream": True,
+    }
+    with _reference_tracer.start_as_current_span(
+        "invoke_agent interactions_agent", kind=SpanKind.CLIENT, attributes=span_attributes
+    ) as span:
+        interaction_stream = client.interactions.create(
+            model=request_model,
+            input=prompt_text,
+            stream=True,
+        )
+        if isinstance(interaction_stream, Interaction):
+            if interaction_stream.id:
+                span.set_attribute("gen_ai.response.id", interaction_stream.id)
+            if interaction_stream.model:
+                span.set_attribute("gen_ai.response.model", str(interaction_stream.model))
+            if interaction_stream.usage:
+                if interaction_stream.usage.total_input_tokens:
+                    span.set_attribute("gen_ai.usage.input_tokens", interaction_stream.usage.total_input_tokens)
+                if interaction_stream.usage.total_output_tokens:
+                    span.set_attribute("gen_ai.usage.output_tokens", interaction_stream.usage.total_output_tokens)
+        else:
+            for _event in interaction_stream:
+                pass
+        print("    -> streaming interaction completed")
+
+
 def run_chat_tool_call():
     """Scenario: chat with tool calling with reference implementation."""
     from google import genai
@@ -607,6 +654,7 @@ def main():
 
     run_chat()
     run_interactions_continuation()
+    run_interactions_streaming()
     run_chat_tool_call()
     run_chat_multimodal()
     run_generate_media()

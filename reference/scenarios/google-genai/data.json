@@ -51,6 +51,7 @@
       "gen_ai.provider.name",
       "gen_ai.request.model",
       "gen_ai.request.previous_response.id",
+      "gen_ai.request.stream",
       "gen_ai.usage.input_tokens",
       "gen_ai.usage.output_tokens"
     ]
@@ -82,10 +83,13 @@
     ]
   },
   "metrics": {},
+  "entities": {},
   "findings": [
     {
       "id": "genai_content_schema",
       "message": "Attribute 'gen_ai.tool.definitions' value does not conform to the GenAI schema: {\"function_declarations\":[{\"description\":\"Get the current weather\",\"name\":\"get_weather\",\"parameters\":{\"properties\":{\"location\":{\"description\":\"City name\",\"type\":\"string\"}},\"required\":[\"location\"],\"type\":\"object\"}}]} is not valid under any of the schemas listed in the 'anyOf' keyword",
+      "signal_type": "span",
+      "signal_name": "chat gemini-2.0-flash",
       "context": {
         "attribute": "gen_ai.tool.definitions",
         "errors": "{\"function_declarations\":[{\"description\":\"Get the current weather\",\"name\":\"get_weather\",\"parameters\":{\"properties\":{\"location\":{\"description\":\"City name\",\"type\":\"string\"}},\"required\":[\"location\"],\"type\":\"object\"}}]} is not valid under any of the schemas listed in the 'anyOf' keyword"
@@ -94,6 +98,8 @@
     {
       "id": "genai_expected_attribute_missing",
       "message": "Span 'chat gemini-2.0-flash' (operation 'chat') is missing expected attribute 'gen_ai.response.id'",
+      "signal_type": "span",
+      "signal_name": "chat gemini-2.0-flash",
       "context": {
         "missing_attribute": "gen_ai.response.id",
         "operation": "chat"
@@ -102,6 +108,8 @@
     {
       "id": "genai_expected_attribute_missing",
       "message": "Span 'chat gemini-2.0-flash' (operation 'chat') is missing expected attribute 'gen_ai.response.model'",
+      "signal_type": "span",
+      "signal_name": "chat gemini-2.0-flash",
       "context": {
         "missing_attribute": "gen_ai.response.model",
         "operation": "chat"
@@ -110,6 +118,8 @@
     {
       "id": "genai_expected_attribute_missing",
       "message": "Span 'chat gemini-2.0-flash' (operation 'chat') is missing expected attribute 'server.address'",
+      "signal_type": "span",
+      "signal_name": "chat gemini-2.0-flash",
       "context": {
         "missing_attribute": "server.address",
         "operation": "chat"
@@ -118,6 +128,8 @@
     {
       "id": "genai_expected_attribute_missing",
       "message": "Span 'create_agent reference-agent' (operation 'create_agent') is missing expected attribute 'server.address'",
+      "signal_type": "span",
+      "signal_name": "create_agent reference-agent",
       "context": {
         "missing_attribute": "server.address",
         "operation": "create_agent"
@@ -126,6 +138,8 @@
     {
       "id": "genai_expected_attribute_missing",
       "message": "Span 'invoke_agent interactions_agent' (operation 'invoke_agent') is missing expected attribute 'gen_ai.response.finish_reasons'",
+      "signal_type": "span",
+      "signal_name": "invoke_agent interactions_agent",
       "context": {
         "missing_attribute": "gen_ai.response.finish_reasons",
         "operation": "invoke_agent"
@@ -134,11 +148,12 @@
     {
       "id": "genai_expected_attribute_missing",
       "message": "Span 'invoke_agent interactions_agent' (operation 'invoke_agent') is missing expected attribute 'server.address'",
+      "signal_type": "span",
+      "signal_name": "invoke_agent interactions_agent",
       "context": {
         "missing_attribute": "server.address",
         "operation": "invoke_agent"
       }
     }
-  ],
-  "entities": {}
+  ]
 }

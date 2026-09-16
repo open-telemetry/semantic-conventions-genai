@@ -32,6 +32,7 @@
       "gen_ai.provider.name",
       "gen_ai.request.max_tokens",
       "gen_ai.request.model",
+      "gen_ai.request.stream",
       "gen_ai.request.temperature",
       "gen_ai.request.top_p",
       "gen_ai.system_instructions",
