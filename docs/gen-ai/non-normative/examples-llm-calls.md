@@ -11,6 +11,7 @@
   - [Multimodal output example](#multimodal-output-example)
 - [Tool calls (functions)](#tool-calls-functions)
   - [GenAI client spans when content capturing is disabled](#genai-client-spans-when-content-capturing-is-disabled)
+    - [Application-specific custom attributes](#application-specific-custom-attributes)
   - [GenAI client spans when content capturing is enabled on span attributes](#genai-client-spans-when-content-capturing-is-enabled-on-span-attributes)
 - [System instructions along with chat history (content enabled)](#system-instructions-along-with-chat-history-content-enabled)
 - [Chat completion with reasoning (content enabled)](#chat-completion-with-reasoning-content-enabled)
@@ -375,6 +376,29 @@ If tool call is [instrumented according to execute-tool span definition](/docs/g
 | `gen_ai.tool.name`      | `"get_weather"`                   |
 | `gen_ai.operation.name` | `"execute_tool"`                  |
 | `gen_ai.tool.type`      | `"function"`                      |
+
+#### Application-specific custom attributes
+
+Applications can attach additional custom attributes to spans when they need to
+correlate telemetry with application records outside the OpenTelemetry GenAI
+semantic conventions. Such attributes are not defined by this specification and
+should not be expected from OpenTelemetry GenAI instrumentations. Applications
+should namespace them to avoid conflicts, such as `acme.custom.attribute`.
+
+Custom attributes can be added to any span, including GenAI client spans,
+execute-tool spans, or surrounding application spans. They are application
+claims only; consumers must independently validate any external record before
+treating a custom attribute as authorization, verification, or policy evidence.
+
+For example, an application could add its own custom correlation attributes to
+the execute-tool span:
+
+| Property                | Value                             |
+| ----------------------- | --------------------------------- |
+| `gen_ai.tool.call.id`   | `"call_VSPygqKTWdrhaFErNvMV18Yl"` |
+| `gen_ai.tool.name`      | `"get_weather"`                   |
+| `gen_ai.operation.name` | `"execute_tool"`                  |
+| `acme.custom.attribute` | `"custom-value"`                  |
 
 **GenAI client span 2:**
 
