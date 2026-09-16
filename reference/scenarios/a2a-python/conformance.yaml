@@ -1,0 +1,38 @@
+runner: genai-conformance
+instrumented_library: a2a-python
+instrumentation_library: reference
+
+scenarios:
+  reference:
+    run: uv run --frozen --python 3.12 --project . python scenario.py
+    spans:
+      - match:
+          attributes:
+            a2a.method.name: SendMessage
+          kind: client
+          type: a2a.client
+      - match:
+          attributes:
+            a2a.method.name: SendStreamingMessage
+          kind: client
+          type: a2a.client
+      - match:
+          attributes:
+            a2a.method.name: GetTask
+          kind: client
+          type: a2a.client
+      - match:
+          attributes:
+            a2a.method.name: SendMessage
+          kind: server
+          type: a2a.server
+      - match:
+          attributes:
+            a2a.method.name: SendStreamingMessage
+          kind: server
+          type: a2a.server
+      - match:
+          attributes:
+            a2a.method.name: GetTask
+          kind: server
+          type: a2a.server
