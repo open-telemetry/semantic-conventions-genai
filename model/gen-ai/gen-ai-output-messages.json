@@ -34,6 +34,20 @@
                     "description": "The general modality of the data if it is known. Instrumentations SHOULD also set the mimeType field if the specific type is known.",
                     "title": "Modality"
                 },
+                "byte_size": {
+                    "anyOf": [
+                        {
+                            "minimum": 0,
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Size of the captured payload in bytes \u2014 the raw decoded byte length, not the length of the base64-encoded `content` string on the wire. Useful for cost-of-capture telemetry and storage planning.",
+                    "title": "Byte Size"
+                },
                 "content": {
                     "description": "Raw bytes of the attached data. This field SHOULD be encoded as a base64 string when serialized to JSON.",
                     "format": "binary",
@@ -126,6 +140,20 @@
                     ],
                     "description": "The general modality of the data if it is known. Instrumentations SHOULD also set the mimeType field if the specific type is known.",
                     "title": "Modality"
+                },
+                "byte_size": {
+                    "anyOf": [
+                        {
+                            "minimum": 0,
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Size of the referenced file in bytes, as observed by the instrumentation at capture time. Useful for cost-of-capture telemetry and storage planning.",
+                    "title": "Byte Size"
                 },
                 "file_id": {
                     "description": "An identifier referencing a file that was pre-uploaded to the provider.",
@@ -550,6 +578,20 @@
                     ],
                     "description": "The general modality of the data if it is known. Instrumentations SHOULD also set the mimeType field if the specific type is known.",
                     "title": "Modality"
+                },
+                "byte_size": {
+                    "anyOf": [
+                        {
+                            "minimum": 0,
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Size of the URI-referenced payload in bytes, as observed by the instrumentation at capture time. Useful for cost-of-capture telemetry and storage planning.",
+                    "title": "Byte Size"
                 },
                 "uri": {
                     "description": "A URI referencing attached data. It should not be a base64 data URL, which should use the `blob` part instead. The URI may use a scheme known to the provider api (e.g. `gs://bucket/object.png`), or be a publicly accessible location.",

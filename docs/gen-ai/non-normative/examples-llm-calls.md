@@ -239,7 +239,11 @@ See the [normative JSON schema](/model/gen-ai/gen-ai-input-messages.json) for mo
         "mime_type": "image/png",
         "uri": "https://raw.githubusercontent.com/open-telemetry/opentelemetry.io/refs/heads/main/static/img/logos/opentelemetry-horizontal-color.png"
       },
-      // A video with a vendor specific URI
+      // A video with a vendor specific URI. `byte_size` is omitted here because
+      // the size of a pre-existing remote URI is generally not observable to the
+      // instrumentation without downloading the content. Set `byte_size` on a
+      // `uri` part only when the instrumentation observed the bytes before they
+      // became a URI (e.g. an inline payload uploaded to an object store).
       {
         "type": "uri",
         "modality": "video",
@@ -257,11 +261,13 @@ See the [normative JSON schema](/model/gen-ai/gen-ai-input-messages.json) for mo
         "modality": "image",
         "file_id": "provider_fileid_123"
       },
-      // An inline image
+      // An inline image. `byte_size` is unambiguous here because the
+      // instrumentation observed the payload directly.
       {
         "type": "blob",
         "modality": "image",
         "mime_type": "image/png",
+        "byte_size": 37,
         "content": "aGVsbG8gd29ybGQgaW1hZ2luZSB0aGlzIGlzIGFuIGltYWdlCg=="
       },
       // Inline audio
