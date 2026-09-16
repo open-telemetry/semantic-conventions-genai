@@ -10,7 +10,7 @@ events:
       independently from traces.
     stability: development
     attributes:
-      - ref_group: span.gen_ai.inference.client
+      - ref_group: span.gen_ai.client.inference
   - name: gen_ai.evaluation.result
     requirement_level: recommended
     brief: >

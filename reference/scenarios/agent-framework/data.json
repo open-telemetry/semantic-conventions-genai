@@ -1,15 +1,6 @@
 {
   "spans": {
-    "gen_ai.execute_tool.internal": [
-      "gen_ai.operation.name",
-      "gen_ai.tool.call.arguments",
-      "gen_ai.tool.call.id",
-      "gen_ai.tool.call.result",
-      "gen_ai.tool.description",
-      "gen_ai.tool.name",
-      "gen_ai.tool.type"
-    ],
-    "gen_ai.inference.client": [
+    "gen_ai.client.inference": [
       "gen_ai.conversation.id",
       "gen_ai.input.messages",
       "gen_ai.operation.name",
@@ -25,6 +16,15 @@
       "gen_ai.usage.output_tokens",
       "gen_ai.usage.reasoning.output_tokens",
       "server.address"
+    ],
+    "gen_ai.execute_tool.internal": [
+      "gen_ai.operation.name",
+      "gen_ai.tool.call.arguments",
+      "gen_ai.tool.call.id",
+      "gen_ai.tool.call.result",
+      "gen_ai.tool.description",
+      "gen_ai.tool.name",
+      "gen_ai.tool.type"
     ],
     "gen_ai.invoke_agent.internal": [
       "gen_ai.agent.description",

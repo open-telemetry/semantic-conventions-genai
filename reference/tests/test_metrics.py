@@ -43,7 +43,7 @@ def test_committed_google_adk_metrics_round_trip():
 def test_registry_span_names_map_onto_report_keys():
     """A data file names spans as the registry does; reports use short keys."""
     entry = _normalize_scenario_data_entry(
-        {"spans": {"gen_ai.inference.client": ["gen_ai.operation.name"]}},
+        {"spans": {"gen_ai.client.inference": ["gen_ai.operation.name"]}},
         "fake",
     )
     assert set(entry.spans) == {"inference"}

@@ -1,6 +1,6 @@
 # Inference Operation Details Event
 
-> **[Semantic Convention](../../docs/gen-ai/gen-ai-events.md#event-gen_aiclientinferenceoperationdetails)**
+> **[Semantic Convention](../../docs/gen-ai/client-inference.md#event-gen_aiclientinferenceoperationdetails)**
 
 ## Required
 

@@ -48,6 +48,9 @@ metrics:
     instrument: histogram
     unit: "s"
     brief: 'GenAI operation duration.'
+    note: >
+      This metric SHOULD NOT be reported for inference operations;
+      use `gen_ai.client.inference.duration` instead.
     stability: development
     annotations:
       code_generation:
@@ -58,27 +61,46 @@ metrics:
       - ref: gen_ai.provider.name
         requirement_level:
           conditionally_required: If the operation involves a call to a GenAI provider.
-  - name: gen_ai.client.operation.time_to_first_chunk
+  - name: gen_ai.client.inference.duration
     requirement_level: recommended
     instrument: histogram
     unit: "s"
-    brief: 'Time to receive the first chunk, measured from when the client issues the generation request to when the first chunk is received in the response stream.'
+    brief: 'GenAI client inference operation duration.'
     note: >
-      This metrics SHOULD be reported for streaming calls and SHOULD NOT be reported otherwise.
+      Represents the end-to-end duration of a model inference operation,
+      measured from when the client issues the inference request to when the
+      response is fully received or the operation terminates with an error.
+
+      When this metric is reported alongside a `gen_ai.client.inference`
+      span, the metric value SHOULD be the same as the span duration.
     stability: development
     annotations:
       code_generation:
         metric_value_type: double
     attributes:
       - ref_group: metric_attributes.gen_ai
-  - name: gen_ai.client.operation.time_per_output_chunk
+      - ref_group: attributes.gen_ai.error
+  - name: gen_ai.client.inference.time_to_first_chunk
+    requirement_level: recommended
+    instrument: histogram
+    unit: "s"
+    brief: 'Time to receive the first chunk, measured from when the client issues the generation request to when the first chunk is received in the response stream.'
+    note: >
+      This metric SHOULD be reported for streaming calls and SHOULD NOT be reported otherwise.
+    stability: development
+    annotations:
+      code_generation:
+        metric_value_type: double
+    attributes:
+      - ref_group: metric_attributes.gen_ai
+  - name: gen_ai.client.inference.time_per_output_chunk
     requirement_level: recommended
     instrument: histogram
     unit: "s"
     brief: >
       Time per output chunk, recorded for each chunk received after the first one, measured as the time elapsed from the end of the previous chunk to the end of the current chunk.
     note: >
-      This metrics SHOULD be reported for streaming calls and SHOULD NOT be reported otherwise.
+      This metric SHOULD be reported for streaming calls and SHOULD NOT be reported otherwise.
     stability: development
     annotations:
       code_generation:
@@ -272,6 +294,18 @@ metric_refinements:
     stability: development
     attributes:
       # - ref_group: metric_attributes.openai - does not work, https://github.com/open-telemetry/weaver/issues/1411
+      - ref: openai.response.service_tier
+        requirement_level: recommended
+      - ref: openai.response.system_fingerprint
+        requirement_level: recommended
+  - id: openai.client.inference.duration
+    ref: gen_ai.client.inference.duration
+    brief: >
+      OpenAI-specific extension to `gen_ai.client.inference.duration`. Adds
+      `openai.response.service_tier` and `openai.response.system_fingerprint`
+      when the provider is `openai`.
+    stability: development
+    attributes:
       - ref: openai.response.service_tier
         requirement_level: recommended
       - ref: openai.response.system_fingerprint
