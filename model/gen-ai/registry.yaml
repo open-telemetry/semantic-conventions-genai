@@ -1039,3 +1039,83 @@ attributes:
       what `gen_ai.workflow.name` means in the context of that framework.
     examples: ["multi_agent_rag", "customer_support_pipeline"]
     stability: development
+  - key: gen_ai.agent.execution.id
+    type: string
+    brief: Unique identifier for a single end-to-end execution run of an agent.
+    note: |
+      Distinct from `gen_ai.agent.id` (the agent's stable identity): the same
+      agent may produce many executions over time. This id ties together the
+      active execution segments of one logical run even when they are separated
+      by a suspend/resume boundary, a process restart, or export into different
+      traces. Instrumentations MUST record the same value on all agent
+      lifecycle events defined in this document that belong to the same
+      logical execution. The value MUST be unique among the executions of the
+      producing application.
+    examples: ["exec_01J9Z2K7Qn", "run-2026-08-09-reconciliation"]
+    stability: development
+  - key: gen_ai.agent.pause.id
+    type: string
+    brief: Identifier of a suspension boundary where agent execution paused awaiting an external condition.
+    note: |
+      Identifies one pause so that a later `gen_ai.agent.resumed` event may
+      name it via `gen_ai.agent.resumed_from.id`. The id only needs to be
+      unique within its `gen_ai.agent.execution.id`.
+    examples: ["pause_01J9Z3F", "approval-7741"]
+    stability: development
+  - key: gen_ai.agent.pause.reason
+    type:
+      members:
+        - id: human_input
+          value: "human_input"
+          brief: Paused awaiting human approval or input.
+          stability: development
+        - id: external_system
+          value: "external_system"
+          brief: Paused awaiting an external system or callback.
+          stability: development
+    brief: The reason agent execution paused.
+    examples: ["human_input", "external_system"]
+    stability: development
+  - key: gen_ai.agent.checkpoint.id
+    type: string
+    brief: Identifier of a persisted agent state checkpoint.
+    note: |
+      Used for durable-recovery correlation. When resumed work continues from a
+      checkpoint, this is the value carried in `gen_ai.agent.resumed_from.id`
+      with `gen_ai.agent.resumed_from.type` set to `checkpoint`.
+    examples: ["ck_001", "chk_8f3a2d"]
+    stability: development
+  - key: gen_ai.agent.resumed_from.type
+    type:
+      members:
+        - id: checkpoint
+          value: "checkpoint"
+          brief: The suspended boundary was a persisted checkpoint.
+          stability: development
+        - id: pause
+          value: "pause"
+          brief: The suspended boundary was a pause with no persisted checkpoint, such as a human-approval wait.
+          stability: development
+    brief: The kind of suspended boundary this resumed segment continues from.
+    note: |
+      Carrying the boundary kind at all means a consumer holding only the
+      resumed record can tell what it references without resolving the
+      counterpart event, which may be closed, sampled out, or exported in a
+      different trace. It is carried as a flat attribute alongside
+      `gen_ai.agent.resumed_from.id`, following `gen_ai.tool.type` and
+      `gen_ai.tool.call.id`. Instrumentations MUST record
+      `gen_ai.agent.resumed_from.type` and `gen_ai.agent.resumed_from.id`
+      together or not at all.
+    examples: ["checkpoint", "pause"]
+    stability: development
+  - key: gen_ai.agent.resumed_from.id
+    type: string
+    brief: Identifier of the suspended boundary this resumed segment continues from.
+    note: |
+      Carries the prior `gen_ai.agent.checkpoint.id` or `gen_ai.agent.pause.id`,
+      as indicated by `gen_ai.agent.resumed_from.type`. Together with a shared
+      `gen_ai.agent.execution.id`, this lets a backend reconstruct the
+      suspend/resume chain even when the original record is closed, sampled
+      out, or exported in a separate trace.
+    examples: ["ck_001", "pause_01J9Z3F"]
+    stability: development
