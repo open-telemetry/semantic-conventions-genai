@@ -1,6 +1,32 @@
 {
     "$defs": {
         "BlobPart": {
+            "anyOf": [
+                {
+                    "properties": {
+                        "content": {
+                            "not": {
+                                "type": "null"
+                            }
+                        }
+                    },
+                    "required": [
+                        "content"
+                    ]
+                },
+                {
+                    "properties": {
+                        "stripped_reason": {
+                            "not": {
+                                "type": "null"
+                            }
+                        }
+                    },
+                    "required": [
+                        "stripped_reason"
+                    ]
+                }
+            ],
             "description": "Represents blob binary data sent inline to the model",
             "properties": {
                 "type": {
@@ -35,16 +61,36 @@
                     "title": "Modality"
                 },
                 "content": {
-                    "description": "Raw bytes of the attached data. This field SHOULD be encoded as a base64 string when serialized to JSON.",
-                    "format": "binary",
-                    "title": "Content",
-                    "type": "string"
+                    "anyOf": [
+                        {
+                            "format": "binary",
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Raw bytes of the attached data. This field SHOULD be encoded as a base64 string when serialized to JSON. MAY be omitted when `stripped_reason` is set.",
+                    "title": "Content"
+                },
+                "stripped_reason": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "If set, indicates that the instrumentation observed an inline blob but intentionally did not capture its payload bytes. The value is a short free-form string describing why capture was skipped (examples: `size_exceeded`, `modality_not_allowed`, `redactor_error`, `upload_error`, `no_store_configured`). When `stripped_reason` is set the `content` field MAY be omitted.",
+                    "title": "Stripped Reason"
                 }
             },
             "required": [
                 "type",
-                "modality",
-                "content"
+                "modality"
             ],
             "title": "BlobPart",
             "type": "object"

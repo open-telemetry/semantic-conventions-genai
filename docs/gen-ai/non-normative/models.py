@@ -316,7 +316,81 @@ class ChatMessage(BaseModel):
 # --------------------------------------------------------------------------
 
 
-class InputMessages(RootModel[List[ChatMessage]]):
+class _GenAiInputMessageModels:
+    """
+    Namespace for the input-messages variants of the shared content-part
+    models. On the `gen_ai.input.messages` schema only, `BlobPart.content` is
+    optional and a `stripped_reason` marker records that the instrumentation
+    observed an inline blob but intentionally did not capture the payload
+    bytes. The variants deliberately reuse the shared class names so the
+    generated `$defs` keys (and the serialized wire format) stay identical
+    across the message schemas.
+    """
+
+    class BlobPart(BlobPart):
+        """Represents blob binary data sent inline to the model"""
+
+        content: Optional[bytes] = Field(
+            default=None,
+            description=(
+                "Raw bytes of the attached data. This field SHOULD be encoded as a "
+                "base64 string when serialized to JSON. MAY be omitted when "
+                "`stripped_reason` is set."
+            ),
+        )
+        stripped_reason: Optional[str] = Field(
+            default=None,
+            description=(
+                "If set, indicates that the instrumentation observed an inline blob but "
+                "intentionally did not capture its payload bytes. The value is a short "
+                "free-form string describing why capture was skipped (examples: "
+                "`size_exceeded`, `modality_not_allowed`, `redactor_error`, "
+                "`upload_error`, `no_store_configured`). When `stripped_reason` is set "
+                "the `content` field MAY be omitted."
+            ),
+        )
+
+        # JSON-schema-level constraint: serialized instances must carry either a
+        # non-null `content` or a non-null `stripped_reason` (or both). The
+        # Pydantic *runtime* model still allows both fields to be None; the
+        # constraint is exported via `json_schema_extra` and enforced by JSON
+        # schema validators on the consumer side.
+        model_config = ConfigDict(
+            json_schema_extra={
+                "anyOf": [
+                    {
+                        "properties": {"content": {"not": {"type": "null"}}},
+                        "required": ["content"],
+                    },
+                    {
+                        "properties": {"stripped_reason": {"not": {"type": "null"}}},
+                        "required": ["stripped_reason"],
+                    },
+                ]
+            }
+        )
+
+    MessagePart = Union[
+        TextPart,
+        ToolCallRequestPart,
+        ToolCallResponsePart,
+        ServerToolCallPart,
+        ServerToolCallResponsePart,
+        BlobPart,
+        FilePart,
+        UriPart,
+        ReasoningPart,
+        CompactionPart,
+        GenericPart,  # Catch-all for any other type
+    ]
+
+    class ChatMessage(ChatMessage):
+        parts: List[MessagePart] = Field(
+            description="List of message parts that make up the message content."
+        )
+
+
+class InputMessages(RootModel[List[_GenAiInputMessageModels.ChatMessage]]):
     """
     Represents the list of input messages sent to the model.
     """
