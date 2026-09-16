@@ -55,7 +55,7 @@ jobs:
 
       - name: Load shared version pins
         id: versions
-        uses: ./.github/actions/load-version-pins
+        uses: $/.github/actions/load-version-pins
 
       - name: Install Weaver
         uses: open-telemetry/weaver/.github/actions/setup-weaver@f8e1b42fbd1e09df5263c26b7df6011eaafd454d
@@ -75,7 +75,7 @@ jobs:
 
       - name: Load shared version pins
         id: versions
-        uses: ./.github/actions/load-version-pins
+        uses: $/.github/actions/load-version-pins
 
       - name: Install Weaver
         uses: open-telemetry/weaver/.github/actions/setup-weaver@f8e1b42fbd1e09df5263c26b7df6011eaafd454d
@@ -137,7 +137,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: ./.github/actions/setup-reference-tooling
+      - uses: $/.github/actions/setup-reference-tooling
 
       - name: Generate matrices
         id: matrices
@@ -159,7 +159,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: ./.github/actions/setup-reference-tooling
+      - uses: $/.github/actions/setup-reference-tooling
 
       - name: Run implementation scenario
         env:
@@ -188,7 +188,7 @@ jobs:
 
       - name: Load shared version pins
         id: versions
-        uses: ./.github/actions/load-version-pins
+        uses: $/.github/actions/load-version-pins
 
       # The reports are built from weaver's resolution of model/, which is
       # resolved on demand rather than committed.
@@ -197,7 +197,7 @@ jobs:
         with:
           version: '${{ steps.versions.outputs.weaver_version }}'
 
-      - uses: ./.github/actions/setup-reference-tooling
+      - uses: $/.github/actions/setup-reference-tooling
 
       - name: Generate status report
         run: uv run --locked update-reports
