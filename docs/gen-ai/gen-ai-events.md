@@ -31,7 +31,12 @@ The event name MUST be `gen_ai.client.inference.operation.details`.
 
 Describes the details of a GenAI completion request including chat history and parameters.
 
-This event could be used to store input and output details independently from traces.
+This event could be used to store input and output details
+independently from traces.
+
+When capturing this event, instrumentation SHOULD store it in the OpenTelemetry
+context using a language-defined context key. Downstream instrumentation MAY enrich
+the existing event and SHOULD NOT emit duplicate events for the same call.
 
 **Requirement level:** [Opt-In](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/signal-requirement-level.md).
 
