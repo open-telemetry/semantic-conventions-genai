@@ -1,7 +1,8 @@
 """Reference implementation for OpenAI Agents.
 
-Exercises: agent run with tool calling and a multi-agent run with handoffs
-wrapped in a workflow span, against a mock OpenAI server, with manual OTel spans.
+Exercises: agent run with tool calling, a multi-agent run with handoffs wrapped
+in a workflow span, and a workflow nested inside another workflow, against a
+mock OpenAI server, with manual OTel spans.
 """
 
 import asyncio
@@ -12,11 +13,68 @@ import openai
 from agents import Agent, RunConfig, Runner, function_tool
 from agents.models.openai_chatcompletions import OpenAIChatCompletionsModel
 from agents.tool import FunctionTool, ToolContext
-from reference_shared import flush_and_shutdown, reference_tracer, setup_otel
+from reference_shared import flush_and_shutdown, reference_meter, reference_tracer, setup_otel
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"] + "/v1"
 
+
 _reference_tracer = reference_tracer()
+_reference_meter = reference_meter()
+
+_workflow_inference_calls = _reference_meter.create_histogram(
+    "gen_ai.invoke_workflow.inference_calls",
+    unit="{inference_call}",
+    description="The number of inference (model) calls made during a single GenAI workflow execution.",
+)
+_workflow_tool_calls = _reference_meter.create_histogram(
+    "gen_ai.invoke_workflow.tool_calls",
+    unit="{tool_call}",
+    description="The number of tool calls made during a single GenAI workflow execution.",
+)
+_inference_calls = _reference_meter.create_histogram(
+    "gen_ai.invoke_agent.inference_calls",
+    unit="{inference_call}",
+    description="The number of inference (model) calls a GenAI agent makes during a single invocation.",
+)
+_tool_calls = _reference_meter.create_histogram(
+    "gen_ai.invoke_agent.tool_calls",
+    unit="{tool_call}",
+    description="The number of tool calls a GenAI agent makes during a single invocation.",
+)
+
+
+PROVIDER_HOSTED_ITEM_TYPES = frozenset(
+    {
+        "file_search_call",
+        "web_search_call",
+        "code_interpreter_call",
+        "image_generation_call",
+        "mcp_call",
+        "program",
+    }
+)
+
+
+def _client_side_tool_calls(run_items) -> int:
+    """Count the tool calls the model made for client-side execution.
+
+    Counts the call items the model issued, so a tool call that failed is
+    still counted, as the convention requires. `ToolCallItem` carries
+    client-side and provider-hosted calls alike, and the SDK delivers a raw
+    item either parsed or as a plain dict, so both forms are matched on their
+    `type`. `HandoffCallItem` is counted too, since a handoff is a tool call
+    the model made to route between agents.
+    """
+    from agents.items import HandoffCallItem, ToolCallItem
+
+    def is_provider_hosted(raw_item) -> bool:
+        item_type = raw_item.get("type") if isinstance(raw_item, dict) else getattr(raw_item, "type", None)
+        return item_type in PROVIDER_HOSTED_ITEM_TYPES
+
+    return sum(
+        isinstance(item, (ToolCallItem, HandoffCallItem)) and not is_provider_hosted(item.raw_item)
+        for item in run_items
+    )
 
 
 @function_tool
@@ -120,6 +178,11 @@ async def run_agent():
                     ]
                 ),
             )
+
+        # One agent and no handoffs, so the run's totals belong to it alone.
+        agent_metric_attributes = {"gen_ai.agent.name": agent.name}
+        _inference_calls.record(len(result.raw_responses), agent_metric_attributes)
+        _tool_calls.record(_client_side_tool_calls(result.new_items), agent_metric_attributes)
         print(f"    -> {str(result.final_output)[:60]}")
 
 
@@ -173,6 +236,97 @@ async def run_workflow():
             workflow_span.set_attribute("gen_ai.output.messages", output_messages)
         print(f"    -> {str(result.final_output)[:60]}")
 
+        # Totals cover every agent the run passed through, so they belong to
+        # the workflow grain.
+        workflow_metric_attributes = {"gen_ai.workflow.name": workflow_name}
+        _workflow_inference_calls.record(len(result.raw_responses), workflow_metric_attributes)
+        _workflow_tool_calls.record(_client_side_tool_calls(result.new_items), workflow_metric_attributes)
+
+
+async def run_nested_workflow():
+    """Run a workflow that invokes a second workflow from inside one of its tools.
+
+    `Runner.run` joins an enclosing trace instead of opening a second workflow,
+    so this scenario builds the nesting itself by giving the outer agent a tool
+    that runs another agent under its own workflow name.
+    """
+    client = openai.AsyncOpenAI(base_url=MOCK_BASE_URL, api_key="mock-key")
+    request_model = "gpt-4o-mini"
+    model = OpenAIChatCompletionsModel(model=request_model, openai_client=client)
+
+    researcher = Agent(
+        name="researcher",
+        instructions="Research the user's question using the tools you have.",
+        model=model,
+        tools=[get_weather],
+    )
+    inner_workflow_name = "web_research"
+    inner_result = None
+
+    @function_tool(name_override="web_research", description_override="Research a question end to end.")
+    async def web_research(question: str) -> str:
+        """Run the inner workflow and return its answer to the outer agent."""
+        nonlocal inner_result
+        inner_span_attributes = {"gen_ai.operation.name": "invoke_workflow"}
+        with _reference_tracer.start_as_current_span(
+            f"invoke_workflow {inner_workflow_name}", attributes=inner_span_attributes
+        ) as inner_span:
+            inner_span.set_attribute("gen_ai.workflow.name", inner_workflow_name)
+            inner_result = await Runner.run(
+                researcher, question, run_config=RunConfig(workflow_name=inner_workflow_name)
+            )
+            inner_metric_attributes = {"gen_ai.workflow.name": inner_workflow_name}
+            _workflow_inference_calls.record(len(inner_result.raw_responses), inner_metric_attributes)
+            _workflow_tool_calls.record(_client_side_tool_calls(inner_result.new_items), inner_metric_attributes)
+
+            # No handoffs here, so the run stays with the researcher and
+            # its totals belong to that one agent.
+            agent_metric_attributes = {"gen_ai.agent.name": researcher.name}
+            _inference_calls.record(len(inner_result.raw_responses), agent_metric_attributes)
+            _tool_calls.record(_client_side_tool_calls(inner_result.new_items), agent_metric_attributes)
+            return str(inner_result.final_output)
+
+    planner = Agent(
+        name="planner",
+        instructions="Plan the work and delegate research to the web_research tool.",
+        model=model,
+        tools=[web_research],
+    )
+    input_text = "What's the weather in Seattle?"
+
+    print("  [nested_workflow_run] workflow nested inside a workflow (reference implementation)")
+    outer_workflow_name = "research_assistant"
+    outer_span_attributes = {"gen_ai.operation.name": "invoke_workflow"}
+    with _reference_tracer.start_as_current_span(
+        f"invoke_workflow {outer_workflow_name}", attributes=outer_span_attributes
+    ) as outer_span:
+        outer_span.set_attribute("gen_ai.workflow.name", outer_workflow_name)
+        outer_span.set_attribute(
+            "gen_ai.input.messages", json.dumps([{"role": "user", "parts": [{"type": "text", "content": input_text}]}])
+        )
+        result = await Runner.run(planner, input_text, run_config=RunConfig(workflow_name=outer_workflow_name))
+        if result.final_output:
+            outer_span.set_attribute(
+                "gen_ai.output.messages",
+                json.dumps([{"role": "assistant", "parts": [{"type": "text", "content": str(result.final_output)}]}]),
+            )
+
+        # The outer RunResult does not include the inner run, so the
+        # enclosing workflow adds the inner counts to its own.
+        outer_metric_attributes = {"gen_ai.workflow.name": outer_workflow_name}
+        outer_inference = len(result.raw_responses)
+        outer_tools = _client_side_tool_calls(result.new_items)
+        if inner_result is not None:
+            outer_inference += len(inner_result.raw_responses)
+            outer_tools += _client_side_tool_calls(inner_result.new_items)
+        _workflow_inference_calls.record(outer_inference, outer_metric_attributes)
+        _workflow_tool_calls.record(outer_tools, outer_metric_attributes)
+
+        planner_metric_attributes = {"gen_ai.agent.name": planner.name}
+        _inference_calls.record(len(result.raw_responses), planner_metric_attributes)
+        _tool_calls.record(_client_side_tool_calls(result.new_items), planner_metric_attributes)
+        print(f"    -> {str(result.final_output)[:60]}")
+
 
 def main():
     print("=== Reference Implementation: OpenAI Agents Reference Implementation ===")
@@ -181,6 +335,7 @@ def main():
 
     asyncio.run(run_agent())
     asyncio.run(run_workflow())
+    asyncio.run(run_nested_workflow())
 
     flush_and_shutdown(tp, lp, mp)
 

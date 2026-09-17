@@ -30,6 +30,16 @@ _tool_calls = _reference_meter.create_histogram(
     unit="{tool_call}",
     description="The number of tool calls a GenAI agent makes during a single invocation.",
 )
+_workflow_inference_calls = _reference_meter.create_histogram(
+    "gen_ai.invoke_workflow.inference_calls",
+    unit="{inference_call}",
+    description="The number of inference (model) calls made during a single GenAI workflow execution.",
+)
+_workflow_tool_calls = _reference_meter.create_histogram(
+    "gen_ai.invoke_workflow.tool_calls",
+    unit="{tool_call}",
+    description="The number of tool calls made during a single GenAI workflow execution.",
+)
 
 
 class SpanCounter(SpanProcessor):
@@ -295,6 +305,12 @@ def run_agent_reference():
         metric_attributes = {"gen_ai.agent.name": agent.name}
         _inference_calls.record(call_counts["inference"], metric_attributes)
         _tool_calls.record(call_counts["tool"], metric_attributes)
+
+        # The same calls at workflow grain, under the name the invoke_workflow
+        # span used. One agent ran under one workflow, so the counts match.
+        workflow_metric_attributes = {"gen_ai.workflow.name": runner.app_name}
+        _workflow_inference_calls.record(call_counts["inference"], workflow_metric_attributes)
+        _workflow_tool_calls.record(call_counts["tool"], workflow_metric_attributes)
 
 
 def run_memory_reference():
