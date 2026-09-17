@@ -240,6 +240,14 @@
       "message": "Metric does not exist in the registry."
     },
     {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'chat gpt-4o-mini' (operation 'chat') is missing expected attribute 'gen_ai.usage.cost.amount'",
+      "context": {
+        "missing_attribute": "gen_ai.usage.cost.amount",
+        "operation": "chat"
+      }
+    },
+    {
       "id": "unit_mismatch",
       "message": "Unit should be '{token}', but found 'tokens'.",
       "context": {

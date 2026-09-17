@@ -17,6 +17,9 @@
       "gen_ai.response.id",
       "gen_ai.response.model",
       "gen_ai.tool.definitions",
+      "gen_ai.usage.cost.amount",
+      "gen_ai.usage.cost.currency",
+      "gen_ai.usage.cost.source",
       "gen_ai.usage.input_tokens",
       "gen_ai.usage.output_tokens"
     ]
@@ -34,7 +37,15 @@
       "gen_ai.usage.output_tokens"
     ]
   },
-  "metrics": {},
+  "metrics": {
+    "gen_ai.client.operation.cost": [
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "gen_ai.request.model",
+      "gen_ai.usage.cost.currency",
+      "gen_ai.usage.cost.source"
+    ]
+  },
   "findings": [
     {
       "id": "genai_content_schema",
@@ -64,6 +75,14 @@
       "message": "Span 'chat gpt-4o-mini' (operation 'chat') is missing expected attribute 'gen_ai.response.model'",
       "context": {
         "missing_attribute": "gen_ai.response.model",
+        "operation": "chat"
+      }
+    },
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'chat gpt-4o-mini' (operation 'chat') is missing expected attribute 'gen_ai.usage.cost.amount'",
+      "context": {
+        "missing_attribute": "gen_ai.usage.cost.amount",
         "operation": "chat"
       }
     },

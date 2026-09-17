@@ -22,6 +22,8 @@
 | gen_ai.request.seed | [openai] |
 | gen_ai.request.stream | [openai] |
 | gen_ai.request.top_k | (none) |
+| gen_ai.usage.cost.currency | [litellm] |
+| gen_ai.usage.cost.source | [litellm] |
 | server.port | [anthropic], [aws-bedrock], [azure-ai-inference], [azure-openai], [cohere], [mistralai], [openai] |
 
 ## Recommended
@@ -46,6 +48,7 @@
 | gen_ai.usage.audio.output_tokens | [google-genai], [openai] |
 | gen_ai.usage.cache_read.input_tokens | [agent-framework], [anthropic], [google-genai], [openai], [vertexai] |
 | gen_ai.usage.cache_write.input_tokens | [anthropic], [openai] |
+| gen_ai.usage.cost.amount | [litellm] |
 | gen_ai.usage.image.cache_read.input_tokens | [google-genai], [vertexai] |
 | gen_ai.usage.image.input_tokens | [google-genai], [vertexai] |
 | gen_ai.usage.image.output_tokens | [google-genai] |

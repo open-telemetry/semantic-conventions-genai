@@ -55,6 +55,7 @@ _EVENTS = {
 # records what the reference scenarios emit, not what instrumentations should emit.
 _METRICS = {
     "gen_ai.client.token.usage": "Client Token Usage",
+    "gen_ai.client.operation.cost": "Client Operation Cost",
     "gen_ai.client.operation.duration": "Client Operation Duration",
     "gen_ai.invoke_agent.inference_calls": "Invoke Agent Inference Calls",
     "gen_ai.invoke_agent.tool_calls": "Invoke Agent Tool Calls",
