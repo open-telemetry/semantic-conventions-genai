@@ -477,7 +477,11 @@ attributes:
     stability: development
   - key: gen_ai.tool.call.id
     type: string
-    brief: The tool call identifier.
+    brief: The tool call identifier supplied by the model or provider.
+    note: |
+      This attribute MUST carry the identifier generated and supplied by the model or provider.
+      Instrumentations MUST NOT synthesize, generate, or fall back to local identifiers
+      (such as memory addresses or sequential counters) when no provider identifier is available.
     examples: ['call_mszuSIzqtI65i1wAUOE8w5H4']
     stability: development
   - key: gen_ai.tool.description

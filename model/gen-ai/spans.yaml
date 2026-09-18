@@ -600,7 +600,7 @@ spans:
         sampling_relevant: true
       - ref: gen_ai.tool.call.id
         requirement_level:
-          recommended: If available.
+          conditionally_required: If the model or provider supplied a tool call identifier.
       - ref: gen_ai.tool.description
         requirement_level:
           recommended: If available.
