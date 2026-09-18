@@ -246,6 +246,33 @@
         "expected": "{token}",
         "unit": "tokens"
       }
+    },
+    {
+      "id": "genai_span_name_format",
+      "message": "execute_tool span name should be 'execute_tool' or 'execute_tool <value of gen_ai.tool.name>', got 'execute_tool load_skill code-review'",
+      "context": {
+        "expected_form": "execute_tool or 'execute_tool <gen_ai.tool.name>'",
+        "keyed_attr": "gen_ai.tool.name",
+        "operation": "execute_tool"
+      }
+    },
+    {
+      "id": "genai_span_name_format",
+      "message": "execute_tool span name should be 'execute_tool' or 'execute_tool <value of gen_ai.tool.name>', got 'execute_tool read_skill_resource code-review references/review_policy.md'",
+      "context": {
+        "expected_form": "execute_tool or 'execute_tool <gen_ai.tool.name>'",
+        "keyed_attr": "gen_ai.tool.name",
+        "operation": "execute_tool"
+      }
+    },
+    {
+      "id": "genai_span_name_format",
+      "message": "execute_tool span name should be 'execute_tool' or 'execute_tool <value of gen_ai.tool.name>', got 'execute_tool run_skill_script code-review scripts/run_checks.py'",
+      "context": {
+        "expected_form": "execute_tool or 'execute_tool <gen_ai.tool.name>'",
+        "keyed_attr": "gen_ai.tool.name",
+        "operation": "execute_tool"
+      }
     }
   ],
   "entities": {}
