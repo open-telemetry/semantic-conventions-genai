@@ -50,6 +50,12 @@ attributes:
           stability: development
           value: "aws.bedrock"
           brief: '[AWS Bedrock](https://aws.amazon.com/bedrock)'
+        - id: oracle_cloud.generative_ai
+          stability: development
+          value: "oracle_cloud.generative_ai"
+          brief: '[OCI Generative AI](https://docs.oracle.com/en-us/iaas/Content/generative-ai/home.htm)'
+          note: >
+            Used when accessing an 'inference.generativeai.<region>.oci.oraclecloud.com' endpoint.
         - id: perplexity
           stability: development
           value: "perplexity"
