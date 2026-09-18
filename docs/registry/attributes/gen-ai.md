@@ -454,7 +454,7 @@ what `gen_ai.workflow.name` means in the context of that framework.
 
 **[51]:** Used when accessing the 'aiplatform.googleapis.com' endpoint.
 
-**[51]:** Used when accessing an 'inference.generativeai.<region>.oci.oraclecloud.com' endpoint.
+**[51]:** Used when accessing an `inference.generativeai.<region>.oci.oraclecloud.com` endpoint.
 
 ---
 
