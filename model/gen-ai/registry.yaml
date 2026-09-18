@@ -55,7 +55,7 @@ attributes:
           value: "oracle_cloud.generative_ai"
           brief: '[OCI Generative AI](https://docs.oracle.com/en-us/iaas/Content/generative-ai/home.htm)'
           note: >
-            Used when accessing an 'inference.generativeai.<region>.oci.oraclecloud.com' endpoint.
+            Used when accessing an `inference.generativeai.<region>.oci.oraclecloud.com` endpoint.
         - id: perplexity
           stability: development
           value: "perplexity"

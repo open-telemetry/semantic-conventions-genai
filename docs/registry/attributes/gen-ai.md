@@ -560,7 +560,7 @@ reported following their own conventions.
 
 **[64]:** Used when accessing the 'aiplatform.googleapis.com' endpoint.
 
-**[51]:** Used when accessing an 'inference.generativeai.<region>.oci.oraclecloud.com' endpoint.
+**[51]:** Used when accessing an `inference.generativeai.<region>.oci.oraclecloud.com` endpoint.
 
 ---
 
