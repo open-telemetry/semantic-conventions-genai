@@ -26,6 +26,7 @@ import logging
 import sys
 
 from semconv_genai import conformance, reference_project_dir
+from semconv_genai.refinement_coverage import update_span_refinement_coverage
 from semconv_genai.scenarios import (
     build_reference_scenario_matrix,
     list_reference_libraries,
@@ -107,6 +108,8 @@ def main(argv: list[str] | None = None) -> int:
                 report_only=not args.strict,
                 extra_args=extra,
             )
+            if exit_code == 0:
+                update_span_refinement_coverage(reference_project_dir(library))
         except RuntimeError as e:
             # Fetching the runner, finding uv or installing weaver -- the
             # scenario never got to run, so say so rather than trace.
