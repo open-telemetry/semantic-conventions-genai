@@ -550,6 +550,7 @@ reported following their own conventions.
 | `moonshot_ai` | [Moonshot AI](https://www.moonshot.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `ollama` | [Ollama](https://ollama.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `openai` | [OpenAI](https://openai.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `oracle_cloud.generative_ai` | [OCI Generative AI](https://docs.oracle.com/en-us/iaas/Content/generative-ai/home.htm) [51] | ![Development](https://img.shields.io/badge/-development-blue) |
 | `perplexity` | [Perplexity](https://www.perplexity.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `x_ai` | [xAI](https://x.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 
@@ -558,6 +559,8 @@ reported following their own conventions.
 **[63]:** May be used when specific backend is unknown.
 
 **[64]:** Used when accessing the 'aiplatform.googleapis.com' endpoint.
+
+**[51]:** Used when accessing an 'inference.generativeai.<region>.oci.oraclecloud.com' endpoint.
 
 ---
 
