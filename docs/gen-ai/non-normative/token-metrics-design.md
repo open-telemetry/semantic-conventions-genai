@@ -3,6 +3,11 @@
 This document explains the design of the token instruments in
 [Semantic conventions for generative AI inference token metrics](/docs/gen-ai/gen-ai-token-metrics.md).
 
+## TL;DR
+
+- **Histograms** (`gen_ai.client.inference.operation.*`) measure per-operation token size distributions. It is invalid to record more than one observation per operation that a histogram represents, so breakdowns like modality cannot go on the histogram without corrupting percentiles.
+- **Counters** (`gen_ai.client.inference.usage.*`) measure cumulative token consumption over time for cost and spend tracking. They safely carry breakdowns like modality where each token bucket increments independently.
+
 ## Why is modality on counters instead of histograms? Why two sets of metrics?
 
 Consider a single histogram, `gen_ai.imaginary.input_tokens`, with
