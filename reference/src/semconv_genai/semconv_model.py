@@ -48,13 +48,18 @@ _EVENTS = {
     "gen_ai.evaluation.result": "Evaluation Result",
 }
 
-# `gen_ai.client.operation.duration` and `gen_ai.client.token.usage` are a
+# `gen_ai.client.operation.duration` and the inference usage instruments are a
 # single-span read, unlike the `invoke_agent` counters below, which need each
-# call attributed to exactly one invocation across the call tree (#336). They
-# are tracked here because agent-framework and anthropic emit them; this list
+# call attributed to exactly one invocation across the call tree (#336). This list
 # records what the reference scenarios emit, not what instrumentations should emit.
 _METRICS = {
-    "gen_ai.client.token.usage": "Client Token Usage",
+    "gen_ai.client.inference.usage.input_tokens": "Client Inference Usage Input Tokens",
+    "gen_ai.client.inference.usage.output_tokens": "Client Inference Usage Output Tokens",
+    "gen_ai.client.inference.usage.cache_read.input_tokens": "Client Inference Cache Read Input Tokens",
+    "gen_ai.client.inference.usage.cache_write.input_tokens": "Client Inference Cache Write Input Tokens",
+    "gen_ai.client.inference.usage.reasoning.output_tokens": "Client Inference Reasoning Output Tokens",
+    "gen_ai.client.inference.operation.input_tokens": "Client Inference Operation Input Tokens",
+    "gen_ai.client.inference.operation.output_tokens": "Client Inference Operation Output Tokens",
     "gen_ai.client.operation.duration": "Client Operation Duration",
     "gen_ai.invoke_agent.inference_calls": "Invoke Agent Inference Calls",
     "gen_ai.invoke_agent.tool_calls": "Invoke Agent Tool Calls",

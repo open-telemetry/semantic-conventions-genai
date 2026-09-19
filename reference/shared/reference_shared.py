@@ -80,7 +80,14 @@ def setup_otel():
                 instrument_name="otel.sdk.span.*",
                 meter_name="opentelemetry-sdk",
                 aggregation=DropAggregation(),
-            )
+            ),
+            # Instrumentation libraries still emit the removed
+            # `gen_ai.client.token.usage` histogram; scenarios that wrap one record
+            # the inference usage instruments themselves.
+            View(
+                instrument_name="gen_ai.client.token.usage",
+                aggregation=DropAggregation(),
+            ),
         ],
     )
     metrics.set_meter_provider(mp)
