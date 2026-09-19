@@ -608,6 +608,9 @@ spans:
         sampling_relevant: true
       - ref: gen_ai.agent.name
         sampling_relevant: true
+      - ref: gen_ai.conversation.id
+        requirement_level:
+          conditionally_required: If available.
       - ref: gen_ai.tool.call.arguments
         requirement_level: opt_in
       - ref: gen_ai.tool.call.result
