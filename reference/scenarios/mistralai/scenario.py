@@ -1,4 +1,4 @@
-"""Reference implementation for Mistral AI.
+"""Reference implementation for Mistral.
 
 Exercises: chat, chat_streaming, embeddings, create_agent
 against a mock server, with manual OTel spans.
@@ -41,7 +41,7 @@ def run_chat(client):
     messages = [{"role": "user", "content": "Say hello."}]
     span_attributes = {
         "gen_ai.operation.name": "chat",
-        "gen_ai.provider.name": "mistral_ai",
+        "gen_ai.provider.name": "mistral",
         "gen_ai.request.model": request_model,
     }
     if host:
@@ -125,7 +125,7 @@ def run_chat_tool_call(client):
     messages = [{"role": "user", "content": "What's the weather in Seattle?"}]
     span_attributes_2 = {
         "gen_ai.operation.name": "chat",
-        "gen_ai.provider.name": "mistral_ai",
+        "gen_ai.provider.name": "mistral",
         "gen_ai.request.model": request_model,
     }
     if host:
@@ -169,7 +169,7 @@ def run_chat_streaming(client):
     messages = [{"role": "user", "content": "Tell me a joke."}]
     span_attributes_3 = {
         "gen_ai.operation.name": "chat",
-        "gen_ai.provider.name": "mistral_ai",
+        "gen_ai.provider.name": "mistral",
         "gen_ai.request.model": request_model,
     }
     if host:
@@ -243,7 +243,7 @@ def run_embeddings(client):
     host, port = mock_server_host_port(MOCK_BASE_URL)
     span_attributes_4 = {
         "gen_ai.operation.name": "embeddings",
-        "gen_ai.provider.name": "mistral_ai",
+        "gen_ai.provider.name": "mistral",
         "gen_ai.request.model": request_model,
     }
     if host:
@@ -276,7 +276,7 @@ def run_create_agent(client):
 
     span_attributes = {
         "gen_ai.operation.name": "create_agent",
-        "gen_ai.provider.name": "mistral_ai",
+        "gen_ai.provider.name": "mistral",
         "gen_ai.request.model": request_model,
         "gen_ai.agent.name": agent_name,
     }
@@ -305,7 +305,7 @@ def run_create_agent(client):
 
 
 def main():
-    print("=== Reference Implementation: Mistral AI ===")
+    print("=== Reference Implementation: Mistral ===")
 
     tp, lp, mp = setup_otel()
     # NO instrument() call - reference implementation only
