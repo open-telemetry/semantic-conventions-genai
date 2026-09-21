@@ -580,8 +580,8 @@ Reports the usage of tokens following the common [gen_ai.client.token.usage](./g
 | -------- | --------------- | ----------- | -------------- | --------- | ------ |
 | `gen_ai.client.token.usage` | Histogram | `{token}` | OpenAI-specific extension to `gen_ai.client.token.usage`. Adds `openai.response.service_tier` and `openai.response.system_fingerprint` when the provider is `openai`. [1] | ![Development](https://img.shields.io/badge/-development-blue) | |
 
-**[1]:** This metric SHOULD be reported when an operation involves the usage  of tokens and the count is readily available.
-For example, if GenAI system returns usage information in the streaming response,  it SHOULD be used. Or if GenAI system returns each token independently,  instrumentation SHOULD count number of output tokens and record the result.
+**[1]:** This metric SHOULD be reported when an operation involves the usage of tokens and the count is readily available.
+For example, if GenAI system returns usage information in the streaming response, it SHOULD be used. Or if GenAI system returns each token independently, instrumentation SHOULD count number of output tokens and record the result.
 If instrumentation cannot efficiently obtain number of input and/or output tokens, it MAY allow users to enable offline token counting. Otherwise it MUST NOT report usage metric.
 When systems report both used tokens and billable tokens, instrumentation MUST report billable tokens.
 

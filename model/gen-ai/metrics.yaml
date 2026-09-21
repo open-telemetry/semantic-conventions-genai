@@ -23,12 +23,12 @@ metrics:
     instrument: histogram
     unit: "{token}"
     brief: 'Number of input and output tokens used.'
-    note: > 
-      This metric SHOULD be reported when an operation involves the usage 
+    note: >
+      This metric SHOULD be reported when an operation involves the usage
       of tokens and the count is readily available.
 
-      For example, if GenAI system returns usage information in the streaming response, 
-      it SHOULD be used. Or if GenAI system returns each token independently, 
+      For example, if GenAI system returns usage information in the streaming response,
+      it SHOULD be used. Or if GenAI system returns each token independently,
       instrumentation SHOULD count number of output tokens and record the result.
 
       If instrumentation cannot efficiently obtain number of input and/or output tokens,
@@ -248,6 +248,35 @@ metrics:
     attributes:
       - ref_group: attributes.gen_ai.error
       - ref_group: attributes.gen_ai.execute_tool.common
+  - name: gen_ai.invoke_agent.skill_loads
+    requirement_level: recommended
+    annotations:
+      code_generation:
+        metric_value_type: int
+    brief: >
+      The number of tool calls resulting in loading a skill a GenAI
+      agent makes during a single invocation.
+    note: |
+      The distribution is scoped to a single agent invocation and SHOULD include
+      only the tool calls the agent itself triggers including failed ones;
+      calls made by sub-agents or transferred-to agents are recorded against
+      those agents' own invocations so that each tool call is counted exactly
+      once across the call tree.
+
+      Only client-side tool calls (tools executed by the agent or framework)
+      are counted. Tools executed server-side by the model provider (for
+      example, provider built-in web search or code execution) are not
+      counted here.
+
+      This metric SHOULD be emitted together with the
+      `gen_ai.invoke_agent.internal` span for the same invocation.
+    instrument: histogram
+    unit: "{tool_call}"
+    stability: development
+    attributes:
+      - ref: gen_ai.agent.name
+        requirement_level: recommended
+
 
 metric_refinements:
   - id: openai.client.token.usage
@@ -276,3 +305,33 @@ metric_refinements:
         requirement_level: recommended
       - ref: openai.response.system_fingerprint
         requirement_level: recommended
+
+  - id: gen_ai.execute_tool.skill_load
+    ref: gen_ai.execute_tool.duration
+    brief: >
+      Extension for `gen_ai.execute_tool.duration` for tool
+      resulting into loading a skill into GenAI agent's context.
+    stability: development
+    attributes:
+      - ref: gen_ai.skill.name
+        requirement_level:
+          conditionally_required: If skill loaded succesfully and its name is available.
+  - id: gen_ai.execute_tool.command
+    ref: gen_ai.execute_tool.duration
+    brief: >
+      Extension for `gen_ai.execute_tool.duration` for tool executing custom scripts,
+      commands, or executable files. Adds information about executable and execution.
+    stability: development
+    attributes:
+      - ref: gen_ai.skill.name
+        requirement_level:
+          conditionally_required: If command is associated with a skill and name is available.
+      - ref: gen_ai.skill.resource.name
+        requirement_level:
+          conditionally_required: If command is associated with a skill resource and name is available.
+      - ref: process.exit.code
+        requirement_level:
+          conditionally_required: If tool reports a single command or process exit code.
+      - ref: process.executable.name
+        requirement_level:
+          conditionally_required: If tool directly executes a single process and the executable path is available.
