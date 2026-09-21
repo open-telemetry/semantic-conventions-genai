@@ -223,6 +223,84 @@ def run_invoke_agent(client):
     client.beta.assistants.delete(assistant.id)
 
 
+def run_invoke_agent_streaming(client):
+    """Exercise OpenAI Assistants API streaming run with manual OTel spans."""
+    print("  [invoke_agent_streaming] OpenAI Assistants: streaming run")
+    request_model = "gpt-4o-mini"
+    assistant_name = "refimpl-test-assistant"
+
+    # Create assistant
+    assistant = client.beta.assistants.create(
+        model=request_model,
+        name=assistant_name,
+        instructions="You are a helpful assistant.",
+    )
+
+    # Create thread
+    thread = client.beta.threads.create()
+
+    # Add message
+    user_message = "Hello, assistant!"
+    client.beta.threads.messages.create(
+        thread_id=thread.id,
+        role="user",
+        content=user_message,
+    )
+
+    span_attributes = {
+        "gen_ai.operation.name": "invoke_agent",
+        "gen_ai.provider.name": "openai",
+        "gen_ai.request.model": request_model,
+        "gen_ai.agent.name": assistant.name or "",
+        "gen_ai.request.stream": True,
+        "server.address": _SERVER_ADDRESS,
+        "server.port": _SERVER_PORT,
+    }
+    with tracer.start_as_current_span(
+        f"invoke_agent {assistant.name}", kind=SpanKind.CLIENT, attributes=span_attributes
+    ) as span:
+        span.set_attribute("gen_ai.agent.id", assistant.id)
+        span.set_attribute("gen_ai.conversation.id", thread.id)
+        span.set_attribute(
+            "gen_ai.input.messages",
+            json.dumps([{"role": "user", "parts": [{"type": "text", "content": user_message}]}]),
+        )
+        stream = client.beta.threads.runs.create(
+            thread_id=thread.id,
+            assistant_id=assistant.id,
+            model=request_model,
+            stream=True,
+        )
+        for _event in stream:
+            pass
+
+        # In the Assistants API, usage and completion state are retrieved from the run
+        run = client.beta.threads.runs.retrieve(thread_id=thread.id, run_id="run-mock-001")
+        if run.usage:
+            span.set_attribute("gen_ai.usage.input_tokens", run.usage.prompt_tokens)
+            span.set_attribute("gen_ai.usage.output_tokens", run.usage.completion_tokens)
+
+        messages = client.beta.threads.messages.list(thread_id=thread.id)
+        assistant_messages = [m for m in messages.data if m.role == "assistant"]
+        if assistant_messages:
+            text = assistant_messages[0].content[0].text.value
+            span.set_attribute(
+                "gen_ai.output.messages",
+                json.dumps(
+                    [
+                        {
+                            "role": "assistant",
+                            "parts": [{"type": "text", "content": text}],
+                        }
+                    ]
+                ),
+            )
+        print("    -> streaming run completed")
+
+    # Clean up
+    client.beta.assistants.delete(assistant.id)
+
+
 if __name__ == "__main__":
     print("=== Manual: OpenAI Assistants Invoke Agent Reference Implementation ===")
     tp, lp, mp = setup_otel()
@@ -233,5 +311,6 @@ if __name__ == "__main__":
     )
 
     run_invoke_agent(client)
+    run_invoke_agent_streaming(client)
 
     flush_and_shutdown(tp, lp, mp)
