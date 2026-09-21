@@ -60,3 +60,78 @@ events:
         requirement_level:
           conditionally_required: Required if `exception.type` is not set, recommended otherwise.
       - ref: exception.stacktrace
+  - name: gen_ai.agent.paused
+    requirement_level: recommended
+    brief: >
+      Agent execution paused awaiting an external condition, such as human
+      approval or an external system.
+    note: >
+      Records the suspension of a long-running or asynchronous agent
+      execution. The pause id identifies this boundary for a later
+      `gen_ai.agent.resumed` record; it is required because a pause recorded
+      without an id can never be resumed from.
+    stability: development
+    attributes:
+      - ref: gen_ai.agent.execution.id
+        requirement_level: required
+      - ref: gen_ai.agent.pause.reason
+        requirement_level: recommended
+      - ref: gen_ai.agent.pause.id
+        requirement_level: required
+      - ref: gen_ai.agent.id
+        requirement_level: recommended
+      - ref: gen_ai.agent.name
+        requirement_level: recommended
+
+  - name: gen_ai.agent.checkpointed
+    requirement_level: recommended
+    brief: Agent state was persisted for durability or recovery.
+    note: >
+      Records the persistence of agent state such that execution can later
+      continue from the persisted state, including across process restarts or
+      in a different worker. When the checkpoint is taken at a pause
+      boundary, recording the pause id joins the checkpoint to that pause, so
+      a consumer reaching the checkpoint through `gen_ai.agent.resumed_from`
+      can also identify the pause without reconstructing record order.
+    stability: development
+    attributes:
+      - ref: gen_ai.agent.execution.id
+        requirement_level: required
+      - ref: gen_ai.agent.checkpoint.id
+        requirement_level: required
+      - ref: gen_ai.agent.pause.id
+        requirement_level:
+          recommended: When the checkpoint is taken at a pause boundary.
+      - ref: gen_ai.agent.id
+        requirement_level: recommended
+      - ref: gen_ai.agent.name
+        requirement_level: recommended
+
+  - name: gen_ai.agent.resumed
+    requirement_level: recommended
+    brief: Agent execution resumed after a suspended boundary.
+    note: >
+      When the resumed work begins a new active execution segment (after a
+      process restart, durable recovery, resumption in a different worker, or
+      when the prior segment was exported in a different trace),
+      instrumentations MUST identify the suspended boundary the segment
+      continues from via `gen_ai.agent.resumed_from.type` and
+      `gen_ai.agent.resumed_from.id`, and MUST record the same
+      `gen_ai.agent.execution.id` as the suspended segment. When resumption
+      continues within the same still-open span, instrumentations SHOULD NOT
+      record the `resumed_from` pair. The two attributes MUST be recorded
+      together or not at all.
+    stability: development
+    attributes:
+      - ref: gen_ai.agent.execution.id
+        requirement_level: required
+      - ref: gen_ai.agent.resumed_from.type
+        requirement_level:
+          conditionally_required: When the resumed work begins a new active execution segment.
+      - ref: gen_ai.agent.resumed_from.id
+        requirement_level:
+          conditionally_required: When the resumed work begins a new active execution segment.
+      - ref: gen_ai.agent.id
+        requirement_level: recommended
+      - ref: gen_ai.agent.name
+        requirement_level: recommended
