@@ -1,0 +1,24 @@
+{
+  "spans": {},
+  "events": {},
+  "metrics": {},
+  "findings": [
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'run_guardrail Reference Email Filter' (operation 'run_guardrail') is missing expected attribute 'gen_ai.guardrail.verdict.code'",
+      "context": {
+        "missing_attribute": "gen_ai.guardrail.verdict.code",
+        "operation": "run_guardrail"
+      }
+    },
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'run_guardrail Reference Email Filter' (operation 'run_guardrail') is missing expected attribute 'gen_ai.provider.name'",
+      "context": {
+        "missing_attribute": "gen_ai.provider.name",
+        "operation": "run_guardrail"
+      }
+    }
+  ],
+  "entities": {}
+}
