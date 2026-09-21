@@ -24,6 +24,8 @@
 | gen_ai.response.finish_reasons | [openai] |
 | gen_ai.response.model | [openai] |
 | gen_ai.response.status | [openai] |
+| gen_ai.usage.input_tokens | [openai] |
+| gen_ai.usage.output_tokens | [openai] |
 | server.address | [openai] |
 
 ## Opt-In
