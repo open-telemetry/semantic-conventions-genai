@@ -270,6 +270,127 @@ spans:
       - ref: gen_ai.request.model
         sampling_relevant: true
 
+  - type: gen_ai.realtime_inference.client
+    requirement_level: recommended
+    kind: client
+    name:
+      note: |
+        **Span name** SHOULD be `{gen_ai.operation.name} {gen_ai.request.model}`.
+        Semantic conventions for individual GenAI systems and frameworks MAY specify different span name format
+        and MUST follow the overall [guidelines for span names](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.56.0/specification/trace/api.md#span).
+    brief: >
+      This span represents one server-side model generation within a realtime, bidirectional
+      streaming session (such as OpenAI Realtime or Gemini Live).
+    note: |
+      The span SHOULD start at the first output chunk of the generation (or at an earlier
+      voice-activity end anchor when the provider exposes one) and end at the generation completion
+      or interruption event. If token usage (`gen_ai.usage.*`) is reported after the completion
+      event, instrumentation SHOULD wait for it before ending the span.
+
+      Instrumentation SHOULD NOT create this span by default for generations expected to be
+      long-running or non-conversational, such as speech translation or transcription.
+
+      The `gen_ai.operation.name` SHOULD be `realtime_inference`.
+
+      When a generation calls a tool, the realtime API returns the tool call to the client, which
+      runs the tool and sends the result back to the model. Tool execution in a realtime session
+      for client-side tools is performed by the client, so a provider-SDK instrumentation cannot
+      observe it and will not emit a `gen_ai.execute_tool.internal` span; the tool exchange is
+      captured as `tool_call` / `tool_call_response` parts instead. Instrumentation at a layer that
+      dispatches the tool, such as an agent framework, should emit it as usual.
+    stability: development
+    attributes:
+      - ref_group: attributes.gen_ai.common
+      - ref_group: attributes.gen_ai.address_and_port
+      - ref_group: attributes.gen_ai.usage
+      - ref_group: attributes.gen_ai.usage.breakdown
+      - ref_group: attributes.gen_ai.content
+      - ref_group: attributes.gen_ai.error
+      - ref: gen_ai.request.max_tokens
+        requirement_level: recommended
+      - ref: gen_ai.request.reasoning.level
+        requirement_level:
+          recommended: When applicable.
+      - ref: gen_ai.output.type
+        requirement_level:
+          conditionally_required: When applicable and if the request includes an output format.
+      - ref: gen_ai.response.id
+        requirement_level:
+          recommended: When available. A realtime generation may not carry a response id on all providers.
+      - ref: gen_ai.response.model
+        requirement_level: recommended
+        note: >
+          If available. The name of the GenAI model that provided the response. If the model is supplied by a vendor,
+          then the value must be the exact name of the model actually used. If the model is a
+          fine-tuned custom model, the value should have a more specific name than the base model that's been fine-tuned.
+      - ref: gen_ai.response.finish_reasons
+        requirement_level: recommended
+      - ref: gen_ai.usage.reasoning.output_tokens
+        requirement_level:
+          recommended: When applicable.
+        note: >
+          The value SHOULD be included in `gen_ai.usage.output_tokens`.
+      - ref: gen_ai.conversation.id
+        requirement_level:
+          conditionally_required: If and only if the instrumented library has one readily available, or the user application provides one through OpenTelemetry context or library-specific mechanisms.
+      - ref: gen_ai.realtime_session.id
+        requirement_level:
+          conditionally_required: If the provider exposes a session identifier, or the instrumentation uses a client-created per-connection identifier.
+      - ref: gen_ai.provider.name
+        # TODO: Not adding to common attributes because of https://github.com/open-telemetry/weaver/issues/479
+        requirement_level: required
+        sampling_relevant: true
+      - ref: gen_ai.operation.name
+        sampling_relevant: true
+      - ref: server.address
+        sampling_relevant: true
+      - ref: server.port
+        sampling_relevant: true
+      - ref: gen_ai.request.model
+        sampling_relevant: true
+
+  - type: gen_ai.user_speech.internal
+    requirement_level: opt_in
+    kind: internal
+    name:
+      note: |
+        **Span name** SHOULD be `{gen_ai.operation.name}`.
+        Semantic conventions for individual GenAI systems and frameworks MAY specify a different span name format.
+    brief: >
+      This span represents the capture of a user speech utterance within a realtime,
+      bidirectional speech-to-speech session, delimited by user speech start and stop
+      events.
+    note: |
+      This span is optional and provider-dependent. It SHOULD be recorded when instrumentation can
+      reliably determine the start and end of user speech, either through user voice-activity
+      detection (VAD) events in the model response (for example OpenAI Realtime
+      `input_audio_buffer.speech_started` / `input_audio_buffer.speech_stopped`) or through
+      client-side events when the application requires the user to manually start and stop
+      recording. The span SHOULD start at the user-speech-start event and end at the
+      user-speech-stop event.
+
+      The `gen_ai.operation.name` SHOULD be `user_speech`.
+    stability: development
+    attributes:
+      - ref_group: attributes.gen_ai.error
+      - ref: gen_ai.input.messages
+        requirement_level: opt_in
+        note: >
+          When content capture is enabled and a transcript of the user's utterance is available,
+          it is carried here as the user input message.
+      - ref: gen_ai.realtime_session.id
+        requirement_level:
+          conditionally_required: If the provider exposes a session identifier, or the instrumentation uses a client-created per-connection identifier.
+        note: >
+          For a realtime session this correlates the user input with the generations that respond to it.
+      - ref: gen_ai.provider.name
+        # TODO: Not adding to common attributes because of https://github.com/open-telemetry/weaver/issues/479
+        requirement_level: required
+        sampling_relevant: true
+      - ref: gen_ai.operation.name
+        requirement_level: required
+        sampling_relevant: true
+
   - type: gen_ai.embeddings.client
     requirement_level: recommended
     kind: client

@@ -290,13 +290,33 @@ When the attribute is recorded on events, it MUST be recorded in structured form
 | `invoke_agent` | Invoke GenAI agent | ![Development](https://img.shields.io/badge/-development-blue) |
 | `invoke_workflow` | Invoke GenAI workflow | ![Development](https://img.shields.io/badge/-development-blue) |
 | `plan` | Agent planning or task decomposition phase | ![Development](https://img.shields.io/badge/-development-blue) |
+| `realtime_inference` | Server-side model generation within a realtime, bidirectional streaming session such as [OpenAI Realtime](https://platform.openai.com/docs/guides/realtime) or [Gemini Live](https://ai.google.dev/gemini-api/docs/live). [17] | ![Development](https://img.shields.io/badge/-development-blue) |
 | `retrieval` | Retrieval operation such as [OpenAI Search Vector Store API](https://platform.openai.com/docs/api-reference/vector-stores/search) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `search_memory` | Search/query memories from a memory store | ![Development](https://img.shields.io/badge/-development-blue) |
 | `text_completion` | Text completions operation such as [OpenAI Completions API (Legacy)](https://platform.openai.com/docs/api-reference/completions) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `update_memory` | Update existing memory records | ![Development](https://img.shields.io/badge/-development-blue) |
 | `upsert_memory` | Create or update memory records without the caller choosing which | ![Development](https://img.shields.io/badge/-development-blue) |
+| `user_speech` | Describes the process of recording user speech input. [18] | ![Development](https://img.shields.io/badge/-development-blue) |
 
 **[16]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
+
+**[17]:** This operation describes a single server-side generation reconstructed from a long-lived streaming session, not a single client request/response. It is distinct from `chat` and `generate_content`: the request is streamed continuously and the generation is bounded by provider events (first output chunk or a voice-activity end anchor through generation completion or interruption) rather than by a client call boundary.
+
+**[18]:** This operation SHOULD be reported when instrumentation can reliably determine the
+start and end of user speech, either through user voice-activity detection (VAD) events
+in the model response or through client-side events when the application requires the
+user to manually start and stop recording.
+
+Examples:
+
+- OpenAI Realtime `input_audio_buffer.speech_started` /
+  `input_audio_buffer.speech_stopped` (provider VAD events).
+- A push-to-talk application that starts and stops recording on an explicit user action
+  (client-side start/stop events).
+
+It is speech-specific: text and other non-speech input have no such speaking interval
+and are carried on the `realtime_inference` operation through `gen_ai.input.messages`
+instead.
 
 ---
 
@@ -526,13 +546,33 @@ When the attribute is recorded on events, it MUST be recorded in structured form
 | `invoke_agent` | Invoke GenAI agent | ![Development](https://img.shields.io/badge/-development-blue) |
 | `invoke_workflow` | Invoke GenAI workflow | ![Development](https://img.shields.io/badge/-development-blue) |
 | `plan` | Agent planning or task decomposition phase | ![Development](https://img.shields.io/badge/-development-blue) |
+| `realtime_inference` | Server-side model generation within a realtime, bidirectional streaming session such as [OpenAI Realtime](https://platform.openai.com/docs/guides/realtime) or [Gemini Live](https://ai.google.dev/gemini-api/docs/live). [17] | ![Development](https://img.shields.io/badge/-development-blue) |
 | `retrieval` | Retrieval operation such as [OpenAI Search Vector Store API](https://platform.openai.com/docs/api-reference/vector-stores/search) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `search_memory` | Search/query memories from a memory store | ![Development](https://img.shields.io/badge/-development-blue) |
 | `text_completion` | Text completions operation such as [OpenAI Completions API (Legacy)](https://platform.openai.com/docs/api-reference/completions) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `update_memory` | Update existing memory records | ![Development](https://img.shields.io/badge/-development-blue) |
 | `upsert_memory` | Create or update memory records without the caller choosing which | ![Development](https://img.shields.io/badge/-development-blue) |
+| `user_speech` | Describes the process of recording user speech input. [18] | ![Development](https://img.shields.io/badge/-development-blue) |
 
 **[16]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
+
+**[17]:** This operation describes a single server-side generation reconstructed from a long-lived streaming session, not a single client request/response. It is distinct from `chat` and `generate_content`: the request is streamed continuously and the generation is bounded by provider events (first output chunk or a voice-activity end anchor through generation completion or interruption) rather than by a client call boundary.
+
+**[18]:** This operation SHOULD be reported when instrumentation can reliably determine the
+start and end of user speech, either through user voice-activity detection (VAD) events
+in the model response or through client-side events when the application requires the
+user to manually start and stop recording.
+
+Examples:
+
+- OpenAI Realtime `input_audio_buffer.speech_started` /
+  `input_audio_buffer.speech_stopped` (provider VAD events).
+- A push-to-talk application that starts and stops recording on an explicit user action
+  (client-side start/stop events).
+
+It is speech-specific: text and other non-speech input have no such speaking interval
+and are carried on the `realtime_inference` operation through `gen_ai.input.messages`
+instead.
 
 ---
 
@@ -697,13 +737,33 @@ Examples:
 | `invoke_agent` | Invoke GenAI agent | ![Development](https://img.shields.io/badge/-development-blue) |
 | `invoke_workflow` | Invoke GenAI workflow | ![Development](https://img.shields.io/badge/-development-blue) |
 | `plan` | Agent planning or task decomposition phase | ![Development](https://img.shields.io/badge/-development-blue) |
+| `realtime_inference` | Server-side model generation within a realtime, bidirectional streaming session such as [OpenAI Realtime](https://platform.openai.com/docs/guides/realtime) or [Gemini Live](https://ai.google.dev/gemini-api/docs/live). [12] | ![Development](https://img.shields.io/badge/-development-blue) |
 | `retrieval` | Retrieval operation such as [OpenAI Search Vector Store API](https://platform.openai.com/docs/api-reference/vector-stores/search) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `search_memory` | Search/query memories from a memory store | ![Development](https://img.shields.io/badge/-development-blue) |
 | `text_completion` | Text completions operation such as [OpenAI Completions API (Legacy)](https://platform.openai.com/docs/api-reference/completions) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `update_memory` | Update existing memory records | ![Development](https://img.shields.io/badge/-development-blue) |
 | `upsert_memory` | Create or update memory records without the caller choosing which | ![Development](https://img.shields.io/badge/-development-blue) |
+| `user_speech` | Describes the process of recording user speech input. [13] | ![Development](https://img.shields.io/badge/-development-blue) |
 
 **[11]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
+
+**[12]:** This operation describes a single server-side generation reconstructed from a long-lived streaming session, not a single client request/response. It is distinct from `chat` and `generate_content`: the request is streamed continuously and the generation is bounded by provider events (first output chunk or a voice-activity end anchor through generation completion or interruption) rather than by a client call boundary.
+
+**[13]:** This operation SHOULD be reported when instrumentation can reliably determine the
+start and end of user speech, either through user voice-activity detection (VAD) events
+in the model response or through client-side events when the application requires the
+user to manually start and stop recording.
+
+Examples:
+
+- OpenAI Realtime `input_audio_buffer.speech_started` /
+  `input_audio_buffer.speech_stopped` (provider VAD events).
+- A push-to-talk application that starts and stops recording on an explicit user action
+  (client-side start/stop events).
+
+It is speech-specific: text and other non-speech input have no such speaking interval
+and are carried on the `realtime_inference` operation through `gen_ai.input.messages`
+instead.
 
 ---
 
@@ -870,13 +930,33 @@ Examples:
 | `invoke_agent` | Invoke GenAI agent | ![Development](https://img.shields.io/badge/-development-blue) |
 | `invoke_workflow` | Invoke GenAI workflow | ![Development](https://img.shields.io/badge/-development-blue) |
 | `plan` | Agent planning or task decomposition phase | ![Development](https://img.shields.io/badge/-development-blue) |
+| `realtime_inference` | Server-side model generation within a realtime, bidirectional streaming session such as [OpenAI Realtime](https://platform.openai.com/docs/guides/realtime) or [Gemini Live](https://ai.google.dev/gemini-api/docs/live). [10] | ![Development](https://img.shields.io/badge/-development-blue) |
 | `retrieval` | Retrieval operation such as [OpenAI Search Vector Store API](https://platform.openai.com/docs/api-reference/vector-stores/search) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `search_memory` | Search/query memories from a memory store | ![Development](https://img.shields.io/badge/-development-blue) |
 | `text_completion` | Text completions operation such as [OpenAI Completions API (Legacy)](https://platform.openai.com/docs/api-reference/completions) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `update_memory` | Update existing memory records | ![Development](https://img.shields.io/badge/-development-blue) |
 | `upsert_memory` | Create or update memory records without the caller choosing which | ![Development](https://img.shields.io/badge/-development-blue) |
+| `user_speech` | Describes the process of recording user speech input. [11] | ![Development](https://img.shields.io/badge/-development-blue) |
 
 **[9]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
+
+**[10]:** This operation describes a single server-side generation reconstructed from a long-lived streaming session, not a single client request/response. It is distinct from `chat` and `generate_content`: the request is streamed continuously and the generation is bounded by provider events (first output chunk or a voice-activity end anchor through generation completion or interruption) rather than by a client call boundary.
+
+**[11]:** This operation SHOULD be reported when instrumentation can reliably determine the
+start and end of user speech, either through user voice-activity detection (VAD) events
+in the model response or through client-side events when the application requires the
+user to manually start and stop recording.
+
+Examples:
+
+- OpenAI Realtime `input_audio_buffer.speech_started` /
+  `input_audio_buffer.speech_stopped` (provider VAD events).
+- A push-to-talk application that starts and stops recording on an explicit user action
+  (client-side start/stop events).
+
+It is speech-specific: text and other non-speech input have no such speaking interval
+and are carried on the `realtime_inference` operation through `gen_ai.input.messages`
+instead.
 
 ---
 
