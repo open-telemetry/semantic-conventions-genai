@@ -26,7 +26,9 @@
     ],
     "gen_ai.inference.client": [
       "gen_ai.conversation.compacted",
+      "gen_ai.conversation.id",
       "gen_ai.input.messages",
+      "gen_ai.input.messages_delta",
       "gen_ai.operation.name",
       "gen_ai.output.messages",
       "gen_ai.prompt.name",
@@ -62,7 +64,9 @@
   "events": {
     "gen_ai.client.inference.operation.details": [
       "gen_ai.conversation.compacted",
+      "gen_ai.conversation.id",
       "gen_ai.input.messages",
+      "gen_ai.input.messages_delta",
       "gen_ai.operation.name",
       "gen_ai.output.messages",
       "gen_ai.prompt.name",
@@ -92,6 +96,21 @@
       "context": {
         "attribute": "gen_ai.tool.definitions",
         "errors": "{\"function\":{\"description\":\"Get the current weather\",\"name\":\"get_weather\",\"parameters\":{\"properties\":{\"location\":{\"description\":\"City name\",\"type\":\"string\"}},\"required\":[\"location\"],\"type\":\"object\"}},\"type\":\"function\"} is not valid under any of the schemas listed in the 'anyOf' keyword"
+      }
+    },
+    {
+      "id": "required_attribute_not_present",
+      "message": "Required attribute 'gen_ai.provider.name' is not present.",
+      "context": {
+        "attribute_key": "gen_ai.provider.name"
+      }
+    },
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'chat gpt-4o-mini' (operation 'chat') is missing expected attribute 'gen_ai.response.finish_reasons'",
+      "context": {
+        "missing_attribute": "gen_ai.response.finish_reasons",
+        "operation": "chat"
       }
     }
   ],
