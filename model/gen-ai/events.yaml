@@ -1,5 +1,25 @@
 file_format: definition/2
 events:
+  - name: gen_ai.execution.state.changed
+    requirement_level: recommended
+    brief: Records a runtime-owned state change in a GenAI execution.
+    note: |
+      This event SHOULD be recorded in the context of the internal workflow or
+      agent span that observes a non-empty, runtime-owned state delta.
+      Instrumentations MUST NOT infer a change by comparing state payloads or
+      emit the event for an unchanged snapshot.
+
+      The event MUST NOT include state values, raw idempotency data, tool
+      arguments or results, or hidden reasoning.
+    stability: development
+    attributes:
+      - ref: gen_ai.execution.state.changed_key.count
+        requirement_level: required
+      - ref: gen_ai.execution.state.changed_keys
+        requirement_level: opt_in
+      - ref: gen_ai.execution.state.version
+        requirement_level:
+          conditionally_required: When the instrumented runtime exposes a version for the resulting state.
   - name: gen_ai.client.inference.operation.details
     requirement_level: opt_in
     brief: >
