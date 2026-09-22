@@ -1,6 +1,6 @@
 {
   "spans": {
-    "gen_ai.inference.client": [
+    "gen_ai.client.inference": [
       "gen_ai.operation.name",
       "gen_ai.provider.name",
       "gen_ai.request.model",
@@ -15,6 +15,6 @@
   },
   "events": {},
   "metrics": {},
-  "findings": [],
-  "entities": {}
+  "entities": {},
+  "findings": []
 }
