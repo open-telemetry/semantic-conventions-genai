@@ -444,7 +444,7 @@ what `gen_ai.workflow.name` means in the context of that framework.
 | `mistral_ai` | [Mistral AI](https://mistral.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `moonshot_ai` | [Moonshot AI](https://www.moonshot.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `openai` | [OpenAI](https://openai.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
-| `oracle_cloud.generative_ai` | [OCI Generative AI](https://docs.oracle.com/en-us/iaas/Content/generative-ai/home.htm) [51] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `oracle_cloud.generative_ai` | [OCI Generative AI](https://docs.oracle.com/en-us/iaas/Content/generative-ai/home.htm) [52] | ![Development](https://img.shields.io/badge/-development-blue) |
 | `perplexity` | [Perplexity](https://www.perplexity.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `x_ai` | [xAI](https://x.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 
@@ -454,7 +454,7 @@ what `gen_ai.workflow.name` means in the context of that framework.
 
 **[51]:** Used when accessing the 'aiplatform.googleapis.com' endpoint.
 
-**[51]:** Used when accessing an `inference.generativeai.<region>.oci.oraclecloud.com` endpoint.
+**[52]:** Used when accessing an `inference.generativeai.<region>.oci.oraclecloud.com` endpoint.
 
 ---
 
