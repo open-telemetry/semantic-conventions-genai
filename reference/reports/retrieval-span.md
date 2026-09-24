@@ -21,6 +21,7 @@
 
 | Attribute | Supporting Libraries |
 | --- | --- |
+| gen_ai.external_ref | (none) |
 | gen_ai.retrieval.top_k | [haystack], [langchain], [llamaindex] |
 | server.address | [llamaindex] |
 
