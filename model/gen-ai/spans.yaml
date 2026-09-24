@@ -99,7 +99,7 @@ attribute_groups:
         brief: The human-readable name of the invoked GenAI agent.
         requirement_level:
           conditionally_required: When available.
-      # not including agent description since this group is shared between 
+      # not including agent description since this group is shared between
       # spans and metrics and description is not needed on metrics
       - ref: gen_ai.request.model
         brief: The name of the GenAI model configured for the agent.
