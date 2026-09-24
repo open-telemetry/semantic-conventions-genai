@@ -9,6 +9,7 @@ on the way in; events and metrics are already named by the registry.
 from __future__ import annotations
 
 import json
+from collections.abc import Mapping
 from dataclasses import dataclass
 
 from semconv_genai import SCENARIOS_DIR
@@ -16,6 +17,7 @@ from semconv_genai.attribute_spec import AttributeSpec, RequirementLevel
 from semconv_genai.semconv_model import (
     event_specs,
     metric_specs,
+    span_refinement_specs,
     span_specs,
 )
 
@@ -38,6 +40,12 @@ SPAN_TYPE_ORDER = [
 EVENT_TYPE_ORDER = [
     "gen_ai.client.inference.operation.details",
     "gen_ai.evaluation.result",
+]
+
+# Display order for span refinements in reports.
+SPAN_REFINEMENT_ORDER = [
+    "execute_tool_transfer",
+    "invoke_agent_caller_client",
 ]
 
 
@@ -73,13 +81,14 @@ def attr_names(spec: AttributeSpec) -> list[str]:
 class ScenarioDataEntry:
     library: str
     spans: dict[str, dict[str, str]]
+    span_refinements: dict[str, dict[str, str]]
     events: dict[str, dict[str, str]]
     metrics: dict[str, dict[str, str]]
 
 
 def _normalize_attr_data(
     value: object,
-    attr_specs: dict[str, AttributeSpec],
+    attr_specs: Mapping[str, AttributeSpec],
 ) -> dict[str, dict[str, str]]:
     """Expand the recorded attribute names into present/absent statuses."""
     if not isinstance(value, dict):
@@ -99,6 +108,10 @@ def _normalize_scenario_data_entry(entry: dict[str, object], library: str) -> Sc
     return ScenarioDataEntry(
         library=library,
         spans=_normalize_attr_data(entry.get("spans"), span_specs()),
+        span_refinements=_normalize_attr_data(
+            entry.get("span_refinements"),
+            span_refinement_specs(),
+        ),
         events=_normalize_attr_data(entry.get("events"), event_specs()),
         metrics=_normalize_attr_data(entry.get("metrics"), metric_specs()),
     )

@@ -9,5 +9,6 @@
   },
   "metrics": {},
   "findings": [],
-  "entities": {}
+  "entities": {},
+  "span_refinements": {}
 }

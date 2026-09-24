@@ -1138,6 +1138,10 @@ are encouraged to follow this semantic convention for tools invoked by their
 own code and to manually instrument any tool calls that automatic
 instrumentations do not cover.
 
+Some tool calls have specialized semantic conventions, such as the
+[tool-based transfer refinement](gen-ai-agent-spans.md#tool-based-transfer).
+Instrumentations SHOULD apply the applicable refinement and SHOULD NOT record two different spans for one call.
+
 **Span name** SHOULD be `execute_tool {gen_ai.tool.name}`.
 
 **Span kind** SHOULD be `INTERNAL`.

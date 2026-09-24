@@ -232,5 +232,6 @@
       "message": "Metric does not exist in the registry."
     }
   ],
-  "entities": {}
+  "entities": {},
+  "span_refinements": {}
 }

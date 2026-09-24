@@ -27,7 +27,7 @@ Run `uv run update-reports` to regenerate.
 | Span | Libraries |
 | --- | --- |
 | [Create Agent](reports/create-agent-span.md) | anthropic, aws-bedrock-agent, azure-ai-foundry, google-genai, mistralai, openai-assistants |
-| [Invoke Agent Client](reports/invoke-agent-client-span.md) | aws-bedrock-agent, azure-ai-foundry, google-genai, openai-assistants |
+| [Invoke Agent Client](reports/invoke-agent-client-span.md) | aws-bedrock-agent, azure-ai-foundry, google-adk, google-genai, openai-assistants |
 | [Invoke Agent Internal](reports/invoke-agent-internal-span.md) | agent-framework, autogen, crewai, google-adk, langchain, openai-agents, pydantic-ai |
 | [Invoke Workflow](reports/invoke-workflow-span.md) | crewai, google-adk, langchain, openai-agents |
 | [Plan](reports/plan-span.md) | crewai, langchain |
@@ -37,6 +37,13 @@ Run `uv run update-reports` to regenerate.
 | [Fetch Response](reports/fetch-response-span.md) | openai |
 | [Memory](reports/memory-span.md) | aws-bedrock-agentcore, google-adk |
 | [Execute Tool](reports/execute-tool-span.md) | agent-framework, autogen, crewai, google-adk, google-genai, langchain, llamaindex, openai-agents, openai-assistants, pydantic-ai, vertexai |
+
+### Span refinements
+
+| Span refinement | Libraries |
+| --- | --- |
+| [Execute Tool Transfer](reports/execute-tool-transfer-span-refinement.md) | google-adk, langchain, openai-agents |
+| [Invoke Agent Caller](reports/invoke-agent-caller-client-span-refinement.md) | google-adk |
 
 ### Events
 
