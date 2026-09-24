@@ -84,6 +84,9 @@ jobs:
 
       - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
 
+      - name: Test reference models and JSON schemas
+        run: make test-json-schemas
+
       - name: Regenerate and check committed outputs are in sync
         run: |
           make generate-all

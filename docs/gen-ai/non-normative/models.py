@@ -28,11 +28,13 @@ from typing import Annotated, Any, List, Literal, Optional, Union
 
 from pydantic import (
     BaseModel,
+    BeforeValidator,
     ConfigDict,
     Field,
     GetCoreSchemaHandler,
     GetJsonSchemaHandler,
     RootModel,
+    model_validator,
 )
 from pydantic_core import core_schema
 
@@ -279,14 +281,40 @@ MessagePart = Union[
     # e.g. structured output, hosted tool call, etc.
 ]
 
+
+class UnknownSystemInstructionPart(GenericPart):
+    """Represents a system instruction part with an unknown type."""
+
+    type: str = Field(
+        description="The type of the content captured in this part.",
+        json_schema_extra={"not": {"enum": ["text"]}},
+    )
+
+    @model_validator(mode="after")
+    def validate_unknown_type(self) -> UnknownSystemInstructionPart:
+        if self.type == "text":
+            raise ValueError("System instructions with type 'text' must match TextPart.")
+        return self
+
+
+def _system_instruction_part_input(value: Any) -> Any:
+    if isinstance(value, GenericPart):
+        # Iteration preserves raw extra values instead of serializing nested models.
+        return dict(value)
+    return value
+
+
 # System instructions are modeled as their own list of parts, independent of
-# the input/output message parts. TextPart is the only member today;
+# the input/output message parts. TextPart is the only known member today;
 # add other system instruction part types once there is an existing
 # provider with non-text system instructions.
-SystemInstructionPart = Union[
-    TextPart,
-    GenericPart,  # Catch-all for any other type
-    # Add other message part types here as needed
+SystemInstructionPart = Annotated[
+    Union[
+        TextPart,
+        UnknownSystemInstructionPart,  # Catch-all for any other type
+        # Add other message part types here as needed
+    ],
+    BeforeValidator(_system_instruction_part_input),
 ]
 
 
