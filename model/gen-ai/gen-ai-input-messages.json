@@ -35,8 +35,8 @@
                     "title": "Modality"
                 },
                 "content": {
+                    "contentEncoding": "base64",
                     "description": "Raw bytes of the attached data. This field SHOULD be encoded as a base64 string when serialized to JSON.",
-                    "format": "binary",
                     "title": "Content",
                     "type": "string"
                 }
@@ -67,39 +67,50 @@
                 "parts": {
                     "description": "List of message parts that make up the message content.",
                     "items": {
-                        "anyOf": [
-                            {
-                                "$ref": "#/$defs/TextPart"
-                            },
-                            {
-                                "$ref": "#/$defs/ToolCallRequestPart"
-                            },
-                            {
-                                "$ref": "#/$defs/ToolCallResponsePart"
-                            },
-                            {
-                                "$ref": "#/$defs/ServerToolCallPart"
-                            },
-                            {
-                                "$ref": "#/$defs/ServerToolCallResponsePart"
-                            },
+                        "oneOf": [
                             {
                                 "$ref": "#/$defs/BlobPart"
                             },
                             {
-                                "$ref": "#/$defs/FilePart"
-                            },
-                            {
-                                "$ref": "#/$defs/UriPart"
-                            },
-                            {
-                                "$ref": "#/$defs/ReasoningPart"
-                            },
-                            {
-                                "$ref": "#/$defs/CompactionPart"
-                            },
-                            {
-                                "$ref": "#/$defs/GenericPart"
+                                "anyOf": [
+                                    {
+                                        "$ref": "#/$defs/TextPart"
+                                    },
+                                    {
+                                        "$ref": "#/$defs/ToolCallRequestPart"
+                                    },
+                                    {
+                                        "$ref": "#/$defs/ToolCallResponsePart"
+                                    },
+                                    {
+                                        "$ref": "#/$defs/ServerToolCallPart"
+                                    },
+                                    {
+                                        "$ref": "#/$defs/ServerToolCallResponsePart"
+                                    },
+                                    {
+                                        "$ref": "#/$defs/FilePart"
+                                    },
+                                    {
+                                        "$ref": "#/$defs/UriPart"
+                                    },
+                                    {
+                                        "$ref": "#/$defs/ReasoningPart"
+                                    },
+                                    {
+                                        "$ref": "#/$defs/CompactionPart"
+                                    },
+                                    {
+                                        "$ref": "#/$defs/GenericPart"
+                                    }
+                                ],
+                                "not": {
+                                    "properties": {
+                                        "type": {
+                                            "const": "blob"
+                                        }
+                                    }
+                                }
                             }
                         ]
                     },

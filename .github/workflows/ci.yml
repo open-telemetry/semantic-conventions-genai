@@ -84,6 +84,9 @@ jobs:
 
       - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
 
+      - name: Test reference models and JSON schemas
+        run: make test-json-schemas
+
       - name: Regenerate and check committed outputs are in sync
         run: |
           make generate-all
@@ -160,6 +163,16 @@ jobs:
           persist-credentials: false
 
       - uses: $/.github/actions/setup-reference-tooling
+
+      - name: Test media capture
+        if: >-
+          matrix.scenario.lib == 'openai' ||
+          matrix.scenario.lib == 'google-genai'
+        env:
+          SCENARIO_LIB: ${{ matrix.scenario.lib }}
+        run: >-
+          uv run --frozen --python 3.12 --project "scenarios/$SCENARIO_LIB"
+          python -B -m unittest discover -s "scenarios/$SCENARIO_LIB" -p test_media_capture.py -v
 
       - name: Run implementation scenario
         env:

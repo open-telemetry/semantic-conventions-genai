@@ -803,7 +803,7 @@ def run_chat_audio_reference(client):
                 "role": "user",
                 "parts": [
                     {"type": "text", "content": "Respond to this audio clip."},
-                    {"type": "blob", "mime_type": "audio/wav", "content": audio_b64},
+                    {"type": "blob", "modality": "audio", "mime_type": "audio/wav", "content": audio_b64},
                 ],
             }
         ]
