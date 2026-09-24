@@ -109,3 +109,11 @@ The two metric families serve different purposes, reflected in their namespaces:
   operations. The `operation` namespace indicates that each measurement represents
   a single operation's token count, producing per-operation distributions and
   percentiles rather than totals.
+
+This split also explains why failed operations are handled differently across
+the two families. Histograms carry no `error.type` dimension, so a failed
+operation's token count would sit in the same distribution as successful ones
+and skew percentiles; instrumentation should skip recording it there. Counters
+exist to track spend, and tokens consumed before a failure were still billed,
+so instrumentation should keep recording them on the counters even when the
+operation ends in an error.

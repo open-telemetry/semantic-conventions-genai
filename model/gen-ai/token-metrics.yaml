@@ -18,6 +18,9 @@ metrics:
 
       When systems report both used tokens and billable tokens, instrumentation
       MUST report billable tokens.
+
+      Instrumentation SHOULD record these counters for failed operations too,
+      so that tokens consumed before the failure are still counted.
     stability: development
     annotations:
       code_generation:
@@ -93,6 +96,10 @@ metrics:
       it MAY allow users to enable offline token counting. Otherwise it MUST NOT report usage metrics.
 
       When systems report both used tokens and billable tokens, instrumentation MUST report billable tokens.
+
+      Instrumentation SHOULD NOT record this metric for an operation that ended
+      in an error (that is, recorded `error.type`). A successful operation
+      that reports zero tokens SHOULD be recorded with a value of `0`.
     stability: development
     annotations:
       code_generation:
