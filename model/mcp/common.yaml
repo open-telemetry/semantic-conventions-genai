@@ -86,7 +86,7 @@ attribute_groups:
     visibility: internal
     attributes:
       - ref: network.transport
-        brief: The transport protocol used for the MCP session.
+        brief: The transport protocol used for the observed MCP operation.
         note: |
           This attribute SHOULD be set to `tcp` or `quic` if the transport protocol
           is HTTP. It SHOULD be set to `pipe` if the transport is stdio.
@@ -97,13 +97,13 @@ attribute_groups:
         examples:
           - "http"
           - "websocket"
+      - ref: jsonrpc.protocol.version
+        requirement_level:
+          recommended: When it's not `2.0`.
       - ref: network.protocol.version
         note: ""  # overriding the default note
         requirement_level:
           recommended: When applicable.
-      - ref: jsonrpc.protocol.version
-        requirement_level:
-          recommended: When it's not `2.0`.
 
   - id: mcp.client.address_and_port.attributes
     visibility: internal
