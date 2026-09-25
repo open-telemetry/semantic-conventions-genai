@@ -14,3 +14,14 @@ Assistants API is covered by the `openai-assistants` scenario).
 | execute_tool | No — the base client returns tool calls but doesn't execute them; the tool runs in app code | ➖ Not instrumentable |
 | retrieval | Yes — Vector Stores search / `file_search` tool | ❌ Not implemented |
 | memory | Yes — Conversations API / stored responses | ❌ Not implemented |
+
+## Media capture regression
+
+The audio event is checked against the actual SDK request and response using a
+local `MockTransport` and in-memory OTel exporters. From this directory, run:
+
+```bash
+uv run --frozen --python 3.12 python -B -m unittest -v test_media_capture
+```
+
+CI runs the same tests before the OpenAI conformance scenario.
