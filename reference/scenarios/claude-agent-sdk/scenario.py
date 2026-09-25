@@ -3,7 +3,7 @@
 import json
 import os
 
-from reference_shared import flush_and_shutdown, reference_tracer, setup_otel
+from reference_shared import flush_and_shutdown, reference_event_logger, reference_tracer, setup_otel
 
 _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 MOCK_CLI_PATH = os.path.join(
@@ -95,6 +95,68 @@ async def run_agent_query_reference():
             )
 
 
+async def run_tool_permission_denial_gap():
+    """Probe Claude Agent SDK permission denial over its real control channel."""
+    from claude_agent_sdk import (
+        ClaudeAgentOptions,
+        PermissionResultDeny,
+        ResultMessage,
+        query,
+    )
+
+    print("  [permission_denial_gap] Claude SDK can_use_tool denies before execution")
+
+    if os.name != "nt":
+        os.chmod(MOCK_CLI_PATH, os.stat(MOCK_CLI_PATH).st_mode | 0o111)
+    os.environ["CLAUDE_AGENT_SDK_SKIP_VERSION_CHECK"] = "1"
+
+    seen = {}
+
+    async def deny_tool(tool_name, input_data, context):
+        seen["tool_name"] = tool_name
+        seen["input"] = dict(input_data)
+        seen["tool_use_id"] = context.tool_use_id
+        seen["decision_reason"] = context.decision_reason
+        attributes = {
+            "gen_ai.tool.call.decision.outcome": "deny",
+            "gen_ai.tool.name": tool_name,
+        }
+        if context.tool_use_id:
+            attributes["gen_ai.tool.call.id"] = context.tool_use_id
+        reference_event_logger("gen_ai.reference.claude_agent_sdk").emit(
+            event_name="gen_ai.tool.call.decision",
+            body="Tool call denied",
+            attributes=attributes,
+        )
+        return PermissionResultDeny(
+            message="Denied by the permission-probe policy.",
+            interrupt=False,
+        )
+
+    options = ClaudeAgentOptions(
+        cli_path=MOCK_CLI_PATH,
+        max_turns=1,
+        can_use_tool=deny_tool,
+    )
+
+    saw_result = False
+    async for message in query(
+        prompt="[permission-probe] run the protected Bash command",
+        options=options,
+    ):
+        if isinstance(message, ResultMessage):
+            saw_result = True
+
+    if not saw_result:
+        raise RuntimeError("Claude permission probe did not reach a result frame.")
+    if seen.get("tool_name") != "Bash":
+        raise AssertionError(f"Unexpected permission tool: {seen!r}")
+    if seen.get("tool_use_id") != "toolu_mock_permission_001":
+        raise AssertionError(f"Missing stable permission tool_use_id: {seen!r}")
+
+    print("    -> deny returned for Bash tool_use_id=toolu_mock_permission_001")
+
+
 def main():
     import anyio
 
@@ -103,6 +165,7 @@ def main():
     tp, lp, mp = setup_otel()
 
     anyio.run(run_agent_query_reference)
+    anyio.run(run_tool_permission_denial_gap)
 
     flush_and_shutdown(tp, lp, mp)
 

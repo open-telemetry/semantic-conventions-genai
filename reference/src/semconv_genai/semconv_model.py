@@ -46,6 +46,7 @@ _SPANS = {
 _EVENTS = {
     "gen_ai.client.inference.operation.details": "Inference Operation Details",
     "gen_ai.evaluation.result": "Evaluation Result",
+    "gen_ai.tool.call.decision": "Tool Call Decision",
 }
 
 # `gen_ai.client.operation.duration` and the inference usage instruments are a

@@ -47,7 +47,13 @@
       "gen_ai.usage.output_tokens"
     ]
   },
-  "events": {},
+  "events": {
+    "gen_ai.tool.call.decision": [
+      "gen_ai.tool.call.decision.outcome",
+      "gen_ai.tool.call.id",
+      "gen_ai.tool.name"
+    ]
+  },
   "metrics": {
     "gen_ai.client.operation.duration": [
       "gen_ai.operation.name",

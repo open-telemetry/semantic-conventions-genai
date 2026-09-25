@@ -38,6 +38,31 @@ events:
           completion being evaluated. This attribute helps correlate the evaluation
           event with the corresponding operation when span id is not available.
 
+  - name: gen_ai.tool.call.decision
+    requirement_level: recommended
+    brief: >
+      Describes an explicit pre-execution decision for a proposed GenAI tool call.
+    note: >
+      This event SHOULD be recorded only when a framework, harness, application policy,
+      or human approval flow makes an explicit decision before tool execution.
+
+      A denied tool call can produce this event without producing an `execute_tool` span.
+      Instrumentations SHOULD use `gen_ai.tool.call.id` to correlate the decision with
+      the proposed call when the identifier is available.
+
+      This event is not intended for generic hook lifecycle telemetry or post-execution
+      tool outcomes.
+    stability: development
+    attributes:
+      - ref: gen_ai.tool.call.decision.outcome
+        requirement_level: required
+      - ref: gen_ai.tool.call.id
+        requirement_level:
+          recommended: If available.
+      - ref: gen_ai.tool.name
+        requirement_level:
+          recommended: If available.
+
   - name: gen_ai.client.operation.exception
     requirement_level: recommended
     brief: >

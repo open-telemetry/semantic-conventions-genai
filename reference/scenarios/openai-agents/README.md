@@ -10,3 +10,4 @@ execution it drives directly.
 | invoke_agent (internal) | Yes — `Runner.run` on an agent | ✅ Implemented |
 | invoke_workflow | Yes — the SDK's tracing models a run as a workflow (`workflow_name`) | ✅ Implemented |
 | execute_tool | Yes — the SDK runs the function tool | ✅ Implemented |
+| tool call decision (event) | Yes — `needs_approval=True` exposes approval and rejection before execution | ✅ Implemented |

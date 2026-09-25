@@ -484,13 +484,30 @@ attributes:
     stability: development
   - key: gen_ai.tool.name
     type: string
-    brief: Name of the tool utilized by the agent.
+    brief: Name of the tool proposed or invoked by the GenAI system.
     examples: ["Flights"]
     stability: development
   - key: gen_ai.tool.call.id
     type: string
     brief: The tool call identifier.
     examples: ['call_mszuSIzqtI65i1wAUOE8w5H4']
+    stability: development
+  - key: gen_ai.tool.call.decision.outcome
+    type:
+      members:
+        - id: allow
+          value: "allow"
+          brief: The tool call is allowed to proceed to execution.
+          stability: development
+        - id: deny
+          value: "deny"
+          brief: The tool call is not allowed to execute.
+          stability: development
+        - id: require_approval
+          value: "require_approval"
+          brief: The tool call is suspended pending an external approval decision.
+          stability: development
+    brief: The explicit pre-execution decision for a proposed tool call.
     stability: development
   - key: gen_ai.tool.description
     type: string

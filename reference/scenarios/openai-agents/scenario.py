@@ -12,7 +12,7 @@ import openai
 from agents import Agent, RunConfig, Runner, function_tool
 from agents.models.openai_chatcompletions import OpenAIChatCompletionsModel
 from agents.tool import FunctionTool, ToolContext
-from reference_shared import flush_and_shutdown, reference_tracer, setup_otel
+from reference_shared import flush_and_shutdown, reference_event_logger, reference_tracer, setup_otel
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"] + "/v1"
 
@@ -123,6 +123,69 @@ async def run_agent():
         print(f"    -> {str(result.final_output)[:60]}")
 
 
+async def run_tool_rejection_gap():
+    """Probe a rejected tool approval that never becomes execute_tool telemetry."""
+    client = openai.AsyncOpenAI(base_url=MOCK_BASE_URL, api_key="mock-key")
+    request_model = "gpt-4o-mini"
+    model = OpenAIChatCompletionsModel(model=request_model, openai_client=client)
+    executed = False
+
+    @function_tool(name_override="get_weather", needs_approval=True)
+    def guarded_weather(location: str) -> str:
+        """Get the current weather for a location."""
+        nonlocal executed
+        executed = True
+        return f"Sunny, 72°F in {location}"
+
+    agent = Agent(
+        name="approval-gap-agent",
+        instructions="Use the weather tool to answer weather questions.",
+        model=model,
+        tools=[guarded_weather],
+    )
+
+    print("  [approval_rejection_gap] OpenAI Agents tool rejected before execution")
+    result = await Runner.run(agent, "What's the weather in Seattle?")
+    if not result.interruptions:
+        raise RuntimeError("Expected a pending OpenAI Agents tool approval interruption.")
+
+    interruption = result.interruptions[0]
+    logger = reference_event_logger("gen_ai.reference.openai_agents")
+    require_approval_attributes = {
+        "gen_ai.tool.call.decision.outcome": "require_approval",
+        "gen_ai.tool.name": interruption.name,
+    }
+    if interruption.call_id:
+        require_approval_attributes["gen_ai.tool.call.id"] = interruption.call_id
+    logger.emit(
+        event_name="gen_ai.tool.call.decision",
+        body="Tool call requires approval",
+        attributes=require_approval_attributes,
+    )
+    print(f"    -> approval requested: tool={interruption.name} arguments={interruption.arguments}")
+
+    state = result.to_state()
+    state.reject(interruption, rejection_message="Rejected by the operator.")
+    deny_attributes = {
+        "gen_ai.tool.call.decision.outcome": "deny",
+        "gen_ai.tool.name": interruption.name,
+    }
+    if interruption.call_id:
+        deny_attributes["gen_ai.tool.call.id"] = interruption.call_id
+    logger.emit(
+        event_name="gen_ai.tool.call.decision",
+        body="Tool call denied",
+        attributes=deny_attributes,
+    )
+
+    await Runner.run(agent, state)
+
+    if executed:
+        raise AssertionError("Rejected OpenAI Agents tool still executed the handler.")
+
+    print("    -> rejection recorded; guarded tool handler was not executed")
+
+
 async def run_workflow():
     """Run a multi-agent handoff wrapped in a workflow span representing the SDK workflow tracing."""
     from agents import handoff
@@ -180,6 +243,7 @@ def main():
     tp, lp, mp = setup_otel()
 
     asyncio.run(run_agent())
+    asyncio.run(run_tool_rejection_gap())
     asyncio.run(run_workflow())
 
     flush_and_shutdown(tp, lp, mp)

@@ -4,7 +4,7 @@ import asyncio
 import os
 from typing import Annotated
 
-from reference_shared import flush_and_shutdown, setup_otel
+from reference_shared import flush_and_shutdown, reference_event_logger, setup_otel
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"] + "/v1"
 
@@ -135,6 +135,96 @@ async def run_chat_completion_agent_tool_call():
     print(f"    -> {result.text[:60]}")
 
 
+async def run_agent_tool_rejection_gap():
+    """Reference a rejected Agent Framework tool approval before execution."""
+    from agent_framework import Agent, Message, tool
+    from agent_framework.observability import enable_sensitive_telemetry
+    from agent_framework.openai import OpenAIChatClient
+
+    print("  [approval_rejection_gap] proposed tool call rejected before execution")
+
+    enable_sensitive_telemetry(force=True)
+    executed = False
+
+    @tool(approval_mode="always_require")
+    def get_weather(
+        location: Annotated[str, "The location to get the weather for."],
+    ) -> str:
+        """Get the weather for a given location."""
+        nonlocal executed
+        executed = True
+        return f"Sunny in {location}"
+
+    client = OpenAIChatClient(
+        model="gpt-4o-mini",
+        base_url=MOCK_BASE_URL,
+        api_key="mock-key",
+    )
+    agent = Agent(
+        client=client,
+        id="weather-agent-approval-gap",
+        name="WeatherAgentApprovalGap",
+        description="Exercises a rejected tool approval boundary.",
+        instructions="Use the weather tool to answer weather questions.",
+        tools=[get_weather],
+    )
+
+    query = "What's the weather in Seattle?"
+    result = await agent.run(
+        query,
+        options={
+            "temperature": 0.2,
+            "top_p": 0.9,
+            "max_tokens": 64,
+        },
+    )
+    requests = [request for request in result.user_input_requests if request.function_call is not None]
+    if not requests:
+        raise RuntimeError("Agent Framework did not expose the expected tool approval request.")
+
+    approval_request = requests[0]
+    proposed_call = approval_request.function_call
+    call_id = getattr(proposed_call, "call_id", None) or getattr(proposed_call, "id", None)
+    logger = reference_event_logger("gen_ai.reference.agent_framework")
+    require_approval_attributes = {
+        "gen_ai.tool.call.decision.outcome": "require_approval",
+        "gen_ai.tool.name": proposed_call.name,
+    }
+    if call_id:
+        require_approval_attributes["gen_ai.tool.call.id"] = str(call_id)
+    logger.emit(
+        event_name="gen_ai.tool.call.decision",
+        body="Tool call requires approval",
+        attributes=require_approval_attributes,
+    )
+    print(f"    -> approval requested: tool={proposed_call.name} arguments={proposed_call.arguments}")
+
+    rejection = approval_request.to_function_approval_response(approved=False)
+    deny_attributes = {
+        "gen_ai.tool.call.decision.outcome": "deny",
+        "gen_ai.tool.name": proposed_call.name,
+    }
+    if call_id:
+        deny_attributes["gen_ai.tool.call.id"] = str(call_id)
+    logger.emit(
+        event_name="gen_ai.tool.call.decision",
+        body="Tool call denied",
+        attributes=deny_attributes,
+    )
+    await agent.run(
+        [
+            query,
+            Message("assistant", [approval_request]),
+            Message("user", [rejection]),
+        ]
+    )
+
+    if executed:
+        raise AssertionError("Rejected tool approval still executed the handler.")
+
+    print("    -> rejection confirmed; tool handler was not executed")
+
+
 async def run_agent_workflow():
     """Scenario: Agent Framework workflow execution with native telemetry."""
     from agent_framework import Agent, WorkflowBuilder
@@ -185,6 +275,7 @@ def main():
     asyncio.run(run_agent_tool_call())
     asyncio.run(run_tool_call())
     asyncio.run(run_chat_completion_agent_tool_call())
+    asyncio.run(run_agent_tool_rejection_gap())
     asyncio.run(run_agent_workflow())
 
     flush_and_shutdown(tp, lp, mp)
