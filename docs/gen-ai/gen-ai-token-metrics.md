@@ -167,6 +167,7 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 | `mistral_ai` | [Mistral AI](https://mistral.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `moonshot_ai` | [Moonshot AI](https://www.moonshot.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `openai` | [OpenAI](https://openai.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `oracle_cloud.generative_ai` | [OCI Generative AI](https://docs.oracle.com/en-us/iaas/Content/generative-ai/home.htm) [11] | ![Development](https://img.shields.io/badge/-development-blue) |
 | `perplexity` | [Perplexity](https://www.perplexity.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `x_ai` | [xAI](https://x.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 
@@ -175,6 +176,8 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 **[9]:** May be used when specific backend is unknown.
 
 **[10]:** Used when accessing the 'aiplatform.googleapis.com' endpoint.
+
+**[11]:** Used when accessing an `inference.generativeai.<region>.oci.oraclecloud.com` endpoint.
 
 ---
 
@@ -294,6 +297,7 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 | `mistral_ai` | [Mistral AI](https://mistral.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `moonshot_ai` | [Moonshot AI](https://www.moonshot.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `openai` | [OpenAI](https://openai.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `oracle_cloud.generative_ai` | [OCI Generative AI](https://docs.oracle.com/en-us/iaas/Content/generative-ai/home.htm) [11] | ![Development](https://img.shields.io/badge/-development-blue) |
 | `perplexity` | [Perplexity](https://www.perplexity.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `x_ai` | [xAI](https://x.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 
@@ -302,6 +306,8 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 **[9]:** May be used when specific backend is unknown.
 
 **[10]:** Used when accessing the 'aiplatform.googleapis.com' endpoint.
+
+**[11]:** Used when accessing an `inference.generativeai.<region>.oci.oraclecloud.com` endpoint.
 
 ---
 
@@ -420,6 +426,7 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 | `mistral_ai` | [Mistral AI](https://mistral.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `moonshot_ai` | [Moonshot AI](https://www.moonshot.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `openai` | [OpenAI](https://openai.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `oracle_cloud.generative_ai` | [OCI Generative AI](https://docs.oracle.com/en-us/iaas/Content/generative-ai/home.htm) [11] | ![Development](https://img.shields.io/badge/-development-blue) |
 | `perplexity` | [Perplexity](https://www.perplexity.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `x_ai` | [xAI](https://x.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 
@@ -428,6 +435,8 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 **[9]:** May be used when specific backend is unknown.
 
 **[10]:** Used when accessing the 'aiplatform.googleapis.com' endpoint.
+
+**[11]:** Used when accessing an `inference.generativeai.<region>.oci.oraclecloud.com` endpoint.
 
 ---
 
@@ -546,6 +555,7 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 | `mistral_ai` | [Mistral AI](https://mistral.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `moonshot_ai` | [Moonshot AI](https://www.moonshot.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `openai` | [OpenAI](https://openai.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `oracle_cloud.generative_ai` | [OCI Generative AI](https://docs.oracle.com/en-us/iaas/Content/generative-ai/home.htm) [11] | ![Development](https://img.shields.io/badge/-development-blue) |
 | `perplexity` | [Perplexity](https://www.perplexity.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `x_ai` | [xAI](https://x.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 
@@ -554,6 +564,8 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 **[9]:** May be used when specific backend is unknown.
 
 **[10]:** Used when accessing the 'aiplatform.googleapis.com' endpoint.
+
+**[11]:** Used when accessing an `inference.generativeai.<region>.oci.oraclecloud.com` endpoint.
 
 ---
 
@@ -672,6 +684,7 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 | `mistral_ai` | [Mistral AI](https://mistral.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `moonshot_ai` | [Moonshot AI](https://www.moonshot.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `openai` | [OpenAI](https://openai.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `oracle_cloud.generative_ai` | [OCI Generative AI](https://docs.oracle.com/en-us/iaas/Content/generative-ai/home.htm) [11] | ![Development](https://img.shields.io/badge/-development-blue) |
 | `perplexity` | [Perplexity](https://www.perplexity.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `x_ai` | [xAI](https://x.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 
@@ -680,6 +693,8 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 **[9]:** May be used when specific backend is unknown.
 
 **[10]:** Used when accessing the 'aiplatform.googleapis.com' endpoint.
+
+**[11]:** Used when accessing an `inference.generativeai.<region>.oci.oraclecloud.com` endpoint.
 
 ---
 
@@ -800,6 +815,7 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 | `mistral_ai` | [Mistral AI](https://mistral.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `moonshot_ai` | [Moonshot AI](https://www.moonshot.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `openai` | [OpenAI](https://openai.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `oracle_cloud.generative_ai` | [OCI Generative AI](https://docs.oracle.com/en-us/iaas/Content/generative-ai/home.htm) [10] | ![Development](https://img.shields.io/badge/-development-blue) |
 | `perplexity` | [Perplexity](https://www.perplexity.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `x_ai` | [xAI](https://x.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 
@@ -808,6 +824,8 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 **[8]:** May be used when specific backend is unknown.
 
 **[9]:** Used when accessing the 'aiplatform.googleapis.com' endpoint.
+
+**[10]:** Used when accessing an `inference.generativeai.<region>.oci.oraclecloud.com` endpoint.
 
 <!-- prettier-ignore-end -->
 <!-- END AUTOGENERATED TEXT -->
@@ -918,6 +936,7 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 | `mistral_ai` | [Mistral AI](https://mistral.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `moonshot_ai` | [Moonshot AI](https://www.moonshot.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `openai` | [OpenAI](https://openai.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `oracle_cloud.generative_ai` | [OCI Generative AI](https://docs.oracle.com/en-us/iaas/Content/generative-ai/home.htm) [10] | ![Development](https://img.shields.io/badge/-development-blue) |
 | `perplexity` | [Perplexity](https://www.perplexity.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `x_ai` | [xAI](https://x.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 
@@ -926,6 +945,8 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 **[8]:** May be used when specific backend is unknown.
 
 **[9]:** Used when accessing the 'aiplatform.googleapis.com' endpoint.
+
+**[10]:** Used when accessing an `inference.generativeai.<region>.oci.oraclecloud.com` endpoint.
 
 <!-- prettier-ignore-end -->
 <!-- END AUTOGENERATED TEXT -->
