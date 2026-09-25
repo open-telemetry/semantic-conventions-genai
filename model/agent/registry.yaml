@@ -1,0 +1,110 @@
+file_format: definition/2
+attributes:
+  - key: agent.threat.detection.rule_id
+    type: string
+    brief: >
+      Stable identifier of the detection rule that fired, scoped by
+      `agent.threat.detection.ruleset`.
+    note: >
+      Rule identifiers are opaque strings owned by the ruleset author.
+      Consumers MUST NOT attempt to parse meaning from the identifier shape;
+      `agent.threat.detection.ruleset` is the only namespace anchor.
+    examples:
+      - "ATR-2026-00440"
+      - "pipelock.network.egress.deny-cloud-metadata"
+      - "acme.policy.allowlist.tool-call"
+    stability: development
+
+  - key: agent.threat.detection.ruleset
+    type: string
+    brief: >
+      Stable namespace and version of the ruleset that issued the rule, in
+      `<namespace>@<version>` form.
+    note: >
+      The namespace is intentionally open-set. Open detection-rule libraries,
+      vendor proprietary bundles, and locally-authored policy packs are peers
+      in this convention. Consumers MUST NOT hardcode a particular ruleset
+      prefix.
+    examples:
+      - "atr@v2.2.1"
+      - "pipelock-rules@2026.05"
+      - "vendor-x-bundle@2025.10"
+      - "local-policy@deploy-123"
+    stability: development
+
+  - key: agent.threat.detection.severity
+    type:
+      members:
+        - id: low
+          stability: development
+          value: "low"
+          brief: Informational; no immediate enforcement implication.
+        - id: medium
+          stability: development
+          value: "medium"
+          brief: Notable; warrants log review or rate gating.
+        - id: high
+          stability: development
+          value: "high"
+          brief: Likely abuse; warrants blocking or approval routing in most policies.
+        - id: critical
+          stability: development
+          value: "critical"
+          brief: Confirmed abuse pattern; warrants immediate enforcement.
+    brief: Severity assigned by the ruleset to the matched rule.
+    note: >
+      Severity is a property of the rule itself, not the enforcement decision.
+      A `high` rule may still result in `agent.threat.detection.action=allow`
+      under a permissive policy, and a `low` rule may result in `block` under
+      a strict policy.
+    stability: development
+
+  - key: agent.threat.detection.action
+    type:
+      members:
+        - id: allow
+          stability: development
+          value: "allow"
+          brief: Operation was permitted to proceed.
+        - id: block
+          stability: development
+          value: "block"
+          brief: Operation was denied.
+        - id: warn
+          stability: development
+          value: "warn"
+          brief: Operation proceeded; a concern was recorded for downstream review.
+        - id: ask
+          stability: development
+          value: "ask"
+          brief: >
+            Operation paused for human or external approval. The absence of
+            execution is intentional and successful, not a missing span or
+            generic error.
+    brief: Enforcement decision taken at detection time.
+    note: >
+      `action` describes the decision at the detection point, not the eventual
+      resolution of an approval flow. When an `ask` decision is later resolved
+      by a human or external system to `allow` or `block`, the resolution
+      SHOULD be recorded as a separate event or span rather than overwriting
+      this attribute.
+    stability: development
+
+  - key: agent.threat.detection.correlation_id
+    type: string
+    brief: >
+      Opaque producer-defined identifier that joins this span/event to richer
+      audit context held outside telemetry.
+    note: >
+      The value is opaque to this convention. Producers SHOULD use it to join
+      to signed receipts, audit packets, OTLP trace IDs, or vendor-specific
+      evidence stores without putting the underlying prompts, tool arguments,
+      or business payloads directly into the span or event.
+
+      This attribute is intended for span and log/event use; it has unbounded
+      cardinality and SHOULD NOT be used as a metric label.
+    examples:
+      - "pipelock-receipt-01HZ1V4SX5"
+      - "atr-scan-uuid-9e4f"
+      - "audit-packet:sha256:9bf3..."
+    stability: development
