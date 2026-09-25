@@ -10,7 +10,7 @@ import os
 import anthropic
 from opentelemetry.trace import SpanKind, StatusCode
 from opentelemetry.util.genai.handler import get_telemetry_handler
-from opentelemetry.util.genai.types import Blob, InputMessage, OutputMessage, Text
+from opentelemetry.util.genai.types import InputMessage, OutputMessage, Text
 from reference_shared import (
     flush_and_shutdown,
     mock_server_host_port,
@@ -276,7 +276,7 @@ def run_compaction(handler):
 
 
 def run_chat_with_document_input(handler):
-    """Scenario: chat with a PDF document block (document modality)."""
+    """Scenario: chat with a PDF document block and its decoded byte size."""
     print("  [chat_document] chat with PDF document block (util-genai handler)")
     request_model = "claude-sonnet-4-20250514"
     request_max_tokens = 100
@@ -310,12 +310,21 @@ def run_chat_with_document_input(handler):
         server_port=port,
     ) as inv:
         inv.max_tokens = request_max_tokens  # -> gen_ai.request.max_tokens
+        source = messages[0]["content"][1]["source"]
+        payload = base64.b64decode(source["data"])
+        # Dict parts preserve byte_size through util-genai 1.0b0's normal serialization.
         inv.input_messages = [  # -> gen_ai.input.messages
             InputMessage(
                 role="user",
                 parts=[
                     Text(content=instruction),
-                    Blob(mime_type=mime_type, modality="document", content=pdf_bytes),
+                    {
+                        "type": "blob",
+                        "mime_type": source["media_type"],
+                        "modality": "document",
+                        "content": payload,
+                        "byte_size": len(payload),
+                    },
                 ],
             )
         ]
@@ -357,7 +366,7 @@ def run_chat_with_document_input(handler):
 
 
 def run_chat_with_image_input(handler):
-    """Scenario: chat with an image block (image modality)."""
+    """Scenario: chat with an image block and its decoded byte size."""
     print("  [chat_image] chat with image block (util-genai handler)")
     request_model = "claude-sonnet-4-20250514"
     request_max_tokens = 100
@@ -391,12 +400,20 @@ def run_chat_with_image_input(handler):
         server_port=port,
     ) as inv:
         inv.max_tokens = request_max_tokens  # -> gen_ai.request.max_tokens
+        source = messages[0]["content"][1]["source"]
+        payload = base64.b64decode(source["data"])
         inv.input_messages = [  # -> gen_ai.input.messages
             InputMessage(
                 role="user",
                 parts=[
                     Text(content=instruction),
-                    Blob(mime_type=mime_type, modality="image", content=image_bytes),
+                    {
+                        "type": "blob",
+                        "mime_type": source["media_type"],
+                        "modality": "image",
+                        "content": payload,
+                        "byte_size": len(payload),
+                    },
                 ],
             )
         ]

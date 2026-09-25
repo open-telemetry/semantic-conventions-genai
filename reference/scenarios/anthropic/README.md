@@ -24,3 +24,25 @@ event and returns the accepted events. The agent then runs asynchronously (the
 session reports `running`) and its output arrives over
 `beta.sessions.events.stream`, so output messages and usage are not available
 when the send call returns.
+
+## Inline media byte sizes
+
+The image and PDF calls demonstrate the optional `BlobPart.byte_size` proposed
+in [#143](https://github.com/open-telemetry/semantic-conventions-genai/pull/143).
+The size comes from decoding the inline `source.data` passed to the Messages API:
+20 image bytes and 48 PDF bytes, not the 28 and 64 base64 characters. No file or
+URI is fetched to discover a size. Sizes that are not observable stay absent.
+
+The pinned util-genai version has no `byte_size` field on `Blob`, so these calls
+use dict parts with its existing span/event serialization, as the compaction
+scenario already does. This is manual reference telemetry, not automatic
+Anthropic instrumentation support.
+
+Run the local-mock regressions from this directory:
+
+```bash
+uv run --frozen --python 3.12 python -m unittest test_inline_byte_size -v
+```
+
+From the repository root, run `make test-anthropic`. CI runs this target for
+the Anthropic scenario before running its conformance check.

@@ -44,7 +44,7 @@ endif
 BASELINE_REGISTRY := https://github.com/trask/semantic-conventions-genai.git[model]
 
 .PHONY: check-policies generate-registry generate-docs generate-json-schemas generate-all clean package-dev \
-	generate-reference-reports update-upstream-links
+	generate-reference-reports update-upstream-links test-anthropic
 
 # Upstream semantic-conventions version, derived from the pinned git tag in the
 # model/manifest.yaml dependency (the single source of truth for that version).
@@ -103,6 +103,9 @@ update-upstream-links:
 # docs/gen-ai/non-normative/models.py.
 generate-json-schemas:
 	cd docs/gen-ai/non-normative && uv run models.py $(CURDIR)/model/gen-ai
+
+test-anthropic:
+	cd reference/scenarios/anthropic && uv run --frozen python -B -m unittest -v test_inline_byte_size
 
 # Update reference reports (README.md and reports/) from data.json files.
 generate-reference-reports:
