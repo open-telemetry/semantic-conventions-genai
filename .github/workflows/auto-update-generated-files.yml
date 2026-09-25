@@ -36,7 +36,7 @@ jobs:
 
       - name: Load shared version pins
         id: versions
-        uses: ./.github/actions/load-version-pins
+        uses: $/.github/actions/load-version-pins
 
       - name: Install Weaver
         uses: open-telemetry/weaver/.github/actions/setup-weaver@f8e1b42fbd1e09df5263c26b7df6011eaafd454d
