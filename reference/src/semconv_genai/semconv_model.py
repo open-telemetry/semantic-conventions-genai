@@ -63,6 +63,8 @@ _METRICS = {
     "gen_ai.client.operation.duration": "Client Operation Duration",
     "gen_ai.invoke_agent.inference_calls": "Invoke Agent Inference Calls",
     "gen_ai.invoke_agent.tool_calls": "Invoke Agent Tool Calls",
+    "gen_ai.invoke_workflow.inference_calls": "Invoke Workflow Inference Calls",
+    "gen_ai.invoke_workflow.tool_calls": "Invoke Workflow Tool Calls",
 }
 
 

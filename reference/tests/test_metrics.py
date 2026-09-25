@@ -15,6 +15,8 @@ from semconv_genai.semconv_model import metric_specs, span_specs
 
 _TOOL_CALLS = "gen_ai.invoke_agent.tool_calls"
 _INFERENCE_CALLS = "gen_ai.invoke_agent.inference_calls"
+_WORKFLOW_TOOL_CALLS = "gen_ai.invoke_workflow.tool_calls"
+_WORKFLOW_INFERENCE_CALLS = "gen_ai.invoke_workflow.inference_calls"
 
 
 def test_metric_specs_expose_recommended_agent_name():
@@ -33,11 +35,28 @@ def test_metric_specs_are_named_as_the_registry_names_them():
         assert spec.registry_id == name, name
 
 
+def test_workflow_metric_specs_expose_conditionally_required_workflow_name():
+    specs = metric_specs()
+    # gen_ai.workflow.name is the only dimension these metrics carry, so it
+    # matches gen_ai.invoke_workflow.duration rather than the agent metrics.
+    for name in (_WORKFLOW_INFERENCE_CALLS, _WORKFLOW_TOOL_CALLS):
+        assert "gen_ai.workflow.name" in specs[name].conditionally_required, name
+
+
 def test_committed_google_adk_metrics_round_trip():
     entries = {e.library: e for e in load_scenario_data_files()}
     adk = entries["google-adk"]
     for name in (_INFERENCE_CALLS, _TOOL_CALLS):
         assert adk.metrics[name]["gen_ai.agent.name"] == "present", name
+    for name in (_WORKFLOW_INFERENCE_CALLS, _WORKFLOW_TOOL_CALLS):
+        assert adk.metrics[name]["gen_ai.workflow.name"] == "present", name
+
+
+def test_workflow_call_counts_cover_applicable_scenarios():
+    entries = {e.library: e for e in load_scenario_data_files()}
+    for library in ("crewai", "google-adk", "langchain", "openai-agents"):
+        for name in (_WORKFLOW_INFERENCE_CALLS, _WORKFLOW_TOOL_CALLS):
+            assert entries[library].metrics[name]["gen_ai.workflow.name"] == "present", (library, name)
 
 
 def test_registry_span_names_map_onto_report_keys():
@@ -73,7 +92,9 @@ def test_span_specs_are_named_as_the_registry_names_them():
 if __name__ == "__main__":
     test_metric_specs_expose_recommended_agent_name()
     test_metric_specs_are_named_as_the_registry_names_them()
+    test_workflow_metric_specs_expose_conditionally_required_workflow_name()
     test_committed_google_adk_metrics_round_trip()
+    test_workflow_call_counts_cover_applicable_scenarios()
     test_registry_span_names_map_onto_report_keys()
     test_events_keep_their_registry_names()
     test_span_types_absent_from_a_data_file_are_not_reported()

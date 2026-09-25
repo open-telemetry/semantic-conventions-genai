@@ -38,7 +38,14 @@
     ]
   },
   "events": {},
-  "metrics": {},
+  "metrics": {
+    "gen_ai.invoke_workflow.inference_calls": [
+      "gen_ai.workflow.name"
+    ],
+    "gen_ai.invoke_workflow.tool_calls": [
+      "gen_ai.workflow.name"
+    ]
+  },
   "findings": [
     {
       "id": "genai_expected_attribute_missing",

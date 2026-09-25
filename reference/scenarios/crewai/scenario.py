@@ -7,11 +7,25 @@ against a mock OpenAI server, with manual OTel spans.
 import json
 import os
 
-from reference_shared import flush_and_shutdown, reference_tracer, setup_otel
+from reference_shared import flush_and_shutdown, reference_meter, reference_tracer, setup_otel
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"] + "/v1"
 
 _reference_tracer = reference_tracer()
+_reference_meter = reference_meter()
+# Bucket boundaries advised for each metric by docs/gen-ai/gen-ai-metrics.md.
+_workflow_inference_calls = _reference_meter.create_histogram(
+    "gen_ai.invoke_workflow.inference_calls",
+    unit="{inference_call}",
+    description="The number of inference (model) calls made during a single GenAI workflow execution.",
+    explicit_bucket_boundaries_advisory=[0, 1, 2, 4, 8, 16, 32, 64, 128, 256, 512],
+)
+_workflow_tool_calls = _reference_meter.create_histogram(
+    "gen_ai.invoke_workflow.tool_calls",
+    unit="{tool_call}",
+    description="The number of tool calls made during a single GenAI workflow execution.",
+    explicit_bucket_boundaries_advisory=[0, 1, 2, 4, 8, 16, 32, 64, 128, 256, 512],
+)
 
 
 def run_crew():
@@ -21,6 +35,12 @@ def run_crew():
     os.environ["CREWAI_DISABLE_TRACKING"] = "true"
     os.environ["CREWAI_TRACING_ENABLED"] = "false"
     from crewai import LLM, Agent, Crew, Task
+    from crewai.hooks import (
+        register_before_llm_call_hook,
+        register_before_tool_call_hook,
+        unregister_before_llm_call_hook,
+        unregister_before_tool_call_hook,
+    )
     from crewai.tools import tool
 
     request_model = "gpt-4o-mini"
@@ -89,6 +109,13 @@ def run_crew():
 
     crew = Crew(agents=[researcher], tasks=[task], verbose=False)
     workflow_name = getattr(crew, "name", None)
+    call_counts = {"inference": 0, "tool": 0}
+
+    def before_model(context):
+        call_counts["inference"] += 1
+
+    def before_tool(context):
+        call_counts["tool"] += 1
 
     workflow_span_attributes = {
         "gen_ai.operation.name": "invoke_workflow",
@@ -105,7 +132,16 @@ def run_crew():
         # CrewAI delegates the LLM call to the underlying LLM client, whose
         # own instrumentation owns the inference span. This scenario emits only
         # the workflow and tool operations CrewAI runs itself.
-        result = crew.kickoff()
+        register_before_llm_call_hook(before_model)
+        register_before_tool_call_hook(before_tool)
+        try:
+            result = crew.kickoff()
+        finally:
+            unregister_before_llm_call_hook(before_model)
+            unregister_before_tool_call_hook(before_tool)
+            workflow_metric_attributes = {"gen_ai.workflow.name": workflow_name} if workflow_name else {}
+            _workflow_inference_calls.record(call_counts["inference"], workflow_metric_attributes)
+            _workflow_tool_calls.record(call_counts["tool"], workflow_metric_attributes)
         workflow_span.set_attribute(
             "gen_ai.output.messages",
             json.dumps(

@@ -8,5 +8,10 @@ execution it drives directly.
 | --- | --- | --- |
 | inference (`chat`) | No — delegates to the `openai` client | ✅ Correctly not emitted |
 | invoke_agent (internal) | Yes — `Runner.run` on an agent | ✅ Implemented |
-| invoke_workflow | Yes — the SDK's tracing models a run as a workflow (`workflow_name`) | ✅ Implemented |
+| invoke_workflow | Yes — `Runner.run` coordinates agents through handoffs | ✅ Implemented |
 | execute_tool | Yes — the SDK runs the function tool | ✅ Implemented |
+| workflow inference/tool call counts | Yes — model, local-tool and handoff start hooks | ✅ Implemented |
+
+The scenario covers a single agent with a tool and a two-agent handoff workflow.
+The workflow counts calls before execution and records totals when the run ends,
+including on failure. Provider-hosted tools do not trigger the local-tool hook.
