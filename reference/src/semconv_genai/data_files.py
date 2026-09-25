@@ -1,7 +1,7 @@
 """Loading the committed ``scenarios/<library>/data.json`` files for reports.
 
 The files are written by the conformance runner, which keys every signal by its
-registry name (``gen_ai.inference.client``). Reports address span types by the
+registry name (``gen_ai.client.inference``). Reports address span types by the
 shorter keys in :mod:`semconv_genai.semconv_model`, so span keys are mapped back
 on the way in; events and metrics are already named by the registry.
 """

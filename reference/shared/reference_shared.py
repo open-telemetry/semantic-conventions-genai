@@ -38,6 +38,14 @@ def reference_meter(name: str = GENAI_REFERENCE_INSTRUMENTATION) -> metrics.Mete
     return metrics.get_meter(name)
 
 
+def inference_duration_view() -> View:
+    """Publish inference-only client duration measurements under their semantic name."""
+    return View(
+        instrument_name="gen_ai.client.operation.duration",
+        name="gen_ai.client.inference.duration",
+    )
+
+
 def mock_server_host_port(url: str) -> tuple[str | None, int | None]:
     """Return ``(hostname, port)`` parsed from ``url``.
 
@@ -50,7 +58,7 @@ def mock_server_host_port(url: str) -> tuple[str | None, int | None]:
     return parsed.hostname, parsed.port
 
 
-def setup_otel():
+def setup_otel(*, metric_views: tuple[View, ...] = ()):
     """Configure OTel SDK with OTLP exporters.
 
     Returns (TracerProvider, LoggerProvider, MeterProvider).
@@ -76,6 +84,7 @@ def setup_otel():
         metric_readers=[reader],
         resource=resource,
         views=[
+            *metric_views,
             View(
                 instrument_name="otel.sdk.span.*",
                 meter_name="opentelemetry-sdk",

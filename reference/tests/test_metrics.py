@@ -40,10 +40,20 @@ def test_committed_google_adk_metrics_round_trip():
         assert adk.metrics[name]["gen_ai.agent.name"] == "present", name
 
 
+def test_inference_scenarios_report_inference_duration():
+    entries = {entry.library: entry for entry in load_scenario_data_files()}
+    for library in ("agent-framework", "anthropic", "groq"):
+        metrics = entries[library].metrics
+        assert "gen_ai.client.inference.duration" in metrics, library
+        assert "gen_ai.client.operation.duration" not in metrics, library
+        assert metrics["gen_ai.client.inference.duration"]["gen_ai.operation.name"] == "present", library
+        assert metrics["gen_ai.client.inference.duration"]["gen_ai.provider.name"] == "present", library
+
+
 def test_registry_span_names_map_onto_report_keys():
     """A data file names spans as the registry does; reports use short keys."""
     entry = _normalize_scenario_data_entry(
-        {"spans": {"gen_ai.inference.client": ["gen_ai.operation.name"]}},
+        {"spans": {"gen_ai.client.inference": ["gen_ai.operation.name"]}},
         "fake",
     )
     assert set(entry.spans) == {"inference"}
@@ -74,6 +84,7 @@ if __name__ == "__main__":
     test_metric_specs_expose_recommended_agent_name()
     test_metric_specs_are_named_as_the_registry_names_them()
     test_committed_google_adk_metrics_round_trip()
+    test_inference_scenarios_report_inference_duration()
     test_registry_span_names_map_onto_report_keys()
     test_events_keep_their_registry_names()
     test_span_types_absent_from_a_data_file_are_not_reported()
