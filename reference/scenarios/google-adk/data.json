@@ -44,6 +44,11 @@
       "gen_ai.memory.records",
       "gen_ai.memory.store.id",
       "gen_ai.operation.name"
+    ],
+    "gen_ai.run_step.internal": [
+      "gen_ai.conversation.id",
+      "gen_ai.operation.name",
+      "gen_ai.step.name"
     ]
   },
   "events": {},
@@ -61,6 +66,12 @@
     ],
     "gen_ai.invoke_agent.tool_calls": [
       "gen_ai.agent.name"
+    ],
+    "gen_ai.invoke_workflow.duration": [
+      "gen_ai.workflow.name"
+    ],
+    "gen_ai.run_step.duration": [
+      "gen_ai.step.name"
     ]
   },
   "findings": [

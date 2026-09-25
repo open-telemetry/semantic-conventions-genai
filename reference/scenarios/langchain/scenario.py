@@ -3,10 +3,11 @@
 import asyncio
 import json
 import os
+import time
 from typing import TypedDict
 
 from langchain_core.tools import tool
-from reference_shared import flush_and_shutdown, reference_tracer, setup_otel
+from reference_shared import flush_and_shutdown, reference_meter, reference_tracer, setup_otel
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"] + "/v1"
 
@@ -15,6 +16,11 @@ AGENT_NAME = "weather-agent"
 AGENT_SYSTEM_PROMPT = "You are a helpful weather assistant."
 
 _reference_tracer = reference_tracer()
+_run_step_duration = reference_meter().create_histogram(
+    "gen_ai.run_step.duration",
+    unit="s",
+    description="The duration of a single GenAI workflow step.",
+)
 
 
 @tool
@@ -78,9 +84,19 @@ async def agent_node(state: GraphState) -> GraphState:
 
 
 def format_node(state: GraphState) -> GraphState:
+    """Deterministic graph node: no other GenAI span covers it, so run_step does."""
     print("  [format] formatting agent result")
-    last_message = state["messages"][-1]
-    return {"messages": state["messages"] + [f"Weather report: {last_message}"]}
+    step_name = "format"
+    step_span_attributes = {
+        "gen_ai.operation.name": "run_step",
+        "gen_ai.step.name": step_name,
+    }
+    start = time.perf_counter()
+    with _reference_tracer.start_as_current_span(f"run_step {step_name}", attributes=step_span_attributes):
+        last_message = state["messages"][-1]
+        result = {"messages": state["messages"] + [f"Weather report: {last_message}"]}
+    _run_step_duration.record(time.perf_counter() - start, {"gen_ai.step.name": step_name})
+    return result
 
 
 def run_retrieval_reference():

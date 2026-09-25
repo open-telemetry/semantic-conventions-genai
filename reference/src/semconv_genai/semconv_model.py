@@ -40,6 +40,7 @@ _SPANS = {
     "invoke_agent_client": ("gen_ai.invoke_agent.client", "Invoke Agent Client"),
     "invoke_agent_internal": ("gen_ai.invoke_agent.internal", "Invoke Agent Internal"),
     "invoke_workflow": ("gen_ai.invoke_workflow.internal", "Invoke Workflow"),
+    "run_step": ("gen_ai.run_step.internal", "Run Step"),
     "plan": ("gen_ai.plan.internal", "Plan"),
 }
 
@@ -63,6 +64,7 @@ _METRICS = {
     "gen_ai.client.operation.duration": "Client Operation Duration",
     "gen_ai.invoke_agent.inference_calls": "Invoke Agent Inference Calls",
     "gen_ai.invoke_agent.tool_calls": "Invoke Agent Tool Calls",
+    "gen_ai.run_step.duration": "Run Step Duration",
 }
 
 

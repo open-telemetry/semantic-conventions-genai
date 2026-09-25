@@ -30,6 +30,11 @@ _tool_calls = _reference_meter.create_histogram(
     unit="{tool_call}",
     description="The number of tool calls a GenAI agent makes during a single invocation.",
 )
+_run_step_duration = _reference_meter.create_histogram(
+    "gen_ai.run_step.duration",
+    unit="s",
+    description="The duration of a single GenAI workflow step.",
+)
 
 
 class SpanCounter(SpanProcessor):
@@ -58,6 +63,7 @@ def _suppress_adk_native_telemetry():
     from google.adk.flows.llm_flows import base_llm_flow as adk_base_llm_flow
     from google.adk.flows.llm_flows import functions as adk_functions
     from google.adk.telemetry import _metrics as adk_metrics
+    from google.adk.telemetry import node_tracing as adk_node_tracing
     from google.adk.telemetry import tracing as adk_tracing
 
     class _DisabledTracer:
@@ -77,6 +83,7 @@ def _suppress_adk_native_telemetry():
         adk_runners,
         adk_base_llm_flow,
         adk_functions,
+        adk_node_tracing,
     )
     previous_attributes = []
 
@@ -380,6 +387,62 @@ def run_memory_reference():
     asyncio.run(_run())
 
 
+def run_workflow_step_reference():
+    """Scenario: a deterministic node in an ADK graph Workflow, reported as run_step.
+
+    ADK runs every Workflow node through one node runner, where the node's
+    registered name is available. Agent and nested-Workflow nodes get their own
+    spans; any other node is a run_step.
+    """
+    from google.adk.agents.context import Context
+    from google.adk.runners import Runner
+    from google.adk.sessions import InMemorySessionService
+    from google.adk.workflow import START, Workflow
+    from google.genai import types
+
+    print("  [workflow_step] deterministic ADK Workflow node (reference implementation)")
+
+    def validate_input(ctx: Context, node_input: types.Content) -> str:
+        step_name = ctx.node.name
+        step_span_attributes = {
+            "gen_ai.operation.name": "run_step",
+            "gen_ai.step.name": step_name,
+            "gen_ai.conversation.id": ctx.session.id,
+        }
+        start = time.perf_counter()
+        with _reference_tracer.start_as_current_span(f"run_step {step_name}", attributes=step_span_attributes):
+            text = node_input.parts[0].text
+            if not text.strip():
+                raise ValueError("input must not be empty")
+        _run_step_duration.record(time.perf_counter() - start, {"gen_ai.step.name": step_name})
+        return text
+
+    workflow = Workflow(name="validate_workflow", edges=[(START, validate_input)])
+
+    with _suppress_adk_native_telemetry():
+        session_service = InMemorySessionService()
+        runner = Runner(node=workflow, app_name="test_app", session_service=session_service)
+
+        async def _run():
+            session = await session_service.create_session(app_name="test_app", user_id="test_user")
+            workflow_span_attributes = {
+                "gen_ai.operation.name": "invoke_workflow",
+                "gen_ai.workflow.name": workflow.name,
+                "gen_ai.conversation.id": session.id,
+            }
+            with _reference_tracer.start_as_current_span(
+                f"invoke_workflow {workflow.name}", attributes=workflow_span_attributes
+            ):
+                async for _ in runner.run_async(
+                    user_id="test_user",
+                    session_id=session.id,
+                    new_message=types.Content(role="user", parts=[types.Part(text="Weather in Seattle?")]),
+                ):
+                    pass
+
+        asyncio.run(_run())
+
+
 def main():
     print("=== Reference Implementation: Google ADK Reference Implementation ===")
 
@@ -390,6 +453,7 @@ def main():
 
     run_agent_reference()
     run_memory_reference()
+    run_workflow_step_reference()
 
     print(f"\n  [diagnostic] Spans generated: {span_counter.count}")
 

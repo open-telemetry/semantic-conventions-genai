@@ -30,6 +30,7 @@ Run `uv run update-reports` to regenerate.
 | [Invoke Agent Client](reports/invoke-agent-client-span.md) | aws-bedrock-agent, azure-ai-foundry, google-genai, openai-assistants |
 | [Invoke Agent Internal](reports/invoke-agent-internal-span.md) | agent-framework, autogen, crewai, google-adk, langchain, openai-agents, pydantic-ai |
 | [Invoke Workflow](reports/invoke-workflow-span.md) | crewai, google-adk, langchain, openai-agents |
+| [Run Step](reports/run-step-span.md) | crewai, google-adk, langchain |
 | [Plan](reports/plan-span.md) | crewai, langchain |
 | [Inference](reports/inference-span.md) | agent-framework, anthropic, aws-bedrock, azure-ai-inference, azure-openai, claude-agent-sdk, cohere, google-genai, groq, litellm, mistralai, openai, vertexai |
 | [Embeddings](reports/embeddings-span.md) | aws-bedrock, azure-ai-inference, azure-openai, cohere, google-genai, litellm, mistralai, openai |
@@ -59,4 +60,5 @@ Run `uv run update-reports` to regenerate.
 | [Client Operation Duration](reports/gen-ai-client-operation-duration-metric.md) | agent-framework, anthropic, groq |
 | [Invoke Agent Inference Calls](reports/gen-ai-invoke-agent-inference-calls-metric.md) | google-adk |
 | [Invoke Agent Tool Calls](reports/gen-ai-invoke-agent-tool-calls-metric.md) | google-adk |
+| [Run Step Duration](reports/gen-ai-run-step-duration-metric.md) | crewai, google-adk, langchain |
 <!-- status:end -->

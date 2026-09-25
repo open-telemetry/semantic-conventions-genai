@@ -76,6 +76,7 @@ SEMCONV_DOC_LINKS: dict[str, str] = {
     "invoke_agent_client": "../../docs/gen-ai/gen-ai-agent-spans.md#invoke-agent-client-span",
     "invoke_agent_internal": "../../docs/gen-ai/gen-ai-agent-spans.md#invoke-agent-internal-span",
     "invoke_workflow": "../../docs/gen-ai/gen-ai-agent-spans.md#invoke-workflow-span",
+    "run_step": "../../docs/gen-ai/gen-ai-agent-spans.md#run-step-span",
     "plan": "../../docs/gen-ai/gen-ai-agent-spans.md#plan-span",
     "inference": "../../docs/gen-ai/gen-ai-spans.md#inference",
     "embeddings": "../../docs/gen-ai/gen-ai-spans.md#embeddings",
@@ -95,6 +96,7 @@ SEMCONV_DOC_LINKS: dict[str, str] = {
     "gen_ai.client.operation.duration": "../../docs/gen-ai/gen-ai-metrics.md#metric-gen_aiclientoperationduration",
     "gen_ai.invoke_agent.inference_calls": "../../docs/gen-ai/gen-ai-metrics.md#metric-gen_aiinvoke_agentinference_calls",
     "gen_ai.invoke_agent.tool_calls": "../../docs/gen-ai/gen-ai-metrics.md#metric-gen_aiinvoke_agenttool_calls",
+    "gen_ai.run_step.duration": "../../docs/gen-ai/gen-ai-metrics.md#metric-gen_airun_stepduration",
 }
 
 

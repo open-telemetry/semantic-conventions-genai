@@ -37,10 +37,18 @@
     "gen_ai.plan.internal": [
       "gen_ai.agent.name",
       "gen_ai.operation.name"
+    ],
+    "gen_ai.run_step.internal": [
+      "gen_ai.operation.name",
+      "gen_ai.step.name"
     ]
   },
   "events": {},
-  "metrics": {},
+  "metrics": {
+    "gen_ai.run_step.duration": [
+      "gen_ai.step.name"
+    ]
+  },
   "findings": [
     {
       "id": "genai_content_schema",
