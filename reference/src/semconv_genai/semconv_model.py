@@ -60,6 +60,7 @@ _METRICS = {
     "gen_ai.client.inference.usage.reasoning.output_tokens": "Client Inference Reasoning Output Tokens",
     "gen_ai.client.inference.operation.input_tokens": "Client Inference Operation Input Tokens",
     "gen_ai.client.inference.operation.output_tokens": "Client Inference Operation Output Tokens",
+    "gen_ai.client.operation.cost": "Client Operation Cost",
     "gen_ai.client.operation.duration": "Client Operation Duration",
     "gen_ai.invoke_agent.inference_calls": "Invoke Agent Inference Calls",
     "gen_ai.invoke_agent.tool_calls": "Invoke Agent Tool Calls",

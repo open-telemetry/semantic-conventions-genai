@@ -18,6 +18,29 @@ attribute_groups:
       - ref: openai.response.system_fingerprint
         requirement_level: recommended
 metrics:
+  - name: gen_ai.client.operation.cost
+    requirement_level: recommended
+    instrument: histogram
+    unit: "{cost}"
+    brief: 'Monetary cost of a single GenAI client operation.'
+    note: |
+      Records the cost of a single GenAI operation in the currency declared by
+      `gen_ai.usage.cost.currency`.
+
+      This metric SHOULD be reported when the cost amount and its currency can
+      both be determined at recording time, either from the response the client
+      received or from pricing data the emitting component owns.
+      Instrumentations MUST NOT report it when either cannot be determined.
+    stability: development
+    annotations:
+      code_generation:
+        metric_value_type: double
+    attributes:
+      - ref_group: metric_attributes.gen_ai
+      - ref: gen_ai.usage.cost.currency
+        requirement_level: required
+      - ref: gen_ai.usage.cost.source
+        requirement_level: recommended
   - name: gen_ai.client.operation.duration
     requirement_level: recommended
     instrument: histogram
