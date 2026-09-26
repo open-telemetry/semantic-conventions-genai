@@ -183,6 +183,10 @@ def run_agent_reference():
                     agent_span.set_attribute("gen_ai.usage.input_tokens", total_input_tokens)
                 if total_output_tokens:
                     agent_span.set_attribute("gen_ai.usage.output_tokens", total_output_tokens)
+                # One turn per model inference in the agent loop; captured_results
+                # holds one entry per model call the agent made.
+                if captured_results:
+                    agent_span.set_attribute("gen_ai.agent.turn.count", len(captured_results))
                 output_messages = json.dumps(
                     [
                         {

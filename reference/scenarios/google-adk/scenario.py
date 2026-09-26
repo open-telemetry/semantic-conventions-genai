@@ -271,6 +271,10 @@ def run_agent_reference():
                             agent_span.set_attribute("gen_ai.usage.input_tokens", prompt_token_count)
                         if candidate_token_count is not None:
                             agent_span.set_attribute("gen_ai.usage.output_tokens", candidate_token_count)
+                    # One turn per model inference in the agent loop, counted above
+                    # from the model-response events.
+                    if call_counts["inference"]:
+                        agent_span.set_attribute("gen_ai.agent.turn.count", call_counts["inference"])
                     if finish_reason is not None:
                         agent_span.set_attribute(
                             "gen_ai.response.finish_reasons",

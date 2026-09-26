@@ -12,6 +12,7 @@
     ],
     "gen_ai.invoke_agent.internal": [
       "gen_ai.agent.name",
+      "gen_ai.agent.turn.count",
       "gen_ai.input.messages",
       "gen_ai.operation.name",
       "gen_ai.output.messages",
