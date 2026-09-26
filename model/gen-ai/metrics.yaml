@@ -31,7 +31,6 @@ metrics:
       both be determined at recording time, either from the response the client
       received or from pricing data the emitting component owns.
       Instrumentations MUST NOT report it when either cannot be determined.
-
     stability: development
     annotations:
       code_generation:

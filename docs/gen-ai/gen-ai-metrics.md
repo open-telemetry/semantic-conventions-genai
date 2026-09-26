@@ -9,6 +9,7 @@ linkTitle: Metrics
 <!-- toc -->
 
 - [Generative AI client metrics](#generative-ai-client-metrics)
+  - [Metric: `gen_ai.client.operation.cost`](#metric-gen_aiclientoperationcost)
   - [Metric: `gen_ai.client.operation.duration`](#metric-gen_aiclientoperationduration)
   - [Metric: `gen_ai.client.operation.time_to_first_chunk`](#metric-gen_aiclientoperationtime_to_first_chunk)
   - [Metric: `gen_ai.client.operation.time_per_output_chunk`](#metric-gen_aiclientoperationtime_per_output_chunk)
@@ -47,7 +48,6 @@ Inference token metrics (`gen_ai.client.inference.usage.*` counters and
 [Inference Token Metrics](gen-ai-token-metrics.md).
 
 ### Metric: `gen_ai.client.operation.cost`
-
 
 This metric SHOULD be specified with [ExplicitBucketBoundaries] of [0.001, 0.004, 0.016, 0.064, 0.256, 1.024, 4.096, 16.384, 65.536]. These assume a
 currency of roughly US dollar scale; instrumentations recording in a currency with a
