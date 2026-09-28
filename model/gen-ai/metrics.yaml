@@ -124,6 +124,67 @@ metrics:
       - ref: gen_ai.workflow.name
         requirement_level:
           conditionally_required: If available.
+  - name: gen_ai.invoke_workflow.inference_calls
+    requirement_level: recommended
+    annotations:
+      code_generation:
+        metric_value_type: int
+    brief: >
+      The number of inference (model) calls made during a single GenAI
+      workflow execution.
+    note: |
+      The distribution is scoped to a single workflow execution and SHOULD
+      include every inference call in the call tree below the corresponding
+      `gen_ai.invoke_workflow.internal` span, including failed ones. Inference
+      calls made in a nested workflow are also recorded against every
+      enclosing workflow execution.
+
+      Instrumentation SHOULD record the count when the execution ends,
+      including when it is zero. Instrumentation that cannot observe every
+      inference call inside the execution SHOULD NOT record this metric.
+
+      This metric SHOULD be emitted together with the
+      `gen_ai.invoke_workflow.internal` span for the same execution.
+    instrument: histogram
+    unit: "{inference_call}"
+    stability: development
+    attributes:
+      - ref: gen_ai.workflow.name
+        requirement_level:
+          conditionally_required: If available.
+  - name: gen_ai.invoke_workflow.tool_calls
+    requirement_level: recommended
+    annotations:
+      code_generation:
+        metric_value_type: int
+    brief: >
+      The number of tool calls made during a single GenAI workflow execution.
+    note: |
+      The distribution is scoped to a single workflow execution and SHOULD
+      include every tool call in the call tree below the corresponding
+      `gen_ai.invoke_workflow.internal` span, including failed ones. Calls that
+      route control between agents, such as a handoff or a `transfer_to_agent`
+      call, count as tool calls. Tool calls made in a nested workflow are also
+      recorded against every enclosing workflow execution.
+
+      Only client-side tool calls (tools executed by the agent or framework)
+      are counted. Tools executed server-side by the model provider (for
+      example, provider built-in web search or code execution) are not
+      counted here.
+
+      Instrumentation SHOULD record the count when the execution ends,
+      including when it is zero. Instrumentation that cannot observe every
+      tool call inside the execution SHOULD NOT record this metric.
+
+      This metric SHOULD be emitted together with the
+      `gen_ai.invoke_workflow.internal` span for the same execution.
+    instrument: histogram
+    unit: "{tool_call}"
+    stability: development
+    attributes:
+      - ref: gen_ai.workflow.name
+        requirement_level:
+          conditionally_required: If available.
   - name: gen_ai.invoke_agent.duration
     requirement_level: recommended
     annotations:

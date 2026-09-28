@@ -95,6 +95,8 @@ SEMCONV_DOC_LINKS: dict[str, str] = {
     "gen_ai.client.operation.duration": "../../docs/gen-ai/gen-ai-metrics.md#metric-gen_aiclientoperationduration",
     "gen_ai.invoke_agent.inference_calls": "../../docs/gen-ai/gen-ai-metrics.md#metric-gen_aiinvoke_agentinference_calls",
     "gen_ai.invoke_agent.tool_calls": "../../docs/gen-ai/gen-ai-metrics.md#metric-gen_aiinvoke_agenttool_calls",
+    "gen_ai.invoke_workflow.inference_calls": "../../docs/gen-ai/gen-ai-metrics.md#metric-gen_aiinvoke_workflowinference_calls",
+    "gen_ai.invoke_workflow.tool_calls": "../../docs/gen-ai/gen-ai-metrics.md#metric-gen_aiinvoke_workflowtool_calls",
 }
 
 

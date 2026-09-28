@@ -5,8 +5,11 @@ import json
 import os
 from typing import TypedDict
 
+from langchain_core.callbacks import AsyncCallbackHandler
+from langchain_core.runnables import RunnableConfig
+from langchain_core.runnables.config import merge_configs
 from langchain_core.tools import tool
-from reference_shared import flush_and_shutdown, reference_tracer, setup_otel
+from reference_shared import flush_and_shutdown, reference_meter, reference_tracer, setup_otel
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"] + "/v1"
 
@@ -15,6 +18,34 @@ AGENT_NAME = "weather-agent"
 AGENT_SYSTEM_PROMPT = "You are a helpful weather assistant."
 
 _reference_tracer = reference_tracer()
+_reference_meter = reference_meter()
+# Bucket boundaries advised for each metric by docs/gen-ai/gen-ai-metrics.md.
+_workflow_inference_calls = _reference_meter.create_histogram(
+    "gen_ai.invoke_workflow.inference_calls",
+    unit="{inference_call}",
+    description="The number of inference (model) calls made during a single GenAI workflow execution.",
+    explicit_bucket_boundaries_advisory=[0, 1, 2, 4, 8, 16, 32, 64, 128, 256, 512],
+)
+_workflow_tool_calls = _reference_meter.create_histogram(
+    "gen_ai.invoke_workflow.tool_calls",
+    unit="{tool_call}",
+    description="The number of tool calls made during a single GenAI workflow execution.",
+    explicit_bucket_boundaries_advisory=[0, 1, 2, 4, 8, 16, 32, 64, 128, 256, 512],
+)
+
+
+class WorkflowCallCounter(AsyncCallbackHandler):
+    """Count library start callbacks, including calls that fail."""
+
+    def __init__(self):
+        self.inference = 0
+        self.tools = 0
+
+    async def on_chat_model_start(self, serialized, messages, **kwargs):
+        self.inference += 1
+
+    async def on_tool_start(self, serialized, input_str, **kwargs):
+        self.tools += 1
 
 
 @tool
@@ -212,7 +243,7 @@ def run_execute_tool_reference():
 
 
 async def run_workflow_reference():
-    """Scenario: graph execution via LangGraph wrapped in a workflow span."""
+    """Run the same application-defined subgraph twice inside an outer graph."""
     print("  [workflow] LangGraph graph run (reference implementation)")
     from langgraph.graph import END, START, StateGraph
 
@@ -223,10 +254,36 @@ async def run_workflow_reference():
     builder.add_edge("agent", "format")
     builder.add_edge("format", END)
 
-    graph = builder.compile()
+    research = builder.compile(name="Weather research")
+
+    async def run_research(state: GraphState, config: RunnableConfig):
+        counts = WorkflowCallCounter()
+        with _reference_tracer.start_as_current_span(
+            f"invoke_workflow {research.name}",
+            attributes={"gen_ai.operation.name": "invoke_workflow", "gen_ai.workflow.name": research.name},
+        ):
+            try:
+                # Inherit the enclosing workflow's callbacks as well as this
+                # invocation's counter. Each call contributes to both scopes.
+                return await research.ainvoke(
+                    state, config=merge_configs(config, {"run_name": research.name, "callbacks": [counts]})
+                )
+            finally:
+                attributes = {"gen_ai.workflow.name": research.name}
+                _workflow_inference_calls.record(counts.inference, attributes)
+                _workflow_tool_calls.record(counts.tools, attributes)
+
+    outer = StateGraph(GraphState)
+    outer.add_node("first_research", run_research)
+    outer.add_node("second_research", run_research)
+    outer.add_edge(START, "first_research")
+    outer.add_edge("first_research", "second_research")
+    outer.add_edge("second_research", END)
+    graph = outer.compile(name="Weather graph")
 
     input_text = "What's the weather in Seattle?"
-    workflow_name = "Weather graph"
+    workflow_name = graph.name
+    counts = WorkflowCallCounter()
     workflow_span_attributes = {
         "gen_ai.operation.name": "invoke_workflow",
     }
@@ -238,14 +295,18 @@ async def run_workflow_reference():
             "gen_ai.input.messages", json.dumps([{"role": "user", "parts": [{"type": "text", "content": input_text}]}])
         )
 
-        # The graph coordinates an agent node and a formatting node; the agent
-        # invocation is reported as a child invoke_agent span.
-        #
         # OpenInference uses the LangChain run_name as the span name:
         # https://github.com/Arize-ai/openinference/blob/main/python/instrumentation/openinference-instrumentation-langchain/src/openinference/instrumentation/langchain/_tracer.py#L194
         # Customize run name as documented in LangChain:
         # https://docs.langchain.com/langsmith/trace-with-langchain#customize-run-name
-        state = await graph.ainvoke({"messages": [input_text]}, config={"run_name": workflow_name})
+        try:
+            state = await graph.ainvoke(
+                {"messages": [input_text]}, config={"run_name": workflow_name, "callbacks": [counts]}
+            )
+        finally:
+            workflow_metric_attributes = {"gen_ai.workflow.name": workflow_name}
+            _workflow_inference_calls.record(counts.inference, workflow_metric_attributes)
+            _workflow_tool_calls.record(counts.tools, workflow_metric_attributes)
 
         final_output = state["messages"][-1]
         output_messages = json.dumps(
