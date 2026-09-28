@@ -60,7 +60,6 @@ def run_chat():
                     {
                         "role": "assistant",
                         "parts": [{"type": "text", "content": choice.message.content}],
-                        "finish_reason": choice.finish_reason,
                     }
                     for choice in resp.choices
                     if choice.message.content
@@ -86,7 +85,6 @@ def run_chat():
                     {
                         "role": "assistant",
                         "parts": [{"type": "text", "content": c.message.content}],
-                        "finish_reason": c.finish_reason,
                     }
                     for c in resp.choices
                     if c.message.content
@@ -138,12 +136,20 @@ def run_chat_streaming():
             stream=True,
         )
         text = ""
-        finish_reason = None
+        seen_choice_indexes = set()
+        finish_reasons_by_index = {}
         for chunk in resp:
-            if chunk.choices[0].delta.content:
-                text += chunk.choices[0].delta.content
-            if chunk.choices[0].finish_reason is not None:
-                finish_reason = chunk.choices[0].finish_reason
+            for choice in chunk.choices:
+                seen_choice_indexes.add(choice.index)
+                if choice.index == 0 and choice.delta.content:
+                    text += choice.delta.content
+                if choice.finish_reason is not None:
+                    finish_reasons_by_index[choice.index] = choice.finish_reason
+        if seen_choice_indexes:
+            span.set_attribute(
+                "gen_ai.response.finish_reasons",
+                [finish_reasons_by_index.get(index, "error") for index in range(max(seen_choice_indexes) + 1)],
+            )
         span.set_attribute(
             "gen_ai.output.messages",
             json.dumps(
@@ -151,7 +157,6 @@ def run_chat_streaming():
                     {
                         "role": "assistant",
                         "parts": [{"type": "text", "content": text}],
-                        **({"finish_reason": finish_reason} if finish_reason is not None else {}),
                     }
                 ]
             ),

@@ -55,14 +55,6 @@
       "gen_ai.request.model",
       "gen_ai.response.model",
       "server.address"
-    ],
-    "gen_ai.client.token.usage": [
-      "gen_ai.operation.name",
-      "gen_ai.provider.name",
-      "gen_ai.request.model",
-      "gen_ai.response.model",
-      "gen_ai.token.type",
-      "server.address"
     ]
   },
   "findings": [
@@ -120,14 +112,6 @@
       "message": "Attribute 'executor.type' does not exist in the registry.",
       "context": {
         "attribute_key": "executor.type"
-      }
-    },
-    {
-      "id": "genai_content_schema",
-      "message": "Attribute 'gen_ai.output.messages' value does not conform to the GenAI schema: \"finish_reason\" is a required property",
-      "context": {
-        "attribute": "gen_ai.output.messages",
-        "errors": "\"finish_reason\" is a required property"
       }
     },
     {
@@ -246,14 +230,6 @@
     {
       "id": "missing_metric",
       "message": "Metric does not exist in the registry."
-    },
-    {
-      "id": "unit_mismatch",
-      "message": "Unit should be '{token}', but found 'tokens'.",
-      "context": {
-        "expected": "{token}",
-        "unit": "tokens"
-      }
     }
   ],
   "entities": {}

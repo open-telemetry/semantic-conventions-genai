@@ -89,7 +89,6 @@ async def run_agent_query_reference():
                         {
                             "role": "assistant",
                             "parts": [{"type": "text", "content": output_text}],
-                            "finish_reason": str(finish_reason) if finish_reason else None,
                         }
                     ]
                 ),

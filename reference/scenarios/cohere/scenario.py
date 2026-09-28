@@ -63,7 +63,6 @@ def run_chat(client):
                     {
                         "role": "assistant",
                         "parts": [{"type": "text", "content": content}],
-                        "finish_reason": resp.finish_reason if hasattr(resp, "finish_reason") else None,
                     }
                 ]
             ),

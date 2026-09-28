@@ -233,7 +233,6 @@ def run_chat():
             {
                 "role": "assistant",
                 "parts": [{"type": "text", "content": response.text}],
-                "finish_reason": finish_reason,
             }
         ]
         _emit_inference_event(request_model, input_messages, output_messages, response_model, finish_reason, usage)
@@ -331,7 +330,6 @@ def run_chat_tool_call():
                     if tool_call
                     else [{"type": "text", "content": response.text}]
                 ),
-                "finish_reason": finish_reason,
             }
         ]
         _emit_inference_event(request_model, input_messages, output_messages, response_model, finish_reason, usage)
@@ -392,9 +390,7 @@ def run_chat_multimodal():
                 ],
             }
         ]
-        output_messages = [
-            {"role": "assistant", "parts": [{"type": "text", "content": response.text}], "finish_reason": finish_reason}
-        ]
+        output_messages = [{"role": "assistant", "parts": [{"type": "text", "content": response.text}]}]
         _emit_inference_event(request_model, input_messages, output_messages, response_model, finish_reason, usage)
         print("    -> multimodal usage captured")
 

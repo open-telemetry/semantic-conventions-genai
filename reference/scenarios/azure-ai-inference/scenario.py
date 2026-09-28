@@ -40,9 +40,8 @@ def run_chat_reference(client):
         )
         span.set_attribute("gen_ai.response.model", resp.model)
         span.set_attribute("gen_ai.response.id", resp.id)
-        finish_reasons = [str(c.finish_reason) for c in resp.choices if c.finish_reason]
-        if finish_reasons:
-            span.set_attribute("gen_ai.response.finish_reasons", finish_reasons)
+        finish_reasons = [str(c.finish_reason) if c.finish_reason else "error" for c in resp.choices]
+        span.set_attribute("gen_ai.response.finish_reasons", finish_reasons)
         if resp.usage:
             span.set_attribute("gen_ai.usage.input_tokens", resp.usage.prompt_tokens)
             span.set_attribute("gen_ai.usage.output_tokens", resp.usage.completion_tokens)
@@ -61,14 +60,12 @@ def run_chat_reference(client):
                     {
                         "role": "assistant",
                         "parts": [{"type": "text", "content": c.message.content}],
-                        "finish_reason": str(c.finish_reason) if c.finish_reason else None,
                     }
                     for c in resp.choices
                 ]
             ),
         }
-        if finish_reasons:
-            event_attrs["gen_ai.response.finish_reasons"] = finish_reasons
+        event_attrs["gen_ai.response.finish_reasons"] = finish_reasons
         if resp.usage:
             event_attrs["gen_ai.usage.input_tokens"] = resp.usage.prompt_tokens
             event_attrs["gen_ai.usage.output_tokens"] = resp.usage.completion_tokens
@@ -142,9 +139,8 @@ def run_chat_tool_call_reference(client):
         )
         span.set_attribute("gen_ai.response.model", resp.model)
         span.set_attribute("gen_ai.response.id", resp.id)
-        finish_reasons = [str(c.finish_reason) for c in resp.choices if c.finish_reason]
-        if finish_reasons:
-            span.set_attribute("gen_ai.response.finish_reasons", finish_reasons)
+        finish_reasons = [str(c.finish_reason) if c.finish_reason else "error" for c in resp.choices]
+        span.set_attribute("gen_ai.response.finish_reasons", finish_reasons)
         if resp.usage:
             span.set_attribute("gen_ai.usage.input_tokens", resp.usage.prompt_tokens)
             span.set_attribute("gen_ai.usage.output_tokens", resp.usage.completion_tokens)
@@ -180,19 +176,25 @@ def run_chat_streaming_reference(client):
         text = ""
         model = None
         response_id = None
-        finish_reasons = []
+        seen_choice_indexes = set()
+        finish_reasons_by_index = {}
         for chunk in stream:
             model = model or getattr(chunk, "model", None)
             response_id = response_id or getattr(chunk, "id", None)
-            if chunk.choices and chunk.choices[0].delta and chunk.choices[0].delta.content:
-                text += chunk.choices[0].delta.content
-            if chunk.choices and chunk.choices[0].finish_reason:
-                finish_reasons.append(str(chunk.choices[0].finish_reason))
+            for choice in chunk.choices:
+                seen_choice_indexes.add(choice.index)
+                if choice.index == 0 and choice.delta and choice.delta.content:
+                    text += choice.delta.content
+                if choice.finish_reason is not None:
+                    finish_reasons_by_index[choice.index] = str(choice.finish_reason)
         if model:
             span.set_attribute("gen_ai.response.model", model)
         if response_id:
             span.set_attribute("gen_ai.response.id", response_id)
-        if finish_reasons:
+        if seen_choice_indexes:
+            finish_reasons = [
+                finish_reasons_by_index.get(index, "error") for index in range(max(seen_choice_indexes) + 1)
+            ]
             span.set_attribute("gen_ai.response.finish_reasons", finish_reasons)
         print(f"    -> {text[:60]}")
 

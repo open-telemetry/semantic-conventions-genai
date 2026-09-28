@@ -9,7 +9,8 @@
 
 {#- Create registry URLs. -#}
 {% macro registry_url(id, registry) -%}
-{{registry}}/{{ id | split_id | list | first | kebab_case }}.md#{{ id | kebab_case }}
+{%- set entity_id = id.type if id is mapping else id -%}
+{{registry}}/{{ entity_id | split_id | list | first | kebab_case }}.md#{{ entity_id | kebab_case }}
 {%- endmacro %}
 
 {#- Create role tags #}

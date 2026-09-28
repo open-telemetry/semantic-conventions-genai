@@ -6,23 +6,24 @@
 
 | Attribute | Supporting Libraries |
 | --- | --- |
-| gen_ai.operation.name | [adk_a2a], [agent-framework], [anthropic] |
+| gen_ai.operation.name | [adk_a2a], [agent-framework], [anthropic], [groq] |
 
 ## Conditionally Required
 
 | Attribute | Supporting Libraries |
 | --- | --- |
-| gen_ai.provider.name | [adk_a2a], [agent-framework], [anthropic] |
-| gen_ai.request.model | [adk_a2a], [agent-framework], [anthropic] |
-| server.port | [anthropic] |
+| gen_ai.provider.name | [adk_a2a], [agent-framework], [anthropic], [groq] |
+| gen_ai.request.model | [adk_a2a], [agent-framework], [anthropic], [groq] |
+| server.port | [anthropic], [groq] |
 
 ## Recommended
 
 | Attribute | Supporting Libraries |
 | --- | --- |
-| gen_ai.response.model | [adk_a2a], [agent-framework], [anthropic] |
-| server.address | [agent-framework], [anthropic] |
+| gen_ai.response.model | [adk_a2a], [agent-framework], [anthropic], [groq] |
+| server.address | [agent-framework], [anthropic], [groq] |
 
 [adk_a2a]: ../scenarios/adk_a2a/scenario.py
 [agent-framework]: ../scenarios/agent-framework/scenario.py
 [anthropic]: ../scenarios/anthropic/scenario.py
+[groq]: ../scenarios/groq/scenario.py

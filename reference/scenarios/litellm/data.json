@@ -53,14 +53,6 @@
     },
     {
       "id": "genai_expected_attribute_missing",
-      "message": "Span 'chat gpt-4o-mini' (operation 'chat') is missing expected attribute 'gen_ai.response.finish_reasons'",
-      "context": {
-        "missing_attribute": "gen_ai.response.finish_reasons",
-        "operation": "chat"
-      }
-    },
-    {
-      "id": "genai_expected_attribute_missing",
       "message": "Span 'chat gpt-4o-mini' (operation 'chat') is missing expected attribute 'gen_ai.response.id'",
       "context": {
         "missing_attribute": "gen_ai.response.id",

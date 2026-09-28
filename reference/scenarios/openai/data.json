@@ -84,7 +84,69 @@
       "server.port"
     ]
   },
-  "metrics": {},
+  "metrics": {
+    "gen_ai.client.inference.operation.input_tokens": [
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "gen_ai.request.model",
+      "gen_ai.response.model",
+      "server.address",
+      "server.port"
+    ],
+    "gen_ai.client.inference.operation.output_tokens": [
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "gen_ai.request.model",
+      "gen_ai.response.model",
+      "server.address",
+      "server.port"
+    ],
+    "gen_ai.client.inference.usage.cache_read.input_tokens": [
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "gen_ai.request.model",
+      "gen_ai.response.model",
+      "gen_ai.token.modality",
+      "server.address",
+      "server.port"
+    ],
+    "gen_ai.client.inference.usage.cache_write.input_tokens": [
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "gen_ai.request.model",
+      "gen_ai.response.model",
+      "gen_ai.token.modality",
+      "server.address",
+      "server.port"
+    ],
+    "gen_ai.client.inference.usage.input_tokens": [
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "gen_ai.request.model",
+      "gen_ai.response.model",
+      "gen_ai.token.modality",
+      "server.address",
+      "server.port"
+    ],
+    "gen_ai.client.inference.usage.output_tokens": [
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "gen_ai.request.model",
+      "gen_ai.response.model",
+      "gen_ai.token.modality",
+      "server.address",
+      "server.port"
+    ],
+    "gen_ai.client.inference.usage.reasoning.output_tokens": [
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "gen_ai.request.model",
+      "gen_ai.response.model",
+      "gen_ai.token.modality",
+      "server.address",
+      "server.port"
+    ]
+  },
   "findings": [
     {
       "id": "genai_content_schema",
@@ -92,22 +154,6 @@
       "context": {
         "attribute": "gen_ai.tool.definitions",
         "errors": "{\"function\":{\"description\":\"Get the current weather\",\"name\":\"get_weather\",\"parameters\":{\"properties\":{\"location\":{\"description\":\"City name\",\"type\":\"string\"}},\"required\":[\"location\"],\"type\":\"object\"}},\"type\":\"function\"} is not valid under any of the schemas listed in the 'anyOf' keyword"
-      }
-    },
-    {
-      "id": "genai_expected_attribute_missing",
-      "message": "Span 'chat gpt-4o-audio-preview' (operation 'chat') is missing expected attribute 'gen_ai.response.finish_reasons'",
-      "context": {
-        "missing_attribute": "gen_ai.response.finish_reasons",
-        "operation": "chat"
-      }
-    },
-    {
-      "id": "genai_expected_attribute_missing",
-      "message": "Span 'chat gpt-4o-mini' (operation 'chat') is missing expected attribute 'gen_ai.response.finish_reasons'",
-      "context": {
-        "missing_attribute": "gen_ai.response.finish_reasons",
-        "operation": "chat"
       }
     }
   ],

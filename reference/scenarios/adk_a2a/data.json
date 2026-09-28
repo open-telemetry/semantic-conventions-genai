@@ -24,13 +24,6 @@
       "gen_ai.provider.name",
       "gen_ai.request.model",
       "gen_ai.response.model"
-    ],
-    "gen_ai.client.token.usage": [
-      "gen_ai.operation.name",
-      "gen_ai.provider.name",
-      "gen_ai.request.model",
-      "gen_ai.response.model",
-      "gen_ai.token.type"
     ]
   },
   "findings": [

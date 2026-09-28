@@ -27,12 +27,12 @@ def get_weather(ctx: ToolContext[None], location: str) -> str:
         "gen_ai.tool.name": "get_weather",
         "gen_ai.tool.type": "function",
     }
+    if ctx.agent is not None and ctx.agent.name:
+        tool_span_attributes["gen_ai.agent.name"] = ctx.agent.name
     with _reference_tracer.start_as_current_span(
         "execute_tool get_weather", attributes=tool_span_attributes
     ) as tool_span:
         tool_span.set_attribute("gen_ai.tool.description", get_weather.description)
-        if ctx.agent is not None and ctx.agent.name:
-            tool_span.set_attribute("gen_ai.agent.name", ctx.agent.name)
         tool_span.set_attribute("gen_ai.tool.call.id", ctx.tool_call_id)
         tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps({"location": location}))
         result = "Sunny, 72°F"
@@ -103,9 +103,8 @@ async def run_agent():
         if captured_responses:
             last_response = captured_responses[-1]
             finish_reasons = [
-                choice.finish_reason
+                getattr(choice, "finish_reason", None) or "error"
                 for choice in getattr(last_response, "choices", []) or []
-                if getattr(choice, "finish_reason", None)
             ]
             if finish_reasons:
                 agent_span.set_attribute("gen_ai.response.finish_reasons", finish_reasons)

@@ -166,8 +166,8 @@ def run_agent_reference():
                     )
                 finally:
                     model_client.create = original_create
-                finish_reasons = [result.finish_reason for result in captured_results if result.finish_reason]
-                if finish_reasons:
+                if captured_results:
+                    finish_reasons = [result.finish_reason or "error" for result in captured_results]
                     agent_span.set_attribute("gen_ai.response.finish_reasons", finish_reasons)
                 total_input_tokens = sum(
                     result.usage.prompt_tokens
