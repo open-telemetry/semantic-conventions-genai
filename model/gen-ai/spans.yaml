@@ -95,6 +95,10 @@ attribute_groups:
   - id: attributes.gen_ai.invoked_agent.internal.common
     visibility: internal
     attributes:
+      - ref: gen_ai.agent.id
+        brief: The unique and stable identifier of the invoked GenAI agent.
+        requirement_level:
+          conditionally_required: When the invoked agent has a stable identifier representing its definition or a provider-managed agent resource.
       - ref: gen_ai.agent.name
         brief: The human-readable name of the invoked GenAI agent.
         requirement_level:

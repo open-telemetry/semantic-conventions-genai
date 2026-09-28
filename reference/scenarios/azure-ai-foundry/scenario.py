@@ -27,7 +27,10 @@ tracer = trace.get_tracer("gen_ai.client.azure_ai_foundry")
 AGENT_MODEL = "gpt-4o-mini"
 AGENT_NAME = "refimpl-test-agent"
 AGENT_DESCRIPTION = "Reference agent for the Azure AI Foundry Agents API flow."
+SECOND_AGENT_NAME = "refimpl-review-agent"
+SECOND_AGENT_DESCRIPTION = "Second durable agent hosted by the same Azure AI Foundry service."
 AGENT_INSTRUCTIONS = "You are a helpful assistant."
+SECOND_AGENT_INSTRUCTIONS = "You review answers from another agent."
 USER_INPUT = "Hello, agent!"
 REQUEST_MAX_TOKENS = 128
 REQUEST_TEMPERATURE = 0.2
@@ -176,6 +179,40 @@ def run_invoke_agent(client):
 
     # Clean up
     client.agents.delete_version(agent_name=agent.name, agent_version=agent.version)
+
+    # Create a second durable agent through the same service endpoint.
+    # The provider-assigned ID, rather than service.* or the display name,
+    # distinguishes this logical agent from the first one.
+    second_create_attributes = {
+        "gen_ai.operation.name": "create_agent",
+        "gen_ai.provider.name": "azure.ai.openai",
+        "gen_ai.request.model": AGENT_MODEL,
+        "gen_ai.agent.name": SECOND_AGENT_NAME,
+        "server.address": _SERVER_ADDRESS,
+        "server.port": _SERVER_PORT,
+    }
+    with tracer.start_as_current_span(
+        f"create_agent {SECOND_AGENT_NAME}",
+        kind=SpanKind.CLIENT,
+        attributes=second_create_attributes,
+    ) as span:
+        span.set_attribute("gen_ai.agent.description", SECOND_AGENT_DESCRIPTION)
+        second_agent = client.agents.create_version(
+            agent_name=SECOND_AGENT_NAME,
+            definition=PromptAgentDefinition(
+                model=AGENT_MODEL,
+                instructions=SECOND_AGENT_INSTRUCTIONS,
+            ),
+            description=SECOND_AGENT_DESCRIPTION,
+        )
+        span.set_attribute("gen_ai.agent.id", second_agent.id)
+        if getattr(second_agent, "version", None):
+            span.set_attribute("gen_ai.agent.version", str(second_agent.version))
+
+    client.agents.delete_version(
+        agent_name=second_agent.name,
+        agent_version=second_agent.version,
+    )
 
 
 if __name__ == "__main__":

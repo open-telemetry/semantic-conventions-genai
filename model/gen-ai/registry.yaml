@@ -457,15 +457,17 @@ attributes:
     stability: development
   - key: gen_ai.agent.id
     type: string
-    brief: The unique and stable identifier of the GenAI hosted agent resource.
+    brief: The unique and stable identifier of the GenAI agent.
     note: >
-      For hosted agents, this SHOULD be the provider-assigned stable identifier of the
-      agent resource such as [AWS Bedrock agent ARN](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_Agent.html)
+      The value SHOULD identify the agent definition or the provider-managed
+      agent resource. For hosted agents, this SHOULD be the provider-assigned
+      stable identifier of the agent resource such as [AWS Bedrock agent ARN](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_Agent.html)
       or [GCP Agent Registry identifier](https://docs.cloud.google.com/agent-registry/concepts#agent-identifier).
 
-      It's NOT RECOMMENDED to record in-memory agent instance ids on this attribute due to their transient nature.
+      Instrumentations MUST NOT use an identifier that is specific to a
+      transient in-memory instance, process, session, or invocation.
 
-    examples: ['asst_5j66UpCpwteGg4YSxUnt7lPY', 'arn:aws:bedrock:us-east-1:123:agent/42', 'urn:agent:projects-123:projects:123:locations:us-east1:aiplatform:reasoningEngines:456']
+    examples: ['builtin:explore', 'asst_5j66UpCpwteGg4YSxUnt7lPY', 'arn:aws:bedrock:us-east-1:123:agent/42', 'urn:agent:projects-123:projects:123:locations:us-east1:aiplatform:reasoningEngines:456']
     stability: development
   - key: gen_ai.agent.name
     type: string

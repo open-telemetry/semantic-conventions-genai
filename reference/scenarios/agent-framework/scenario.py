@@ -2,20 +2,28 @@
 
 import asyncio
 import os
+import time
 from typing import Annotated
 
-from reference_shared import flush_and_shutdown, setup_otel
+from reference_shared import flush_and_shutdown, reference_meter, setup_otel
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"] + "/v1"
 
+_reference_meter = reference_meter()
+_invoke_agent_duration = _reference_meter.create_histogram(
+    "gen_ai.invoke_agent.duration",
+    unit="s",
+    description="The end-to-end duration of a single in-process agent invocation.",
+)
+
 
 async def run_agent_tool_call():
-    """Scenario: Agent Framework agent execution with native telemetry."""
+    """Scenario: Coding-agent definitions with stable, source-qualified IDs."""
     from agent_framework import Agent, tool
     from agent_framework.observability import enable_sensitive_telemetry
     from agent_framework.openai import OpenAIChatClient
 
-    print("  [agent_run] agent with tool calling (native telemetry)")
+    print("  [agent_run] coding-agent definitions with stable IDs (native telemetry)")
 
     enable_sensitive_telemetry(force=True)
 
@@ -26,29 +34,50 @@ async def run_agent_tool_call():
         """Get the weather for a given location."""
         return f"Sunny in {location}"
 
+    request_model = "gpt-4o-mini"
     client = OpenAIChatClient(
-        model="gpt-4o-mini",
+        model=request_model,
         base_url=MOCK_BASE_URL,
         api_key="mock-key",
     )
-    agent = Agent(
-        client=client,
-        id="weather-agent",
-        name="WeatherAgent",
-        description="Answers weather questions with a function tool.",
-        instructions="You are a helpful weather agent.",
-        tools=[get_weather],
-    )
+    agents = [
+        Agent(
+            client=client,
+            id="builtin:weather",
+            name="WeatherAgent",
+            description="Built-in coding agent that answers weather questions.",
+            instructions="You are the built-in weather agent.",
+            tools=[get_weather],
+        ),
+        Agent(
+            client=client,
+            id="project:weather",
+            name="WeatherAgent",
+            description="Project coding agent that answers weather questions.",
+            instructions="You are the project weather agent.",
+            tools=[get_weather],
+        ),
+    ]
 
-    result = await agent.run(
-        "What's the weather in Seattle?",
-        options={
-            "temperature": 0.2,
-            "top_p": 0.9,
-            "max_tokens": 64,
-        },
-    )
-    print(f"    -> {result.text[:60]}")
+    for agent in agents:
+        start_time = time.perf_counter()
+        result = await agent.run(
+            "What's the weather in Seattle?",
+            options={
+                "temperature": 0.2,
+                "top_p": 0.9,
+                "max_tokens": 64,
+            },
+        )
+        _invoke_agent_duration.record(
+            time.perf_counter() - start_time,
+            {
+                "gen_ai.agent.id": agent.id,
+                "gen_ai.agent.name": agent.name,
+                "gen_ai.request.model": request_model,
+            },
+        )
+        print(f"    -> {agent.id}: {result.text[:60]}")
 
 
 async def run_tool_call():
@@ -113,7 +142,7 @@ async def run_chat_completion_agent_tool_call():
     )
     agent = Agent(
         client=client,
-        id="weather-agent-chat-completions",
+        id="builtin:weather-chat-completions",
         name="WeatherAgentChatCompletions",
         description="Answers weather questions with a function tool.",
         instructions="You are a helpful weather agent.",
