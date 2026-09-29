@@ -37,46 +37,43 @@
   "metrics": {},
   "findings": [
     {
-      "id": "span_status_ok_set_by_instrumentation",
-      "message": "Span 'a2a.client.transports.jsonrpc.JsonRpcTransport._send_request' has status.code='ok'; instrumentations must leave status UNSET on success (OK is reserved for application code).",
+      "id": "missing_attribute",
+      "message": "Attribute 'http.request.method' does not exist in the registry.",
       "context": {
-        "status_code": "ok"
+        "attribute_key": "http.request.method"
       }
     },
     {
-      "id": "span_status_ok_set_by_instrumentation",
-      "message": "Span 'a2a.client.transports.jsonrpc.JsonRpcTransport._send_stream_request' has status.code='ok'; instrumentations must leave status UNSET on success (OK is reserved for application code).",
+      "id": "missing_attribute",
+      "message": "Attribute 'http.response.status_code' does not exist in the registry.",
       "context": {
-        "status_code": "ok"
+        "attribute_key": "http.response.status_code"
       }
     },
     {
-      "id": "span_status_ok_set_by_instrumentation",
-      "message": "Span 'a2a.client.transports.jsonrpc.JsonRpcTransport.close' has status.code='ok'; instrumentations must leave status UNSET on success (OK is reserved for application code).",
+      "id": "missing_attribute",
+      "message": "Attribute 'url.path' does not exist in the registry.",
       "context": {
-        "status_code": "ok"
+        "attribute_key": "url.path"
       }
     },
     {
-      "id": "span_status_ok_set_by_instrumentation",
-      "message": "Span 'a2a.client.transports.jsonrpc.JsonRpcTransport.get_task' has status.code='ok'; instrumentations must leave status UNSET on success (OK is reserved for application code).",
+      "id": "missing_attribute",
+      "message": "Attribute 'url.scheme' does not exist in the registry.",
       "context": {
-        "status_code": "ok"
+        "attribute_key": "url.scheme"
       }
     },
     {
-      "id": "span_status_ok_set_by_instrumentation",
-      "message": "Span 'a2a.client.transports.jsonrpc.JsonRpcTransport.send_message' has status.code='ok'; instrumentations must leave status UNSET on success (OK is reserved for application code).",
+      "id": "missing_attribute",
+      "message": "Attribute 'user_agent.original' does not exist in the registry.",
       "context": {
-        "status_code": "ok"
+        "attribute_key": "user_agent.original"
       }
     },
     {
-      "id": "span_status_ok_set_by_instrumentation",
-      "message": "Span 'a2a.client.transports.jsonrpc.JsonRpcTransport.send_message_streaming' has status.code='ok'; instrumentations must leave status UNSET on success (OK is reserved for application code).",
-      "context": {
-        "status_code": "ok"
-      }
+      "id": "missing_metric",
+      "message": "Metric does not exist in the registry."
     }
   ],
   "entities": {}
