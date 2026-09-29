@@ -67,6 +67,48 @@
   },
   "findings": [
     {
+      "id": "missing_attribute",
+      "message": "Attribute 'gcp.vertex.agent.event_id' does not exist in the registry.",
+      "context": {
+        "attribute_key": "gcp.vertex.agent.event_id"
+      }
+    },
+    {
+      "id": "missing_attribute",
+      "message": "Attribute 'gcp.vertex.agent.invocation_id' does not exist in the registry.",
+      "context": {
+        "attribute_key": "gcp.vertex.agent.invocation_id"
+      }
+    },
+    {
+      "id": "missing_attribute",
+      "message": "Attribute 'gcp.vertex.agent.llm_request' does not exist in the registry.",
+      "context": {
+        "attribute_key": "gcp.vertex.agent.llm_request"
+      }
+    },
+    {
+      "id": "missing_attribute",
+      "message": "Attribute 'gcp.vertex.agent.llm_response' does not exist in the registry.",
+      "context": {
+        "attribute_key": "gcp.vertex.agent.llm_response"
+      }
+    },
+    {
+      "id": "missing_attribute",
+      "message": "Attribute 'gcp.vertex.agent.session_id' does not exist in the registry.",
+      "context": {
+        "attribute_key": "gcp.vertex.agent.session_id"
+      }
+    },
+    {
+      "id": "missing_attribute",
+      "message": "Attribute 'gen_ai.system' does not exist in the registry.",
+      "context": {
+        "attribute_key": "gen_ai.system"
+      }
+    },
+    {
       "id": "genai_content_schema",
       "message": "Attribute 'gen_ai.tool.definitions' value does not conform to the GenAI schema: {\"description\":\"Get the current weather.\",\"name\":\"get_weather\",\"parameters\":{\"properties\":{\"location\":{\"description\":\"City name\",\"type\":\"STRING\"}},\"required\":[\"location\"],\"type\":\"OBJECT\"}} is not valid under any of the schemas listed in the 'anyOf' keyword",
       "context": {
