@@ -393,7 +393,7 @@ Tracing instrumentations that do so, MUST also set `http.request.method_original
 `error.type` SHOULD be set to exception type (its fully-qualified class name, if applicable)
 or a component-specific low cardinality error identifier.
 
-If response status code was sent or received and status indicates an error according to [HTTP span status definition](/docs/http/http-spans.md),
+If response status code was sent or received and status indicates an error according to [HTTP span status definition](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/http/http-spans.md),
 `error.type` SHOULD be set to the status code number (represented as a string), an exception type (if thrown) or a component-specific error identifier.
 
 The `error.type` value SHOULD be predictable and SHOULD have low cardinality.
@@ -413,7 +413,7 @@ If the request has completed successfully, instrumentations SHOULD NOT set `erro
 **[12] `http.request.method_original`:** If and only if it's different than `http.request.method`.
 
 **[13] `http.route`:** MUST NOT be populated when this is not supported by the HTTP server framework as the route attribute should have low-cardinality and the URI path can NOT substitute it.
-SHOULD include the [application root](/docs/http/http-spans.md#http-server-definitions) if there is one.
+SHOULD include the [application root](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/http/http-spans.md#http-server-definitions) if there is one.
 
 A static path segment is a part of the route template with a fixed, low-cardinality value. This includes literal strings like `/users/` and placeholders that
 are constrained to a finite, predefined set of values, e.g. `{controller}` or `{action}`.
@@ -427,7 +427,7 @@ support custom route formatting. Instrumentations SHOULD document the format and
 
 **[15] `network.protocol.name`:** The value SHOULD be normalized to lowercase.
 
-**[16] `server.port`:** See [Setting `server.address` and `server.port` attributes](/docs/http/http-spans.md#setting-serveraddress-and-serverport-attributes).
+**[16] `server.port`:** See [Setting `server.address` and `server.port` attributes](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/http/http-spans.md#setting-serveraddress-and-serverport-attributes).
 
 **[17] `url.query`:** Sensitive content provided in `url.query` SHOULD be scrubbed when instrumentations can identify it.
 
@@ -462,7 +462,7 @@ When a query string value is redacted, the query string key SHOULD still be pres
 
 **[21] `network.protocol.version`:** If protocol version is subject to negotiation (for example using [ALPN](https://www.rfc-editor.org/rfc/rfc7301.html)), this attribute SHOULD be set to the negotiated version. If the actual protocol version is not known, this attribute SHOULD NOT be set.
 
-**[22] `server.address`:** See [Setting `server.address` and `server.port` attributes](/docs/http/http-spans.md#setting-serveraddress-and-serverport-attributes).
+**[22] `server.address`:** See [Setting `server.address` and `server.port` attributes](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/http/http-spans.md#setting-serveraddress-and-serverport-attributes).
 
 **[23] `client.port`:** When observed from the server side, and when communicating through an intermediary, `client.port` SHOULD represent the client port behind any intermediaries,  for example proxies, if it's available.
 
