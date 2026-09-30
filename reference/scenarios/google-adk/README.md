@@ -13,5 +13,6 @@ owns the agent, workflow, tool, and memory operations it runs directly.
 | memory | Yes — memory service upsert / search | ✅ Implemented |
 | skills | Yes — `SkillToolset` runs the skill tools | ✅ Implemented |
 
+The scenario runs the agent as a child of an ADK `SequentialAgent` workflow.
 The `invoke_agent` and `invoke_workflow` spans record `user.id` from the
 `Session.user_id` value returned by ADK's session service.

@@ -115,7 +115,7 @@ def _suppress_adk_native_telemetry():
 
 def run_agent_reference():
     """Scenario: basic agent execution via Google ADK with reference implementation."""
-    from google.adk.agents import Agent
+    from google.adk.agents import Agent, SequentialAgent
     from google.adk.models.google_llm import Gemini
     from google.adk.runners import Runner
     from google.adk.sessions import InMemorySessionService
@@ -193,9 +193,10 @@ def run_agent_reference():
                 frequency_penalty=request_frequency_penalty,
             ),
         )
+        workflow = SequentialAgent(name="test_workflow", sub_agents=[agent])
 
         session_service = InMemorySessionService()
-        runner = Runner(agent=agent, app_name="test_app", session_service=session_service)
+        runner = Runner(agent=workflow, app_name="test_app", session_service=session_service)
 
         async def _run():
             session = await session_service.create_session(
@@ -206,9 +207,9 @@ def run_agent_reference():
                 "gen_ai.operation.name": "invoke_workflow",
             }
             with _reference_tracer.start_as_current_span(
-                f"invoke_workflow {runner.app_name}", attributes=workflow_span_attributes
+                f"invoke_workflow {workflow.name}", attributes=workflow_span_attributes
             ) as workflow_span:
-                workflow_span.set_attribute("gen_ai.workflow.name", runner.app_name)
+                workflow_span.set_attribute("gen_ai.workflow.name", workflow.name)
                 workflow_span.set_attribute("gen_ai.conversation.id", session.id)
                 workflow_span.set_attribute("user.id", session.user_id)
                 workflow_span.set_attribute(

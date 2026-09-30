@@ -145,9 +145,6 @@ attribute_groups:
       - ref: gen_ai.conversation.id
         requirement_level:
           conditionally_required: If and only if the instrumented library has one readily available, or the user application provides one through OpenTelemetry context or library-specific mechanisms.
-      - ref: user.id
-        brief: Unique identifier of the user on whose behalf the agent is invoked.
-        requirement_level: opt_in
       - ref: gen_ai.data_source.id
         requirement_level:
           conditionally_required: If applicable.
@@ -566,6 +563,10 @@ spans:
     stability: development
     attributes:
       - ref_group: attributes.gen_ai.invoke_agent.common
+      - ref: user.id
+        brief: Unique identifier of the user on whose behalf the agent is invoked.
+        requirement_level:
+          conditionally_required: If and only if the instrumented library has one readily available, or the user application provides one through OpenTelemetry context or library-specific mechanisms.
       - ref: gen_ai.operation.name
         sampling_relevant: true
       - ref: gen_ai.request.model
@@ -673,7 +674,8 @@ spans:
           conditionally_required: If and only if the instrumented library has one readily available, or the user application provides one through OpenTelemetry context or library-specific mechanisms.
       - ref: user.id
         brief: Unique identifier of the user on whose behalf the workflow is invoked.
-        requirement_level: opt_in
+        requirement_level:
+          conditionally_required: If and only if the instrumented library has one readily available, or the user application provides one through OpenTelemetry context or library-specific mechanisms.
       - ref: gen_ai.input.messages
         requirement_level: opt_in
       - ref: gen_ai.output.messages
