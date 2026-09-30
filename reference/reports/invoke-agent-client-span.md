@@ -23,6 +23,7 @@
 | gen_ai.request.choice.count | (none) |
 | gen_ai.request.seed | (none) |
 | server.port | [aws-bedrock-agent], [azure-ai-foundry], [openai-assistants] |
+| user.id | (none) |
 
 ## Recommended
 

@@ -10,7 +10,8 @@
       "gen_ai.tool.call.result",
       "gen_ai.tool.description",
       "gen_ai.tool.name",
-      "gen_ai.tool.type"
+      "gen_ai.tool.type",
+      "user.id"
     ],
     "gen_ai.invoke_agent.internal": [
       "gen_ai.agent.name",
@@ -116,13 +117,6 @@
       "context": {
         "attribute": "gen_ai.tool.definitions",
         "errors": "{\"description\":\"Get the current weather.\",\"name\":\"get_weather\",\"parameters\":{\"properties\":{\"location\":{\"description\":\"City name\",\"type\":\"STRING\"}},\"required\":[\"location\"],\"type\":\"OBJECT\"}} is not valid under any of the schemas listed in the 'anyOf' keyword"
-      }
-    },
-    {
-      "id": "missing_attribute",
-      "message": "Attribute 'process.exit.code' does not exist in the registry.",
-      "context": {
-        "attribute_key": "process.exit.code"
       }
     },
     {

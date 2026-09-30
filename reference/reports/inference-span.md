@@ -23,6 +23,7 @@
 | gen_ai.request.stream | [openai] |
 | gen_ai.request.top_k | (none) |
 | server.port | [anthropic], [aws-bedrock], [azure-ai-inference], [azure-openai], [cohere], [mistralai], [openai] |
+| user.id | (none) |
 
 ## Recommended
 

@@ -14,5 +14,6 @@ owns the agent, workflow, tool, and memory operations it runs directly.
 | skills | Yes — `SkillToolset` runs the skill tools | ✅ Implemented |
 
 The scenario runs the agent as a child of an ADK `SequentialAgent` workflow.
-The `invoke_agent` and `invoke_workflow` spans record `user.id` from the
-`Session.user_id` value returned by ADK's session service.
+The `invoke_agent`, `invoke_workflow`, and `execute_tool` spans record `user.id`
+from the `Session.user_id` value returned by ADK's session service. Tool spans
+read the same value through `ToolContext.session.user_id`.

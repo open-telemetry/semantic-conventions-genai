@@ -154,6 +154,7 @@ def run_agent_reference():
             "execute_tool get_weather", attributes=tool_span_attributes
         ) as tool_span:
             tool_span.set_attribute("gen_ai.conversation.id", tool_context.session.id)
+            tool_span.set_attribute("user.id", tool_context.session.user_id)
             tool_span.set_attribute("gen_ai.tool.description", "Get the current weather.")
             if tool_context.function_call_id:
                 tool_span.set_attribute("gen_ai.tool.call.id", tool_context.function_call_id)
@@ -461,6 +462,8 @@ def run_skills_reference():
             ) as span:
                 span.set_attribute("gen_ai.tool.description", self.description)
                 span.set_attribute("gen_ai.agent.name", tool_context.agent_name)
+                span.set_attribute("gen_ai.conversation.id", tool_context.session.id)
+                span.set_attribute("user.id", tool_context.session.user_id)
                 if tool_context.function_call_id:
                     span.set_attribute("gen_ai.tool.call.id", tool_context.function_call_id)
                 span.set_attribute("gen_ai.tool.call.arguments", json.dumps(args))
@@ -609,7 +612,7 @@ def run_skills_reference():
                 session_service=session_service,
             )
 
-        async def invoke(runner, session_id, prompt, tool_name=None):
+        async def invoke(runner, session, prompt, tool_name=None):
             """One agent invocation, wrapped in its `invoke_agent` span.
 
             Exposing a single skill tool for the turn is what makes the model's
@@ -627,7 +630,8 @@ def run_skills_reference():
             with _reference_tracer.start_as_current_span(
                 f"invoke_agent {agent_name}", attributes=agent_span_attributes
             ) as agent_span:
-                agent_span.set_attribute("gen_ai.conversation.id", session_id)
+                agent_span.set_attribute("gen_ai.conversation.id", session.id)
+                agent_span.set_attribute("user.id", session.user_id)
                 agent_span.set_attribute(
                     "gen_ai.system_instructions",
                     json.dumps([{"type": "text", "content": agent.instruction}]),
@@ -640,8 +644,8 @@ def run_skills_reference():
                 finish_reason = None
                 last_text = ""
                 async for event in runner.run_async(
-                    user_id=user_id,
-                    session_id=session_id,
+                    user_id=session.user_id,
+                    session_id=session.id,
                     new_message=types.Content(role="user", parts=[types.Part(text=prompt)]),
                 ):
                     if getattr(event, "usage_metadata", None) is not None:
@@ -683,14 +687,14 @@ def run_skills_reference():
             ]
             for prompt, tool_name in stages:
                 session = await session_service.create_session(app_name="test_app", user_id=user_id)
-                await invoke(lifecycle_runner, session.id, prompt, tool_name)
+                await invoke(lifecycle_runner, session, prompt, tool_name)
 
             # A model can also name a skill that does not exist. No skill resolves,
             # so the span carries the name the call asked for and the failure, and
             # nothing else about a skill.
             load_skill_tool.skill_names = ["ocr-tables"]
             session = await session_service.create_session(app_name="test_app", user_id=user_id)
-            await invoke(lifecycle_runner, session.id, "Extract the tables from this PDF.", "load_skill")
+            await invoke(lifecycle_runner, session, "Extract the tables from this PDF.", "load_skill")
 
             # A script the skill does not bundle fails before anything runs, so the
             # execution carries `error.type` and no exit code — the two describe
@@ -698,7 +702,7 @@ def run_skills_reference():
             run_script_tool.script_paths = ["scripts/lint.sh"]
             run_script_tool.commands = [f"bash {toolset.skills_folder / 'code-review' / 'scripts/lint.sh'}"]
             session = await session_service.create_session(app_name="test_app", user_id=user_id)
-            await invoke(lifecycle_runner, session.id, "Lint it too.", "run_skill_script")
+            await invoke(lifecycle_runner, session, "Lint it too.", "run_skill_script")
 
         async def _run():
             try:
