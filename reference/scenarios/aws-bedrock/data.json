@@ -72,6 +72,14 @@
     },
     {
       "id": "genai_expected_attribute_missing",
+      "message": "Span 'chat anthropic.claude-3-haiku-20240307-v1:0' (operation 'chat') is missing expected attribute 'gen_ai.usage.cost.amount'",
+      "context": {
+        "missing_attribute": "gen_ai.usage.cost.amount",
+        "operation": "chat"
+      }
+    },
+    {
+      "id": "genai_expected_attribute_missing",
       "message": "Span 'chat' (operation 'chat') is missing expected attribute 'gen_ai.response.id'",
       "context": {
         "missing_attribute": "gen_ai.response.id",
@@ -83,6 +91,14 @@
       "message": "Span 'chat' (operation 'chat') is missing expected attribute 'gen_ai.response.model'",
       "context": {
         "missing_attribute": "gen_ai.response.model",
+        "operation": "chat"
+      }
+    },
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'chat' (operation 'chat') is missing expected attribute 'gen_ai.usage.cost.amount'",
+      "context": {
+        "missing_attribute": "gen_ai.usage.cost.amount",
         "operation": "chat"
       }
     }

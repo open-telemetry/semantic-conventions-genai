@@ -66,6 +66,14 @@
       "context": {
         "attribute_key": "gen_ai.provider.name"
       }
+    },
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'chat mistral-large-latest' (operation 'chat') is missing expected attribute 'gen_ai.usage.cost.amount'",
+      "context": {
+        "missing_attribute": "gen_ai.usage.cost.amount",
+        "operation": "chat"
+      }
     }
   ],
   "entities": {}
