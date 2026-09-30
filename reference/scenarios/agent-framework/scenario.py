@@ -253,15 +253,6 @@ async def run_skills():
                     # in hand before the call runs.
                     skill = self._find_skill(skills, skill_name) if isinstance(skill_name, str) else None
                     if skill is not None:
-                        # `direct`: Agent Framework parses the SKILL.md metadata
-                        # into SkillFrontmatter and exposes it as runtime state.
-                        metadata = skill.frontmatter.metadata or {}
-                        skill_id = metadata.get("id")
-                        skill_version = metadata.get("version")
-                        if skill_id:
-                            span.set_attribute("gen_ai.skill.id", skill_id)
-                        if skill_version:
-                            span.set_attribute("gen_ai.skill.version", skill_version)
                         span.set_attribute("gen_ai.skill.description", skill.frontmatter.description)
                         span.set_attribute("gen_ai.skill.source.uri", pathlib.Path(skill.path).as_uri())
                     # `direct`: the resource the call names is a call argument,

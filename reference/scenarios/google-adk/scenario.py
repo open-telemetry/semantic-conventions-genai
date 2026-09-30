@@ -465,14 +465,6 @@ def run_skills_reference():
                 # frontmatter and the location ADK loaded it from are in hand.
                 skill = skills_by_name.get(skill_name)
                 if skill is not None:
-                    # `direct`: ADK parses the SKILL.md metadata into Frontmatter
-                    # and exposes it on the resolved Skill at runtime.
-                    skill_id = skill.frontmatter.metadata.get("id")
-                    skill_version = skill.frontmatter.metadata.get("version")
-                    if skill_id:
-                        span.set_attribute("gen_ai.skill.id", skill_id)
-                    if skill_version:
-                        span.set_attribute("gen_ai.skill.version", skill_version)
                     span.set_attribute("gen_ai.skill.description", skill.description)
                     if skill._uri is not None:
                         span.set_attribute("gen_ai.skill.source.uri", skill._uri)

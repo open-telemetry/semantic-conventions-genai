@@ -2,9 +2,7 @@
 
 The Google Agent Development Kit (ADK) is an agent framework. It calls models
 through its model layer (e.g. `google-genai`), so it **delegates inference**. It
-owns the agent, workflow, tool, and memory operations it runs directly. The
-skill lifecycle coverage includes identity and version metadata parsed by ADK
-from `SKILL.md`.
+owns the agent, workflow, tool, and memory operations it runs directly.
 
 | Operation | Should be instrumented here | Status |
 | --- | --- | --- |
