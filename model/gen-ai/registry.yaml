@@ -1056,6 +1056,23 @@ attributes:
     brief: The name of the [Agent Skill](https://agentskills.io/specification#skill-md-format).
     examples: ["code-review", "pdf-processing"]
     stability: development
+  - key: gen_ai.skill.id
+    type: string
+    brief: The unique identifier of the Agent Skill within its source or runtime.
+    note: |
+      This SHOULD be the identifier provided by the skill source or runtime.
+      Instrumentations SHOULD NOT generate an identifier when none is available.
+    examples: ["skill_29bbe8a7", "code-review_filesystem-default"]
+    stability: development
+  - key: gen_ai.skill.version
+    type: string
+    brief: The version of the Agent Skill.
+    note: |
+      The version string can follow any versioning scheme used by the skill
+      source or runtime. Instrumentations SHOULD record the version that was
+      resolved for the operation when it is available.
+    examples: ["1.0.0", "3", "2026-09-30"]
+    stability: development
   - key: gen_ai.skill.description
     type: string
     brief: The [description of the Agent Skill](https://agentskills.io/specification#skill-md-format).

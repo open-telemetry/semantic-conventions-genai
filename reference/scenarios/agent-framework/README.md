@@ -4,7 +4,8 @@ Microsoft Agent Framework is an **agent framework** with built-in OpenTelemetry
 instrumentation, so this scenario turns that on
 (`enable_sensitive_telemetry`) and exercises the library rather than wrapping
 it. It owns agents, workflows and tool execution, and its chat clients report
-the model call themselves.
+the model call themselves. The skill lifecycle coverage includes identity and
+version metadata parsed by `SkillsProvider` from `SKILL.md`.
 
 | Operation | Should be instrumented here | Status |
 | --- | --- | --- |
