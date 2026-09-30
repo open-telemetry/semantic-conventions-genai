@@ -898,6 +898,12 @@ span_refinements:
         requirement_level:
           conditionally_required: If the skill name is available.
         sampling_relevant: true
+      - ref: gen_ai.skill.id
+        requirement_level:
+          recommended: If the skill identifier is available.
+      - ref: gen_ai.skill.version
+        requirement_level:
+          recommended: If the skill version is available.
       - ref: gen_ai.skill.description
         requirement_level:
           recommended: If the skill description is available.
@@ -933,6 +939,12 @@ span_refinements:
         requirement_level:
           conditionally_required: If the skill name is available.
         sampling_relevant: true
+      - ref: gen_ai.skill.id
+        requirement_level:
+          recommended: If the skill identifier is available.
+      - ref: gen_ai.skill.version
+        requirement_level:
+          recommended: If the skill version is available.
       - ref: gen_ai.skill.resource.name
         requirement_level:
           conditionally_required: If the skill resource name is available.
@@ -990,6 +1002,12 @@ span_refinements:
         requirement_level:
           conditionally_required: If the command is associated with a skill and its name is available.
         sampling_relevant: true
+      - ref: gen_ai.skill.id
+        requirement_level:
+          recommended: If the command is associated with a skill and its identifier is available.
+      - ref: gen_ai.skill.version
+        requirement_level:
+          recommended: If the command is associated with a skill and its version is available.
       - ref: gen_ai.skill.resource.name
         requirement_level:
           conditionally_required: If the command executes a named skill resource and the name is available.
