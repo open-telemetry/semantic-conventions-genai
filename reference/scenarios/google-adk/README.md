@@ -12,3 +12,6 @@ owns the agent, workflow, tool, and memory operations it runs directly.
 | execute_tool | Yes — ADK runs the tool | ✅ Implemented |
 | memory | Yes — memory service upsert / search | ✅ Implemented |
 | skills | Yes — `SkillToolset` runs the skill tools | ✅ Implemented |
+
+The `invoke_agent` and `invoke_workflow` spans record `user.id` from the
+`Session.user_id` value returned by ADK's session service.

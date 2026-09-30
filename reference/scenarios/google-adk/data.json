@@ -30,14 +30,16 @@
       "gen_ai.system_instructions",
       "gen_ai.tool.definitions",
       "gen_ai.usage.input_tokens",
-      "gen_ai.usage.output_tokens"
+      "gen_ai.usage.output_tokens",
+      "user.id"
     ],
     "gen_ai.invoke_workflow.internal": [
       "gen_ai.conversation.id",
       "gen_ai.input.messages",
       "gen_ai.operation.name",
       "gen_ai.output.messages",
-      "gen_ai.workflow.name"
+      "gen_ai.workflow.name",
+      "user.id"
     ],
     "gen_ai.memory.client": [
       "gen_ai.memory.query.text",

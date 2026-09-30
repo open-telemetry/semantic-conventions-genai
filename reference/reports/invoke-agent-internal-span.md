@@ -43,6 +43,7 @@
 | gen_ai.output.messages | [agent-framework], [autogen], [crewai], [google-adk], [langchain], [openai-agents], [pydantic-ai] |
 | gen_ai.system_instructions | [agent-framework], [autogen], [crewai], [google-adk], [langchain], [openai-agents], [pydantic-ai] |
 | gen_ai.tool.definitions | [agent-framework], [autogen], [crewai], [google-adk], [langchain], [openai-agents], [pydantic-ai] |
+| user.id | [google-adk] |
 
 [agent-framework]: ../scenarios/agent-framework/scenario.py
 [autogen]: ../scenarios/autogen/scenario.py

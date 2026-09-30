@@ -210,6 +210,7 @@ def run_agent_reference():
             ) as workflow_span:
                 workflow_span.set_attribute("gen_ai.workflow.name", runner.app_name)
                 workflow_span.set_attribute("gen_ai.conversation.id", session.id)
+                workflow_span.set_attribute("user.id", session.user_id)
                 workflow_span.set_attribute(
                     "gen_ai.input.messages",
                     json.dumps([{"role": "user", "parts": [{"type": "text", "content": input_text}]}]),
@@ -231,6 +232,7 @@ def run_agent_reference():
                     agent_span.set_attribute("gen_ai.request.presence_penalty", request_presence_penalty)
                     agent_span.set_attribute("gen_ai.request.stop_sequences", request_stop_sequences)
                     agent_span.set_attribute("gen_ai.conversation.id", session.id)
+                    agent_span.set_attribute("user.id", session.user_id)
                     agent_span.set_attribute(
                         "gen_ai.system_instructions",
                         json.dumps([{"type": "text", "content": agent.instruction}]),
@@ -244,7 +246,7 @@ def run_agent_reference():
                     finish_reason = None
                     last_text = ""
                     async for event in runner.run_async(
-                        user_id="test_user",
+                        user_id=session.user_id,
                         session_id=session.id,
                         new_message=types.Content(
                             role="user",

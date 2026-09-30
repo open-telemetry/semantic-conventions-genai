@@ -21,6 +21,7 @@
 | --- | --- |
 | gen_ai.input.messages | [crewai], [google-adk], [langchain], [openai-agents] |
 | gen_ai.output.messages | [crewai], [google-adk], [langchain], [openai-agents] |
+| user.id | [google-adk] |
 
 [crewai]: ../scenarios/crewai/scenario.py
 [google-adk]: ../scenarios/google-adk/scenario.py
