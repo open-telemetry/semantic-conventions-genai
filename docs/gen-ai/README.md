@@ -35,7 +35,7 @@ and availability conditions when recording them.
 
 | Attribute | Use across spans | Use on metrics |
 | --- | --- | --- |
-| [`gen_ai.conversation.id`](/docs/registry/attributes/gen-ai.md) | Correlates [agent invocations](gen-ai-agent-spans.md#invoke-agent-client-span), [workflow invocations](gen-ai-agent-spans.md#invoke-workflow-span), [inference](gen-ai-spans.md#inference), and [tool executions](gen-ai-spans.md#execute-tool-span) belonging to the same conversation. | Not defined on GenAI metrics. |
+| [`gen_ai.conversation.id`](/docs/registry/attributes/gen-ai.md) | Correlates [remote](gen-ai-agent-spans.md#invoke-agent-client-span) and [local](gen-ai-agent-spans.md#invoke-agent-internal-span) agent invocations, [workflow invocations](gen-ai-agent-spans.md#invoke-workflow-span), [inference](gen-ai-spans.md#inference), and [tool executions](gen-ai-spans.md#execute-tool-span) belonging to the same conversation. | Not defined on GenAI metrics. |
 | [`gen_ai.agent.name`](/docs/registry/attributes/gen-ai.md) | Identifies the agent being [created](gen-ai-agent-spans.md#create-agent-span) or invoked, either [remotely](gen-ai-agent-spans.md#invoke-agent-client-span) or [locally](gen-ai-agent-spans.md#invoke-agent-internal-span), and the agent [planning](gen-ai-agent-spans.md#plan-span) or [executing a tool](gen-ai-spans.md#execute-tool-span). It is not currently defined on inference spans. | Included in [agent metrics](gen-ai-metrics.md#generative-ai-agent-metrics) and [tool metrics](gen-ai-metrics.md#generative-ai-tool-metrics). |
 
 Use the conversation identifier available to the instrumented library or supplied
