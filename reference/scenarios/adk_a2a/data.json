@@ -306,5 +306,6 @@
         "gen_ai.main_agent.name"
       ]
     }
-  }
+  },
+  "span_refinements": {}
 }

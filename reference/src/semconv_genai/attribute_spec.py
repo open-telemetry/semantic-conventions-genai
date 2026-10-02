@@ -34,3 +34,11 @@ class AttributeSpec:
         if level is RequirementLevel.OPT_IN:
             return self.opt_in
         raise KeyError(f"Unknown requirement level: {level}")
+
+
+@dataclass(frozen=True)
+class SpanRefinementSpec(AttributeSpec):
+    base_registry_id: str = ""
+    operation_name: str = ""
+    span_kind: str = ""
+    discriminator: str = ""

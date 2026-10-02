@@ -24,14 +24,68 @@ import argparse
 import json
 import logging
 import sys
+from pathlib import Path
 
-from semconv_genai import conformance, reference_project_dir
+from semconv_genai import SEMCONV_ROOT, conformance, reference_project_dir
+from semconv_genai.refinement_coverage import update_span_refinement_coverage
 from semconv_genai.scenarios import (
     build_reference_scenario_matrix,
     list_reference_libraries,
 )
 
 logger = logging.getLogger(__name__)
+
+
+def _option_value(arguments: list[str], name: str) -> str | None:
+    value = None
+    for index, argument in enumerate(arguments):
+        if argument == name and index + 1 < len(arguments):
+            value = arguments[index + 1]
+        elif argument.startswith(f"{name}="):
+            value = argument.split("=", 1)[1]
+    return value
+
+
+def _runner_path(value: str | None, default: Path) -> Path:
+    path = Path(value) if value is not None else default
+    return path if path.is_absolute() else SEMCONV_ROOT / path
+
+
+def _runner_output_paths(
+    scenario_dir: Path,
+    extra_args: list[str],
+) -> tuple[Path, Path]:
+    report_dir = _runner_path(
+        _option_value(extra_args, "--report-dir"),
+        scenario_dir / "output" / "weaver-reports",
+    )
+    data_file = _runner_path(
+        _option_value(extra_args, "--data-file"),
+        scenario_dir / "data.json",
+    )
+    return report_dir, data_file
+
+
+def _file_state(path: Path) -> tuple[int, bytes] | None:
+    if not path.is_file():
+        return None
+    return path.stat().st_mtime_ns, path.read_bytes()
+
+
+def _update_refinement_coverage_after_run(
+    scenario_dir: Path,
+    report_dir: Path,
+    data_file: Path,
+    previous_data_file_state: tuple[int, bytes] | None,
+) -> bool:
+    if _file_state(data_file) == previous_data_file_state:
+        return False
+    update_span_refinement_coverage(
+        scenario_dir,
+        data_file=data_file,
+        report_dir=report_dir,
+    )
+    return True
 
 
 def _parse_args(argv: list[str]) -> tuple[argparse.Namespace, list[str]]:
@@ -101,12 +155,22 @@ def main(argv: list[str] | None = None) -> int:
     for index, library in enumerate(selected, start=1):
         if args.all:
             logger.info("[%s/%s] %s", index, len(selected), library)
+        scenario_dir = reference_project_dir(library)
+        report_dir, data_file = _runner_output_paths(scenario_dir, extra)
+        previous_data_file_state = _file_state(data_file)
         try:
             exit_code = conformance.run(
-                reference_project_dir(library),
+                scenario_dir,
                 report_only=not args.strict,
                 extra_args=extra,
             )
+            if exit_code == 0:
+                _update_refinement_coverage_after_run(
+                    scenario_dir,
+                    report_dir,
+                    data_file,
+                    previous_data_file_state,
+                )
         except RuntimeError as e:
             # Fetching the runner, finding uv or installing weaver -- the
             # scenario never got to run, so say so rather than trace.

@@ -59,5 +59,6 @@
       }
     }
   ],
-  "entities": {}
+  "entities": {},
+  "span_refinements": {}
 }
