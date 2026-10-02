@@ -1,6 +1,6 @@
 {
   "spans": {
-    "gen_ai.inference.client": [
+    "gen_ai.client.inference": [
       "gen_ai.conversation.id",
       "gen_ai.operation.name",
       "gen_ai.request.model",
@@ -237,38 +237,6 @@
       "message": "Span 'a2a.utils.helpers.append_artifact_to_task' has status.code='ok'; instrumentations must leave status UNSET on success (OK is reserved for application code).",
       "context": {
         "status_code": "ok"
-      }
-    },
-    {
-      "id": "genai_expected_attribute_missing",
-      "message": "Span 'generate_content gemini-2.0-flash' (operation 'generate_content') is missing expected attribute 'gen_ai.provider.name'",
-      "context": {
-        "missing_attribute": "gen_ai.provider.name",
-        "operation": "generate_content"
-      }
-    },
-    {
-      "id": "genai_expected_attribute_missing",
-      "message": "Span 'generate_content gemini-2.0-flash' (operation 'generate_content') is missing expected attribute 'gen_ai.response.id'",
-      "context": {
-        "missing_attribute": "gen_ai.response.id",
-        "operation": "generate_content"
-      }
-    },
-    {
-      "id": "genai_expected_attribute_missing",
-      "message": "Span 'generate_content gemini-2.0-flash' (operation 'generate_content') is missing expected attribute 'gen_ai.response.model'",
-      "context": {
-        "missing_attribute": "gen_ai.response.model",
-        "operation": "generate_content"
-      }
-    },
-    {
-      "id": "genai_expected_attribute_missing",
-      "message": "Span 'generate_content gemini-2.0-flash' (operation 'generate_content') is missing expected attribute 'server.address'",
-      "context": {
-        "missing_attribute": "server.address",
-        "operation": "generate_content"
       }
     },
     {
