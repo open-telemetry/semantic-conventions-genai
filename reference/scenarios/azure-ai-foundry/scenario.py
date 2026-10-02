@@ -1,26 +1,23 @@
-"""Reference implementation: Azure AI Foundry invoke_agent with manual instrumentation.
-
-Exercises: invoke_agent (Azure AI Foundry Agents API: create agent, create
-thread, run, poll) against a mock Azure AI Foundry server, with manual span
-instrumentation.
-"""
+"""Reference implementation for Microsoft Foundry Agent Service."""
 
 import json
 import os
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urlunparse
 
 from azure.ai.projects import AIProjectClient
 from azure.ai.projects.models import PromptAgentDefinition
 from azure.core.credentials import AccessToken
 from azure.core.pipeline.policies import SansIOHTTPPolicy
+from openai import DefaultHttpxClient
 from opentelemetry import trace
 from opentelemetry.trace import SpanKind, StatusCode
 from reference_shared import flush_and_shutdown, setup_otel
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"]
-_parsed = urlparse(MOCK_BASE_URL)
-_SERVER_ADDRESS = _parsed.hostname or "localhost"
-_SERVER_PORT = _parsed.port or 443
+FOUNDRY_PROJECT_ENDPOINT = "https://foundry-resource.services.ai.azure.com/api/projects/reference-project"
+_project_endpoint = urlparse(FOUNDRY_PROJECT_ENDPOINT)
+_SERVER_ADDRESS = _project_endpoint.hostname
+_SERVER_PORT = _project_endpoint.port
 
 tracer = trace.get_tracer("gen_ai.client.azure_ai_foundry")
 
@@ -29,9 +26,55 @@ AGENT_NAME = "refimpl-test-agent"
 AGENT_DESCRIPTION = "Reference agent for the Azure AI Foundry Agents API flow."
 AGENT_INSTRUCTIONS = "You are a helpful assistant."
 USER_INPUT = "Hello, agent!"
-REQUEST_MAX_TOKENS = 128
-REQUEST_TEMPERATURE = 0.2
-REQUEST_TOP_P = 0.9
+
+
+def _route_agent_request_to_mock(request):
+    logical_base_url = urlparse(f"{FOUNDRY_PROJECT_ENDPOINT}/agents/{AGENT_NAME}/endpoint/protocols/openai")
+    request_url = urlparse(str(request.url))
+    logical_path = logical_base_url.path.rstrip("/")
+    if request_url.netloc != logical_base_url.netloc or not request_url.path.startswith(logical_path):
+        raise ValueError(f"unexpected Foundry agent request URL: {request.url}")
+
+    request_path = request_url.path.removeprefix(logical_path)
+    if request.method == "POST" and request_path == "/conversations":
+        mock_path = "/v1/threads"
+    elif request.method == "DELETE" and request_path.startswith("/conversations/"):
+        conversation_id = request_path.removeprefix("/conversations/")
+        mock_path = f"/v1/assistants/{conversation_id}"
+    elif request.method == "POST" and request_path == "/responses":
+        mock_path = "/v1/responses"
+    else:
+        raise ValueError(f"unexpected Foundry agent request: {request.method} {request_path}")
+
+    mock_url = urlparse(MOCK_BASE_URL)
+    request.url = request.url.copy_with(
+        scheme=mock_url.scheme,
+        host=mock_url.hostname,
+        port=mock_url.port,
+        path=f"{mock_url.path.rstrip('/')}{mock_path}",
+    )
+    request.headers["host"] = request.url.netloc.decode("ascii")
+
+
+class MockTransportPolicy(SansIOHTTPPolicy):
+    """Route Azure SDK requests to the conformance mock server."""
+
+    def on_request(self, request):
+        request_url = urlparse(request.http_request.url)
+        logical_path = _project_endpoint.path.rstrip("/")
+        if request_url.netloc != _project_endpoint.netloc or not request_url.path.startswith(logical_path):
+            raise ValueError(f"unexpected Foundry project request URL: {request.http_request.url}")
+
+        mock_url = urlparse(MOCK_BASE_URL)
+        mock_path = f"{mock_url.path.rstrip('/')}{request_url.path.removeprefix(logical_path)}"
+        request.http_request.url = urlunparse(
+            request_url._replace(
+                scheme=mock_url.scheme,
+                netloc=mock_url.netloc,
+                path=mock_path,
+            )
+        )
+        request.http_request.headers["Host"] = mock_url.netloc
 
 
 class MockCredential:
@@ -71,123 +114,182 @@ def run_invoke_agent(client):
     # Create agent version using the v2 AIProjectClient surface.
     span_attributes = {
         "gen_ai.operation.name": "create_agent",
-        "gen_ai.provider.name": "azure.ai.openai",
+        "gen_ai.provider.name": "azure.ai.foundry",
         "gen_ai.request.model": AGENT_MODEL,
         "gen_ai.agent.name": AGENT_NAME,
         "server.address": _SERVER_ADDRESS,
-        "server.port": _SERVER_PORT,
     }
+    if _SERVER_PORT is not None and _SERVER_PORT != 443:
+        span_attributes["server.port"] = _SERVER_PORT
     with tracer.start_as_current_span(
         f"create_agent {AGENT_NAME}", kind=SpanKind.CLIENT, attributes=span_attributes
     ) as span:
-        span.set_attribute("gen_ai.agent.description", AGENT_DESCRIPTION)
-        span.set_attribute("gen_ai.system_instructions", json.dumps([{"type": "text", "content": AGENT_INSTRUCTIONS}]))
-        span.set_attribute("gen_ai.tool.definitions", json.dumps(tool_defs))
-        agent = client.agents.create_version(
-            agent_name=AGENT_NAME,
-            definition=PromptAgentDefinition(
-                model=AGENT_MODEL,
-                instructions=AGENT_INSTRUCTIONS,
-                tools=tool_defs,
-            ),
-            description=AGENT_DESCRIPTION,
-        )
-        span.set_attribute("gen_ai.agent.id", agent.id)
-        if getattr(agent, "version", None):
-            span.set_attribute("gen_ai.agent.version", str(agent.version))
-
-    # Invoke the agent through the Responses API, wrapped in a manual span.
-    openai_client = client.get_openai_client()
-
-    span_attributes_2 = {
-        "gen_ai.operation.name": "invoke_agent",
-        "gen_ai.provider.name": "azure.ai.openai",
-        "gen_ai.request.model": AGENT_MODEL,
-        "gen_ai.agent.name": agent.name,
-        "server.address": _SERVER_ADDRESS,
-        "server.port": _SERVER_PORT,
-    }
-    with tracer.start_as_current_span(
-        f"invoke_agent {agent.name}", kind=SpanKind.CLIENT, attributes=span_attributes_2
-    ) as span:
-        span.set_attribute("gen_ai.request.max_tokens", REQUEST_MAX_TOKENS)
-        span.set_attribute("gen_ai.request.temperature", REQUEST_TEMPERATURE)
-        span.set_attribute("gen_ai.request.top_p", REQUEST_TOP_P)
-        span.set_attribute("gen_ai.system_instructions", json.dumps([{"type": "text", "content": AGENT_INSTRUCTIONS}]))
-        span.set_attribute(
-            "gen_ai.input.messages", json.dumps([{"role": "user", "parts": [{"type": "text", "content": USER_INPUT}]}])
-        )
-        span.set_attribute("gen_ai.tool.definitions", json.dumps(tool_defs))
         try:
-            response = openai_client.responses.create(
-                model=AGENT_MODEL,
-                instructions=AGENT_INSTRUCTIONS,
-                tools=tool_defs,
-                input=USER_INPUT,
-                max_output_tokens=REQUEST_MAX_TOKENS,
-                temperature=REQUEST_TEMPERATURE,
-                top_p=REQUEST_TOP_P,
-                extra_body={
-                    "agent_reference": {
-                        "name": agent.name,
-                        "type": "agent_reference",
-                    }
-                },
+            span.set_attribute("gen_ai.agent.description", AGENT_DESCRIPTION)
+            span.set_attribute(
+                "gen_ai.system_instructions",
+                json.dumps([{"type": "text", "content": AGENT_INSTRUCTIONS}]),
             )
+            span.set_attribute(
+                "gen_ai.tool.definitions",
+                json.dumps(
+                    [
+                        {
+                            "type": tool["type"],
+                            "name": tool["function"]["name"],
+                            "description": tool["function"]["description"],
+                            "parameters": tool["function"]["parameters"],
+                        }
+                        for tool in tool_defs
+                    ]
+                ),
+            )
+            agent = client.agents.create_version(
+                agent_name=AGENT_NAME,
+                definition=PromptAgentDefinition(
+                    model=AGENT_MODEL,
+                    instructions=AGENT_INSTRUCTIONS,
+                    tools=tool_defs,
+                ),
+                description=AGENT_DESCRIPTION,
+            )
+            span.set_attribute("gen_ai.agent.id", agent.id)
+            if getattr(agent, "version", None):
+                span.set_attribute("gen_ai.agent.version", str(agent.version))
+        except Exception as error:
+            span.set_attribute("error.type", type(error).__qualname__)
+            raise
 
-            if getattr(response, "assistant_id", None):
-                span.set_attribute("gen_ai.agent.id", response.assistant_id)
-
-            response_text = None
-            for output in getattr(response, "output", []) or []:
-                if getattr(output, "type", None) != "message":
-                    continue
-                for content in getattr(output, "content", []) or []:
-                    if getattr(content, "type", None) == "output_text":
-                        response_text = getattr(content, "text", None)
-                        break
-                if response_text:
-                    break
-
-            if response_text:
-                span.set_attribute("gen_ai.output.type", "text")
-                span.set_attribute(
-                    "gen_ai.output.messages",
-                    json.dumps(
-                        [
-                            {
-                                "role": "assistant",
-                                "parts": [{"type": "text", "content": response_text}],
-                            }
-                        ]
-                    ),
+    openai_client = None
+    owned_openai_http_client = None
+    conversation = None
+    primary_error = None
+    try:
+        owned_openai_http_client = DefaultHttpxClient(event_hooks={"request": [_route_agent_request_to_mock]})
+        openai_client = client.get_openai_client(
+            agent_name=agent.name,
+            http_client=owned_openai_http_client,
+        )
+        owned_openai_http_client = None
+        conversation = openai_client.conversations.create()
+        span_attributes_2 = {
+            "gen_ai.operation.name": "invoke_agent",
+            "gen_ai.provider.name": "azure.ai.foundry",
+            "gen_ai.agent.name": agent.name,
+            "gen_ai.conversation.id": conversation.id,
+            "server.address": _SERVER_ADDRESS,
+        }
+        if _SERVER_PORT is not None and _SERVER_PORT != 443:
+            span_attributes_2["server.port"] = _SERVER_PORT
+        with tracer.start_as_current_span(
+            f"invoke_agent {agent.name}",
+            kind=SpanKind.CLIENT,
+            attributes=span_attributes_2,
+        ) as span:
+            try:
+                response = openai_client.responses.create(
+                    conversation=conversation.id,
+                    input=USER_INPUT,
                 )
 
-            if response.usage:
-                span.set_attribute("gen_ai.usage.input_tokens", response.usage.input_tokens)
-                span.set_attribute("gen_ai.usage.output_tokens", response.usage.output_tokens)
+                response_text = response.output_text
+                if response_text:
+                    span.set_attribute(
+                        "gen_ai.output.messages",
+                        json.dumps(
+                            [
+                                {
+                                    "role": "assistant",
+                                    "parts": [{"type": "text", "content": response_text}],
+                                }
+                            ]
+                        ),
+                    )
 
-            print(f"    -> {response_text or response.id}")
-        except Exception as e:
-            span.set_status(StatusCode.ERROR, str(e))
-            raise
-        finally:
-            openai_client.close()
+                if response.usage:
+                    span.set_attribute("gen_ai.usage.input_tokens", response.usage.input_tokens)
+                    span.set_attribute("gen_ai.usage.output_tokens", response.usage.output_tokens)
 
-    # Clean up
-    client.agents.delete_version(agent_name=agent.name, agent_version=agent.version)
+                print(f"    -> {response_text or response.id}")
+            except Exception as error:
+                span.set_attribute("error.type", type(error).__qualname__)
+                span.set_status(StatusCode.ERROR, str(error))
+                raise
+    except BaseException as error:  # noqa: BLE001
+        primary_error = error
+    finally:
+        # Continue cleanup so every failure can be reported with the primary error.
+        cleanup_errors = []
+        if conversation is not None:
+            try:
+                openai_client.conversations.delete(conversation_id=conversation.id)
+            except BaseException as error:  # noqa: BLE001
+                cleanup_errors.append(error)
+        if openai_client is not None:
+            try:
+                openai_client.close()
+            except BaseException as error:  # noqa: BLE001
+                cleanup_errors.append(error)
+        if owned_openai_http_client is not None:
+            try:
+                owned_openai_http_client.close()
+            except BaseException as error:  # noqa: BLE001
+                cleanup_errors.append(error)
+        try:
+            client.agents.delete_version(agent_name=agent.name, agent_version=agent.version)
+        except BaseException as error:  # noqa: BLE001
+            cleanup_errors.append(error)
+
+        if primary_error is not None and cleanup_errors:
+            raise BaseExceptionGroup(
+                "Foundry agent invocation and cleanup failed",
+                [primary_error, *cleanup_errors],
+            ) from None
+        if len(cleanup_errors) == 1:
+            raise cleanup_errors[0]
+        if cleanup_errors:
+            raise BaseExceptionGroup("Foundry agent cleanup failed", cleanup_errors)
+
+    if primary_error is not None:
+        raise primary_error
 
 
 if __name__ == "__main__":
     print("=== Manual: Azure AI Foundry Invoke Agent Reference Implementation ===")
     tp, lp, mp = setup_otel()
 
-    client = AIProjectClient(
-        endpoint=MOCK_BASE_URL,
-        credential=MockCredential(),
-        authentication_policy=SansIOHTTPPolicy(),
-    )
+    client = None
+    primary_error = None
+    try:
+        client = AIProjectClient(
+            endpoint=FOUNDRY_PROJECT_ENDPOINT,
+            credential=MockCredential(),
+            authentication_policy=SansIOHTTPPolicy(),
+            per_call_policies=[MockTransportPolicy()],
+        )
+        run_invoke_agent(client)
+    except BaseException as error:  # noqa: BLE001
+        primary_error = error
 
-    run_invoke_agent(client)
+    cleanup_errors = []
+    if client is not None:
+        try:
+            client.close()
+        except BaseException as error:  # noqa: BLE001
+            cleanup_errors.append(error)
+    try:
+        flush_and_shutdown(tp, lp, mp)
+    except BaseException as error:  # noqa: BLE001
+        cleanup_errors.append(error)
 
-    flush_and_shutdown(tp, lp, mp)
+    if primary_error is not None and cleanup_errors:
+        raise BaseExceptionGroup(
+            "Foundry scenario and cleanup failed",
+            [primary_error, *cleanup_errors],
+        ) from None
+    if len(cleanup_errors) == 1:
+        raise cleanup_errors[0]
+    if cleanup_errors:
+        raise BaseExceptionGroup("Foundry scenario cleanup failed", cleanup_errors)
+    if primary_error is not None:
+        raise primary_error

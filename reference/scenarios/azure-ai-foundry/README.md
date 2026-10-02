@@ -1,9 +1,12 @@
 # azure-ai-foundry
 
-This scenario uses the **Azure AI Foundry Agent Service**, which creates and
-runs agents remotely. The client owns the create-agent and invoke-agent client
-operations; the agent's reasoning, model calls, and tool execution all happen
-server-side, across a process boundary the client cannot observe.
+This scenario uses `azure-ai-projects` to create and invoke a remote Microsoft
+Foundry agent. Invocation goes through an agent-scoped OpenAI Responses client
+and a Foundry conversation.
+
+Foundry performs the agent's model calls, tool execution, state management, and
+orchestration remotely. The client scenario instruments the create-agent and
+invoke-agent boundaries, not the hidden server-side inference or tool spans.
 
 | Operation | Should be instrumented here | Status |
 | --- | --- | --- |
