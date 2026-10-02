@@ -66,10 +66,10 @@ attributes:
           stability: development
           value: "groq"
           brief: '[Groq](https://groq.com/)'
-        - id: mistral_ai
+        - id: mistral
           stability: development
-          value: "mistral_ai"
-          brief: '[Mistral AI](https://mistral.ai/)'
+          value: "mistral"
+          brief: '[Mistral](https://mistral.ai/)'
         - id: moonshot_ai
           stability: development
           value: "moonshot_ai"
