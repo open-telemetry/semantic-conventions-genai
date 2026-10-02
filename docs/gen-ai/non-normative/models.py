@@ -24,7 +24,7 @@ import argparse
 import json
 from enum import StrEnum
 from pathlib import Path
-from typing import Annotated, Any, List, Literal, Optional, Union
+from typing import Annotated, Any, List, Literal, Union
 
 from pydantic import (
     BaseModel,
@@ -35,6 +35,13 @@ from pydantic import (
     RootModel,
 )
 from pydantic_core import core_schema
+from pydantic.experimental.missing_sentinel import MISSING
+
+
+def omittable_field(**kwargs: Any):
+    """Define a property omitted when unavailable."""
+
+    return Field(MISSING, **kwargs)
 
 
 # --------------------------------------------------------------------------
@@ -63,11 +70,16 @@ class ToolCallRequestPart(BaseModel):
     type: Literal["tool_call"] = Field(
         description="The type of the content captured in this part."
     )
-    id: Optional[str] = Field(
-        default=None, description="Unique identifier for the tool call."
+    id: str | MISSING = omittable_field(
+        description="Unique identifier for the tool call."
     )
     name: str = Field(description="Name of the tool.")
-    arguments: Any = Field(default=None, description="Arguments for the tool call.")
+    arguments: Any = omittable_field(
+        description=(
+            "Arguments for the tool call. Omit when they are not captured; "
+            "record null when the call has null arguments."
+        )
+    )
 
     model_config = ConfigDict(extra="allow")
 
@@ -80,8 +92,10 @@ class ToolCallResponsePart(BaseModel):
     type: Literal["tool_call_response"] = Field(
         description="The type of the content captured in this part."
     )
-    id: Optional[str] = Field(default=None, description="Unique tool call identifier.")
-    response: Any = Field(description="Tool call response.")
+    id: str | MISSING = omittable_field(description="Unique tool call identifier.")
+    response: Any = Field(
+        description="Tool call response. Null represents a captured null response."
+    )
 
     model_config = ConfigDict(extra="allow")
 
@@ -122,8 +136,8 @@ class ServerToolCallPart(BaseModel):
     type: Literal["server_tool_call"] = Field(
         description="The type of the content captured in this part."
     )
-    id: Optional[str] = Field(
-        default=None, description="Unique identifier for the server tool call."
+    id: str | MISSING = omittable_field(
+        description="Unique identifier for the server tool call."
     )
     name: str = Field(description="Name of the server tool.")
     server_tool_call: ServerToolCall = Field(
@@ -139,8 +153,7 @@ class ServerToolCallResponsePart(BaseModel):
     type: Literal["server_tool_call_response"] = Field(
         description="The type of the content captured in this part."
     )
-    id: Optional[str] = Field(
-        default=None,
+    id: str | MISSING = omittable_field(
         description="Unique server tool call identifier matching the original call.",
     )
     server_tool_call_response: ServerToolCallResponse = Field(
@@ -180,12 +193,10 @@ class CompactionPart(BaseModel):
     type: Literal["compaction"] = Field(
         description="The type of the content captured in this part."
     )
-    id: Optional[str] = Field(
-        default=None,
+    id: str | MISSING = omittable_field(
         description="Provider-assigned identifier for the compaction item or block.",
     )
-    content: Optional[str] = Field(
-        default=None,
+    content: str | MISSING = omittable_field(
         description="The unencrypted compacted conversation summary, when available.",
     )
 
@@ -198,8 +209,8 @@ class BlobPart(BaseModel):
     type: Literal["blob"] = Field(
         description="The type of the content captured in this part."
     )
-    mime_type: Optional[str] = Field(
-        default=None, description="The IANA MIME type of the attached data."
+    mime_type: str | MISSING = omittable_field(
+        description="The IANA MIME type of the attached data."
     )
     modality: Union[Modality, str] = Field(
         description="The general modality of the data if it is known. Instrumentations SHOULD also set the mimeType field if the specific type is known."
@@ -215,8 +226,8 @@ class FilePart(BaseModel):
     type: Literal["file"] = Field(
         description="The type of the content captured in this part."
     )
-    mime_type: Optional[str] = Field(
-        default=None, description="The IANA MIME type of the attached data."
+    mime_type: str | MISSING = omittable_field(
+        description="The IANA MIME type of the attached data."
     )
     modality: Union[Modality, str] = Field(
         description="The general modality of the data if it is known. Instrumentations SHOULD also set the mimeType field if the specific type is known."
@@ -234,8 +245,8 @@ class UriPart(BaseModel):
     type: Literal["uri"] = Field(
         description="The type of the content captured in this part."
     )
-    mime_type: Optional[str] = Field(
-        default=None, description="The IANA MIME type of the attached data."
+    mime_type: str | MISSING = omittable_field(
+        description="The IANA MIME type of the attached data."
     )
     modality: Union[Modality, str] = Field(
         description="The general modality of the data if it is known. Instrumentations SHOULD also set the mimeType field if the specific type is known."
@@ -304,8 +315,8 @@ class ChatMessage(BaseModel):
     parts: List[MessagePart] = Field(
         description="List of message parts that make up the message content."
     )
-    name: Optional[str] = Field(
-        default=None, description="The name of the participant."
+    name: str | MISSING = omittable_field(
+        description="The name of the participant."
     )
 
     model_config = ConfigDict(extra="allow")
@@ -422,18 +433,20 @@ class FunctionToolDefinition(GenericToolDefinition):
     """
 
     type: Literal["function"] = Field(description="The type of the tool.")
-    description: Optional[str] = Field(
-        default=None,
+    description: str | None | MISSING = omittable_field(
         description=(
             "The description of the tool. "
+            "Omit when it is not captured; record null when the provider reports "
+            "that the tool has no description. "
             "Since this attribute could be large, it's NOT RECOMMENDED to be populated by default. "
             "Instrumentations MAY provide a way to enable populating this property."
         ),
     )
-    parameters: Optional[JsonSchemaDraft7Dict] = Field(
-        default=None,
+    parameters: JsonSchemaDraft7Dict | None | MISSING = omittable_field(
         description=(
             "JSON Schema document describing the parameters accepted by the tool. "
+            "Omit when it is not captured; record null when the provider reports "
+            "that the tool has no parameters. "
             "The value MUST conform to JSON Schema draft-07. "
             "Since this attribute could be large, it's NOT RECOMMENDED to be populated by default. "
             "Instrumentations MAY provide a way to enable populating this property."
@@ -469,11 +482,11 @@ class RetrievalDocument(BaseModel):
     Represents a single document retrieved from a vector database or search system.
     """
 
-    id: str | None = Field(
-        default=None, description="A unique identifier for the document."
+    id: str | MISSING = omittable_field(
+        description="A unique identifier for the document."
     )
-    score: float | None = Field(
-        default=None, description="The relevance score of the document."
+    score: float | MISSING = omittable_field(
+        description="The relevance score of the document."
     )
 
     model_config = ConfigDict(
@@ -499,16 +512,16 @@ class MemoryRecord(BaseModel):
     Represents a single memory record stored in or retrieved from a memory store.
     """
 
-    content: Any = Field(description="The content of the memory record.")
-    id: Optional[str] = Field(
-        default=None, description="A unique identifier for the memory record."
+    content: Any = Field(
+        description="The content of the memory record. Null represents a captured null value."
     )
-    metadata: Optional[dict[str, Any]] = Field(
-        default=None,
+    id: str | MISSING = omittable_field(
+        description="A unique identifier for the memory record."
+    )
+    metadata: dict[str, Any] | MISSING = omittable_field(
         description="Provider-specific metadata associated with the memory record.",
     )
-    score: Optional[float] = Field(
-        default=None,
+    score: float | MISSING = omittable_field(
         description="The relevance score of the memory record when populated on search results.",
     )
 
