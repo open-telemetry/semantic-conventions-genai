@@ -28,6 +28,7 @@
 
 | Attribute | Supporting Libraries |
 | --- | --- |
+| gen_ai.external_ref | (none) |
 | gen_ai.request.frequency_penalty | (none) |
 | gen_ai.request.max_tokens | [azure-ai-foundry], [openai-assistants] |
 | gen_ai.request.model | [azure-ai-foundry], [google-genai], [openai-assistants] |

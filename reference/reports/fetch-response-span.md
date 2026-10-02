@@ -21,6 +21,7 @@
 
 | Attribute | Supporting Libraries |
 | --- | --- |
+| gen_ai.external_ref | (none) |
 | gen_ai.response.finish_reasons | [openai] |
 | gen_ai.response.model | [openai] |
 | gen_ai.response.status | [openai] |
