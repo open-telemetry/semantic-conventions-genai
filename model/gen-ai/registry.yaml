@@ -277,9 +277,9 @@ attributes:
     stability: development
   - key: gen_ai.usage.input_tokens
     type: int
-    brief: The number of tokens used in the GenAI input (prompt).
+    brief: The total number of input (prompt) tokens across all modalities.
     note: |
-      This value SHOULD include all types of input tokens, including cached tokens.
+      This value SHOULD include cached tokens and tokens of all modalities.
       Instrumentations SHOULD make a best effort to populate this value, using a total
       provided by the provider when available or, depending on the provider API,
       by summing different token types parsed from the provider output.
@@ -335,8 +335,10 @@ attributes:
     stability: development
   - key: gen_ai.usage.output_tokens
     type: int
-    brief: The number of tokens used in the GenAI response (completion).
+    brief: The total number of output (completion) tokens across all modalities.
     note: |
+      This value SHOULD include reasoning tokens and tokens of all modalities.
+
       When the provider reports both billed token counts and model-consumed
       token counts (for example, Cohere exposes both `usage.billed_units` and
       `usage.tokens`), instrumentations SHOULD report the billed count so the
@@ -415,10 +417,14 @@ attributes:
           value: "unknown"
           brief: 'The modality is not known.'
     brief: The modality of the tokens being counted.
-    note: >
-      When the provider does not break usage down by modality and the modality
-      cannot be reliably determined, instrumentations SHOULD report the tokens
-      under the `unknown` modality.
+    note: |
+      On token usage metrics, values across all modalities SHOULD add up to the
+      total, such as `gen_ai.usage.input_tokens`.
+
+      Instrumentations SHOULD record tokens as `unknown` when the provider does
+      not report their modality or reports one not listed here. For example, if a
+      provider reports 300 input tokens and 100 of them are audio, record 100 as
+      `audio` and 200 as `unknown`.
     examples: ['text', 'image', 'audio']
     stability: development
   - key: gen_ai.conversation.id

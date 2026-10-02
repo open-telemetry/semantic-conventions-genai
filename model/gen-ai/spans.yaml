@@ -48,31 +48,31 @@ attribute_groups:
     attributes:
       - ref: gen_ai.usage.text.input_tokens
         requirement_level:
-          recommended: When applicable.
+          recommended: When reported by the provider.
       - ref: gen_ai.usage.image.input_tokens
         requirement_level:
-          recommended: When applicable.
+          recommended: When reported by the provider.
       - ref: gen_ai.usage.audio.input_tokens
         requirement_level:
-          recommended: When applicable.
+          recommended: When reported by the provider.
       - ref: gen_ai.usage.text.cache_read.input_tokens
         requirement_level:
-          recommended: When applicable.
+          recommended: When reported by the provider.
       - ref: gen_ai.usage.image.cache_read.input_tokens
         requirement_level:
-          recommended: When applicable.
+          recommended: When reported by the provider.
       - ref: gen_ai.usage.audio.cache_read.input_tokens
         requirement_level:
-          recommended: When applicable.
+          recommended: When reported by the provider.
       - ref: gen_ai.usage.text.output_tokens
         requirement_level:
-          recommended: When applicable.
+          recommended: When reported by the provider.
       - ref: gen_ai.usage.image.output_tokens
         requirement_level:
-          recommended: When applicable.
+          recommended: When reported by the provider.
       - ref: gen_ai.usage.audio.output_tokens
         requirement_level:
-          recommended: When applicable.
+          recommended: When reported by the provider.
       - ref: gen_ai.usage.cache_read.input_tokens
         requirement_level:
           recommended: When applicable.
