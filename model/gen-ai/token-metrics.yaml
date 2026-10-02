@@ -93,12 +93,19 @@ metrics:
       it MAY allow users to enable offline token counting. Otherwise it MUST NOT report usage metrics.
 
       When systems report both used tokens and billable tokens, instrumentation MUST report billable tokens.
+
+      Instrumentation that reports this metric SHOULD also record it for failed
+      operations, with `error.type` set. Whether or not the operation succeeded,
+      it SHOULD record the provider's count for this metric. When a failed
+      operation has no such count, it SHOULD record the count it knows for this
+      metric, or `0` if it has none.
     stability: development
     annotations:
       code_generation:
         metric_value_type: int
     attributes:
       - ref_group: metric_attributes.gen_ai
+      - ref_group: attributes.gen_ai.error
   - name: gen_ai.client.inference.operation.output_tokens
     requirement_level: recommended
     instrument: histogram
@@ -111,6 +118,7 @@ metrics:
         metric_value_type: int
     attributes:
       - ref_group: metric_attributes.gen_ai
+      - ref_group: attributes.gen_ai.error
 metric_refinements:
   - id: openai.client.inference.usage.input_tokens
     ref: gen_ai.client.inference.usage.input_tokens

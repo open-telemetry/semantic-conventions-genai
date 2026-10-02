@@ -109,3 +109,8 @@ The two metric families serve different purposes, reflected in their namespaces:
   operations. The `operation` namespace indicates that each measurement represents
   a single operation's token count, producing per-operation distributions and
   percentiles rather than totals.
+
+Histograms also record failed operations, with `error.type`, so failures can
+be filtered out or compared. For each histogram, a failed operation records the
+provider's count if there is one, otherwise the count instrumentation knows, or
+`0` if it has none.
