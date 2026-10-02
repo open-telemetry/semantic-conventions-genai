@@ -254,7 +254,7 @@ def run_chat_reference(client):
                 "cached_tokens",
                 None,
             )
-            if cached_tokens is not None:
+            if cached_tokens:
                 usage["gen_ai.usage.cache_read.input_tokens"] = cached_tokens
         for attr, value in usage.items():
             span.set_attribute(attr, value)
