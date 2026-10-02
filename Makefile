@@ -111,6 +111,9 @@ generate-reference-reports:
 # Run every regeneration the repo owns (weaver-driven + pydantic-driven + reports).
 # CI checks that all committed outputs match what this target generates.
 generate-all: update-upstream-links generate-registry generate-docs generate-json-schemas generate-reference-reports
+	# Again over the freshly generated docs: snippets inherit upstream `note`
+	# text whose links are root-relative to the upstream repo.
+	$(MAKE) update-upstream-links
 
 # Package the registry into a publication artifact. The version comes from
 # model/manifest.yaml's schema_url; bump it there to cut a new release.

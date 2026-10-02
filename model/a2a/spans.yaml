@@ -1,0 +1,95 @@
+file_format: definition/2
+attribute_groups:
+  - id: a2a.agent.attributes
+    visibility: internal
+    attributes:
+      - ref: gen_ai.agent.name
+        requirement_level:
+          conditionally_required: When available from the Agent Card.
+      - ref: gen_ai.agent.description
+        requirement_level:
+          conditionally_required: When available from the Agent Card.
+      - ref: gen_ai.agent.version
+        requirement_level:
+          conditionally_required: When available from the Agent Card.
+
+spans:
+  - type: a2a.client
+    kind: client
+    name:
+      note: |
+        **Span name** SHOULD be `{a2a.method.name}`.
+    brief: This span describes an A2A call from the client side.
+    note: |
+      It covers the time to receive the response for non-streaming
+      calls and the time to consume the response stream for streaming calls.
+
+      A2A `SendMessage`, `SendStreamingMessage` and other operations may be performed
+      as part of a higher-level GenAI agent invocation. A2A instrumentations report
+      spans for A2A requests only and SHOULD NOT report telemetry describing
+      higher level GenAI agent operations.
+    stability: development
+    attributes:
+      - ref_group: a2a.common.attributes
+      - ref_group: a2a.agent.attributes
+      - ref_group: a2a.client.address_and_port.attributes
+
+  - type: a2a.server
+    kind: server
+    name:
+      note: |
+        **Span name** SHOULD be `{a2a.method.name}`.
+    brief: This span describes processing of an A2A request by the server.
+    note: |
+      It covers the time to produce the response for non-streaming
+      calls and the time to produce the response stream for streaming calls.
+
+      This span is reported when instrumentation cannot detect the transport
+      server span the A2A request is handled in. When it can, instrumentation
+      SHOULD enrich the transport server span instead - see A2A
+      [HTTP](/docs/gen-ai/a2a.md#server-over-http) and
+      [gRPC](/docs/gen-ai/a2a.md#server-over-grpc) server spans.
+    stability: development
+    attributes:
+      - ref_group: a2a.common.attributes
+      - ref_group: a2a.agent.attributes
+      - ref_group: a2a.server.address_and_port.attributes
+
+span_refinements:
+  - id: a2a.http.server
+    ref: http.server
+    brief: >
+      This span describes processing of an A2A request received over an HTTP
+      binding (HTTP+JSON or JSON-RPC over HTTP).
+    note: |
+      When instrumentation can detect that the A2A request is handled within an
+      instrumented HTTP server call, it SHOULD enrich the HTTP server span with
+      A2A attributes instead of reporting a nested `a2a.server` span.
+
+      Instrumentation SHOULD update the span name to `{a2a.method.name}` once
+      the A2A method is known.
+    stability: development
+    name:
+      note: |
+        **Span name** SHOULD be `{a2a.method.name}`.
+    attributes:
+      - ref_group: a2a.protocol.attributes
+      - ref_group: a2a.agent.attributes
+
+  - id: a2a.grpc.server
+    ref: rpc.grpc.call.server
+    brief: >
+      This span describes processing of an A2A request received over the gRPC
+      binding.
+    note: |
+      When instrumentation can detect that the A2A request is handled within an
+      instrumented gRPC server call, it SHOULD enrich the gRPC server span with
+      A2A attributes instead of reporting a nested `a2a.server` span.
+    stability: development
+    name:
+      note: |
+        **Span name** SHOULD follow the gRPC semantic conventions: it already
+        identifies the A2A method, so A2A instrumentation SHOULD NOT change it.
+    attributes:
+      - ref_group: a2a.protocol.attributes
+      - ref_group: a2a.agent.attributes

@@ -45,6 +45,7 @@ templates:
     file_name: "entities/{{ ctx.root_namespace | kebab_case }}.md"
 
 acronyms:
+  - A2A
   - AI
   - AWS
   - Bedrock
