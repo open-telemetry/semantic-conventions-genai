@@ -161,6 +161,10 @@ jobs:
 
       - uses: $/.github/actions/setup-reference-tooling
 
+      - name: Test Anthropic inline byte sizes
+        if: matrix.scenario.lib == 'anthropic'
+        run: make -C .. test-anthropic
+
       - name: Run implementation scenario
         env:
           SCENARIO_LIB: ${{ matrix.scenario.lib }}
