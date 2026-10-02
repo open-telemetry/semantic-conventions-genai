@@ -146,7 +146,11 @@ def _usage_attributes(um):
     and the inference-details event.
     """
     attrs = {}
-    reasoning_tokens = getattr(um, "thoughts_token_count", None) or 0
+    # Keep None (not reported) distinct from an explicit 0 so that a zero
+    # observation still reaches the usage attributes and metrics.
+    candidates_tokens = getattr(um, "candidates_token_count", None)
+    thoughts_tokens = getattr(um, "thoughts_token_count", None)
+    reasoning_tokens = thoughts_tokens or 0
     cache_read_tokens = getattr(um, "cached_content_token_count", None) or 0
     # Tool-use tokens are reported separately from prompt_token_count, so add
     # them to get the total input token count.
@@ -156,9 +160,8 @@ def _usage_attributes(um):
         attrs["gen_ai.usage.input_tokens"] = um.prompt_token_count + tool_use_tokens
     # Google reports "thoughts" (reasoning) tokens separately from the visible
     # candidates, so include them in the output token total.
-    output_tokens = (um.candidates_token_count or 0) + reasoning_tokens
-    if output_tokens:
-        attrs["gen_ai.usage.output_tokens"] = output_tokens
+    if candidates_tokens is not None or thoughts_tokens is not None:
+        attrs["gen_ai.usage.output_tokens"] = (candidates_tokens or 0) + reasoning_tokens
     if cache_read_tokens:
         attrs["gen_ai.usage.cache_read.input_tokens"] = cache_read_tokens
     if reasoning_tokens:
