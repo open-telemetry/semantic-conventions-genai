@@ -1,6 +1,7 @@
 """Native telemetry scenario for Microsoft Agent Framework."""
 
 import asyncio
+import json
 import os
 import pathlib
 import subprocess
@@ -230,15 +231,38 @@ async def run_skills():
         return completed.stdout.strip()
 
     class _InstrumentedSkillsProvider(SkillsProvider):
-        """Adds `gen_ai.skill.*` to the framework's own `execute_tool` span.
+        """Adds skill attributes to the framework's own spans.
 
-        Overriding `_create_tools` is the provider's own extension point for the
-        tool set it hands the model. `stage_tool` narrows that set to one tool
+        `_create_context` hands the run's skills to the `invoke_agent` span as
+        `gen_ai.skill.definitions`. `_create_tools` is the provider's own
+        extension point for the tool set it hands the model: it puts
+        `gen_ai.skill.*` on the `execute_tool` span. `stage_tool` narrows that set to one tool
         per run: the mock model server calls the first tool it is offered, so
         this is what makes the model's choice deterministic.
         """
 
         stage_tool: str | None = None
+
+        async def _create_context(self, source_context):
+            skills, instructions, tools = await super()._create_context(source_context)
+            # `direct`: this is where the provider gets the skills from its
+            # source, once per run and inside `Agent.run`, so the current span is
+            # the framework's own `invoke_agent` span. Each skill's frontmatter and
+            # the folder it was read from are in hand.
+            trace.get_current_span().set_attribute(
+                "gen_ai.skill.definitions",
+                json.dumps(
+                    [
+                        {
+                            "name": skill.frontmatter.name,
+                            "description": skill.frontmatter.description,
+                            "source_uri": pathlib.Path(skill.path).as_uri(),
+                        }
+                        for skill in skills
+                    ]
+                ),
+            )
+            return skills, instructions, tools
 
         def _create_tools(self, skills):
             def instrument(tool_name, func):

@@ -633,6 +633,21 @@ def run_skills_reference():
                     "gen_ai.input.messages",
                     json.dumps([{"role": "user", "parts": [{"type": "text", "content": prompt}]}]),
                 )
+                # `direct`: `load_skill_from_dir` returns each `Skill` attached to
+                # this agent; `name`, `description`, and `_uri` are that object's fields.
+                agent_span.set_attribute(
+                    "gen_ai.skill.definitions",
+                    json.dumps(
+                        [
+                            {
+                                "name": skill.name,
+                                "description": skill.description,
+                                "source_uri": skill._uri,
+                            }
+                            for skill in skills
+                        ]
+                    ),
+                )
                 usage_metadata = None
                 finish_reason = None
                 last_text = ""
