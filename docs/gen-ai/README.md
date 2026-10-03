@@ -24,6 +24,7 @@ Technology specific semantic conventions are defined for the following GenAI sys
 
 See also:
 
+* [GenAI glossary](./non-normative/glossary.md): Non-normative explanations of the terms used in these conventions.
 * [Model Context Protocol](./mcp.md): Semantic Conventions for [MCP](https://modelcontextprotocol.io)
 
 [DocumentStatus]: https://opentelemetry.io/docs/specs/otel/document-status
