@@ -515,7 +515,15 @@ spans:
     note: |
       The `gen_ai.operation.name` SHOULD be `invoke_agent`.
 
-      Examples: OpenAI Assistants API, AWS Bedrock Agents.
+      This span SHOULD be emitted if and only if the agent being invoked is not running
+      in the same process as the instrumentation.
+
+      Examples include invocations of remote, managed, or other out-of-process
+      agents such as OpenAI Assistants API, AWS Bedrock
+      Agents, Gemini Enterprise Agent Platform, or Azure AI Foundry Agent Service.
+
+      For agent invocations targeting local agents, refer to the
+      `gen_ai.invoke_agent.internal` span.
     stability: development
     attributes:
       - ref_group: attributes.gen_ai.invoke_agent.common
@@ -559,7 +567,14 @@ spans:
     note: |
       The `gen_ai.operation.name` SHOULD be `invoke_agent`.
 
-      Examples: LangChain agents, CrewAI agents.
+      This span SHOULD be emitted if and only if the agent runs locally within the
+      calling process.
+
+      Examples include local agent invocations in frameworks such as LangChain,
+      CrewAI, AutoGen, or Google ADK.
+
+      For agent invocations targeting an out-of-process or remote agent service,
+      refer to the `gen_ai.invoke_agent.client` span.
     stability: development
     entity_associations:
       - "gen_ai.main_agent"
