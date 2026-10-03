@@ -441,6 +441,31 @@ def run_chat_tool_call():
             if hasattr(part, "function_call") and part.function_call:
                 tool_call = part.function_call
         input_messages = [{"role": "user", "parts": [{"type": "text", "content": "What's the weather in Seattle?"}]}]
+        if response.automatic_function_calling_history:
+            input_messages = []
+            for message in response.automatic_function_calling_history:
+                parts = []
+                for part in message.parts or []:
+                    if part.text is not None:
+                        parts.append({"type": "text", "content": part.text})
+                    elif part.function_call is not None:
+                        parts.append(
+                            {
+                                "type": "tool_call",
+                                "name": part.function_call.name,
+                                "arguments": part.function_call.args,
+                            }
+                        )
+                    elif part.function_response is not None:
+                        parts.append(
+                            {
+                                "type": "tool_call_response",
+                                "name": part.function_response.name,
+                                "response": part.function_response.response,
+                            }
+                        )
+                input_messages.append({"role": message.role, "parts": parts})
+        span.set_attribute("gen_ai.input.messages", json.dumps(input_messages))
         output_messages = [
             {
                 "role": "assistant",

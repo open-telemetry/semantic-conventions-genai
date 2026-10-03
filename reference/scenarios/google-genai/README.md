@@ -5,6 +5,10 @@ directly, so it owns inference and embeddings. It also supports **automatic
 function calling** — when tools are Python callables, the SDK executes them — so
 tool execution is instrumentable here.
 
+The automatic function-calling scenario captures the SDK's returned conversation
+history. Function responses retain the `user` role supplied by that history on
+both the inference span and the inference details event.
+
 | Operation | Should be instrumented here | Status |
 | --- | --- | --- |
 | inference (`chat`) | Yes — calls the model directly | ✅ Implemented |

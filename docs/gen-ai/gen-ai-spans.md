@@ -1331,6 +1331,12 @@ formally defined in [inputs JSON schema](/model/gen-ai/gen-ai-input-messages.jso
 [outputs JSON schema](/model/gen-ai/gen-ai-output-messages.json). See also their representation
 in [Python code](./non-normative/models.py).
 
+For messages containing `tool_call_response` parts, instrumentations SHOULD preserve
+the role supplied by the provider or framework API. A tool response does not imply
+that the message role is `tool`: some APIs carry tool responses in `user` messages.
+Instrumentations SHOULD NOT split a message or change its role solely because it
+contains a tool response alongside other content parts.
+
 > [!NOTE]
 >
 > Recording structured attributes is supported on events (or logs) and may not
