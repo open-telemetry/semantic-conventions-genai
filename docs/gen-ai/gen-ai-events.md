@@ -529,9 +529,8 @@ Examples:
 Instrumentation MAY generate or reuse a per-connection identifier or leave it unset when the
 instrumented library does not provide one.
 
-`gen_ai.realtime_session.id` is orthogonal to `gen_ai.conversation.id`: a single conversation
-can span multiple realtime sessions, so the realtime session id is not a substitute for the
-conversation id.
+Instrumentations MUST NOT use `gen_ai.conversation.id` as a realtime session identifier
+since a single conversation  can span multiple realtime sessions.
 
 **[4] `server.port`:** When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries, for example proxies, if it's available.
 
@@ -662,9 +661,8 @@ Examples:
 Instrumentation MAY generate or reuse a per-connection identifier or leave it unset when the
 instrumented library does not provide one.
 
-`gen_ai.realtime_session.id` is orthogonal to `gen_ai.conversation.id`: a single conversation
-can span multiple realtime sessions, so the realtime session id is not a substitute for the
-conversation id.
+Instrumentations MUST NOT use `gen_ai.conversation.id` as a realtime session identifier
+since a single conversation  can span multiple realtime sessions.
 
 **[5] `server.port`:** When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries, for example proxies, if it's available.
 

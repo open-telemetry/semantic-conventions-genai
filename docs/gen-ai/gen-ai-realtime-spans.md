@@ -159,9 +159,8 @@ Examples:
 Instrumentation MAY generate or reuse a per-connection identifier or leave it unset when the
 instrumented library does not provide one.
 
-`gen_ai.realtime_session.id` is orthogonal to `gen_ai.conversation.id`: a single conversation
-can span multiple realtime sessions, so the realtime session id is not a substitute for the
-conversation id.
+Instrumentations MUST NOT use `gen_ai.conversation.id` as a realtime session identifier
+since a single conversation  can span multiple realtime sessions.
 
 **[10] `gen_ai.request.model`:** The name of the GenAI model a request is being made to. If the model is supplied by a vendor, then the value must be the exact name of the model requested. If the model is a fine-tuned custom model, the value should have a more specific name than the base model that's been fine-tuned.
 
