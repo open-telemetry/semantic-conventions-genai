@@ -124,16 +124,14 @@ async def _run_generation(session, request_model, host, port):
     if port is not None:
         span_attributes["server.port"] = port
 
+    # The user speaks: stream their audio, then signal the end of the utterance.
+    await session.send_realtime_input(audio=types.Blob(data=base64.b64decode(INPUT_AUDIO_B64), mime_type="audio/pcm"))
+    await session.send_realtime_input(audio_stream_end=True)
+
     with _reference_tracer.start_as_current_span(
         f"realtime_inference {request_model}", attributes=span_attributes
     ) as span:
         span.set_attribute("gen_ai.input.messages", _user_audio_message())
-
-        # The user speaks: stream their audio, then signal the end of the utterance.
-        await session.send_realtime_input(
-            audio=types.Blob(data=base64.b64decode(INPUT_AUDIO_B64), mime_type="audio/pcm")
-        )
-        await session.send_realtime_input(audio_stream_end=True)
 
         transcript_deltas = []
         audio_chunks = []

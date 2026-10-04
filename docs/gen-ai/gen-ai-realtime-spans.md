@@ -28,10 +28,19 @@ spans and session lifecycle events for the operations these APIs expose.
 
 This span represents one server-side model generation within a realtime, bidirectional streaming session (such as OpenAI Realtime or Gemini Live).
 
-The span SHOULD start at the first output chunk of the generation (or at an earlier
-voice-activity end anchor when the provider exposes one) and end at the generation completion
-or interruption event. If token usage (`gen_ai.usage.*`) is reported after the completion
-event, instrumentation SHOULD wait for it before ending the span.
+The instrumentation SHOULD do the best effort to determine when server started
+and ended generation based on the available information and SHOULD NOT report
+this span if there is no reliable way to determine either start or end.
+
+For example,
+
+- start of generation may be determined based on event received from the server,
+  the first chunk of output content
+- end of generation may be determined based on completion or interruption event
+
+Instrumentation SHOULD do the best effort to include information about the generation
+that may come after generation completing event, such as usage but SHOULD only
+wait for this information if there is a way to end the span reliably.
 
 Instrumentation SHOULD NOT create this span by default for generations expected to be
 long-running or non-conversational, such as speech translation or transcription.
