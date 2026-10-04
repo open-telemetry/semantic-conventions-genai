@@ -149,7 +149,7 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 
 **[7]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
 
-**[8]:** This operation describes a single server-side generation reconstructed from a long-lived streaming session, not a single client request/response. It is distinct from `chat` and `generate_content`: the request is streamed continuously and the generation is bounded by provider events (first output chunk or a voice-activity end anchor through generation completion or interruption) rather than by a client call boundary.
+**[8]:** This operation describes one server-side generation within a long-lived realtime session. A session can contain multiple generations, each represented by a separate `realtime_inference` span. The span follows the generation boundaries determined from the available provider signals, not the lifetime of the session or an individual client method call.
 
 **[9]:** This operation SHOULD be reported when instrumentation can reliably determine the
 start and end of user speech, either through user voice-activity detection (VAD) events
@@ -296,7 +296,7 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 
 **[7]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
 
-**[8]:** This operation describes a single server-side generation reconstructed from a long-lived streaming session, not a single client request/response. It is distinct from `chat` and `generate_content`: the request is streamed continuously and the generation is bounded by provider events (first output chunk or a voice-activity end anchor through generation completion or interruption) rather than by a client call boundary.
+**[8]:** This operation describes one server-side generation within a long-lived realtime session. A session can contain multiple generations, each represented by a separate `realtime_inference` span. The span follows the generation boundaries determined from the available provider signals, not the lifetime of the session or an individual client method call.
 
 **[9]:** This operation SHOULD be reported when instrumentation can reliably determine the
 start and end of user speech, either through user voice-activity detection (VAD) events
@@ -442,7 +442,7 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 
 **[7]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
 
-**[8]:** This operation describes a single server-side generation reconstructed from a long-lived streaming session, not a single client request/response. It is distinct from `chat` and `generate_content`: the request is streamed continuously and the generation is bounded by provider events (first output chunk or a voice-activity end anchor through generation completion or interruption) rather than by a client call boundary.
+**[8]:** This operation describes one server-side generation within a long-lived realtime session. A session can contain multiple generations, each represented by a separate `realtime_inference` span. The span follows the generation boundaries determined from the available provider signals, not the lifetime of the session or an individual client method call.
 
 **[9]:** This operation SHOULD be reported when instrumentation can reliably determine the
 start and end of user speech, either through user voice-activity detection (VAD) events
@@ -588,7 +588,7 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 
 **[7]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
 
-**[8]:** This operation describes a single server-side generation reconstructed from a long-lived streaming session, not a single client request/response. It is distinct from `chat` and `generate_content`: the request is streamed continuously and the generation is bounded by provider events (first output chunk or a voice-activity end anchor through generation completion or interruption) rather than by a client call boundary.
+**[8]:** This operation describes one server-side generation within a long-lived realtime session. A session can contain multiple generations, each represented by a separate `realtime_inference` span. The span follows the generation boundaries determined from the available provider signals, not the lifetime of the session or an individual client method call.
 
 **[9]:** This operation SHOULD be reported when instrumentation can reliably determine the
 start and end of user speech, either through user voice-activity detection (VAD) events
@@ -734,7 +734,7 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 
 **[7]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
 
-**[8]:** This operation describes a single server-side generation reconstructed from a long-lived streaming session, not a single client request/response. It is distinct from `chat` and `generate_content`: the request is streamed continuously and the generation is bounded by provider events (first output chunk or a voice-activity end anchor through generation completion or interruption) rather than by a client call boundary.
+**[8]:** This operation describes one server-side generation within a long-lived realtime session. A session can contain multiple generations, each represented by a separate `realtime_inference` span. The span follows the generation boundaries determined from the available provider signals, not the lifetime of the session or an individual client method call.
 
 **[9]:** This operation SHOULD be reported when instrumentation can reliably determine the
 start and end of user speech, either through user voice-activity detection (VAD) events
@@ -882,7 +882,7 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 
 **[6]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
 
-**[7]:** This operation describes a single server-side generation reconstructed from a long-lived streaming session, not a single client request/response. It is distinct from `chat` and `generate_content`: the request is streamed continuously and the generation is bounded by provider events (first output chunk or a voice-activity end anchor through generation completion or interruption) rather than by a client call boundary.
+**[7]:** This operation describes one server-side generation within a long-lived realtime session. A session can contain multiple generations, each represented by a separate `realtime_inference` span. The span follows the generation boundaries determined from the available provider signals, not the lifetime of the session or an individual client method call.
 
 **[8]:** This operation SHOULD be reported when instrumentation can reliably determine the
 start and end of user speech, either through user voice-activity detection (VAD) events
@@ -1020,7 +1020,7 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 
 **[6]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
 
-**[7]:** This operation describes a single server-side generation reconstructed from a long-lived streaming session, not a single client request/response. It is distinct from `chat` and `generate_content`: the request is streamed continuously and the generation is bounded by provider events (first output chunk or a voice-activity end anchor through generation completion or interruption) rather than by a client call boundary.
+**[7]:** This operation describes one server-side generation within a long-lived realtime session. A session can contain multiple generations, each represented by a separate `realtime_inference` span. The span follows the generation boundaries determined from the available provider signals, not the lifetime of the session or an individual client method call.
 
 **[8]:** This operation SHOULD be reported when instrumentation can reliably determine the
 start and end of user speech, either through user voice-activity detection (VAD) events

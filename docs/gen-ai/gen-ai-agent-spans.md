@@ -155,7 +155,7 @@ and SHOULD be provided **at span creation time** (if provided at all):
 
 **[9]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
 
-**[10]:** This operation describes a single server-side generation reconstructed from a long-lived streaming session, not a single client request/response. It is distinct from `chat` and `generate_content`: the request is streamed continuously and the generation is bounded by provider events (first output chunk or a voice-activity end anchor through generation completion or interruption) rather than by a client call boundary.
+**[10]:** This operation describes one server-side generation within a long-lived realtime session. A session can contain multiple generations, each represented by a separate `realtime_inference` span. The span follows the generation boundaries determined from the available provider signals, not the lifetime of the session or an individual client method call.
 
 **[11]:** This operation SHOULD be reported when instrumentation can reliably determine the
 start and end of user speech, either through user voice-activity detection (VAD) events
@@ -515,7 +515,7 @@ and SHOULD be provided **at span creation time** (if provided at all):
 
 **[33]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
 
-**[34]:** This operation describes a single server-side generation reconstructed from a long-lived streaming session, not a single client request/response. It is distinct from `chat` and `generate_content`: the request is streamed continuously and the generation is bounded by provider events (first output chunk or a voice-activity end anchor through generation completion or interruption) rather than by a client call boundary.
+**[34]:** This operation describes one server-side generation within a long-lived realtime session. A session can contain multiple generations, each represented by a separate `realtime_inference` span. The span follows the generation boundaries determined from the available provider signals, not the lifetime of the session or an individual client method call.
 
 **[35]:** This operation SHOULD be reported when instrumentation can reliably determine the
 start and end of user speech, either through user voice-activity detection (VAD) events
@@ -817,7 +817,7 @@ and SHOULD be provided **at span creation time** (if provided at all):
 
 **[16]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
 
-**[17]:** This operation describes a single server-side generation reconstructed from a long-lived streaming session, not a single client request/response. It is distinct from `chat` and `generate_content`: the request is streamed continuously and the generation is bounded by provider events (first output chunk or a voice-activity end anchor through generation completion or interruption) rather than by a client call boundary.
+**[17]:** This operation describes one server-side generation within a long-lived realtime session. A session can contain multiple generations, each represented by a separate `realtime_inference` span. The span follows the generation boundaries determined from the available provider signals, not the lifetime of the session or an individual client method call.
 
 **[18]:** This operation SHOULD be reported when instrumentation can reliably determine the
 start and end of user speech, either through user voice-activity detection (VAD) events
@@ -1026,7 +1026,7 @@ and SHOULD be provided **at span creation time** (if provided at all):
 
 **[8]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
 
-**[9]:** This operation describes a single server-side generation reconstructed from a long-lived streaming session, not a single client request/response. It is distinct from `chat` and `generate_content`: the request is streamed continuously and the generation is bounded by provider events (first output chunk or a voice-activity end anchor through generation completion or interruption) rather than by a client call boundary.
+**[9]:** This operation describes one server-side generation within a long-lived realtime session. A session can contain multiple generations, each represented by a separate `realtime_inference` span. The span follows the generation boundaries determined from the available provider signals, not the lifetime of the session or an individual client method call.
 
 **[10]:** This operation SHOULD be reported when instrumentation can reliably determine the
 start and end of user speech, either through user voice-activity detection (VAD) events
@@ -1141,7 +1141,7 @@ and SHOULD be provided **at span creation time** (if provided at all):
 
 **[3]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
 
-**[4]:** This operation describes a single server-side generation reconstructed from a long-lived streaming session, not a single client request/response. It is distinct from `chat` and `generate_content`: the request is streamed continuously and the generation is bounded by provider events (first output chunk or a voice-activity end anchor through generation completion or interruption) rather than by a client call boundary.
+**[4]:** This operation describes one server-side generation within a long-lived realtime session. A session can contain multiple generations, each represented by a separate `realtime_inference` span. The span follows the generation boundaries determined from the available provider signals, not the lifetime of the session or an individual client method call.
 
 **[5]:** This operation SHOULD be reported when instrumentation can reliably determine the
 start and end of user speech, either through user voice-activity detection (VAD) events
@@ -1348,7 +1348,7 @@ and SHOULD be provided **at span creation time** (if provided at all):
 
 **[10]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
 
-**[11]:** This operation describes a single server-side generation reconstructed from a long-lived streaming session, not a single client request/response. It is distinct from `chat` and `generate_content`: the request is streamed continuously and the generation is bounded by provider events (first output chunk or a voice-activity end anchor through generation completion or interruption) rather than by a client call boundary.
+**[11]:** This operation describes one server-side generation within a long-lived realtime session. A session can contain multiple generations, each represented by a separate `realtime_inference` span. The span follows the generation boundaries determined from the available provider signals, not the lifetime of the session or an individual client method call.
 
 **[12]:** This operation SHOULD be reported when instrumentation can reliably determine the
 start and end of user speech, either through user voice-activity detection (VAD) events
@@ -1547,7 +1547,7 @@ and SHOULD be provided **at span creation time** (if provided at all):
 
 **[10]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
 
-**[11]:** This operation describes a single server-side generation reconstructed from a long-lived streaming session, not a single client request/response. It is distinct from `chat` and `generate_content`: the request is streamed continuously and the generation is bounded by provider events (first output chunk or a voice-activity end anchor through generation completion or interruption) rather than by a client call boundary.
+**[11]:** This operation describes one server-side generation within a long-lived realtime session. A session can contain multiple generations, each represented by a separate `realtime_inference` span. The span follows the generation boundaries determined from the available provider signals, not the lifetime of the session or an individual client method call.
 
 **[12]:** This operation SHOULD be reported when instrumentation can reliably determine the
 start and end of user speech, either through user voice-activity detection (VAD) events
@@ -1781,7 +1781,7 @@ and SHOULD be provided **at span creation time** (if provided at all):
 
 **[17]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
 
-**[18]:** This operation describes a single server-side generation reconstructed from a long-lived streaming session, not a single client request/response. It is distinct from `chat` and `generate_content`: the request is streamed continuously and the generation is bounded by provider events (first output chunk or a voice-activity end anchor through generation completion or interruption) rather than by a client call boundary.
+**[18]:** This operation describes one server-side generation within a long-lived realtime session. A session can contain multiple generations, each represented by a separate `realtime_inference` span. The span follows the generation boundaries determined from the available provider signals, not the lifetime of the session or an individual client method call.
 
 **[19]:** This operation SHOULD be reported when instrumentation can reliably determine the
 start and end of user speech, either through user voice-activity detection (VAD) events

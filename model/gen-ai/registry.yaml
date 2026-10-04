@@ -676,12 +676,11 @@ attributes:
           value: "realtime_inference"
           brief: 'Server-side model generation within a realtime, bidirectional streaming session such as [OpenAI Realtime](https://platform.openai.com/docs/guides/realtime) or [Gemini Live](https://ai.google.dev/gemini-api/docs/live).'
           note: >
-            This operation describes a single server-side generation reconstructed from a
-            long-lived streaming session, not a single client request/response. It is distinct
-            from `chat` and `generate_content`: the request is streamed continuously and the
-            generation is bounded by provider events (first output chunk or a voice-activity
-            end anchor through generation completion or interruption) rather than by a client
-            call boundary.
+            This operation describes one server-side generation within a long-lived realtime
+            session. A session can contain multiple generations, each represented by a separate
+            `realtime_inference` span. The span follows the generation boundaries determined from
+            the available provider signals, not the lifetime of the session or an individual
+            client method call.
           stability: development
         - id: user_speech
           value: "user_speech"
