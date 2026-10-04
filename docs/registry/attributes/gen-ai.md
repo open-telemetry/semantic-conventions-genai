@@ -225,8 +225,8 @@ should have the `gen_ai.provider.name` set to `aws.bedrock` and include
 applicable `aws.bedrock.*` attributes and are not expected to include
 `openai.*` attributes.
 
-**[20] `gen_ai.realtime_session.id`:** A realtime session is a single long-lived streaming connection during which the client
-streams input continuously and the server streams incremental output.
+**[20] `gen_ai.realtime_session.id`:** A realtime session is a long-lived streaming connection between client and
+inference server.
 
 Examples:
 

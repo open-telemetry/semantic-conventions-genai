@@ -147,8 +147,8 @@ Additional output format details may be recorded in the future in the `gen_ai.ou
 
 **[8] `gen_ai.realtime_session.id`:** If the provider exposes a session identifier, or the instrumentation uses a client-created per-connection identifier.
 
-**[9] `gen_ai.realtime_session.id`:** A realtime session is a single long-lived streaming connection during which the client
-streams input continuously and the server streams incremental output.
+**[9] `gen_ai.realtime_session.id`:** A realtime session is a long-lived streaming connection between client and
+inference server.
 
 Examples:
 

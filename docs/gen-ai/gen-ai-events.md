@@ -517,8 +517,8 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 
 **[2] `gen_ai.realtime_session.id`:** If the provider exposes a session identifier, or the instrumentation uses a client-created per-connection identifier.
 
-**[3] `gen_ai.realtime_session.id`:** A realtime session is a single long-lived streaming connection during which the client
-streams input continuously and the server streams incremental output.
+**[3] `gen_ai.realtime_session.id`:** A realtime session is a long-lived streaming connection between client and
+inference server.
 
 Examples:
 
@@ -649,8 +649,8 @@ it's RECOMMENDED to:
 
 **[3] `gen_ai.realtime_session.id`:** If the provider exposes a session identifier, or the instrumentation uses a client-created per-connection identifier.
 
-**[4] `gen_ai.realtime_session.id`:** A realtime session is a single long-lived streaming connection during which the client
-streams input continuously and the server streams incremental output.
+**[4] `gen_ai.realtime_session.id`:** A realtime session is a long-lived streaming connection between client and
+inference server.
 
 Examples:
 

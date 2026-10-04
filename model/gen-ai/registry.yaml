@@ -459,8 +459,8 @@ attributes:
     type: string
     brief: The unique identifier for a realtime, bidirectional streaming session.
     note: |
-      A realtime session is a single long-lived streaming connection during which the client
-      streams input continuously and the server streams incremental output.
+      A realtime session is a long-lived streaming connection between client and
+      inference server.
 
       Examples:
 
