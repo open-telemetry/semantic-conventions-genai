@@ -38,13 +38,6 @@ long-running or non-conversational, such as speech translation or transcription.
 
 The `gen_ai.operation.name` SHOULD be `realtime_inference`.
 
-When a generation calls a tool, the realtime API returns the tool call to the client, which
-runs the tool and sends the result back to the model. Tool execution in a realtime session
-for client-side tools is performed by the client, so a provider-SDK instrumentation cannot
-observe it and will not emit a `gen_ai.execute_tool.internal` span; the tool exchange is
-captured as `tool_call` / `tool_call_response` parts instead. Instrumentation at a layer that
-dispatches the tool, such as an agent framework, should emit it as usual.
-
 **Span name** SHOULD be `{gen_ai.operation.name} {gen_ai.request.model}`.
 Semantic conventions for individual GenAI systems and frameworks MAY specify different span name format
 and MUST follow the overall [guidelines for span names](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.56.0/specification/trace/api.md#span).

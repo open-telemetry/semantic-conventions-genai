@@ -291,13 +291,6 @@ spans:
       long-running or non-conversational, such as speech translation or transcription.
 
       The `gen_ai.operation.name` SHOULD be `realtime_inference`.
-
-      When a generation calls a tool, the realtime API returns the tool call to the client, which
-      runs the tool and sends the result back to the model. Tool execution in a realtime session
-      for client-side tools is performed by the client, so a provider-SDK instrumentation cannot
-      observe it and will not emit a `gen_ai.execute_tool.internal` span; the tool exchange is
-      captured as `tool_call` / `tool_call_response` parts instead. Instrumentation at a layer that
-      dispatches the tool, such as an agent framework, should emit it as usual.
     stability: development
     attributes:
       - ref_group: attributes.gen_ai.common
