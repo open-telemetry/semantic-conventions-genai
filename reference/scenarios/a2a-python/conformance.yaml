@@ -1,0 +1,63 @@
+runner: genai-conformance
+instrumented_library: a2a-python
+instrumentation_library: reference
+
+env:
+  # The SDK traces every internal method as kind=SERVER; A2A semconv
+  # instrumentation replaces that, so the two are not run together.
+  OTEL_INSTRUMENTATION_A2A_SDK_ENABLED: "false"
+  # Emit the stable HTTP conventions the a2a.http.server refinement builds on.
+  OTEL_SEMCONV_STABILITY_OPT_IN: "http"
+
+scenarios:
+  reference:
+    run: uv run --frozen --python 3.12 --project . python scenario.py
+    spans:
+      - match:
+          attributes:
+            a2a.method.name: SendMessage
+          kind: client
+          type: a2a.client
+      - match:
+          attributes:
+            a2a.method.name: SendStreamingMessage
+          kind: client
+          type: a2a.client
+      - match:
+          attributes:
+            a2a.method.name: GetTask
+          kind: client
+          type: a2a.client
+      - match:
+          attributes:
+            a2a.method.name: SendMessage
+            a2a.tenant: billing
+          kind: server
+          type: a2a.server
+      - match:
+          attributes:
+            a2a.method.name: SendStreamingMessage
+            a2a.tenant: billing
+          kind: server
+          type: a2a.server
+      - match:
+          attributes:
+            a2a.method.name: GetTask
+            a2a.tenant: billing
+          kind: server
+          type: a2a.server
+      # The same A2A server spans, hosted on the transport span rather than
+      # reported standalone (the a2a.http.server refinement). The runner has no
+      # type for a refinement, so they are declared as the A2A server spans they are.
+      - match:
+          attributes:
+            a2a.method.name: SendMessage
+            a2a.tenant: billing-http
+          kind: server
+          type: a2a.server
+      - match:
+          attributes:
+            a2a.method.name: SendStreamingMessage
+            a2a.tenant: billing-http
+          kind: server
+          type: a2a.server

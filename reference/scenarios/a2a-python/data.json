@@ -1,0 +1,80 @@
+{
+  "spans": {
+    "a2a.client": [
+      "a2a.message.id",
+      "a2a.message.reference_task_ids",
+      "a2a.method.name",
+      "a2a.protocol.version",
+      "a2a.task.id",
+      "a2a.task.state",
+      "a2a.tenant",
+      "gen_ai.agent.description",
+      "gen_ai.agent.name",
+      "gen_ai.agent.version",
+      "gen_ai.conversation.id",
+      "server.address",
+      "server.port"
+    ],
+    "a2a.server": [
+      "a2a.message.id",
+      "a2a.message.reference_task_ids",
+      "a2a.method.name",
+      "a2a.protocol.version",
+      "a2a.task.id",
+      "a2a.task.state",
+      "a2a.tenant",
+      "client.address",
+      "client.port",
+      "gen_ai.agent.description",
+      "gen_ai.agent.name",
+      "gen_ai.agent.version",
+      "gen_ai.conversation.id",
+      "server.address",
+      "server.port"
+    ]
+  },
+  "events": {},
+  "metrics": {},
+  "findings": [
+    {
+      "id": "missing_attribute",
+      "message": "Attribute 'http.request.method' does not exist in the registry.",
+      "context": {
+        "attribute_key": "http.request.method"
+      }
+    },
+    {
+      "id": "missing_attribute",
+      "message": "Attribute 'http.response.status_code' does not exist in the registry.",
+      "context": {
+        "attribute_key": "http.response.status_code"
+      }
+    },
+    {
+      "id": "missing_attribute",
+      "message": "Attribute 'url.path' does not exist in the registry.",
+      "context": {
+        "attribute_key": "url.path"
+      }
+    },
+    {
+      "id": "missing_attribute",
+      "message": "Attribute 'url.scheme' does not exist in the registry.",
+      "context": {
+        "attribute_key": "url.scheme"
+      }
+    },
+    {
+      "id": "missing_attribute",
+      "message": "Attribute 'user_agent.original' does not exist in the registry.",
+      "context": {
+        "attribute_key": "user_agent.original"
+      }
+    },
+    {
+      "id": "missing_metric",
+      "message": "Metric does not exist in the registry."
+    }
+  ],
+  "entities": {}
+}
