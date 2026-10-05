@@ -448,13 +448,15 @@ following `gen_ai.realtime_inference.client` span through
 
 This span represents the capture of a user speech utterance within a realtime, bidirectional speech-to-speech session, delimited by user speech start and stop events.
 
-This span is optional and provider-dependent. It SHOULD be recorded when instrumentation can
+It SHOULD be recorded when instrumentation can
 reliably determine the start and end of user speech, either through user voice-activity
 detection (VAD) events in the model response (for example OpenAI Realtime
 `input_audio_buffer.speech_started` / `input_audio_buffer.speech_stopped`) or through
 client-side events when the application requires the user to manually start and stop
-recording. The span SHOULD start at the user-speech-start event and end at the
-user-speech-stop event.
+recording.
+
+If instrumentation cannot reliably determine when user speech starts and ends,
+it SHOULD NOT record this span.
 
 The `gen_ai.operation.name` SHOULD be `user_speech`.
 
