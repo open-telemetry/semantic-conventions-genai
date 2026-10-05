@@ -446,7 +446,7 @@ following `gen_ai.realtime_inference.client` span through
 
 **Status:** ![Development](https://img.shields.io/badge/-development-blue)
 
-This span represents the capture of a user speech utterance within a realtime, bidirectional speech-to-speech session, delimited by user speech start and stop events.
+This span represents the capture of a user speech utterance.
 
 It SHOULD be recorded when instrumentation can
 reliably determine the start and end of user speech, either through user voice-activity
