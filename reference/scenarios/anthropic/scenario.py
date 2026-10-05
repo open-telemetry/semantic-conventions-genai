@@ -6,11 +6,20 @@
 import base64
 import json
 import os
+from tempfile import TemporaryDirectory
 
 import anthropic
 from opentelemetry.trace import SpanKind, StatusCode
+from opentelemetry.util.genai._upload.completion_hook import UploadCompletionHook
 from opentelemetry.util.genai.handler import get_telemetry_handler
-from opentelemetry.util.genai.types import Blob, InputMessage, OutputMessage, Text
+from opentelemetry.util.genai.types import (
+    Blob,
+    FunctionToolDefinition,
+    InputMessage,
+    OutputMessage,
+    Text,
+    ToolCallRequest,
+)
 from reference_shared import (
     flush_and_shutdown,
     mock_server_host_port,
@@ -104,7 +113,17 @@ def run_chat(handler):
     request_model = "claude-sonnet-4-20250514"
     request_max_tokens = 100
     request_reasoning_level = "medium"
+    system_instruction = "Answer briefly."
     messages = [{"role": "user", "content": "Say hello."}]
+    tool = {
+        "name": "get_weather",
+        "description": "Get the current weather for a location.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"location": {"type": "string"}},
+            "required": ["location"],
+        },
+    }
     client = anthropic.Anthropic(base_url=MOCK_BASE_URL, api_key="mock-key")
 
     host, port = mock_server_host_port(MOCK_BASE_URL)
@@ -116,6 +135,14 @@ def run_chat(handler):
     ) as inv:
         inv.max_tokens = request_max_tokens  # -> gen_ai.request.max_tokens
         inv.attributes["gen_ai.request.reasoning.level"] = request_reasoning_level  # -> gen_ai.request.reasoning.level
+        inv.system_instruction = [Text(content=system_instruction)]  # -> gen_ai.system_instructions
+        inv.tool_definitions = [  # -> gen_ai.tool.definitions
+            FunctionToolDefinition(
+                name=tool["name"],
+                description=tool["description"],
+                parameters=tool["input_schema"],
+            )
+        ]
         (user_message,) = messages
         inv.input_messages = [  # -> gen_ai.input.messages
             InputMessage(role=user_message["role"], parts=[Text(content=user_message["content"])])
@@ -126,6 +153,8 @@ def run_chat(handler):
             max_tokens=request_max_tokens,
             messages=messages,
             output_config={"effort": request_reasoning_level},
+            system=system_instruction,
+            tools=[tool],
         )
 
         inv.response_model_name = resp.model  # -> gen_ai.response.model
@@ -144,14 +173,31 @@ def run_chat(handler):
             if cache_read:
                 inv.cache_read_input_tokens = cache_read  # -> gen_ai.usage.cache_read.input_tokens
 
-        output_parts = [Text(content=block.text) for block in resp.content if hasattr(block, "text")]
+        output_parts = []
+        for block in resp.content:
+            if hasattr(block, "text"):
+                output_parts.append(Text(content=block.text))
+            elif block.type == "tool_use":
+                output_parts.append(
+                    ToolCallRequest(
+                        id=block.id,
+                        name=block.name,
+                        arguments=block.input,
+                    )
+                )
         if output_parts:
             inv.output_messages = [  # -> gen_ai.output.messages
                 OutputMessage(role="assistant", parts=output_parts)
             ]
         record_inference_usage(inv, request_model, host, port)
 
-    print(f"    -> {resp.content[0].text[:60]}")
+    first_block = resp.content[0]
+    if hasattr(first_block, "text"):
+        print(f"    -> {first_block.text[:60]}")
+    elif first_block.type == "tool_use":
+        print(f"    -> tool_call: {first_block.name}")
+    else:
+        print(f"    -> {first_block.type}")
 
 
 def _has_compaction_block_in_input(messages):
@@ -484,17 +530,23 @@ def main():
     os.environ["OTEL_INSTRUMENTATION_GENAI_EMIT_EVENT"] = "true"
 
     tp, lp, mp = setup_otel()
-    handler = get_telemetry_handler(
-        tracer_provider=tp,
-        meter_provider=mp,
-        logger_provider=lp,
-    )
+    with TemporaryDirectory() as upload_dir:
+        completion_hook = UploadCompletionHook(base_path=upload_dir)
+        handler = get_telemetry_handler(
+            tracer_provider=tp,
+            meter_provider=mp,
+            logger_provider=lp,
+            completion_hook=completion_hook,
+        )
 
-    run_chat(handler)
-    run_compaction(handler)
-    run_chat_with_document_input(handler)
-    run_chat_with_image_input(handler)
-    run_create_agent()
+        try:
+            run_chat(handler)
+            run_compaction(handler)
+            run_chat_with_document_input(handler)
+            run_chat_with_image_input(handler)
+            run_create_agent()
+        finally:
+            completion_hook.shutdown(timeout_sec=5)
 
     flush_and_shutdown(tp, lp, mp)
 
