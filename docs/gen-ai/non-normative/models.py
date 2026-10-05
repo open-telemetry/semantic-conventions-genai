@@ -299,7 +299,11 @@ class Role(StrEnum):
 
 class ChatMessage(BaseModel):
     role: Union[Role, str] = Field(
-        description="Role of the entity that created the message."
+        description=(
+            "Role of the entity that created the message. "
+            "A tool_call_response part does not imply a tool role; "
+            "Instrumentations SHOULD preserve the role supplied by the provider or framework API."
+        )
     )
     parts: List[MessagePart] = Field(
         description="List of message parts that make up the message content."

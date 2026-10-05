@@ -154,6 +154,75 @@ def run_chat(handler):
     print(f"    -> {resp.content[0].text[:60]}")
 
 
+def run_tool_response_role(handler):
+    """Capture a tool response and text together in their original user message."""
+    request_model = "claude-sonnet-4-20250514"
+    request_max_tokens = 100
+    tools = [
+        {"name": "get_weather", "input_schema": {"type": "object", "properties": {"location": {"type": "string"}}}}
+    ]
+    messages = [
+        {"role": "user", "content": [{"type": "text", "text": "What is the weather in Paris?"}]},
+        {
+            "role": "assistant",
+            "content": [
+                {"type": "tool_use", "id": "toolu_weather", "name": "get_weather", "input": {"location": "Paris"}}
+            ],
+        },
+        {
+            "role": "user",
+            "content": [
+                {"type": "tool_result", "tool_use_id": "toolu_weather", "content": "Rainy, 14 C"},
+                {"type": "text", "text": "Summarize the result."},
+            ],
+        },
+    ]
+    client = anthropic.Anthropic(base_url=MOCK_BASE_URL, api_key="mock-key")
+    host, port = mock_server_host_port(MOCK_BASE_URL)
+    with handler.inference(
+        provider="anthropic", request_model=request_model, server_address=host, server_port=port
+    ) as inv:
+        inv.max_tokens = request_max_tokens
+        inv.input_messages = []
+        for message in messages:
+            parts = []
+            for block in message["content"]:
+                if block["type"] == "text":
+                    parts.append(Text(content=block["text"]))
+                elif block["type"] == "tool_use":
+                    parts.append(
+                        {"type": "tool_call", "id": block["id"], "name": block["name"], "arguments": block["input"]}
+                    )
+                elif block["type"] == "tool_result":
+                    parts.append(
+                        {"type": "tool_call_response", "id": block["tool_use_id"], "response": block["content"]}
+                    )
+            inv.input_messages.append(InputMessage(role=message["role"], parts=parts))
+        inv.attributes["gen_ai.tool.definitions"] = json.dumps(
+            [{"type": "function", "name": tool["name"], "parameters": tool["input_schema"]} for tool in tools]
+        )
+        resp = client.messages.create(
+            model=request_model, max_tokens=request_max_tokens, messages=messages, tools=tools
+        )
+        inv.response_id = resp.id
+        inv.response_model_name = resp.model
+        inv.finish_reasons = [resp.stop_reason]
+        inv.output_messages = [
+            OutputMessage(role=resp.role, parts=[Text(content=b.text) for b in resp.content if b.type == "text"])
+        ]
+        inv.input_tokens = (
+            resp.usage.input_tokens
+            + (resp.usage.cache_read_input_tokens or 0)
+            + (resp.usage.cache_creation_input_tokens or 0)
+        )
+        inv.output_tokens = resp.usage.output_tokens
+        if resp.usage.cache_read_input_tokens:
+            inv.cache_read_input_tokens = resp.usage.cache_read_input_tokens
+        if resp.usage.cache_creation_input_tokens:
+            inv.attributes["gen_ai.usage.cache_write.input_tokens"] = resp.usage.cache_creation_input_tokens
+        record_inference_usage(inv, request_model, host, port)
+
+
 def _has_compaction_block_in_input(messages):
     """Return True if any input message contains a compaction content block."""
     for message in messages:
@@ -491,6 +560,7 @@ def main():
     )
 
     run_chat(handler)
+    run_tool_response_role(handler)
     run_compaction(handler)
     run_chat_with_document_input(handler)
     run_chat_with_image_input(handler)
