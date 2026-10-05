@@ -1,7 +1,6 @@
 {
     "$defs": {
         "BlobPart": {
-            "additionalProperties": true,
             "description": "Represents blob binary data sent inline to the model",
             "properties": {
                 "type": {

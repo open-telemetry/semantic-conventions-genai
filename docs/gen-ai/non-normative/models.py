@@ -231,9 +231,6 @@ class BlobPart(BaseModel):
         description="Raw bytes of the attached data. This field SHOULD be encoded as a base64 string when serialized to JSON."
     )
 
-    model_config = ConfigDict(extra="allow")
-
-
 class FilePart(BaseModel):
     """Represents an external referenced file sent to the model by file id"""
 
