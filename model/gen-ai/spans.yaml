@@ -388,8 +388,6 @@ spans:
       - ref: gen_ai.realtime_session.id
         requirement_level:
           conditionally_required: If the provider exposes a session identifier, or the instrumentation uses a client-created per-connection identifier.
-        note: >
-          For a realtime session this correlates the user input with the generations that respond to it.
       - ref: gen_ai.provider.name
         requirement_level: required
         sampling_relevant: true

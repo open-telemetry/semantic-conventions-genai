@@ -228,6 +228,8 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 **[20] `gen_ai.realtime_session.id`:** A realtime session is a long-lived streaming connection between client and
 inference server.
 
+Telemetry recorded within the same realtime session can be correlated using this identifier.
+
 Examples:
 
 - OpenAI Realtime exposes a session identifier (`session.id`).

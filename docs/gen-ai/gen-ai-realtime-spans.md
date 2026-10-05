@@ -155,6 +155,8 @@ Additional output format details may be recorded in the future in the `gen_ai.ou
 **[9] `gen_ai.realtime_session.id`:** A realtime session is a long-lived streaming connection between client and
 inference server.
 
+Telemetry recorded within the same realtime session can be correlated using this identifier.
+
 Examples:
 
 - OpenAI Realtime exposes a session identifier (`session.id`).
@@ -501,7 +503,22 @@ Instrumentations SHOULD document the list of errors they report.
 
 **[4] `gen_ai.realtime_session.id`:** If the provider exposes a session identifier, or the instrumentation uses a client-created per-connection identifier.
 
-**[5] `gen_ai.realtime_session.id`:** For a realtime session this correlates the user input with the generations that respond to it.
+**[5] `gen_ai.realtime_session.id`:** A realtime session is a long-lived streaming connection between client and
+inference server.
+
+Telemetry recorded within the same realtime session can be correlated using this identifier.
+
+Examples:
+
+- OpenAI Realtime exposes a session identifier (`session.id`).
+- Gemini exposes no session identifier when using the Developer API; the enterprise API
+  provides one.
+
+Instrumentation MAY generate or reuse a per-connection identifier or leave it unset when the
+instrumented library does not provide one.
+
+Instrumentations MUST NOT use `gen_ai.conversation.id` as a realtime session identifier
+since a single conversation  can span multiple realtime sessions.
 
 **[6] `gen_ai.input.messages`:** When content capture is enabled and a transcript of the user's utterance is available, it is carried here as the user input message.
 
