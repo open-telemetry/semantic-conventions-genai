@@ -41,6 +41,8 @@ import json
 import os
 from collections import deque
 
+from opentelemetry.trace import SpanKind
+
 from reference_shared import (
     flush_and_shutdown,
     mock_server_host_port,
@@ -202,7 +204,9 @@ class _RealtimeDriver:
             "realtime_inference",
             output_type=output_type,
         )
-        span = _reference_tracer.start_span(f"realtime_inference {self.request_model}", attributes=attributes)
+        span = _reference_tracer.start_span(
+            f"realtime_inference {self.request_model}", kind=SpanKind.CLIENT, attributes=attributes
+        )
         span.set_attribute("gen_ai.input.messages", input_messages)
         self._gen = {
             "span": span,

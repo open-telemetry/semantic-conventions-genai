@@ -47,6 +47,8 @@ import json
 import os
 import ssl
 
+from opentelemetry.trace import SpanKind
+
 from reference_shared import (
     flush_and_shutdown,
     mock_server_host_port,
@@ -159,7 +161,9 @@ async def _run_generation(session, request_model, host, port, input_messages, br
     """
     output_type = None if break_on_tool_call else "speech"
     attributes = _live_attributes(request_model, host, port, "realtime_inference", output_type=output_type)
-    with _reference_tracer.start_as_current_span(f"realtime_inference {request_model}", attributes=attributes) as span:
+    with _reference_tracer.start_as_current_span(
+        f"realtime_inference {request_model}", kind=SpanKind.CLIENT, attributes=attributes
+    ) as span:
         span.set_attribute("gen_ai.input.messages", input_messages)
 
         transcript_deltas = []

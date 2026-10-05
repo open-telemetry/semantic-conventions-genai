@@ -31,6 +31,15 @@
     ]
   },
   "metrics": {},
-  "findings": [],
+  "findings": [
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'realtime_inference gemini-3-flash-native-audio-preview' (operation 'realtime_inference') is missing expected attribute 'gen_ai.response.model'",
+      "context": {
+        "missing_attribute": "gen_ai.response.model",
+        "operation": "realtime_inference"
+      }
+    }
+  ],
   "entities": {}
 }

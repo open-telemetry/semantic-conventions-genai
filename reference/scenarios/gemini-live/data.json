@@ -31,6 +31,31 @@
     ]
   },
   "metrics": {},
-  "findings": [],
+  "findings": [
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'realtime_inference gemini-2.5-flash-native-audio-preview' (operation 'realtime_inference') is missing expected attribute 'gen_ai.response.model'",
+      "context": {
+        "missing_attribute": "gen_ai.response.model",
+        "operation": "realtime_inference"
+      }
+    },
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'realtime_inference gemini-2.5-flash-native-audio-preview' (operation 'realtime_inference') is missing expected attribute 'gen_ai.usage.input_tokens'",
+      "context": {
+        "missing_attribute": "gen_ai.usage.input_tokens",
+        "operation": "realtime_inference"
+      }
+    },
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'realtime_inference gemini-2.5-flash-native-audio-preview' (operation 'realtime_inference') is missing expected attribute 'gen_ai.usage.output_tokens'",
+      "context": {
+        "missing_attribute": "gen_ai.usage.output_tokens",
+        "operation": "realtime_inference"
+      }
+    }
+  ],
   "entities": {}
 }
