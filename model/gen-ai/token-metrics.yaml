@@ -18,6 +18,8 @@ metrics:
 
       When systems report both used tokens and billable tokens, instrumentation
       MUST report billable tokens.
+
+      See `gen_ai.token.modality` for how to split tokens by modality.
     stability: development
     annotations:
       code_generation:
