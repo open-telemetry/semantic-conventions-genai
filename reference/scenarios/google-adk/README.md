@@ -11,3 +11,4 @@ owns the agent, workflow, tool, and memory operations it runs directly.
 | invoke_workflow | Yes — workflow agents (e.g. `SequentialAgent`) | ✅ Implemented |
 | execute_tool | Yes — ADK runs the tool | ✅ Implemented |
 | memory | Yes — memory service upsert / search | ✅ Implemented |
+| skills | Yes — `SkillToolset` runs the skill tools | ✅ Implemented |
