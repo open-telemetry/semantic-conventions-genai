@@ -22,8 +22,9 @@ speech-then-generation sequence. Three turns run inside the one session:
    arrives mid-response) and cancels the generation. Because speech and
    generation state are tracked independently, the barge-in opens its own
    ``user_speech`` span even though a generation span is still open; the
-   cancelled generation ends with ``gen_ai.response.finish_reasons`` reflecting a
-   stop, and the barge-in utterance is then answered by a follow-up generation.
+   cancelled generation ends with ``gen_ai.response.finish_reasons`` set to the
+   provider-reported ``turn_detected`` reason, and the barge-in utterance is then
+   answered by a follow-up generation.
 3. A tool-calling turn demonstrating the **sibling** tool-call pattern: the
    first ``realtime_inference`` span resolves to a function call and ends, the
    client runs the tool, then a second ``realtime_inference`` span speaks the
@@ -240,7 +241,12 @@ class _RealtimeDriver:
         if self._function_call is not None:
             self._finish_tool_call_generation(span, event.response.usage)
         else:
-            self._finish_spoken_generation(span, event.response.status, event.response.usage)
+            self._finish_spoken_generation(
+                span,
+                event.response.status,
+                event.response.status_details,
+                event.response.usage,
+            )
 
     def _finish_tool_call_generation(self, span, usage):
         function_call = self._function_call
@@ -280,12 +286,13 @@ class _RealtimeDriver:
         )
         self._start_generation("complete", _tool_result_message(function_call, result))
 
-    def _finish_spoken_generation(self, span, status, usage):
+    def _finish_spoken_generation(self, span, status, status_details, usage):
         gen = self._gen
         transcript = (
             gen["final_transcript"] if gen["final_transcript"] is not None else "".join(gen["transcript_deltas"])
         )
         output_audio = "".join(gen["audio_deltas"])
+        finish_reason = _finish_reason(status, status_details)
         output_messages = [
             {
                 "role": "assistant",
@@ -293,10 +300,10 @@ class _RealtimeDriver:
                     {"type": "blob", "modality": "audio", "mime_type": "audio/pcm", "content": output_audio},
                     {"type": "transcription", "content": transcript},
                 ],
-                "finish_reason": _finish_reason(status),
+                "finish_reason": finish_reason,
             }
         ]
-        span.set_attribute("gen_ai.response.finish_reasons", [_finish_reason(status)])
+        span.set_attribute("gen_ai.response.finish_reasons", [finish_reason])
         span.set_attribute("gen_ai.output.messages", json.dumps(output_messages))
         self._set_usage(span, usage)
         span.end()
@@ -332,12 +339,13 @@ _STATUS_TO_FINISH_REASON = {
     "completed": "stop",
     "incomplete": "length",
     "failed": "error",
-    "cancelled": "stop",
 }
 
 
-def _finish_reason(status):
-    return _STATUS_TO_FINISH_REASON.get(status, "stop")
+def _finish_reason(status, status_details):
+    if status == "cancelled":
+        return getattr(status_details, "reason", None) or "error"
+    return _STATUS_TO_FINISH_REASON.get(status, "error")
 
 
 def _execute_tool(function_call):

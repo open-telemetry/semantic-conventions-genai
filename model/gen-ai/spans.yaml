@@ -292,6 +292,11 @@ spans:
         the first chunk of output content
       - end of generation may be determined based on completion or interruption event
 
+      For an interrupted generation, instrumentation SHOULD report the
+      provider-reported interruption reason in `gen_ai.response.finish_reasons`
+      when available. If the provider does not report an interruption reason,
+      instrumentation SHOULD report `error`.
+
       Instrumentation SHOULD do the best effort to include information about the generation
       that may come after generation completing event, such as usage but SHOULD only
       wait for this information if there is a way to end the span reliably.
