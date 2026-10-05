@@ -199,12 +199,12 @@ attributes:
     stability: development
   - key: gen_ai.response.id
     type: string
-    brief: The unique identifier for the completion.
+    brief: The identifier for the completion returned in the response.
     examples: ['chatcmpl-123']
     stability: development
   - key: gen_ai.response.model
     type: string
-    brief: The name of the model that generated the response.
+    brief: The model name returned in the response.
     examples: ['gpt-4-0613']
     stability: development
   - key: gen_ai.response.finish_reasons
@@ -279,6 +279,7 @@ attributes:
     type: int
     brief: The number of tokens used in the GenAI input (prompt).
     note: |
+      The value SHOULD reflect the usage reported by the provider for the whole request.
       This value SHOULD include all types of input tokens, including cached tokens.
       Instrumentations SHOULD make a best effort to populate this value, using a total
       provided by the provider when available or, depending on the provider API,
@@ -337,6 +338,8 @@ attributes:
     type: int
     brief: The number of tokens used in the GenAI response (completion).
     note: |
+      The value SHOULD reflect the usage reported by the provider for the whole request.
+
       When the provider reports both billed token counts and model-consumed
       token counts (for example, Cohere exposes both `usage.billed_units` and
       `usage.tokens`), instrumentations SHOULD report the billed count so the

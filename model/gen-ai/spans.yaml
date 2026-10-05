@@ -177,13 +177,20 @@ spans:
         Semantic conventions for individual GenAI systems and frameworks MAY specify different span name format
         and MUST follow the overall [guidelines for span names](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.56.0/specification/trace/api.md#span).
     brief: >
-      This span represents a client call to Generative AI model or service that generates
-      a response or requests a tool call based on the input prompt.
+      This span represents a logical client call to Generative AI model or 
+      service that generates a response or requests a tool call based on the input prompt.
     note: |
       **Span kind** SHOULD be `CLIENT` and MAY be set to `INTERNAL` on spans representing
       call to models running in the same process. It's RECOMMENDED to use `CLIENT` kind
       when the GenAI system being instrumented usually runs in a different process than its
       client or when the GenAI call happens over instrumented protocol such as HTTP.
+
+      One client request may involve server-side tool calls and multiple
+      inference operations. The model provider or server, when instrumented,
+      may record them as nested inference spans.
+
+      Telemetry consumers should group inference spans by `service.name`
+      when counting operations or tokens.
     stability: development
     attributes:
       - ref_group: attributes.gen_ai.common
@@ -229,10 +236,6 @@ spans:
         requirement_level: recommended
       - ref: gen_ai.response.model
         requirement_level: recommended
-        note: >
-          If available. The name of the GenAI model that provided the response. If the model is supplied by a vendor,
-          then the value must be the exact name of the model actually used. If the model is a
-          fine-tuned custom model, the value should have a more specific name than the base model that's been fine-tuned.
       - ref: gen_ai.response.finish_reasons
         requirement_level: recommended
       - ref: gen_ai.response.time_to_first_chunk
