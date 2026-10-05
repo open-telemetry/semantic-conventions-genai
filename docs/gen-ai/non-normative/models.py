@@ -193,17 +193,7 @@ class CompactionPart(BaseModel):
 
 
 class TranscriptionPart(BaseModel):
-    """
-    Represents a text transcript of spoken audio, captured as a standalone part.
-
-    Audio and its transcription are modeled as separate parts because providers
-    stream and complete them on independent boundaries: OpenAI Realtime and Grok
-    emit separate audio and transcript deltas with their own `.done` events, and
-    Gemini Live delivers `inputTranscription`/`outputTranscription` separately
-    from the audio without guaranteed chunk alignment. A transcript attached to
-    the audio part cannot represent that, and reusing a `text` part would require
-    an extra identifier to tell a transcript apart from ordinary text.
-    """
+    """Represents a text transcript of spoken audio, captured as a standalone part."""
 
     type: Literal["transcription"] = Field(
         description="The type of the content captured in this part."

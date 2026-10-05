@@ -521,7 +521,7 @@
         },
         "TranscriptionPart": {
             "additionalProperties": true,
-            "description": "Represents a text transcript of spoken audio, captured as a standalone part.\n\nAudio and its transcription are modeled as separate parts because providers\nstream and complete them on independent boundaries: OpenAI Realtime and Grok\nemit separate audio and transcript deltas with their own `.done` events, and\nGemini Live delivers `inputTranscription`/`outputTranscription` separately\nfrom the audio without guaranteed chunk alignment. A transcript attached to\nthe audio part cannot represent that, and reusing a `text` part would require\nan extra identifier to tell a transcript apart from ordinary text.",
+            "description": "Represents a text transcript of spoken audio, captured as a standalone part.",
             "properties": {
                 "type": {
                     "const": "transcription",
