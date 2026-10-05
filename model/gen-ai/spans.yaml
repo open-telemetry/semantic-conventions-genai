@@ -326,10 +326,6 @@ spans:
           recommended: When available. A realtime generation may not carry a response id on all providers.
       - ref: gen_ai.response.model
         requirement_level: recommended
-        note: >
-          If available. The name of the GenAI model that provided the response. If the model is supplied by a vendor,
-          then the value must be the exact name of the model actually used. If the model is a
-          fine-tuned custom model, the value should have a more specific name than the base model that's been fine-tuned.
       - ref: gen_ai.response.finish_reasons
         requirement_level: recommended
       - ref: gen_ai.usage.reasoning.output_tokens
