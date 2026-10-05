@@ -19,6 +19,7 @@
 | gen_ai.output.type | (none) |
 | gen_ai.request.choice.count | [agent-framework], [crewai], [google-adk] |
 | gen_ai.request.seed | [agent-framework], [autogen], [crewai], [pydantic-ai] |
+| user.id | [google-adk] |
 
 ## Recommended
 
