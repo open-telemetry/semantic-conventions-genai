@@ -184,8 +184,6 @@ class _RealtimeDriver:
         self._speech_span = _reference_tracer.start_span("user_speech", attributes=attributes)
 
     def _on_speech_stopped(self, event):
-        # When a transcript of the user's audio is available it is carried here.
-        self._speech_span.set_attribute("gen_ai.input.messages", _user_audio_message())
         self._speech_span.end()
         self._speech_span = None
 

@@ -376,11 +376,6 @@ spans:
     stability: development
     attributes:
       - ref_group: attributes.gen_ai.error
-      - ref: gen_ai.input.messages
-        requirement_level: opt_in
-        note: >
-          When content capture is enabled and a transcript of the user's utterance is available,
-          it is carried here as the user input message.
       - ref: gen_ai.realtime_session.id
         requirement_level:
           conditionally_required: If the provider exposes a session identifier, or the instrumentation uses a client-created per-connection identifier.

@@ -19,7 +19,6 @@
       "server.port"
     ],
     "gen_ai.user_speech.internal": [
-      "gen_ai.input.messages",
       "gen_ai.operation.name",
       "gen_ai.provider.name",
       "gen_ai.realtime_session.id"

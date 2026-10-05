@@ -13,10 +13,4 @@
 | --- | --- |
 | gen_ai.realtime_session.id | [openai] |
 
-## Opt-In
-
-| Attribute | Supporting Libraries |
-| --- | --- |
-| gen_ai.input.messages | [openai] |
-
 [openai]: ../scenarios/openai/scenario.py
