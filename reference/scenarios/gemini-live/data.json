@@ -1,0 +1,61 @@
+{
+  "spans": {
+    "gen_ai.realtime_inference.client": [
+      "gen_ai.input.messages",
+      "gen_ai.operation.name",
+      "gen_ai.output.messages",
+      "gen_ai.output.type",
+      "gen_ai.provider.name",
+      "gen_ai.request.model",
+      "gen_ai.response.finish_reasons",
+      "gen_ai.usage.audio.input_tokens",
+      "gen_ai.usage.audio.output_tokens",
+      "gen_ai.usage.input_tokens",
+      "gen_ai.usage.output_tokens",
+      "server.address",
+      "server.port"
+    ]
+  },
+  "events": {
+    "gen_ai.client.realtime_session.ended": [
+      "gen_ai.provider.name",
+      "gen_ai.request.model",
+      "server.address",
+      "server.port"
+    ],
+    "gen_ai.client.realtime_session.started": [
+      "gen_ai.provider.name",
+      "gen_ai.request.model",
+      "server.address",
+      "server.port"
+    ]
+  },
+  "metrics": {},
+  "findings": [
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'realtime_inference gemini-2.5-flash-native-audio-preview' (operation 'realtime_inference') is missing expected attribute 'gen_ai.response.model'",
+      "context": {
+        "missing_attribute": "gen_ai.response.model",
+        "operation": "realtime_inference"
+      }
+    },
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'realtime_inference gemini-2.5-flash-native-audio-preview' (operation 'realtime_inference') is missing expected attribute 'gen_ai.usage.input_tokens'",
+      "context": {
+        "missing_attribute": "gen_ai.usage.input_tokens",
+        "operation": "realtime_inference"
+      }
+    },
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'realtime_inference gemini-2.5-flash-native-audio-preview' (operation 'realtime_inference') is missing expected attribute 'gen_ai.usage.output_tokens'",
+      "context": {
+        "missing_attribute": "gen_ai.usage.output_tokens",
+        "operation": "realtime_inference"
+      }
+    }
+  ],
+  "entities": {}
+}

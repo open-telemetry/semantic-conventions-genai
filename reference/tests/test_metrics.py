@@ -10,6 +10,11 @@ Runnable directly (``python tests/test_metrics.py``) or under pytest.
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from unittest.mock import patch
+
 from semconv_genai.data_files import _normalize_scenario_data_entry, load_scenario_data_files
 from semconv_genai.semconv_model import entity_specs, metric_specs, span_specs
 
@@ -71,6 +76,31 @@ def test_entities_with_sections_round_trip():
     assert entry.entities["gen_ai.main_agent"]["gen_ai.main_agent.name"] == "present"
 
 
+def test_scenarios_for_one_library_merge_entities():
+    with TemporaryDirectory() as directory:
+        scenarios = Path(directory)
+        for name, attributes in {
+            "first": ["gen_ai.main_agent.id"],
+            "second": ["gen_ai.main_agent.name"],
+        }.items():
+            scenario = scenarios / name
+            scenario.mkdir()
+            (scenario / "conformance.yaml").write_text("instrumented_library: shared\n", encoding="utf-8")
+            (scenario / "data.json").write_text(
+                json.dumps({"entities": {"gen_ai.main_agent": attributes}}),
+                encoding="utf-8",
+            )
+        with patch("semconv_genai.data_files.SCENARIOS_DIR", scenarios):
+            entries = load_scenario_data_files()
+
+    assert len(entries) == 1
+    assert entries[0].library == "shared"
+    entity = entries[0].entities["gen_ai.main_agent"]
+    assert entity["gen_ai.main_agent.id"] == "present"
+    assert entity["gen_ai.main_agent.name"] == "present"
+    assert entity["gen_ai.main_agent.description"] == "absent"
+
+
 def test_registry_span_names_map_onto_report_keys():
     """A data file names spans as the registry does; reports use short keys."""
     entry = _normalize_scenario_data_entry(
@@ -107,6 +137,8 @@ if __name__ == "__main__":
     test_committed_google_adk_metrics_round_trip()
     test_entity_specs_expose_required_id()
     test_entities_keep_their_registry_names()
+    test_entities_with_sections_round_trip()
+    test_scenarios_for_one_library_merge_entities()
     test_registry_span_names_map_onto_report_keys()
     test_events_keep_their_registry_names()
     test_span_types_absent_from_a_data_file_are_not_reported()

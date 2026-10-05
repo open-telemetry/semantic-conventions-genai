@@ -455,6 +455,28 @@ attributes:
       SHOULD leave it unset otherwise.
     examples: [true]
     stability: development
+  - key: gen_ai.realtime_session.id
+    type: string
+    brief: The unique identifier for a realtime, bidirectional streaming session.
+    note: |
+      A realtime session is a long-lived streaming connection between client and
+      inference server.
+
+      Telemetry recorded within the same realtime session can be correlated using this identifier.
+
+      Examples:
+
+      - OpenAI Realtime exposes a session identifier (`session.id`).
+      - Gemini exposes no session identifier when using the Developer API; the enterprise API
+        provides one.
+
+      Instrumentation MAY generate or reuse a per-connection identifier or leave it unset when the
+      instrumented library does not provide one.
+
+      Instrumentations MUST NOT use `gen_ai.conversation.id` as a realtime session identifier
+      since a single conversation  can span multiple realtime sessions.
+    examples: ["sess_5j66UpCpwteGg4YSxUnt7lPY"]
+    stability: development
   - key: gen_ai.agent.id
     type: string
     brief: The unique and stable identifier of the GenAI hosted agent resource.
@@ -650,6 +672,36 @@ attributes:
         - id: generate_content
           value: "generate_content"
           brief: 'Multimodal content generation operation such as [Gemini Generate Content](https://ai.google.dev/api/generate-content)'
+          stability: development
+        - id: realtime_inference
+          value: "realtime_inference"
+          brief: 'Server-side model generation within a realtime, bidirectional streaming session such as [OpenAI Realtime](https://platform.openai.com/docs/guides/realtime) or [Gemini Live](https://ai.google.dev/gemini-api/docs/live).'
+          note: >
+            This operation describes one server-side generation within a long-lived realtime
+            session. A session can contain multiple generations, each represented by a separate
+            `realtime_inference` span. The span follows the generation boundaries determined from
+            the available provider signals, not the lifetime of the session or an individual
+            client method call.
+          stability: development
+        - id: user_speech
+          value: "user_speech"
+          brief: 'Describes the process of recording user speech input.'
+          note: |
+            This operation SHOULD be reported when instrumentation can reliably determine the
+            start and end of user speech, either through user voice-activity detection (VAD) events
+            in the model response or through client-side events when the application requires the
+            user to manually start and stop recording.
+
+            Examples:
+
+            - OpenAI Realtime `input_audio_buffer.speech_started` /
+              `input_audio_buffer.speech_stopped` (provider VAD events).
+            - A push-to-talk application that starts and stops recording on an explicit user action
+              (client-side start/stop events).
+
+            It is speech-specific: text and other non-speech input have no such speaking interval
+            and are carried on the `realtime_inference` operation through `gen_ai.input.messages`
+            instead.
           stability: development
         - id: text_completion
           value: "text_completion"
