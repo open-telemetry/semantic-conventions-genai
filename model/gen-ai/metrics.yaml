@@ -60,6 +60,24 @@ metrics:
         metric_value_type: double
     attributes:
       - ref_group: metric_attributes.gen_ai
+  - name: gen_ai.client.apply_guardrail.duration
+    requirement_level: recommended
+    instrument: histogram
+    unit: "s"
+    brief: 'Duration of a remote guardrail operation.'
+    note: >
+      This metric records the duration of a `gen_ai.apply_guardrail.client`
+      span. The metric value SHOULD be the same as the span duration.
+    stability: development
+    annotations:
+      code_generation:
+        metric_value_type: double
+    attributes:
+      - ref_group: attributes.gen_ai.error
+      - ref: gen_ai.guardrail.component.name
+        requirement_level: recommended
+      - ref: gen_ai.provider.name
+        requirement_level: required
   - name: gen_ai.server.request.duration
     requirement_level: recommended
     instrument: histogram

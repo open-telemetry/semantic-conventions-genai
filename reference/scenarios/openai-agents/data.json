@@ -29,7 +29,16 @@
       "gen_ai.workflow.name"
     ]
   },
-  "events": {},
+  "events": {
+    "gen_ai.guardrail.result": [
+      "gen_ai.guardrail.component.name",
+      "gen_ai.guardrail.content.input.value",
+      "gen_ai.guardrail.result.reason",
+      "gen_ai.guardrail.result.type",
+      "gen_ai.guardrail.result.value",
+      "gen_ai.guardrail.source"
+    ]
+  },
   "metrics": {},
   "findings": [
     {
