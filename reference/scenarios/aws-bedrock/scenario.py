@@ -2,11 +2,19 @@
 
 import json
 import os
+import time
 
+from guardrail_mock_server import (
+    GUARDRAIL_ID,
+    GUARDRAIL_VERSION,
+    guardrail_mock_server,
+)
+from opentelemetry.trace import SpanKind
 from reference_shared import (
     flush_and_shutdown,
     mock_server_host_port,
     reference_event_logger,
+    reference_meter,
     reference_tracer,
     setup_otel,
 )
@@ -14,19 +22,134 @@ from reference_shared import (
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"]
 
 _reference_tracer = reference_tracer()
+_reference_meter = reference_meter()
+_apply_guardrail_duration = _reference_meter.create_histogram(
+    "gen_ai.client.apply_guardrail.duration",
+    unit="s",
+    description="Duration of a remote guardrail operation.",
+    explicit_bucket_boundaries_advisory=[
+        0.01,
+        0.02,
+        0.04,
+        0.08,
+        0.16,
+        0.32,
+        0.64,
+        1.28,
+        2.56,
+        5.12,
+        10.24,
+        20.48,
+        40.96,
+        81.92,
+    ],
+)
 
 
-def create_bedrock_client():
+def create_bedrock_client(endpoint_url=MOCK_BASE_URL):
     """Create a boto3 Bedrock Runtime client pointing at the mock server."""
     import boto3
 
     return boto3.client(
         "bedrock-runtime",
-        endpoint_url=MOCK_BASE_URL,
+        endpoint_url=endpoint_url,
         region_name="us-east-1",
         aws_access_key_id="mock",
         aws_secret_access_key="mock",
     )
+
+
+def run_apply_guardrail_reference():
+    """Scenario: Bedrock ApplyGuardrail with provider-native results."""
+    print("  [apply_guardrail] Bedrock ApplyGuardrail (reference implementation)")
+    source = "INPUT"
+    input_text = "You are an idiot."
+    request_content = [{"text": {"text": input_text}}]
+
+    with guardrail_mock_server() as endpoint_url:
+        client = create_bedrock_client(endpoint_url)
+        host, port = mock_server_host_port(client.meta.endpoint_url)
+        component_name = client.meta.service_model.metadata["serviceFullName"]
+        span_attributes = {
+            "gen_ai.operation.name": "apply_guardrail",
+            "gen_ai.provider.name": "aws.bedrock",
+            "gen_ai.guardrail.component.name": component_name,
+            "gen_ai.guardrail.policy.id": GUARDRAIL_ID,
+            "gen_ai.guardrail.policy.version": GUARDRAIL_VERSION,
+            "gen_ai.guardrail.source": source,
+        }
+        if host:
+            span_attributes["server.address"] = host
+        if port is not None:
+            span_attributes["server.port"] = port
+
+        start_time = time.perf_counter()
+        with _reference_tracer.start_as_current_span(
+            f"apply_guardrail {component_name}",
+            kind=SpanKind.CLIENT,
+            attributes=span_attributes,
+        ) as span:
+            response = client.apply_guardrail(
+                guardrailIdentifier=GUARDRAIL_ID,
+                guardrailVersion=GUARDRAIL_VERSION,
+                source=source,
+                content=request_content,
+                outputScope="FULL",
+            )
+
+            result_type = "action"
+            result_value = response["action"]
+            span.set_attribute("gen_ai.guardrail.result.type", result_type)
+            span.set_attribute("gen_ai.guardrail.result.value", result_value)
+            result_reason = response.get("actionReason")
+            if result_reason:
+                span.set_attribute("gen_ai.guardrail.result.reason", result_reason)
+
+            output_text = response["outputs"][0]["text"]
+            overall_event_attributes = {
+                "gen_ai.guardrail.component.name": component_name,
+                "gen_ai.guardrail.content.input.value": input_text,
+                "gen_ai.guardrail.content.output.value": output_text,
+                "gen_ai.guardrail.policy.id": GUARDRAIL_ID,
+                "gen_ai.guardrail.policy.version": GUARDRAIL_VERSION,
+                "gen_ai.guardrail.result.type": result_type,
+                "gen_ai.guardrail.result.value": result_value,
+                "gen_ai.guardrail.source": source,
+                "gen_ai.provider.name": "aws.bedrock",
+            }
+            if result_reason:
+                overall_event_attributes["gen_ai.guardrail.result.reason"] = result_reason
+            reference_event_logger().emit(
+                event_name="gen_ai.guardrail.result",
+                body="Guardrail result",
+                attributes=overall_event_attributes,
+            )
+
+            for assessment in response["assessments"]:
+                for content_filter in assessment.get("contentPolicy", {}).get("filters", []):
+                    reference_event_logger().emit(
+                        event_name="gen_ai.guardrail.result",
+                        body="Guardrail result",
+                        attributes={
+                            "gen_ai.guardrail.component.name": component_name,
+                            "gen_ai.guardrail.policy.id": GUARDRAIL_ID,
+                            "gen_ai.guardrail.policy.version": GUARDRAIL_VERSION,
+                            "gen_ai.guardrail.result.type": "action",
+                            "gen_ai.guardrail.result.value": content_filter["action"],
+                            "gen_ai.guardrail.risk.category": content_filter["type"],
+                            "gen_ai.guardrail.source": source,
+                            "gen_ai.provider.name": "aws.bedrock",
+                        },
+                    )
+
+        _apply_guardrail_duration.record(
+            time.perf_counter() - start_time,
+            {
+                "gen_ai.guardrail.component.name": component_name,
+                "gen_ai.provider.name": "aws.bedrock",
+            },
+        )
+        print(f"    -> {result_value}: {result_reason}")
 
 
 def run_converse_reference(client):
@@ -395,6 +518,7 @@ def main():
 
     client = create_bedrock_client()
 
+    run_apply_guardrail_reference()
     run_converse_reference(client)
     run_converse_tool_call_reference(client)
     run_converse_with_document_input_reference(client)

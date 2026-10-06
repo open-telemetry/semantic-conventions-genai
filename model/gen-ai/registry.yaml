@@ -38,6 +38,10 @@ attributes:
           stability: development
           value: "azure.ai.inference"
           brief: 'Azure AI Inference'
+        - id: azure.ai.content_safety
+          stability: development
+          value: "azure.ai.content_safety"
+          brief: '[Azure AI Content Safety](https://azure.microsoft.com/products/ai-services/ai-content-safety)'
         - id: azure.ai.openai
           stability: development
           value: "azure.ai.openai"
@@ -630,6 +634,120 @@ attributes:
         ]
 
     stability: development
+  - key: gen_ai.guardrail.component.name
+    type: string
+    brief: Human readable name of the guardrail service or component.
+    note: >
+      This identifies the guardrail evaluation service or component, not the
+      policy. For the policy evaluated by the guardrail, use
+      `gen_ai.guardrail.policy.id`.
+    examples: ['Azure AI Content Safety', 'Amazon Bedrock Guardrails', 'OpenAI Agents']
+    stability: development
+  - key: gen_ai.guardrail.result.type
+    type: string
+    brief: The provider-native name of the guardrail result.
+    note: >
+      This identifies the result field or result kind reported by the
+      instrumented guardrail API. Instrumentations MUST NOT translate it into a
+      generalized allow or deny verdict.
+    examples: ['action', 'tripwire_triggered', 'filter_match_state', 'severity']
+    stability: development
+  - key: gen_ai.guardrail.result.value
+    type: string
+    brief: The provider-native guardrail result value.
+    note: >
+      Instrumentations SHOULD preserve the value reported by the guardrail API.
+      Non-string primitive values SHOULD be converted to their canonical string
+      representation.
+    examples: ['GUARDRAIL_INTERVENED', 'true', 'MATCH_FOUND', '6']
+    stability: development
+  - key: gen_ai.guardrail.result.reason
+    type: string
+    brief: Human-readable explanation reported with the guardrail result.
+    note: >
+      The value SHOULD be low-cardinality and MUST NOT contain sensitive user
+      content or other high-risk data.
+    examples:
+      - 'Guardrail policy blocked the requested topic'
+      - 'Prompt attack detected'
+    stability: development
+  - key: gen_ai.guardrail.source
+    type: string
+    brief: The provider-native source or stage of the content evaluated by the guardrail.
+    note: >
+      Instrumentations SHOULD preserve the value reported by the guardrail API.
+      For APIs that express the source through the operation being called,
+      instrumentations SHOULD use that operation's source term.
+    examples: ['INPUT', 'OUTPUT', 'input', 'tool_input', 'user_prompt', 'model_response']
+    stability: development
+  - key: gen_ai.guardrail.risk.category
+    type: string
+    brief: The provider-native risk category reported by the guardrail.
+    note: >
+      Instrumentations SHOULD preserve the category reported by the guardrail
+      API and MUST NOT translate it to a different taxonomy.
+    examples:
+      - 'HATE'
+      - 'Violence'
+      - 'PROMPT_ATTACK'
+      - 'EMAIL_ADDRESS'
+    stability: development
+  - key: gen_ai.guardrail.risk.score
+    type: double
+    brief: The provider-native risk, confidence, or severity score.
+    note: >
+      Instrumentations SHOULD preserve the score reported by the guardrail API
+      and document its scale.
+    examples: [0.85, 6.0]
+    stability: development
+  - key: gen_ai.guardrail.policy.id
+    type: string
+    brief: Identifier of the guardrail policy or configuration evaluated.
+    examples: ['gr-abc123', 'template-456', 'policy_pii_v2']
+    stability: development
+  - key: gen_ai.guardrail.policy.version
+    type: string
+    brief: Version of the guardrail policy or configuration evaluated.
+    examples: ['1', 'DRAFT', '2024-09-01']
+    stability: development
+  - key: gen_ai.guardrail.policy.rule.id
+    type: string
+    brief: Identifier of a rule, filter, or detector that produced the guardrail result.
+    note: >
+      Use this when `gen_ai.guardrail.policy.id` identifies a broader policy and
+      the guardrail reports a more specific rule, filter, or detector.
+    examples: ['blocklist-email', 'topic-policy-financial-advice', 'detector-jailbreak']
+    stability: development
+  - key: gen_ai.guardrail.content.input.value
+    type: any
+    brief: The input content that was evaluated by the guardrail.
+    annotations:
+      type:
+        json_schema: model/gen-ai/gen-ai-guardrail-content.json
+    note: |
+      > [!WARNING]
+      > This attribute may contain sensitive information including user/PII
+      > data. Instrumentations SHOULD NOT capture this by default. Enable via
+      > opt-in configuration only.
+
+      This attribute MAY be truncated.
+    examples:
+      - 'Send an email to customer@example.com'
+    stability: development
+  - key: gen_ai.guardrail.content.output.value
+    type: any
+    brief: The output content returned by the guardrail.
+    annotations:
+      type:
+        json_schema: model/gen-ai/gen-ai-guardrail-content.json
+    note: |
+      > [!WARNING]
+      > This attribute may contain sensitive information. Instrumentations
+      > SHOULD NOT capture this by default. Enable via opt-in configuration
+      > only.
+    examples:
+      - 'Send an email to [REDACTED]'
+    stability: development
   - key: gen_ai.data_source.id
     type: string
     brief: The data source identifier.
@@ -680,6 +798,10 @@ attributes:
         - id: execute_tool
           value: "execute_tool"
           brief: 'Execute a tool'
+          stability: development
+        - id: apply_guardrail
+          value: "apply_guardrail"
+          brief: 'Apply a guardrail to content'
           stability: development
         - id: invoke_workflow
           value: "invoke_workflow"

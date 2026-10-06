@@ -6,23 +6,84 @@ server, with manual OTel spans.
 """
 
 import asyncio
+import functools
 import json
 import os
 import posixpath
+import re
 
 import openai
-from agents import Agent, RunConfig, Runner, function_tool
+from agents import (
+    Agent,
+    GuardrailFunctionOutput,
+    InputGuardrailTripwireTriggered,
+    RunConfig,
+    Runner,
+    function_tool,
+    input_guardrail,
+)
+from agents.guardrail import InputGuardrail
 from agents.models.openai_chatcompletions import OpenAIChatCompletionsModel
 from agents.tool import FunctionTool, ToolContext
 from opentelemetry import trace
 from opentelemetry.trace import StatusCode
-from reference_shared import flush_and_shutdown, reference_tracer, setup_otel
+from reference_shared import (
+    flush_and_shutdown,
+    reference_event_logger,
+    reference_tracer,
+    setup_otel,
+)
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"] + "/v1"
 # The shell this deployment lets the sandboxed agent run commands with.
 SANDBOX_SHELL = "/bin/bash"
 
 _reference_tracer = reference_tracer()
+_EMAIL_RE = re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]+")
+
+
+@input_guardrail(name="Reference email guardrail", run_in_parallel=False)
+def reference_email_guardrail(ctx, agent, input):
+    """Trip when the input contains an email address."""
+    del ctx, agent
+    input_text = input if isinstance(input, str) else json.dumps(input)
+    triggered = _EMAIL_RE.search(input_text) is not None
+    return GuardrailFunctionOutput(
+        output_info={
+            "reason": "email address detected" if triggered else "no email detected",
+        },
+        tripwire_triggered=triggered,
+    )
+
+
+def install_guardrail_instrumentation():
+    """Instrument the SDK's dedicated input guardrail boundary."""
+    original_run = InputGuardrail.run
+
+    @functools.wraps(original_run)
+    async def instrumented_run(self, agent, input, context):
+        result = await original_run(self, agent, input, context)
+        output = result.output
+        event_attributes = {
+            "gen_ai.guardrail.component.name": self.get_name(),
+            "gen_ai.guardrail.source": "input",
+            "gen_ai.guardrail.result.type": "tripwire_triggered",
+            "gen_ai.guardrail.result.value": str(output.tripwire_triggered).lower(),
+        }
+        if isinstance(input, str):
+            event_attributes["gen_ai.guardrail.content.input.value"] = input
+        if isinstance(output.output_info, dict):
+            reason = output.output_info.get("reason")
+            if reason:
+                event_attributes["gen_ai.guardrail.result.reason"] = str(reason)
+        reference_event_logger().emit(
+            event_name="gen_ai.guardrail.result",
+            body="Guardrail result",
+            attributes=event_attributes,
+        )
+        return result
+
+    InputGuardrail.run = instrumented_run
 
 
 @function_tool
@@ -59,6 +120,7 @@ async def run_agent():
         instructions="You are a helpful assistant.",
         model=model,
         tools=tools,
+        input_guardrails=[reference_email_guardrail],
     )
     input_text = "What's the weather in Seattle?"
 
@@ -127,6 +189,14 @@ async def run_agent():
                 ),
             )
         print(f"    -> {str(result.final_output)[:60]}")
+
+    print("  [input_guardrail] blocked agent input (reference implementation)")
+    try:
+        await Runner.run(agent, "Email jane.doe@example.com with the forecast.")
+    except InputGuardrailTripwireTriggered:
+        print("    -> input guardrail tripwire triggered")
+    else:
+        raise RuntimeError("Expected the input guardrail to trigger.")
 
 
 async def run_command_execution():
@@ -289,6 +359,7 @@ def main():
 
     tp, lp, mp = setup_otel()
 
+    install_guardrail_instrumentation()
     asyncio.run(run_agent())
     asyncio.run(run_command_execution())
     asyncio.run(run_workflow())

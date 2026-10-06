@@ -40,6 +40,59 @@ events:
           completion being evaluated. This attribute helps correlate the evaluation
           event with the corresponding operation when span id is not available.
 
+  - name: gen_ai.guardrail.result
+    requirement_level: recommended
+    brief: >
+      Describes a result produced by a guardrail.
+    note: |
+      This event SHOULD be emitted for results returned by remote guardrail
+      services and dedicated in-process guardrail APIs.
+
+      A guardrail operation MAY emit multiple result events when the API reports
+      multiple categories, filters, or checks. Instrumentations MUST preserve
+      provider-native result values and MUST NOT infer an allow or deny verdict
+      from scores or categories.
+    stability: development
+    attributes:
+      - ref_group: attributes.gen_ai.error
+      - ref: gen_ai.guardrail.component.name
+        requirement_level:
+          recommended: If available.
+      - ref: gen_ai.guardrail.result.type
+        requirement_level:
+          conditionally_required: If the guardrail API reports a named result field or result kind.
+      - ref: gen_ai.guardrail.result.value
+        requirement_level:
+          conditionally_required: If `gen_ai.guardrail.result.type` is set.
+      - ref: gen_ai.guardrail.result.reason
+        requirement_level:
+          recommended: If available.
+      - ref: gen_ai.guardrail.source
+        requirement_level:
+          conditionally_required: If the guardrail API reports the source or stage of the evaluated content.
+      - ref: gen_ai.guardrail.risk.category
+        requirement_level:
+          conditionally_required: If the guardrail API reports a risk category.
+      - ref: gen_ai.guardrail.risk.score
+        requirement_level:
+          conditionally_required: If the guardrail API reports a risk, confidence, or severity score.
+      - ref: gen_ai.guardrail.policy.id
+        requirement_level:
+          conditionally_required: If the guardrail API accepts or reports a policy identifier.
+      - ref: gen_ai.guardrail.policy.version
+        requirement_level:
+          conditionally_required: If the guardrail API accepts or reports a policy version.
+      - ref: gen_ai.guardrail.policy.rule.id
+        requirement_level:
+          recommended: If available.
+      - ref: gen_ai.provider.name
+        requirement_level:
+          recommended: If available.
+      - ref: gen_ai.guardrail.content.input.value
+        requirement_level: opt_in
+      - ref: gen_ai.guardrail.content.output.value
+        requirement_level: opt_in
+
   - name: gen_ai.client.operation.exception
     requirement_level: recommended
     brief: >

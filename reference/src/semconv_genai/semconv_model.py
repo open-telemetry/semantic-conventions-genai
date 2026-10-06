@@ -42,11 +42,13 @@ _SPANS = {
     "invoke_agent_internal": ("gen_ai.invoke_agent.internal", "Invoke Agent Internal"),
     "invoke_workflow": ("gen_ai.invoke_workflow.internal", "Invoke Workflow"),
     "plan": ("gen_ai.plan.internal", "Plan"),
+    "apply_guardrail_client": ("gen_ai.apply_guardrail.client", "Apply Guardrail Client"),
 }
 
 _EVENTS = {
     "gen_ai.client.inference.operation.details": "Inference Operation Details",
     "gen_ai.evaluation.result": "Evaluation Result",
+    "gen_ai.guardrail.result": "Guardrail Result",
 }
 
 # `gen_ai.client.operation.duration` and the inference usage instruments are a
@@ -62,6 +64,7 @@ _METRICS = {
     "gen_ai.client.inference.operation.input_tokens": "Client Inference Operation Input Tokens",
     "gen_ai.client.inference.operation.output_tokens": "Client Inference Operation Output Tokens",
     "gen_ai.client.operation.duration": "Client Operation Duration",
+    "gen_ai.client.apply_guardrail.duration": "Apply Guardrail Client Duration",
     "gen_ai.invoke_agent.inference_calls": "Invoke Agent Inference Calls",
     "gen_ai.invoke_agent.tool_calls": "Invoke Agent Tool Calls",
 }

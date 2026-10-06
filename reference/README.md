@@ -37,6 +37,7 @@ Run `uv run update-reports` to regenerate.
 | [Fetch Response](reports/fetch-response-span.md) | openai |
 | [Memory](reports/memory-span.md) | aws-bedrock-agentcore, google-adk |
 | [Execute Tool](reports/execute-tool-span.md) | agent-framework, autogen, crewai, google-adk, google-genai, langchain, llamaindex, openai-agents, openai-assistants, pydantic-ai, vertexai |
+| [Apply Guardrail Client](reports/apply-guardrail-client-span.md) | aws-bedrock, azure-ai-contentsafety |
 
 ### Events
 
@@ -44,6 +45,7 @@ Run `uv run update-reports` to regenerate.
 | --- | --- |
 | [Inference Operation Details](reports/gen-ai-client-inference-operation-details-event.md) | anthropic, aws-bedrock, azure-ai-inference, cohere, google-genai, groq, litellm, mistralai, openai, vertexai |
 | [Evaluation Result](reports/gen-ai-evaluation-result-event.md) | azure-ai-evaluation, deepeval, dspy |
+| [Guardrail Result](reports/gen-ai-guardrail-result-event.md) | aws-bedrock, azure-ai-contentsafety, openai-agents |
 
 ### Entities
 
@@ -63,6 +65,7 @@ Run `uv run update-reports` to regenerate.
 | [Client Inference Operation Input Tokens](reports/gen-ai-client-inference-operation-input-tokens-metric.md) | anthropic, google-genai, openai |
 | [Client Inference Operation Output Tokens](reports/gen-ai-client-inference-operation-output-tokens-metric.md) | anthropic, google-genai, openai |
 | [Client Operation Duration](reports/gen-ai-client-operation-duration-metric.md) | adk_a2a, agent-framework, anthropic, groq |
+| [Apply Guardrail Client Duration](reports/gen-ai-client-apply-guardrail-duration-metric.md) | aws-bedrock, azure-ai-contentsafety |
 | [Invoke Agent Inference Calls](reports/gen-ai-invoke-agent-inference-calls-metric.md) | google-adk |
 | [Invoke Agent Tool Calls](reports/gen-ai-invoke-agent-tool-calls-metric.md) | google-adk |
 <!-- status:end -->
