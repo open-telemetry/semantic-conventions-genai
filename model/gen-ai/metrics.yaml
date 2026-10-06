@@ -44,9 +44,9 @@ metrics:
     note: >
       Represents the end-to-end duration of a model inference operation,
       measured from when the client issues the inference request to when the
-      response is fully received or the operation terminates with an error.
+      response is fully received or the operation ends with an error or cancellation.
 
-      When this metric is reported alongside a `gen_ai.client.inference`
+      When this metric is reported alongside a `gen_ai.inference.client`
       span, the metric value SHOULD be the same as the span duration.
     stability: development
     annotations:
@@ -260,7 +260,7 @@ metric_refinements:
         requirement_level: recommended
       - ref: openai.response.system_fingerprint
         requirement_level: recommended
-  - id: openai.client.inference.duration
+  - id: openai.gen_ai.client.inference.duration
     ref: gen_ai.client.inference.duration
     brief: >
       OpenAI-specific extension to `gen_ai.client.inference.duration`. Adds
