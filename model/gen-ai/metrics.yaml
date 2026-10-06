@@ -46,7 +46,7 @@ metrics:
       measured from when the client issues the inference request to when the
       response is fully received or the operation ends with an error or cancellation.
 
-      When this metric is reported alongside a `gen_ai.inference.client`
+      When this metric is reported alongside a `gen_ai.client.inference`
       span, the metric value SHOULD be the same as the span duration.
     stability: development
     annotations:

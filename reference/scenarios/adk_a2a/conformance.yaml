@@ -11,3 +11,9 @@ env:
 scenarios:
   reference:
     run: uv run --frozen --python 3.12 --project . python scenario.py
+    spans:
+      - match:
+          attributes:
+            gen_ai.operation.name: generate_content
+          type: gen_ai.client.inference
+
