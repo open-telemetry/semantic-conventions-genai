@@ -281,6 +281,11 @@ output messages. `gen_ai.response.finish_reasons` remains aligned with the
 generations returned by the provider, not with a filtered or truncated
 `gen_ai.output.messages` value.
 
+When an operation ends in an error, this attribute SHOULD only be set
+when the operation produced output, including partial streamed output.
+Instrumentation SHOULD NOT synthesize output content for a failed
+operation.
+
 > [!Warning]
 > This attribute is likely to contain sensitive information including user/PII data.
 
@@ -843,6 +848,7 @@ The event name MUST be `gen_ai.client.inference.operation.details`.
 Describes the details of a GenAI completion request including chat history and parameters.
 
 This event could be used to store input and output details independently from traces.
+Instrumentations SHOULD set the severity to DEBUG (severity number 5) when recording this event.
 
 **Requirement level:** [Opt-In](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/signal-requirement-level.md).
 
@@ -1063,6 +1069,11 @@ Instrumentations MAY provide a way for users to filter or truncate
 output messages. `gen_ai.response.finish_reasons` remains aligned with the
 generations returned by the provider, not with a filtered or truncated
 `gen_ai.output.messages` value.
+
+When an operation ends in an error, this attribute SHOULD only be set
+when the operation produced output, including partial streamed output.
+Instrumentation SHOULD NOT synthesize output content for a failed
+operation.
 
 > [!Warning]
 > This attribute is likely to contain sensitive information including user/PII data.
