@@ -10,8 +10,8 @@ measurements; this scenario publishes those durations as
 
 | Operation | Should be instrumented here | Status |
 | --- | --- | --- |
-| inference (`chat`) | Yes - the chat client reports the model call | ✅ Implemented (native) |
-| invoke_agent (internal) | Yes - `Agent.run` | ✅ Implemented (native) |
-| invoke_workflow | Yes - a `WorkflowBuilder` graph run | ❌ Not implemented |
-| execute_tool | Yes - the framework's tool loop runs the tool | ✅ Implemented (native) |
-| skills | Yes - `SkillsProvider` exposes the skill lifecycle as tools | ✅ Implemented |
+| inference (`chat`) | Yes — the chat client reports the model call | ✅ Implemented (native) |
+| invoke_agent (internal) | Yes — `Agent.run` | ✅ Implemented (native) |
+| invoke_workflow | Yes — a `WorkflowBuilder` graph run | ❌ Not implemented |
+| execute_tool | Yes — the framework's tool loop runs the tool | ✅ Implemented (native) |
+| skills | Yes — `SkillsProvider` exposes the skill lifecycle as tools | ✅ Implemented |
