@@ -11,6 +11,8 @@ owns the agent, workflow, tool, and memory operations it runs directly.
 | invoke_workflow | Yes — workflow agents (e.g. `SequentialAgent`) | ✅ Implemented |
 | execute_tool | Yes — ADK runs the tool | ✅ Implemented |
 | memory | Yes — memory service upsert / search | ✅ Implemented |
+| skills | Yes — `SkillToolset` runs the skill tools | ✅ Implemented |
+| execution state changed event | Yes — `EventActions.state_delta` exposes runtime-owned deltas | ✅ Implemented (count only) |
 
 The scenario also proves ADK's public resumability path with an `App` configured
 for resumability, an in-memory session, and a confirmation-gated `FunctionTool`.

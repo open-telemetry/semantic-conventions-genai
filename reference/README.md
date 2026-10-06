@@ -28,10 +28,10 @@ Run `uv run update-reports` to regenerate.
 | --- | --- |
 | [Create Agent](reports/create-agent-span.md) | anthropic, aws-bedrock-agent, azure-ai-foundry, google-genai, mistralai, openai-assistants |
 | [Invoke Agent Client](reports/invoke-agent-client-span.md) | aws-bedrock-agent, azure-ai-foundry, google-genai, openai-assistants |
-| [Invoke Agent Internal](reports/invoke-agent-internal-span.md) | agent-framework, autogen, crewai, google-adk, langchain, openai-agents, pydantic-ai |
+| [Invoke Agent Internal](reports/invoke-agent-internal-span.md) | adk_a2a, agent-framework, autogen, crewai, google-adk, langchain, openai-agents, pydantic-ai |
 | [Invoke Workflow](reports/invoke-workflow-span.md) | crewai, google-adk, langchain, langgraph, openai-agents |
 | [Plan](reports/plan-span.md) | crewai, langchain |
-| [Inference](reports/inference-span.md) | agent-framework, anthropic, aws-bedrock, azure-ai-inference, azure-openai, claude-agent-sdk, cohere, google-genai, groq, litellm, mistralai, openai, vertexai |
+| [Inference](reports/inference-span.md) | adk_a2a, agent-framework, anthropic, aws-bedrock, azure-ai-inference, azure-openai, claude-agent-sdk, cohere, google-genai, groq, litellm, mistralai, openai, vertexai |
 | [Embeddings](reports/embeddings-span.md) | aws-bedrock, azure-ai-inference, azure-openai, cohere, google-genai, litellm, mistralai, openai |
 | [Retrieval](reports/retrieval-span.md) | haystack, langchain, llamaindex |
 | [Fetch Response](reports/fetch-response-span.md) | openai |
@@ -46,13 +46,24 @@ Run `uv run update-reports` to regenerate.
 | [Evaluation Result](reports/gen-ai-evaluation-result-event.md) | azure-ai-evaluation, deepeval, dspy |
 | [Execution State Changed](reports/gen-ai-execution-state-changed-event.md) | google-adk, langgraph |
 
+### Entities
+
+| Entity | Libraries |
+| --- | --- |
+| [Main Agent](reports/gen-ai-main-agent-entity.md) | adk_a2a |
+
 ### Metrics
 
 | Metric | Libraries |
 | --- | --- |
-| [Client Token Usage](reports/gen-ai-client-token-usage-metric.md) | agent-framework, anthropic, groq |
-| [Client Operation Duration](reports/gen-ai-client-operation-duration-metric.md) | agent-framework, anthropic, groq |
+| [Client Inference Usage Input Tokens](reports/gen-ai-client-inference-usage-input-tokens-metric.md) | anthropic, google-genai, openai |
+| [Client Inference Usage Output Tokens](reports/gen-ai-client-inference-usage-output-tokens-metric.md) | anthropic, google-genai, openai |
+| [Client Inference Cache Read Input Tokens](reports/gen-ai-client-inference-usage-cache-read-input-tokens-metric.md) | anthropic, google-genai, openai |
+| [Client Inference Cache Write Input Tokens](reports/gen-ai-client-inference-usage-cache-write-input-tokens-metric.md) | anthropic, openai |
+| [Client Inference Reasoning Output Tokens](reports/gen-ai-client-inference-usage-reasoning-output-tokens-metric.md) | google-genai, openai |
+| [Client Inference Operation Input Tokens](reports/gen-ai-client-inference-operation-input-tokens-metric.md) | anthropic, google-genai, openai |
+| [Client Inference Operation Output Tokens](reports/gen-ai-client-inference-operation-output-tokens-metric.md) | anthropic, google-genai, openai |
+| [Client Operation Duration](reports/gen-ai-client-operation-duration-metric.md) | adk_a2a, agent-framework, anthropic, groq |
 | [Invoke Agent Inference Calls](reports/gen-ai-invoke-agent-inference-calls-metric.md) | google-adk |
 | [Invoke Agent Tool Calls](reports/gen-ai-invoke-agent-tool-calls-metric.md) | google-adk |
 <!-- status:end -->
-

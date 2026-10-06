@@ -276,6 +276,11 @@ output messages. `gen_ai.response.finish_reasons` remains aligned with the
 generations returned by the provider, not with a filtered or truncated
 `gen_ai.output.messages` value.
 
+When an operation ends in an error, this attribute SHOULD only be set
+when the operation produced output, including partial streamed output.
+Instrumentation SHOULD NOT synthesize output content for a failed
+operation.
+
 > [!Warning]
 > This attribute is likely to contain sensitive information including user/PII data.
 
@@ -823,6 +828,11 @@ output messages. `gen_ai.response.finish_reasons` remains aligned with the
 generations returned by the provider, not with a filtered or truncated
 `gen_ai.output.messages` value.
 
+When an operation ends in an error, this attribute SHOULD only be set
+when the operation produced output, including partial streamed output.
+Instrumentation SHOULD NOT synthesize output content for a failed
+operation.
+
 > [!Warning]
 > This attribute is likely to contain sensitive information including user/PII data.
 
@@ -1138,11 +1148,22 @@ are encouraged to follow this semantic convention for tools invoked by their
 own code and to manually instrument any tool calls that automatic
 instrumentations do not cover.
 
+Some tools are specialized, such as [Agent Skills](https://agentskills.io)
+that agentic frameworks expose as tools. Instrumentations SHOULD distinguish
+generic tools from specialized ones using framework-specific tool names or
+other heuristics and record the applicable
+[refinement](/docs/gen-ai/gen-ai-agent-spans.md#execute-tool-span).
+They SHOULD NOT record two different spans for one call.
+
 **Span name** SHOULD be `execute_tool {gen_ai.tool.name}`.
 
 **Span kind** SHOULD be `INTERNAL`.
 
 **Span status** SHOULD follow the [Recording Errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/recording-errors.md) document.
+
+**Entity Associations** The span SHOULD be associated with one of the following entities:
+
+- [`gen_ai.main_agent`](/docs/registry/entities/gen-ai.md#gen-ai-main-agent)
 
 **Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/signal-requirement-level.md).
 
@@ -1347,6 +1368,9 @@ of the span sampling decision with:
   [outputs](/model/gen-ai/gen-ai-output-messages.json) object using formats defined in this convention
   and before they are serialized to JSON string;
 - the span instance
+
+The hook SHOULD receive the same instructions, inputs, and outputs that the
+instrumentation would record in these attributes.
 
 The hook implementation SHOULD be able to enrich and modify provided span, instructions,
 and message objects.
