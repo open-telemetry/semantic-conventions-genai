@@ -1,0 +1,90 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "JSON schema test case",
+    "description": "A sample document validated against one of the committed schemas under model/gen-ai/, with the errors that schema reports snapshotted in `errors`. See README.md.",
+    "type": "object",
+    "required": ["description", "schema", "document"],
+    "additionalProperties": false,
+    "properties": {
+        "description": {
+            "type": "string",
+            "description": "What this case demonstrates about the schema."
+        },
+        "schema": {
+            "description": "File name of the schema under model/gen-ai/ to validate `document` against.",
+            "enum": [
+                "gen-ai-input-messages.json",
+                "gen-ai-memory-records.json",
+                "gen-ai-output-messages.json",
+                "gen-ai-retrieval-documents.json",
+                "gen-ai-system-instructions.json",
+                "gen-ai-tool-call-arguments.json",
+                "gen-ai-tool-call-result.json",
+                "gen-ai-tool-definitions.json"
+            ]
+        },
+        "document": {
+            "description": "The document to validate. Its shape is given by `schema` (see the allOf below)."
+        },
+        "errors": {
+            "description": "Snapshot of the errors `schema` reports for `document`; an empty list means the document is valid. Written by `uv run pytest --update-snapshots`, do not edit by hand.",
+            "type": "array",
+            "items": { "$ref": "#/$defs/error" }
+        }
+    },
+    "allOf": [
+        {
+            "if": { "properties": { "schema": { "const": "gen-ai-input-messages.json" } } },
+            "then": { "properties": { "document": { "$ref": "../../../../model/gen-ai/gen-ai-input-messages.json" } } }
+        },
+        {
+            "if": { "properties": { "schema": { "const": "gen-ai-memory-records.json" } } },
+            "then": { "properties": { "document": { "$ref": "../../../../model/gen-ai/gen-ai-memory-records.json" } } }
+        },
+        {
+            "if": { "properties": { "schema": { "const": "gen-ai-output-messages.json" } } },
+            "then": { "properties": { "document": { "$ref": "../../../../model/gen-ai/gen-ai-output-messages.json" } } }
+        },
+        {
+            "if": { "properties": { "schema": { "const": "gen-ai-retrieval-documents.json" } } },
+            "then": { "properties": { "document": { "$ref": "../../../../model/gen-ai/gen-ai-retrieval-documents.json" } } }
+        },
+        {
+            "if": { "properties": { "schema": { "const": "gen-ai-system-instructions.json" } } },
+            "then": { "properties": { "document": { "$ref": "../../../../model/gen-ai/gen-ai-system-instructions.json" } } }
+        },
+        {
+            "if": { "properties": { "schema": { "const": "gen-ai-tool-call-arguments.json" } } },
+            "then": { "properties": { "document": { "$ref": "../../../../model/gen-ai/gen-ai-tool-call-arguments.json" } } }
+        },
+        {
+            "if": { "properties": { "schema": { "const": "gen-ai-tool-call-result.json" } } },
+            "then": { "properties": { "document": { "$ref": "../../../../model/gen-ai/gen-ai-tool-call-result.json" } } }
+        },
+        {
+            "if": { "properties": { "schema": { "const": "gen-ai-tool-definitions.json" } } },
+            "then": { "properties": { "document": { "$ref": "../../../../model/gen-ai/gen-ai-tool-definitions.json" } } }
+        }
+    ],
+    "$defs": {
+        "error": {
+            "type": "object",
+            "required": ["path", "keyword"],
+            "additionalProperties": false,
+            "properties": {
+                "path": {
+                    "type": "string",
+                    "description": "JSON path of the offending value, e.g. `$[0].parts[1].type`."
+                },
+                "keyword": {
+                    "type": "string",
+                    "description": "The JSON Schema keyword that failed, e.g. `required`, `const`, `anyOf`."
+                },
+                "message": {
+                    "type": "string",
+                    "description": "The validator's message. Omitted for unnarrowed anyOf/oneOf failures."
+                }
+            }
+        }
+    }
+}
