@@ -64,6 +64,8 @@ Run `uv run update-reports` to regenerate.
 | [Client Inference Operation Output Tokens](reports/gen-ai-client-inference-operation-output-tokens-metric.md) | anthropic, google-genai, openai |
 | [Client Operation Duration](reports/gen-ai-client-operation-duration-metric.md) | adk_a2a |
 | [Client Inference Duration](reports/gen-ai-client-inference-duration-metric.md) | agent-framework, anthropic, groq |
+| [Client Embeddings Duration](reports/gen-ai-client-embeddings-duration-metric.md) | aws-bedrock, azure-ai-inference, azure-openai, cohere, google-genai, litellm, mistralai, openai |
+| [Client Embeddings Operation Input Tokens](reports/gen-ai-client-embeddings-operation-input-tokens-metric.md) | aws-bedrock, azure-ai-inference, azure-openai, cohere, litellm, mistralai, openai |
 | [Invoke Agent Inference Calls](reports/gen-ai-invoke-agent-inference-calls-metric.md) | google-adk |
 | [Invoke Agent Tool Calls](reports/gen-ai-invoke-agent-tool-calls-metric.md) | google-adk |
 <!-- status:end -->

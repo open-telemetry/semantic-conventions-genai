@@ -1,5 +1,16 @@
 {
   "spans": {
+    "gen_ai.client.embeddings": [
+      "gen_ai.embeddings.dimension.count",
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "gen_ai.request.encoding_formats",
+      "gen_ai.request.model",
+      "gen_ai.response.model",
+      "gen_ai.usage.input_tokens",
+      "server.address",
+      "server.port"
+    ],
     "gen_ai.client.inference": [
       "gen_ai.conversation.compacted",
       "gen_ai.input.messages",
@@ -31,17 +42,6 @@
       "gen_ai.usage.input_tokens",
       "gen_ai.usage.output_tokens",
       "gen_ai.usage.reasoning.output_tokens",
-      "server.address",
-      "server.port"
-    ],
-    "gen_ai.embeddings.client": [
-      "gen_ai.embeddings.dimension.count",
-      "gen_ai.operation.name",
-      "gen_ai.provider.name",
-      "gen_ai.request.encoding_formats",
-      "gen_ai.request.model",
-      "gen_ai.response.model",
-      "gen_ai.usage.input_tokens",
       "server.address",
       "server.port"
     ],
@@ -85,6 +85,22 @@
     ]
   },
   "metrics": {
+    "gen_ai.client.embeddings.duration": [
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "gen_ai.request.model",
+      "gen_ai.response.model",
+      "server.address",
+      "server.port"
+    ],
+    "gen_ai.client.embeddings.operation.input_tokens": [
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "gen_ai.request.model",
+      "gen_ai.response.model",
+      "server.address",
+      "server.port"
+    ],
     "gen_ai.client.inference.operation.input_tokens": [
       "gen_ai.operation.name",
       "gen_ai.provider.name",

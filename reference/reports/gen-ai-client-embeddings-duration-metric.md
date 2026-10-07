@@ -1,6 +1,6 @@
-# Embeddings Span
+# Client Embeddings Duration Metric
 
-> **[Semantic Convention](../../docs/gen-ai/client-embeddings.md#span-gen_aiclientembeddings)**
+> **[Semantic Convention](../../docs/gen-ai/client-embeddings.md#metric-gen_aiclientembeddingsduration)**
 
 ## Required
 
@@ -20,10 +20,7 @@
 
 | Attribute | Supporting Libraries |
 | --- | --- |
-| gen_ai.embeddings.dimension.count | [azure-openai], [google-genai], [openai] |
-| gen_ai.request.encoding_formats | [azure-openai], [openai] |
 | gen_ai.response.model | [azure-ai-inference], [azure-openai], [litellm], [mistralai], [openai] |
-| gen_ai.usage.input_tokens | [aws-bedrock], [azure-ai-inference], [azure-openai], [cohere], [litellm], [mistralai], [openai] |
 | server.address | [aws-bedrock], [azure-ai-inference], [azure-openai], [cohere], [mistralai], [openai] |
 
 [aws-bedrock]: ../scenarios/aws-bedrock/scenario.py
