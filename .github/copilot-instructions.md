@@ -16,6 +16,12 @@ through several coupled surfaces:
 - `docs/gen-ai/` and `docs/registry/` — generated from the model via Weaver
   (`make generate-all`). Generated tables and registry pages should not be
   hand-edited.
+- `model/gen-ai/*.json` — JSON schemas for structured attribute values
+  (messages, tool definitions, ...), generated from the pydantic models in
+  `docs/gen-ai/non-normative/models.py` (`make generate-json-schemas`) and
+  covered by snapshot tests under `docs/gen-ai/non-normative/tests/`
+  (`make test-json-schemas`). See
+  `.github/instructions/json-schemas.instructions.md`.
 - `reference/scenarios/<library>/` — runnable Python reference scenarios
   (`scenario.py`) that prove proposed conventions are capturable.
 - `reference/README.md` and `reference/reports/` — telemetry compliance

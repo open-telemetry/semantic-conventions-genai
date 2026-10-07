@@ -5,7 +5,13 @@ description = "Generates the committed GenAI JSON schemas from the pydantic mode
 requires-python = ">=3.11"
 dependencies = [
     "pydantic==2.13.5",
+    "jsonschema",
+    "pytest",
+    "ruamel.yaml",
 ]
 
 [tool.uv]
 package = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
