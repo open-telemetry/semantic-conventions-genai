@@ -1,10 +1,10 @@
 # yaml-language-server: $schema=../case.schema.json
 description: >
-  `finish_reason` accepts the defined values or any other string, but not
-  other JSON types; `parts` must be an array
+  `finish_reason` and `generic_type` accept strings, not other JSON types;
+  `parts` must be an array
 schema: gen-ai-output-messages.json
 document: [
-  { "role": "assistant", "parts": [], "finish_reason": 0 },
+  { "role": "assistant", "parts": [{ "type": "generic", "generic_type": 123 }], "finish_reason": 0 },
   { "role": "assistant", "parts": { "type": "text", "content": "oops" } }
 ]
 # Regenerate with `uv run pytest --update-snapshots`, do not edit by hand.
@@ -12,6 +12,9 @@ errors:
   - path: $[0].finish_reason
     keyword: type
     message: 0 is not of type 'string'
+  - path: $[0].parts[0].generic_type
+    keyword: type
+    message: 123 is not of type 'string'
   - path: $[1].parts
     keyword: type
     message: "{'type': 'text', 'content': 'oops'} is not of type 'array'"

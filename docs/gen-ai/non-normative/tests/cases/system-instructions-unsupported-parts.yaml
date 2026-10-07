@@ -10,3 +10,6 @@ errors:
   - path: $[0]
     keyword: type
     message: "'You are a helpful bot' is not of type 'object'"
+  - path: $[1]
+    keyword: anyOf
+    message: "{'type': 'tool_call', 'name': 'get_weather'} is not valid under any of the given schemas"

@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=../case.schema.json
+description: >
+  A provider content block that no part type fits is recorded as a `generic`
+  part, with the provider's own type in `generic_type` and its fields kept
+schema: gen-ai-input-messages.json
+document: [
+  {
+    "role": "user",
+    "parts": [
+      { "type": "text", "content": "Answer using the attached search result." },
+      {
+        "type": "generic",
+        "generic_type": "search_result",
+        "source": "https://example.com/docs/otel",
+        "title": "OpenTelemetry overview",
+        "content": [{ "type": "text", "text": "OpenTelemetry is an observability framework." }],
+        "citations": { "enabled": true }
+      }
+    ]
+  }
+]
+# Regenerate with `uv run pytest --update-snapshots`, do not edit by hand.
+errors: []
