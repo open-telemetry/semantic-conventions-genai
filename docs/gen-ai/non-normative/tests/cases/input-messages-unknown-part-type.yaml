@@ -10,4 +10,7 @@ document: [
   }
 ]
 # Regenerate with `uv run pytest --update-snapshots`, do not edit by hand.
-errors: []
+errors:
+  - path: $[0].parts[0]
+    keyword: anyOf
+    message: "{'type': 'search_result', 'source': 'https://example.com/docs/otel'} is not valid under any of the given schemas"
