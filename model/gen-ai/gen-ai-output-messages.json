@@ -156,12 +156,26 @@
         },
         "GenericPart": {
             "additionalProperties": true,
-            "description": "Represents an arbitrary message part with any type and properties.\nThis allows for extensibility with custom message part types.",
+            "description": "Represents a message part that doesn't match any of the other part types.\nThis allows for extensibility with custom message part types.",
             "properties": {
                 "type": {
+                    "const": "generic",
                     "description": "The type of the content captured in this part.",
                     "title": "Type",
                     "type": "string"
+                },
+                "generic_type": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "The kind of content in this part when no other part type fits, for example the provider's own content block type.",
+                    "title": "Generic Type"
                 }
             },
             "required": [
