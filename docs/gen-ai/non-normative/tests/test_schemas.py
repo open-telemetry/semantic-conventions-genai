@@ -119,6 +119,12 @@ def test_case_schema_lists_every_schema():
     )
 
 
+def test_every_schema_has_cases():
+    covered = {load_yaml.load(c)["schema"] for c in CASE_FILES}
+    missing = [f.name for f in SCHEMA_FILES if f.name not in covered]
+    assert not missing, f"schemas without a case under tests/cases/: {missing}"
+
+
 @pytest.mark.parametrize("case_file", CASE_FILES, ids=lambda p: p.stem)
 def test_schema(case_file: Path, request: pytest.FixtureRequest):
     case = load_yaml.load(case_file)
