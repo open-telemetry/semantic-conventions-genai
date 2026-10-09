@@ -39,6 +39,7 @@ SPAN_TYPE_ORDER = [
 EVENT_TYPE_ORDER = [
     "gen_ai.client.inference.operation.details",
     "gen_ai.evaluation.result",
+    "gen_ai.tool.call.decision",
 ]
 
 # Display order for entity types in reports.

@@ -14,4 +14,5 @@ measurements; this scenario publishes those durations as
 | invoke_agent (internal) | Yes — `Agent.run` | ✅ Implemented (native) |
 | invoke_workflow | Yes — a `WorkflowBuilder` graph run | ❌ Not implemented |
 | execute_tool | Yes — the framework's tool loop runs the tool | ✅ Implemented (native) |
+| tool call decision (event) | Yes — `approval_mode="always_require"` exposes approval before execution | ✅ Implemented |
 | skills | Yes — `SkillsProvider` exposes the skill lifecycle as tools | ✅ Implemented |

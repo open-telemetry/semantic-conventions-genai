@@ -11,3 +11,4 @@ happens inside the CLI subprocess and is not observable in-process.
 | invoke_agent | Yes — `query()` drives the Claude Code agent loop (tools, multiple turns) | ❌ Not implemented (the scenario models the run as `chat`) |
 | inference (`chat`) | Yes — owns the model call across the CLI subprocess | ✅ Implemented |
 | execute_tool | No — runs inside the Claude CLI subprocess | ✅ Correctly not emitted |
+| tool call decision (event) | Yes — the SDK exposes pre-execution permission decisions through `can_use_tool` | ✅ Implemented |
