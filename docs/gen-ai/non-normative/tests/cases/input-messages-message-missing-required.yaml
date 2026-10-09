@@ -1,0 +1,15 @@
+# yaml-language-server: $schema=../case.schema.json
+description: Every message needs `role` and `parts`
+schema: gen-ai-input-messages.json
+document: [
+  { "role": "user" },
+  { "parts": [{ "type": "text", "content": "hi" }] }
+]
+# Regenerate with `uv run pytest --update-snapshots`, do not edit by hand.
+errors:
+  - path: $[0]
+    keyword: required
+    message: "'parts' is a required property"
+  - path: $[1]
+    keyword: required
+    message: "'role' is a required property"
