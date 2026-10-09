@@ -245,6 +245,26 @@ metrics:
     attributes:
       - ref_group: attributes.gen_ai.error
       - ref_group: attributes.gen_ai.execute_tool.common
+  - name: gen_ai.invoke_agent.skill_loads
+    annotations:
+      code_generation:
+        metric_value_type: int
+    brief: >
+      The number of tool calls a GenAI agent makes to load a skill during a
+      single invocation.
+    note: |
+      Counts the [load skill](/docs/gen-ai/gen-ai-agent-spans.md#load-skill-span)
+      tool calls within `gen_ai.invoke_agent.tool_calls`, with the same scope.
+      It SHOULD include failed and repeated loads.
+
+      This metric SHOULD be emitted together with the
+      `gen_ai.invoke_agent.internal` span for the same invocation.
+    instrument: histogram
+    unit: "{tool_call}"
+    stability: development
+    attributes:
+      - ref: gen_ai.agent.name
+        requirement_level: recommended
 
 metric_refinements:
   - id: openai.client.operation.duration
@@ -272,3 +292,52 @@ metric_refinements:
         requirement_level: recommended
       - ref: openai.response.system_fingerprint
         requirement_level: recommended
+
+  - id: gen_ai.execute_tool.load_skill
+    ref: gen_ai.execute_tool.duration
+    brief: >
+      Extension to `gen_ai.execute_tool.duration` for a tool call that loads
+      a skill into an agent's context.
+    stability: development
+    attributes:
+      - ref: gen_ai.skill.name
+        requirement_level:
+          conditionally_required: If the skill exists and its name is available.
+  - id: gen_ai.execute_tool.read_skill_resource
+    ref: gen_ai.execute_tool.duration
+    brief: >
+      Extension to `gen_ai.execute_tool.duration` for a tool call that reads
+      a resource belonging to a skill.
+    stability: development
+    attributes:
+      - ref: gen_ai.skill.name
+        requirement_level:
+          conditionally_required: If the skill exists and its name is available.
+      - ref: gen_ai.skill.resource.name
+        requirement_level:
+          conditionally_required: If the skill resource exists and its name is available.
+  - id: gen_ai.execute_tool.command
+    ref: gen_ai.execute_tool.duration
+    brief: >
+      Extension to `gen_ai.execute_tool.duration` for a tool call that executes
+      one or more commands.
+    note: |
+      Instrumentation that can reliably bound a single tool call SHOULD
+      record this metric for every tool execution they can observe.
+
+      When this metric is reported alongside a `gen_ai.execute_tool` span,
+      the metric value SHOULD be the same as the span duration.
+
+      When the tool reports a single non-zero exit code and no other error,
+      `error.type` SHOULD be set to the string representation of that exit code.
+    stability: development
+    attributes:
+      - ref: gen_ai.skill.name
+        requirement_level:
+          conditionally_required: If the command is associated with an existing skill and its name is available.
+      - ref: gen_ai.skill.resource.name
+        requirement_level:
+          conditionally_required: If the command executes an existing skill resource and its name is available.
+      - ref: process.exit.code
+        requirement_level:
+          conditionally_required: If the tool reports a single command or process exit code.

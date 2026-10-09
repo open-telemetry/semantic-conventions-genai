@@ -21,6 +21,9 @@ from reference_shared import (
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"]
 SKILLS_DIR = pathlib.Path(__file__).parent / "skills"
+# The `error_code` values ADK returns when the named skill or script does not exist.
+SKILL_NOT_FOUND = "SKILL_NOT_FOUND"
+SCRIPT_NOT_FOUND = frozenset({"SCRIPT_NOT_FOUND", "SCRIPT_NOT_FOUND_FATAL"})
 
 _reference_tracer = reference_tracer()
 _reference_meter = reference_meter()
@@ -34,6 +37,16 @@ _tool_calls = _reference_meter.create_histogram(
     "gen_ai.invoke_agent.tool_calls",
     unit="{tool_call}",
     description="The number of tool calls a GenAI agent makes during a single invocation.",
+)
+_execute_tool_duration = _reference_meter.create_histogram(
+    "gen_ai.execute_tool.duration",
+    unit="s",
+    description="The duration of a single tool execution.",
+)
+_skill_loads = _reference_meter.create_histogram(
+    "gen_ai.invoke_agent.skill_loads",
+    unit="{tool_call}",
+    description="The number of skill-loading tool calls a GenAI agent makes during a single invocation.",
 )
 
 
@@ -57,7 +70,7 @@ class SpanCounter(SpanProcessor):
 
 
 @contextlib.contextmanager
-def _suppress_adk_native_telemetry():
+def _suppress_adk_native_telemetry(*, tool_execution_duration=True):
     from google.adk import runners as adk_runners
     from google.adk.agents import base_agent as adk_base_agent
     from google.adk.flows.llm_flows import base_llm_flow as adk_base_llm_flow
@@ -107,6 +120,10 @@ def _suppress_adk_native_telemetry():
         # including the invoke_agent inference/tool call counts, which describe ADK's own work.
         patch_attribute(adk_metrics, "_client_operation_duration", disabled_instrument)
         patch_attribute(adk_metrics, "_client_token_usage", disabled_instrument)
+        # The skills scenario records the tool duration itself to add the skill
+        # attributes, so it drops ADK's copy of that instrument too.
+        if not tool_execution_duration:
+            patch_attribute(adk_metrics, "_tool_execution_duration", disabled_instrument)
         yield
     finally:
         for owner, name, value in reversed(previous_attributes):
@@ -423,11 +440,11 @@ def run_skills_reference():
     skills_by_name = {skill.name: skill for skill in skills}
 
     class _TracedSkillTool:
-        """Records an `execute_tool` span around `BaseTool.run_async`.
+        """Records an `execute_tool` span and duration around `BaseTool.run_async`.
 
-        `run_async` is ADK's own tool-execution entry point — the one its
-        `record_tool_execution` hook wraps — so the span covers exactly one
-        library call and nothing of the scenario around it.
+        `run_async` is ADK's own tool-execution entry point, which its
+        `record_tool_execution` hook also wraps, so the span covers the library
+        call and nothing of the scenario around it.
         """
 
         def _span_name(self, skill_name, resource_name):
@@ -452,6 +469,7 @@ def run_skills_reference():
                 attributes["gen_ai.skill.name"] = skill_name
             if resource_name:
                 attributes["gen_ai.skill.resource.name"] = resource_name
+            started = time.perf_counter()
             with _reference_tracer.start_as_current_span(
                 self._span_name(skill_name, resource_name),
                 attributes=attributes,
@@ -477,11 +495,19 @@ def run_skills_reference():
                     span.set_status(StatusCode.ERROR, result.get("error", ""))
                 else:
                     span.set_attribute("gen_ai.tool.call.result", json.dumps(result, default=str))
-                self._record_skill_signals(span, args, result, error_type, tool_context)
+                metric_attributes = {
+                    "gen_ai.tool.name": self.name,
+                    "gen_ai.tool.type": "function",
+                    "gen_ai.agent.name": tool_context.agent_name,
+                }
+                if error_type:
+                    metric_attributes["error.type"] = error_type
+                self._record_skill_attributes(span, args, result, error_type, metric_attributes)
+                _execute_tool_duration.record(time.perf_counter() - started, metric_attributes)
                 return result
 
-        def _record_skill_signals(self, span, args, result, error_type, tool_context):
-            """Hook for the per-tool skill attributes."""
+        def _record_skill_attributes(self, span, args, result, error_type, metric_attributes):
+            """Hook for the skill attributes a refined tool adds to its span and metric."""
 
     def _resource_span_name(tool_name, skill_name, resource_name):
         """The name a call acting on a skill resource takes.
@@ -523,6 +549,14 @@ def run_skills_reference():
             base = f"execute_tool {self.name}"
             return f"{base} {skill_name}" if skill_name else base
 
+        async def run_async(self, *, args, tool_context):
+            skill_loads["count"] += 1
+            return await super().run_async(args=args, tool_context=tool_context)
+
+        def _record_skill_attributes(self, span, args, result, error_type, metric_attributes):
+            if error_type != SKILL_NOT_FOUND and args.get("skill_name"):
+                metric_attributes["gen_ai.skill.name"] = args["skill_name"]
+
     class _LoadSkillResourceTool(_TracedSkillTool, adk_skill_toolset.LoadSkillResourceTool):
         """Read skill resource: the resource the call reads qualifies the span name."""
 
@@ -540,6 +574,12 @@ def run_skills_reference():
 
         def _span_name(self, skill_name, resource_name):
             return _resource_span_name(self.name, skill_name, resource_name)
+
+        def _record_skill_attributes(self, span, args, result, error_type, metric_attributes):
+            if error_type != SKILL_NOT_FOUND and args.get("skill_name"):
+                metric_attributes["gen_ai.skill.name"] = args["skill_name"]
+                if error_type is None:
+                    metric_attributes["gen_ai.skill.resource.name"] = args["file_path"]
 
     class _RunSkillScriptTool(_TracedSkillTool, adk_skill_toolset.RunSkillScriptTool):
         """Command execution: a script bundled with the skill runs in the environment."""
@@ -561,17 +601,27 @@ def run_skills_reference():
         def _span_name(self, skill_name, resource_name):
             return _resource_span_name(self.name, skill_name, resource_name)
 
-        def _record_skill_signals(self, span, args, result, error_type, tool_context):
+        def _record_skill_attributes(self, span, args, result, error_type, metric_attributes):
+            if error_type != SKILL_NOT_FOUND and args.get("skill_name"):
+                metric_attributes["gen_ai.skill.name"] = args["skill_name"]
+                if error_type not in SCRIPT_NOT_FOUND and args.get("file_path"):
+                    metric_attributes["gen_ai.skill.resource.name"] = args["file_path"]
             # `direct`: the environment reports the status the command exited
             # with. Absent when the tool failed before running anything.
             exit_code = result.get("exit_code") if isinstance(result, dict) else None
             if exit_code is not None:
                 span.set_attribute("process.exit.code", exit_code)
+                metric_attributes["process.exit.code"] = exit_code
+                # A non-zero exit is a failure even without an `error_code`.
+                if exit_code != 0 and not error_type:
+                    span.set_attribute("error.type", str(exit_code))
+                    span.set_status(StatusCode.ERROR)
+                    metric_attributes["error.type"] = str(exit_code)
             # `process.executable.*` stay unset: the environment hands the
             # model's command string to a shell, so the library never resolves a
             # single executable of its own.
 
-    with _suppress_adk_native_telemetry():
+    with _suppress_adk_native_telemetry(tool_execution_duration=False):
         # An explicit workspace, so the path the skills are materialized under is
         # known before the first call rather than only once a script has run.
         working_dir = pathlib.Path(tempfile.mkdtemp(prefix="adk_skills_"))
@@ -600,6 +650,8 @@ def run_skills_reference():
         )
         session_service = InMemorySessionService()
 
+        skill_loads = {"count": 0}
+
         def build_runner():
             return Runner(
                 app=App(name="test_app", root_agent=agent),
@@ -616,6 +668,7 @@ def run_skills_reference():
             empty list, which ADK reads as *no filter* and would expose all four.
             """
             toolset.tool_filter = [tool_name] if tool_name else lambda tool, readonly_context=None: False
+            skill_loads["count"] = 0
             agent_span_attributes = {
                 "gen_ai.operation.name": "invoke_agent",
                 "gen_ai.request.model": request_model,
@@ -667,6 +720,7 @@ def run_skills_reference():
                             ]
                         ),
                     )
+            _skill_loads.record(skill_loads["count"], {"gen_ai.agent.name": agent_name})
 
         async def _phases():
             # The skill lifecycle. Each stage is its own conversation, so each
@@ -684,7 +738,7 @@ def run_skills_reference():
 
             # A model can also name a skill that does not exist. No skill resolves,
             # so the span carries the name the call asked for and the failure, and
-            # nothing else about a skill.
+            # the duration is recorded with `error.type` and no skill attributes.
             load_skill_tool.skill_names = ["ocr-tables"]
             session = await session_service.create_session(app_name="test_app", user_id=user_id)
             await invoke(lifecycle_runner, session.id, "Extract the tables from this PDF.", "load_skill")
@@ -696,6 +750,13 @@ def run_skills_reference():
             run_script_tool.commands = [f"bash {toolset.skills_folder / 'code-review' / 'scripts/lint.sh'}"]
             session = await session_service.create_session(app_name="test_app", user_id=user_id)
             await invoke(lifecycle_runner, session.id, "Lint it too.", "run_skill_script")
+
+            # A bundled script that exits non-zero. ADK reports no `error_code`
+            # for it, so `error.type` falls back to the exit code.
+            run_script_tool.script_paths = ["scripts/check_format.py"]
+            run_script_tool.commands = [f"python3 {toolset.skills_folder / 'code-review' / 'scripts/check_format.py'}"]
+            session = await session_service.create_session(app_name="test_app", user_id=user_id)
+            await invoke(lifecycle_runner, session.id, "Check the formatting.", "run_skill_script")
 
         async def _run():
             try:

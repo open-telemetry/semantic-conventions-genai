@@ -61,6 +61,9 @@
     "gen_ai.invoke_agent.inference_calls": [
       "gen_ai.agent.name"
     ],
+    "gen_ai.invoke_agent.skill_loads": [
+      "gen_ai.agent.name"
+    ],
     "gen_ai.invoke_agent.tool_calls": [
       "gen_ai.agent.name"
     ]
@@ -160,6 +163,15 @@
     {
       "id": "genai_span_name_format",
       "message": "execute_tool span name should be 'execute_tool' or 'execute_tool <value of gen_ai.tool.name>', got 'execute_tool load_skill_resource code-review references/review_policy.md'",
+      "context": {
+        "expected_form": "execute_tool or 'execute_tool <gen_ai.tool.name>'",
+        "keyed_attr": "gen_ai.tool.name",
+        "operation": "execute_tool"
+      }
+    },
+    {
+      "id": "genai_span_name_format",
+      "message": "execute_tool span name should be 'execute_tool' or 'execute_tool <value of gen_ai.tool.name>', got 'execute_tool run_skill_script code-review scripts/check_format.py'",
       "context": {
         "expected_form": "execute_tool or 'execute_tool <gen_ai.tool.name>'",
         "keyed_attr": "gen_ai.tool.name",

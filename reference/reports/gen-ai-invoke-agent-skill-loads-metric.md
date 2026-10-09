@@ -1,6 +1,6 @@
-# Invoke Agent Tool Calls Metric
+# Invoke Agent Skill Loads Metric
 
-> **[Semantic Convention](../../docs/gen-ai/gen-ai-metrics.md#metric-gen_aiinvoke_agenttool_calls)**
+> **[Semantic Convention](../../docs/gen-ai/gen-ai-metrics.md#metric-gen_aiinvoke_agentskill_loads)**
 
 ## Recommended
 

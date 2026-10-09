@@ -1479,6 +1479,9 @@ Instrumentations MAY also emit additional spans following the
 [CLI client span conventions](https://opentelemetry.io/docs/specs/semconv/cli/cli-spans/)
 for each observed command, script, or process execution.
 
+When the tool reports a single non-zero exit code and no other error,
+`error.type` SHOULD be set to the string representation of that exit code.
+
 **Span name** SHOULD be:
 
 - `execute_tool {gen_ai.tool.name} {gen_ai.skill.name} {gen_ai.skill.resource.name}`
