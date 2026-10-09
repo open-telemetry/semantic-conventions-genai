@@ -126,7 +126,7 @@ def _modality_usage_attributes(usage_metadata):
             name = getattr(raw, "name", str(raw)).split(".")[-1].upper()
             modality = _MODALITY_MAP.get(name)
             count = getattr(entry, "token_count", None)
-            if modality and count is not None:
+            if modality and count:
                 attrs[f"gen_ai.usage.{modality}.{suffix}"] = count
     return attrs
 
