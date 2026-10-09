@@ -25,9 +25,7 @@ linkTitle: Agent spans
 
 Generative AI models can be trained to use tools to access real-time information or suggest a real-world action. For example, a model can leverage a database retrieval tool to access specific information, like a customer's purchase history, so it can generate tailored shopping recommendations. Alternatively, based on a user's query, a model can make various API calls to send an email response to a colleague or complete a financial transaction on your behalf. To do so, the model must not only have access to a set of external tools, it needs the ability to plan and execute any task in a self-directed fashion. This combination of reasoning, logic, and access to external information that are all connected to a Generative AI model invokes the concept of an agent.
 
-This document defines semantic conventions for GenAI agent calls that are defined by this [whitepaper](https://www.kaggle.com/whitepaper-agents).
-
-It MAY be applicable to agent operations that are performed by the GenAI framework locally.
+This document defines semantic conventions for GenAI agent and framework operations across both remote services and local frameworks.
 
 The semantic conventions for GenAI agents extend and override the semantic conventions for [Gen AI Spans](gen-ai-spans.md).
 
@@ -199,7 +197,15 @@ Describes GenAI agent invocation over a remote service.
 
 The `gen_ai.operation.name` SHOULD be `invoke_agent`.
 
-Examples: OpenAI Assistants API, AWS Bedrock Agents.
+This span SHOULD be emitted if and only if the agent being invoked is not running
+in the same process as the instrumentation.
+
+Examples include invocations of remote, managed, or other out-of-process
+agents such as OpenAI Assistants API, AWS Bedrock
+Agents, Gemini Enterprise Agent Platform, or Azure AI Foundry Agent Service.
+
+For agent invocations targeting local agents, refer to the
+`gen_ai.invoke_agent.internal` span.
 
 **Span name** SHOULD be `invoke_agent {gen_ai.agent.name}` if `gen_ai.agent.name` is readily available.
 When `gen_ai.agent.name` is not available, it SHOULD be `invoke_agent`.
@@ -555,7 +561,14 @@ Describes GenAI agent invocation within the same process.
 
 The `gen_ai.operation.name` SHOULD be `invoke_agent`.
 
-Examples: LangChain agents, CrewAI agents.
+This span SHOULD be emitted if and only if the agent runs locally within the
+calling process.
+
+Examples include local agent invocations in frameworks such as LangChain,
+CrewAI, AutoGen, or Google ADK.
+
+For agent invocations targeting an out-of-process or remote agent service,
+refer to the `gen_ai.invoke_agent.client` span.
 
 **Span name** SHOULD be `invoke_agent {gen_ai.agent.name}` if `gen_ai.agent.name` is readily available.
 When `gen_ai.agent.name` is not available, it SHOULD be `invoke_agent`.
