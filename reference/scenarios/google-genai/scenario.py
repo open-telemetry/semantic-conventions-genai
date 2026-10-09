@@ -518,6 +518,8 @@ def run_chat_multimodal():
 
 def run_generate_media():
     """Scenario: image + audio output generation, emitting per-modality output usage."""
+    import base64
+
     from google import genai
     from google.genai import types
 
@@ -557,7 +559,19 @@ def run_generate_media():
                 if getattr(part, "text", None):
                     output_parts.append({"type": "text", "content": part.text})
                 elif getattr(part, "inline_data", None):
-                    output_parts.append({"type": "blob", "mime_type": part.inline_data.mime_type})
+                    inline_data = part.inline_data
+                    if inline_data.data is None:
+                        continue
+                    if not inline_data.mime_type:
+                        continue
+                    output_parts.append(
+                        {
+                            "type": "blob",
+                            "mime_type": inline_data.mime_type,
+                            "modality": inline_data.mime_type.split("/", 1)[0],
+                            "content": base64.b64encode(inline_data.data).decode("ascii"),
+                        }
+                    )
             output_messages = [
                 {
                     "role": "assistant",
