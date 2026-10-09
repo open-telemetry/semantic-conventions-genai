@@ -24,8 +24,7 @@ from semconv_genai.semconv_model import (
 SPAN_TYPE_ORDER = [
     "create_agent",
     "invoke_agent_client",
-    "invoke_agent_internal",
-    "invoke_workflow",
+    "invocation_internal",
     "plan",
     "inference",
     "embeddings",

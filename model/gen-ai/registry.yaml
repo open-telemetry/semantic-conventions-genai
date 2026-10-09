@@ -685,6 +685,10 @@ attributes:
           value: "invoke_workflow"
           brief: 'Invoke GenAI workflow'
           stability: development
+        - id: handle_conversation_turn
+          value: "handle_conversation_turn"
+          brief: 'Handle one conversation turn of a GenAI system, while the framework steers the control flow'
+          stability: development
         - id: plan
           value: "plan"
           brief: 'Agent planning or task decomposition phase'
@@ -1086,6 +1090,18 @@ attributes:
       Semantic conventions for individual Generative AI frameworks SHOULD document
       what `gen_ai.workflow.name` means in the context of that framework.
     examples: ["multi_agent_rag", "customer_support_pipeline"]
+    stability: development
+  - key: gen_ai.invocation.is_nested
+    type: boolean
+    brief: >
+      Whether an in-process GenAI invocation is nested within another
+      in-process GenAI invocation.
+    note: |
+      `false` on the root invocation of a turn in the process: the
+      `handle_conversation_turn` invocation when reported, otherwise the
+      top-level `invoke_workflow` or `invoke_agent` invocation. `true` on every
+      invocation nested inside another in-process invocation.
+    examples: [false, true]
     stability: development
   - key: gen_ai.skill.name
     type: string

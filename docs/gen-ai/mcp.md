@@ -287,6 +287,7 @@ When the attribute is recorded on events, it MUST be recorded in structured form
 | `execute_tool` | Execute a tool | ![Development](https://img.shields.io/badge/-development-blue) |
 | `fetch_response` | Fetch a previously generated model response by its identifier, without performing inference, such as [OpenAI Get a model response](https://platform.openai.com/docs/api-reference/responses/get) [16] | ![Development](https://img.shields.io/badge/-development-blue) |
 | `generate_content` | Multimodal content generation operation such as [Gemini Generate Content](https://ai.google.dev/api/generate-content) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `handle_conversation_turn` | Handle one conversation turn of a GenAI system, while the framework steers the control flow | ![Development](https://img.shields.io/badge/-development-blue) |
 | `invoke_agent` | Invoke GenAI agent | ![Development](https://img.shields.io/badge/-development-blue) |
 | `invoke_workflow` | Invoke GenAI workflow | ![Development](https://img.shields.io/badge/-development-blue) |
 | `plan` | Agent planning or task decomposition phase | ![Development](https://img.shields.io/badge/-development-blue) |
@@ -523,6 +524,7 @@ When the attribute is recorded on events, it MUST be recorded in structured form
 | `execute_tool` | Execute a tool | ![Development](https://img.shields.io/badge/-development-blue) |
 | `fetch_response` | Fetch a previously generated model response by its identifier, without performing inference, such as [OpenAI Get a model response](https://platform.openai.com/docs/api-reference/responses/get) [16] | ![Development](https://img.shields.io/badge/-development-blue) |
 | `generate_content` | Multimodal content generation operation such as [Gemini Generate Content](https://ai.google.dev/api/generate-content) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `handle_conversation_turn` | Handle one conversation turn of a GenAI system, while the framework steers the control flow | ![Development](https://img.shields.io/badge/-development-blue) |
 | `invoke_agent` | Invoke GenAI agent | ![Development](https://img.shields.io/badge/-development-blue) |
 | `invoke_workflow` | Invoke GenAI workflow | ![Development](https://img.shields.io/badge/-development-blue) |
 | `plan` | Agent planning or task decomposition phase | ![Development](https://img.shields.io/badge/-development-blue) |
@@ -694,6 +696,7 @@ Examples:
 | `execute_tool` | Execute a tool | ![Development](https://img.shields.io/badge/-development-blue) |
 | `fetch_response` | Fetch a previously generated model response by its identifier, without performing inference, such as [OpenAI Get a model response](https://platform.openai.com/docs/api-reference/responses/get) [11] | ![Development](https://img.shields.io/badge/-development-blue) |
 | `generate_content` | Multimodal content generation operation such as [Gemini Generate Content](https://ai.google.dev/api/generate-content) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `handle_conversation_turn` | Handle one conversation turn of a GenAI system, while the framework steers the control flow | ![Development](https://img.shields.io/badge/-development-blue) |
 | `invoke_agent` | Invoke GenAI agent | ![Development](https://img.shields.io/badge/-development-blue) |
 | `invoke_workflow` | Invoke GenAI workflow | ![Development](https://img.shields.io/badge/-development-blue) |
 | `plan` | Agent planning or task decomposition phase | ![Development](https://img.shields.io/badge/-development-blue) |
@@ -867,6 +870,7 @@ Examples:
 | `execute_tool` | Execute a tool | ![Development](https://img.shields.io/badge/-development-blue) |
 | `fetch_response` | Fetch a previously generated model response by its identifier, without performing inference, such as [OpenAI Get a model response](https://platform.openai.com/docs/api-reference/responses/get) [9] | ![Development](https://img.shields.io/badge/-development-blue) |
 | `generate_content` | Multimodal content generation operation such as [Gemini Generate Content](https://ai.google.dev/api/generate-content) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `handle_conversation_turn` | Handle one conversation turn of a GenAI system, while the framework steers the control flow | ![Development](https://img.shields.io/badge/-development-blue) |
 | `invoke_agent` | Invoke GenAI agent | ![Development](https://img.shields.io/badge/-development-blue) |
 | `invoke_workflow` | Invoke GenAI workflow | ![Development](https://img.shields.io/badge/-development-blue) |
 | `plan` | Agent planning or task decomposition phase | ![Development](https://img.shields.io/badge/-development-blue) |

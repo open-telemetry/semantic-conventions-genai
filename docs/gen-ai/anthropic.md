@@ -321,6 +321,7 @@ and SHOULD be provided **at span creation time** (if provided at all):
 | `execute_tool` | Execute a tool | ![Development](https://img.shields.io/badge/-development-blue) |
 | `fetch_response` | Fetch a previously generated model response by its identifier, without performing inference, such as [OpenAI Get a model response](https://platform.openai.com/docs/api-reference/responses/get) [39] | ![Development](https://img.shields.io/badge/-development-blue) |
 | `generate_content` | Multimodal content generation operation such as [Gemini Generate Content](https://ai.google.dev/api/generate-content) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `handle_conversation_turn` | Handle one conversation turn of a GenAI system, while the framework steers the control flow | ![Development](https://img.shields.io/badge/-development-blue) |
 | `invoke_agent` | Invoke GenAI agent | ![Development](https://img.shields.io/badge/-development-blue) |
 | `invoke_workflow` | Invoke GenAI workflow | ![Development](https://img.shields.io/badge/-development-blue) |
 | `plan` | Agent planning or task decomposition phase | ![Development](https://img.shields.io/badge/-development-blue) |

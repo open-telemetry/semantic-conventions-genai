@@ -14,10 +14,9 @@ linkTitle: Metrics
   - [Metric: `gen_ai.server.request.duration`](#metric-gen_aiserverrequestduration)
   - [Metric: `gen_ai.server.time_per_output_token`](#metric-gen_aiservertime_per_output_token)
   - [Metric: `gen_ai.server.time_to_first_token`](#metric-gen_aiservertime_to_first_token)
-- [Generative AI workflow metrics](#generative-ai-workflow-metrics)
-  - [Metric: `gen_ai.invoke_workflow.duration`](#metric-gen_aiinvoke_workflowduration)
+- [Generative AI invocation metrics](#generative-ai-invocation-metrics)
+  - [Metric: `gen_ai.invocation.duration`](#metric-gen_aiinvocationduration)
 - [Generative AI agent metrics](#generative-ai-agent-metrics)
-  - [Metric: `gen_ai.invoke_agent.duration`](#metric-gen_aiinvoke_agentduration)
   - [Metric: `gen_ai.invoke_agent.inference_calls`](#metric-gen_aiinvoke_agentinference_calls)
   - [Metric: `gen_ai.invoke_agent.tool_calls`](#metric-gen_aiinvoke_agenttool_calls)
 - [Generative AI tool metrics](#generative-ai-tool-metrics)
@@ -132,6 +131,7 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 | `execute_tool` | Execute a tool | ![Development](https://img.shields.io/badge/-development-blue) |
 | `fetch_response` | Fetch a previously generated model response by its identifier, without performing inference, such as [OpenAI Get a model response](https://platform.openai.com/docs/api-reference/responses/get) [8] | ![Development](https://img.shields.io/badge/-development-blue) |
 | `generate_content` | Multimodal content generation operation such as [Gemini Generate Content](https://ai.google.dev/api/generate-content) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `handle_conversation_turn` | Handle one conversation turn of a GenAI system, while the framework steers the control flow | ![Development](https://img.shields.io/badge/-development-blue) |
 | `invoke_agent` | Invoke GenAI agent | ![Development](https://img.shields.io/badge/-development-blue) |
 | `invoke_workflow` | Invoke GenAI workflow | ![Development](https://img.shields.io/badge/-development-blue) |
 | `plan` | Agent planning or task decomposition phase | ![Development](https://img.shields.io/badge/-development-blue) |
@@ -266,6 +266,7 @@ Instrumentations SHOULD document the list of errors they report.
 | `execute_tool` | Execute a tool | ![Development](https://img.shields.io/badge/-development-blue) |
 | `fetch_response` | Fetch a previously generated model response by its identifier, without performing inference, such as [OpenAI Get a model response](https://platform.openai.com/docs/api-reference/responses/get) [7] | ![Development](https://img.shields.io/badge/-development-blue) |
 | `generate_content` | Multimodal content generation operation such as [Gemini Generate Content](https://ai.google.dev/api/generate-content) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `handle_conversation_turn` | Handle one conversation turn of a GenAI system, while the framework steers the control flow | ![Development](https://img.shields.io/badge/-development-blue) |
 | `invoke_agent` | Invoke GenAI agent | ![Development](https://img.shields.io/badge/-development-blue) |
 | `invoke_workflow` | Invoke GenAI workflow | ![Development](https://img.shields.io/badge/-development-blue) |
 | `plan` | Agent planning or task decomposition phase | ![Development](https://img.shields.io/badge/-development-blue) |
@@ -387,6 +388,7 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 | `execute_tool` | Execute a tool | ![Development](https://img.shields.io/badge/-development-blue) |
 | `fetch_response` | Fetch a previously generated model response by its identifier, without performing inference, such as [OpenAI Get a model response](https://platform.openai.com/docs/api-reference/responses/get) [6] | ![Development](https://img.shields.io/badge/-development-blue) |
 | `generate_content` | Multimodal content generation operation such as [Gemini Generate Content](https://ai.google.dev/api/generate-content) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `handle_conversation_turn` | Handle one conversation turn of a GenAI system, while the framework steers the control flow | ![Development](https://img.shields.io/badge/-development-blue) |
 | `invoke_agent` | Invoke GenAI agent | ![Development](https://img.shields.io/badge/-development-blue) |
 | `invoke_workflow` | Invoke GenAI workflow | ![Development](https://img.shields.io/badge/-development-blue) |
 | `plan` | Agent planning or task decomposition phase | ![Development](https://img.shields.io/badge/-development-blue) |
@@ -507,6 +509,7 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 | `execute_tool` | Execute a tool | ![Development](https://img.shields.io/badge/-development-blue) |
 | `fetch_response` | Fetch a previously generated model response by its identifier, without performing inference, such as [OpenAI Get a model response](https://platform.openai.com/docs/api-reference/responses/get) [6] | ![Development](https://img.shields.io/badge/-development-blue) |
 | `generate_content` | Multimodal content generation operation such as [Gemini Generate Content](https://ai.google.dev/api/generate-content) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `handle_conversation_turn` | Handle one conversation turn of a GenAI system, while the framework steers the control flow | ![Development](https://img.shields.io/badge/-development-blue) |
 | `invoke_agent` | Invoke GenAI agent | ![Development](https://img.shields.io/badge/-development-blue) |
 | `invoke_workflow` | Invoke GenAI workflow | ![Development](https://img.shields.io/badge/-development-blue) |
 | `plan` | Agent planning or task decomposition phase | ![Development](https://img.shields.io/badge/-development-blue) |
@@ -551,26 +554,46 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 <!-- END AUTOGENERATED TEXT -->
 <!-- endweaver -->
 
-## Generative AI workflow metrics
+## Generative AI invocation metrics
 
-### Metric: `gen_ai.invoke_workflow.duration`
+Individual systems may include additional system-specific attributes.
+It is recommended to check system-specific documentation, if available.
 
-This metric SHOULD be specified with [ExplicitBucketBoundaries] of [1, 5, 10, 30, 60, 120, 300, 600, 1800, 3600, 7200].
+### Metric: `gen_ai.invocation.duration`
 
-<!-- weaver .registry.metrics[] | select(.name == "gen_ai.invoke_workflow.duration") -->
+This metric SHOULD be specified with [ExplicitBucketBoundaries] of
+[0.1, 0.2, 0.4, 0.8, 1.6, 3.2, 6.4, 12.8, 25.6, 51.2, 102.4, 204.8, 409.6].
+
+<!-- weaver .registry.metrics[] | select(.name == "gen_ai.invocation.duration") -->
 <!-- NOTE: THIS TEXT IS AUTOGENERATED. DO NOT EDIT BY HAND. -->
 <!-- see templates/registry/markdown/snippet.md.j2 -->
 <!-- prettier-ignore-start -->
 
 | Name | Instrument Type | Unit (UCUM) | Description | Stability | Entity Associations |
 | -------- | --------------- | ----------- | -------------- | --------- | ------ |
-| `gen_ai.invoke_workflow.duration` | Histogram | `s` | Records duration of GenAI workflow. [1] | ![Development](https://img.shields.io/badge/-development-blue) | |
+| `gen_ai.invocation.duration` | Histogram | `s` | The end-to-end duration of an in-process GenAI conversation turn, workflow, or agent invocation. [1] | ![Development](https://img.shields.io/badge/-development-blue) | |
 
-**[1]:** Represents the end-to-end duration of a workflow execution, measured from the point where application code initiates the workflow to the point where the workflow completes, independent of workflow complexity.
-A workflow is a coordinated process composed of multiple agents or other operations involving generative AI.
-If instrumentation measures only a single provider-facing client operation (for example, one model API call), `gen_ai.client.operation.duration` SHOULD be used instead. Instrumentation MAY emit both metrics for the same request path when both boundaries are available.
-When this metric is reported alongside a `gen_ai.invoke_workflow.internal` span, the metric value SHOULD be the same as the span duration.
-Individual systems may include additional system-specific attributes. Refer to system-specific documentation, if available.
+**[1]:** Measured from the moment the invocation starts until it emits the last
+chunk of its final response, releases control flow back to its caller,
+or terminates with an error. When reported alongside a
+`gen_ai.invocation.internal` span, the value SHOULD be the same as the
+span duration.
+
+Recorded for every `gen_ai.invocation.internal` operation at any nesting
+depth; values include nested work. Filter by
+`gen_ai.invocation.is_nested = false` for end-to-end turn latency, and by
+`gen_ai.operation.name` with `gen_ai.agent.name` or
+`gen_ai.workflow.name` for individual agents and workflows.
+
+Disabling the `handle_conversation_turn` span SHOULD NOT disable its
+data point of this metric: in a handoff, several top-level peer
+invocations would otherwise each report `gen_ai.invocation.is_nested`
+set to `false` for the same turn.
+
+If instrumentation can only measure a single provider-facing client
+operation (for example, one model API call),
+`gen_ai.client.inference.duration` or `gen_ai.client.operation.duration`
+SHOULD be used instead.
 
 **Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/signal-requirement-level.md).
 
@@ -578,14 +601,29 @@ Individual systems may include additional system-specific attributes. Refer to s
 
 | Key | Stability | [Requirement Level](https://opentelemetry.io/docs/specs/semconv/general/attribute-requirement-level/) | Value Type | Description | Example Values |
 | --- | --- | --- | --- | --- | --- |
-| [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/error.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If the operation ended in an error. | string | Describes a class of error the operation ended with. [1] | `timeout`; `java.net.UnknownHostException`; `server_certificate_invalid`; `500` |
-| [`gen_ai.workflow.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If available. | string | Human-readable name of the GenAI workflow provided by the application. [2] | `multi_agent_rag`; `customer_support_pipeline` |
+| [`gen_ai.invocation.is_nested`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Required` | boolean | Whether an in-process GenAI invocation is nested within another in-process GenAI invocation. [1] | `false`; `true` |
+| [`gen_ai.operation.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Required` | string | The name of the operation being performed. [2] | `chat`; `generate_content`; `text_completion` |
+| [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/error.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If the operation ended in an error. | string | Describes a class of error the operation ended with. [3] | `timeout`; `java.net.UnknownHostException`; `server_certificate_invalid`; `500` |
+| [`gen_ai.agent.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [4] | string | The human-readable name of the invoked GenAI agent, or the entry-point agent when `gen_ai.operation.name` is `handle_conversation_turn`. | `Math Tutor`; `Fiction Writer` |
+| [`gen_ai.workflow.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [5] | string | Human-readable name of the GenAI workflow provided by the application. [6] | `multi_agent_rag`; `customer_support_pipeline` |
+| [`gen_ai.request.model`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If applicable. | string | The name of the GenAI model configured for the agent. [7] | `gpt-4` |
 
-**[1] `error.type`:** The `error.type` SHOULD match the error code returned by the Generative AI provider or the client library,
+**[1] `gen_ai.invocation.is_nested`:** `false` on the root invocation of a turn in the process: the
+`handle_conversation_turn` invocation when reported, otherwise the
+top-level `invoke_workflow` or `invoke_agent` invocation. `true` on every
+invocation nested inside another in-process invocation.
+
+**[2] `gen_ai.operation.name`:** If one of the predefined values applies, but specific system uses a different name it's RECOMMENDED to document it in the semantic conventions for specific GenAI system and use system-specific name in the instrumentation. If a different name is not documented, instrumentation libraries SHOULD use applicable predefined value.
+
+**[3] `error.type`:** The `error.type` SHOULD match the error code returned by the Generative AI provider or the client library,
 the canonical name of exception that occurred, or another low-cardinality error identifier.
 Instrumentations SHOULD document the list of errors they report.
 
-**[2] `gen_ai.workflow.name`:** The workflow name is usually a static, application-unique identifier defined
+**[4] `gen_ai.agent.name`:** When the invoked or entry-point entity is an agent and the name is available.
+
+**[5] `gen_ai.workflow.name`:** When the invoked or entry-point entity is a workflow and the name is available.
+
+**[6] `gen_ai.workflow.name`:** The workflow name is usually a static, application-unique identifier defined
 in a framework-specific way.
 
 For example, it can be the name of the first chain in LangChain,
@@ -600,6 +638,8 @@ available for a given framework, this attribute MUST NOT be captured by default.
 Semantic conventions for individual Generative AI frameworks SHOULD document
 what `gen_ai.workflow.name` means in the context of that framework.
 
+**[7] `gen_ai.request.model`:** This attribute SHOULD be populated if and only if the instrumented library allows to set only a single model per agent. It SHOULD NOT be populated for `handle_conversation_turn`, for workflows, or for agents that support multiple models or dynamic selection.
+
 ---
 
 `error.type` has the following list of well-known values. If one of them applies, then the respective value MUST be used; otherwise, a custom value MAY be used.
@@ -607,6 +647,34 @@ what `gen_ai.workflow.name` means in the context of that framework.
 | Value | Description | Stability |
 | --- | --- | --- |
 | `_OTHER` | A fallback error value to be used when the instrumentation doesn't define a custom value. | ![Stable](https://img.shields.io/badge/-stable-lightgreen) |
+
+---
+
+`gen_ai.operation.name` has the following list of well-known values. If one of them applies, then the respective value MUST be used; otherwise, a custom value MAY be used.
+
+| Value | Description | Stability |
+| --- | --- | --- |
+| `chat` | Chat completion operation such as [OpenAI Chat API](https://platform.openai.com/docs/api-reference/chat) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `create_agent` | Create GenAI agent | ![Development](https://img.shields.io/badge/-development-blue) |
+| `create_memory` | Create new memory records | ![Development](https://img.shields.io/badge/-development-blue) |
+| `create_memory_store` | Create or initialize a memory store | ![Development](https://img.shields.io/badge/-development-blue) |
+| `delete_memory` | Delete memory records | ![Development](https://img.shields.io/badge/-development-blue) |
+| `delete_memory_store` | Delete or deprovision a memory store | ![Development](https://img.shields.io/badge/-development-blue) |
+| `embeddings` | Embeddings operation such as [OpenAI Create embeddings API](https://platform.openai.com/docs/api-reference/embeddings/create) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `execute_tool` | Execute a tool | ![Development](https://img.shields.io/badge/-development-blue) |
+| `fetch_response` | Fetch a previously generated model response by its identifier, without performing inference, such as [OpenAI Get a model response](https://platform.openai.com/docs/api-reference/responses/get) [8] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `generate_content` | Multimodal content generation operation such as [Gemini Generate Content](https://ai.google.dev/api/generate-content) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `handle_conversation_turn` | Handle one conversation turn of a GenAI system, while the framework steers the control flow | ![Development](https://img.shields.io/badge/-development-blue) |
+| `invoke_agent` | Invoke GenAI agent | ![Development](https://img.shields.io/badge/-development-blue) |
+| `invoke_workflow` | Invoke GenAI workflow | ![Development](https://img.shields.io/badge/-development-blue) |
+| `plan` | Agent planning or task decomposition phase | ![Development](https://img.shields.io/badge/-development-blue) |
+| `retrieval` | Retrieval operation such as [OpenAI Search Vector Store API](https://platform.openai.com/docs/api-reference/vector-stores/search) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `search_memory` | Search/query memories from a memory store | ![Development](https://img.shields.io/badge/-development-blue) |
+| `text_completion` | Text completions operation such as [OpenAI Completions API (Legacy)](https://platform.openai.com/docs/api-reference/completions) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `update_memory` | Update existing memory records | ![Development](https://img.shields.io/badge/-development-blue) |
+| `upsert_memory` | Create or update memory records without the caller choosing which | ![Development](https://img.shields.io/badge/-development-blue) |
+
+**[8]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
 
 <!-- prettier-ignore-end -->
 <!-- END AUTOGENERATED TEXT -->
@@ -616,64 +684,6 @@ what `gen_ai.workflow.name` means in the context of that framework.
 
 Individual systems may include additional system-specific attributes.
 It is recommended to check system-specific documentation, if available.
-
-### Metric: `gen_ai.invoke_agent.duration`
-
-This metric SHOULD be specified with [ExplicitBucketBoundaries] of
-[0.1, 0.2, 0.4, 0.8, 1.6, 3.2, 6.4, 12.8, 25.6, 51.2, 102.4, 204.8, 409.6].
-
-<!-- weaver .registry.metrics[] | select(.name == "gen_ai.invoke_agent.duration") -->
-<!-- NOTE: THIS TEXT IS AUTOGENERATED. DO NOT EDIT BY HAND. -->
-<!-- see templates/registry/markdown/snippet.md.j2 -->
-<!-- prettier-ignore-start -->
-
-| Name | Instrument Type | Unit (UCUM) | Description | Stability | Entity Associations |
-| -------- | --------------- | ----------- | -------------- | --------- | ------ |
-| `gen_ai.invoke_agent.duration` | Histogram | `s` | The end-to-end duration of a single in-process agent invocation, from the moment the invocation starts until the agent emits the last chunk of its final response or terminates with an error. [1] | ![Development](https://img.shields.io/badge/-development-blue) | |
-
-**[1]:** Intended for instrumentations of agent frameworks (for example, ADK,
-LangChain agents, CrewAI agents) that can reliably bound a single
-agent invocation.
-
-If instrumentation can only measure a single provider-facing client
-operation (for example, one model API call),
-`gen_ai.client.operation.duration` SHOULD be used instead. If
-instrumentation can reliably bound a higher-level workflow that
-coordinates multiple agents, `gen_ai.invoke_workflow.duration` SHOULD be
-used for that workflow. Instrumentation MAY emit several of these
-metrics for the same request path when more than one boundary is
-available.
-
-When this metric is reported alongside a `gen_ai.invoke_agent.internal`
-span, the metric value SHOULD be the same as the span duration.
-
-**Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/signal-requirement-level.md).
-
-**Attributes:**
-
-| Key | Stability | [Requirement Level](https://opentelemetry.io/docs/specs/semconv/general/attribute-requirement-level/) | Value Type | Description | Example Values |
-| --- | --- | --- | --- | --- | --- |
-| [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/error.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If the operation ended in an error. | string | Describes a class of error the operation ended with. [1] | `timeout`; `java.net.UnknownHostException`; `server_certificate_invalid`; `500` |
-| [`gen_ai.agent.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When available. | string | The human-readable name of the invoked GenAI agent. | `Math Tutor`; `Fiction Writer` |
-| [`gen_ai.request.model`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If applicable. | string | The name of the GenAI model configured for the agent. [2] | `gpt-4` |
-
-**[1] `error.type`:** The `error.type` SHOULD match the error code returned by the Generative AI provider or the client library,
-the canonical name of exception that occurred, or another low-cardinality error identifier.
-Instrumentations SHOULD document the list of errors they report.
-
-**[2] `gen_ai.request.model`:** This attribute SHOULD be populated if and only if the instrumented library allows to set only a single model per agent. It SHOULD NOT be populated for agents that support multiple models or dynamic selection.
-
----
-
-`error.type` has the following list of well-known values. If one of them applies, then the respective value MUST be used; otherwise, a custom value MAY be used.
-
-| Value | Description | Stability |
-| --- | --- | --- |
-| `_OTHER` | A fallback error value to be used when the instrumentation doesn't define a custom value. | ![Stable](https://img.shields.io/badge/-stable-lightgreen) |
-
-<!-- prettier-ignore-end -->
-<!-- END AUTOGENERATED TEXT -->
-<!-- endweaver -->
 
 ### Metric: `gen_ai.invoke_agent.inference_calls`
 
@@ -700,7 +710,8 @@ those agents' own invocations so that each inference call is counted
 exactly once across the call tree.
 
 This metric SHOULD be emitted together with the
-`gen_ai.invoke_agent.internal` span for the same invocation.
+`gen_ai.invocation.internal` span (with `gen_ai.operation.name` set to
+`invoke_agent`) for the same invocation.
 
 **Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/signal-requirement-level.md).
 
@@ -744,7 +755,8 @@ example, provider built-in web search or code execution) are not
 counted here.
 
 This metric SHOULD be emitted together with the
-`gen_ai.invoke_agent.internal` span for the same invocation.
+`gen_ai.invocation.internal` span (with `gen_ai.operation.name` set to
+`invoke_agent`) for the same invocation.
 
 **Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/signal-requirement-level.md).
 

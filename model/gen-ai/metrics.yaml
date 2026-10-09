@@ -116,67 +116,64 @@ metrics:
         metric_value_type: double
     attributes:
       - ref_group: metric_attributes.gen_ai
-  - name: gen_ai.invoke_workflow.duration
-    requirement_level: recommended
-    annotations:
-      code_generation:
-        metric_value_type: double
-    brief: 'Records duration of GenAI workflow.'
-    note: >
-      Represents the end-to-end duration of a workflow execution, measured from the point
-      where application code initiates the workflow to the point where the workflow completes,
-      independent of workflow complexity.
-
-      A workflow is a coordinated process composed of multiple agents or other
-      operations involving generative AI.
-
-      If instrumentation measures only a single provider-facing client operation
-      (for example, one model API call), `gen_ai.client.operation.duration` SHOULD be used instead.
-      Instrumentation MAY emit both metrics for the same request path when both boundaries are available.
-
-      When this metric is reported alongside a `gen_ai.invoke_workflow.internal` span, the metric value SHOULD be the same as the span duration.
-
-      Individual systems may include additional system-specific attributes.
-      Refer to system-specific documentation, if available.
-    instrument: histogram
-    unit: "s"
-    stability: development
-    attributes:
-      - ref_group: attributes.gen_ai.error
-      - ref: gen_ai.workflow.name
-        requirement_level:
-          conditionally_required: If available.
-  - name: gen_ai.invoke_agent.duration
+  - name: gen_ai.invocation.duration
     requirement_level: recommended
     annotations:
       code_generation:
         metric_value_type: double
     brief: >
-      The end-to-end duration of a single in-process agent invocation,
-      from the moment the invocation starts until the agent emits
-      the last chunk of its final response or terminates with an error.
+      The end-to-end duration of an in-process GenAI conversation turn, workflow,
+      or agent invocation.
     note: |
-      Intended for instrumentations of agent frameworks (for example, ADK,
-      LangChain agents, CrewAI agents) that can reliably bound a single
-      agent invocation.
+      Measured from the moment the invocation starts until it emits the last
+      chunk of its final response, releases control flow back to its caller,
+      or terminates with an error. When reported alongside a
+      `gen_ai.invocation.internal` span, the value SHOULD be the same as the
+      span duration.
+
+      Recorded for every `gen_ai.invocation.internal` operation at any nesting
+      depth; values include nested work. Filter by
+      `gen_ai.invocation.is_nested = false` for end-to-end turn latency, and by
+      `gen_ai.operation.name` with `gen_ai.agent.name` or
+      `gen_ai.workflow.name` for individual agents and workflows.
+
+      Disabling the `handle_conversation_turn` span SHOULD NOT disable its
+      data point of this metric: in a handoff, several top-level peer
+      invocations would otherwise each report `gen_ai.invocation.is_nested`
+      set to `false` for the same turn.
 
       If instrumentation can only measure a single provider-facing client
       operation (for example, one model API call),
-      `gen_ai.client.operation.duration` SHOULD be used instead. If
-      instrumentation can reliably bound a higher-level workflow that
-      coordinates multiple agents, `gen_ai.invoke_workflow.duration` SHOULD be
-      used for that workflow. Instrumentation MAY emit several of these
-      metrics for the same request path when more than one boundary is
-      available.
-
-      When this metric is reported alongside a `gen_ai.invoke_agent.internal`
-      span, the metric value SHOULD be the same as the span duration.
+      `gen_ai.client.inference.duration` or `gen_ai.client.operation.duration`
+      SHOULD be used instead.
     instrument: histogram
     unit: "s"
     stability: development
     attributes:
       - ref_group: attributes.gen_ai.error
-      - ref_group: attributes.gen_ai.invoked_agent.internal.common
+      - ref: gen_ai.operation.name
+        requirement_level: required
+      - ref: gen_ai.invocation.is_nested
+        requirement_level: required
+      - ref: gen_ai.agent.name
+        brief: >
+          The human-readable name of the invoked GenAI agent, or the
+          entry-point agent when `gen_ai.operation.name` is
+          `handle_conversation_turn`.
+        requirement_level:
+          conditionally_required: When the invoked or entry-point entity is an agent and the name is available.
+      - ref: gen_ai.workflow.name
+        requirement_level:
+          conditionally_required: When the invoked or entry-point entity is a workflow and the name is available.
+      - ref: gen_ai.request.model
+        brief: The name of the GenAI model configured for the agent.
+        requirement_level:
+          recommended: If applicable.
+        note: >
+          This attribute SHOULD be populated if and only if the instrumented
+          library allows to set only a single model per agent. It SHOULD NOT
+          be populated for `handle_conversation_turn`, for workflows, or for agents that
+          support multiple models or dynamic selection.
   - name: gen_ai.invoke_agent.inference_calls
     annotations:
       code_generation:
@@ -192,7 +189,8 @@ metrics:
       exactly once across the call tree.
 
       This metric SHOULD be emitted together with the
-      `gen_ai.invoke_agent.internal` span for the same invocation.
+      `gen_ai.invocation.internal` span (with `gen_ai.operation.name` set to
+      `invoke_agent`) for the same invocation.
     instrument: histogram
     unit: "{inference_call}"
     stability: development
@@ -219,7 +217,8 @@ metrics:
       counted here.
 
       This metric SHOULD be emitted together with the
-      `gen_ai.invoke_agent.internal` span for the same invocation.
+      `gen_ai.invocation.internal` span (with `gen_ai.operation.name` set to
+      `invoke_agent`) for the same invocation.
     instrument: histogram
     unit: "{tool_call}"
     stability: development

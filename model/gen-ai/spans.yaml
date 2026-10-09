@@ -546,20 +546,63 @@ spans:
         requirement_level:
           conditionally_required: When available.
 
-  - type: gen_ai.invoke_agent.internal
+  - type: gen_ai.invocation.internal
     requirement_level: recommended
     kind: internal
     name:
       note: |
-        **Span name** SHOULD be `invoke_agent {gen_ai.agent.name}` if `gen_ai.agent.name` is readily available.
-        When `gen_ai.agent.name` is not available, it SHOULD be `invoke_agent`.
-        Semantic conventions for individual GenAI systems and frameworks MAY specify different span name format.
+        **Span name** SHOULD be `{gen_ai.operation.name} {gen_ai.workflow.name}` when
+        `gen_ai.workflow.name` is set, otherwise `{gen_ai.operation.name} {gen_ai.agent.name}` when
+        `gen_ai.agent.name` is set, otherwise `{gen_ai.operation.name}`.
+        Semantic conventions for individual GenAI systems and frameworks MAY specify a different
+        span name format.
     brief: >
-      Describes GenAI agent invocation within the same process.
+      Describes an in-process GenAI conversation turn, workflow, or agent invocation.
     note: |
-      The `gen_ai.operation.name` SHOULD be `invoke_agent`.
+      Instrumentations SHOULD set `gen_ai.operation.name` to:
 
-      Examples: LangChain agents, CrewAI agents.
+      - `invoke_agent` when an LLM drives the control flow through tool calls, for example
+        LangChain [`create_agent`](https://docs.langchain.com/oss/python/langchain/agents), OpenAI
+        Agents [`Agent`](https://openai.github.io/openai-agents-python/agents/), CrewAI
+        [`Agent`](https://docs.crewai.com/concepts/agents), Microsoft Agent Framework
+        [`Agent`](https://learn.microsoft.com/agent-framework/), Pydantic AI `Agent`, and ADK
+        [`LlmAgent`](https://adk.dev/agents/llm-agents/).
+      - `invoke_workflow` when the application defines the control flow, for example LangGraph
+        [`StateGraph`](https://reference.langchain.com/python/langgraph/graphs), Microsoft Agent
+        Framework [`Workflow`](https://learn.microsoft.com/agent-framework/workflows/) built with
+        `WorkflowBuilder` edges, CrewAI [`Crew`](https://docs.crewai.com/concepts/crews) with
+        `Process.sequential` or [`Flow`](https://docs.crewai.com/concepts/flows), and ADK
+        `Workflow`.
+      - `handle_conversation_turn` if and only if all of the following hold:
+        1. the framework defines the control flow;
+        2. the span covers the time during which the framework steers the control flow, from when
+           it takes control flow from the caller until it releases it back;
+        3. without this span, the framework might not reliably produce exactly one invocation with
+           `gen_ai.invocation.is_nested` set to `false` per turn (for example, when agents hand off
+           to each other).
+
+        For example, ADK [`Runner.run(...)`](https://adk.dev/runtime/) /
+        `Runner.run_async(...)`, one OpenAI Agents
+        [`Runner.run(starting_agent=...)`](https://openai.github.io/openai-agents-python/ref/run/#agents.run.Runner.run)
+        call (the SDK's `task` span, not an SDK `turn`, which is one agent-loop iteration;
+        `RunConfig.workflow_name` is not recorded), LangGraph Swarm
+        `create_swarm([...]).compile().invoke(...)`, Microsoft Agent Framework
+        `HandoffBuilder(participants=[...]).build().run(...)`, CrewAI
+        `Crew(..., process=Process.hierarchical).kickoff()`, and AutoGen `Swarm([...]).run(...)`.
+
+      Framework-specific semantic conventions SHOULD specify the operation for cases not covered
+      above.
+
+      Instrumentations SHOULD propagate an in-process OpenTelemetry context key when a turn begins
+      so that a `handle_conversation_turn` span is never parented (directly or indirectly) by
+      another `handle_conversation_turn` span in the same process (for example, a framework
+      entrypoint invoked inside a tool or workflow step, such as OpenAI Agents `Agent.as_tool()`,
+      ADK `AgentTool`, or an ADK runner invoked inside a LangGraph node). Cross-process propagation
+      of turn state is out of scope.
+
+      Instrumentations MAY provide a configuration option to disable reporting the
+      `handle_conversation_turn` span; its `gen_ai.invocation.duration` data point is still
+      recorded.
     stability: development
     entity_associations:
       - "gen_ai.main_agent"
@@ -570,6 +613,15 @@ spans:
       - ref: gen_ai.request.model
         sampling_relevant: true
       - ref: gen_ai.agent.name
+        brief: >
+          The human-readable name of the invoked GenAI agent, or the entry-point agent when
+          `gen_ai.operation.name` is `handle_conversation_turn`.
+        requirement_level:
+          conditionally_required: When the invoked or entry-point entity is an agent and the name is available.
+        sampling_relevant: true
+      - ref: gen_ai.workflow.name
+        requirement_level:
+          conditionally_required: When the invoked or entry-point entity is a workflow and the name is available.
         sampling_relevant: true
 
   - type: gen_ai.execute_tool.internal
@@ -625,58 +677,6 @@ spans:
       - ref: gen_ai.tool.call.arguments
         requirement_level: opt_in
       - ref: gen_ai.tool.call.result
-        requirement_level: opt_in
-
-  - type: gen_ai.invoke_workflow.internal
-    requirement_level: recommended
-    kind: internal
-    name:
-      note: >
-        **Span name** SHOULD be `invoke_workflow {gen_ai.workflow.name}`.
-    brief: >
-      Represents an operation that executes a coordinated process composed of multiple agents
-      or other operations involving generative AI.
-    note: |
-      The `gen_ai.operation.name` SHOULD be `invoke_workflow`.
-
-      The workflow span SHOULD be reported for operations that trigger the execution
-      of composable processes (e.g., graphs, orchestrators) coordinating multiple
-      agents or GenAI calls. It SHOULD NOT be reported for standalone agent invocations.
-
-      The `invoke_workflow` span SHOULD NOT be reported when the workflow invocation is
-      an internal implementation detail of another operation (e.g., an agent or tool that
-      spins up a runner/workflow under the hood to delegate to a sub-agent) rather than
-      a user-facing entry point. Workflows defined by the application SHOULD be reported
-      even when nested, for example a sub-graph invoked as a node of another graph.
-
-      Framework-specific semantic conventions SHOULD define which operations to report
-      as workflows and MAY specify heuristics to distinguish them from standalone
-      agent invocations and internal operations.
-
-      Examples of workflow invocations in different frameworks include:
-
-      - **ADK**: [`Runner.run(...)`](https://adk.dev/workflows/) with multi-agent or graph workflow.
-      - **CrewAI**: [`Crew.kickoff()`](https://docs.crewai.com/concepts/crews)
-      - **LangChain / LangGraph**: [`*Graph*.invoke(...)`](https://reference.langchain.com/python/langgraph/graphs)
-      - **Microsoft Agent Framework**: [`Workflow*.run(...)`](https://learn.microsoft.com/agent-framework/workflows/)
-      - **OpenAI Agents**: [`Runner.run(starting_agent=...)`](https://openai.github.io/openai-agents-python/ref/run/#agents.run.Runner.run) with handoffs, sub-agents, or agents-as-tools.
-    stability: development
-    entity_associations:
-      - "gen_ai.main_agent"
-    attributes:
-      - ref_group: attributes.gen_ai.error
-      - ref: gen_ai.operation.name
-        requirement_level: required
-        sampling_relevant: true
-      - ref: gen_ai.workflow.name
-        requirement_level:
-          conditionally_required: When available.
-      - ref: gen_ai.conversation.id
-        requirement_level:
-          conditionally_required: If and only if the instrumented library has one readily available, or the user application provides one through OpenTelemetry context or library-specific mechanisms.
-      - ref: gen_ai.input.messages
-        requirement_level: opt_in
-      - ref: gen_ai.output.messages
         requirement_level: opt_in
 
   - type: gen_ai.plan.internal
