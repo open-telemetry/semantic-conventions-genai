@@ -277,6 +277,16 @@ See the [normative JSON schema](/model/gen-ai/gen-ai-input-messages.json) for mo
         "modality": "document",
         "mime_type": "application/pdf",
         "uri": "s3://my-bucket/kyc-form.pdf"
+      },
+      // A video that the instrumentation chose not to capture (e.g. it
+      // exceeded the configured capture size cap). The original part type
+      // is preserved so consumers can still see it was a blob video; the
+      // payload (`content`) is omitted and `stripped_reason` records why.
+      {
+        "type": "blob",
+        "modality": "video",
+        "mime_type": "video/mp4",
+        "stripped_reason": "size_exceeded"
       }
     ]
   }
