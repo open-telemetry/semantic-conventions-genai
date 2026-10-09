@@ -38,6 +38,10 @@ attributes:
           stability: development
           value: "azure.ai.inference"
           brief: 'Azure AI Inference'
+        - id: microsoft.foundry
+          stability: development
+          value: "microsoft.foundry"
+          brief: '[Microsoft Foundry Agent Service](https://learn.microsoft.com/azure/foundry/agents/overview)'
         - id: azure.ai.openai
           stability: development
           value: "azure.ai.openai"

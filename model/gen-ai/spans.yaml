@@ -839,6 +839,32 @@ span_refinements:
         requirement_level:
           conditionally_required: If not default (443).
 
+  - id: microsoft.foundry.gen_ai.invoke_agent.client
+    ref: gen_ai.invoke_agent.client
+    brief: >
+      Semantic Conventions for [Microsoft Foundry Agent Service](https://learn.microsoft.com/azure/foundry/agents/overview)
+      client spans extend and override the semantic conventions for [Gen AI Spans](gen-ai-spans.md).
+    note: |
+      This refinement applies when invoking a remotely hosted Foundry agent through the agent-scoped OpenAI Responses API.
+
+      `gen_ai.provider.name` MUST be set to `"microsoft.foundry"` and SHOULD be provided **at span creation time**.
+    stability: development
+    attributes:
+      - ref: gen_ai.agent.name
+        requirement_level: required
+      - ref: gen_ai.conversation.id
+        requirement_level:
+          conditionally_required: When the request references a Foundry conversation.
+      - ref: gen_ai.request.model
+        requirement_level:
+          recommended: When the invoked agent has one configured model and it is readily available to instrumentation.
+      - ref: microsoft.foundry.project.id
+        requirement_level:
+          conditionally_required: When the full project resource ID is readily available to instrumentation.
+      - ref: server.port
+        requirement_level:
+          conditionally_required: When the endpoint port is not the default port 443.
+
   - id: anthropic.gen_ai.client.inference
     ref: gen_ai.client.inference
     brief: >

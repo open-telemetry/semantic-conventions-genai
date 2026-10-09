@@ -18,7 +18,7 @@
 | gen_ai.agent.name | [anthropic], [aws-bedrock-agent], [azure-ai-foundry], [google-genai], [mistralai], [openai-assistants] |
 | gen_ai.agent.version | [anthropic], [aws-bedrock-agent], [azure-ai-foundry], [mistralai] |
 | gen_ai.request.model | [anthropic], [aws-bedrock-agent], [azure-ai-foundry], [google-genai], [mistralai], [openai-assistants] |
-| server.port | [anthropic], [aws-bedrock-agent], [azure-ai-foundry], [mistralai], [openai-assistants] |
+| server.port | [anthropic], [aws-bedrock-agent], [mistralai], [openai-assistants] |
 
 ## Recommended
 

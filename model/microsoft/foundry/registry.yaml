@@ -1,0 +1,9 @@
+file_format: definition/2
+attributes:
+  - key: microsoft.foundry.project.id
+    type: string
+    brief: >
+      The full Azure Resource Manager resource ID of the Microsoft Foundry project.
+    examples:
+      - /subscriptions/b17253fa-f327-42d6-9686-f3e553e24763/resourceGroups/hanchi-test/providers/Microsoft.CognitiveServices/accounts/hancwang-swectr/projects/hancwang-swectr-proj
+    stability: development

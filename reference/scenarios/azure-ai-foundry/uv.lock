@@ -42,7 +42,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "azure-ai-projects", specifier = "==2.7.0" },
+    { name = "azure-ai-projects", specifier = "==2.8.0" },
     { name = "azure-identity", specifier = "==1.25.3" },
     { name = "genai-reference-shared", editable = "../../shared" },
     { name = "httpx" },
@@ -50,7 +50,7 @@ requires-dist = [
 
 [[package]]
 name = "azure-ai-projects"
-version = "2.7.0"
+version = "2.8.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "azure-core" },
@@ -60,9 +60,9 @@ dependencies = [
     { name = "openai" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/e6/6b/634eb4403c60bbef36612a3dd9da3cd42ccc2b4fe64b7180fab8e965d832/azure_ai_projects-2.7.0.tar.gz", hash = "sha256:ba3c6626bfa710031de37f927ae488ca9614168382407d7b2bb8d6e20fe32ff8", size = 39992282, upload-time = "2026-09-18T20:50:49.486Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/80/12/1b1aeef287b886c8d75f7666e7493346bf030765506e82d9411d38c8a455/azure_ai_projects-2.8.0.tar.gz", hash = "sha256:63de92a4507c89075d2cc8c300d192617161e7bd29972846148c8e4d434ed354", size = 40027918, upload-time = "2026-10-05T22:45:24.332Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/14/62/6031657cb26334542584302006f79c2e25689a6f3736e74002071b1163b0/azure_ai_projects-2.7.0-py3-none-any.whl", hash = "sha256:4bce987ebc93641311f7f9406b94f75f00d96b7d388056bb8b06e1f6f64deeaf", size = 517253, upload-time = "2026-09-18T20:50:52.529Z" },
+    { url = "https://files.pythonhosted.org/packages/36/bf/e389959c6856eba648c38d250faa82f950389c85dd4535ae9a4a400e8dd7/azure_ai_projects-2.8.0-py3-none-any.whl", hash = "sha256:75c877f55c2235af91b6d328fbaeac5fd3e2c7714b739809539e900e2c0ab5ca", size = 537918, upload-time = "2026-10-05T22:45:27.533Z" },
 ]
 
 [[package]]

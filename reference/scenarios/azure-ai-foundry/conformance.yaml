@@ -11,3 +11,11 @@ env:
 scenarios:
   reference:
     run: uv run --frozen --python 3.12 --project . python scenario.py
+    expected_violations:
+      - id: genai_expected_attribute_missing
+        context:
+          operation: invoke_agent
+          missing_attribute: gen_ai.response.finish_reasons
+        reason: >-
+          The agent-scoped Responses API exposes aggregate response lifecycle status, not a
+          provider-returned model generation finish reason.
