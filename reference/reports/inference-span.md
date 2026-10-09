@@ -29,6 +29,7 @@
 | Attribute | Supporting Libraries |
 | --- | --- |
 | gen_ai.conversation.compacted | [anthropic], [openai] |
+| gen_ai.external_ref | (none) |
 | gen_ai.request.frequency_penalty | [openai] |
 | gen_ai.request.max_tokens | [anthropic], [openai] |
 | gen_ai.request.presence_penalty | [openai] |

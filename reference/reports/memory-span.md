@@ -21,6 +21,7 @@
 
 | Attribute | Supporting Libraries |
 | --- | --- |
+| gen_ai.external_ref | (none) |
 | gen_ai.memory.record.count | [aws-bedrock-agentcore], [google-adk] |
 | server.address | [aws-bedrock-agentcore] |
 
