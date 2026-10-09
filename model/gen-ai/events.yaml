@@ -1,7 +1,7 @@
 file_format: definition/2
 events:
   - name: gen_ai.client.inference.operation.details
-    requirement_level: opt_in
+    requirement_level: recommended
     brief: >
       Describes the details of a GenAI completion request including chat history
       and parameters.

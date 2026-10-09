@@ -829,8 +829,6 @@ See [Inference Token Metrics](gen-ai-token-metrics.md#metric-gen_aiclientinferen
 
 ## Events
 
-GenAI instrumentations MAY capture user inputs sent to the model and responses received from it as [events](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.55.0/specification/logs/data-model.md#events).
-
 > [!Note]
 > Events are in-development and not yet available in some languages. Check [spec-compliance matrix](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.55.0/spec-compliance-matrix.md#logs) to see the implementation status in corresponding language.
 
@@ -850,7 +848,7 @@ Describes the details of a GenAI completion request including chat history and p
 This event could be used to store input and output details independently from traces.
 Instrumentations SHOULD set the severity to DEBUG (severity number 5) when recording this event.
 
-**Requirement level:** [Opt-In](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/signal-requirement-level.md).
+**Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/signal-requirement-level.md).
 
 **Attributes:**
 
