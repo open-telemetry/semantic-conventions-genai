@@ -2,16 +2,24 @@
 
 import asyncio
 import contextlib
+import contextvars
 import json
 import os
 import pathlib
 import shutil
+import socket
+import subprocess
+import sys
 import tempfile
 import time
+import urllib.request
+from pathlib import Path
+from urllib.parse import urlparse
 
+from opentelemetry import context as _otel_context
 from opentelemetry import trace as _trace
-from opentelemetry.sdk.trace import SpanProcessor
-from opentelemetry.trace import StatusCode
+from opentelemetry.sdk.trace import ReadableSpan, SpanProcessor
+from opentelemetry.trace import SpanKind, StatusCode
 from reference_shared import (
     flush_and_shutdown,
     reference_meter,
@@ -20,10 +28,12 @@ from reference_shared import (
 )
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"]
+os.environ.setdefault("OTEL_INSTRUMENTATION_A2A_SDK_ENABLED", "false")
 SKILLS_DIR = pathlib.Path(__file__).parent / "skills"
 
 _reference_tracer = reference_tracer()
 _reference_meter = reference_meter()
+_A2A_CALL_CONTEXT_KEY = "reference.google_adk.a2a_call"
 
 _inference_calls = _reference_meter.create_histogram(
     "gen_ai.invoke_agent.inference_calls",
@@ -35,6 +45,22 @@ _tool_calls = _reference_meter.create_histogram(
     unit="{tool_call}",
     description="The number of tool calls a GenAI agent makes during a single invocation.",
 )
+
+
+@contextlib.contextmanager
+def _patched_method(obj, name, replacement):
+    """Temporarily replace the ``obj.name`` bound method with ``replacement`` as
+    an instrumentation seam, always restoring the original in ``finally`` --
+    including on exceptions. Repo rules allow patching a public or private method
+    as a seam as long as the scenario still enters through the library's public
+    API; this helper just guarantees the patch is symmetric.
+    """
+    original = getattr(obj, name)
+    setattr(obj, name, replacement)
+    try:
+        yield
+    finally:
+        setattr(obj, name, original)
 
 
 class SpanCounter(SpanProcessor):
@@ -54,6 +80,128 @@ class SpanCounter(SpanProcessor):
 
     def force_flush(self, timeout_millis=None):
         return True
+
+
+class A2ATopologyRecorder(SpanProcessor):
+    """Verify concurrent A2A calls preserve their workflow and agent callers."""
+
+    def __init__(self):
+        self.workflow_span_id = None
+        self.routing_agent_span_id = None
+        self.agent_tool_span_id = None
+        self.agent_tool_parent_span_id = None
+        self.internal_spans = {}
+        self.client_calls = {}
+
+    def on_start(self, span, parent_context=None):
+        pass
+
+    def on_end(self, span: ReadableSpan):
+        attributes = span.attributes or {}
+        operation_name = attributes.get("gen_ai.operation.name")
+        if operation_name == "invoke_workflow" and attributes.get("gen_ai.workflow.name") == "weather_workflow":
+            self.workflow_span_id = span.context.span_id
+        elif (
+            operation_name == "invoke_agent"
+            and span.kind == SpanKind.INTERNAL
+            and attributes.get("gen_ai.agent.name") == "routing_agent"
+        ):
+            self.routing_agent_span_id = span.context.span_id
+        elif operation_name == "execute_tool" and attributes.get("gen_ai.transfer.target.name") == "agent_remote_agent":
+            self.agent_tool_span_id = span.context.span_id
+            self.agent_tool_parent_span_id = span.parent.span_id if span.parent else None
+        elif operation_name == "invoke_agent" and span.kind == SpanKind.INTERNAL:
+            agent_name = attributes.get("gen_ai.agent.name")
+            if agent_name in {"workflow_remote_agent", "agent_remote_agent"}:
+                self.internal_spans[span.context.span_id] = (
+                    agent_name,
+                    span.parent.span_id if span.parent else None,
+                )
+        elif (
+            operation_name == "invoke_agent"
+            and span.kind == SpanKind.CLIENT
+            and attributes.get("gen_ai.agent.name") == "weather-agent"
+        ):
+            caller = (
+                attributes.get("gen_ai.caller.type"),
+                attributes.get("gen_ai.caller.name"),
+            )
+            self.client_calls[caller] = span.parent.span_id if span.parent else None
+
+    def assert_valid(self):
+        if self.workflow_span_id is None:
+            raise AssertionError("Workflow span was not recorded")
+        if self.routing_agent_span_id is None:
+            raise AssertionError("Routing agent span was not recorded")
+        if self.agent_tool_span_id is None:
+            raise AssertionError("AgentTool transfer span was not recorded")
+        if self.agent_tool_parent_span_id != self.routing_agent_span_id:
+            raise AssertionError("AgentTool transfer span has the wrong routing-agent parent")
+        expected_callers = {
+            ("workflow", "invoke_remote_weather_agent"),
+            ("workflow", "invoke_remote_forecast_agent"),
+            ("agent", "routing_agent"),
+        }
+        if set(self.client_calls) != expected_callers:
+            raise AssertionError(f"A2A CLIENT callers were not correlated correctly: {self.client_calls}")
+        if len(self.internal_spans) != len(expected_callers):
+            raise AssertionError("Each A2A CLIENT call must have one RemoteA2aAgent INTERNAL parent")
+        for caller, internal_span_id in self.client_calls.items():
+            internal_span = self.internal_spans.get(internal_span_id)
+            if internal_span is None:
+                raise AssertionError(f"A2A CLIENT call {caller} has no RemoteA2aAgent INTERNAL parent")
+            agent_name, parent_span_id = internal_span
+            if caller[0] == "workflow":
+                if agent_name != "workflow_remote_agent" or parent_span_id != self.workflow_span_id:
+                    raise AssertionError(f"Workflow A2A call {caller} has the wrong span topology")
+            elif agent_name != "agent_remote_agent" or parent_span_id != self.agent_tool_span_id:
+                raise AssertionError(f"AgentTool A2A call {caller} has the wrong span topology")
+
+    def shutdown(self):
+        pass
+
+    def force_flush(self, timeout_millis=None):
+        return True
+
+
+@contextlib.contextmanager
+def _run_a2a_server():
+    from a2a_server import create_agent_card
+
+    host = "127.0.0.1"
+    with socket.socket() as sock:
+        sock.bind((host, 0))
+        port = sock.getsockname()[1]
+
+    agent_card = create_agent_card(host, port)
+    server_path = Path(__file__).with_name("a2a_server.py")
+    process = subprocess.Popen(
+        [sys.executable, str(server_path), "--host", host, "--port", str(port)],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    base_url = f"http://{host}:{port}"
+    deadline = time.monotonic() + 30
+    try:
+        while time.monotonic() < deadline:
+            if process.poll() is not None:
+                raise RuntimeError(f"A2A server exited with code {process.returncode}")
+            try:
+                with urllib.request.urlopen(f"{base_url}/health", timeout=1):
+                    break
+            except OSError:
+                time.sleep(0.1)
+        else:
+            raise RuntimeError("A2A server did not become ready")
+        yield base_url, agent_card
+    finally:
+        if process.poll() is None:
+            process.terminate()
+            try:
+                process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                process.wait(timeout=5)
 
 
 @contextlib.contextmanager
@@ -383,6 +531,498 @@ def run_memory_reference():
             search_span.set_attribute("gen_ai.memory.records", json.dumps(search_records))
 
     asyncio.run(_run())
+
+
+def run_multi_agent_delegation_reference():
+    """Delegation: a caller agent invokes a sub-agent exposed via ``AgentTool``.
+
+    ``AgentTool`` runs the wrapped agent and returns its result to the caller.
+    The caller-owned ``execute_tool`` span records the transfer; the child
+    ``invoke_agent`` span records the target's execution.
+    """
+    from google.adk.agents import Agent
+    from google.adk.models.google_llm import Gemini
+    from google.adk.runners import Runner
+    from google.adk.sessions import InMemorySessionService
+    from google.adk.tools.agent_tool import AgentTool
+    from google.genai import types
+
+    print("  [delegation] agent-as-tool via AgentTool (reference implementation)")
+
+    os.environ.setdefault("GOOGLE_API_KEY", "mock-key")
+    request_model = "gemini-2.0-flash"
+    input_text = "What's the weather in Seattle?"
+
+    with _suppress_adk_native_telemetry():
+        # The target sub-agent has no tools, so its mock model call returns text.
+        specialist = Agent(
+            name="weather_specialist",
+            description="Answers weather questions for a given location.",
+            model=Gemini(model=request_model, base_url=MOCK_BASE_URL),
+            instruction="You report the weather.",
+        )
+        agent_tool = AgentTool(agent=specialist)
+
+        # Wrap the tool's public run_async to open the caller-owned execute_tool
+        # span around the real sub-agent invocation. The entry point stays
+        # runner.run_async; the patched method is installed and restored in
+        # `finally` by `_patched_method` below.
+        original_run_async = agent_tool.run_async
+
+        async def _traced_run_async(*, args, tool_context):
+            transfer_attributes = {
+                "gen_ai.agent.name": root_agent.name,
+                "gen_ai.transfer.mode": "return_to_caller",
+                "gen_ai.transfer.target.name": specialist.name,
+            }
+            assert transfer_attributes == {
+                "gen_ai.agent.name": "root_agent",
+                "gen_ai.transfer.mode": "return_to_caller",
+                "gen_ai.transfer.target.name": "weather_specialist",
+            }
+            tool_span_attributes = {
+                "gen_ai.operation.name": "execute_tool",
+                "gen_ai.tool.name": agent_tool.name,
+                "gen_ai.tool.type": "function",
+                **transfer_attributes,
+            }
+            with _reference_tracer.start_as_current_span(
+                f"execute_tool {agent_tool.name} {specialist.name}", attributes=tool_span_attributes
+            ) as tool_span:
+                if tool_context.function_call_id:
+                    tool_span.set_attribute("gen_ai.tool.call.id", tool_context.function_call_id)
+                tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps(args))
+                sub_agent_span_attributes = {
+                    "gen_ai.operation.name": "invoke_agent",
+                    "gen_ai.request.model": request_model,
+                    "gen_ai.agent.name": specialist.name,
+                    "gen_ai.agent.description": specialist.description,
+                }
+                with _reference_tracer.start_as_current_span(
+                    f"invoke_agent {specialist.name}", attributes=sub_agent_span_attributes
+                ) as sub_agent_span:
+                    result = await original_run_async(args=args, tool_context=tool_context)
+                    sub_agent_span.set_attribute(
+                        "gen_ai.output.messages",
+                        json.dumps([{"role": "assistant", "parts": [{"type": "text", "content": str(result)}]}]),
+                    )
+                tool_span.set_attribute("gen_ai.tool.call.result", str(result))
+            return result
+
+        root_agent = Agent(
+            name="root_agent",
+            description="Routes questions to specialist agents.",
+            model=Gemini(model=request_model, base_url=MOCK_BASE_URL),
+            instruction="Delegate weather questions to the weather_specialist tool.",
+            tools=[agent_tool],
+        )
+        session_service = InMemorySessionService()
+        runner = Runner(agent=root_agent, app_name="delegation_app", session_service=session_service)
+
+        async def _run():
+            session = await session_service.create_session(app_name="delegation_app", user_id="test_user")
+            agent_span_attributes = {
+                "gen_ai.operation.name": "invoke_agent",
+                "gen_ai.request.model": request_model,
+                "gen_ai.agent.name": root_agent.name,
+                "gen_ai.agent.description": root_agent.description,
+            }
+            with _reference_tracer.start_as_current_span(
+                "invoke_agent root_agent", attributes=agent_span_attributes
+            ) as agent_span:
+                agent_span.set_attribute("gen_ai.conversation.id", session.id)
+                agent_span.set_attribute(
+                    "gen_ai.input.messages",
+                    json.dumps([{"role": "user", "parts": [{"type": "text", "content": input_text}]}]),
+                )
+                last_text = ""
+                async for event in runner.run_async(
+                    user_id="test_user",
+                    session_id=session.id,
+                    new_message=types.Content(role="user", parts=[types.Part(text=input_text)]),
+                ):
+                    if event.content and event.content.parts:
+                        text = event.content.parts[0].text
+                        if text:
+                            last_text = text
+                if last_text:
+                    agent_span.set_attribute(
+                        "gen_ai.output.messages",
+                        json.dumps([{"role": "assistant", "parts": [{"type": "text", "content": last_text}]}]),
+                    )
+                    print(f"    -> {last_text[:60]}")
+
+        # `_patched_method` installs the caller-owned execute_tool run_async seam
+        # and restores it in `finally`. The entry point stays runner.run_async.
+        with _patched_method(agent_tool, "run_async", _traced_run_async):
+            asyncio.run(_run())
+
+
+def run_remote_a2a_agent_reference(topology_recorder):
+    """Invoke a remote A2A agent from an ADK workflow and agent tool."""
+    import httpx
+    from a2a.client.client import ClientConfig
+    from a2a.client.client_factory import ClientFactory
+    from a2a.helpers import get_message_text
+    from google.adk.agents import Agent
+    from google.adk.agents.context import Context
+    from google.adk.agents.remote_a2a_agent import RemoteA2aAgent
+    from google.adk.models.base_llm import BaseLlm
+    from google.adk.models.llm_response import LlmResponse
+    from google.adk.runners import Runner
+    from google.adk.sessions import InMemorySessionService
+    from google.adk.tools.agent_tool import AgentTool
+    from google.adk.workflow import START, FunctionNode, Workflow
+    from google.genai import types
+
+    print("  [invoke_agent] workflow and agent callers -> A2A remote agent")
+
+    with _run_a2a_server() as (_server_url, agent_card), _suppress_adk_native_telemetry():
+        request_barrier = asyncio.Barrier(3)
+        workflow_call_context = contextvars.ContextVar("workflow_a2a_call_context", default=None)
+
+        class _TracingClientFactory(ClientFactory):
+            def create(self, card, interceptors=None):
+                client = super().create(card, interceptors)
+                original_send_message = client.send_message
+
+                async def _traced_send_message(request, *, context=None):
+                    call_context = _otel_context.get_value(_A2A_CALL_CONTEXT_KEY)
+                    if call_context is None:
+                        raise RuntimeError("A2A request did not inherit its ADK caller context")
+                    await asyncio.wait_for(request_barrier.wait(), timeout=10)
+                    target_url = urlparse(card.supported_interfaces[0].url)
+                    client_attributes = {
+                        "gen_ai.operation.name": "invoke_agent",
+                        "gen_ai.agent.name": card.name,
+                        "gen_ai.agent.version": card.version,
+                        "gen_ai.caller.type": call_context["caller_type"],
+                        "gen_ai.caller.name": call_context["caller_name"],
+                        "server.address": target_url.hostname or "localhost",
+                        "server.port": target_url.port or 443,
+                    }
+                    if card.provider:
+                        client_attributes["gen_ai.provider.name"] = card.provider.organization
+                    with _reference_tracer.start_as_current_span(
+                        f"invoke_agent {card.name}",
+                        kind=SpanKind.CLIENT,
+                        attributes=client_attributes,
+                    ) as client_span:
+                        if card.description:
+                            client_span.set_attribute("gen_ai.agent.description", card.description)
+                        if request.message.context_id:
+                            client_span.set_attribute(
+                                "gen_ai.conversation.id",
+                                request.message.context_id,
+                            )
+                        input_text = get_message_text(request.message, delimiter=" ")
+                        if input_text:
+                            client_span.set_attribute(
+                                "gen_ai.input.messages",
+                                json.dumps(
+                                    [
+                                        {
+                                            "role": "user",
+                                            "parts": [{"type": "text", "content": input_text}],
+                                        }
+                                    ]
+                                ),
+                            )
+                        try:
+                            async for response in original_send_message(
+                                request,
+                                context=context,
+                            ):
+                                yield response
+                        except Exception as error:
+                            client_span.set_attribute("error.type", type(error).__qualname__)
+                            raise
+
+                client.send_message = _traced_send_message
+                return client
+
+        http_client = httpx.AsyncClient()
+        client_factory = _TracingClientFactory(ClientConfig(httpx_client=http_client))
+        workflow_remote_agent = RemoteA2aAgent(
+            name="workflow_remote_agent",
+            agent_card=agent_card,
+            a2a_client_factory=client_factory,
+        )
+        agent_remote_agent = RemoteA2aAgent(
+            name="agent_remote_agent",
+            agent_card=agent_card,
+            a2a_client_factory=client_factory,
+        )
+
+        async def invoke_remote_weather_agent(ctx, node_input):
+            return await ctx.run_node(
+                workflow_remote_agent,
+                node_input=node_input,
+            )
+
+        async def invoke_remote_forecast_agent(ctx, node_input):
+            return await ctx.run_node(
+                workflow_remote_agent,
+                node_input=node_input,
+            )
+
+        async def collect_remote_results(ctx, node_input):
+            del ctx
+            return node_input
+
+        weather_workflow_step = FunctionNode(
+            name="invoke_remote_weather_agent",
+            func=invoke_remote_weather_agent,
+            rerun_on_resume=True,
+        )
+        forecast_workflow_step = FunctionNode(
+            name="invoke_remote_forecast_agent",
+            func=invoke_remote_forecast_agent,
+            rerun_on_resume=True,
+        )
+        collect_workflow_step = FunctionNode(
+            name="collect_remote_results",
+            func=collect_remote_results,
+            rerun_on_resume=True,
+        )
+        workflow = Workflow(
+            name="weather_workflow",
+            description="Invokes the remote weather agent.",
+            edges=[
+                (START, weather_workflow_step),
+                (START, forecast_workflow_step),
+                (weather_workflow_step, collect_workflow_step),
+                (forecast_workflow_step, collect_workflow_step),
+            ],
+        )
+        agent_tool = AgentTool(agent=agent_remote_agent)
+
+        class _AgentToolModel(BaseLlm):
+            turn: int = 0
+
+            async def generate_content_async(self, llm_request, stream=False):
+                self.turn += 1
+                if self.turn == 1:
+                    yield LlmResponse(
+                        content=types.Content(
+                            role="model",
+                            parts=[
+                                types.Part.from_function_call(
+                                    name=agent_remote_agent.name,
+                                    args={"request": "What's the weather in Portland?"},
+                                )
+                            ],
+                        )
+                    )
+                    return
+                yield LlmResponse(
+                    content=types.Content(
+                        role="model",
+                        parts=[types.Part.from_text(text="The remote weather agent responded.")],
+                    )
+                )
+
+        routing_model = _AgentToolModel(model="reference-agent-tool-model")
+        routing_agent = Agent(
+            name="routing_agent",
+            description="Routes weather questions to the remote weather agent.",
+            model=routing_model,
+            instruction="Use the agent_remote_agent tool for weather questions.",
+            tools=[agent_tool],
+        )
+        workflow_sessions = InMemorySessionService()
+        agent_sessions = InMemorySessionService()
+        workflow_runner = Runner(
+            node=workflow,
+            app_name="a2a_workflow_app",
+            session_service=workflow_sessions,
+        )
+        agent_runner = Runner(
+            agent=routing_agent,
+            app_name="a2a_agent_app",
+            session_service=agent_sessions,
+        )
+        original_context_run_node = Context.run_node
+        original_remote_run = RemoteA2aAgent.run_async
+        original_agent_tool_run = AgentTool.run_async
+
+        async def _traced_remote_run(self, parent_context):
+            if self.name not in {"workflow_remote_agent", "agent_remote_agent"}:
+                async for event in original_remote_run(self, parent_context):
+                    yield event
+                return
+            call_context = _otel_context.get_value(_A2A_CALL_CONTEXT_KEY)
+            if call_context is None:
+                call_context = workflow_call_context.get()
+            if call_context is None:
+                raise RuntimeError(f"{self.name} did not inherit its ADK caller context")
+            agent_attributes = {
+                "gen_ai.operation.name": "invoke_agent",
+                "gen_ai.agent.name": self.name,
+            }
+            with _reference_tracer.start_as_current_span(
+                f"invoke_agent {self.name}",
+                kind=SpanKind.INTERNAL,
+                attributes=agent_attributes,
+            ) as agent_span:
+                agent_span.set_attribute("gen_ai.conversation.id", parent_context.session.id)
+                token = _otel_context.attach(_otel_context.set_value(_A2A_CALL_CONTEXT_KEY, call_context))
+                try:
+                    async for event in original_remote_run(self, parent_context):
+                        yield event
+                finally:
+                    _otel_context.detach(token)
+
+        async def _traced_workflow_run_node(self, node, node_input=None, **kwargs):
+            if node is not workflow_remote_agent:
+                return await original_context_run_node(
+                    self,
+                    node,
+                    node_input=node_input,
+                    **kwargs,
+                )
+            caller = self.node
+            if caller is None:
+                raise RuntimeError("Workflow context did not expose its current node")
+            call_context = {
+                "caller_type": "workflow",
+                "caller_name": caller.name,
+                "remote_agent": node,
+            }
+            token = workflow_call_context.set(call_context)
+            try:
+                return await original_context_run_node(
+                    self,
+                    node,
+                    node_input=node_input,
+                    **kwargs,
+                )
+            finally:
+                workflow_call_context.reset(token)
+
+        async def _traced_agent_tool_run(self, *, args, tool_context):
+            if self is not agent_tool:
+                return await original_agent_tool_run(
+                    self,
+                    args=args,
+                    tool_context=tool_context,
+                )
+            call_context = {
+                "caller_type": "agent",
+                "caller_name": tool_context.agent_name,
+                "remote_agent": self.agent,
+            }
+            tool_attributes = {
+                "gen_ai.operation.name": "execute_tool",
+                "gen_ai.tool.name": self.name,
+                "gen_ai.tool.type": "function",
+                "gen_ai.agent.name": tool_context.agent_name,
+                "gen_ai.transfer.mode": "return_to_caller",
+                "gen_ai.transfer.target.name": self.agent.name,
+            }
+            with _reference_tracer.start_as_current_span(
+                f"execute_tool {self.name} {self.agent.name}",
+                kind=SpanKind.INTERNAL,
+                attributes=tool_attributes,
+            ) as tool_span:
+                if tool_context.function_call_id:
+                    tool_span.set_attribute("gen_ai.tool.call.id", tool_context.function_call_id)
+                tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps(args))
+                token = _otel_context.attach(_otel_context.set_value(_A2A_CALL_CONTEXT_KEY, call_context))
+                try:
+                    result = await original_agent_tool_run(
+                        self,
+                        args=args,
+                        tool_context=tool_context,
+                    )
+                finally:
+                    _otel_context.detach(token)
+                tool_span.set_attribute("gen_ai.tool.call.result", str(result))
+                return result
+
+        async def _invoke_workflow():
+            session = await workflow_sessions.create_session(
+                app_name="a2a_workflow_app",
+                user_id="workflow_user",
+            )
+            input_text = "What's the weather in Seattle?"
+            input_message = types.Content(role="user", parts=[types.Part(text=input_text)])
+            workflow_attributes = {
+                "gen_ai.operation.name": "invoke_workflow",
+                "gen_ai.workflow.name": workflow.name,
+            }
+            with _reference_tracer.start_as_current_span(
+                f"invoke_workflow {workflow.name}",
+                kind=SpanKind.INTERNAL,
+                attributes=workflow_attributes,
+            ) as workflow_span:
+                workflow_span.set_attribute("gen_ai.conversation.id", session.id)
+                workflow_span.set_attribute(
+                    "gen_ai.input.messages",
+                    json.dumps([{"role": "user", "parts": [{"type": "text", "content": input_text}]}]),
+                )
+                last_text = ""
+                async for event in workflow_runner.run_async(
+                    user_id="workflow_user",
+                    session_id=session.id,
+                    new_message=input_message,
+                ):
+                    if event.content and event.content.parts:
+                        text = event.content.parts[0].text
+                        if text:
+                            last_text = text
+                if last_text:
+                    workflow_span.set_attribute(
+                        "gen_ai.output.messages",
+                        json.dumps([{"role": "assistant", "parts": [{"type": "text", "content": last_text}]}]),
+                    )
+                    print(f"    -> {last_text[:60]}")
+
+        async def _invoke_agent():
+            session = await agent_sessions.create_session(
+                app_name="a2a_agent_app",
+                user_id="agent_user",
+            )
+            input_text = "Ask the remote weather agent about Portland."
+            agent_attributes = {
+                "gen_ai.operation.name": "invoke_agent",
+                "gen_ai.agent.name": routing_agent.name,
+                "gen_ai.request.model": routing_model.model,
+            }
+            with _reference_tracer.start_as_current_span(
+                f"invoke_agent {routing_agent.name}",
+                kind=SpanKind.INTERNAL,
+                attributes=agent_attributes,
+            ):
+                async for _ in agent_runner.run_async(
+                    user_id="agent_user",
+                    session_id=session.id,
+                    new_message=types.Content(
+                        role="user",
+                        parts=[types.Part(text=input_text)],
+                    ),
+                ):
+                    pass
+
+        async def _run():
+            try:
+                await asyncio.gather(_invoke_workflow(), _invoke_agent())
+            finally:
+                try:
+                    await workflow_remote_agent.cleanup()
+                finally:
+                    try:
+                        await agent_remote_agent.cleanup()
+                    finally:
+                        await http_client.aclose()
+
+        with (
+            _patched_method(Context, "run_node", _traced_workflow_run_node),
+            _patched_method(RemoteA2aAgent, "run_async", _traced_remote_run),
+            _patched_method(AgentTool, "run_async", _traced_agent_tool_run),
+        ):
+            asyncio.run(_run())
+        topology_recorder.assert_valid()
 
 
 def run_skills_reference():
@@ -719,8 +1359,12 @@ def main():
 
     span_counter = SpanCounter()
     tp.add_span_processor(span_counter)
+    topology_recorder = A2ATopologyRecorder()
+    tp.add_span_processor(topology_recorder)
 
     run_agent_reference()
+    run_multi_agent_delegation_reference()
+    run_remote_a2a_agent_reference(topology_recorder)
     run_memory_reference()
     run_skills_reference()
 

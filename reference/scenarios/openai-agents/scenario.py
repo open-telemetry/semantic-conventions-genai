@@ -1,11 +1,12 @@
 """Reference implementation for OpenAI Agents.
 
-Exercises: agent run with tool calling, sandboxed command execution, and a
-multi-agent run with handoffs wrapped in a workflow span, against a mock OpenAI
-server, with manual OTel spans.
+Exercises: agent run with tool calling, agent-as-tool delegation, sandboxed
+command execution, and a multi-agent run with handoffs wrapped in a workflow
+span, against a mock OpenAI server, with manual OTel spans.
 """
 
 import asyncio
+import contextlib
 import json
 import os
 import posixpath
@@ -23,6 +24,22 @@ MOCK_BASE_URL = os.environ["MOCK_LLM_URL"] + "/v1"
 SANDBOX_SHELL = "/bin/bash"
 
 _reference_tracer = reference_tracer()
+
+
+@contextlib.contextmanager
+def _patched_method(obj, name, replacement):
+    """Temporarily replace the ``obj.name`` bound method with ``replacement`` as
+    an instrumentation seam, always restoring the original in ``finally`` --
+    including on exceptions. Repo rules allow patching a public or private method
+    as a seam as long as the scenario still enters through the library's public
+    API; this helper just guarantees the patch is symmetric.
+    """
+    original = getattr(obj, name)
+    setattr(obj, name, replacement)
+    try:
+        yield
+    finally:
+        setattr(obj, name, original)
 
 
 @function_tool
@@ -129,6 +146,109 @@ async def run_agent():
         print(f"    -> {str(result.final_output)[:60]}")
 
 
+async def run_agent_as_tool_delegation():
+    """Delegation: a caller agent invokes another agent exposed via `Agent.as_tool`.
+
+    `Agent.as_tool()` runs the target agent as a function tool and returns its
+    result to the original agent. The caller-owned `execute_tool` span records
+    the transfer; the child `invoke_agent` span records the target's execution.
+    """
+    client = openai.AsyncOpenAI(base_url=MOCK_BASE_URL, api_key="mock-key")
+    request_model = "gpt-4o-mini"
+    model = OpenAIChatCompletionsModel(model=request_model, openai_client=client)
+
+    # The target agent has no tools, so its mock model call returns plain text.
+    specialist = Agent(
+        name="weather-specialist",
+        instructions="You report the weather.",
+        model=model,
+    )
+    weather_tool = specialist.as_tool(
+        tool_name="weather-specialist",
+        tool_description="Delegate weather questions to the weather specialist agent.",
+    )
+
+    # Wrap the tool's public invoker to open the caller-owned execute_tool span
+    # around the real sub-agent invocation. The entry point stays `Runner.run`;
+    # the patched invoker is restored in `finally` by `_patched_method` below.
+    original_on_invoke_tool = weather_tool.on_invoke_tool
+
+    async def _traced_on_invoke_tool(tool_context, input_json):
+        transfer_attributes = {
+            "gen_ai.agent.name": caller.name,
+            "gen_ai.transfer.mode": "return_to_caller",
+            "gen_ai.transfer.target.name": specialist.name,
+        }
+        assert transfer_attributes == {
+            "gen_ai.agent.name": "assistant",
+            "gen_ai.transfer.mode": "return_to_caller",
+            "gen_ai.transfer.target.name": "weather-specialist",
+        }
+        tool_span_attributes = {
+            "gen_ai.operation.name": "execute_tool",
+            "gen_ai.tool.name": weather_tool.name,
+            "gen_ai.tool.type": "function",
+            **transfer_attributes,
+        }
+        with _reference_tracer.start_as_current_span(
+            f"execute_tool {weather_tool.name} {specialist.name}", attributes=tool_span_attributes
+        ) as tool_span:
+            tool_span.set_attribute("gen_ai.tool.call.id", tool_context.tool_call_id)
+            tool_span.set_attribute("gen_ai.tool.call.arguments", input_json)
+            target_span_attributes = {
+                "gen_ai.operation.name": "invoke_agent",
+                "gen_ai.request.model": request_model,
+                "gen_ai.agent.name": specialist.name,
+            }
+            with _reference_tracer.start_as_current_span(
+                f"invoke_agent {specialist.name}", attributes=target_span_attributes
+            ) as target_span:
+                result = await original_on_invoke_tool(tool_context, input_json)
+                target_span.set_attribute(
+                    "gen_ai.output.messages",
+                    json.dumps([{"role": "assistant", "parts": [{"type": "text", "content": str(result)}]}]),
+                )
+            tool_span.set_attribute("gen_ai.tool.call.result", str(result))
+        return result
+
+    caller = Agent(
+        name="assistant",
+        instructions="You are a helpful assistant. Delegate weather questions to the specialist.",
+        model=model,
+        tools=[weather_tool],
+    )
+    input_text = "What's the weather in Seattle?"
+
+    print("  [delegation] agent-as-tool via Agent.as_tool (reference implementation)")
+    # `_patched_method` installs the caller-owned execute_tool invoker and restores
+    # it in `finally`. The caller's whole logical invocation is the public
+    # `Runner.run(caller, ...)` call, so its execution span wraps that call directly
+    # and owns the caller's input and response.
+    caller_span_attributes = {
+        "gen_ai.operation.name": "invoke_agent",
+        "gen_ai.request.model": request_model,
+        "gen_ai.agent.name": caller.name,
+    }
+    with (
+        _patched_method(weather_tool, "on_invoke_tool", _traced_on_invoke_tool),
+        _reference_tracer.start_as_current_span(
+            f"invoke_agent {caller.name}", attributes=caller_span_attributes
+        ) as caller_span,
+    ):
+        caller_span.set_attribute(
+            "gen_ai.system_instructions", json.dumps([{"type": "text", "content": caller.instructions}])
+        )
+        caller_span.set_attribute(
+            "gen_ai.input.messages", json.dumps([{"role": "user", "parts": [{"type": "text", "content": input_text}]}])
+        )
+        result = await Runner.run(caller, input_text)
+        caller_span.set_attribute(
+            "gen_ai.output.messages",
+            json.dumps([{"role": "assistant", "parts": [{"type": "text", "content": str(result.final_output)}]}]),
+        )
+    print(f"    -> {str(result.final_output)[:60]}")
+
+
 async def run_command_execution():
     """Sandboxed command execution through the SDK's `exec_command` tool."""
     from agents.run_config import SandboxRunConfig
@@ -148,7 +268,6 @@ async def run_command_execution():
 
         async def _invoke(self, ctx, raw_input):
             args = self.args_model.model_validate_json(raw_input)
-            # `direct`: `shell` is the binary the tool launches the command with.
             executable = args.shell
             executable_name = posixpath.basename(executable) if executable else None
             attributes = {
@@ -158,8 +277,6 @@ async def run_command_execution():
             }
             if ctx.agent is not None and ctx.agent.name:
                 attributes["gen_ai.agent.name"] = ctx.agent.name
-            # The command refinement appends the executable to the generic
-            # `execute_tool {tool}` name.
             span_name = f"execute_tool {self.name}"
             if executable_name:
                 attributes["process.executable.name"] = executable_name
@@ -186,7 +303,6 @@ async def run_command_execution():
 
     async def _pty_exec_start(*command, **kwargs):
         update = await original_pty_exec_start(*command, **kwargs)
-        # `direct`: the session reports the status the command exited with.
         if update.exit_code is not None:
             trace.get_current_span().set_attribute("process.exit.code", update.exit_code)
         return update
@@ -214,14 +330,12 @@ async def run_command_execution():
         capabilities=[Shell(configure_tools=configure_tools)],
     )
 
-    # Each run is one command. The second one fails, but tool call itself succeeds.
     runs = (
         ("List the files in the workspace.", "ls -1a"),
         ("Show me the report.", "cat missing-report.txt"),
     )
     try:
         for input_text, command in runs:
-            # Read by `configure_tools` when the run builds the agent's tools.
             allowed_command = command
             result = await Runner.run(
                 agent,
@@ -290,6 +404,7 @@ def main():
     tp, lp, mp = setup_otel()
 
     asyncio.run(run_agent())
+    asyncio.run(run_agent_as_tool_delegation())
     asyncio.run(run_command_execution())
     asyncio.run(run_workflow())
 
