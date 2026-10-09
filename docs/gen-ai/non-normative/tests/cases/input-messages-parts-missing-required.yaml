@@ -11,4 +11,13 @@ document: [
   }
 ]
 # Regenerate with `uv run pytest --update-snapshots`, do not edit by hand.
-errors: []
+errors:
+  - path: $[0].parts[0]
+    keyword: required
+    message: "'content' is a required property"
+  - path: $[0].parts[1]
+    keyword: required
+    message: "'content' is a required property"
+  - path: $[0].parts[1]
+    keyword: required
+    message: "'modality' is a required property"
