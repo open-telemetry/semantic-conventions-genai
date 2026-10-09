@@ -1120,3 +1120,30 @@ attributes:
     brief: The skill-relative name of the resource (script, reference, or asset) being accessed or executed.
     examples: ["references/review_policy.md", "assets/report_template.html"]
     stability: development
+  - key: gen_ai.skill.definitions
+    type: any
+    brief: The list of skill definitions available to the GenAI agent when the invocation started.
+    annotations:
+      type:
+        json_schema: model/gen-ai/gen-ai-skill-definitions.json
+    note: |
+      > [!WARNING]
+      > This attribute may contain sensitive information.
+
+      Skills added or removed during the invocation are not reflected.
+
+      Each definition follows the [Agent Skills specification](https://agentskills.io/specification):
+      `name` and `description` are required. Since this attribute could be large,
+      it's NOT RECOMMENDED to populate other properties by default.
+      Instrumentations MAY provide a way to enable populating optional properties.
+    examples:
+      - |
+        [
+          {
+            "name": "code-review",
+            "description": "Review a changelist against the team's review policy.",
+            "source_uri": "https://skills.example.com/code-review",
+            "compatibility": "Requires git, docker, jq"
+          }
+        ]
+    stability: development

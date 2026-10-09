@@ -565,6 +565,8 @@ spans:
       - "gen_ai.main_agent"
     attributes:
       - ref_group: attributes.gen_ai.invoke_agent.common
+      - ref: gen_ai.skill.definitions
+        requirement_level: opt_in
       - ref: gen_ai.operation.name
         sampling_relevant: true
       - ref: gen_ai.request.model
