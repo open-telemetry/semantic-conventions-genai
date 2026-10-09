@@ -653,6 +653,7 @@ def run_chat_with_document_input_reference(client):
             "type": "blob",
             "modality": "document",
             "mime_type": mime_type,
+            "byte_size": len(pdf_bytes),
             "content": pdf_b64,
         },
     ]
@@ -723,6 +724,7 @@ def run_chat_image_reference(client):
             "type": "blob",
             "modality": "image",
             "mime_type": mime_type,
+            "byte_size": len(image_bytes),
             "content": image_b64,
         },
     ]
@@ -765,6 +767,164 @@ def run_chat_image_reference(client):
         # these tokens under the `unknown` modality even though the input is an image.
         record_inference_usage(usage, usage_metric_attributes(request_model, resp.model, host, port))
         print(f"    -> {resp.choices[0].message.content[:60]}")
+
+
+def run_chat_with_file_id_reference(client):
+    """Scenario: chat with a provider-uploaded file and its observable size."""
+    import httpx2 as httpx
+    import openai
+
+    print("  [chat_file_id] chat with a provider-uploaded file (reference implementation)")
+    request_model = "gpt-4o-mini"
+    pdf_bytes = b"%PDF-1.4\n%mock pdf for reference scenario\n%%EOF\n"
+    filename = "sample-kyc.pdf"
+    mime_type = "application/pdf"
+
+    # The mock LLM server does not implement OpenAI's Files API. Return a
+    # deterministic Files API response through the SDK's HTTP transport so
+    # the file ID and byte count used below come from an SDK response object.
+    def respond_to_file_create(request):
+        if request.method != "POST" or request.url.path != "/v1/files":
+            return httpx.Response(404)
+        return httpx.Response(
+            200,
+            json={
+                "id": "file-ref-001",
+                "object": "file",
+                "bytes": len(pdf_bytes),
+                "created_at": 1,
+                "filename": filename,
+                "purpose": "user_data",
+                "status": "processed",
+                "status_details": None,
+            },
+        )
+
+    files_client = openai.OpenAI(
+        base_url=MOCK_BASE_URL,
+        api_key="mock-key",
+        http_client=httpx.Client(transport=httpx.MockTransport(respond_to_file_create)),
+    )
+    try:
+        uploaded_file = files_client.files.create(
+            file=(filename, pdf_bytes, mime_type),
+            purpose="user_data",
+        )
+    finally:
+        files_client.close()
+
+    instruction = "Summarize the attached document in one sentence."
+    messages = [
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": instruction},
+                {"type": "file", "file": {"file_id": uploaded_file.id}},
+            ],
+        }
+    ]
+    input_parts = [
+        {"type": "text", "content": instruction},
+        {
+            "type": "file",
+            "modality": "document",
+            "mime_type": mime_type,
+            "file_id": uploaded_file.id,
+            "byte_size": uploaded_file.bytes,
+        },
+    ]
+    input_messages = json.dumps([{"role": "user", "parts": input_parts}])
+
+    host, port = mock_server_host_port(MOCK_BASE_URL)
+    span_attributes = {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "openai",
+        "gen_ai.request.model": request_model,
+    }
+    if host:
+        span_attributes["server.address"] = host
+    if port is not None:
+        span_attributes["server.port"] = port
+    with _reference_tracer.start_as_current_span("chat gpt-4o-mini", attributes=span_attributes) as span:
+        span.set_attribute("gen_ai.input.messages", input_messages)
+        resp = client.chat.completions.create(model=request_model, messages=messages)
+        span.set_attribute("gen_ai.response.model", resp.model)
+        span.set_attribute("gen_ai.response.id", resp.id)
+        span.set_attribute("gen_ai.response.finish_reasons", chat_finish_reasons(resp.choices))
+        span.set_attribute(
+            "gen_ai.output.messages",
+            json.dumps(
+                [
+                    {
+                        "role": choice.message.role,
+                        "parts": [{"type": "text", "content": choice.message.content}],
+                    }
+                    for choice in resp.choices
+                ]
+            ),
+        )
+        if resp.usage:
+            span.set_attribute("gen_ai.usage.input_tokens", resp.usage.prompt_tokens)
+            span.set_attribute("gen_ai.usage.output_tokens", resp.usage.completion_tokens)
+    print(f"    -> {resp.choices[0].message.content[:60]}")
+
+
+def run_chat_with_remote_uri_reference(client):
+    """Scenario: chat with a caller-supplied URI whose size is not observable."""
+    print("  [chat_remote_uri] chat with a remote image URI (reference implementation)")
+    request_model = "gpt-4o-mini"
+    instruction = "Describe the attached image."
+    image_url = "https://example.com/reference-image.png"
+    messages = [
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": instruction},
+                {"type": "image_url", "image_url": {"url": image_url}},
+            ],
+        }
+    ]
+    # The SDK input exposes the URI and image modality, but not the remote
+    # payload length or MIME type. Do not fetch a caller-supplied URL to infer
+    # either value; byte_size and mime_type are omitted.
+    input_parts = [
+        {"type": "text", "content": instruction},
+        {"type": "uri", "modality": "image", "uri": image_url},
+    ]
+    input_messages = json.dumps([{"role": "user", "parts": input_parts}])
+
+    host, port = mock_server_host_port(MOCK_BASE_URL)
+    span_attributes = {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "openai",
+        "gen_ai.request.model": request_model,
+    }
+    if host:
+        span_attributes["server.address"] = host
+    if port is not None:
+        span_attributes["server.port"] = port
+    with _reference_tracer.start_as_current_span("chat gpt-4o-mini", attributes=span_attributes) as span:
+        span.set_attribute("gen_ai.input.messages", input_messages)
+        resp = client.chat.completions.create(model=request_model, messages=messages)
+        span.set_attribute("gen_ai.response.model", resp.model)
+        span.set_attribute("gen_ai.response.id", resp.id)
+        span.set_attribute("gen_ai.response.finish_reasons", chat_finish_reasons(resp.choices))
+        span.set_attribute(
+            "gen_ai.output.messages",
+            json.dumps(
+                [
+                    {
+                        "role": choice.message.role,
+                        "parts": [{"type": "text", "content": choice.message.content}],
+                    }
+                    for choice in resp.choices
+                ]
+            ),
+        )
+        if resp.usage:
+            span.set_attribute("gen_ai.usage.input_tokens", resp.usage.prompt_tokens)
+            span.set_attribute("gen_ai.usage.output_tokens", resp.usage.completion_tokens)
+    print(f"    -> {resp.choices[0].message.content[:60]}")
 
 
 def run_chat_audio_reference(client):
@@ -1156,6 +1316,8 @@ def main():
     run_chat_tool_call_reference(client)
     run_chat_with_document_input_reference(client)
     run_chat_image_reference(client)
+    run_chat_with_file_id_reference(client)
+    run_chat_with_remote_uri_reference(client)
     run_chat_audio_reference(client)
     run_responses_with_prompt_template_reference(client)
     run_fetch_response_reference(client)

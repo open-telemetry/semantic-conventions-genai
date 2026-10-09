@@ -204,6 +204,15 @@ class BlobPart(BaseModel):
     modality: Union[Modality, str] = Field(
         description="The general modality of the data if it is known. Instrumentations SHOULD also set the mimeType field if the specific type is known."
     )
+    byte_size: Optional[int] = Field(
+        default=None,
+        ge=0,
+        description=(
+            "Size of the captured payload in bytes — the raw decoded byte length, not the length "
+            "of the base64-encoded `content` string on the wire. Useful for cost-of-capture "
+            "telemetry and storage planning."
+        ),
+    )
     content: bytes = Field(
         description="Raw bytes of the attached data. This field SHOULD be encoded as a base64 string when serialized to JSON."
     )
@@ -220,6 +229,14 @@ class FilePart(BaseModel):
     )
     modality: Union[Modality, str] = Field(
         description="The general modality of the data if it is known. Instrumentations SHOULD also set the mimeType field if the specific type is known."
+    )
+    byte_size: Optional[int] = Field(
+        default=None,
+        ge=0,
+        description=(
+            "Size of the referenced file in bytes, as observed by the instrumentation at capture "
+            "time. Useful for cost-of-capture telemetry and storage planning."
+        ),
     )
     file_id: str = Field(
         description="An identifier referencing a file that was pre-uploaded to the provider."
@@ -239,6 +256,14 @@ class UriPart(BaseModel):
     )
     modality: Union[Modality, str] = Field(
         description="The general modality of the data if it is known. Instrumentations SHOULD also set the mimeType field if the specific type is known."
+    )
+    byte_size: Optional[int] = Field(
+        default=None,
+        ge=0,
+        description=(
+            "Size of the URI-referenced payload in bytes, as observed by the instrumentation at "
+            "capture time. Useful for cost-of-capture telemetry and storage planning."
+        ),
     )
     uri: str = Field(
         description=(

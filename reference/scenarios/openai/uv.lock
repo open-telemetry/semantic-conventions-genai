@@ -284,12 +284,14 @@ version = "0.0.0"
 source = { virtual = "." }
 dependencies = [
     { name = "genai-reference-shared" },
+    { name = "httpx2" },
     { name = "openai" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "genai-reference-shared", editable = "../../shared" },
+    { name = "httpx2" },
     { name = "openai", specifier = "==3.22.0" },
 ]
 
