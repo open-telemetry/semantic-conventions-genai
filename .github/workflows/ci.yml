@@ -26,7 +26,7 @@ jobs:
           fetch-depth: 0 # needed for merge-base used in modified-files mode
           persist-credentials: false
 
-      - uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4.3.0
+      - uses: jdx/mise-action@7a4e45a543138629540c9a1616d08632b893e492 # v5.0.1
 
       - name: Check links for pull requests
         if: github.event_name == 'pull_request'
@@ -55,7 +55,7 @@ jobs:
 
       - name: Load shared version pins
         id: versions
-        uses: ./.github/actions/load-version-pins
+        uses: $/.github/actions/load-version-pins
 
       - name: Install Weaver
         uses: open-telemetry/weaver/.github/actions/setup-weaver@f8e1b42fbd1e09df5263c26b7df6011eaafd454d
@@ -75,14 +75,14 @@ jobs:
 
       - name: Load shared version pins
         id: versions
-        uses: ./.github/actions/load-version-pins
+        uses: $/.github/actions/load-version-pins
 
       - name: Install Weaver
         uses: open-telemetry/weaver/.github/actions/setup-weaver@f8e1b42fbd1e09df5263c26b7df6011eaafd454d
         with:
           version: '${{ steps.versions.outputs.weaver_version }}'
 
-      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
 
       - name: Regenerate and check committed outputs are in sync
         run: |
@@ -112,7 +112,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           enable-cache: true
           cache-dependency-glob: "reference/**/uv.lock"
@@ -137,7 +137,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: ./.github/actions/setup-reference-tooling
+      - uses: $/.github/actions/setup-reference-tooling
 
       - name: Generate matrices
         id: matrices
@@ -159,7 +159,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: ./.github/actions/setup-reference-tooling
+      - uses: $/.github/actions/setup-reference-tooling
 
       - name: Run implementation scenario
         env:
@@ -188,7 +188,7 @@ jobs:
 
       - name: Load shared version pins
         id: versions
-        uses: ./.github/actions/load-version-pins
+        uses: $/.github/actions/load-version-pins
 
       # The reports are built from weaver's resolution of model/, which is
       # resolved on demand rather than committed.
@@ -197,7 +197,7 @@ jobs:
         with:
           version: '${{ steps.versions.outputs.weaver_version }}'
 
-      - uses: ./.github/actions/setup-reference-tooling
+      - uses: $/.github/actions/setup-reference-tooling
 
       - name: Generate status report
         run: uv run --locked update-reports

@@ -6,8 +6,10 @@
 {%- import 'metric_table.j2' as mt -%}
 {%- import 'event_macros.j2' as ev -%}
 {%- import 'span_macros.j2' as sp -%}
+{%- import 'entity_macros.j2' as entity -%}
 
 {%- set attribute_registry_base_url = (params.registry_base_url ~ "attributes") | trim -%}
+{%- set entity_registry_base_url = (params.registry_base_url ~ "entities") | trim -%}
 {%- set upstream_docs_base = params.upstream_docs_base | trim -%}
 {%- set _kind = kind | default(none) -%}
 {%- set _instrument = instrument | default(none) -%}
@@ -24,15 +26,18 @@
 <!-- prettier-ignore-start -->
 
 {% if _kind %}
-{%- set span = {"type": (type | default(none)), "id": (id | default(none)), "kind": _kind, "stability": _stability, "deprecated": _deprecated, "brief": _brief, "note": _note, "requirement_level": _requirement_level, "name": _name} -%}
-{{ sp.header(span) }}{{ at.generate(_attrs, attribute_registry_base_url, upstream_docs_base, "Attributes") }}
+{%- set span = {"type": (type | default(none)), "id": (id | default(none)), "kind": _kind, "stability": _stability, "deprecated": _deprecated, "brief": _brief, "note": _note, "requirement_level": _requirement_level, "name": _name, "entity_associations": (entity_associations | default(none))} -%}
+{{ sp.header(span, entity_registry_base_url) }}{{ at.generate(_attrs, attribute_registry_base_url, upstream_docs_base, "Attributes") }}
 {%- elif _instrument -%}
 {%- set metric = {"name": _name, "instrument": _instrument, "unit": (unit | default("")), "stability": _stability, "deprecated": _deprecated, "brief": _brief, "note": _note, "requirement_level": _requirement_level, "entity_associations": (entity_associations | default([]))} -%}
 {{ mt.generate(metric) }}
 {{ at.generate(_attrs, attribute_registry_base_url, upstream_docs_base, "Attributes") }}
+{%- elif (identity is defined or description is defined) and not _kind and not _instrument -%}
+{%- set entity_obj = {"type": (type | default(none)), "stability": _stability, "deprecated": _deprecated, "brief": _brief, "note": _note, "identity": identity | default([]), "description": description | default([])} -%}
+{{ entity.header(entity_obj) }}{{ entity.all_attribute_table(entity_obj, attribute_registry_base_url, upstream_docs_base) }}
 {%- elif _name and _attrs -%}
-{%- set event = {"name": _name, "stability": _stability, "deprecated": _deprecated, "brief": _brief, "note": _note, "requirement_level": _requirement_level} -%}
-{{ ev.header(event) }}{{ at.generate(_attrs, attribute_registry_base_url, upstream_docs_base, "Attributes") }}
+{%- set event = {"name": _name, "stability": _stability, "deprecated": _deprecated, "brief": _brief, "note": _note, "requirement_level": _requirement_level, "entity_associations": (entity_associations | default(none))} -%}
+{{ ev.header(event, entity_registry_base_url) }}{{ at.generate(_attrs, attribute_registry_base_url, upstream_docs_base, "Attributes") }}
 {%- elif _attrs -%}
 {{ at.generate(_attrs, attribute_registry_base_url, upstream_docs_base, "Attributes") }}
 {%- endif %}

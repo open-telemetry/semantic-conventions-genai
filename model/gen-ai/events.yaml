@@ -1,16 +1,18 @@
 file_format: definition/2
 events:
   - name: gen_ai.client.inference.operation.details
-    requirement_level: opt_in
+    requirement_level: recommended
     brief: >
       Describes the details of a GenAI completion request including chat history
       and parameters.
     note: >
       This event could be used to store input and output details
       independently from traces.
+
+      Instrumentations SHOULD set the severity to DEBUG (severity number 5) when recording this event.
     stability: development
     attributes:
-      - ref_group: span.gen_ai.inference.client
+      - ref_group: span.gen_ai.client.inference
   - name: gen_ai.evaluation.result
     requirement_level: recommended
     brief: >
