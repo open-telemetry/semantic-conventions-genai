@@ -184,6 +184,10 @@ spans:
       call to models running in the same process. It's RECOMMENDED to use `CLIENT` kind
       when the GenAI system being instrumented usually runs in a different process than its
       client or when the GenAI call happens over instrumented protocol such as HTTP.
+
+      The `gen_ai.operation.name` SHOULD be `decision` for dedicated decision-model APIs
+      that answer typed questions about input. A request containing multiple questions
+      is one inference operation; its duration and usage SHOULD be recorded once for the request.
     stability: development
     attributes:
       - ref_group: attributes.gen_ai.common

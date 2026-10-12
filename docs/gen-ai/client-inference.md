@@ -33,11 +33,31 @@ Examples of inference operations include:
 
 - [OpenAI Create Response](https://platform.openai.com/docs/api-reference/responses/create)
 - [OpenAI Create Chat Completion](https://platform.openai.com/docs/api-reference/chat/create)
+- [OpenAI Create Decision](https://developers.openai.com/api/reference/resources/decisions/methods/create)
+- [TypeSafe System One](https://docs.typesafe.ai/api)
 - [Anthropic Create a Message](https://docs.anthropic.com/en/api/messages)
 - [Google Gemini Create Interaction](https://ai.google.dev/gemini-api/docs/interactions-overview)
 - [Google Gemini Generate Content](https://ai.google.dev/api/generate-content)
 
 including their streaming and non-streaming variants.
+
+Dedicated decision-model APIs use `gen_ai.operation.name` of `decision`.
+For example, this applies to OpenAI `decisions.create` and TypeSafe `system_one`.
+Calls to chat or content-generation APIs retain their existing operation name,
+including when an application uses their output to make a decision.
+
+Decision operations reuse inference duration, provider/model, usage, and error
+conventions. Record only values available from the API. Candidate options and
+questions are not candidate completions and MUST NOT be counted in
+`gen_ai.request.choice.count`. An API's JSON response envelope does not imply
+that the client requested `gen_ai.output.type` of `json`.
+
+Per-question decision results do not yet have a standardized representation.
+This includes selected choices, probabilities, scores, confidence, and refusals.
+An application choosing to abstain based on a probability or confidence threshold
+is separate from the model call. An explicit refusal of an individual question
+does not by itself indicate that the request failed. Instrumentations SHOULD NOT
+synthesize generation finish reasons from decision answer types.
 
 ## Span: `gen_ai.client.inference`
 
@@ -54,6 +74,10 @@ This span represents a client call to Generative AI model or service that genera
 call to models running in the same process. It's RECOMMENDED to use `CLIENT` kind
 when the GenAI system being instrumented usually runs in a different process than its
 client or when the GenAI call happens over instrumented protocol such as HTTP.
+
+The `gen_ai.operation.name` SHOULD be `decision` for dedicated decision-model APIs
+that answer typed questions about input. A request containing multiple questions
+is one inference operation; its duration and usage SHOULD be recorded once for the request.
 
 **Span name** SHOULD be `{gen_ai.operation.name} {gen_ai.request.model}`.
 Semantic conventions for individual GenAI systems and frameworks MAY specify different span name format
@@ -371,6 +395,7 @@ and SHOULD be provided **at span creation time** (if provided at all):
 | `create_agent` | Create GenAI agent | ![Development](https://img.shields.io/badge/-development-blue) |
 | `create_memory` | Create new memory records | ![Development](https://img.shields.io/badge/-development-blue) |
 | `create_memory_store` | Create or initialize a memory store | ![Development](https://img.shields.io/badge/-development-blue) |
+| `decision` | Decision-model inference that answers typed questions about input, such as predicates, choices, or scores. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `delete_memory` | Delete memory records | ![Development](https://img.shields.io/badge/-development-blue) |
 | `delete_memory_store` | Delete or deprovision a memory store | ![Development](https://img.shields.io/badge/-development-blue) |
 | `embeddings` | Embeddings operation such as [OpenAI Create embeddings API](https://platform.openai.com/docs/api-reference/embeddings/create) | ![Development](https://img.shields.io/badge/-development-blue) |
@@ -521,6 +546,7 @@ Instrumentations SHOULD document the list of errors they report.
 | `create_agent` | Create GenAI agent | ![Development](https://img.shields.io/badge/-development-blue) |
 | `create_memory` | Create new memory records | ![Development](https://img.shields.io/badge/-development-blue) |
 | `create_memory_store` | Create or initialize a memory store | ![Development](https://img.shields.io/badge/-development-blue) |
+| `decision` | Decision-model inference that answers typed questions about input, such as predicates, choices, or scores. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `delete_memory` | Delete memory records | ![Development](https://img.shields.io/badge/-development-blue) |
 | `delete_memory_store` | Delete or deprovision a memory store | ![Development](https://img.shields.io/badge/-development-blue) |
 | `embeddings` | Embeddings operation such as [OpenAI Create embeddings API](https://platform.openai.com/docs/api-reference/embeddings/create) | ![Development](https://img.shields.io/badge/-development-blue) |
@@ -635,6 +661,7 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 | `create_agent` | Create GenAI agent | ![Development](https://img.shields.io/badge/-development-blue) |
 | `create_memory` | Create new memory records | ![Development](https://img.shields.io/badge/-development-blue) |
 | `create_memory_store` | Create or initialize a memory store | ![Development](https://img.shields.io/badge/-development-blue) |
+| `decision` | Decision-model inference that answers typed questions about input, such as predicates, choices, or scores. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `delete_memory` | Delete memory records | ![Development](https://img.shields.io/badge/-development-blue) |
 | `delete_memory_store` | Delete or deprovision a memory store | ![Development](https://img.shields.io/badge/-development-blue) |
 | `embeddings` | Embeddings operation such as [OpenAI Create embeddings API](https://platform.openai.com/docs/api-reference/embeddings/create) | ![Development](https://img.shields.io/badge/-development-blue) |
@@ -749,6 +776,7 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 | `create_agent` | Create GenAI agent | ![Development](https://img.shields.io/badge/-development-blue) |
 | `create_memory` | Create new memory records | ![Development](https://img.shields.io/badge/-development-blue) |
 | `create_memory_store` | Create or initialize a memory store | ![Development](https://img.shields.io/badge/-development-blue) |
+| `decision` | Decision-model inference that answers typed questions about input, such as predicates, choices, or scores. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `delete_memory` | Delete memory records | ![Development](https://img.shields.io/badge/-development-blue) |
 | `delete_memory_store` | Delete or deprovision a memory store | ![Development](https://img.shields.io/badge/-development-blue) |
 | `embeddings` | Embeddings operation such as [OpenAI Create embeddings API](https://platform.openai.com/docs/api-reference/embeddings/create) | ![Development](https://img.shields.io/badge/-development-blue) |
@@ -1149,6 +1177,7 @@ When the attribute is recorded on events, it MUST be recorded in structured form
 | `create_agent` | Create GenAI agent | ![Development](https://img.shields.io/badge/-development-blue) |
 | `create_memory` | Create new memory records | ![Development](https://img.shields.io/badge/-development-blue) |
 | `create_memory_store` | Create or initialize a memory store | ![Development](https://img.shields.io/badge/-development-blue) |
+| `decision` | Decision-model inference that answers typed questions about input, such as predicates, choices, or scores. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `delete_memory` | Delete memory records | ![Development](https://img.shields.io/badge/-development-blue) |
 | `delete_memory_store` | Delete or deprovision a memory store | ![Development](https://img.shields.io/badge/-development-blue) |
 | `embeddings` | Embeddings operation such as [OpenAI Create embeddings API](https://platform.openai.com/docs/api-reference/embeddings/create) | ![Development](https://img.shields.io/badge/-development-blue) |

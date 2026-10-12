@@ -432,6 +432,7 @@ what `gen_ai.workflow.name` means in the context of that framework.
 | `create_agent` | Create GenAI agent | ![Development](https://img.shields.io/badge/-development-blue) |
 | `create_memory` | Create new memory records | ![Development](https://img.shields.io/badge/-development-blue) |
 | `create_memory_store` | Create or initialize a memory store | ![Development](https://img.shields.io/badge/-development-blue) |
+| `decision` | Decision-model inference that answers typed questions about input, such as predicates, choices, or scores. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `delete_memory` | Delete memory records | ![Development](https://img.shields.io/badge/-development-blue) |
 | `delete_memory_store` | Delete or deprovision a memory store | ![Development](https://img.shields.io/badge/-development-blue) |
 | `embeddings` | Embeddings operation such as [OpenAI Create embeddings API](https://platform.openai.com/docs/api-reference/embeddings/create) | ![Development](https://img.shields.io/badge/-development-blue) |
