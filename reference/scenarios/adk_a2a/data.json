@@ -24,6 +24,15 @@
       "gen_ai.provider.name",
       "gen_ai.request.model",
       "gen_ai.response.model"
+    ],
+    "gen_ai.invoke_agent.duration": [
+      "gen_ai.agent.name"
+    ],
+    "gen_ai.invoke_agent.inference_calls": [
+      "gen_ai.agent.name"
+    ],
+    "gen_ai.invoke_agent.tool_calls": [
+      "gen_ai.agent.name"
     ]
   },
   "findings": [
@@ -80,10 +89,6 @@
     {
       "id": "missing_event",
       "message": "Event 'gen_ai.user.message' does not exist in the registry."
-    },
-    {
-      "id": "missing_metric",
-      "message": "Metric does not exist in the registry."
     },
     {
       "id": "span_status_ok_set_by_instrumentation",
@@ -261,6 +266,22 @@
       "context": {
         "missing_attribute": "gen_ai.usage.output_tokens",
         "operation": "invoke_agent"
+      }
+    },
+    {
+      "id": "unit_mismatch",
+      "message": "Unit should be '{inference_call}', but found '1'.",
+      "context": {
+        "expected": "{inference_call}",
+        "unit": "1"
+      }
+    },
+    {
+      "id": "unit_mismatch",
+      "message": "Unit should be '{tool_call}', but found '1'.",
+      "context": {
+        "expected": "{tool_call}",
+        "unit": "1"
       }
     }
   ],
