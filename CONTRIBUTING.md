@@ -65,6 +65,17 @@ This validates the model against shared OpenTelemetry policies covering
 naming conventions, attribute type rules, stability requirements, and
 backwards compatibility.
 
+Run the Python reference-model and JSON-schema regressions (requires
+[uv](https://docs.astral.sh/uv/)):
+
+```bash
+make test-json-schemas
+```
+
+This discovers `test_*.py` under `docs/gen-ai/non-normative`, using the locked
+generator dependencies and a pinned JSON Schema validator. CI runs the same
+target.
+
 Run the link checks (optional, requires [mise](https://mise.jdx.dev/)):
 
 ```bash
