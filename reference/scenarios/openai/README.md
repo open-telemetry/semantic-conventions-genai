@@ -10,7 +10,18 @@ Assistants API is covered by the `openai-assistants` scenario).
 | Operation | Should be instrumented here | Status |
 | --- | --- | --- |
 | inference (`chat`) | Yes — calls the model directly | ✅ Implemented |
+| inference (`decision`) | Yes — `client.decisions.create` calls the model directly | ✅ Implemented |
 | embeddings | Yes — calls the model directly | ✅ Implemented |
 | execute_tool | No — the base client returns tool calls but doesn't execute them; the tool runs in app code | ➖ Not instrumentable |
 | retrieval | Yes — Vector Stores search / `file_search` tool | ❌ Not implemented |
 | memory | Yes — Conversations API / stored responses | ❌ Not implemented |
+
+`decisions.py` exercises the real OpenAI SDK against an in-process HTTP mock
+transport using the documented Decisions response shape. It covers routing,
+bounded scoring, mixed answers with an explicit refusal, and a request error.
+These fixtures test SDK capturability, not model accuracy or live service behavior.
+
+The scenario records one inference span and duration per request, and usage from
+the returned SDK object. It checks selected choices and scores without exporting
+them: per-question result conventions are deferred. No prompt, choices, rubric,
+probabilities, or invented finish reasons are recorded on telemetry.

@@ -655,6 +655,10 @@ attributes:
           value: "text_completion"
           brief: 'Text completions operation such as [OpenAI Completions API (Legacy)](https://platform.openai.com/docs/api-reference/completions)'
           stability: development
+        - id: decision
+          value: "decision"
+          brief: 'Decision-model inference that answers typed questions about input, such as predicates, choices, or scores.'
+          stability: development
         - id: embeddings
           value: "embeddings"
           brief: 'Embeddings operation such as [OpenAI Create embeddings API](https://platform.openai.com/docs/api-reference/embeddings/create)'
