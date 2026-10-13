@@ -1,9 +1,14 @@
 """Reference implementation for OpenAI."""
 
+import argparse
 import json
 import os
+from time import time_ns
 
-from opentelemetry.trace import SpanKind
+import httpx2
+from openai import BadRequestError, OpenAI
+from opentelemetry._logs import SeverityNumber
+from opentelemetry.trace import SpanKind, StatusCode
 from reference_shared import (
     flush_and_shutdown,
     mock_server_host_port,
@@ -12,8 +17,6 @@ from reference_shared import (
     reference_tracer,
     setup_otel,
 )
-
-MOCK_BASE_URL = os.environ["MOCK_LLM_URL"] + "/v1"
 
 _reference_tracer = reference_tracer()
 _reference_meter = reference_meter()
@@ -1155,7 +1158,270 @@ def run_fetch_response_reference(client):
     _emit_fetch_response_span(client, "resp-failed-001")
 
 
+def decision_request(client, *, model, input, questions, capture_results=False, results_on_event=False):
+    """Instrument one Decisions SDK call, including all its returned answers."""
+    attributes = {
+        "gen_ai.operation.name": "decision",
+        "gen_ai.provider.name": "openai",
+        "gen_ai.request.model": model,
+        "server.address": client.base_url.host,
+        "server.port": client.base_url.port or (443 if client.base_url.scheme == "https" else 80),
+    }
+    meter = reference_meter()
+    duration = meter.create_histogram("gen_ai.client.inference.duration", unit="s")
+    started = time_ns()
+    with reference_tracer().start_as_current_span(
+        f"decision {model}",
+        kind=SpanKind.CLIENT,
+        attributes=attributes,
+        start_time=started,
+        end_on_exit=False,
+        record_exception=False,
+        set_status_on_exception=False,
+    ) as span:
+        try:
+            response = client.decisions.create(model=model, input=input, questions=questions)
+            span.set_attribute("gen_ai.response.model", response.model)
+            attributes["gen_ai.response.model"] = response.model
+            results = []
+            if capture_results:
+                # OpenAI guarantees answer order matches request question order.
+                for index, answer in enumerate(response.answers):
+                    result = {"question_index": index, "type": answer.type}
+                    if answer.name is not None:
+                        result["question_name"] = answer.name
+                    if answer.type == "predicate":
+                        result["probability"] = answer.probability
+                    elif answer.type == "choice":
+                        result["value"] = answer.choice
+                        for option in answer.probabilities:
+                            if type(option.value) is type(answer.choice) and option.value == answer.choice:
+                                result["probability"] = option.probability
+                                break
+                    elif answer.type == "score":
+                        # The API's score is an expected index into these request levels.
+                        levels = questions[index].get("levels", [])
+                        if len(levels) < 2 or any(not isinstance(level.get("label"), str) for level in levels):
+                            continue
+                        result["value"] = answer.score
+                        result["levels"] = [level["label"] for level in levels]
+                    elif answer.type != "refusal":
+                        # Unknown future answers are not abstentions or refusals.
+                        continue
+                    results.append(result)
+                if results and not results_on_event:
+                    span.set_attribute("gen_ai.decision.results", json.dumps(results))
+            # Usage belongs to the request, including when some questions are refused.
+            usage = {}
+            for direction, tokens in (
+                ("input", response.usage.input_tokens),
+                ("output", response.usage.output_tokens),
+            ):
+                if tokens is not None:
+                    span.set_attribute(f"gen_ai.usage.{direction}_tokens", tokens)
+                    usage[f"gen_ai.usage.{direction}_tokens"] = tokens
+                    meter.create_histogram(
+                        f"gen_ai.client.inference.operation.{direction}_tokens", unit="{token}"
+                    ).record(tokens, attributes)
+                    meter.create_counter(f"gen_ai.client.inference.usage.{direction}_tokens", unit="{token}").add(
+                        tokens, {**attributes, "gen_ai.token.modality": "unknown"}
+                    )
+            if results and results_on_event:
+                reference_event_logger().emit(
+                    event_name="gen_ai.client.inference.operation.details",
+                    severity_number=SeverityNumber.DEBUG,
+                    attributes={**attributes, **usage, "gen_ai.decision.results": results},
+                )
+            return response
+        except Exception as error:
+            error_type = type(error).__qualname__
+            span.set_attribute("error.type", error_type)
+            span.set_status(StatusCode.ERROR)
+            attributes["error.type"] = error_type
+            reference_event_logger().emit(
+                event_name="gen_ai.client.operation.exception",
+                severity_number=SeverityNumber.WARN,
+                attributes={**attributes, "exception.type": error_type},
+            )
+            raise
+        finally:
+            finished = time_ns()
+            span.end(end_time=finished)
+            duration.record((finished - started) / 1_000_000_000, attributes)
+
+
+def decision_cases():
+    """Synthetic predictions paired with SDK requests; these do not test model quality.
+
+    API contract: https://developers.openai.com/api/reference/resources/decisions/methods/create
+    """
+    routing_question = {
+        "type": "choice",
+        "name": "department",
+        "instructions": "Which team should handle this request?",
+        "choices": [{"value": "billing"}, {"value": "technical"}, {"value": "sales"}],
+    }
+    routing_answer = {
+        "type": "choice",
+        "name": "department",
+        "choice": "technical",
+        "probabilities": [
+            {"value": "billing", "probability": 0.2},
+            {"value": "technical", "probability": 0.72},
+            {"value": "sales", "probability": 0.08},
+        ],
+        "confidence": 0.55,
+    }
+    yield (
+        "Checkout returns an error when I submit an order.",
+        [routing_question],
+        [routing_answer],
+    )
+    yield (
+        "Query: reset a password. Passage: choose Forgot password to reset it.",
+        [
+            {
+                "type": "score",
+                "name": "relevance",
+                "instructions": "How useful is the passage for answering the query?",
+                "levels": [{"label": "irrelevant"}, {"label": "relevant"}],
+            }
+        ],
+        [
+            {
+                "type": "score",
+                "name": "relevance",
+                "score": 0.84,
+                "confidence": 0.6,
+                "probabilities": [
+                    {"value": 0, "label": "irrelevant", "probability": 0.16},
+                    {"value": 1, "label": "relevant", "probability": 0.84},
+                ],
+            }
+        ],
+    )
+    yield (
+        "Please escalate this request.",
+        [
+            {"type": "predicate", "instructions": "Does the user request escalation?"},
+            {
+                "type": "choice",
+                "name": "escalate",
+                "instructions": "Should the request be escalated?",
+                "choices": [{"value": True}, {"value": "true"}],
+            },
+        ],
+        [
+            {"type": "predicate", "probability": 0.87},
+            {
+                "type": "choice",
+                "name": "escalate",
+                "choice": True,
+                "probabilities": [
+                    {"value": "true", "probability": 0.13},
+                    {"value": True, "probability": 0.87},
+                ],
+                "confidence": 0.74,
+            },
+        ],
+    )
+    yield (
+        "Synthetic input exercising partial refusal, without inferring its cause.",
+        [
+            routing_question,
+            {"type": "predicate", "name": "urgent", "instructions": "Is the request urgent?"},
+        ],
+        [routing_answer, {"type": "refusal", "name": "urgent"}],
+    )
+
+
+def mock_decision_client(expected_input, expected_questions, answers, *, status_code=200):
+    """Intercept HTTP after real SDK serialization; parse responses through the SDK."""
+
+    def handle(request):
+        assert request.method == "POST"
+        assert request.url.path == "/v1/decisions"
+        body = json.loads(request.content)
+        assert body["input"] == expected_input
+        assert body["questions"] == expected_questions
+        assert body["model"] == "gpt-6-luna"
+        if status_code != 200:
+            return httpx2.Response(
+                status_code,
+                json={"error": {"message": "Invalid request", "type": "invalid_request_error", "code": None}},
+            )
+        return httpx2.Response(
+            200,
+            json={
+                "model": "gpt-6-luna",
+                "answers": answers,
+                "usage": {
+                    "input_tokens": 42,
+                    "input_tokens_details": {"cached_tokens": 0, "cache_write_tokens": 0},
+                    "output_tokens": 0,
+                    "output_tokens_details": {"reasoning_tokens": 0},
+                    "total_tokens": 42,
+                },
+            },
+        )
+
+    return OpenAI(
+        api_key="mock-key",
+        base_url="https://api.openai.com/v1",
+        http_client=httpx2.Client(transport=httpx2.MockTransport(handle)),
+        max_retries=0,
+    )
+
+
+def run_decisions_reference():
+    providers = setup_otel()
+    try:
+        for input_text, questions, answers in decision_cases():
+            with mock_decision_client(input_text, questions, answers) as client:
+                response = decision_request(
+                    client, model="gpt-6-luna", input=input_text, questions=questions, capture_results=True
+                )
+                assert len(response.answers) == len(questions)
+                for actual, expected in zip(response.answers, answers, strict=True):
+                    assert actual.type == expected["type"]
+                    if actual.type == "choice":
+                        assert actual.choice == expected["choice"]
+                    elif actual.type == "score":
+                        assert actual.score == expected["score"]
+        input_text, questions, answers = list(decision_cases())[-1]
+        with mock_decision_client(input_text, questions, answers) as client:
+            decision_request(
+                client,
+                model="gpt-6-luna",
+                input=input_text,
+                questions=questions,
+                capture_results=True,
+                results_on_event=True,
+            )
+        input_text, questions, answers = next(decision_cases())
+        with mock_decision_client(input_text, questions, answers, status_code=400) as client:
+            try:
+                decision_request(
+                    client, model="gpt-6-luna", input=input_text, questions=questions, capture_results=True
+                )
+            except BadRequestError:
+                print("Expected SDK request error recorded.")
+            else:
+                raise AssertionError("The error scenario unexpectedly succeeded")
+    finally:
+        flush_and_shutdown(*providers)
+
+
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--scenario", choices=("reference", "decisions"), default="reference")
+    args = parser.parse_args()
+    if args.scenario == "decisions":
+        run_decisions_reference()
+        return
+
+    global MOCK_BASE_URL
+    MOCK_BASE_URL = os.environ["MOCK_LLM_URL"] + "/v1"
     print("=== Reference Implementation: OpenAI Reference Implementation ===")
 
     tp, lp, mp = setup_otel()

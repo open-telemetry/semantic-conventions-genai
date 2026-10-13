@@ -7,9 +7,10 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-import decisions
+import scenario as decisions
 from jsonschema import Draft202012Validator, ValidationError
 from openai import BadRequestError
+from opentelemetry._logs import SeverityNumber
 from opentelemetry.sdk._logs import LoggerProvider
 from opentelemetry.sdk._logs.export import InMemoryLogRecordExporter, SimpleLogRecordProcessor
 from opentelemetry.sdk.metrics import MeterProvider
@@ -63,8 +64,8 @@ class DecisionTelemetryTest(unittest.TestCase):
         }
 
     def test_multiple_answers_and_refusal_do_not_multiply_usage(self):
-        input_text, questions, answers = list(decisions.cases())[-1]
-        with decisions.mock_client(input_text, questions, answers) as client:
+        input_text, questions, answers = list(decisions.decision_cases())[-1]
+        with decisions.mock_decision_client(input_text, questions, answers) as client:
             result = decisions.decision_request(client, model="gpt-6-luna", input=input_text, questions=questions)
         self.assertEqual([answer.type for answer in result.answers], ["choice", "refusal"])
         spans = self.exporter.get_finished_spans()
@@ -93,14 +94,12 @@ class DecisionTelemetryTest(unittest.TestCase):
         )
 
     def test_request_error_is_rethrown_without_inventing_usage(self):
-        input_text, questions, answers = next(decisions.cases())
+        input_text, questions, answers = next(decisions.decision_cases())
         with (
-            decisions.mock_client(input_text, questions, answers, status_code=400) as client,
+            decisions.mock_decision_client(input_text, questions, answers, status_code=400) as client,
             self.assertRaises(BadRequestError),
         ):
-            decisions.decision_request(
-                client, model="gpt-6-luna", input=input_text, questions=questions, capture_results=True
-            )
+            decisions.decision_request(client, model="gpt-6-luna", input=input_text, questions=questions)
         (span,) = self.exporter.get_finished_spans()
         self.assertEqual(span.status.status_code, StatusCode.ERROR)
         self.assertEqual(span.attributes["error.type"], "BadRequestError")
@@ -109,10 +108,20 @@ class DecisionTelemetryTest(unittest.TestCase):
         points = self.points()
         self.assertEqual(set(points), {"gen_ai.client.inference.duration"})
         self.assertEqual(points["gen_ai.client.inference.duration"][0].attributes["error.type"], "BadRequestError")
+        (record,) = self.log_exporter.get_finished_logs()
+        event = record.log_record
+        self.assertEqual(event.event_name, "gen_ai.client.operation.exception")
+        self.assertEqual(event.severity_number, SeverityNumber.WARN)
+        self.assertEqual(event.trace_id, span.context.trace_id)
+        self.assertEqual(event.span_id, span.context.span_id)
+        self.assertEqual(event.attributes["exception.type"], "BadRequestError")
+        self.assertEqual(event.attributes["gen_ai.operation.name"], "decision")
+        self.assertNotIn("gen_ai.decision.results", event.attributes)
+        self.assertFalse(any(key.startswith("gen_ai.usage.") for key in event.attributes))
 
     def test_result_variants_are_exported_with_question_correlation(self):
-        for input_text, questions, answers in decisions.cases():
-            with decisions.mock_client(input_text, questions, answers) as client:
+        for input_text, questions, answers in decisions.decision_cases():
+            with decisions.mock_decision_client(input_text, questions, answers) as client:
                 decisions.decision_request(
                     client, model="gpt-6-luna", input=input_text, questions=questions, capture_results=True
                 )
@@ -147,8 +156,8 @@ class DecisionTelemetryTest(unittest.TestCase):
         self.assertNotIn("probabilities", json.dumps(results))
 
     def test_event_results_are_structured_and_correlated_to_inference(self):
-        input_text, questions, answers = list(decisions.cases())[-1]
-        with decisions.mock_client(input_text, questions, answers) as client:
+        input_text, questions, answers = list(decisions.decision_cases())[-1]
+        with decisions.mock_decision_client(input_text, questions, answers) as client:
             decisions.decision_request(
                 client,
                 model="gpt-6-luna",
@@ -169,6 +178,11 @@ class DecisionTelemetryTest(unittest.TestCase):
         content_models.DecisionResults.model_validate(event_results)
         RESULT_VALIDATOR.validate(event_results)
         self.assertEqual(event.attributes["gen_ai.decision.results"][1]["type"], "refusal")
+        self.assertEqual(event.attributes["gen_ai.usage.input_tokens"], 42)
+        self.assertEqual(event.attributes["gen_ai.usage.output_tokens"], 0)
+        for metric in self.points().values():
+            for point in metric:
+                self.assertFalse(any(key.startswith("gen_ai.usage.") for key in point.attributes))
 
     def test_schema_rejects_ambiguous_or_invalid_results(self):
         invalid = [
@@ -200,9 +214,9 @@ class DecisionTelemetryTest(unittest.TestCase):
             )
 
     def test_unknown_answers_are_omitted_without_renumbering(self):
-        input_text, questions, answers = list(decisions.cases())[-1]
+        input_text, questions, answers = list(decisions.decision_cases())[-1]
         answers[0] = {"type": "future_answer", "name": "department"}
-        with decisions.mock_client(input_text, questions, answers) as client:
+        with decisions.mock_decision_client(input_text, questions, answers) as client:
             decisions.decision_request(
                 client, model="gpt-6-luna", input=input_text, questions=questions, capture_results=True
             )
@@ -213,7 +227,7 @@ class DecisionTelemetryTest(unittest.TestCase):
         )
 
     def test_score_preserves_larger_scale_and_is_omitted_without_labels(self):
-        input_text, questions, answers = list(decisions.cases())[1]
+        input_text, questions, answers = list(decisions.decision_cases())[1]
         questions[0]["levels"] = [{"label": label} for label in ["irrelevant", "partial", "relevant"]]
         answers[0]["score"] = 1.68
         answers[0]["probabilities"] = [
@@ -221,7 +235,7 @@ class DecisionTelemetryTest(unittest.TestCase):
             {"value": 1, "label": "partial", "probability": 0},
             {"value": 2, "label": "relevant", "probability": 0.84},
         ]
-        with decisions.mock_client(input_text, questions, answers) as client:
+        with decisions.mock_decision_client(input_text, questions, answers) as client:
             decisions.decision_request(
                 client, model="gpt-6-luna", input=input_text, questions=questions, capture_results=True
             )
@@ -233,15 +247,15 @@ class DecisionTelemetryTest(unittest.TestCase):
         # Exercise defensive omission when a request level cannot be captured.
         # This malformed fixture is not an example of an accepted provider request.
         questions[0]["levels"][1] = {}
-        with decisions.mock_client(input_text, questions, answers) as client:
+        with decisions.mock_decision_client(input_text, questions, answers) as client:
             decisions.decision_request(
                 client, model="gpt-6-luna", input=input_text, questions=questions, capture_results=True
             )
         self.assertNotIn("gen_ai.decision.results", self.exporter.get_finished_spans()[1].attributes)
 
     def test_missing_answers_do_not_create_abstention(self):
-        input_text, questions, _ = next(decisions.cases())
-        with decisions.mock_client(input_text, questions, []) as client:
+        input_text, questions, _ = next(decisions.decision_cases())
+        with decisions.mock_decision_client(input_text, questions, []) as client:
             decisions.decision_request(
                 client, model="gpt-6-luna", input=input_text, questions=questions, capture_results=True
             )
