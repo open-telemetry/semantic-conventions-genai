@@ -236,7 +236,8 @@ requests: identical labels do not prove identical instructions or rubric version
 ## Reference implementation and provider mappings
 
 The runnable [OpenAI decision scenario](../../../reference/scenarios/openai/decisions.py)
-uses SDK 3.26.0, the first release with standalone Decisions support. Its HTTP
+uses SDK 3.29.0, retaining the repository's dependency update on main. Standalone
+Decisions support first appeared in SDK 3.26.0. Its HTTP
 transport asserts the serialized request, then returns synthetic predictions in
 the documented response schema. Instrumentation reads the resulting SDK objects.
 Unit tests inspect exported results, trace-correlated structured events, privacy
@@ -349,8 +350,8 @@ The operation value extends inference and existing metric dimensions. One new
 structured attribute and JSON schema carry results on inference spans and detail
 events. No span type, event type, or metric is added. Existing generation schemas
 are unchanged; the new result schema does not inherit their generic-part fallback.
-The OpenAI scenario dependency is upgraded from 3.22.0 to 3.26.0 for Decisions
-support. A Towncrier enhancement fragment records the consumer-visible addition.
+The OpenAI scenario retains main's SDK 3.29.0, which includes Decisions support.
+A Towncrier enhancement fragment records the consumer-visible addition.
 
 The workflow in [CONTRIBUTING.md](../../../CONTRIBUTING.md) and
 [Makefile](../../../Makefile) uses `make generate-all` and `make check-policies`.
