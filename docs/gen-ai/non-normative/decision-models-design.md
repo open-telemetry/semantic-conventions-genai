@@ -235,7 +235,7 @@ requests: identical labels do not prove identical instructions or rubric version
 
 ## Reference implementation and provider mappings
 
-The runnable [OpenAI decision scenario](../../../reference/scenarios/openai/decisions.py)
+The runnable [OpenAI decision scenario](../../../reference/scenarios/openai/scenario.py)
 uses SDK 3.29.0, retaining the repository's dependency update on main. Standalone
 Decisions support first appeared in SDK 3.26.0. Its HTTP
 transport asserts the serialized request, then returns synthetic predictions in

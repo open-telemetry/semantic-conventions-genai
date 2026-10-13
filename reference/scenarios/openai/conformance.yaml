@@ -10,7 +10,7 @@ env:
 
 scenarios:
   decisions:
-    run: uv run --frozen --python 3.12 --project . python decisions.py
+    run: uv run --frozen --python 3.12 --project . python scenario.py --scenario decisions
     spans:
       - match:
           attributes:

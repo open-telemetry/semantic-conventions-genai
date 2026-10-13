@@ -85,6 +85,9 @@
       "gen_ai.usage.reasoning.output_tokens",
       "server.address",
       "server.port"
+    ],
+    "gen_ai.client.operation.exception": [
+      "exception.type"
     ]
   },
   "metrics": {
