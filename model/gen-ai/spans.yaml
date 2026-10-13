@@ -196,6 +196,8 @@ spans:
       - ref_group: attributes.gen_ai.usage.breakdown
       - ref_group: attributes.gen_ai.content
       - ref_group: attributes.gen_ai.error
+      - ref: gen_ai.decision.results
+        requirement_level: opt_in
       - ref: gen_ai.request.max_tokens
         requirement_level: recommended
       - ref: gen_ai.request.choice.count

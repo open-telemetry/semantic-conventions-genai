@@ -1,0 +1,225 @@
+{
+    "$defs": {
+        "ChoiceDecisionResult": {
+            "additionalProperties": false,
+            "properties": {
+                "question_index": {
+                    "description": "Zero-based position of the question in the original request.",
+                    "minimum": 0,
+                    "title": "Question Index",
+                    "type": "integer"
+                },
+                "question_name": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Question name supplied to or returned by the API.",
+                    "title": "Question Name"
+                },
+                "type": {
+                    "const": "choice",
+                    "title": "Type",
+                    "type": "string"
+                },
+                "value": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "boolean"
+                        }
+                    ],
+                    "description": "Selected option, preserving its JSON type.",
+                    "title": "Value"
+                },
+                "probability": {
+                    "anyOf": [
+                        {
+                            "maximum": 1,
+                            "minimum": 0,
+                            "type": "number"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Provider-reported probability of the selected option, not confidence.",
+                    "title": "Probability"
+                }
+            },
+            "required": [
+                "question_index",
+                "type",
+                "value"
+            ],
+            "title": "ChoiceDecisionResult",
+            "type": "object"
+        },
+        "PredicateDecisionResult": {
+            "additionalProperties": false,
+            "properties": {
+                "question_index": {
+                    "description": "Zero-based position of the question in the original request.",
+                    "minimum": 0,
+                    "title": "Question Index",
+                    "type": "integer"
+                },
+                "question_name": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Question name supplied to or returned by the API.",
+                    "title": "Question Name"
+                },
+                "type": {
+                    "const": "predicate",
+                    "title": "Type",
+                    "type": "string"
+                },
+                "probability": {
+                    "description": "Provider-reported probability that the predicate is true.",
+                    "maximum": 1,
+                    "minimum": 0,
+                    "title": "Probability",
+                    "type": "number"
+                }
+            },
+            "required": [
+                "question_index",
+                "type",
+                "probability"
+            ],
+            "title": "PredicateDecisionResult",
+            "type": "object"
+        },
+        "RefusalDecisionResult": {
+            "additionalProperties": false,
+            "properties": {
+                "question_index": {
+                    "description": "Zero-based position of the question in the original request.",
+                    "minimum": 0,
+                    "title": "Question Index",
+                    "type": "integer"
+                },
+                "question_name": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Question name supplied to or returned by the API.",
+                    "title": "Question Name"
+                },
+                "type": {
+                    "const": "refusal",
+                    "title": "Type",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "question_index",
+                "type"
+            ],
+            "title": "RefusalDecisionResult",
+            "type": "object"
+        },
+        "ScoreDecisionResult": {
+            "additionalProperties": false,
+            "properties": {
+                "question_index": {
+                    "description": "Zero-based position of the question in the original request.",
+                    "minimum": 0,
+                    "title": "Question Index",
+                    "type": "integer"
+                },
+                "question_name": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Question name supplied to or returned by the API.",
+                    "title": "Question Name"
+                },
+                "type": {
+                    "const": "score",
+                    "title": "Type",
+                    "type": "string"
+                },
+                "value": {
+                    "description": "Provider-reported expected zero-based level index.",
+                    "minimum": 0,
+                    "title": "Value",
+                    "type": "number"
+                },
+                "levels": {
+                    "description": "Complete ordered level labels; value ranges from zero to len(levels)-1.",
+                    "items": {
+                        "type": "string"
+                    },
+                    "minItems": 2,
+                    "title": "Levels",
+                    "type": "array"
+                }
+            },
+            "required": [
+                "question_index",
+                "type",
+                "value",
+                "levels"
+            ],
+            "title": "ScoreDecisionResult",
+            "type": "object"
+        }
+    },
+    "description": "Captured decision answers; omitted answers do not change question indices.",
+    "items": {
+        "discriminator": {
+            "mapping": {
+                "choice": "#/$defs/ChoiceDecisionResult",
+                "predicate": "#/$defs/PredicateDecisionResult",
+                "refusal": "#/$defs/RefusalDecisionResult",
+                "score": "#/$defs/ScoreDecisionResult"
+            },
+            "propertyName": "type"
+        },
+        "oneOf": [
+            {
+                "$ref": "#/$defs/PredicateDecisionResult"
+            },
+            {
+                "$ref": "#/$defs/ChoiceDecisionResult"
+            },
+            {
+                "$ref": "#/$defs/ScoreDecisionResult"
+            },
+            {
+                "$ref": "#/$defs/RefusalDecisionResult"
+            }
+        ]
+    },
+    "title": "DecisionResults",
+    "type": "array"
+}
