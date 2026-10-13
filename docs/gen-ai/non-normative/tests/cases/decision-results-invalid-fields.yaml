@@ -1,0 +1,31 @@
+# yaml-language-server: $schema=../case.schema.json
+description: Reject invalid probabilities, untyped choices, missing scales, inferred abstention, and confidence
+schema: gen-ai-decision-results.json
+document: [
+  { "question_index": 0, "type": "predicate", "probability": 1.1 },
+  { "question_index": 1, "type": "choice", "value": 1 },
+  { "question_index": 2, "type": "score", "value": 0.84 },
+  { "question_index": -1, "type": "refusal" },
+  { "question_index": 4, "type": "refusal", "value": "abstain" },
+  { "question_index": 5, "type": "choice", "value": "technical", "confidence": 0.8 }
+]
+# Regenerate with `uv run pytest --update-snapshots`, do not edit by hand.
+errors:
+  - path: $[0].probability
+    keyword: maximum
+    message: 1.1 is greater than the maximum of 1
+  - path: $[1].value
+    keyword: anyOf
+    message: 1 is not valid under any of the given schemas
+  - path: $[2]
+    keyword: required
+    message: "'levels' is a required property"
+  - path: $[3].question_index
+    keyword: minimum
+    message: -1 is less than the minimum of 0
+  - path: $[4]
+    keyword: additionalProperties
+    message: Additional properties are not allowed ('value' was unexpected)
+  - path: $[5]
+    keyword: additionalProperties
+    message: Additional properties are not allowed ('confidence' was unexpected)
