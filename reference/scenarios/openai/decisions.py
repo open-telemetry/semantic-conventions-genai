@@ -9,11 +9,12 @@ from time import time_ns
 
 import httpx2
 from openai import BadRequestError, OpenAI
+from opentelemetry._logs import SeverityNumber
 from opentelemetry.trace import SpanKind, StatusCode
-from reference_shared import flush_and_shutdown, reference_meter, reference_tracer, setup_otel
+from reference_shared import flush_and_shutdown, reference_event_logger, reference_meter, reference_tracer, setup_otel
 
 
-def decision_request(client, *, model, input, questions):
+def decision_request(client, *, model, input, questions, capture_results=False, results_on_event=False):
     """Instrument one Decisions SDK call, including all its returned answers."""
     attributes = {
         "gen_ai.operation.name": "decision",
@@ -38,6 +39,41 @@ def decision_request(client, *, model, input, questions):
             response = client.decisions.create(model=model, input=input, questions=questions)
             span.set_attribute("gen_ai.response.model", response.model)
             attributes["gen_ai.response.model"] = response.model
+            if capture_results:
+                results = []
+                # OpenAI guarantees answer order matches request question order.
+                for index, answer in enumerate(response.answers):
+                    result = {"question_index": index, "type": answer.type}
+                    if answer.name is not None:
+                        result["question_name"] = answer.name
+                    if answer.type == "predicate":
+                        result["probability"] = answer.probability
+                    elif answer.type == "choice":
+                        result["value"] = answer.choice
+                        for option in answer.probabilities:
+                            if type(option.value) is type(answer.choice) and option.value == answer.choice:
+                                result["probability"] = option.probability
+                                break
+                    elif answer.type == "score":
+                        # The API's score is an expected index into these request levels.
+                        levels = questions[index].get("levels", [])
+                        if len(levels) < 2 or any(not isinstance(level.get("label"), str) for level in levels):
+                            continue
+                        result["value"] = answer.score
+                        result["levels"] = [level["label"] for level in levels]
+                    elif answer.type != "refusal":
+                        # Unknown future answers are not abstentions or refusals.
+                        continue
+                    results.append(result)
+                if results:
+                    if results_on_event:
+                        reference_event_logger().emit(
+                            event_name="gen_ai.client.inference.operation.details",
+                            severity_number=SeverityNumber.DEBUG,
+                            attributes={**attributes, "gen_ai.decision.results": results},
+                        )
+                    else:
+                        span.set_attribute("gen_ai.decision.results", json.dumps(results))
             # Usage belongs to the request, including when some questions are refused.
             for direction, tokens in (
                 ("input", response.usage.input_tokens),
@@ -112,6 +148,31 @@ def cases():
         ],
     )
     yield (
+        "Please escalate this request.",
+        [
+            {"type": "predicate", "instructions": "Does the user request escalation?"},
+            {
+                "type": "choice",
+                "name": "escalate",
+                "instructions": "Should the request be escalated?",
+                "choices": [{"value": True}, {"value": "true"}],
+            },
+        ],
+        [
+            {"type": "predicate", "probability": 0.87},
+            {
+                "type": "choice",
+                "name": "escalate",
+                "choice": True,
+                "probabilities": [
+                    {"value": "true", "probability": 0.13},
+                    {"value": True, "probability": 0.87},
+                ],
+                "confidence": 0.74,
+            },
+        ],
+    )
+    yield (
         "Synthetic input exercising partial refusal, without inferring its cause.",
         [
             routing_question,
@@ -164,7 +225,9 @@ def main():
     try:
         for input_text, questions, answers in cases():
             with mock_client(input_text, questions, answers) as client:
-                response = decision_request(client, model="gpt-6-luna", input=input_text, questions=questions)
+                response = decision_request(
+                    client, model="gpt-6-luna", input=input_text, questions=questions, capture_results=True
+                )
                 assert len(response.answers) == len(questions)
                 for actual, expected in zip(response.answers, answers, strict=True):
                     assert actual.type == expected["type"]
@@ -172,10 +235,22 @@ def main():
                         assert actual.choice == expected["choice"]
                     elif actual.type == "score":
                         assert actual.score == expected["score"]
+        input_text, questions, answers = list(cases())[-1]
+        with mock_client(input_text, questions, answers) as client:
+            decision_request(
+                client,
+                model="gpt-6-luna",
+                input=input_text,
+                questions=questions,
+                capture_results=True,
+                results_on_event=True,
+            )
         input_text, questions, answers = next(cases())
         with mock_client(input_text, questions, answers, status_code=400) as client:
             try:
-                decision_request(client, model="gpt-6-luna", input=input_text, questions=questions)
+                decision_request(
+                    client, model="gpt-6-luna", input=input_text, questions=questions, capture_results=True
+                )
             except BadRequestError:
                 print("Expected SDK request error recorded.")
             else:

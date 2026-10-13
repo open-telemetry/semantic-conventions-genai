@@ -2,17 +2,21 @@
 
 Design rationale for the first implementation. This document is non-normative.
 Provider documentation and SDK source were inspected on 2026-10-12.
+The result mapping was rechecked on 2026-10-13.
 Repository baseline: `6fd0d763a092db245a54104fc1124031eb3c51d2`.
 Related issue: [#580](https://github.com/open-telemetry/semantic-conventions-genai/issues/580).
 
 This changeset adds `decision` to `gen_ai.operation.name` and attaches its recording
 guidance to the existing inference span. Existing inference metrics carry the same
-operation value. The OpenAI reference uses a real SDK with HTTP mock responses to
-demonstrate routing, scoring, partial refusal, and errors.
+operation value. Opt-in `gen_ai.decision.results` captures correlated predicate,
+choice, score, and refusal results on that span or the existing inference-detail
+event. The OpenAI reference emits these results through real SDK calls with HTTP
+mock responses.
 
-This first slice supports filtering decision inference latency, usage, and failures.
-It does not standardize result content or claim to resolve all of #580. Results
-need a mapping for multiple answers, typed choices, and individual refusals.
+Result content is disabled by default. Generic confidence, inferred abstention,
+complete candidate lists, full distributions, and arbitrary rubric text remain
+excluded for the reasons below. This design covers the observed result contracts;
+it does not claim that all future decision APIs share them.
 
 ## Current architecture
 
@@ -39,10 +43,10 @@ usage rules. Missing usage is not zero, and zero output tokens is not an error.
 The [content guidance](../gen-ai-spans.md#capturing-instructions-inputs-and-outputs)
 makes input/output capture opt-in. `gen_ai.client.inference.operation.details`
 can carry the inference attributes independently from traces. Its current model
-uses event attributes; an arbitrary event body is not an established decision
-result schema.
+uses event attributes. The new result attribute is inherited from the inference
+span; it does not require a separate event or arbitrary event body.
 
-The [reference rules](../../../reference/CONTRIBUTING.md) require an actual library
+Repository [reference rules](../../../reference/CONTRIBUTING.md) require an actual library
 boundary and values readable from parameters the library interprets, returned
 objects, exceptions, or library state. Mock service responses may exercise a real
 SDK, but application-defined metadata and invented response fields cannot justify
@@ -65,14 +69,14 @@ not a requirement to create one span type per endpoint.
 | `error.type`, span status, exception event | SDK or request failure. | An uncertain or refused answer is not automatically a failed request. |
 | `gen_ai.request.choice.count` | Number of alternative completions requested. | Neither number of decision options nor number of questions. |
 | `gen_ai.output.type` | Requested content format. | A JSON HTTP response does not imply a requested JSON generation format; it does not identify predicate/choice/score. |
-| `gen_ai.output.messages` | Captured generated messages. | Custom parts are schema-valid, but multiple decision answers are not automatically alternative generations. A portable mapping is missing. |
+| `gen_ai.output.messages` | Captured generated messages. | Multiple decision answers are not alternative generations; the new structured result attribute avoids inventing message roles or generations. |
 | `gen_ai.response.finish_reasons` | Why each generation stopped. | No documented decision mapping; do not manufacture `stop`, `error`, or `content_filter` from answer types. |
 | `gen_ai.evaluation.result` and `gen_ai.evaluation.score.*` | Evaluation of GenAI output. | Not every routing or scoring request evaluates GenAI output. Do not relabel all decisions as evaluations. |
 | `gen_ai.prompt.name`, `gen_ai.prompt.version` | An observable named/versioned prompt template. | Arbitrary question names are not prompt or rubric versions. |
 | `gen_ai.response.id` | Provider response identifier. | Neither inspected direct decision response schema defines an ID; do not substitute a question name. |
 
 `GenericPart` in [models.py](models.py) permits custom content parts. This provides
-an extension point, not an agreed interpretation of a decision answer. Ordinary
+an extension point, but no question correlation or typed result contract. Ordinary
 chat or Responses calls that happen to return application-defined routing JSON
 can retain their existing operation and opt-in message capture. Instrumentation
 cannot infer a dedicated decision API merely by parsing that JSON.
@@ -172,59 +176,76 @@ Illustrative values below describe consumer needs, not captured provider respons
 | Option | Fit with the repository | Benefit | Problem | Recommendation |
 | --- | --- | --- | --- | --- |
 | A: existing inference operation plus decision attributes. | Reuses the inference signal. | Minimal operational change. | `chat`/`text_completion` describe different API contracts; classifying from prompt intent is not generically instrumentable. | Retain for actual chat/Responses APIs, not dedicated decision endpoints. |
-| B: `decision` operation within `gen_ai.client.inference`. | Same separation of span type and operation used today. | Portable filtering for latency, failures, and usage. | Needs explicit endpoint mapping and a separate answer representation. | Implemented for operation telemetry; result representation deferred. |
-| C: result event associated with inference. | Similar correlation mechanism to existing result/detail events. | Can preserve per-answer identity, content, and partial refusal. | New event/schema and correlation rules; risk of duplicating the inference detail event. | Evaluate against typed content parts before adding a new event. |
+| B: `decision` operation within `gen_ai.client.inference`. | Same separation of span type and operation used today. | Portable filtering for latency, failures, and usage. | Needs explicit endpoint mapping and an answer representation. | Implemented with a structured per-question result attribute. |
+| C: result event associated with inference. | Existing inference-detail event inherits inference attributes. | Can preserve per-answer identity, content, and partial refusal. | A dedicated new event would duplicate this surface. | Reuse the inference-detail event with the same structured results; no new event. |
 
 Options B and C are not mutually exclusive. One concerns the operation, the other
 its results. A separate decision span type, separate duration metric, or one span
 per answer has no demonstrated need in this first slice. One request containing
 ten answers still has one request duration and one usage total.
 
-## Operation and deferred candidate fields
+## Implemented semantic model and field rationale
 
-Only the `decision` operation value is implemented. All other names in this table
-are discussion placeholders. Per-answer fields need a result schema or signal first.
-For those fields, the requirement column describes a possible future treatment.
+`gen_ai.operation.name=decision` identifies dedicated typed-decision APIs. It remains
+a required, low-cardinality string on inference. The new `gen_ai.decision.results`
+attribute is an opt-in structured array, attached to the inference span and inherited
+by the existing inference-detail event. JSON Schema defines four disjoint result
+variants; there is no permissive generic-message fallback. It is never a metric
+dimension. JSON serialization on spans follows the existing content convention.
 
-| Candidate | Purpose / example | Type and possible requirement | Cardinality / privacy | Evidence and existing-field gap | Disposition |
-| --- | --- | --- | --- | --- | --- |
-| `gen_ai.operation.name=decision` | Separate decision inference traffic. | Existing string; required on inference. | One low-cardinality value; no content. | Dedicated endpoints across providers; existing generation values do not identify their contract. | Implemented on inference spans and metrics. |
-| `gen_ai.decision.type` | Interpret an answer, e.g. `predicate`. | String enum per answer; required within a future typed result. | Few values; little direct content risk. | OpenAI predicate maps conceptually to Jev Noul; no current typed decision result. | No scalar span field; settle normalization. |
-| `gen_ai.decision.outcome` | Inspect route, e.g. `technical`. | String or boolean per answer; opt-in. | Potentially unbounded and sensitive. | Both return `choice`; OpenAI preserves booleans. Messages capture content but lack a portable choice field. | Consider typed content, not a string-only scalar. |
-| Selected probability | Inspect ambiguity of selected choice, e.g. 0.72. | Double per answer; opt-in if reported. | Continuous values; can disclose sensitive inference. | Read distribution entry matching the selected typed value; no matching current field. | Candidate content field; never substitute confidence. |
-| Predicate probability | Inspect truth estimate, e.g. 0.87. | Double per answer; opt-in. | Continuous values and sensitive judgments. | OpenAI `probability`, Jev `noul`; not a selected-action probability. | Keep distinct from selected probability. |
-| `gen_ai.decision.score` | Compare judgments under one rubric, e.g. 1.1. | Double per answer; opt-in with scale context. | Continuous values; potentially sensitive assessment. | Both score APIs; evaluation score applies only in an evaluation context. | Defer until scale/result mapping is specified. |
-| `gen_ai.decision.confidence` | Explain certainty gating, e.g. 0.55. | Double; no portable requirement proposed. | Continuous values; sensitive assessment. | Returned by both; TypeSafe defines type-dependent statistics, equivalence to OpenAI unknown. | Reject generic comparable confidence. |
-| `gen_ai.decision.candidates` | Reconstruct allowed alternatives. | Structured list/map; opt-in only if a content schema is accepted. | Unbounded labels/descriptions, size, PII. | Both request choice sets; completion count is unrelated. | Reject as default span attributes. |
-| Candidate count | Diagnose size of selection task, e.g. 3. | Integer per choice question; optional if eventually justified. | Lower privacy/size risk; numeric range can still vary. | Length of SDK choices/criteria; `gen_ai.request.choice.count` is not this count. | Defer: insufficient added consumer value for first slice. |
-| Full probabilities | Diagnose alternatives and calibration. | Structured per-answer distribution; opt-in. | Candidate-dependent size and sensitive labels. | Both APIs return it; no existing portable schema. | Consider bounded/redacted content; never metric dimensions. |
-| `gen_ai.decision.abstained` | Explain fallback. | Boolean; no requirement proposed. | Low cardinality; policy meaning can be sensitive. | No native field established; caller thresholds are outside model SDK. | Reject inferred attribute. |
-| Refusal result | Distinguish an unanswered question. | Typed per-answer variant; only when explicitly returned. | Low type cardinality; question association may be sensitive. | OpenAI refusal; token finish reasons do not define this mapping. | Result-level candidate, not a call-wide error flag. |
-| `gen_ai.decision.rubric.*` | Reproduce score interpretation. | Text/structured levels opt-in; ID/version unspecified. | Rubric text and caller identifiers can be sensitive/unbounded. | Level definitions exist; native rubric IDs/versions unverified. | Keep text in controlled content; no ID/version attributes. |
-| Question identity | Join each answer to its question. | Index or name in future result; name opt-in. | Index bounded per request; names may contain user data. | OpenAI ordered answers/name, Jev map key. No current decision correlation field. | Resolve before choosing an event or message mapping. |
+The array is needed because scalar attributes lose per-question association and
+partial refusal. Existing generated-message conventions require one generation per
+message, which does not describe these answers. Evaluation results concern evaluation
+of GenAI output, while these APIs also classify arbitrary input.
 
-None of the candidate result values should become metric dimensions. Selected
-probability is smaller than a distribution but cannot support full multiclass
-calibration analysis. Candidate count is safer than candidate content but cannot
-explain which options were available. These are explicit information tradeoffs.
+| Field within each result | Purpose / example | Type and requirement | Cardinality / privacy | Runtime evidence and existing-field gap |
+| --- | --- | --- | --- | --- |
+| `question_index` | Associate an answer with its original request question, e.g. 1. | Nonnegative integer, required. | Request-local index; no prompt content. | OpenAI positional order; Jev request-map iteration order plus returned key. No existing decision correlation field. |
+| `question_name` | Identify the question to the consumer, e.g. `department`. | String, optional when available. | Arbitrary and potentially sensitive; captured only with results. | OpenAI answer name and Jev map key. Neither a response ID nor a rubric version. |
+| `type` | Interpret the answer: predicate, choice, score, refusal. | String discriminator, required. | Four values; refusal still discloses an inference result. | OpenAI answer variants; Jev `noul` maps to predicate. Generation finish reasons cannot represent partial refusal. |
+| `value` for choice | Inspect the recommended route, e.g. `technical`. | String or boolean, required for choice. | Unbounded values; sensitive classifications. | OpenAI typed `choice` and Jev string `choice`. Existing completion counts and output modality do not describe selected options. |
+| `probability` for choice | Inspect ambiguity of the selected option, e.g. 0.72. | Number in [0, 1], optional when reported. | Continuous and sensitive; content only. | Read the distribution entry for the exact typed selected value. Neither generic confidence nor a calibrated certainty claim. |
+| `probability` for predicate | Interpret truth estimate, e.g. 0.87. | Number in [0, 1], required for predicate. | Continuous and sensitive; content only. | OpenAI `probability`, Jev `noul`. Does not imply a thresholded yes/no action. |
+| `value` for score | Compare a judgment within its rubric, e.g. 1.68. | Number, required for score. | Continuous and potentially sensitive. | Both APIs report expected level index; evaluation score has a different scope. Preserve the original index scale. |
+| `levels` for score | Interpret score scale, e.g. `["irrelevant", "partial", "relevant"]`. | Ordered string array, required for score, at least two labels. | Variable-size, sensitive labels; omit the result if the complete scale cannot be captured. | OpenAI request labels; Jev string-valued legend sorted by contiguous zero-based indices. Min/max alone do not explain level meanings. |
 
-Scores should retain their original scale, level order, and interpretation in
-controlled content or externally managed configuration. Minimum and maximum alone
-do not identify a rubric. Avoid rescaling all scores to 0..1 or hashing arbitrary
-rubric text into a supposed provider identifier.
+Refusal has only correlation fields and its type. An API must explicitly return it;
+low confidence, a missing answer, and a request error do not imply refusal.
+The score variant covers expected zero-based level indices only. It does not assign
+meaning to arbitrary numeric outputs or providers' other scoring contracts.
+Consumers must use application-managed rubric context when comparing results across
+requests: identical labels do not prove identical instructions or rubric versions.
 
-## Reference implementation and result scenario plans
+### Alternatives intentionally excluded
+
+- Full candidate lists and distributions: they expose every label and grow with
+  candidate count. Selected value and selected probability support routing diagnosis
+  with less content, though they cannot support full multiclass calibration analysis.
+- Candidate count: smaller and safer than labels, but insufficient added consumer
+  value for this change. `gen_ai.request.choice.count` remains completion count.
+- Generic confidence: TypeSafe defines distribution statistics whose interpretation
+  varies by question type. Equivalence to OpenAI confidence is not established.
+- Inferred abstention: no native direct-API abstention variant was found. Application
+  thresholds and fallback actions remain outside the model operation.
+- Arbitrary rubric text and rubric IDs/versions: instructions and descriptions are
+  sensitive content; a portable native rubric identity/version is unverified. Score
+  labels preserve the numeric scale without claiming to reproduce the full rubric.
+- A new result event or one span per answer: existing inference-detail events carry
+  the same result attribute with trace correlation. Usage and latency stay per call.
+
+## Reference implementation and provider mappings
 
 The runnable [OpenAI decision scenario](../../../reference/scenarios/openai/decisions.py)
 uses SDK 3.26.0, the first release with standalone Decisions support. Its HTTP
 transport asserts the serialized request, then returns synthetic predictions in
 the documented response schema. Instrumentation reads the resulting SDK objects.
-Unit tests check refusal versus error, request-scoped usage, and content omission.
+Unit tests inspect exported results, trace-correlated structured events, privacy
+defaults, original score scales, typed choices, and refusal versus error.
 This proves SDK capturability, not live-service behavior or model accuracy.
 
-Below are sketches of the result fields a future result convention could use.
-The TypeSafe sketch has not been executed; OpenAI operation coverage is implemented
-in the linked scenario. Neither sketch establishes a portable result schema.
+Below are provider call shapes supporting the mapping. The TypeSafe sketch has not
+been executed; OpenAI operation and result capture are implemented in the linked
+scenario. TypeSafe mapping is based on its official API and SDK contracts.
 
 ### Routing: TypeSafe Python SDK
 
@@ -256,7 +277,7 @@ elapsed time belong to the enclosing inference span. Read usage from
 `response.answers["department"].choice`, and its probability from the matching
 `probabilities` entry. Confidence remains a separate provider value.
 
-The selected route needs the future opt-in result representation. Do not emit
+The selected route maps to a choice result's `value` and `probability`. Do not emit
 an application routing action or abstention merely because confidence is low.
 Use an SDK exception for a request-failure variant. No observed refusal variant
 is available to this plan. A real endpoint returning `technical` is possible,
@@ -287,46 +308,47 @@ def relevance_call(client: OpenAI):
 
 The [official Decisions resource](https://github.com/openai/openai-python/blob/main/src/openai/resources/decisions.py)
 defines this SDK boundary. The implemented scenario reads the result type before reading
-`score`; `refusal` is an alternative answer. For a score, retain its two ordered
-levels so a value between 0 and 1 remains interpretable. This is a weighted level
+`score`; `refusal` is an alternative answer. For a score, the emitted result retains its two ordered
+labels so a value between 0 and 1 remains interpretable. This is a weighted level
 index for this question, not a general probability that retrieval succeeded.
 
-Read returned model and usage at call scope. Test a separate multi-question request
-to prove that one refusal does not discard successful answers or duplicate usage.
+Returned model and usage stay at call scope. A separate multi-question test verifies
+that one refusal does not discard successful answers or duplicate usage.
 Do not populate `gen_ai.evaluation.*` solely because the question is named
 `relevance`: this call evaluates a retrieved passage, not necessarily GenAI output.
 
-### Acceptance checks before adding result conventions
+### Result validation
 
-1. Extend the pinned OpenAI coverage to TypeSafe and run both through real SDK
-   serialization and response parsing. Use provider-documented mock response
-   shapes or explicitly authorized live calls; never assert invented fields.
-2. Compare both providers' routing and score projections. Preserve boolean versus
-   string choices, mixed answer types, optional names, and original score scales.
-3. Exercise refusal, transport failure, missing usage, zero usage, and unknown
-   answer types where the SDK supports them. Do not turn missing data into a
-   result or a zero value.
-4. Verify one inference span and one duration/usage observation per logical call.
-   Content disabled should omit choices, rubrics, distributions, and question names.
-5. Choose the result signal/schema, then bind every new attribute to it. Update
-   scenario README status, conformance declarations, data, and reports together.
+The reference exercises all four schema variants through SDK serialization and
+response parsing. Tests verify explicit opt-in, boolean/string choice separation,
+scores above one on a three-level scale, omitted unknown answers without index
+renumbering, event trace correlation, and exclusion of results from metric labels.
+Missing answers and HTTP errors produce no fabricated result. Malformed-input
+defensive tests are labeled separately from valid provider contract examples.
+
+The generated JSON Schema enforces variant fields, scalar types, probability bounds,
+and scale presence. Its companion Python model additionally checks score bounds
+that depend on the number of levels and uniqueness of question indices. Those
+cross-field constraints cannot be expressed by this JSON Schema alone.
+Tests validate actual exported content against the generated JSON Schema and check
+it matches the Python source. This is necessary because the pinned conformance
+runner's content policy uses a fixed list of schemas that excludes this new one.
 
 ## Maintainer decisions
 
-1. Should dedicated typed-decision endpoints share `gen_ai.client.inference` with
-   a new `decision` operation, or is a different operation spelling preferred?
-2. Should each answer be a typed content part in the existing inference detail
-   surface, or an independently correlated result event? How does either mapping
-   preserve the one-generation/one-message rule?
-3. Can the first result slice cover choice and explicit refusal while retaining
-   string/boolean values, leaving score and confidence for later work?
-4. Is the implemented operation-only slice sufficient initial consumer value,
-   or should result mapping be settled before adopting the operation?
+1. Is one structured result attribute on inference spans and detail events the
+   preferred surface for typed decisions, given the generation-message invariant?
+2. Is the expected-index score contract sufficiently narrow, including omission
+   when a complete ordered string scale cannot be captured?
+3. Should cross-provider confidence or full distributions be considered separately
+   after a comparable interpretation and content-size controls are established?
 
 ## Validation and compatibility
 
-The new operation value extends the inference span and existing metric dimensions.
-No attributes, namespaces, span types, result schemas, or metrics are added.
+The operation value extends inference and existing metric dimensions. One new
+structured attribute and JSON schema carry results on inference spans and detail
+events. No span type, event type, or metric is added. Existing generation schemas
+are unchanged; the new result schema does not inherit their generic-part fallback.
 The OpenAI scenario dependency is upgraded from 3.22.0 to 3.26.0 for Decisions
 support. A Towncrier enhancement fragment records the consumer-visible addition.
 
@@ -344,30 +366,31 @@ violations by default; use `--strict` when assessing unresolved conformance gaps
 
 ## Suggested issue comment
 
-I compared the OpenAI Decisions API, TypeSafe Jev, and Cloudflare Clef. Their
-shared boundary appears to be one inference call with several typed questions,
-so I suggest exploring a `decision` operation under the existing inference span
-and reusing duration, usage, provider/model, and error conventions. A local first
-implementation adds that operation with an OpenAI SDK reference and telemetry tests.
+The local implementation adds a `decision` inference operation and one opt-in
+structured `gen_ai.decision.results` attribute on inference spans and existing
+detail events. Results retain question correlation, typed choices, selected
+probabilities, score scales, and explicit per-question refusals. OpenAI SDK
+reference scenarios emit all four variants, with tests for privacy defaults,
+partial refusal, usage accounting, and structured event correlation.
 
-Result modeling needs a separate decision: each answer needs correlation, choices
-can be typed, and OpenAI can refuse individual answers. I would keep confidence,
-full distributions, and rubric text out of default span attributes. Would the SIG
-prefer an operation-only first change, or a choice/refusal result slice using
-typed content parts versus a result event? Result attributes are deliberately
-deferred in the current implementation.
+Both OpenAI and TypeSafe contracts support these mappings. Generic confidence, full
+distributions, inferred abstention, and rubric identities remain excluded. Does
+the SIG prefer this structured result surface, and is the expected-index score
+contract appropriately scoped?
 
 ## Suggested PR title
 
-Add decision inference operation with OpenAI reference coverage
+Add decision inference and per-question results with OpenAI reference coverage
 
 ## Suggested PR description
 
 ### Description
 
 Add `decision` as an inference operation so dedicated decision APIs can be filtered
-in latency, usage, and failure telemetry. This is a first slice of #580; per-question
-result attributes remain deferred.
+in latency, usage, and failure telemetry. Add opt-in per-question predicate, choice,
+score, and refusal results on inference spans or existing detail events.
+Results preserve correlation, typed choices,
+selected probabilities, and ordered score scales.
 
 ### Motivation
 
@@ -375,15 +398,17 @@ Operators need to distinguish decision inference traffic and explain model routi
 recommendations. [OpenAI Decisions](https://developers.openai.com/api/docs/guides/decisions),
 [TypeSafe Jev](https://docs.typesafe.ai/api), and
 [Cloudflare Clef](https://developers.cloudflare.com/workers-ai/models/clef/) provide
-prior art for typed questions. Per-answer correlation and confidence semantics
-need a deliberate mapping before telemetry fields are standardized.
+prior art for typed questions. Per-answer correlation is addressed through typed
+results; generic confidence remains
+excluded because its cross-provider meaning is not established.
 
 ### Prototype
 
 The OpenAI reference exercises the real Decisions SDK through an HTTP mock for
 routing, scoring, partial refusal, and request errors. Tests verify that multiple
 answers do not multiply usage and that refusal does not become a request failure.
-The design note maps TypeSafe and Cloudflare prior art and explains deferred results.
+The design note maps TypeSafe and Cloudflare prior art and explains the result
+schema, privacy controls, and excluded confidence/distribution fields.
 
 ### Checklist
 

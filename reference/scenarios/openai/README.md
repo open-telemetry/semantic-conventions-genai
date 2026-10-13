@@ -18,10 +18,17 @@ Assistants API is covered by the `openai-assistants` scenario).
 
 `decisions.py` exercises the real OpenAI SDK against an in-process HTTP mock
 transport using the documented Decisions response shape. It covers routing,
-bounded scoring, mixed answers with an explicit refusal, and a request error.
+bounded scoring, predicates, typed choices, mixed answers with an explicit refusal,
+and a request error.
 These fixtures test SDK capturability, not model accuracy or live service behavior.
 
 The scenario records one inference span and duration per request, and usage from
-the returned SDK object. It checks selected choices and scores without exporting
-them: per-question result conventions are deferred. No prompt, choices, rubric,
-probabilities, or invented finish reasons are recorded on telemetry.
+the returned SDK object. With capture enabled, it emits `gen_ai.decision.results`
+as JSON on spans or structured data on an inference-detail event. Results preserve
+question indices, selected option types, selected probabilities, and score scales.
+Capture is disabled by default. It does not emit full candidate lists,
+distributions, generic confidence, prompt text, or invented finish reasons.
+
+Run `uv run python -m unittest discover -s . -p test_decisions.py -v` here to test
+emitted content, event correlation, privacy defaults, refusal/error handling,
+unknown answers, score scales, and the result schema.
