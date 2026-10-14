@@ -1,14 +1,6 @@
 {
   "spans": {
-    "gen_ai.embeddings.client": [
-      "gen_ai.operation.name",
-      "gen_ai.provider.name",
-      "gen_ai.request.model",
-      "gen_ai.usage.input_tokens",
-      "server.address",
-      "server.port"
-    ],
-    "gen_ai.inference.client": [
+    "gen_ai.client.inference": [
       "gen_ai.operation.name",
       "gen_ai.provider.name",
       "gen_ai.request.model",
@@ -17,6 +9,14 @@
       "gen_ai.tool.definitions",
       "gen_ai.usage.input_tokens",
       "gen_ai.usage.output_tokens",
+      "server.address",
+      "server.port"
+    ],
+    "gen_ai.embeddings.client": [
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "gen_ai.request.model",
+      "gen_ai.usage.input_tokens",
       "server.address",
       "server.port"
     ]
@@ -48,14 +48,6 @@
       "message": "Required attribute 'gen_ai.provider.name' is not present.",
       "context": {
         "attribute_key": "gen_ai.provider.name"
-      }
-    },
-    {
-      "id": "genai_expected_attribute_missing",
-      "message": "Span 'chat command-r-plus' (operation 'chat') is missing expected attribute 'gen_ai.response.model'",
-      "context": {
-        "missing_attribute": "gen_ai.response.model",
-        "operation": "chat"
       }
     }
   ],

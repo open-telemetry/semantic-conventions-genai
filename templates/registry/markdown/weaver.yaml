@@ -28,6 +28,22 @@ templates:
     application_mode: single
     file_name: README.md
 
+  # entity registry
+  - template: entity_readme.md.j2
+    filter: >
+      try (semconv_signal("entity"; {"v2":true, "exclude_deprecated":true})
+      | group_by(.root_namespace)
+      | map({ root_namespace: .[0].root_namespace, entities: . | sort_by(.type) })) catch empty
+    application_mode: single
+    file_name: "entities/README.md"
+  - template: entity_namespace.md.j2
+    filter: >
+      try (semconv_signal("entity"; {"v2":true, "exclude_deprecated":true})
+      | group_by(.root_namespace)
+      | map({ root_namespace: .[0].root_namespace, entities: . | sort_by(.type) })) catch empty
+    application_mode: each
+    file_name: "entities/{{ ctx.root_namespace | kebab_case }}.md"
+
 acronyms:
   - AI
   - AWS

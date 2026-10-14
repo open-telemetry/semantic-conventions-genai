@@ -41,6 +41,13 @@
   "metrics": {},
   "findings": [
     {
+      "id": "missing_attribute",
+      "message": "Attribute 'process.exit.code' does not exist in the registry.",
+      "context": {
+        "attribute_key": "process.exit.code"
+      }
+    },
+    {
       "id": "genai_expected_attribute_missing",
       "message": "Span 'invoke_agent weather-agent' (operation 'invoke_agent') is missing expected attribute 'gen_ai.response.finish_reasons'",
       "context": {

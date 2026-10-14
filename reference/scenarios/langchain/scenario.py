@@ -1,4 +1,4 @@
-"""Reference implementation for LangChain retrieval, planning, and workflow (LangGraph) runs."""
+"""Reference implementation for LangChain retrieval, planning, tool and workflow (LangGraph) runs."""
 
 import asyncio
 import json
@@ -211,6 +211,63 @@ def run_execute_tool_reference():
     print(f"    -> {tool_message.content[:60]}")
 
 
+def run_command_execution_reference():
+    """Shell command execution via LangChain's `ShellToolMiddleware."""
+    print("  [execute_tool] shell command execution via ShellToolMiddleware (reference implementation)")
+    from typing import Annotated, Literal
+
+    from langchain.agents import create_agent
+    from langchain.agents.middleware import ShellToolMiddleware
+    from langchain.agents.middleware.shell_tool import _ShellToolInput
+    from langchain_openai import ChatOpenAI
+    from pydantic import Field
+    from pydantic.json_schema import SkipJsonSchema
+
+    class _AllowedShellInput(_ShellToolInput):
+        """Narrowed declaration of the middleware's own shell tool input."""
+
+        command: Literal["ls -1a"] = Field(description="The shell command to execute.")
+        restart: Annotated[bool | None, SkipJsonSchema()] = None
+
+    middleware = ShellToolMiddleware()
+    shell_tool = middleware.tools[0]
+    shell_tool.args_schema = _AllowedShellInput
+    run_shell = shell_tool.func
+
+    def traced_shell(*, runtime, command=None, restart=False):
+        tool_span_attributes = {
+            "gen_ai.operation.name": "execute_tool",
+            "gen_ai.tool.name": shell_tool.name,
+            "gen_ai.tool.type": "function",
+        }
+        with _reference_tracer.start_as_current_span(
+            f"execute_tool {shell_tool.name}", attributes=tool_span_attributes
+        ) as tool_span:
+            tool_span.set_attribute("gen_ai.tool.description", shell_tool.description)
+            tool_span.set_attribute("gen_ai.tool.call.id", runtime.tool_call_id)
+            tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps({"command": command}))
+            tool_message = run_shell(runtime=runtime, command=command, restart=restart)
+            # `direct`: the middleware reports the status the command exited
+            # with on the artifact of the tool message it builds. It is None
+            # when the command timed out and was killed before exiting.
+            exit_code = tool_message.artifact.get("exit_code")
+            if exit_code is not None:
+                tool_span.set_attribute("process.exit.code", exit_code)
+            tool_span.set_attribute("gen_ai.tool.call.result", tool_message.content)
+            return tool_message
+
+    shell_tool.func = traced_shell
+
+    agent = create_agent(
+        model=ChatOpenAI(model=AGENT_MODEL, base_url=MOCK_BASE_URL, api_key="mock-key"),
+        middleware=[middleware],
+        system_prompt="You run shell commands to answer questions about the workspace.",
+        name="shell-agent",
+    )
+    result = agent.invoke({"messages": [{"role": "user", "content": "List the files in the workspace."}]})
+    print(f"    -> {result['messages'][-1].text()[:60]}")
+
+
 async def run_workflow_reference():
     """Scenario: graph execution via LangGraph wrapped in a workflow span."""
     print("  [workflow] LangGraph graph run (reference implementation)")
@@ -267,6 +324,7 @@ def main():
     run_retrieval_reference()
     run_plan_and_execute_reference()
     run_execute_tool_reference()
+    run_command_execution_reference()
     asyncio.run(run_workflow_reference())
 
     flush_and_shutdown(tp, lp, mp)

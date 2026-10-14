@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=../case.schema.json
+description: "`score` is a number and `id` is a string"
+schema: gen-ai-retrieval-documents.json
+document: [
+  { "id": 42, "score": "0.91" }
+]
+# Regenerate with `uv run pytest --update-snapshots`, do not edit by hand.
+errors:
+  - path: $[0].id
+    keyword: type
+    message: 42 is not of type 'string'
+  - path: $[0].score
+    keyword: type
+    message: "'0.91' is not of type 'number'"

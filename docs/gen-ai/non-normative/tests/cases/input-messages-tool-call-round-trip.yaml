@@ -1,0 +1,34 @@
+# yaml-language-server: $schema=../case.schema.json
+description: >
+  A tool call round trip: the assistant's `tool_call` request followed by the
+  `tool_call_response` message carrying the result
+schema: gen-ai-input-messages.json
+document: [
+  {
+    "role": "user",
+    "parts": [{ "type": "text", "content": "What's the weather in Paris?" }]
+  },
+  {
+    "role": "assistant",
+    "parts": [
+      {
+        "type": "tool_call",
+        "id": "call_VSPygqKTWdrhaFErNvMV18Yl",
+        "name": "get_weather",
+        "arguments": { "location": "Paris" }
+      }
+    ]
+  },
+  {
+    "role": "tool",
+    "parts": [
+      {
+        "type": "tool_call_response",
+        "id": "call_VSPygqKTWdrhaFErNvMV18Yl",
+        "response": "rainy, 57°F"
+      }
+    ]
+  }
+]
+# Regenerate with `uv run pytest --update-snapshots`, do not edit by hand.
+errors: []

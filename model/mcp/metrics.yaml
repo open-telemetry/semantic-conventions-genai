@@ -11,7 +11,15 @@ attribute_groups:
     visibility: internal
     attributes:
       - ref: mcp.protocol.version
-      - ref_group: mcp.network.protocol.attributes
+      - ref: network.protocol.name
+        requirement_level:
+          recommended: When applicable.
+        examples:
+          - "http"
+          - "websocket"
+      - ref: jsonrpc.protocol.version
+        requirement_level:
+          recommended: When it's not `2.0`.
       - ref: error.type
         requirement_level:
           conditionally_required: If and only if session ends with an error.

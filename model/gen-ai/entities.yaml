@@ -1,0 +1,26 @@
+file_format: definition/2
+entities:
+  - type: gen_ai.main_agent
+    stability: development
+    brief: >
+      A logical top-level Generative AI agent in the process.
+    note: >
+      This entity identifies an agent that exists as a persistent resource with a
+      stable identifier across invocations (for example, a scheduled or cron-driven
+      agent job, a hosted agent configured in a cloud provider console, or an agent
+      declared in an Agent-to-Agent (A2A) Agent Card). It SHOULD be used when it is
+      possible to associate an OpenTelemetry SDK instance with that main agent.
+
+      As noted on [gen_ai.main_agent.id](/docs/registry/attributes/gen-ai.md),
+      transient in-memory or process-local identifiers MUST NOT be used. If no stable
+      identifier is available, the main agent entity MUST NOT be emitted.
+
+      In-process instrumentations that record telemetry for `invoke_agent` operation 
+      should use `gen_ai.agent.*` attributes such as   
+      [gen_ai.agent.name](/docs/registry/attributes/gen-ai.md)) instead.
+    identity:
+      - ref: gen_ai.main_agent.id
+        requirement_level: required
+    description:
+      - ref: gen_ai.main_agent.name
+      - ref: gen_ai.main_agent.description
