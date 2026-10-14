@@ -188,6 +188,9 @@ spans:
       The `gen_ai.operation.name` SHOULD be `decision` for dedicated decision-model APIs
       that answer typed questions about input. A request containing multiple questions
       is one inference operation; its duration and usage SHOULD be recorded once for the request.
+
+      For decision operations, attributes unsupported by the decision API MUST NOT be populated.
+      Per-question instructions MUST NOT be recorded as `gen_ai.system_instructions`.
     stability: development
     attributes:
       - ref_group: attributes.gen_ai.common

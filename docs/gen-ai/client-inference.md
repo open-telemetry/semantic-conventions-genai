@@ -43,12 +43,24 @@ including their streaming and non-streaming variants.
 
 Dedicated decision-model APIs use `gen_ai.operation.name` of `decision`.
 For example, this applies to OpenAI `decisions.create` and TypeSafe `system_one`.
+This operation does not cover deterministic rule evaluation or downstream
+application routing based on a model's output.
 Calls to chat or content-generation APIs retain their existing operation name,
 including when an application uses their output to make a decision.
 
 Decision operations reuse inference duration, provider/model, usage, and error
-conventions. Record only values available from the API. Candidate options and
-questions are not candidate completions and MUST NOT be counted in
+conventions. Record `gen_ai.request.model` when the requested model is available;
+model selection is distinct from generation-specific parameters.
+On decision spans and inference-detail events, attributes unsupported by the
+decision API MUST NOT be populated, even when listed in the shared inference
+attribute table or when content capture is enabled. For OpenAI Decisions and
+TypeSafe Jev, this includes `gen_ai.system_instructions`, `gen_ai.tool.definitions`,
+and generation parameters such as `gen_ai.request.temperature`,
+`gen_ai.request.top_p`, `gen_ai.request.max_tokens`, and `gen_ai.request.choice.count`.
+Per-question `instructions` describe what to decide and MUST NOT be recorded as
+`gen_ai.system_instructions`.
+
+Candidate options and questions are not candidate completions and MUST NOT be counted in
 `gen_ai.request.choice.count`. An API's JSON response envelope does not imply
 that the client requested `gen_ai.output.type` of `json`.
 
@@ -97,6 +109,10 @@ dimensions. Complete candidate lists and probability distributions are not part
 of this schema. Do not substitute provider confidence, application-derived
 confidence, or a thresholded action for a returned probability.
 
+Recorded probabilities MUST NOT be interpreted as calibrated estimates of answer
+correctness. Application calibration, calibration metadata, and review-band
+decisions are outside the scope of these decision-model inference conventions.
+
 An application choosing to abstain is separate from the model call. An explicit
 refusal of an individual question does not by itself indicate request failure.
 Instrumentations SHOULD NOT synthesize generation finish reasons from answer
@@ -121,6 +137,9 @@ client or when the GenAI call happens over instrumented protocol such as HTTP.
 The `gen_ai.operation.name` SHOULD be `decision` for dedicated decision-model APIs
 that answer typed questions about input. A request containing multiple questions
 is one inference operation; its duration and usage SHOULD be recorded once for the request.
+
+For decision operations, attributes unsupported by the decision API MUST NOT be populated.
+Per-question instructions MUST NOT be recorded as `gen_ai.system_instructions`.
 
 **Span name** SHOULD be `{gen_ai.operation.name} {gen_ai.request.model}`.
 Semantic conventions for individual GenAI systems and frameworks MAY specify different span name format
