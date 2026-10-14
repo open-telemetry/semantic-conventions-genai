@@ -6,12 +6,58 @@ against a mock OpenAI server, with manual OTel spans.
 
 import json
 import os
+import time
 
-from reference_shared import flush_and_shutdown, reference_event_logger, reference_tracer, setup_otel
+from opentelemetry.trace import StatusCode
+from reference_shared import flush_and_shutdown, reference_event_logger, reference_meter, reference_tracer, setup_otel
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"] + "/v1"
 
 _reference_tracer = reference_tracer()
+_reference_meter = reference_meter()
+
+_embeddings_duration = _reference_meter.create_histogram(
+    "gen_ai.client.embeddings.duration",
+    unit="s",
+    description="GenAI client embeddings operation duration.",
+    explicit_bucket_boundaries_advisory=[
+        0.01,
+        0.02,
+        0.04,
+        0.08,
+        0.16,
+        0.32,
+        0.64,
+        1.28,
+        2.56,
+        5.12,
+        10.24,
+        20.48,
+        40.96,
+        81.92,
+    ],
+)
+_embeddings_input_tokens = _reference_meter.create_histogram(
+    "gen_ai.client.embeddings.operation.input_tokens",
+    unit="{token}",
+    description="The number of input tokens used per embeddings operation.",
+    explicit_bucket_boundaries_advisory=[
+        1,
+        4,
+        16,
+        64,
+        256,
+        1024,
+        4096,
+        16384,
+        65536,
+        262144,
+        1048576,
+        4194304,
+        16777216,
+        67108864,
+    ],
+)
 
 
 def _provider_name(model_name: str) -> str:
@@ -242,20 +288,34 @@ def run_embeddings():
         "gen_ai.provider.name": provider_name,
         "gen_ai.request.model": request_model,
     }
+    start_time = time.perf_counter()
+    metric_attributes = dict(span_attributes_4)
     with _reference_tracer.start_as_current_span(
         "embeddings text-embedding-3-small", attributes=span_attributes_4
     ) as span:
-        resp = litellm.embedding(
-            model=litellm_model,
-            input=["Hello, world!"],
-            api_base=MOCK_BASE_URL,
-            api_key="mock-key",
-        )
-        if resp.model:
-            span.set_attribute("gen_ai.response.model", resp.model)
-        if resp.usage:
-            span.set_attribute("gen_ai.usage.input_tokens", resp.usage.prompt_tokens)
-        print(f"    -> embedding dim: {len(resp.data[0]['embedding'])}")
+        try:
+            resp = litellm.embedding(
+                model=litellm_model,
+                input=["Hello, world!"],
+                api_base=MOCK_BASE_URL,
+                api_key="mock-key",
+            )
+            if resp.model:
+                span.set_attribute("gen_ai.response.model", resp.model)
+            if resp.usage:
+                span.set_attribute("gen_ai.usage.input_tokens", resp.usage.prompt_tokens)
+            if resp.model:
+                metric_attributes["gen_ai.response.model"] = resp.model
+            if resp.usage:
+                _embeddings_input_tokens.record(resp.usage.prompt_tokens, metric_attributes)
+            print(f"    -> embedding dim: {len(resp.data[0]['embedding'])}")
+        except Exception as e:
+            span.set_status(StatusCode.ERROR, str(e))
+            span.set_attribute("error.type", type(e).__qualname__)
+            metric_attributes["error.type"] = type(e).__qualname__
+            raise
+        finally:
+            _embeddings_duration.record(time.perf_counter() - start_time, metric_attributes)
 
 
 def main():

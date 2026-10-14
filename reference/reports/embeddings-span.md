@@ -1,6 +1,6 @@
 # Embeddings Span
 
-> **[Semantic Convention](../../docs/gen-ai/gen-ai-spans.md#embeddings)**
+> **[Semantic Convention](../../docs/gen-ai/client-embeddings.md#span-gen_aiclientembeddings)**
 
 ## Required
 

@@ -24,8 +24,8 @@ metrics:
     unit: "s"
     brief: 'GenAI operation duration.'
     note: >
-      This metric SHOULD NOT be reported for inference operations;
-      use `gen_ai.client.inference.duration` instead.
+      This metric SHOULD NOT be reported for inference or embeddings operations;
+      use `gen_ai.client.inference.duration` or `gen_ai.client.embeddings.duration` instead.
     stability: development
     annotations:
       code_generation:
@@ -55,6 +55,32 @@ metrics:
     attributes:
       - ref_group: metric_attributes.gen_ai
       - ref_group: attributes.gen_ai.error
+  - name: gen_ai.client.embeddings.duration
+    requirement_level: recommended
+    instrument: histogram
+    unit: "s"
+    brief: 'GenAI client embeddings operation duration.'
+    note: >
+      Represents the end-to-end duration of an embeddings operation,
+      measured from when the client issues the embeddings request to when the
+      response is fully received or the operation ends with an error or cancellation.
+
+      When this metric is reported alongside a `gen_ai.client.embeddings`
+      span, the metric value SHOULD be the same as the span duration.
+    stability: development
+    annotations:
+      code_generation:
+        metric_value_type: double
+    attributes:
+      - ref_group: metric_attributes.gen_ai
+      - ref_group: attributes.gen_ai.error
+      - ref: gen_ai.operation.name
+        examples: ["embeddings"]
+        note: SHOULD be `embeddings`.
+      - ref: gen_ai.request.model
+        examples: ["text-embedding-3-small", "gemini-embedding-001"]
+      - ref: gen_ai.response.model
+        examples: ["text-embedding-3-small"]
   - name: gen_ai.client.inference.time_to_first_chunk
     requirement_level: recommended
     instrument: histogram

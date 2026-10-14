@@ -1,5 +1,11 @@
 {
   "spans": {
+    "gen_ai.client.embeddings": [
+      "gen_ai.embeddings.dimension.count",
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "gen_ai.request.model"
+    ],
     "gen_ai.client.inference": [
       "gen_ai.operation.name",
       "gen_ai.provider.name",
@@ -29,12 +35,6 @@
       "gen_ai.provider.name",
       "gen_ai.request.model",
       "gen_ai.system_instructions"
-    ],
-    "gen_ai.embeddings.client": [
-      "gen_ai.embeddings.dimension.count",
-      "gen_ai.operation.name",
-      "gen_ai.provider.name",
-      "gen_ai.request.model"
     ],
     "gen_ai.execute_tool.internal": [
       "gen_ai.operation.name",
@@ -82,6 +82,11 @@
     ]
   },
   "metrics": {
+    "gen_ai.client.embeddings.duration": [
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "gen_ai.request.model"
+    ],
     "gen_ai.client.inference.operation.input_tokens": [
       "gen_ai.operation.name",
       "gen_ai.provider.name",

@@ -42,6 +42,10 @@ Two families of token instruments are defined:
   for total usage or cost calculations. Use histograms exclusively to monitor
   usage percentiles (e.g. p95/p99) and detect outliers.
 
+Embeddings operations only report the
+[`gen_ai.client.embeddings.operation.input_tokens`](client-embeddings.md#metric-gen_aiclientembeddingsoperationinput_tokens)
+histogram, and total token usage can be computed from it.
+
 > [!NOTE]
 > 
 > The `gen_ai.client.inference.operation.input_tokens` and

@@ -109,3 +109,14 @@ The two metric families serve different purposes, reflected in their namespaces:
   operations. The `operation` namespace indicates that each measurement represents
   a single operation's token count, producing per-operation distributions and
   percentiles rather than totals.
+
+## Why do embeddings have only a histogram?
+
+Embeddings responses report one input token count per request, with no output,
+cached, or reasoning tokens.
+
+So total embeddings usage comes from the sum of
+[`gen_ai.client.embeddings.operation.input_tokens`](/docs/gen-ai/client-embeddings.md#metric-gen_aiclientembeddingsoperationinput_tokens).
+
+Detailed usage for embeddings may be added later, see
+[#577](https://github.com/open-telemetry/semantic-conventions-genai/issues/577).
