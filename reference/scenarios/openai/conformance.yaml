@@ -9,6 +9,13 @@ env:
   MOCK_LLM_URL: ${MOCK_SERVER_URL}
 
 scenarios:
+  decisions:
+    run: uv run --frozen --python 3.12 --project . python scenario.py --scenario decisions
+    spans:
+      - match:
+          attributes:
+            gen_ai.operation.name: decision
+          type: gen_ai.client.inference
   reference:
     run: uv run --frozen --python 3.12 --project . python scenario.py
     spans:

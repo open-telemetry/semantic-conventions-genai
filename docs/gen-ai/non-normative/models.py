@@ -33,6 +33,7 @@ from pydantic import (
     GetCoreSchemaHandler,
     GetJsonSchemaHandler,
     RootModel,
+    model_validator,
 )
 from pydantic_core import core_schema
 
@@ -545,11 +546,99 @@ class ToolCallResult(RootModel[dict[str, Any]]):
 
 
 # --------------------------------------------------------------------------
+# `gen_ai.decision.results` model
+# --------------------------------------------------------------------------
+
+
+class DecisionResult(BaseModel):
+    """Common correlation for one returned decision answer."""
+
+    question_index: int = Field(
+        ge=0, description="Zero-based position of the question in the original request."
+    )
+    question_name: Optional[str] = Field(
+        default=None, description="Question name supplied to or returned by the API."
+    )
+
+    model_config = ConfigDict(extra="forbid", strict=True, allow_inf_nan=False)
+
+
+class PredicateDecisionResult(DecisionResult):
+    type: Literal["predicate"]
+    probability: float = Field(
+        ge=0,
+        le=1,
+        description="Provider-reported probability that the predicate is true.",
+    )
+
+
+class ChoiceDecisionResult(DecisionResult):
+    type: Literal["choice"]
+    value: Union[str, bool] = Field(
+        description="Selected option, preserving its JSON type."
+    )
+    probability: Optional[float] = Field(
+        default=None,
+        ge=0,
+        le=1,
+        description="Provider-reported probability of the selected option, not confidence.",
+    )
+
+
+class ScoreDecisionResult(DecisionResult):
+    type: Literal["score"]
+    value: float = Field(
+        ge=0, description="Provider-reported expected zero-based level index."
+    )
+    levels: List[str] = Field(
+        min_length=2,
+        description="Complete ordered level labels; value ranges from zero to len(levels)-1.",
+    )
+
+    @model_validator(mode="after")
+    def value_within_scale(self) -> ScoreDecisionResult:
+        # JSON Schema cannot express a bound computed from another property's length.
+        if self.value > len(self.levels) - 1:
+            raise ValueError("Score exceeds its level-index scale")
+        return self
+
+
+class RefusalDecisionResult(DecisionResult):
+    type: Literal["refusal"]
+
+
+class DecisionResults(
+    RootModel[
+        List[
+            Annotated[
+                Union[
+                    PredicateDecisionResult,
+                    ChoiceDecisionResult,
+                    ScoreDecisionResult,
+                    RefusalDecisionResult,
+                ],
+                Field(discriminator="type"),
+            ]
+        ]
+    ]
+):
+    """Captured decision answers; omitted answers do not change question indices."""
+
+    @model_validator(mode="after")
+    def unique_question_indices(self) -> DecisionResults:
+        indices = [result.question_index for result in self.root]
+        if len(set(indices)) != len(indices):
+            raise ValueError("Each question may have at most one captured result")
+        return self
+
+
+# --------------------------------------------------------------------------
 # Schema generation entry point
 # --------------------------------------------------------------------------
 
 # Maps committed JSON file name (under model/gen-ai/) -> root model class.
 SCHEMAS: dict[str, type[BaseModel]] = {
+    "gen-ai-decision-results.json": DecisionResults,
     "gen-ai-input-messages.json": InputMessages,
     "gen-ai-output-messages.json": OutputMessages,
     "gen-ai-system-instructions.json": SystemInstructions,
