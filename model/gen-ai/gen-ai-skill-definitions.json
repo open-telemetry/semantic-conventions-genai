@@ -1,0 +1,107 @@
+{
+    "$defs": {
+        "SkillDefinition": {
+            "additionalProperties": true,
+            "description": "Represents an Agent Skill definition available to the GenAI agent.\nConforms to the Agent Skills specification (https://agentskills.io/specification).",
+            "properties": {
+                "name": {
+                    "description": "The name of the Agent Skill.",
+                    "maxLength": 64,
+                    "minLength": 1,
+                    "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+                    "title": "Name",
+                    "type": "string"
+                },
+                "description": {
+                    "description": "What the Agent Skill does and when to use it.",
+                    "maxLength": 1024,
+                    "minLength": 1,
+                    "title": "Description",
+                    "type": "string"
+                },
+                "source_uri": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "The source URI for loading the skill.",
+                    "title": "Source Uri"
+                },
+                "compatibility": {
+                    "anyOf": [
+                        {
+                            "maxLength": 500,
+                            "minLength": 1,
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Environment and compatibility requirements for the skill.",
+                    "title": "Compatibility"
+                },
+                "license": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "License name or reference to a bundled license file.",
+                    "title": "License"
+                },
+                "metadata": {
+                    "anyOf": [
+                        {
+                            "additionalProperties": {
+                                "type": "string"
+                            },
+                            "type": "object"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Arbitrary key-value metadata mapping defined in the skill frontmatter.",
+                    "title": "Metadata"
+                },
+                "allowed-tools": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Space-separated list of pre-approved tools the skill may use. Experimental.",
+                    "title": "Allowed-Tools"
+                }
+            },
+            "required": [
+                "name",
+                "description"
+            ],
+            "title": "SkillDefinition",
+            "type": "object"
+        }
+    },
+    "description": "Represents the list of skill definitions available to the GenAI agent.",
+    "items": {
+        "$ref": "#/$defs/SkillDefinition"
+    },
+    "title": "SkillDefinitions",
+    "type": "array"
+}
