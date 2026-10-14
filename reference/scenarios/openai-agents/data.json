@@ -29,7 +29,13 @@
       "gen_ai.workflow.name"
     ]
   },
-  "events": {},
+  "events": {
+    "gen_ai.tool.call.decision": [
+      "gen_ai.tool.call.decision.outcome",
+      "gen_ai.tool.call.id",
+      "gen_ai.tool.name"
+    ]
+  },
   "metrics": {},
   "findings": [
     {
