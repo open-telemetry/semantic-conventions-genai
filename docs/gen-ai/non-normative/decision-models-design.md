@@ -3,6 +3,7 @@
 Design rationale for the first implementation. This document is non-normative.
 Provider documentation and SDK source were inspected on 2026-10-12.
 The result mapping was rechecked on 2026-10-13.
+Request attribute applicability was rechecked on 2026-10-14.
 Repository baseline: `6fd0d763a092db245a54104fc1124031eb3c51d2`.
 Related issue: [#580](https://github.com/open-telemetry/semantic-conventions-genai/issues/580).
 
@@ -68,6 +69,9 @@ not a requirement to create one span type per endpoint.
 | Inference duration and `gen_ai.usage.*` | Latency and token usage. | Keep at request scope; do not duplicate for each answer. |
 | `error.type`, span status, exception event | SDK or request failure. | An uncertain or refused answer is not automatically a failed request. |
 | `gen_ai.request.choice.count` | Number of alternative completions requested. | Neither number of decision options nor number of questions. |
+| `gen_ai.system_instructions` | System-level instructions. | Per-question `instructions` specify the decision task, not system instructions. Neither inspected API exposes system instructions. |
+| `gen_ai.tool.definitions` | Tools available to the model. | Neither inspected API accepts tools. Decision options are not tool definitions, even when their labels name tools. |
+| Generation controls (`gen_ai.request.temperature`, `top_p`, `top_k`, `max_tokens`, penalties, stop sequences, seed) | Controls exposed by generation APIs. | Neither inspected decision API exposes these controls; omit them rather than applying generation defaults. |
 | `gen_ai.output.type` | Requested content format. | A JSON HTTP response does not imply a requested JSON generation format; it does not identify predicate/choice/score. |
 | `gen_ai.output.messages` | Captured generated messages. | Multiple decision answers are not alternative generations; the new structured result attribute avoids inventing message roles or generations. |
 | `gen_ai.response.finish_reasons` | Why each generation stopped. | No documented decision mapping; do not manufacture `stop`, `error`, or `content_filter` from answer types. |
@@ -113,6 +117,19 @@ Sources: [OpenAI API reference](https://developers.openai.com/api/reference/reso
 Unknown means unverified, not unsupported. These are documentation/source findings,
 not observations from production calls. Cloudflare corroborates breadth but was
 not used to infer missing fields from another provider's contract.
+
+The OpenAI request body defines `model`, `input`, `questions`, and optional
+`safety_identifier`; TypeSafe defines `model`, `state`, and `questions`.
+These are ordinary API request fields, so the absence of generation controls does
+not mean there are no request parameters. Both APIs support recording the requested
+model as `gen_ai.request.model`. Question instructions and criteria describe the
+decision task; this change adds no attribute for their capture.
+
+Sharing the inference span and detail-event definitions does not make every listed
+attribute applicable to decisions. Unsupported attributes remain unset, including
+when result capture is enabled. The OpenAI reference already omits these fields;
+regression tests check their absence alongside the supported model, provider,
+usage, and result attributes.
 
 The [OpenAI guide](https://developers.openai.com/api/docs/guides/decisions) describes
 scores as expected zero-based level indices. Its confidence field is separate

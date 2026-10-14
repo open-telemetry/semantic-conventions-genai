@@ -63,6 +63,29 @@ class DecisionTelemetryTest(unittest.TestCase):
             for metric in scope.metrics
         }
 
+    def assert_decision_attributes(self, attributes):
+        self.assertEqual(attributes["gen_ai.operation.name"], "decision")
+        self.assertEqual(attributes["gen_ai.provider.name"], "openai")
+        self.assertEqual(attributes["gen_ai.request.model"], "gpt-6-luna")
+        self.assertEqual(attributes["gen_ai.response.model"], "gpt-6-luna")
+        self.assertEqual(attributes["gen_ai.usage.input_tokens"], 42)
+        self.assertEqual(attributes["gen_ai.usage.output_tokens"], 0)
+        for unsupported in (
+            "gen_ai.system_instructions",
+            "gen_ai.tool.definitions",
+            "gen_ai.request.temperature",
+            "gen_ai.request.top_p",
+            "gen_ai.request.top_k",
+            "gen_ai.request.max_tokens",
+            "gen_ai.request.choice.count",
+            "gen_ai.request.frequency_penalty",
+            "gen_ai.request.presence_penalty",
+            "gen_ai.request.stop_sequences",
+            "gen_ai.request.seed",
+        ):
+            with self.subTest(unsupported=unsupported):
+                self.assertNotIn(unsupported, attributes)
+
     def test_multiple_answers_and_refusal_do_not_multiply_usage(self):
         input_text, questions, answers = list(decisions.decision_cases())[-1]
         with decisions.mock_decision_client(input_text, questions, answers) as client:
@@ -71,6 +94,7 @@ class DecisionTelemetryTest(unittest.TestCase):
         spans = self.exporter.get_finished_spans()
         self.assertEqual(len(spans), 1)
         span = spans[0]
+        self.assert_decision_attributes(span.attributes)
         self.assertEqual(span.status.status_code, StatusCode.UNSET)
         self.assertEqual(span.attributes["gen_ai.usage.input_tokens"], 42)
         self.assertEqual(span.attributes["gen_ai.usage.output_tokens"], 0)
@@ -125,6 +149,8 @@ class DecisionTelemetryTest(unittest.TestCase):
                 decisions.decision_request(
                     client, model="gpt-6-luna", input=input_text, questions=questions, capture_results=True
                 )
+        for span in self.exporter.get_finished_spans():
+            self.assert_decision_attributes(span.attributes)
         results = [
             json.loads(span.attributes["gen_ai.decision.results"]) for span in self.exporter.get_finished_spans()
         ]
@@ -170,6 +196,8 @@ class DecisionTelemetryTest(unittest.TestCase):
         (record,) = self.log_exporter.get_finished_logs()
         event = record.log_record
         self.assertEqual(event.event_name, "gen_ai.client.inference.operation.details")
+        self.assert_decision_attributes(span.attributes)
+        self.assert_decision_attributes(event.attributes)
         self.assertEqual(event.trace_id, span.context.trace_id)
         self.assertEqual(event.span_id, span.context.span_id)
         self.assertNotIn("gen_ai.decision.results", span.attributes)
@@ -183,6 +211,17 @@ class DecisionTelemetryTest(unittest.TestCase):
         for metric in self.points().values():
             for point in metric:
                 self.assertFalse(any(key.startswith("gen_ai.usage.") for key in point.attributes))
+
+    def test_event_destination_does_not_enable_result_capture(self):
+        input_text, questions, answers = next(decisions.decision_cases())
+        with decisions.mock_decision_client(input_text, questions, answers) as client:
+            decisions.decision_request(
+                client, model="gpt-6-luna", input=input_text, questions=questions, results_on_event=True
+            )
+        (span,) = self.exporter.get_finished_spans()
+        self.assert_decision_attributes(span.attributes)
+        self.assertNotIn("gen_ai.decision.results", span.attributes)
+        self.assertEqual(len(self.log_exporter.get_finished_logs()), 0)
 
     def test_schema_rejects_ambiguous_or_invalid_results(self):
         invalid = [

@@ -30,6 +30,10 @@ Details events also include request usage. Failed requests emit a correlated
 `gen_ai.client.operation.exception` event, even when result capture is disabled.
 Capture is disabled by default. It does not emit full candidate lists,
 distributions, generic confidence, prompt text, or invented finish reasons.
+Tests also verify that default capture and opt-in result capture omit unsupported
+system instructions, tool definitions, and generation parameters while retaining
+model, provider, and usage attributes. Per-question instructions are not system
+instructions.
 
 Run `uv run python -m unittest discover -s . -p test_decisions.py -v` here to test
 emitted content, event correlation, privacy defaults, refusal/error handling,
