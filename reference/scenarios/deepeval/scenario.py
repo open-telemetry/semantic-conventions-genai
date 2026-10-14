@@ -53,12 +53,18 @@ def run_evaluation():
     with _reference_tracer.start_as_current_span("reference.evaluation", kind=SpanKind.INTERNAL) as span:
         try:
             score = float(metric.measure(test_case))
+
             attributes = {
                 "gen_ai.evaluation.name": metric.name,
                 "gen_ai.evaluation.score.value": score,
             }
+
+            if isinstance(metric, GEval):
+                attributes["gen_ai.evaluation.evaluator.type"] = "llm_judge"
+
             if getattr(metric, "reason", None):
                 attributes["gen_ai.evaluation.explanation"] = metric.reason
+
             reference_event_logger("gen_ai.evaluation.reference").emit(
                 event_name="gen_ai.evaluation.result",
                 body="Evaluation result",
