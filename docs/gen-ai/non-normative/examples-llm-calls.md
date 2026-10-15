@@ -17,6 +17,8 @@
 - [Tool calls (built-in)](#tool-calls-built-in)
 - [Chat completion with multiple choices](#chat-completion-with-multiple-choices)
   - [GenAI client span when content capturing is enabled on span attributes](#genai-client-span-when-content-capturing-is-enabled-on-span-attributes-1)
+- [Agent tool transfer that returns to the source](#agent-tool-transfer-that-returns-to-the-source)
+- [Agent tool transfer that passes control](#agent-tool-transfer-that-passes-control)
 
 <!-- tocstop -->
 
@@ -934,3 +936,118 @@ sequenceDiagram
   }
 ]
 ```
+
+## Agent tool transfer that returns to the source
+
+In this example, `root_agent` invokes `weather_specialist` through an agent tool
+and resumes after the specialist returns. Content capturing is disabled.
+
+**Source agent span:**
+
+| Property | Value |
+| --- | --- |
+| Span name | `"invoke_agent root_agent"` |
+| Span kind | `INTERNAL` |
+| Span status | `UNSET` |
+| Trace id | `"4bf92f3577b34da6a3ce929d0e0e4736"` |
+| Span id | `"00f067aa0ba902b7"` |
+| `gen_ai.operation.name` | `"invoke_agent"` |
+| `gen_ai.agent.name` | `"root_agent"` |
+| `gen_ai.request.model` | `"gemini-2.0-flash"` |
+
+**Agent tool span:**
+
+| Property | Value |
+| --- | --- |
+| Span name | `"execute_tool weather_specialist"` |
+| Span kind | `INTERNAL` |
+| Span status | `UNSET` |
+| Trace id | `"4bf92f3577b34da6a3ce929d0e0e4736"` |
+| Span id | `"b9c7c989f97918e1"` |
+| Parent span id | `"00f067aa0ba902b7"` |
+| `gen_ai.operation.name` | `"execute_tool"` |
+| `gen_ai.agent.name` | `"root_agent"` |
+| `gen_ai.tool.name` | `"weather_specialist"` |
+| `gen_ai.tool.type` | `"function"` |
+| `gen_ai.tool.call.id` | `"call_weather_1"` |
+| `gen_ai.transfer.mode` | `"return_to_caller"` |
+| `gen_ai.transfer.target.name` | `"weather_specialist"` |
+
+**Target agent span:**
+
+| Property | Value |
+| --- | --- |
+| Span name | `"invoke_agent weather_specialist"` |
+| Span kind | `INTERNAL` |
+| Span status | `UNSET` |
+| Trace id | `"4bf92f3577b34da6a3ce929d0e0e4736"` |
+| Span id | `"7b3f9e6d4a1c2058"` |
+| Parent span id | `"b9c7c989f97918e1"` |
+| `gen_ai.operation.name` | `"invoke_agent"` |
+| `gen_ai.agent.name` | `"weather_specialist"` |
+| `gen_ai.request.model` | `"gemini-2.0-flash"` |
+
+## Agent tool transfer that passes control
+
+In this example, `triage-agent` calls a transfer tool that passes control to
+`billing-agent`. The enclosing workflow invokes the agents as separate steps,
+so their spans are siblings. The transfer tool selects the next agent but does
+not invoke it. Content capturing is disabled.
+
+**Enclosing workflow span:**
+
+| Property | Value |
+| --- | --- |
+| Span name | `"invoke_workflow agent_handoff"` |
+| Span kind | `INTERNAL` |
+| Span status | `UNSET` |
+| Trace id | `"7d3a91e25c6f408ab2e019f7d4c83560"` |
+| Span id | `"5d9fb1324680ace2"` |
+| `gen_ai.operation.name` | `"invoke_workflow"` |
+| `gen_ai.workflow.name` | `"agent_handoff"` |
+
+**Source agent span:**
+
+| Property | Value |
+| --- | --- |
+| Span name | `"invoke_agent triage-agent"` |
+| Span kind | `INTERNAL` |
+| Span status | `UNSET` |
+| Trace id | `"7d3a91e25c6f408ab2e019f7d4c83560"` |
+| Span id | `"2a6c8e0f13579bdf"` |
+| Parent span id | `"5d9fb1324680ace2"` |
+| `gen_ai.operation.name` | `"invoke_agent"` |
+| `gen_ai.agent.name` | `"triage-agent"` |
+| `gen_ai.request.model` | `"gpt-4o-mini"` |
+
+**Transfer tool span:**
+
+| Property | Value |
+| --- | --- |
+| Span name | `"execute_tool transfer_to_billing_agent"` |
+| Span kind | `INTERNAL` |
+| Span status | `UNSET` |
+| Trace id | `"7d3a91e25c6f408ab2e019f7d4c83560"` |
+| Span id | `"3b7d9f102468ace0"` |
+| Parent span id | `"2a6c8e0f13579bdf"` |
+| `gen_ai.operation.name` | `"execute_tool"` |
+| `gen_ai.agent.name` | `"triage-agent"` |
+| `gen_ai.tool.name` | `"transfer_to_billing_agent"` |
+| `gen_ai.tool.type` | `"function"` |
+| `gen_ai.tool.call.id` | `"call_transfer_1"` |
+| `gen_ai.transfer.mode` | `"pass_control"` |
+| `gen_ai.transfer.target.name` | `"billing-agent"` |
+
+**Target agent span:**
+
+| Property | Value |
+| --- | --- |
+| Span name | `"invoke_agent billing-agent"` |
+| Span kind | `INTERNAL` |
+| Span status | `UNSET` |
+| Trace id | `"7d3a91e25c6f408ab2e019f7d4c83560"` |
+| Span id | `"4c8ea0213579bdf1"` |
+| Parent span id | `"5d9fb1324680ace2"` |
+| `gen_ai.operation.name` | `"invoke_agent"` |
+| `gen_ai.agent.name` | `"billing-agent"` |
+| `gen_ai.request.model` | `"gpt-4o-mini"` |

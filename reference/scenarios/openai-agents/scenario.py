@@ -1,18 +1,21 @@
 """Reference implementation for OpenAI Agents.
 
-Exercises: agent run with tool calling, sandboxed command execution, and a
-multi-agent run with handoffs wrapped in a workflow span, against a mock OpenAI
-server, with manual OTel spans.
+Exercises: agent run with tool calling, agent-as-tool delegation, sandboxed
+command execution, and a multi-agent run with handoffs wrapped in a workflow
+span, against a mock OpenAI server, with manual OTel spans.
 """
 
 import asyncio
 import json
 import os
 import posixpath
+from contextvars import ContextVar
+from unittest.mock import patch
 
 import openai
 from agents import Agent, RunConfig, Runner, function_tool
 from agents.models.openai_chatcompletions import OpenAIChatCompletionsModel
+from agents.run import AgentRunner
 from agents.tool import FunctionTool, ToolContext
 from opentelemetry import trace
 from opentelemetry.trace import StatusCode
@@ -129,6 +132,131 @@ async def run_agent():
         print(f"    -> {str(result.final_output)[:60]}")
 
 
+async def run_agent_as_tool_delegation():
+    """Delegation: a caller agent invokes another agent exposed via `Agent.as_tool`.
+
+    `Agent.as_tool()` runs the target agent as a function tool and returns its
+    result to the original agent. The caller-owned `execute_tool` span records
+    the transfer; the child `invoke_agent` span records the target's execution.
+    """
+    client = openai.AsyncOpenAI(base_url=MOCK_BASE_URL, api_key="mock-key")
+    request_model = "gpt-4o-mini"
+    model = OpenAIChatCompletionsModel(model=request_model, openai_client=client)
+
+    # The target agent has no tools, so its mock model call returns plain text.
+    specialist = Agent(
+        name="weather-specialist",
+        instructions="You report the weather.",
+        model=model,
+    )
+    weather_tool = specialist.as_tool(
+        tool_name="weather-specialist",
+        tool_description="Delegate weather questions to the weather specialist agent.",
+    )
+
+    original_on_invoke_tool = weather_tool.on_invoke_tool
+
+    async def _traced_on_invoke_tool(tool_context, input_json):
+        transfer_attributes = {
+            "gen_ai.agent.name": tool_context.agent.name,
+            "gen_ai.transfer.mode": "return_to_caller",
+            "gen_ai.transfer.target.name": weather_tool._agent_instance.name,
+        }
+        assert transfer_attributes == {
+            "gen_ai.agent.name": "assistant",
+            "gen_ai.transfer.mode": "return_to_caller",
+            "gen_ai.transfer.target.name": "weather-specialist",
+        }
+        tool_span_attributes = {
+            "gen_ai.operation.name": "execute_tool",
+            "gen_ai.tool.name": weather_tool.name,
+            "gen_ai.tool.type": "function",
+            **transfer_attributes,
+        }
+        with _reference_tracer.start_as_current_span(
+            f"execute_tool {weather_tool.name}", attributes=tool_span_attributes
+        ) as tool_span:
+            tool_span.set_attribute("gen_ai.tool.call.id", tool_context.tool_call_id)
+            tool_span.set_attribute("gen_ai.tool.call.arguments", input_json)
+            result = await original_on_invoke_tool(tool_context, input_json)
+            tool_span.set_attribute("gen_ai.tool.call.result", str(result))
+        return result
+
+    model_responses = ContextVar("delegation_model_responses", default=None)
+    original_create = client.chat.completions.create
+    original_agent_run = AgentRunner.run
+
+    async def _capture_create(*args, **kwargs):
+        response = await original_create(*args, **kwargs)
+        responses = model_responses.get()
+        if responses is not None:
+            responses.append(response)
+        return response
+
+    async def _traced_agent_run(runner, starting_agent, input, **kwargs):
+        agent_span_attributes = {
+            "gen_ai.operation.name": "invoke_agent",
+            "gen_ai.request.model": starting_agent.model.model,
+            "gen_ai.agent.name": starting_agent.name,
+        }
+        with _reference_tracer.start_as_current_span(
+            f"invoke_agent {starting_agent.name}", attributes=agent_span_attributes
+        ) as agent_span:
+            agent_span.set_attribute(
+                "gen_ai.system_instructions", json.dumps([{"type": "text", "content": starting_agent.instructions}])
+            )
+            agent_span.set_attribute(
+                "gen_ai.input.messages", json.dumps([{"role": "user", "parts": [{"type": "text", "content": input}]}])
+            )
+            responses = []
+            token = model_responses.set(responses)
+            try:
+                result = await original_agent_run(runner, starting_agent, input, **kwargs)
+            finally:
+                model_responses.reset(token)
+            # Agent.as_tool shares context usage with its caller. Each run's raw
+            # responses identify its own model usage without counting the other agent.
+            if result.raw_responses:
+                agent_span.set_attribute(
+                    "gen_ai.usage.input_tokens", sum(response.usage.input_tokens for response in result.raw_responses)
+                )
+                agent_span.set_attribute(
+                    "gen_ai.usage.output_tokens", sum(response.usage.output_tokens for response in result.raw_responses)
+                )
+            finish_reasons = []
+            if responses:
+                finish_reasons = [
+                    choice.finish_reason for choice in responses[-1].choices if choice.finish_reason is not None
+                ]
+                if finish_reasons:
+                    agent_span.set_attribute("gen_ai.response.finish_reasons", finish_reasons)
+            output_message = {
+                "role": "assistant",
+                "parts": [{"type": "text", "content": str(result.final_output)}],
+            }
+            if len(finish_reasons) == 1:
+                output_message["finish_reason"] = finish_reasons[0]
+            agent_span.set_attribute("gen_ai.output.messages", json.dumps([output_message]))
+        return result
+
+    caller = Agent(
+        name="assistant",
+        instructions="You are a helpful assistant. Delegate weather questions to the specialist.",
+        model=model,
+        tools=[weather_tool],
+    )
+    input_text = "What's the weather in Seattle?"
+
+    print("  [delegation] agent-as-tool via Agent.as_tool (reference implementation)")
+    with (
+        patch.object(weather_tool, "on_invoke_tool", _traced_on_invoke_tool),
+        patch.object(AgentRunner, "run", _traced_agent_run),
+        patch.object(client.chat.completions, "create", _capture_create),
+    ):
+        result = await Runner.run(caller, input_text)
+    print(f"    -> {str(result.final_output)[:60]}")
+
+
 async def run_command_execution():
     """Sandboxed command execution through the SDK's `exec_command` tool."""
     from agents.run_config import SandboxRunConfig
@@ -148,7 +276,6 @@ async def run_command_execution():
 
         async def _invoke(self, ctx, raw_input):
             args = self.args_model.model_validate_json(raw_input)
-            # `direct`: `shell` is the binary the tool launches the command with.
             executable = args.shell
             executable_name = posixpath.basename(executable) if executable else None
             attributes = {
@@ -158,8 +285,6 @@ async def run_command_execution():
             }
             if ctx.agent is not None and ctx.agent.name:
                 attributes["gen_ai.agent.name"] = ctx.agent.name
-            # The command refinement appends the executable to the generic
-            # `execute_tool {tool}` name.
             span_name = f"execute_tool {self.name}"
             if executable_name:
                 attributes["process.executable.name"] = executable_name
@@ -186,7 +311,6 @@ async def run_command_execution():
 
     async def _pty_exec_start(*command, **kwargs):
         update = await original_pty_exec_start(*command, **kwargs)
-        # `direct`: the session reports the status the command exited with.
         if update.exit_code is not None:
             trace.get_current_span().set_attribute("process.exit.code", update.exit_code)
         return update
@@ -214,14 +338,12 @@ async def run_command_execution():
         capabilities=[Shell(configure_tools=configure_tools)],
     )
 
-    # Each run is one command. The second one fails, but tool call itself succeeds.
     runs = (
         ("List the files in the workspace.", "ls -1a"),
         ("Show me the report.", "cat missing-report.txt"),
     )
     try:
         for input_text, command in runs:
-            # Read by `configure_tools` when the run builds the agent's tools.
             allowed_command = command
             result = await Runner.run(
                 agent,
@@ -290,6 +412,7 @@ def main():
     tp, lp, mp = setup_otel()
 
     asyncio.run(run_agent())
+    asyncio.run(run_agent_as_tool_delegation())
     asyncio.run(run_command_execution())
     asyncio.run(run_workflow())
 

@@ -4,6 +4,11 @@ The Google Agent Development Kit (ADK) is an agent framework. It calls models
 through its model layer (e.g. `google-genai`), so it **delegates inference**. It
 owns the agent, workflow, tool, and memory operations it runs directly.
 
+The agent-as-tool scenario records the caller's session ID on the tool span.
+The specialist span wraps ADK's actual agent execution, after tool argument
+validation. Both agents record finish reasons and accumulated token usage from
+their own ADK events, filtered by `event.author`.
+
 | Operation | Should be instrumented here | Status |
 | --- | --- | --- |
 | inference (`chat`) | No — delegates to the model client (`google-genai`) | ✅ Correctly not emitted |
