@@ -1,0 +1,18 @@
+{
+  "spans": {
+    "gen_ai.invoke_workflow.internal": [
+      "gen_ai.operation.name",
+      "gen_ai.workflow.name"
+    ]
+  },
+  "events": {
+    "gen_ai.execution.state.changed": [
+      "gen_ai.execution.state.changed_key.count",
+      "gen_ai.execution.state.changed_keys",
+      "gen_ai.execution.state.version"
+    ]
+  },
+  "metrics": {},
+  "findings": [],
+  "entities": {}
+}
