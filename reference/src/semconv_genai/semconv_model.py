@@ -65,6 +65,14 @@ _METRICS = {
     "gen_ai.client.inference.duration": "Client Inference Duration",
     "gen_ai.invoke_agent.inference_calls": "Invoke Agent Inference Calls",
     "gen_ai.invoke_agent.tool_calls": "Invoke Agent Tool Calls",
+    "mcp.client.operation.duration": "MCP Client Operation Duration",
+    "mcp.server.operation.duration": "MCP Server Operation Duration",
+    "mcp.client.operation.active": "MCP Client Operation Active",
+    "mcp.server.operation.active": "MCP Server Operation Active",
+    "mcp.client.request.size": "MCP Client Request Size",
+    "mcp.client.response.size": "MCP Client Response Size",
+    "mcp.server.request.size": "MCP Server Request Size",
+    "mcp.server.response.size": "MCP Server Response Size",
 }
 
 _ENTITIES = {

@@ -1,0 +1,17 @@
+runner: genai-conformance
+instrumented_library: mcp
+instrumentation_library: reference
+
+scenarios:
+  reference:
+    # scenario.py starts server.py over stdio itself; no mock LLM server is involved.
+    run: uv run --frozen --python 3.12 --project . python scenario.py
+    metrics:
+      - mcp.client.operation.active
+      - mcp.client.operation.duration
+      - mcp.client.request.size
+      - mcp.client.response.size
+      - mcp.server.operation.active
+      - mcp.server.operation.duration
+      - mcp.server.request.size
+      - mcp.server.response.size

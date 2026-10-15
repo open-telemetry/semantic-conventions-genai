@@ -1,0 +1,87 @@
+{
+  "spans": {},
+  "events": {},
+  "metrics": {
+    "mcp.client.operation.active": [
+      "gen_ai.operation.name",
+      "gen_ai.prompt.name",
+      "gen_ai.tool.name",
+      "mcp.method.name",
+      "mcp.protocol.version",
+      "network.transport"
+    ],
+    "mcp.client.operation.duration": [
+      "error.type",
+      "gen_ai.operation.name",
+      "gen_ai.prompt.name",
+      "gen_ai.tool.name",
+      "mcp.method.name",
+      "mcp.protocol.version",
+      "mcp.resource.uri",
+      "network.transport",
+      "rpc.response.status_code"
+    ],
+    "mcp.client.request.size": [
+      "error.type",
+      "gen_ai.operation.name",
+      "gen_ai.prompt.name",
+      "gen_ai.tool.name",
+      "mcp.method.name",
+      "mcp.protocol.version",
+      "mcp.resource.uri",
+      "network.transport",
+      "rpc.response.status_code"
+    ],
+    "mcp.client.response.size": [
+      "error.type",
+      "gen_ai.operation.name",
+      "gen_ai.prompt.name",
+      "gen_ai.tool.name",
+      "mcp.method.name",
+      "mcp.protocol.version",
+      "mcp.resource.uri",
+      "network.transport",
+      "rpc.response.status_code"
+    ],
+    "mcp.server.operation.active": [
+      "gen_ai.operation.name",
+      "gen_ai.prompt.name",
+      "gen_ai.tool.name",
+      "mcp.method.name",
+      "mcp.protocol.version",
+      "network.transport"
+    ],
+    "mcp.server.operation.duration": [
+      "gen_ai.operation.name",
+      "gen_ai.prompt.name",
+      "gen_ai.tool.name",
+      "mcp.method.name",
+      "mcp.protocol.version",
+      "mcp.resource.uri",
+      "network.transport",
+      "rpc.response.status_code"
+    ],
+    "mcp.server.request.size": [
+      "gen_ai.operation.name",
+      "gen_ai.prompt.name",
+      "gen_ai.tool.name",
+      "mcp.method.name",
+      "mcp.protocol.version",
+      "mcp.resource.uri",
+      "network.transport",
+      "rpc.response.status_code"
+    ],
+    "mcp.server.response.size": [
+      "gen_ai.operation.name",
+      "gen_ai.prompt.name",
+      "gen_ai.tool.name",
+      "mcp.method.name",
+      "mcp.protocol.version",
+      "mcp.resource.uri",
+      "network.transport",
+      "rpc.response.status_code"
+    ]
+  },
+  "findings": [],
+  "entities": {}
+}

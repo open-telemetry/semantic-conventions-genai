@@ -103,6 +103,14 @@ SEMCONV_DOC_LINKS: dict[str, str] = {
     "gen_ai.client.inference.duration": "../../docs/gen-ai/client-inference.md#metric-gen_aiclientinferenceduration",
     "gen_ai.invoke_agent.inference_calls": "../../docs/gen-ai/gen-ai-metrics.md#metric-gen_aiinvoke_agentinference_calls",
     "gen_ai.invoke_agent.tool_calls": "../../docs/gen-ai/gen-ai-metrics.md#metric-gen_aiinvoke_agenttool_calls",
+    "mcp.client.operation.duration": "../../docs/gen-ai/mcp.md#metric-mcpclientoperationduration",
+    "mcp.server.operation.duration": "../../docs/gen-ai/mcp.md#metric-mcpserveroperationduration",
+    "mcp.client.operation.active": "../../docs/gen-ai/mcp.md#metric-mcpclientoperationactive",
+    "mcp.server.operation.active": "../../docs/gen-ai/mcp.md#metric-mcpserveroperationactive",
+    "mcp.client.request.size": "../../docs/gen-ai/mcp.md#metric-mcpclientrequestsize",
+    "mcp.client.response.size": "../../docs/gen-ai/mcp.md#metric-mcpclientresponsesize",
+    "mcp.server.request.size": "../../docs/gen-ai/mcp.md#metric-mcpserverrequestsize",
+    "mcp.server.response.size": "../../docs/gen-ai/mcp.md#metric-mcpserverresponsesize",
 }
 
 

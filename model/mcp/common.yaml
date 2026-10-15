@@ -1,6 +1,7 @@
 file_format: definition/2
 attribute_groups:
-  - id: mcp.common.attributes
+  # Known when the request or notification is sent or received.
+  - id: mcp.request.attributes
     visibility: internal
     attributes:
       - ref: gen_ai.tool.name
@@ -15,12 +16,21 @@ attribute_groups:
             call and SHOULD NOT be set otherwise.
         note: >
           Populating this attribute for tool calling along with `mcp.method.name`
-          allows consumers to treat MCP tool calls spans similarly with other tool
-          call types.
+          allows consumers to treat MCP tool calls similarly to other tool call
+          types.
       - ref: gen_ai.prompt.name
         brief: The name of the prompt or prompt template provided in the request or response.
         requirement_level:
           conditionally_required: When operation is related to a specific prompt.
+      - ref: mcp.method.name
+        requirement_level: required
+      - ref: mcp.protocol.version
+      - ref_group: mcp.network.protocol.attributes
+
+  - id: mcp.common.attributes
+    visibility: internal
+    attributes:
+      - ref_group: mcp.request.attributes
       - ref: gen_ai.prompt.variable
         brief: The variables supplied to the prompt template in the request.
         requirement_level: opt_in
@@ -41,10 +51,6 @@ attribute_groups:
           [CallToolResult](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/9c8a44e47e16b789a1f9d47c89ea23ed13a37cf9/schema/2025-06-18/schema.ts#L715)
           is returned with `isError` set to `true`, this attribute SHOULD be set to
           `tool_error`.
-      - ref: mcp.method.name
-        requirement_level: required
-      - ref: mcp.protocol.version
-      - ref_group: mcp.network.protocol.attributes
 
   - id: mcp.client.status.attributes
     visibility: internal

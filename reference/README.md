@@ -66,4 +66,12 @@ Run `uv run update-reports` to regenerate.
 | [Client Inference Duration](reports/gen-ai-client-inference-duration-metric.md) | agent-framework, anthropic, groq |
 | [Invoke Agent Inference Calls](reports/gen-ai-invoke-agent-inference-calls-metric.md) | adk_a2a, google-adk |
 | [Invoke Agent Tool Calls](reports/gen-ai-invoke-agent-tool-calls-metric.md) | adk_a2a, google-adk |
+| [MCP Client Operation Duration](reports/mcp-client-operation-duration-metric.md) | mcp |
+| [MCP Server Operation Duration](reports/mcp-server-operation-duration-metric.md) | mcp |
+| [MCP Client Operation Active](reports/mcp-client-operation-active-metric.md) | mcp |
+| [MCP Server Operation Active](reports/mcp-server-operation-active-metric.md) | mcp |
+| [MCP Client Request Size](reports/mcp-client-request-size-metric.md) | mcp |
+| [MCP Client Response Size](reports/mcp-client-response-size-metric.md) | mcp |
+| [MCP Server Request Size](reports/mcp-server-request-size-metric.md) | mcp |
+| [MCP Server Response Size](reports/mcp-server-response-size-metric.md) | mcp |
 <!-- status:end -->
