@@ -77,8 +77,8 @@ Two families of token instruments are defined:
 
 **[1]:** This metric SHOULD be reported when an operation involves the usage of tokens and the count is readily available.
 When systems report both used tokens and billable tokens, instrumentation MUST report billable tokens.
-Instrumentation MUST record only known, strictly positive modality contributions. It SHOULD record these for successful and failed inference operations. Zero counts and unavailable counts MUST NOT produce measurements. Availability MUST be determined independently for each usage counter.
-When a positive contribution's modality cannot reliably be determined, it MUST be recorded with `gen_ai.token.modality` set to `unknown`.
+Instrumentation SHOULD record contributions from successful and failed inference operations. Each measurement MUST be a known, strictly positive modality contribution. Availability MUST be determined independently for each usage counter.
+When a contribution's modality cannot reliably be determined, instrumentation MUST set `gen_ai.token.modality` to `unknown`.
 
 **Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/signal-requirement-level.md).
 
@@ -206,8 +206,8 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 
 **[1]:** This metric SHOULD be reported when an operation involves the usage of tokens and the count is readily available.
 When systems report both used tokens and billable tokens, instrumentation MUST report billable tokens.
-Instrumentation MUST record only known, strictly positive modality contributions. It SHOULD record these for successful and failed inference operations. Zero counts and unavailable counts MUST NOT produce measurements. Availability MUST be determined independently for each usage counter.
-When a positive contribution's modality cannot reliably be determined, it MUST be recorded with `gen_ai.token.modality` set to `unknown`.
+Instrumentation SHOULD record contributions from successful and failed inference operations. Each measurement MUST be a known, strictly positive modality contribution. Availability MUST be determined independently for each usage counter.
+When a contribution's modality cannot reliably be determined, instrumentation MUST set `gen_ai.token.modality` to `unknown`.
 
 **Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/signal-requirement-level.md).
 
@@ -334,8 +334,8 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 | `gen_ai.client.inference.usage.cache_read.input_tokens` | Counter | `{token}` | The number of input tokens served from a provider-managed cache. [1] | ![Development](https://img.shields.io/badge/-development-blue) | |
 
 **[1]:** This value is a subset of `gen_ai.client.inference.usage.input_tokens`.
-Instrumentation MUST record only known, strictly positive modality contributions. It SHOULD record these for successful and failed inference operations. Zero counts and unavailable counts MUST NOT produce measurements. Availability MUST be determined independently for each usage counter.
-When a positive contribution's modality cannot reliably be determined, it MUST be recorded with `gen_ai.token.modality` set to `unknown`.
+Instrumentation SHOULD record contributions from successful and failed inference operations. Each measurement MUST be a known, strictly positive modality contribution. Availability MUST be determined independently for each usage counter.
+When a contribution's modality cannot reliably be determined, instrumentation MUST set `gen_ai.token.modality` to `unknown`.
 
 **Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/signal-requirement-level.md).
 
@@ -462,8 +462,8 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 | `gen_ai.client.inference.usage.cache_write.input_tokens` | Counter | `{token}` | The number of input tokens written to a provider-managed cache. [1] | ![Development](https://img.shields.io/badge/-development-blue) | |
 
 **[1]:** This value is a subset of `gen_ai.client.inference.usage.input_tokens`.
-Instrumentation MUST record only known, strictly positive modality contributions. It SHOULD record these for successful and failed inference operations. Zero counts and unavailable counts MUST NOT produce measurements. Availability MUST be determined independently for each usage counter.
-When a positive contribution's modality cannot reliably be determined, it MUST be recorded with `gen_ai.token.modality` set to `unknown`.
+Instrumentation SHOULD record contributions from successful and failed inference operations. Each measurement MUST be a known, strictly positive modality contribution. Availability MUST be determined independently for each usage counter.
+When a contribution's modality cannot reliably be determined, instrumentation MUST set `gen_ai.token.modality` to `unknown`.
 
 **Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/signal-requirement-level.md).
 
@@ -590,8 +590,8 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 | `gen_ai.client.inference.usage.reasoning.output_tokens` | Counter | `{token}` | The number of output tokens used for reasoning (e.g. chain-of-thought, extended thinking). [1] | ![Development](https://img.shields.io/badge/-development-blue) | |
 
 **[1]:** This value is a subset of `gen_ai.client.inference.usage.output_tokens`.
-Instrumentation MUST record only known, strictly positive modality contributions. It SHOULD record these for successful and failed inference operations. Zero counts and unavailable counts MUST NOT produce measurements. Availability MUST be determined independently for each usage counter.
-When a positive contribution's modality cannot reliably be determined, it MUST be recorded with `gen_ai.token.modality` set to `unknown`.
+Instrumentation SHOULD record contributions from successful and failed inference operations. Each measurement MUST be a known, strictly positive modality contribution. Availability MUST be determined independently for each usage counter.
+When a contribution's modality cannot reliably be determined, instrumentation MUST set `gen_ai.token.modality` to `unknown`.
 
 **Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/signal-requirement-level.md).
 

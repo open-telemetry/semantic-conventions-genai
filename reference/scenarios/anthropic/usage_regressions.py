@@ -2,12 +2,10 @@
 
 import os
 import unittest
-from contextlib import ExitStack
 from types import SimpleNamespace
 from unittest.mock import DEFAULT, patch
 
-import anthropic
-import httpx
+from anthropic.types import Usage
 
 with patch.dict(os.environ, {"MOCK_LLM_URL": "http://localhost:8080"}):
     import scenario
@@ -15,9 +13,7 @@ with patch.dict(os.environ, {"MOCK_LLM_URL": "http://localhost:8080"}):
 
 class UsageRecordingTest(unittest.TestCase):
     def setUp(self):
-        self.stack = ExitStack()
-        self.addCleanup(self.stack.close)
-        self.instruments = self.stack.enter_context(
+        self.instruments = self.enterContext(
             patch.multiple(
                 scenario,
                 _input_tokens=DEFAULT,
@@ -30,39 +26,15 @@ class UsageRecordingTest(unittest.TestCase):
         )
 
     def record(self, usage):
-        body = {
-            "id": "msg_test",
-            "type": "message",
-            "role": "assistant",
-            "model": "claude-sonnet-4-20250514",
-            "content": [{"type": "text", "text": "Hi"}],
-            "stop_reason": "end_turn",
-            "usage": usage,
-        }
-        transport = httpx.MockTransport(lambda request: httpx.Response(200, json=body))
-        with anthropic.Anthropic(
-            api_key="mock-key",
-            base_url="http://localhost:8080",
-            http_client=httpx.Client(transport=transport),
-        ) as client:
-            response = client.messages.create(
-                model="claude-sonnet-4-20250514", max_tokens=10, messages=[{"role": "user", "content": "Hi"}]
-            )
+        usage = Usage.model_validate(usage) if usage is not None else None
         inv = SimpleNamespace(
-            input_tokens=None,
-            output_tokens=None,
-            cache_read_input_tokens=None,
-            response_model_name=response.model,
-            attributes={},
+            input_tokens=usage.input_tokens if usage else None,
+            output_tokens=usage.output_tokens if usage else None,
+            cache_read_input_tokens=usage.cache_read_input_tokens if usage else None,
+            response_model_name=None,
+            attributes={"gen_ai.usage.cache_write.input_tokens": usage.cache_creation_input_tokens} if usage else {},
         )
-        if response.usage is not None:
-            inv.input_tokens = response.usage.input_tokens
-            inv.output_tokens = response.usage.output_tokens
-            inv.cache_read_input_tokens = response.usage.cache_read_input_tokens
-            cache_write = response.usage.cache_creation_input_tokens
-            if cache_write is not None:
-                inv.attributes["gen_ai.usage.cache_write.input_tokens"] = cache_write
-        scenario.record_inference_usage(inv, response.model, "localhost", 8080)
+        scenario.record_inference_usage(inv, "claude-sonnet-4-20250514", "localhost", 8080)
 
     def test_explicit_zeros_only_record_histograms(self):
         self.record(

@@ -2,7 +2,6 @@
 
 import os
 import unittest
-from contextlib import ExitStack
 from unittest.mock import DEFAULT, call, patch
 
 from google.genai import types
@@ -13,9 +12,7 @@ with patch.dict(os.environ, {"MOCK_LLM_URL": "http://localhost:8080"}):
 
 class UsageRecordingTest(unittest.TestCase):
     def setUp(self):
-        self.stack = ExitStack()
-        self.addCleanup(self.stack.close)
-        self.instruments = self.stack.enter_context(
+        self.instruments = self.enterContext(
             patch.multiple(
                 scenario,
                 _input_tokens=DEFAULT,

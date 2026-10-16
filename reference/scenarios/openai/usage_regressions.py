@@ -2,7 +2,6 @@
 
 import os
 import unittest
-from contextlib import ExitStack
 from unittest.mock import DEFAULT, call, patch
 
 import httpx
@@ -14,9 +13,7 @@ with patch.dict(os.environ, {"MOCK_LLM_URL": "http://localhost:8080"}):
 
 class UsageRecordingTest(unittest.TestCase):
     def setUp(self):
-        self.stack = ExitStack()
-        self.addCleanup(self.stack.close)
-        self.instruments = self.stack.enter_context(
+        self.instruments = self.enterContext(
             patch.multiple(
                 scenario,
                 _input_tokens=DEFAULT,
@@ -26,13 +23,24 @@ class UsageRecordingTest(unittest.TestCase):
                 _reasoning_output_tokens=DEFAULT,
                 _operation_input_tokens=DEFAULT,
                 _operation_output_tokens=DEFAULT,
-                _reference_tracer=DEFAULT,
             )
         )
-        self.stack.enter_context(patch.object(scenario, "reference_event_logger"))
+        self.body = {}
+        self.http_status = 200
+        self.client = self.enterContext(
+            openai.OpenAI(
+                api_key="mock-key",
+                base_url="http://localhost:8080/v1",
+                http_client=httpx.Client(
+                    transport=httpx.MockTransport(lambda request: httpx.Response(self.http_status, json=self.body))
+                ),
+                max_retries=0,
+            )
+        )
 
     def run_response(self, usage, *, status="completed", http_status=200):
-        body = {
+        self.http_status = http_status
+        self.body = {
             "id": "resp_test",
             "object": "response",
             "created_at": 0,
@@ -42,18 +50,12 @@ class UsageRecordingTest(unittest.TestCase):
             "usage": usage,
         }
         if status == "failed":
-            body["error"] = {"code": "server_error", "message": "Generation failed"}
-        transport = httpx.MockTransport(lambda request: httpx.Response(http_status, json=body))
-        with openai.OpenAI(
-            api_key="mock-key",
-            base_url="http://localhost:8080/v1",
-            http_client=httpx.Client(transport=transport),
-            max_retries=0,
-        ) as client:
-            scenario.run_responses_compaction_reference(client)
+            self.body["error"] = {"code": "server_error", "message": "Generation failed"}
+        scenario.run_responses_compaction_reference(self.client)
 
     def run_chat(self, usage, *, audio=False):
-        body = {
+        self.http_status = 200
+        self.body = {
             "id": "chatcmpl_test",
             "object": "chat.completion",
             "created": 0,
@@ -61,16 +63,10 @@ class UsageRecordingTest(unittest.TestCase):
             "choices": [{"index": 0, "finish_reason": "stop", "message": {"role": "assistant", "content": "Hi"}}],
             "usage": usage,
         }
-        transport = httpx.MockTransport(lambda request: httpx.Response(200, json=body))
-        with openai.OpenAI(
-            api_key="mock-key",
-            base_url="http://localhost:8080/v1",
-            http_client=httpx.Client(transport=transport),
-        ) as client:
-            if audio:
-                scenario.run_chat_audio_reference(client)
-            else:
-                scenario.run_chat_reference(client)
+        if audio:
+            scenario.run_chat_audio_reference(self.client)
+        else:
+            scenario.run_chat_reference(self.client)
 
     def test_absent_usage_does_not_record_any_counter(self):
         for status in ("completed", "failed"):

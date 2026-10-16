@@ -50,26 +50,20 @@ category explodes quickly, and histograms are expensive. Instead, the
 misleading quantiles, keep telemetry volume low, and answer the questions people
 care about: usage rates, cost approximations, and ratios across modalities.
 
-A metric view changes aggregation, not which measurements instrumentation
-records. Applying histogram aggregation to a usage counter therefore produces a
-distribution of modality contributions, not generally a distribution of total
-tokens per inference. Dropping the modality attribute in that view does not
-combine the contributions into one observation per inference.
+Usage counters can record several modality contributions per inference.
+A histogram view changes aggregation, not recording cardinality, so it does not
+generally produce a per-inference distribution. Dropping the modality attribute
+does not merge contributions into one observation.
 
 ## Why record only positive contributions on usage counters?
 
-Usage counters measure token consumption as positive modality contributions.
-Zero tokens contribute no consumption, so neither a provider-reported zero nor
-an implied zero produces a counter measurement. No response, or a response with
-no usage, does not establish a quantity to record either. Each counter records
-only its known positive contributions, including those from failed operations.
+Zero tokens contribute no consumption, and missing usage establishes no quantity.
+Counters therefore record only known positive contributions, including those
+from failed operations.
 Available input or output totals do not establish cache or reasoning counts.
 
-This differs from the `gen_ai.client.inference.operation.*` histograms, which
-record one total per inference and retain their zero fallback when usage is
-missing. A usage counter can receive several modality contributions from one
-inference. Recording zeros on it would not preserve a distribution with one
-observation per inference, even with a histogram view.
+Per-operation token histograms instead record one total per inference and retain
+their missing-usage zero fallback.
 
 ## Why does `gen_ai.token.modality` have an `unknown` value?
 

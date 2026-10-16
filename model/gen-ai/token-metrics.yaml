@@ -19,14 +19,13 @@ metrics:
       When systems report both used tokens and billable tokens, instrumentation
       MUST report billable tokens.
 
-      Instrumentation MUST record only known, strictly positive modality
-      contributions. It SHOULD record these for successful and failed inference
-      operations. Zero counts and unavailable counts MUST NOT produce
-      measurements. Availability MUST be determined independently for each
-      usage counter.
+      Instrumentation SHOULD record contributions from successful and failed
+      inference operations. Each measurement MUST be a known, strictly positive
+      modality contribution. Availability MUST be determined independently for
+      each usage counter.
 
-      When a positive contribution's modality cannot reliably be determined,
-      it MUST be recorded with `gen_ai.token.modality` set to `unknown`.
+      When a contribution's modality cannot reliably be determined,
+      instrumentation MUST set `gen_ai.token.modality` to `unknown`.
     stability: development
     annotations:
       code_generation:
@@ -53,14 +52,13 @@ metrics:
     note: >
       This value is a subset of `gen_ai.client.inference.usage.input_tokens`.
 
-      Instrumentation MUST record only known, strictly positive modality
-      contributions. It SHOULD record these for successful and failed inference
-      operations. Zero counts and unavailable counts MUST NOT produce
-      measurements. Availability MUST be determined independently for each
-      usage counter.
+      Instrumentation SHOULD record contributions from successful and failed
+      inference operations. Each measurement MUST be a known, strictly positive
+      modality contribution. Availability MUST be determined independently for
+      each usage counter.
 
-      When a positive contribution's modality cannot reliably be determined,
-      it MUST be recorded with `gen_ai.token.modality` set to `unknown`.
+      When a contribution's modality cannot reliably be determined,
+      instrumentation MUST set `gen_ai.token.modality` to `unknown`.
     stability: development
     annotations:
       code_generation:
@@ -75,14 +73,13 @@ metrics:
     note: >
       This value is a subset of `gen_ai.client.inference.usage.input_tokens`.
 
-      Instrumentation MUST record only known, strictly positive modality
-      contributions. It SHOULD record these for successful and failed inference
-      operations. Zero counts and unavailable counts MUST NOT produce
-      measurements. Availability MUST be determined independently for each
-      usage counter.
+      Instrumentation SHOULD record contributions from successful and failed
+      inference operations. Each measurement MUST be a known, strictly positive
+      modality contribution. Availability MUST be determined independently for
+      each usage counter.
 
-      When a positive contribution's modality cannot reliably be determined,
-      it MUST be recorded with `gen_ai.token.modality` set to `unknown`.
+      When a contribution's modality cannot reliably be determined,
+      instrumentation MUST set `gen_ai.token.modality` to `unknown`.
     stability: development
     annotations:
       code_generation:
@@ -97,14 +94,13 @@ metrics:
     note: >
       This value is a subset of `gen_ai.client.inference.usage.output_tokens`.
 
-      Instrumentation MUST record only known, strictly positive modality
-      contributions. It SHOULD record these for successful and failed inference
-      operations. Zero counts and unavailable counts MUST NOT produce
-      measurements. Availability MUST be determined independently for each
-      usage counter.
+      Instrumentation SHOULD record contributions from successful and failed
+      inference operations. Each measurement MUST be a known, strictly positive
+      modality contribution. Availability MUST be determined independently for
+      each usage counter.
 
-      When a positive contribution's modality cannot reliably be determined,
-      it MUST be recorded with `gen_ai.token.modality` set to `unknown`.
+      When a contribution's modality cannot reliably be determined,
+      instrumentation MUST set `gen_ai.token.modality` to `unknown`.
     stability: development
     annotations:
       code_generation:
