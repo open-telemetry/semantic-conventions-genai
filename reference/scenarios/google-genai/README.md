@@ -5,6 +5,13 @@ directly, so it owns inference and embeddings. It also supports **automatic
 function calling** — when tools are Python callables, the SDK executes them — so
 tool execution is instrumentable here.
 
+Usage counters record only known positive contributions from the SDK's usage
+metadata, omitting zero and unavailable counts. Contributions partition each
+known total, with any remainder recorded as `unknown`. Span/event attributes and
+operation histograms keep their existing zero handling.
+
+Run the recording-boundary regressions with `uv run --frozen python -m unittest usage_regressions`.
+
 | Operation | Should be instrumented here | Status |
 | --- | --- | --- |
 | inference (`chat`) | Yes — calls the model directly | ✅ Implemented |

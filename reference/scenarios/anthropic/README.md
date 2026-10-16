@@ -8,6 +8,13 @@ Tool use is supported, but the tool itself runs in application code.
 The scenario publishes inference durations from `opentelemetry-util-genai`
 under `gen_ai.client.inference.duration` using an OTel SDK view.
 
+Usage counters record only known positive contributions from the SDK's usage
+fields, omitting zero and unavailable counts.
+The Messages API reports no token modality breakdown, so known counts use
+`unknown` modality.
+
+Run the recording-boundary regressions with `uv run --frozen python -m unittest usage_regressions`.
+
 The same client also drives the **Managed Agents** service (`beta.agents`,
 `beta.sessions`, `beta.memory_stores`), where agents run server-side. The client
 owns the create-agent and invoke-agent client operations; the agent's reasoning,

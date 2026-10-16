@@ -88,14 +88,16 @@ def record_inference_usage(inv, request_model, server_address, server_port):
     modality_attributes = {**metric_attributes, "gen_ai.token.modality": "unknown"}
     if inv.input_tokens is not None:
         _operation_input_tokens.record(inv.input_tokens, metric_attributes)
-        _input_tokens.add(inv.input_tokens, modality_attributes)
+        if inv.input_tokens > 0:
+            _input_tokens.add(inv.input_tokens, modality_attributes)
     if inv.output_tokens is not None:
         _operation_output_tokens.record(inv.output_tokens, metric_attributes)
-        _output_tokens.add(inv.output_tokens, modality_attributes)
-    if inv.cache_read_input_tokens:
+        if inv.output_tokens > 0:
+            _output_tokens.add(inv.output_tokens, modality_attributes)
+    if inv.cache_read_input_tokens is not None and inv.cache_read_input_tokens > 0:
         _cache_read_input_tokens.add(inv.cache_read_input_tokens, modality_attributes)
     cache_write = inv.attributes.get("gen_ai.usage.cache_write.input_tokens")
-    if cache_write:
+    if cache_write is not None and cache_write > 0:
         _cache_write_input_tokens.add(cache_write, modality_attributes)
 
 

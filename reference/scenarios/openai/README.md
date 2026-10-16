@@ -7,6 +7,13 @@ tool) and memory (the Conversations API and stored responses via `store` /
 `previous_response_id`). It has no agent, workflow, or plan concepts (the
 Assistants API is covered by the `openai-assistants` scenario).
 
+Usage counters record only known positive contributions, omitting zero and
+unavailable counts.
+The audio scenario preserves the SDK's audio contributions and records the
+remaining known tokens with `unknown` modality.
+
+Run the recording-boundary regressions with `uv run --frozen python -m unittest usage_regressions`.
+
 | Operation | Should be instrumented here | Status |
 | --- | --- | --- |
 | inference (`chat`) | Yes — calls the model directly | ✅ Implemented |

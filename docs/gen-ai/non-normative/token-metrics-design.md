@@ -50,10 +50,31 @@ category explodes quickly, and histograms are expensive. Instead, the
 misleading quantiles, keep telemetry volume low, and answer the questions people
 care about: usage rates, cost approximations, and ratios across modalities.
 
+A metric view changes aggregation, not which measurements instrumentation
+records. Applying histogram aggregation to a usage counter therefore produces a
+distribution of modality contributions, not generally a distribution of total
+tokens per inference. Dropping the modality attribute in that view does not
+combine the contributions into one observation per inference.
+
+## Why record only positive contributions on usage counters?
+
+Usage counters measure token consumption as positive modality contributions.
+Zero tokens contribute no consumption, so neither a provider-reported zero nor
+an implied zero produces a counter measurement. No response, or a response with
+no usage, does not establish a quantity to record either. Each counter records
+only its known positive contributions, including those from failed operations.
+Available input or output totals do not establish cache or reasoning counts.
+
+This differs from the `gen_ai.client.inference.operation.*` histograms, which
+record one total per inference and retain their zero fallback when usage is
+missing. A usage counter can receive several modality contributions from one
+inference. Recording zeros on it would not preserve a distribution with one
+observation per inference, even with a histogram view.
+
 ## Why does `gen_ai.token.modality` have an `unknown` value?
 
-Summing a counter across `gen_ai.token.modality` must equal the total, even for
-providers that report no modality breakdown.
+Summing a counter across `gen_ai.token.modality` must equal the known total, even
+for providers that report no modality breakdown.
 
 The counters aggregate cleanly because each token lands in one modality bucket,
 and `gen_ai.token.modality` is required on all of them. When a provider reports
@@ -61,8 +82,9 @@ no breakdown, instrumentation still has to put tokens somewhere. Without
 `unknown`, both options fail: omitting the attribute breaks sums across
 different providers, and guessing `text` invents data.
 
-`unknown` means "the provider gave no modality breakdown", not "the token has no
-modality". It keeps the partition complete.
+`unknown` means "the positive count is known but its modality cannot reliably be
+determined", not "the count is unknown". It keeps the partition complete without
+inventing a quantity.
 
 ## Why are cached, cache-written, and reasoning tokens separate counters instead of attributes?
 
