@@ -33,13 +33,6 @@
       "gen_ai.usage.input_tokens",
       "gen_ai.usage.output_tokens"
     ],
-    "gen_ai.invoke_workflow.internal": [
-      "gen_ai.conversation.id",
-      "gen_ai.input.messages",
-      "gen_ai.operation.name",
-      "gen_ai.output.messages",
-      "gen_ai.workflow.name"
-    ],
     "gen_ai.memory.client": [
       "gen_ai.memory.query.text",
       "gen_ai.memory.record.count",
@@ -60,10 +53,12 @@
       "gen_ai.agent.name"
     ],
     "gen_ai.invoke_agent.inference_calls": [
-      "gen_ai.agent.name"
+      "gen_ai.agent.name",
+      "gen_ai.operation.name"
     ],
     "gen_ai.invoke_agent.tool_calls": [
-      "gen_ai.agent.name"
+      "gen_ai.agent.name",
+      "gen_ai.operation.name"
     ]
   },
   "entities": {},
@@ -81,6 +76,24 @@
       }
     },
     {
+      "id": "required_attribute_not_present",
+      "message": "Required attribute 'gen_ai.operation.name' is not present.",
+      "signal_type": "metric",
+      "signal_name": "gen_ai.invoke_agent.duration",
+      "context": {
+        "attribute_key": "gen_ai.operation.name"
+      }
+    },
+    {
+      "id": "required_attribute_not_present",
+      "message": "Required attribute 'gen_ai.operation.name' is not present.",
+      "signal_type": "metric",
+      "signal_name": "gen_ai.invoke_agent.inference_calls",
+      "context": {
+        "attribute_key": "gen_ai.operation.name"
+      }
+    },
+    {
       "id": "unit_mismatch",
       "message": "Unit should be '{inference_call}', but found '1'.",
       "signal_type": "metric",
@@ -88,6 +101,15 @@
       "context": {
         "expected": "{inference_call}",
         "unit": "1"
+      }
+    },
+    {
+      "id": "required_attribute_not_present",
+      "message": "Required attribute 'gen_ai.operation.name' is not present.",
+      "signal_type": "metric",
+      "signal_name": "gen_ai.invoke_agent.tool_calls",
+      "context": {
+        "attribute_key": "gen_ai.operation.name"
       }
     },
     {
@@ -216,6 +238,15 @@
         "expected_form": "execute_tool run_skill_script",
         "keyed_attr": "gen_ai.tool.name",
         "operation": "execute_tool"
+      }
+    },
+    {
+      "id": "genai_operation_name_unknown",
+      "message": "Span 'invoke_runner' has gen_ai.operation.name='invoke_runner' which is not a documented enum value",
+      "signal_type": "span",
+      "signal_name": "invoke_runner",
+      "context": {
+        "operation": "invoke_runner"
       }
     }
   ]

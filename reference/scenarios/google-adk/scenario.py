@@ -204,15 +204,15 @@ def run_agent_reference():
                 app_name="test_app",
                 user_id="test_user",
             )
-            workflow_span_attributes = {
-                "gen_ai.operation.name": "invoke_workflow",
+            # `Runner` is not itself an agent or a workflow, so its invocation is `invoke_runner`.
+            runner_span_attributes = {
+                "gen_ai.operation.name": "invoke_runner",
             }
             with _reference_tracer.start_as_current_span(
-                f"invoke_workflow {runner.app_name}", attributes=workflow_span_attributes
-            ) as workflow_span:
-                workflow_span.set_attribute("gen_ai.workflow.name", runner.app_name)
-                workflow_span.set_attribute("gen_ai.conversation.id", session.id)
-                workflow_span.set_attribute(
+                "invoke_runner", attributes=runner_span_attributes
+            ) as runner_span:
+                runner_span.set_attribute("gen_ai.conversation.id", session.id)
+                runner_span.set_attribute(
                     "gen_ai.input.messages",
                     json.dumps([{"role": "user", "parts": [{"type": "text", "content": input_text}]}]),
                 )
@@ -293,13 +293,13 @@ def run_agent_reference():
                             ]
                         )
                         agent_span.set_attribute("gen_ai.output.messages", output_messages)
-                        workflow_span.set_attribute("gen_ai.output.messages", output_messages)
+                        runner_span.set_attribute("gen_ai.output.messages", output_messages)
 
         asyncio.run(_run())
 
         # Both metrics are scoped to the agent invocation and emitted alongside
-        # the invoke_agent (internal) span, dimensioned by the agent name.
-        metric_attributes = {"gen_ai.agent.name": agent.name}
+        # its invoke_agent span, dimensioned by the operation and agent name.
+        metric_attributes = {"gen_ai.operation.name": "invoke_agent", "gen_ai.agent.name": agent.name}
         _inference_calls.record(call_counts["inference"], metric_attributes)
         _tool_calls.record(call_counts["tool"], metric_attributes)
 
@@ -656,9 +656,9 @@ def run_multi_agent_handoff_reference():
 
     async def run():
         session = await session_service.create_session(app_name=runner.app_name, user_id="test_user")
+        # `Runner` is not itself an agent or a workflow, so its invocation is `invoke_runner`.
         with _reference_tracer.start_as_current_span(
-            f"invoke_workflow {runner.app_name}",
-            attributes={"gen_ai.operation.name": "invoke_workflow", "gen_ai.workflow.name": runner.app_name},
+            "invoke_runner", attributes={"gen_ai.operation.name": "invoke_runner"}
         ):
             async for event in runner.run_async(
                 user_id=session.user_id,

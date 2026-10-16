@@ -30,3 +30,12 @@ scenarios:
           keyed_attr: gen_ai.tool.name
           operation: execute_tool
         reason: The runner does not recognize the span-name refinements for skill and command tools.
+      - id: genai_operation_name_unknown
+        context:
+          operation: invoke_runner
+        reason: invoke_runner follows the invoke_{framework_entrypoint} pattern and is not a gen_ai.operation.name enum value.
+    spans:
+      - match:
+          attributes:
+            gen_ai.operation.name: invoke_runner
+          type: gen_ai.invoke_agent.internal
