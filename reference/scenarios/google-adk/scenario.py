@@ -26,12 +26,12 @@ _reference_tracer = reference_tracer()
 _reference_meter = reference_meter()
 
 _inference_calls = _reference_meter.create_histogram(
-    "gen_ai.invoke_agent.inference_calls",
+    "gen_ai.invocation.inference_calls",
     unit="{inference_call}",
     description="The number of inference (model) calls a GenAI agent makes during a single invocation.",
 )
 _tool_calls = _reference_meter.create_histogram(
-    "gen_ai.invoke_agent.tool_calls",
+    "gen_ai.invocation.tool_calls",
     unit="{tool_call}",
     description="The number of tool calls a GenAI agent makes during a single invocation.",
 )
@@ -104,7 +104,7 @@ def _suppress_adk_native_telemetry():
         # call it hands to google-genai, but only as a fallback for when no model-client
         # instrumentation is loaded (see tracing._should_emit_native_telemetry). That call belongs
         # to google-genai, so drop those two instruments. Every other ADK instrument is left alone,
-        # including the invoke_agent inference/tool call counts, which describe ADK's own work.
+        # including the invocation inference/tool call counts, which describe ADK's own work.
         patch_attribute(adk_metrics, "_client_operation_duration", disabled_instrument)
         patch_attribute(adk_metrics, "_client_token_usage", disabled_instrument)
         yield
@@ -138,7 +138,7 @@ def run_agent_reference():
 
     # Per-invocation call counts, scoped to the single agent invocation below.
     # ADK can attribute each inference/tool call to the agent that issued it,
-    # which is exactly the criteria the invoke_agent call-count metrics require.
+    # which is exactly the criteria the invocation call-count metrics require.
     call_counts = {"inference": 0, "tool": 0}
 
     def get_weather(location: str, tool_context: ToolContext) -> str:
@@ -202,20 +202,22 @@ def run_agent_reference():
                 app_name="test_app",
                 user_id="test_user",
             )
-            workflow_span_attributes = {
-                "gen_ai.operation.name": "invoke_workflow",
+            # `Runner` is not itself an agent or a workflow, so its invocation is `invoke_runner`.
+            runner_span_attributes = {
+                "gen_ai.operation.name": "invoke_runner",
+                "gen_ai.invocation.is_nested": False,
             }
             with _reference_tracer.start_as_current_span(
-                f"invoke_workflow {runner.app_name}", attributes=workflow_span_attributes
-            ) as workflow_span:
-                workflow_span.set_attribute("gen_ai.workflow.name", runner.app_name)
-                workflow_span.set_attribute("gen_ai.conversation.id", session.id)
-                workflow_span.set_attribute(
+                "invoke_runner", attributes=runner_span_attributes
+            ) as runner_span:
+                runner_span.set_attribute("gen_ai.conversation.id", session.id)
+                runner_span.set_attribute(
                     "gen_ai.input.messages",
                     json.dumps([{"role": "user", "parts": [{"type": "text", "content": input_text}]}]),
                 )
                 agent_span_attributes = {
                     "gen_ai.operation.name": "invoke_agent",
+                    "gen_ai.invocation.is_nested": True,
                     "gen_ai.request.model": request_model,
                     "gen_ai.agent.name": agent.name,
                 }
@@ -291,13 +293,13 @@ def run_agent_reference():
                             ]
                         )
                         agent_span.set_attribute("gen_ai.output.messages", output_messages)
-                        workflow_span.set_attribute("gen_ai.output.messages", output_messages)
+                        runner_span.set_attribute("gen_ai.output.messages", output_messages)
 
         asyncio.run(_run())
 
         # Both metrics are scoped to the agent invocation and emitted alongside
-        # the invoke_agent (internal) span, dimensioned by the agent name.
-        metric_attributes = {"gen_ai.agent.name": agent.name}
+        # its invoke_agent span, dimensioned by the operation and agent name.
+        metric_attributes = {"gen_ai.operation.name": "invoke_agent", "gen_ai.agent.name": agent.name}
         _inference_calls.record(call_counts["inference"], metric_attributes)
         _tool_calls.record(call_counts["tool"], metric_attributes)
 
@@ -618,6 +620,7 @@ def run_skills_reference():
             toolset.tool_filter = [tool_name] if tool_name else lambda tool, readonly_context=None: False
             agent_span_attributes = {
                 "gen_ai.operation.name": "invoke_agent",
+                "gen_ai.invocation.is_nested": False,
                 "gen_ai.request.model": request_model,
                 "gen_ai.agent.name": agent_name,
             }

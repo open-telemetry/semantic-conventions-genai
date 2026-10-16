@@ -1074,9 +1074,8 @@ attributes:
       The workflow name is usually a static, application-unique identifier defined
       in a framework-specific way.
 
-      For example, it can be the name of the first chain in LangChain,
-      the name of the crew in CrewAI, or the entry point agent in ADK or
-      OpenAI Agents when no explicit workflow name is provided.
+      For example, it can be the name of a compiled LangGraph graph, the name
+      of a CrewAI `Crew`, or the name of an ADK `Workflow`.
 
       This attribute MUST have low cardinality. It is NOT RECOMMENDED to use
       instrumentation-time constants or names of types representing the workflow,
@@ -1086,6 +1085,17 @@ attributes:
       Semantic conventions for individual Generative AI frameworks SHOULD document
       what `gen_ai.workflow.name` means in the context of that framework.
     examples: ["multi_agent_rag", "customer_support_pipeline"]
+    stability: development
+  - key: gen_ai.invocation.is_nested
+    type: boolean
+    brief: >
+      Whether the invocation runs within another `invoke_agent`,
+      `invoke_workflow`, or `invoke_{framework_entrypoint}` invocation.
+    note: |
+      `true` when the invocation runs within another `invoke_agent`,
+      `invoke_workflow`, or `invoke_{framework_entrypoint}` invocation, including one
+      whose span is disabled or not sampled; `false` otherwise.
+    examples: [false, true]
     stability: development
   - key: gen_ai.skill.name
     type: string

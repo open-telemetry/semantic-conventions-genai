@@ -80,8 +80,7 @@ def _metrics_of(entry: ScenarioDataEntry) -> dict[str, dict[str, str]]:
 SEMCONV_DOC_LINKS: dict[str, str] = {
     "create_agent": "../../docs/gen-ai/gen-ai-agent-spans.md#create-agent-span",
     "invoke_agent_client": "../../docs/gen-ai/gen-ai-agent-spans.md#invoke-agent-client-span",
-    "invoke_agent_internal": "../../docs/gen-ai/gen-ai-agent-spans.md#invoke-agent-internal-span",
-    "invoke_workflow": "../../docs/gen-ai/gen-ai-agent-spans.md#invoke-workflow-span",
+    "invocation_internal": "../../docs/gen-ai/gen-ai-agent-spans.md#invocation-internal-span",
     "plan": "../../docs/gen-ai/gen-ai-agent-spans.md#plan-span",
     "inference": "../../docs/gen-ai/client-inference.md#span-gen_aiclientinference",
     "embeddings": "../../docs/gen-ai/gen-ai-spans.md#embeddings",
@@ -101,8 +100,8 @@ SEMCONV_DOC_LINKS: dict[str, str] = {
     "gen_ai.client.inference.operation.output_tokens": "../../docs/gen-ai/gen-ai-token-metrics.md#metric-gen_aiclientinferenceoperationoutput_tokens",
     "gen_ai.client.operation.duration": "../../docs/gen-ai/gen-ai-metrics.md#metric-gen_aiclientoperationduration",
     "gen_ai.client.inference.duration": "../../docs/gen-ai/client-inference.md#metric-gen_aiclientinferenceduration",
-    "gen_ai.invoke_agent.inference_calls": "../../docs/gen-ai/gen-ai-metrics.md#metric-gen_aiinvoke_agentinference_calls",
-    "gen_ai.invoke_agent.tool_calls": "../../docs/gen-ai/gen-ai-metrics.md#metric-gen_aiinvoke_agenttool_calls",
+    "gen_ai.invocation.inference_calls": "../../docs/gen-ai/gen-ai-metrics.md#metric-gen_aiinvocationinference_calls",
+    "gen_ai.invocation.tool_calls": "../../docs/gen-ai/gen-ai-metrics.md#metric-gen_aiinvocationtool_calls",
 }
 
 

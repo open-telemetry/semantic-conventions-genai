@@ -9,7 +9,7 @@
       "gen_ai.tool.name",
       "gen_ai.tool.type"
     ],
-    "gen_ai.invoke_agent.internal": [
+    "gen_ai.invocation.internal": [
       "gen_ai.agent.name",
       "gen_ai.input.messages",
       "gen_ai.operation.name",
@@ -18,12 +18,7 @@
       "gen_ai.system_instructions",
       "gen_ai.tool.definitions",
       "gen_ai.usage.input_tokens",
-      "gen_ai.usage.output_tokens"
-    ],
-    "gen_ai.invoke_workflow.internal": [
-      "gen_ai.input.messages",
-      "gen_ai.operation.name",
-      "gen_ai.output.messages",
+      "gen_ai.usage.output_tokens",
       "gen_ai.workflow.name"
     ],
     "gen_ai.plan.internal": [
@@ -45,14 +40,6 @@
       "message": "Attribute 'process.exit.code' does not exist in the registry.",
       "context": {
         "attribute_key": "process.exit.code"
-      }
-    },
-    {
-      "id": "genai_expected_attribute_missing",
-      "message": "Span 'invoke_agent weather-agent' (operation 'invoke_agent') is missing expected attribute 'gen_ai.response.finish_reasons'",
-      "context": {
-        "missing_attribute": "gen_ai.response.finish_reasons",
-        "operation": "invoke_agent"
       }
     }
   ],

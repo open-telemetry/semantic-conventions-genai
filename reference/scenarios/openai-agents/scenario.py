@@ -1,7 +1,7 @@
 """Reference implementation for OpenAI Agents.
 
 Exercises: agent run with tool calling, sandboxed command execution, and a
-multi-agent run with handoffs wrapped in a workflow span, against a mock OpenAI
+multi-agent run with handoffs wrapped in an invoke_runner span, against a mock OpenAI
 server, with manual OTel spans.
 """
 
@@ -65,6 +65,7 @@ async def run_agent():
     print("  [agent_run] agent with tool calling (reference implementation)")
     agent_span_attributes = {
         "gen_ai.operation.name": "invoke_agent",
+        "gen_ai.invocation.is_nested": False,
         "gen_ai.request.model": request_model,
         "gen_ai.agent.name": agent.name,
     }
@@ -233,8 +234,8 @@ async def run_command_execution():
         await session.shutdown()
 
 
-async def run_workflow():
-    """Run a multi-agent handoff wrapped in a workflow span representing the SDK workflow tracing."""
+async def run_runner():
+    """Run a multi-agent handoff wrapped in an `invoke_runner` span for the `Runner.run` call."""
     from agents import handoff
 
     client = openai.AsyncOpenAI(base_url=MOCK_BASE_URL, api_key="mock-key")
@@ -254,22 +255,20 @@ async def run_workflow():
     )
     input_text = "What's the weather in Seattle?"
 
-    print("  [workflow_run] agent run as workflow (reference implementation)")
-    workflow_name = "sequential-agents"
-    workflow_span_attributes = {
-        "gen_ai.operation.name": "invoke_workflow",
+    print("  [runner_run] multi-agent handoff via Runner.run (reference implementation)")
+    # `Runner` is not itself an agent or a workflow, so its invocation is `invoke_runner`.
+    runner_span_attributes = {
+        "gen_ai.operation.name": "invoke_runner",
+        "gen_ai.invocation.is_nested": False,
     }
-    with _reference_tracer.start_as_current_span(
-        f"invoke_workflow {workflow_name}", attributes=workflow_span_attributes
-    ) as workflow_span:
-        workflow_span.set_attribute("gen_ai.workflow.name", workflow_name)
-        workflow_span.set_attribute(
+    with _reference_tracer.start_as_current_span("invoke_runner", attributes=runner_span_attributes) as runner_span:
+        runner_span.set_attribute(
             "gen_ai.input.messages", json.dumps([{"role": "user", "parts": [{"type": "text", "content": input_text}]}])
         )
 
         # Note: Agent spans (invoke_agent) are expected to be children of the
-        # workflow span but are omitted for brevity in this scenario.
-        result = await Runner.run(agent_a, input_text, run_config=RunConfig(workflow_name=workflow_name))
+        # runner span but are omitted for brevity in this scenario.
+        result = await Runner.run(agent_a, input_text)
 
         if result.final_output:
             output_messages = json.dumps(
@@ -280,7 +279,7 @@ async def run_workflow():
                     }
                 ]
             )
-            workflow_span.set_attribute("gen_ai.output.messages", output_messages)
+            runner_span.set_attribute("gen_ai.output.messages", output_messages)
         print(f"    -> {str(result.final_output)[:60]}")
 
 
@@ -291,7 +290,7 @@ def main():
 
     asyncio.run(run_agent())
     asyncio.run(run_command_execution())
-    asyncio.run(run_workflow())
+    asyncio.run(run_runner())
 
     flush_and_shutdown(tp, lp, mp)
 

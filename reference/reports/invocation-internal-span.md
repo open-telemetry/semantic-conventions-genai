@@ -1,11 +1,12 @@
-# Invoke Agent Internal Span
+# Invocation Internal Span
 
-> **[Semantic Convention](../../docs/gen-ai/gen-ai-agent-spans.md#invoke-agent-internal-span)**
+> **[Semantic Convention](../../docs/gen-ai/gen-ai-agent-spans.md#invocation-internal-span)**
 
 ## Required
 
 | Attribute | Supporting Libraries |
 | --- | --- |
+| gen_ai.invocation.is_nested | [google-adk], [openai-agents] |
 | gen_ai.operation.name | [adk_a2a], [agent-framework], [autogen], [crewai], [google-adk], [langchain], [openai-agents], [pydantic-ai] |
 
 ## Conditionally Required
@@ -19,6 +20,7 @@
 | gen_ai.output.type | (none) |
 | gen_ai.request.choice.count | [agent-framework], [crewai], [google-adk] |
 | gen_ai.request.seed | [agent-framework], [autogen], [crewai], [pydantic-ai] |
+| gen_ai.workflow.name | [crewai], [langchain] |
 
 ## Recommended
 

@@ -39,8 +39,7 @@ _SPANS = {
     "execute_tool": ("gen_ai.execute_tool.internal", "Execute Tool"),
     "create_agent": ("gen_ai.create_agent.client", "Create Agent"),
     "invoke_agent_client": ("gen_ai.invoke_agent.client", "Invoke Agent Client"),
-    "invoke_agent_internal": ("gen_ai.invoke_agent.internal", "Invoke Agent Internal"),
-    "invoke_workflow": ("gen_ai.invoke_workflow.internal", "Invoke Workflow"),
+    "invocation_internal": ("gen_ai.invocation.internal", "Invocation Internal"),
     "plan": ("gen_ai.plan.internal", "Plan"),
 }
 
@@ -63,8 +62,8 @@ _METRICS = {
     "gen_ai.client.inference.operation.output_tokens": "Client Inference Operation Output Tokens",
     "gen_ai.client.operation.duration": "Client Operation Duration",
     "gen_ai.client.inference.duration": "Client Inference Duration",
-    "gen_ai.invoke_agent.inference_calls": "Invoke Agent Inference Calls",
-    "gen_ai.invoke_agent.tool_calls": "Invoke Agent Tool Calls",
+    "gen_ai.invocation.inference_calls": "Invocation Inference Calls",
+    "gen_ai.invocation.tool_calls": "Invocation Tool Calls",
 }
 
 _ENTITIES = {
