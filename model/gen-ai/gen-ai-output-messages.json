@@ -156,26 +156,26 @@
         },
         "GenericPart": {
             "additionalProperties": true,
-            "description": "Represents a message part that doesn't match any of the other part types.\nThis allows for extensibility with custom message part types.",
+            "description": "Fallback for consumers when a message part has a `type` not defined by this\nversion of semantic conventions (such as a provider-specific part or a part\ntype added in a newer version).",
             "properties": {
                 "type": {
-                    "const": "generic",
-                    "description": "The type of the content captured in this part.",
+                    "description": "The type of the content captured in this part. When recording a provider-specific part, it is RECOMMENDED to prefix the value with `gen_ai.provider.name` (for example `anthropic.search_result`) to avoid name collisions with current or future part types defined by semantic conventions.",
+                    "not": {
+                        "enum": [
+                            "text",
+                            "tool_call",
+                            "tool_call_response",
+                            "server_tool_call",
+                            "server_tool_call_response",
+                            "blob",
+                            "file",
+                            "uri",
+                            "reasoning",
+                            "compaction"
+                        ]
+                    },
                     "title": "Type",
                     "type": "string"
-                },
-                "generic_type": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "The kind of content in this part when no other part type fits, for example the provider's own content block type.",
-                    "title": "Generic Type"
                 }
             },
             "required": [
