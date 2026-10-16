@@ -13,7 +13,8 @@
 
 | Attribute | Supporting Libraries |
 | --- | --- |
-| gen_ai.conversation.id | (none) |
+| gen_ai.agent.name | [adk_a2a] |
+| gen_ai.conversation.id | [adk_a2a] |
 | gen_ai.output.type | (none) |
 | gen_ai.prompt.name | [aws-bedrock], [openai] |
 | gen_ai.prompt.version | [aws-bedrock], [openai] |
@@ -37,21 +38,21 @@
 | gen_ai.request.stop_sequences | (none) |
 | gen_ai.request.temperature | (none) |
 | gen_ai.request.top_p | (none) |
-| gen_ai.response.finish_reasons | [anthropic], [aws-bedrock], [azure-ai-inference], [cohere], [google-genai], [groq], [litellm], [mistralai], [openai], [vertexai] |
+| gen_ai.response.finish_reasons | [adk_a2a], [anthropic], [aws-bedrock], [azure-ai-inference], [cohere], [google-genai], [groq], [litellm], [mistralai], [openai], [vertexai] |
 | gen_ai.response.id | [anthropic], [azure-ai-inference], [cohere], [google-genai], [groq], [litellm], [mistralai], [openai] |
 | gen_ai.response.model | [anthropic], [azure-ai-inference], [google-genai], [groq], [litellm], [mistralai], [openai] |
 | gen_ai.response.time_to_first_chunk | (none) |
 | gen_ai.usage.audio.cache_read.input_tokens | [google-genai], [vertexai] |
 | gen_ai.usage.audio.input_tokens | [google-genai], [openai], [vertexai] |
 | gen_ai.usage.audio.output_tokens | [google-genai], [openai] |
-| gen_ai.usage.cache_read.input_tokens | [anthropic], [google-genai], [openai], [vertexai] |
+| gen_ai.usage.cache_read.input_tokens | [adk_a2a], [anthropic], [google-genai], [openai], [vertexai] |
 | gen_ai.usage.cache_write.input_tokens | [anthropic], [openai] |
 | gen_ai.usage.image.cache_read.input_tokens | [google-genai], [vertexai] |
 | gen_ai.usage.image.input_tokens | [google-genai], [vertexai] |
 | gen_ai.usage.image.output_tokens | [google-genai] |
-| gen_ai.usage.input_tokens | [anthropic], [aws-bedrock], [azure-ai-inference], [cohere], [google-genai], [groq], [litellm], [mistralai], [openai], [vertexai] |
-| gen_ai.usage.output_tokens | [anthropic], [aws-bedrock], [azure-ai-inference], [cohere], [google-genai], [groq], [litellm], [mistralai], [openai], [vertexai] |
-| gen_ai.usage.reasoning.output_tokens | [google-genai], [openai], [vertexai] |
+| gen_ai.usage.input_tokens | [adk_a2a], [anthropic], [aws-bedrock], [azure-ai-inference], [cohere], [google-genai], [groq], [litellm], [mistralai], [openai], [vertexai] |
+| gen_ai.usage.output_tokens | [adk_a2a], [anthropic], [aws-bedrock], [azure-ai-inference], [cohere], [google-genai], [groq], [litellm], [mistralai], [openai], [vertexai] |
+| gen_ai.usage.reasoning.output_tokens | [adk_a2a], [google-genai], [openai], [vertexai] |
 | gen_ai.usage.text.cache_read.input_tokens | [google-genai], [vertexai] |
 | gen_ai.usage.text.input_tokens | [google-genai], [vertexai] |
 | gen_ai.usage.text.output_tokens | [google-genai], [vertexai] |
@@ -67,6 +68,7 @@
 | gen_ai.system_instructions | (none) |
 | gen_ai.tool.definitions | (none) |
 
+[adk_a2a]: ../scenarios/adk_a2a/scenario.py
 [anthropic]: ../scenarios/anthropic/scenario.py
 [aws-bedrock]: ../scenarios/aws-bedrock/scenario.py
 [azure-ai-inference]: ../scenarios/azure-ai-inference/scenario.py

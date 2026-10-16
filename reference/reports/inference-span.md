@@ -13,6 +13,7 @@
 
 | Attribute | Supporting Libraries |
 | --- | --- |
+| gen_ai.agent.name | [adk_a2a] |
 | gen_ai.conversation.id | [adk_a2a], [agent-framework] |
 | gen_ai.output.type | (none) |
 | gen_ai.prompt.name | [aws-bedrock], [openai] |
