@@ -12,6 +12,7 @@
 
 | Attribute | Supporting Libraries |
 | --- | --- |
+| gen_ai.agent.name | [langchain] |
 | gen_ai.data_source.id | [haystack], [langchain], [llamaindex] |
 | gen_ai.provider.name | [llamaindex] |
 | gen_ai.request.model | [llamaindex] |

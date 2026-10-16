@@ -1,10 +1,17 @@
-"""Reference implementation for LangChain retrieval, planning, tool and workflow (LangGraph) runs."""
+"""Reference implementation for LangChain retrieval, planning, tool and workflow (LangGraph) runs.
+
+The retrieval scenarios cover a direct retriever call and a retriever tool
+inside a `create_agent` run.
+"""
 
 import asyncio
 import json
 import os
 from typing import TypedDict
 
+from langchain_core.callbacks import BaseCallbackHandler
+from langchain_core.documents import Document
+from langchain_core.retrievers import BaseRetriever
 from langchain_core.tools import tool
 from reference_shared import flush_and_shutdown, reference_tracer, setup_otel
 
@@ -83,20 +90,58 @@ def format_node(state: GraphState) -> GraphState:
     return {"messages": state["messages"] + [f"Weather report: {last_message}"]}
 
 
+class WeatherRetriever(BaseRetriever):
+    docs: list[Document]
+    top_k: int = 2
+
+    def _get_relevant_documents(self, query: str):
+        query_lower = query.lower()
+        matches = [doc for doc in self.docs if query_lower.split()[0] in doc.page_content.lower()]
+        return matches[: self.top_k]
+
+
+class RetrievalSpanHandler(BaseCallbackHandler):
+    """Callback handler that reports each LangChain retriever run as a retrieval span."""
+
+    def __init__(self):
+        self._spans = {}
+
+    def on_retriever_start(self, serialized, query, *, run_id, metadata=None, **kwargs):
+        retrieval_span_attributes = {"gen_ai.operation.name": "retrieval"}
+        # `create_agent(name=...)` stores the agent name as `lc_agent_name` in
+        # the run metadata. LangChain passes this metadata to the child runs.
+        agent_name = (metadata or {}).get("lc_agent_name")
+        if agent_name:
+            retrieval_span_attributes["gen_ai.agent.name"] = agent_name
+        span = _reference_tracer.start_span("retrieval", attributes=retrieval_span_attributes)
+        span.set_attribute("gen_ai.retrieval.query.text", query)
+        self._spans[run_id] = span
+
+    def on_retriever_end(self, documents, *, run_id, **kwargs):
+        span = self._spans.pop(run_id)
+        span.set_attribute(
+            "gen_ai.retrieval.documents",
+            json.dumps(
+                [
+                    {
+                        "content": document.page_content,
+                        "source_id": document.metadata.get("source_id"),
+                    }
+                    for document in documents
+                ]
+            ),
+        )
+        span.end()
+
+    def on_retriever_error(self, error, *, run_id, **kwargs):
+        span = self._spans.pop(run_id)
+        span.set_attribute("error.type", type(error).__qualname__)
+        span.end()
+
+
 def run_retrieval_reference():
     """Scenario: in-memory retrieval via LangChain retriever with reference implementation."""
     print("  [retrieval] in-memory retrieval (reference implementation)")
-    from langchain_core.documents import Document
-    from langchain_core.retrievers import BaseRetriever
-
-    class WeatherRetriever(BaseRetriever):
-        docs: list[Document]
-        top_k: int = 2
-
-        def _get_relevant_documents(self, query: str):
-            query_lower = query.lower()
-            matches = [doc for doc in self.docs if query_lower.split()[0] in doc.page_content.lower()]
-            return matches[: self.top_k]
 
     data_source_id = "weather-knowledge-base"
     query_text = "Seattle weather"
@@ -128,6 +173,38 @@ def run_retrieval_reference():
             ),
         )
         print(f"    -> {documents[0].page_content[:60]}")
+
+
+def run_agent_retrieval_reference():
+    """Scenario: retrieval through a retriever tool inside a `create_agent` run.
+
+    The agent calls the retriever tool, and the tool calls `retriever.invoke()`.
+    The `on_retriever_start` callback receives the run metadata of the agent,
+    so the retrieval span gets the agent name at span start.
+    """
+    print("  [retrieval] retriever tool inside an agent run (reference implementation)")
+    from langchain.agents import create_agent
+    from langchain_core.tools import create_retriever_tool
+    from langchain_openai import ChatOpenAI
+
+    data_source_id = "weather-knowledge-base"
+    retriever = WeatherRetriever(
+        docs=[
+            Document(page_content="Seattle weather is rainy and cool.", metadata={"source_id": data_source_id}),
+            Document(page_content="Paris weather is mild and breezy.", metadata={"source_id": data_source_id}),
+        ],
+    )
+    retriever_tool = create_retriever_tool(retriever, "search_weather_docs", "Search the weather knowledge base.")
+    agent = create_agent(
+        model=ChatOpenAI(model=AGENT_MODEL, base_url=MOCK_BASE_URL, api_key="mock-key"),
+        tools=[retriever_tool],
+        name="research-agent",
+    )
+    result = agent.invoke(
+        {"messages": [{"role": "user", "content": "What is the weather like in Seattle?"}]},
+        config={"callbacks": [RetrievalSpanHandler()]},
+    )
+    print(f"    -> {result['messages'][-1].text()[:60]}")
 
 
 def run_plan_and_execute_reference():
@@ -322,6 +399,7 @@ def main():
 
     tp, lp, mp = setup_otel()
     run_retrieval_reference()
+    run_agent_retrieval_reference()
     run_plan_and_execute_reference()
     run_execute_tool_reference()
     run_command_execution_reference()
