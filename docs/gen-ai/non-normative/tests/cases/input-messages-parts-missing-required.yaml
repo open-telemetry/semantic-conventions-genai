@@ -1,11 +1,15 @@
 # yaml-language-server: $schema=../case.schema.json
-description: A text part without `content`, and a blob part without `modality` or `content`
+description: >
+  A text part without `content` (even with the content in another field), and
+  a blob part without `modality` or `content`. Parts are not accepted as generic
+  parts when their `type` conflicts with a defined part type.
 schema: gen-ai-input-messages.json
 document: [
   {
     "role": "user",
     "parts": [
       { "type": "text" },
+      { "type": "text", "text": "hello" },
       { "type": "blob", "mime_type": "image/png" }
     ]
   }
@@ -18,6 +22,9 @@ errors:
   - path: $[0].parts[1]
     keyword: required
     message: "'content' is a required property"
-  - path: $[0].parts[1]
+  - path: $[0].parts[2]
+    keyword: required
+    message: "'content' is a required property"
+  - path: $[0].parts[2]
     keyword: required
     message: "'modality' is a required property"

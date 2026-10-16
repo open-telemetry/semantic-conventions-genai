@@ -437,9 +437,9 @@ def run_chat_with_image_input(handler):
 def run_chat_with_search_result_input(handler):
     """Scenario: chat with a search result block (no matching semconv part type).
 
-    Search result blocks have no semconv part type, so the block is recorded as
-    a generic part: `type` is `generic`, `generic_type` is Anthropic's block type,
-    and the block's own fields are kept as-is.
+    Search result blocks have no defined part type, so the block is recorded
+    with `type` prefixed by `gen_ai.provider.name` (`anthropic.`) and its own
+    fields kept as-is.
     """
     print("  [chat_search_result] chat with search result block (util-genai handler)")
     request_model = "claude-sonnet-4-20250514"
@@ -468,14 +468,14 @@ def run_chat_with_search_result_input(handler):
         server_port=port,
     ) as inv:
         inv.max_tokens = request_max_tokens  # -> gen_ai.request.max_tokens
-        # util-genai's GenericPart has no `generic_type`, so the part is a plain
-        # dict; `dataclasses.asdict` passes it through to the span and the event.
+        # util-genai's GenericPart fixes `type` to `"generic"`, so the part is a
+        # plain dict; `dataclasses.asdict` passes it through to the span and the event.
         inv.input_messages = [  # -> gen_ai.input.messages
             InputMessage(
                 role="user",
                 parts=[
                     Text(content=instruction),
-                    {**search_result, "type": "generic", "generic_type": search_result["type"]},
+                    {**search_result, "type": f"anthropic.{search_result['type']}"},
                 ],
             )
         ]
