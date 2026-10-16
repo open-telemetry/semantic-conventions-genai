@@ -470,6 +470,20 @@ attributes:
   - key: gen_ai.agent.name
     type: string
     brief: Human-readable name of the GenAI agent provided by the application.
+    note: |
+      On `create_agent` and `invoke_agent` operations, the value is the name of
+      the agent that the operation creates or invokes.
+
+      On other operations, such as inference or tool execution, the value is the
+      name of the agent that performs the operation. When an agent transfers
+      control to another agent, the value is the name of the agent that is active
+      when the operation starts. The value SHOULD be the same as the
+      `gen_ai.agent.name` of the enclosing `invoke_agent` operation, when one is
+      reported.
+
+      This attribute SHOULD have low cardinality. Instrumentations SHOULD
+      populate it only with a name that the application or the instrumented
+      library provides.
     examples: ["Math Tutor", "Fiction Writer"]
     stability: development
   - key: gen_ai.agent.description

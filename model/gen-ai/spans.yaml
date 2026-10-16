@@ -254,6 +254,11 @@ spans:
       - ref: gen_ai.conversation.id
         requirement_level:
           conditionally_required: If and only if the instrumented library has one readily available, or the user application provides one through OpenTelemetry context or library-specific mechanisms.
+      - ref: gen_ai.agent.name
+        brief: The human-readable name of the agent that makes the inference request.
+        requirement_level:
+          conditionally_required: If available.
+        sampling_relevant: true
       - ref: gen_ai.conversation.compacted
         requirement_level:
           recommended: when available
@@ -335,6 +340,11 @@ spans:
       - ref: gen_ai.data_source.id
         requirement_level:
           conditionally_required: When applicable.
+      - ref: gen_ai.agent.name
+        brief: The human-readable name of the agent that makes the retrieval request.
+        requirement_level:
+          conditionally_required: If available.
+        sampling_relevant: true
 
   - type: gen_ai.fetch_response.client
     kind: client

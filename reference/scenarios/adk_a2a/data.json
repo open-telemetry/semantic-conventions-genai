@@ -1,6 +1,7 @@
 {
   "spans": {
     "gen_ai.client.inference": [
+      "gen_ai.agent.name",
       "gen_ai.conversation.id",
       "gen_ai.operation.name",
       "gen_ai.request.model",
@@ -17,7 +18,17 @@
       "gen_ai.operation.name"
     ]
   },
-  "events": {},
+  "events": {
+    "gen_ai.client.inference.operation.details": [
+      "gen_ai.agent.name",
+      "gen_ai.conversation.id",
+      "gen_ai.response.finish_reasons",
+      "gen_ai.usage.cache_read.input_tokens",
+      "gen_ai.usage.input_tokens",
+      "gen_ai.usage.output_tokens",
+      "gen_ai.usage.reasoning.output_tokens"
+    ]
+  },
   "metrics": {
     "gen_ai.client.operation.duration": [
       "gen_ai.operation.name",
@@ -79,16 +90,18 @@
       }
     },
     {
-      "id": "missing_event",
-      "message": "Event 'gen_ai.choice' does not exist in the registry."
+      "id": "required_attribute_not_present",
+      "message": "Required attribute 'gen_ai.operation.name' is not present.",
+      "context": {
+        "attribute_key": "gen_ai.operation.name"
+      }
     },
     {
-      "id": "missing_event",
-      "message": "Event 'gen_ai.system.message' does not exist in the registry."
-    },
-    {
-      "id": "missing_event",
-      "message": "Event 'gen_ai.user.message' does not exist in the registry."
+      "id": "required_attribute_not_present",
+      "message": "Required attribute 'gen_ai.provider.name' is not present.",
+      "context": {
+        "attribute_key": "gen_ai.provider.name"
+      }
     },
     {
       "id": "span_status_ok_set_by_instrumentation",

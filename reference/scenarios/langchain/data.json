@@ -30,6 +30,7 @@
       "gen_ai.operation.name"
     ],
     "gen_ai.retrieval.client": [
+      "gen_ai.agent.name",
       "gen_ai.data_source.id",
       "gen_ai.operation.name",
       "gen_ai.retrieval.documents",
