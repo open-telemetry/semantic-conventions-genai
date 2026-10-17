@@ -21,8 +21,7 @@ metrics:
 
       Instrumentation SHOULD record contributions from successful and failed
       inference operations. Each measurement MUST be a known, strictly positive
-      modality contribution. Availability MUST be determined independently for
-      each usage counter.
+      modality contribution.
 
       When a contribution's modality cannot reliably be determined,
       instrumentation MUST set `gen_ai.token.modality` to `unknown`.
@@ -54,8 +53,7 @@ metrics:
 
       Instrumentation SHOULD record contributions from successful and failed
       inference operations. Each measurement MUST be a known, strictly positive
-      modality contribution. Availability MUST be determined independently for
-      each usage counter.
+      modality contribution.
 
       When a contribution's modality cannot reliably be determined,
       instrumentation MUST set `gen_ai.token.modality` to `unknown`.
@@ -75,8 +73,7 @@ metrics:
 
       Instrumentation SHOULD record contributions from successful and failed
       inference operations. Each measurement MUST be a known, strictly positive
-      modality contribution. Availability MUST be determined independently for
-      each usage counter.
+      modality contribution.
 
       When a contribution's modality cannot reliably be determined,
       instrumentation MUST set `gen_ai.token.modality` to `unknown`.
@@ -96,8 +93,7 @@ metrics:
 
       Instrumentation SHOULD record contributions from successful and failed
       inference operations. Each measurement MUST be a known, strictly positive
-      modality contribution. Availability MUST be determined independently for
-      each usage counter.
+      modality contribution.
 
       When a contribution's modality cannot reliably be determined,
       instrumentation MUST set `gen_ai.token.modality` to `unknown`.
