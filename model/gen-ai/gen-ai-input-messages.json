@@ -10,17 +10,9 @@
                     "type": "string"
                 },
                 "mime_type": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
                     "description": "The IANA MIME type of the attached data.",
-                    "title": "Mime Type"
+                    "title": "Mime Type",
+                    "type": "string"
                 },
                 "modality": {
                     "anyOf": [
@@ -107,17 +99,9 @@
                     "type": "array"
                 },
                 "name": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
                     "description": "The name of the participant.",
-                    "title": "Name"
+                    "title": "Name",
+                    "type": "string"
                 }
             },
             "required": [
@@ -138,30 +122,14 @@
                     "type": "string"
                 },
                 "id": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
                     "description": "Provider-assigned identifier for the compaction item or block.",
-                    "title": "Id"
+                    "title": "Id",
+                    "type": "string"
                 },
                 "content": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
                     "description": "The unencrypted compacted conversation summary, when available.",
-                    "title": "Content"
+                    "title": "Content",
+                    "type": "string"
                 }
             },
             "required": [
@@ -181,17 +149,9 @@
                     "type": "string"
                 },
                 "mime_type": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
                     "description": "The IANA MIME type of the attached data.",
-                    "title": "Mime Type"
+                    "title": "Mime Type",
+                    "type": "string"
                 },
                 "modality": {
                     "anyOf": [
@@ -321,17 +281,9 @@
                     "type": "string"
                 },
                 "id": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
                     "description": "Unique identifier for the server tool call.",
-                    "title": "Id"
+                    "title": "Id",
+                    "type": "string"
                 },
                 "name": {
                     "description": "Name of the server tool.",
@@ -362,17 +314,9 @@
                     "type": "string"
                 },
                 "id": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
                     "description": "Unique server tool call identifier matching the original call.",
-                    "title": "Id"
+                    "title": "Id",
+                    "type": "string"
                 },
                 "server_tool_call_response": {
                     "$ref": "#/$defs/GenericServerToolCallResponse",
@@ -420,17 +364,9 @@
                     "type": "string"
                 },
                 "id": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
                     "description": "Unique identifier for the tool call.",
-                    "title": "Id"
+                    "title": "Id",
+                    "type": "string"
                 },
                 "name": {
                     "description": "Name of the tool.",
@@ -438,8 +374,7 @@
                     "type": "string"
                 },
                 "arguments": {
-                    "default": null,
-                    "description": "Arguments for the tool call.",
+                    "description": "Arguments for the tool call. Omit when they are not captured; record null when the call has null arguments.",
                     "title": "Arguments"
                 }
             },
@@ -461,20 +396,12 @@
                     "type": "string"
                 },
                 "id": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
                     "description": "Unique tool call identifier.",
-                    "title": "Id"
+                    "title": "Id",
+                    "type": "string"
                 },
                 "response": {
-                    "description": "Tool call response.",
+                    "description": "Tool call response. Null represents a captured null response.",
                     "title": "Response"
                 }
             },
@@ -496,17 +423,9 @@
                     "type": "string"
                 },
                 "mime_type": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
                     "description": "The IANA MIME type of the attached data.",
-                    "title": "Mime Type"
+                    "title": "Mime Type",
+                    "type": "string"
                 },
                 "modality": {
                     "anyOf": [
