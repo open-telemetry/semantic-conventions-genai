@@ -19,11 +19,12 @@ metrics:
       When systems report both used tokens and billable tokens, instrumentation
       MUST report billable tokens.
 
-      Instrumentations SHOULD record this metric for each inference operation,
-      including failed ones. The recorded value SHOULD match the token count
-      returned by the provider, or `0` if the response was not received or
-      did not contain token usage. When no usage is received, the `0` is
-      recorded with `gen_ai.token.modality` set to `unknown`.
+      Instrumentation SHOULD record contributions from successful and failed
+      inference operations. Each measurement MUST be a known, strictly positive
+      modality contribution.
+
+      When a contribution's modality cannot reliably be determined,
+      instrumentation MUST set `gen_ai.token.modality` to `unknown`.
     stability: development
     annotations:
       code_generation:
@@ -50,10 +51,12 @@ metrics:
     note: >
       This value is a subset of `gen_ai.client.inference.usage.input_tokens`.
 
-      Instrumentations SHOULD record this metric for each inference operation,
-      including failed ones. The recorded value SHOULD match the token count
-      returned by the provider, or `0` if the response was not received or
-      did not contain token usage.
+      Instrumentation SHOULD record contributions from successful and failed
+      inference operations. Each measurement MUST be a known, strictly positive
+      modality contribution.
+
+      When a contribution's modality cannot reliably be determined,
+      instrumentation MUST set `gen_ai.token.modality` to `unknown`.
     stability: development
     annotations:
       code_generation:
@@ -68,10 +71,12 @@ metrics:
     note: >
       This value is a subset of `gen_ai.client.inference.usage.input_tokens`.
 
-      Instrumentations SHOULD record this metric for each inference operation,
-      including failed ones. The recorded value SHOULD match the token count
-      returned by the provider, or `0` if the response was not received or
-      did not contain token usage.
+      Instrumentation SHOULD record contributions from successful and failed
+      inference operations. Each measurement MUST be a known, strictly positive
+      modality contribution.
+
+      When a contribution's modality cannot reliably be determined,
+      instrumentation MUST set `gen_ai.token.modality` to `unknown`.
     stability: development
     annotations:
       code_generation:
@@ -86,10 +91,12 @@ metrics:
     note: >
       This value is a subset of `gen_ai.client.inference.usage.output_tokens`.
 
-      Instrumentations SHOULD record this metric for each inference operation,
-      including failed ones. The recorded value SHOULD match the token count
-      returned by the provider, or `0` if the response was not received or
-      did not contain token usage.
+      Instrumentation SHOULD record contributions from successful and failed
+      inference operations. Each measurement MUST be a known, strictly positive
+      modality contribution.
+
+      When a contribution's modality cannot reliably be determined,
+      instrumentation MUST set `gen_ai.token.modality` to `unknown`.
     stability: development
     annotations:
       code_generation:
