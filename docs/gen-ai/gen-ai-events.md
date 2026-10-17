@@ -43,7 +43,7 @@ This event captures the result of evaluating GenAI output for quality, accuracy,
 | [`gen_ai.evaluation.score.label`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If applicable. | string | Human readable label for evaluation. [2] | `relevant`; `not_relevant`; `correct`; `incorrect`; `pass`; `fail` |
 | [`gen_ai.evaluation.score.value`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If applicable. | double | The evaluation score returned by the evaluator. | `4.0` |
 | [`gen_ai.evaluation.explanation`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | A free-form explanation for the assigned score provided by the evaluator. | `The response is factually accurate but lacks sufficient detail to fully address the question.` |
-| [`gen_ai.response.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` When available. | string | The unique identifier for the completion. [3] | `chatcmpl-123` |
+| [`gen_ai.response.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` When available. | string | The identifier for the completion returned in the response. [3] | `chatcmpl-123` |
 
 **[1] `error.type`:** The `error.type` SHOULD match the error code returned by the Generative AI provider or the client library,
 the canonical name of exception that occurred, or another low-cardinality error identifier.
