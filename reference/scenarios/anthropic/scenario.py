@@ -10,7 +10,7 @@ import os
 import anthropic
 from opentelemetry.trace import SpanKind, StatusCode
 from opentelemetry.util.genai.handler import get_telemetry_handler
-from opentelemetry.util.genai.types import Blob, InputMessage, OutputMessage, Text
+from opentelemetry.util.genai.types import Blob, GenericToolDefinition, InputMessage, OutputMessage, Text
 from reference_shared import (
     flush_and_shutdown,
     inference_duration_view,
@@ -435,11 +435,10 @@ def run_chat_with_image_input(handler):
 
 
 def run_chat_with_search_result_input(handler):
-    """Scenario: chat with a search result block (no matching semconv part type).
+    """Scenario: chat with a search result block and a built-in web search tool.
 
-    Search result blocks have no defined part type, so the block is recorded
-    with `type` prefixed by `gen_ai.provider.name` (`anthropic.`) and its own
-    fields kept as-is.
+    Search result blocks and built-in tools have no defined semconv type, so
+    both are recorded with `type` prefixed by `gen_ai.provider.name` (`anthropic.`).
     """
     print("  [chat_search_result] chat with search result block (util-genai handler)")
     request_model = "claude-sonnet-4-20250514"
@@ -452,6 +451,7 @@ def run_chat_with_search_result_input(handler):
         "content": [{"type": "text", "text": "OpenTelemetry is an observability framework."}],
         "citations": {"enabled": True},
     }
+    tools = [{"type": "web_search_20250305", "name": "web_search"}]
     messages = [
         {
             "role": "user",
@@ -478,11 +478,15 @@ def run_chat_with_search_result_input(handler):
                 ],
             )
         ]
+        inv.tool_definitions = [  # -> gen_ai.tool.definitions
+            GenericToolDefinition(name=t["name"], type=f"anthropic.{t['type']}") for t in tools
+        ]
 
         resp = client.messages.create(
             model=request_model,
             max_tokens=request_max_tokens,
             messages=messages,
+            tools=tools,
         )
 
         inv.response_model_name = resp.model  # -> gen_ai.response.model
