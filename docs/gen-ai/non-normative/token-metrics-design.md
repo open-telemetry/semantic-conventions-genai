@@ -50,10 +50,10 @@ category explodes quickly, and histograms are expensive. Instead, the
 misleading quantiles, keep telemetry volume low, and answer the questions people
 care about: usage rates, cost approximations, and ratios across modalities.
 
-Usage counters can record several modality contributions per inference.
-A histogram view changes aggregation, not recording cardinality, so it does not
-generally produce a per-inference distribution. Dropping the modality attribute
-does not merge contributions into one observation.
+A histogram view does not combine a usage counter's modality contributions into
+inference totals. An inference with 100 text tokens and 200 image tokens produces
+two observations, 100 and 200, not one observation of 300. Dropping
+`gen_ai.token.modality` does not combine them.
 
 ## Why record only positive contributions on usage counters?
 
