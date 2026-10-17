@@ -63,8 +63,7 @@ modality being analyzed on every inference, including zeros. Otherwise, averages
 and percentiles depend on which zero counts happen to be reported.
 
 Providers may report only a total without a modality breakdown. Instrumentation
-cannot fill missing modality counts with zeros. Usage counters record only known
-positive contributions, including those from failed operations.
+cannot fill missing modality counts with zeros.
 
 This applies only to usage counters. Per-operation token histograms record one
 total per inference, including genuine zeros, and retain their missing-usage
