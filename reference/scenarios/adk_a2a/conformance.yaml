@@ -7,10 +7,65 @@ server:
 
 env:
   MOCK_LLM_URL: ${MOCK_SERVER_URL}
+  OTEL_INSTRUMENTATION_A2A_SDK_ENABLED: "false"
 
 scenarios:
   reference:
     run: uv run --frozen --python 3.12 --project . python scenario.py
+    expected_violations:
+      - id: missing_attribute
+        context:
+          attribute_key: gcp.vertex.agent.event_id
+        reason: ADK native instrumentation emits a proprietary attribute outside the registry.
+      - id: missing_attribute
+        context:
+          attribute_key: gcp.vertex.agent.invocation_id
+        reason: ADK native instrumentation emits a proprietary attribute outside the registry.
+      - id: missing_attribute
+        context:
+          attribute_key: gcp.vertex.agent.llm_request
+        reason: ADK native instrumentation emits a proprietary attribute outside the registry.
+      - id: missing_attribute
+        context:
+          attribute_key: gcp.vertex.agent.llm_response
+        reason: ADK native instrumentation emits a proprietary attribute outside the registry.
+      - id: missing_attribute
+        context:
+          attribute_key: gcp.vertex.agent.session_id
+        reason: ADK native instrumentation emits a proprietary attribute outside the registry.
+      - id: missing_attribute
+        context:
+          attribute_key: gen_ai.system
+        reason: ADK native instrumentation emits the removed gen_ai.system attribute; use gen_ai.provider.name.
+      # Weaver provides no event identity in the context, so these cannot be scoped by name.
+      - id: missing_event
+        context: {}
+        reason: ADK native instrumentation emits legacy gen_ai.choice, gen_ai.system.message, and gen_ai.user.message events.
+      - id: genai_expected_attribute_missing
+        context:
+          missing_attribute: gen_ai.response.finish_reasons
+          operation: invoke_agent
+        reason: ADK records this attribute on inference spans, not its invoke_agent span.
+      - id: genai_expected_attribute_missing
+        context:
+          missing_attribute: gen_ai.usage.input_tokens
+          operation: invoke_agent
+        reason: ADK records this attribute on inference spans, not its invoke_agent span.
+      - id: genai_expected_attribute_missing
+        context:
+          missing_attribute: gen_ai.usage.output_tokens
+          operation: invoke_agent
+        reason: ADK records this attribute on inference spans, not its invoke_agent span.
+      - id: unit_mismatch
+        context:
+          expected: '{inference_call}'
+          unit: '1'
+        reason: ADK native instrumentation emits unit '1' instead of '{inference_call}'.
+      - id: unit_mismatch
+        context:
+          expected: '{tool_call}'
+          unit: '1'
+        reason: ADK native instrumentation emits unit '1' instead of '{tool_call}'.
     spans:
       - match:
           attributes:

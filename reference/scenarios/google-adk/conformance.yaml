@@ -11,3 +11,14 @@ env:
 scenarios:
   reference:
     run: uv run --frozen --python 3.12 --project . python scenario.py
+    expected_violations:
+      - id: unit_mismatch
+        context:
+          expected: '{inference_call}'
+          unit: '1'
+        reason: OTel SDK emits unit '1' instead of '{inference_call}'/'{tool_call}'; fix histogram unit.
+      - id: unit_mismatch
+        context:
+          expected: '{tool_call}'
+          unit: '1'
+        reason: OTel SDK emits unit '1' instead of '{inference_call}'/'{tool_call}'; fix histogram unit.
