@@ -27,4 +27,23 @@ See also:
 
 * [Model Context Protocol](./mcp.md): Semantic Conventions for [MCP](https://modelcontextprotocol.io)
 
+## Attributes shared across operations
+
+Instrumentations MAY propagate context containing attributes listed below to nested
+instrumentations within the same process. This allows queries to select related
+spans without traversing the hierarchy.
+
+Language-specific helper packages (such as [`opentelemetry-util-genai`](https://github.com/open-telemetry/opentelemetry-python-contrib/tree/main/util/opentelemetry-util-genai))
+MAY support propagating these attributes within the process.
+
+When an attribute is available both from the instrumented library and from outer
+context, instrumentation SHOULD prefer the library's value.
+
+Instrumentations and helpers SHOULD NOT propagate attributes not listed here.
+Instrumentations SHOULD NOT use these attributes on signals that don't reference them
+explicitly.
+
+* [`gen_ai.conversation.id`](/docs/registry/attributes/gen-ai.md#gen-ai-conversation-id)
+* [`gen_ai.agent.name`](/docs/registry/attributes/gen-ai.md#gen-ai-agent-name)
+
 [DocumentStatus]: https://opentelemetry.io/docs/specs/otel/document-status
