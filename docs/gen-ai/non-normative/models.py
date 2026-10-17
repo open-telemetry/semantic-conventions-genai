@@ -253,11 +253,17 @@ class UriPart(BaseModel):
 
 class GenericPart(BaseModel):
     """
-    Represents an arbitrary message part with any type and properties.
+    Represents a message part that doesn't match any of the other part types.
     This allows for extensibility with custom message part types.
     """
 
-    type: str = Field(description="The type of the content captured in this part.")
+    type: Literal["generic"] = Field(
+        description="The type of the content captured in this part."
+    )
+    generic_type: Optional[str] = Field(
+        default=None,
+        description="The kind of content in this part when no other part type fits, for example the provider's own content block type.",
+    )
 
     model_config = ConfigDict(extra="allow")
 
