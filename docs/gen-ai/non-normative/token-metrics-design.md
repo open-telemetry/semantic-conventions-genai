@@ -57,13 +57,18 @@ does not merge contributions into one observation.
 
 ## Why record only positive contributions on usage counters?
 
-Zero tokens contribute no consumption, and missing usage establishes no quantity.
-Counters therefore record only known positive contributions, including those
-from failed operations.
-Available input or output totals do not establish cache or reasoning counts.
+Zeros do not affect consumption totals. To support per-modality statistics
+across inferences, instrumentation would need to record a known count for each
+modality being analyzed on every inference, including zeros. Otherwise, averages
+and percentiles depend on which zero counts happen to be reported.
 
-Per-operation token histograms instead record one total per inference and retain
-their missing-usage zero fallback.
+Providers may report only a total without a modality breakdown. Instrumentation
+cannot fill missing modality counts with zeros. Usage counters record only known
+positive contributions, including those from failed operations.
+
+This applies only to usage counters. Per-operation token histograms record one
+total per inference, including genuine zeros, and retain their missing-usage
+zero fallback.
 
 ## Why does `gen_ai.token.modality` have an `unknown` value?
 
