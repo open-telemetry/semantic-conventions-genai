@@ -27,7 +27,3 @@ event and returns the accepted events. The agent then runs asynchronously (the
 session reports `running`) and its output arrives over
 `beta.sessions.events.stream`, so output messages and usage are not available
 when the send call returns.
-
-## Tests
-
-Run the usage regressions with `uv run --frozen python -m unittest usage_regressions`.

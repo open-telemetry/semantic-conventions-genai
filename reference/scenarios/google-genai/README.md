@@ -12,7 +12,3 @@ tool execution is instrumentable here.
 | execute_tool | Yes — automatic function calling executes the tool | ✅ Implemented |
 | create_agent | Yes — `google.genai.Client.agents` supports remote agent creation | ✅ Implemented |
 | invoke_agent (client) | Yes — `google.genai.Client.agents` supports remote agent invocation | ❌ Not implemented |
-
-## Tests
-
-Run the usage regressions with `uv run --frozen python -m unittest usage_regressions`.

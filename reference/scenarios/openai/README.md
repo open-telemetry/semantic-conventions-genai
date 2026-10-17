@@ -14,7 +14,3 @@ Assistants API is covered by the `openai-assistants` scenario).
 | execute_tool | No — the base client returns tool calls but doesn't execute them; the tool runs in app code | ➖ Not instrumentable |
 | retrieval | Yes — Vector Stores search / `file_search` tool | ❌ Not implemented |
 | memory | Yes — Conversations API / stored responses | ❌ Not implemented |
-
-## Tests
-
-Run the usage regressions with `uv run --frozen python -m unittest usage_regressions`.
