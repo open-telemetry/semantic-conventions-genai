@@ -77,8 +77,7 @@ no breakdown, instrumentation still has to put tokens somewhere. Without
 different providers, and guessing `text` invents data.
 
 `unknown` means "the positive count is known but its modality cannot reliably be
-determined", not "the count is unknown". It keeps the partition complete without
-inventing a quantity.
+determined", not "the count is unknown".
 
 ## Why are cached, cache-written, and reasoning tokens separate counters instead of attributes?
 
