@@ -10,6 +10,7 @@ Assistants API is covered by the `openai-assistants` scenario).
 | Operation | Should be instrumented here | Status |
 | --- | --- | --- |
 | inference (`chat`) | Yes — calls the model directly | ✅ Implemented |
+| Responses API tool response | Yes — maps role-less `function_call_output` input items | ✅ Implemented |
 | embeddings | Yes — calls the model directly | ✅ Implemented |
 | execute_tool | No — the base client returns tool calls but doesn't execute them; the tool runs in app code | ➖ Not instrumentable |
 | retrieval | Yes — Vector Stores search / `file_search` tool | ❌ Not implemented |

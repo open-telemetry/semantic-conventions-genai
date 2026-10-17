@@ -475,6 +475,42 @@ def run_responses_continuation_reference(client):
         print(f"    -> previous_response_id: {previous_response_id}")
 
 
+def run_responses_tool_output_reference(client):
+    """Scenario: map a role-less Responses API function output to a tool message."""
+    print("  [responses_tool_output] Responses API function output (reference implementation)")
+    request_model = "gpt-4o-mini"
+    call_id = "call_weather_1"
+    tool_output = "Rainy, 14 C"
+    input_item = {"type": "function_call_output", "call_id": call_id, "output": tool_output}
+    host, port = mock_server_host_port(MOCK_BASE_URL)
+    input_messages = [
+        {
+            "role": "tool",
+            "parts": [{"type": "tool_call_response", "id": input_item["call_id"], "response": input_item["output"]}],
+        }
+    ]
+    span_attributes = {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "openai",
+        "gen_ai.request.model": request_model,
+        "openai.api.type": "responses",
+        "gen_ai.input.messages": json.dumps(input_messages),
+    }
+    if host:
+        span_attributes["server.address"] = host
+    if port is not None:
+        span_attributes["server.port"] = port
+    with _reference_tracer.start_as_current_span("chat gpt-4o-mini", attributes=span_attributes) as span:
+        response = client.responses.create(model=request_model, input=[input_item])
+        span.set_attribute("gen_ai.response.id", response.id)
+        if response.model:
+            span.set_attribute("gen_ai.response.model", response.model)
+        finish_reason = responses_finish_reason(response)
+        if finish_reason is not None:
+            span.set_attribute("gen_ai.response.finish_reasons", [finish_reason])
+    print(f"    -> {response.output_text[:60]}")
+
+
 def run_chat_streaming_reference(client):
     """Scenario: streaming chat completion with reference implementation."""
     print("  [chat_streaming] streaming chat completion (reference implementation)")
@@ -1152,6 +1188,7 @@ def main():
     run_chat_reference(client)
     run_responses_compaction_reference(client)
     run_responses_continuation_reference(client)
+    run_responses_tool_output_reference(client)
     run_chat_streaming_reference(client)
     run_chat_tool_call_reference(client)
     run_chat_with_document_input_reference(client)

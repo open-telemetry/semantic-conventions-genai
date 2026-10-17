@@ -65,7 +65,7 @@
 | gen_ai.output.messages | [anthropic], [aws-bedrock], [azure-ai-inference], [cohere], [google-genai], [groq], [litellm], [mistralai], [openai], [vertexai] |
 | gen_ai.prompt.variable | (none) |
 | gen_ai.system_instructions | (none) |
-| gen_ai.tool.definitions | (none) |
+| gen_ai.tool.definitions | [anthropic] |
 
 [anthropic]: ../scenarios/anthropic/scenario.py
 [aws-bedrock]: ../scenarios/aws-bedrock/scenario.py

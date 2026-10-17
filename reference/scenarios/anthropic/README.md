@@ -5,6 +5,10 @@ directly, so it owns inference. The API has no embeddings endpoint (Anthropic
 points users to third-party embedding providers), so embeddings is out of scope.
 Tool use is supported, but the tool itself runs in application code.
 
+The tool-response scenario passes an existing conversation to the Messages API.
+It preserves the `user` role on the message containing both a tool result and text,
+and records those blocks together as `tool_call_response` and `text` parts.
+
 The scenario publishes inference durations from `opentelemetry-util-genai`
 under `gen_ai.client.inference.duration` using an OTel SDK view.
 
