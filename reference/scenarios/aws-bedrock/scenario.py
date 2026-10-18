@@ -379,6 +379,7 @@ def run_embeddings_reference(client):
 
     print("  [embeddings] Bedrock Titan Embeddings (reference implementation)")
     request_model = "amazon.titan-embed-text-v2:0"
+    encoding_formats = ["float"]
     host, port = mock_server_host_port(MOCK_BASE_URL)
     span_attributes_3 = {
         "gen_ai.operation.name": "embeddings",
@@ -392,11 +393,12 @@ def run_embeddings_reference(client):
     with _reference_tracer.start_as_current_span(
         "embeddings amazon.titan-embed-text-v2:0", kind=SpanKind.CLIENT, attributes=span_attributes_3
     ) as span:
+        span.set_attribute("gen_ai.request.encoding_formats", encoding_formats)
         response = client.invoke_model(
             modelId=request_model,
             contentType="application/json",
             accept="application/json",
-            body=_json.dumps({"inputText": "Hello, world!"}),
+            body=_json.dumps({"inputText": "Hello, world!", "embeddingTypes": encoding_formats}),
         )
         result = _json.loads(response["body"].read())
         if result.get("inputTextTokenCount") is not None:

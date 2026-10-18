@@ -31,6 +31,7 @@
       "gen_ai.embeddings.dimension.count",
       "gen_ai.operation.name",
       "gen_ai.provider.name",
+      "gen_ai.request.encoding_formats",
       "gen_ai.request.model",
       "gen_ai.response.model",
       "gen_ai.usage.input_tokens",
@@ -53,15 +54,6 @@
     ]
   },
   "metrics": {},
-  "findings": [
-    {
-      "id": "genai_expected_attribute_missing",
-      "message": "Span 'embeddings mistral-embed' (operation 'embeddings') is missing expected attribute 'gen_ai.request.encoding_formats'",
-      "context": {
-        "missing_attribute": "gen_ai.request.encoding_formats",
-        "operation": "embeddings"
-      }
-    }
-  ],
+  "findings": [],
   "entities": {}
 }

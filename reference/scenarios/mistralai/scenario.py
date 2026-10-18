@@ -248,6 +248,7 @@ def run_embeddings(client):
     print("  [embeddings] embedding generation (reference implementation)")
     request_model = "mistral-embed"
     host, port = mock_server_host_port(MOCK_BASE_URL)
+    encoding_format = "float"
     span_attributes_4 = {
         "gen_ai.operation.name": "embeddings",
         "gen_ai.provider.name": "mistral",
@@ -260,9 +261,11 @@ def run_embeddings(client):
     with _reference_tracer.start_as_current_span(
         "embeddings mistral-embed", kind=SpanKind.CLIENT, attributes=span_attributes_4
     ) as span:
+        span.set_attribute("gen_ai.request.encoding_formats", [encoding_format])
         resp = client.embeddings.create(
             model=request_model,
             inputs=["Hello, world!"],
+            encoding_format=encoding_format,
         )
         if getattr(resp, "model", None):
             span.set_attribute("gen_ai.response.model", resp.model)

@@ -66,6 +66,9 @@ async def agent_node(state: GraphState) -> GraphState:
         result = await agent.ainvoke({"messages": [{"role": "user", "content": input_text}]})
 
         final_message = result["messages"][-1]
+        finish_reason = final_message.response_metadata.get("finish_reason")
+        if finish_reason is not None:
+            agent_span.set_attribute("gen_ai.response.finish_reasons", [finish_reason])
         usage = getattr(final_message, "usage_metadata", None) or {}
         if usage.get("input_tokens"):
             agent_span.set_attribute("gen_ai.usage.input_tokens", usage["input_tokens"])

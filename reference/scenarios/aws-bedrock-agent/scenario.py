@@ -96,13 +96,27 @@ def run_invoke_agent(client, agent_id):
             )
             # Consume the event stream
             text = ""
+            input_tokens = []
+            output_tokens = []
             for event in response["completion"]:
                 if "chunk" in event:
                     text += event["chunk"].get("bytes", b"").decode("utf-8")
                 elif "trace" in event:
+                    trace = event["trace"].get("trace", {})
+                    for trace_type in ("preProcessingTrace", "orchestrationTrace", "postProcessingTrace"):
+                        model_output = trace.get(trace_type, {}).get("modelInvocationOutput", {})
+                        usage = model_output.get("metadata", {}).get("usage", {})
+                        if usage.get("inputTokens") is not None:
+                            input_tokens.append(usage["inputTokens"])
+                        if usage.get("outputTokens") is not None:
+                            output_tokens.append(usage["outputTokens"])
                     agent_version = event["trace"].get("agentVersion")
                     if agent_version:
                         span.set_attribute("gen_ai.agent.version", agent_version)
+            if input_tokens:
+                span.set_attribute("gen_ai.usage.input_tokens", sum(input_tokens))
+            if output_tokens:
+                span.set_attribute("gen_ai.usage.output_tokens", sum(output_tokens))
             if text:
                 span.set_attribute(
                     "gen_ai.output.messages",

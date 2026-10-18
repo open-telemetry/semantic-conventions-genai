@@ -690,6 +690,7 @@ def run_create_agent():
         "gen_ai.provider.name": "gcp.gemini",
         "gen_ai.request.model": request_model,
         "gen_ai.agent.name": agent_name,
+        "server.address": _SERVER_ADDRESS,
     }
     with _reference_tracer.start_as_current_span(
         f"create_agent {agent_name}", kind=SpanKind.CLIENT, attributes=span_attributes

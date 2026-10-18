@@ -260,6 +260,7 @@ def run_embeddings():
     request_model = "text-embedding-3-small"
     litellm_model = f"openai/{request_model}"
     provider_name = _provider_name(litellm_model)
+    encoding_format = "float"
     span_attributes_4 = {
         "gen_ai.operation.name": "embeddings",
         "gen_ai.provider.name": provider_name,
@@ -269,9 +270,11 @@ def run_embeddings():
     with _reference_tracer.start_as_current_span(
         "embeddings text-embedding-3-small", kind=SpanKind.CLIENT, attributes=span_attributes_4
     ) as span:
+        span.set_attribute("gen_ai.request.encoding_formats", [encoding_format])
         resp = litellm.embedding(
             model=litellm_model,
             input=["Hello, world!"],
+            encoding_format=encoding_format,
             api_base=MOCK_BASE_URL,
             api_key="mock-key",
         )

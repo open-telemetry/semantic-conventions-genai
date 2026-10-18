@@ -161,6 +161,19 @@ def run_invoke_agent(client):
                     ),
                 )
 
+            finish_reason = None
+            if response.status == "completed":
+                finish_reason = "stop"
+            elif response.status == "incomplete":
+                reason = response.incomplete_details.reason if response.incomplete_details else None
+                finish_reason = {"max_output_tokens": "length", "content_filter": "content_filter"}.get(
+                    reason, "incomplete"
+                )
+            elif response.status in ("failed", "cancelled"):
+                finish_reason = "error"
+            if finish_reason is not None:
+                span.set_attribute("gen_ai.response.finish_reasons", [finish_reason])
+
             if response.usage:
                 span.set_attribute("gen_ai.usage.input_tokens", response.usage.input_tokens)
                 span.set_attribute("gen_ai.usage.output_tokens", response.usage.output_tokens)

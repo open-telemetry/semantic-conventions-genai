@@ -149,6 +149,7 @@ def run_embeddings(client):
     """Scenario: embedding generation with reference implementation."""
     print("  [embeddings] embedding generation (reference implementation)")
     request_model = "embed-v4.0"
+    encoding_formats = ["float"]
     host, port = mock_server_host_port(MOCK_BASE_URL)
     span_attributes_3 = {
         "gen_ai.operation.name": "embeddings",
@@ -162,11 +163,12 @@ def run_embeddings(client):
     with _reference_tracer.start_as_current_span(
         "embeddings embed-v4.0", kind=SpanKind.CLIENT, attributes=span_attributes_3
     ) as span:
+        span.set_attribute("gen_ai.request.encoding_formats", encoding_formats)
         resp = client.embed(
             model=request_model,
             texts=["Hello, world!"],
             input_type="search_document",
-            embedding_types=["float"],
+            embedding_types=encoding_formats,
         )
         if hasattr(resp, "meta") and resp.meta and hasattr(resp.meta, "billed_units") and resp.meta.billed_units:
             input_tokens = getattr(resp.meta.billed_units, "input_tokens", None)

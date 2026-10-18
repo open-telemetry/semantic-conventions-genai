@@ -210,6 +210,7 @@ def run_embeddings_reference(client):
     print("  [embeddings] embedding generation (reference implementation)")
     request_model = "text-embedding-3-small"
     host, port = mock_server_host_port(MOCK_BASE_URL)
+    encoding_format = "float"
     span_attributes_4 = {
         "gen_ai.operation.name": "embeddings",
         "gen_ai.provider.name": "azure.ai.inference",
@@ -222,9 +223,11 @@ def run_embeddings_reference(client):
     with _reference_tracer.start_as_current_span(
         "embeddings text-embedding-3-small", kind=SpanKind.CLIENT, attributes=span_attributes_4
     ) as span:
+        span.set_attribute("gen_ai.request.encoding_formats", [encoding_format])
         resp = client.embed(
             model=request_model,
             input=["Hello, world!"],
+            encoding_format=encoding_format,
         )
         if resp.model:
             span.set_attribute("gen_ai.response.model", resp.model)
