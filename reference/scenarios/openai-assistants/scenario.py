@@ -43,14 +43,16 @@ def run_invoke_agent(client):
     tool_defs = [
         {
             "type": "function",
-            "name": "get_weather",
-            "description": "Get the current weather",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "location": {"type": "string", "description": "City name"},
+            "function": {
+                "name": "get_weather",
+                "description": "Get the current weather",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "location": {"type": "string", "description": "City name"},
+                    },
+                    "required": ["location"],
                 },
-                "required": ["location"],
             },
         }
     ]
@@ -114,7 +116,9 @@ def run_invoke_agent(client):
             "gen_ai.input.messages",
             json.dumps([{"role": "user", "parts": [{"type": "text", "content": user_message}]}]),
         )
-        span.set_attribute("gen_ai.tool.definitions", json.dumps(tool_defs))
+        span.set_attribute(
+            "gen_ai.tool.definitions", json.dumps([{"type": t["type"], **t["function"]} for t in tool_defs])
+        )
         if getattr(assistant, "instructions", None):
             span.set_attribute(
                 "gen_ai.system_instructions",
@@ -153,7 +157,14 @@ def run_invoke_agent(client):
                         tool_span.set_attribute("gen_ai.tool.name", tool_name)
                         tool_span.set_attribute(
                             "gen_ai.tool.description",
-                            next((d.get("description", "") for d in tool_defs if d.get("name") == tool_name), ""),
+                            next(
+                                (
+                                    d["function"].get("description", "")
+                                    for d in tool_defs
+                                    if d["function"]["name"] == tool_name
+                                ),
+                                "",
+                            ),
                         )
                         tool_span.set_attribute("gen_ai.tool.type", "function")
                         if tool_call_id:

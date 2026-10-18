@@ -72,7 +72,7 @@ def run_chat(client):
         # Emit inference operation details event
         event_attrs = {
             "gen_ai.operation.name": "chat",
-            "gen_ai.provider.name": "mistral_ai",
+            "gen_ai.provider.name": "mistral",
             "gen_ai.request.model": request_model,
             "gen_ai.input.messages": json.dumps(
                 [{"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]} for m in messages]

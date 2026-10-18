@@ -223,7 +223,7 @@ def run_chat():
             prompt_text = "Say hello."
             response = model.generate_content(prompt_text)
         response_model = response.to_dict().get("modelVersion")
-        response_id = response.to_dict().get("responseId")
+        response_id = response.to_dict().get("response_id")
         if response_id:
             span.set_attribute("gen_ai.response.id", response_id)
         if response_model:
