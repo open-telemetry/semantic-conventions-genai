@@ -282,8 +282,11 @@ KnownMessagePart = Union[
 class GenericPart(BaseModel):
     """
     Fallback for consumers when a message part has a `type` not defined by this
-    version of semantic conventions (such as a provider-specific part or a part
-    type added in a newer version).
+    version of semantic conventions. When the instrumented API sends or returns
+    content that none of the defined part types fit, record the part keeping
+    the provider's fields. Consumers SHOULD expect parts with `type` values
+    they don't recognize, including provider-specific parts and part types
+    added in newer versions of semantic conventions.
     """
 
     type: str = Field(

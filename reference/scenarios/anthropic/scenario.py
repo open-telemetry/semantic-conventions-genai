@@ -468,8 +468,7 @@ def run_chat_with_search_result_input(handler):
         server_port=port,
     ) as inv:
         inv.max_tokens = request_max_tokens  # -> gen_ai.request.max_tokens
-        # util-genai's GenericPart fixes `type` to `"generic"`, so the part is a
-        # plain dict; `dataclasses.asdict` passes it through to the span and the event.
+        # util-genai has no type for provider-specific parts, so pass a plain dict.
         inv.input_messages = [  # -> gen_ai.input.messages
             InputMessage(
                 role="user",

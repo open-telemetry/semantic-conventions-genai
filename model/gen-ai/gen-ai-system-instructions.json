@@ -2,7 +2,7 @@
     "$defs": {
         "GenericPart": {
             "additionalProperties": true,
-            "description": "Fallback for consumers when a message part has a `type` not defined by this\nversion of semantic conventions (such as a provider-specific part or a part\ntype added in a newer version).",
+            "description": "Fallback for consumers when a message part has a `type` not defined by this\nversion of semantic conventions. When the instrumented API sends or returns\ncontent that none of the defined part types fit, record the part keeping\nthe provider's fields. Consumers SHOULD expect parts with `type` values\nthey don't recognize, including provider-specific parts and part types\nadded in newer versions of semantic conventions.",
             "properties": {
                 "type": {
                     "description": "The type of the content captured in this part. When recording a provider-specific part, it is RECOMMENDED to prefix the value with `gen_ai.provider.name` (for example `anthropic.search_result`) to avoid name collisions with current or future part types defined by semantic conventions.",
