@@ -847,18 +847,9 @@ sequenceDiagram
 
 ## Content without a matching part type
 
-When the instrumented API sends or returns content that none of the defined part
-types fit, record the part keeping the provider's fields. To avoid name
-collisions with current or future part types defined by semantic conventions, it
-is RECOMMENDED to prefix `type` with the corresponding `gen_ai.provider.name`,
-for example `anthropic.search_result`.
-
-Consumers SHOULD expect parts with `type` values they don't recognize, including
-provider-specific parts and part types added in newer versions of semantic
-conventions.
-
 This example is an Anthropic Messages API call with a `search_result` content
-block:
+block recorded with `type` prefixed by `gen_ai.provider.name`
+(`"anthropic.search_result"`):
 
 ```jsonc
 [
