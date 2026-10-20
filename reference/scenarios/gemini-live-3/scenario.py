@@ -206,7 +206,7 @@ async def _run_generation(session, request_model, host, port):
                     },
                 ],
                 "finish_reason": "stop",
-            }
+            },
         ]
         span.set_attribute("gen_ai.response.finish_reasons", ["stop"])
         span.set_attribute("gen_ai.output.messages", json.dumps(output_messages))
