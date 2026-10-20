@@ -380,7 +380,8 @@ spans:
         requirement_level:
           conditionally_required: If the provider exposes a session identifier, or the instrumentation uses a client-created per-connection identifier.
       - ref: gen_ai.provider.name
-        requirement_level: required
+        requirement_level:
+          recommended: If the start and end of user speech are determined from events in the model response.
         sampling_relevant: true
       - ref: gen_ai.operation.name
         requirement_level: required

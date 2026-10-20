@@ -1,37 +1,22 @@
-"""Reference implementation for Google Gemini Live 3.x (voice-native) inference.
+"""Reference implementation for Google Gemini Live 3.x voice inference.
 
-Exercises the *child* tool-call pattern within one realtime session against the mock
-Gemini Live WebSocket server. Unlike Gemini Live 2.5 (see the ``gemini-live``
-scenario, sibling pattern), a Gemini Live 3.x tool call is resolved *within* a
-single generation: the model asks for a tool, the client runs it and returns the
-result, and the *same* generation then speaks its answer. The
-``realtime_inference`` span therefore stays open across the whole tool round-trip.
+The mock server reports the tool request and the spoken answer within one
+generation. The ``realtime_inference`` span remains open until the provider
+reports generation or turn completion.
 
-Running the tool is application work, not a model operation, so it is not wrapped
-in a span. And because the request and result are resolved inside one generation
-(rather than across two, as in the sibling scenarios), they are not surfaced as
-separate ``tool_call`` / ``tool_call_response`` message parts either: the child
-pattern is an honest capture gap for the intermediate tool exchange, and generic
-instrumentation of ``client.aio.live.connect`` sees a single voice generation.
+The SDK exposes the tool request through ``session.receive`` and accepts the
+result through ``session.send_tool_response``. Instrumentation records both as
+``tool_call`` and ``tool_call_response`` message parts. The application executes
+the tool, so this client scenario does not emit an ``execute_tool`` span.
 
-A realtime session is long-lived and mostly idle, so it is not modeled as a span.
-Instead the session is represented by the ``gen_ai.client.realtime_session.started``
-and ``gen_ai.client.realtime_session.ended`` events. The Gemini Developer API's
-``setupComplete`` message has no fields, so it exposes no server session
-identifier to the client and ``gen_ai.realtime_session.id`` is left unset here. When
-a provider session id is not available, instrumentation may instead mint a
-client-created per-connection id and use it as ``gen_ai.realtime_session.id``.
+The session is represented by ``gen_ai.client.realtime_session.started`` and
+``gen_ai.client.realtime_session.ended`` events. The Gemini Developer API's
+``setupComplete`` message contains no server session identifier, so
+``gen_ai.realtime_session.id`` is unset.
 
-The Gemini Developer API also exposes no user voice-activity (VAD) events, so
-there is no ``user_speech`` span here (another honest capture gap for this
-provider); the user's spoken input is carried on the generation span through
-``gen_ai.input.messages`` instead.
-
-This proves that the child tool-call pattern is capturable by generic
-instrumentation of ``client.aio.live.connect`` and complements the sibling
-pattern demonstrated by the ``openai-realtime`` and ``gemini-live`` scenarios.
-It also shows the child pattern's honest limit: the intermediate tool exchange
-is not separately capturable as message parts.
+The Gemini Developer API also exposes no user voice-activity events, so this
+scenario does not emit a ``user_speech`` span. The user's audio is recorded in
+``gen_ai.input.messages`` on the generation span.
 """
 
 import asyncio
@@ -40,6 +25,8 @@ import json
 import os
 import ssl
 
+from opentelemetry import context as otel_context
+from opentelemetry._logs import SeverityNumber
 from opentelemetry.trace import SpanKind
 
 from reference_shared import (
@@ -76,33 +63,55 @@ def _audio_modality_tokens(details):
 
 
 def _user_audio_message():
-    """The user's spoken input as an audio-modality input message."""
-    return json.dumps(
-        [
+    """Return the user's spoken input as an audio message."""
+    return {
+        "role": "user",
+        "parts": [
             {
-                "role": "user",
-                "parts": [
-                    {
-                        "type": "blob",
-                        "modality": "audio",
-                        "mime_type": "audio/pcm",
-                        "content": INPUT_AUDIO_B64,
-                    }
-                ],
+                "type": "blob",
+                "modality": "audio",
+                "mime_type": "audio/pcm",
+                "content": INPUT_AUDIO_B64,
             }
-        ]
-    )
+        ],
+    }
+
+
+def _tool_call_message(function_call):
+    """Return the model's tool request as an assistant message."""
+    return {
+        "role": "assistant",
+        "parts": [
+            {
+                "type": "tool_call",
+                "id": function_call["id"],
+                "name": function_call["name"],
+                "arguments": function_call["args"],
+            }
+        ],
+    }
+
+
+def _tool_response_message(function_call, result):
+    """Return the application's tool result as a tool message."""
+    return {
+        "role": "tool",
+        "parts": [
+            {
+                "type": "tool_call_response",
+                "id": function_call["id"],
+                "response": result,
+            }
+        ],
+    }
 
 
 def _execute_tool(function_call):
-    """Run the requested tool on the client and return its result.
+    """Run the requested tool in the application and return its result.
 
     In the Gemini Live API the application executes tool calls and sends the
-    result back to the model, so this client-side work is not itself a model
-    operation and is not wrapped in a span. In the child pattern the request and
-    result are resolved within a single generation, so — unlike the sibling
-    scenarios — they are not surfaced as separate ``tool_call`` /
-    ``tool_call_response`` message parts either.
+    result back to the model. The client instrumentation does not own this
+    operation and does not emit an ``execute_tool`` span.
     """
     return {
         "location": function_call["args"].get("location"),
@@ -112,7 +121,7 @@ def _execute_tool(function_call):
 
 
 async def _run_generation(session, request_model, host, port):
-    """Drive one Gemini Live 3.x voice turn where a tool call is a child of the generation."""
+    """Drive one voice turn with a tool exchange within one generation."""
     from google.genai import types
 
     span_attributes = {
@@ -130,10 +139,12 @@ async def _run_generation(session, request_model, host, port):
     await session.send_realtime_input(audio=types.Blob(data=base64.b64decode(INPUT_AUDIO_B64), mime_type="audio/pcm"))
     await session.send_realtime_input(audio_stream_end=True)
 
+    caller_context = otel_context.get_current()
     with _reference_tracer.start_as_current_span(
         f"realtime_inference {request_model}", kind=SpanKind.CLIENT, attributes=span_attributes
     ) as span:
-        span.set_attribute("gen_ai.input.messages", _user_audio_message())
+        input_messages = [_user_audio_message()]
+        span.set_attribute("gen_ai.input.messages", json.dumps(input_messages))
 
         transcript_deltas = []
         audio_chunks = []
@@ -149,8 +160,15 @@ async def _run_generation(session, request_model, host, port):
             if message.usage_metadata is not None:
                 usage = message.usage_metadata
 
-        # The client runs the tool within this still-open generation span.
-        result = _execute_tool(function_call)
+        # The generation span remains open, but application tool execution uses
+        # the caller's context rather than inheriting the client span.
+        context_token = otel_context.attach(caller_context)
+        try:
+            result = _execute_tool(function_call)
+            input_messages.append(_tool_response_message(function_call, result))
+        finally:
+            otel_context.detach(context_token)
+        span.set_attribute("gen_ai.input.messages", json.dumps(input_messages))
         await session.send_tool_response(
             function_responses=[
                 types.FunctionResponse(id=function_call["id"], name=function_call["name"], response=result)
@@ -173,6 +191,7 @@ async def _run_generation(session, request_model, host, port):
         transcript = "".join(transcript_deltas)
         output_audio = base64.b64encode(b"".join(audio_chunks)).decode() if audio_chunks else ""
         output_messages = [
+            _tool_call_message(function_call),
             {
                 "role": "assistant",
                 "parts": [
@@ -207,11 +226,11 @@ async def _run_generation(session, request_model, host, port):
 
 
 async def run_gemini_live_3_reference():
-    """Scenario: a Gemini Live 3.x voice turn with a child-pattern tool call."""
+    """Run a Gemini Live 3.x tool exchange within one generation."""
     from google import genai
     from google.genai import types
 
-    print("  [gemini-live-3] voice-native inference with child tool call (reference implementation)")
+    print("  [gemini-live-3] voice inference with a tool exchange in one generation")
     request_model = "gemini-3-flash-native-audio-preview"
     host, live_port = _gemini_live_base_url(MOCK_BASE_URL)
 
@@ -244,6 +263,7 @@ async def run_gemini_live_3_reference():
             session_attributes["server.port"] = live_port
         reference_event_logger().emit(
             event_name="gen_ai.client.realtime_session.started",
+            severity_number=SeverityNumber.INFO,
             body="Realtime session started",
             attributes=session_attributes,
         )
@@ -252,6 +272,7 @@ async def run_gemini_live_3_reference():
         finally:
             reference_event_logger().emit(
                 event_name="gen_ai.client.realtime_session.ended",
+                severity_number=SeverityNumber.INFO,
                 body="Realtime session ended",
                 attributes=session_attributes,
             )

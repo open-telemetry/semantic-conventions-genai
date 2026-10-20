@@ -41,6 +41,7 @@ import json
 import os
 from collections import deque
 
+from opentelemetry._logs import SeverityNumber
 from opentelemetry.trace import SpanKind
 
 from reference_shared import (
@@ -410,6 +411,7 @@ def run_realtime_reference(client):
             session_attributes["server.port"] = port
         reference_event_logger().emit(
             event_name="gen_ai.client.realtime_session.started",
+            severity_number=SeverityNumber.INFO,
             body="Realtime session started",
             attributes=session_attributes,
         )
@@ -428,6 +430,7 @@ def run_realtime_reference(client):
             # The session is closed: record its end as an event.
             reference_event_logger().emit(
                 event_name="gen_ai.client.realtime_session.ended",
+                severity_number=SeverityNumber.INFO,
                 body="Realtime session ended",
                 attributes=session_attributes,
             )

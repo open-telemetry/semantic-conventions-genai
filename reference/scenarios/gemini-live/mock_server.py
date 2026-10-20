@@ -38,13 +38,13 @@ Server -> client turn sequence for one voice response:
 The first ``audioStreamEnd`` drives a simple spoken turn. A subsequent
 ``audioStreamEnd`` drives a tool-calling turn: the server emits a ``toolCall``
 (and nothing else) so the client runs the tool and replies with a
-``toolResponse``; the server then produces the spoken answer turn. This is the
-sibling tool-call pattern used by Gemini Live 2.5.
+``toolResponse``; the server then produces the spoken answer as a new
+generation, matching Gemini Live 2.5.
 
 When the requested model is a Gemini Live 3.x model, the very first
 ``audioStreamEnd`` drives the tool-calling turn directly (a single utterance
-that resolves to a tool call and then the spoken answer), letting the client
-model the tool call as a child of one generation.
+that resolves to a tool call and then the spoken answer). The server reports
+generation completion only after the spoken answer.
 """
 
 import argparse
@@ -115,15 +115,14 @@ async def _run_tool_call(ws):
 
 async def _handler(ws):
     audio_turns = 0
-    is_child_pattern = False
+    uses_single_generation_tool_exchange = False
     async for raw in ws:
         message = json.loads(raw)
         if "setup" in message:
-            # Gemini Live 3.x resolves a tool call within a single generation
-            # (child pattern); 2.5 splits it into sibling generations. The mock
-            # picks the behavior from the requested model.
+            # Gemini Live 3.x reports one generation across the tool exchange;
+            # 2.5 reports the tool request and answer as separate generations.
             model = str((message["setup"] or {}).get("model", ""))
-            is_child_pattern = "gemini-3" in model
+            uses_single_generation_tool_exchange = "gemini-3" in model
             await _send(ws, {"setupComplete": {}})
         elif "tool_response" in message or "toolResponse" in message:
             # The client returned the tool result; the model now speaks its answer.
@@ -134,7 +133,7 @@ async def _handler(ws):
             # generates its spoken response for the accumulated audio.
             if realtime_input.get("audioStreamEnd"):
                 audio_turns += 1
-                if is_child_pattern:
+                if uses_single_generation_tool_exchange:
                     # A single utterance that immediately requires a tool call.
                     await _run_tool_call(ws)
                 elif audio_turns == 1:

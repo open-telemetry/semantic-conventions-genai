@@ -47,6 +47,7 @@ import json
 import os
 import ssl
 
+from opentelemetry._logs import SeverityNumber
 from opentelemetry.trace import SpanKind
 
 from reference_shared import (
@@ -288,6 +289,7 @@ async def run_gemini_live_reference():
             session_attributes["server.port"] = live_port
         reference_event_logger().emit(
             event_name="gen_ai.client.realtime_session.started",
+            severity_number=SeverityNumber.INFO,
             body="Realtime session started",
             attributes=session_attributes,
         )
@@ -328,6 +330,7 @@ async def run_gemini_live_reference():
             # The session is closed: record its end as an event.
             reference_event_logger().emit(
                 event_name="gen_ai.client.realtime_session.ended",
+                severity_number=SeverityNumber.INFO,
                 body="Realtime session ended",
                 attributes=session_attributes,
             )

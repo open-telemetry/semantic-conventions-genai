@@ -444,12 +444,10 @@ instead.
 
 ### Realtime content generation
 
-Realtime, bidirectional streaming sessions (such as OpenAI Realtime or Gemini
-Live) reconstruct each server-side generation as a
-`gen_ai.realtime_inference.client` span and, optionally, the preceding user
-utterance as a `gen_ai.user_speech.internal` span. These spans, their trace
-structure, and related guidance are documented separately in
-[Realtime (live) content generation spans](gen-ai-realtime-spans.md).
+For bidirectional streaming sessions (such as OpenAI Realtime or Gemini Live),
+each server-side generation is modeled as a `realtime_inference` span, and
+optional user speech as a `user_speech` span. See
+[Realtime content generation](gen-ai-realtime.md).
 
 ### Embeddings
 

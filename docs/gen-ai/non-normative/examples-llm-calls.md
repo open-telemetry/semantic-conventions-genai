@@ -16,8 +16,8 @@
   - [Realtime inference span when content capturing is disabled](#realtime-inference-span-when-content-capturing-is-disabled)
   - [Realtime inference span when content capturing is enabled on span attributes](#realtime-inference-span-when-content-capturing-is-enabled-on-span-attributes)
 - [Realtime inference with tool calls](#realtime-inference-with-tool-calls)
-  - [Sibling tool execution](#sibling-tool-execution)
-  - [Child tool execution](#child-tool-execution)
+  - [Tool execution across two generations](#tool-execution-across-two-generations)
+  - [Tool execution within one generation](#tool-execution-within-one-generation)
 - [System instructions along with chat history (content enabled)](#system-instructions-along-with-chat-history-content-enabled)
 - [Chat completion with reasoning (content enabled)](#chat-completion-with-reasoning-content-enabled)
 - [Tool calls (built-in)](#tool-calls-built-in)
@@ -596,12 +596,17 @@ sequenceDiagram
     participant I as Instrumented realtime client
     participant M as Model
     A->>I: Open realtime connection
+    I->>M: Establish realtime connection
+    M-->>I: Connection established
     I-->>A: Connection established
     Note left of I: realtime_session.started event
     A->>I: User speech starts
     activate I
     Note left of I: user_speech span
-    A->>I: Stream user audio
+    loop While user is speaking
+        A->>I: Stream user audio
+        I->>M: Stream user audio
+    end
     A->>I: User speech ends
     deactivate I
     I->>M: Commit user input
@@ -612,6 +617,8 @@ sequenceDiagram
     deactivate I
     I-->>A: Play model output
     A->>I: Close realtime connection
+    I->>M: Close realtime connection
+    M-->>I: Connection closed
     Note left of I: realtime_session.ended event
     I-->>A: Connection closed
 ```
@@ -687,16 +694,17 @@ use the same `gen_ai.realtime_session.id` when it is available.
 ## Realtime inference with tool calls
 
 Realtime APIs expose different generation boundaries around tool calls. The
-provider's observable completion events determine whether tool execution is a
-sibling of two generation spans or a child of one generation span.
+provider's observable completion events determine whether the tool request ends
+one generation or the same generation remains open until the final answer.
 
 The diagrams include the optional `user_speech` span. Instrumentation records
 this span only when it can reliably determine when the user starts and stops
 speaking. The session lifecycle events and spans use the same
-`gen_ai.realtime_session.id` when it is available, except for `execute_tool`
-spans, which remain correlated through trace context.
+`gen_ai.realtime_session.id` when it is available. The application or agent
+owns tool execution, and the parent of an `execute_tool` span depends on the
+active context in that layer.
 
-### Sibling tool execution
+### Tool execution across two generations
 
 OpenAI Realtime and Gemini Live 2.5 report the tool call as the end of a
 generation. The model output after the tool result belongs to a new generation:
@@ -714,12 +722,17 @@ sequenceDiagram
     participant M as Model
     participant T as Tool
     A->>I: Open realtime connection
+    I->>M: Establish realtime connection
+    M-->>I: Connection established
     I-->>A: Connection established
     Note left of I: realtime_session.started event
     A->>I: User speech starts
     activate I
     Note left of I: user_speech span
-    A->>I: Stream user audio
+    loop While user is speaking
+        A->>I: Stream user audio
+        I->>M: Stream user audio
+    end
     A->>I: User speech ends
     deactivate I
     I->>M: Commit user input
@@ -741,11 +754,13 @@ sequenceDiagram
     deactivate I
     I-->>A: Final answer
     A->>I: Close realtime connection
+    I->>M: Close realtime connection
+    M-->>I: Connection closed
     Note left of I: realtime_session.ended event
     I-->>A: Connection closed
 ```
 
-#### Sibling-pattern spans when content capturing is disabled
+#### Spans across two generations when content capturing is disabled
 
 The first `realtime_inference` span ends when the model requests the tool:
 
@@ -756,8 +771,7 @@ The first `realtime_inference` span ends when the model requests the tool:
 | `gen_ai.realtime_session.id`     | `"sess_5j66UpCpwteGg4YSxUnt7lPY"`     |
 | `gen_ai.response.finish_reasons` | `["tool_call"]`                       |
 
-When tool execution is instrumented under the same application or agent span,
-the `execute_tool` span is a sibling:
+Application or agent instrumentation may record the tool execution:
 
 | Property                | Value                             |
 | ----------------------- | --------------------------------- |
@@ -774,7 +788,7 @@ The second `realtime_inference` span records the model's final answer:
 | `gen_ai.realtime_session.id`     | `"sess_5j66UpCpwteGg4YSxUnt7lPY"`     |
 | `gen_ai.response.finish_reasons` | `["stop"]`                            |
 
-#### Sibling-pattern spans when content capturing is enabled on span attributes
+#### Spans across two generations when content capturing is enabled on span attributes
 
 The first `realtime_inference` span records the tool request:
 
@@ -830,8 +844,7 @@ The first `realtime_inference` span records the tool request:
 ]
 ```
 
-When tool execution is instrumented under the same application or agent span,
-the `execute_tool` span is a sibling:
+Application or agent instrumentation may record the tool execution:
 
 | Property                | Value                        |
 | ----------------------- | ---------------------------- |
@@ -895,7 +908,7 @@ model's answer as output:
 ]
 ```
 
-### Child tool execution
+### Tool execution within one generation
 
 Gemini Live 3.x can report the tool request and the output produced after the
 tool result as one generation. The `realtime_inference` span remains open until
@@ -914,35 +927,43 @@ sequenceDiagram
     participant M as Model
     participant T as Tool
     A->>I: Open realtime connection
+    I->>M: Establish realtime connection
+    M-->>I: Connection established
     I-->>A: Connection established
     Note left of I: realtime_session.started event
     A->>I: User speech starts
     activate I
     Note left of I: user_speech span
-    A->>I: Stream user audio
+    loop While user is speaking
+        A->>I: Stream user audio
+        I->>M: Stream user audio
+    end
     A->>I: User speech ends
     deactivate I
     I->>M: Commit user input
     activate I
     Note left of I: realtime_inference span
     M-->>I: Tool call
-    I->>T: Execute tool
-    activate I
-    Note left of I: execute_tool child span
-    T-->>I: Tool result
-    deactivate I
-    I->>M: Send tool result
+    I-->>A: Tool call
+    A->>T: Execute tool
+    activate A
+    Note right of A: execute_tool span
+    T-->>A: Tool result
+    deactivate A
+    A->>I: Send tool result
     M-->>I: Final answer and turn completion
     deactivate I
     I-->>A: Final answer
     A->>I: Close realtime connection
+    I->>M: Close realtime connection
+    M-->>I: Connection closed
     Note left of I: realtime_session.ended event
     I-->>A: Connection closed
 ```
 
-#### Child-pattern span when content capturing is disabled
+#### Span within one generation when content capturing is disabled
 
-The parent span covers the complete generation, including the interval while
+The span covers the complete generation, including the interval while
 the provider waits for the tool result:
 
 | Property                         | Value                                 |
@@ -952,8 +973,8 @@ the provider waits for the tool result:
 | `gen_ai.realtime_session.id`     | `"sess_5j66UpCpwteGg4YSxUnt7lPY"`     |
 | `gen_ai.response.finish_reasons` | `["stop"]`                            |
 
-When the layer executing the tool instruments it, the `execute_tool` span is a
-child of the active generation span:
+Application or agent instrumentation may record the tool execution. Its parent
+depends on the active context in that layer:
 
 | Property                | Value                        |
 | ----------------------- | ---------------------------- |
@@ -961,18 +982,9 @@ child of the active generation span:
 | `gen_ai.operation.name` | `"execute_tool"`             |
 | `gen_ai.tool.name`      | `"get_weather"`              |
 
-#### Child-pattern span when content capturing is enabled on span attributes
+#### Span within one generation when content capturing is enabled on span attributes
 
-When the layer executing the tool instruments it, the `execute_tool` span is a
-child of the active generation span:
-
-| Property                | Value                        |
-| ----------------------- | ---------------------------- |
-| Span name               | `"execute_tool get_weather"` |
-| `gen_ai.operation.name` | `"execute_tool"`             |
-| `gen_ai.tool.name`      | `"get_weather"`              |
-
-The parent `realtime_inference` span covers the provider's complete generation,
+The `realtime_inference` span covers the provider's complete generation,
 including the interval while the provider waits for the tool result. It ends
 when the provider reports generation or turn completion.
 
@@ -981,11 +993,11 @@ when the provider reports generation or turn completion.
 | Span name                        | `"realtime_inference gemini-live"`    |
 | `gen_ai.operation.name`          | `"realtime_inference"`                |
 | `gen_ai.realtime_session.id`     | `"sess_5j66UpCpwteGg4YSxUnt7lPY"`     |
-| `gen_ai.input.messages`          | [`gen_ai.input.messages`](#gen-ai-input-messages-realtime-tool-child) |
-| `gen_ai.output.messages`         | [`gen_ai.output.messages`](#gen-ai-output-messages-realtime-tool-child) |
+| `gen_ai.input.messages`          | [`gen_ai.input.messages`](#gen-ai-input-messages-realtime-tool-single-generation) |
+| `gen_ai.output.messages`         | [`gen_ai.output.messages`](#gen-ai-output-messages-realtime-tool-single-generation) |
 | `gen_ai.response.finish_reasons` | `["stop"]`                            |
 
-<span id="gen-ai-input-messages-realtime-tool-child">`gen_ai.input.messages` value</span>
+<span id="gen-ai-input-messages-realtime-tool-single-generation">`gen_ai.input.messages` value</span>
 
 ```json
 [
@@ -1021,7 +1033,7 @@ when the provider reports generation or turn completion.
 ]
 ```
 
-<span id="gen-ai-output-messages-realtime-tool-child">`gen_ai.output.messages` value</span>
+<span id="gen-ai-output-messages-realtime-tool-single-generation">`gen_ai.output.messages` value</span>
 
 ```json
 [
