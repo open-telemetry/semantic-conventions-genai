@@ -1,0 +1,8 @@
+# yaml-language-server: $schema=../case.schema.json
+description: Guardrail content keeps the structured input the guardrail API received
+schema: gen-ai-guardrail-content.json
+document: [
+  { "role": "user", "content": "Send an email to customer@example.com" }
+]
+# Regenerate with `uv run pytest --update-snapshots`, do not edit by hand.
+errors: []

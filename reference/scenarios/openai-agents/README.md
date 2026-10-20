@@ -2,7 +2,8 @@
 
 The OpenAI Agents SDK orchestrates agents. It calls the model through the
 `openai` client, so it **delegates inference**. It owns the agent run and tool
-execution it drives directly, including the sandbox tools it ships.
+execution it drives directly, including the sandbox tools it ships. It also
+exposes dedicated input and output guardrail APIs.
 
 Agent-as-tool calls use `execute_tool {gen_ai.tool.name}` span names and record
 the SDK tool's target separately in `gen_ai.transfer.target.name`. Agent spans
@@ -27,3 +28,5 @@ target's SDK turn begins. Each agent's turn has its own `invoke_agent` span.
 | invoke_workflow | Yes — the SDK's tracing models a run as a workflow (`workflow_name`) | ✅ Implemented |
 | execute_tool | Yes — the SDK runs the function tool | ✅ Implemented |
 | execute_tool (command) | Yes — the `Shell` sandbox capability runs a general command through `exec_command` | ✅ Implemented |
+| guardrail result event | Yes — `InputGuardrail.run` returns `InputGuardrailResult` | ✅ Implemented |
+| apply guardrail client span | No — guardrails run in process | ➖ Not instrumentable |
