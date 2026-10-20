@@ -109,14 +109,6 @@
       }
     },
     {
-      "id": "genai_content_schema",
-      "message": "Attribute 'gen_ai.tool.definitions' value does not conform to the GenAI schema: {\"description\":\"Get the current weather.\",\"name\":\"get_weather\",\"parameters\":{\"properties\":{\"location\":{\"description\":\"City name\",\"type\":\"STRING\"}},\"required\":[\"location\"],\"type\":\"OBJECT\"}} is not valid under any of the schemas listed in the 'anyOf' keyword",
-      "context": {
-        "attribute": "gen_ai.tool.definitions",
-        "errors": "{\"description\":\"Get the current weather.\",\"name\":\"get_weather\",\"parameters\":{\"properties\":{\"location\":{\"description\":\"City name\",\"type\":\"STRING\"}},\"required\":[\"location\"],\"type\":\"OBJECT\"}} is not valid under any of the schemas listed in the 'anyOf' keyword"
-      }
-    },
-    {
       "id": "missing_attribute",
       "message": "Attribute 'process.exit.code' does not exist in the registry.",
       "context": {

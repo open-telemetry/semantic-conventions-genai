@@ -28,8 +28,10 @@
       "server.port"
     ],
     "gen_ai.embeddings.client": [
+      "gen_ai.embeddings.dimension.count",
       "gen_ai.operation.name",
       "gen_ai.provider.name",
+      "gen_ai.request.encoding_formats",
       "gen_ai.request.model",
       "gen_ai.response.model",
       "gen_ai.usage.input_tokens",
@@ -42,6 +44,7 @@
       "gen_ai.input.messages",
       "gen_ai.operation.name",
       "gen_ai.output.messages",
+      "gen_ai.provider.name",
       "gen_ai.request.model",
       "gen_ai.response.finish_reasons",
       "gen_ai.response.id",
@@ -51,22 +54,6 @@
     ]
   },
   "metrics": {},
-  "findings": [
-    {
-      "id": "genai_content_schema",
-      "message": "Attribute 'gen_ai.tool.definitions' value does not conform to the GenAI schema: {\"function\":{\"description\":\"Get the current weather\",\"name\":\"get_weather\",\"parameters\":{\"properties\":{\"location\":{\"description\":\"City name\",\"type\":\"string\"}},\"required\":[\"location\"],\"type\":\"object\"}},\"type\":\"function\"} is not valid under any of the schemas listed in the 'anyOf' keyword",
-      "context": {
-        "attribute": "gen_ai.tool.definitions",
-        "errors": "{\"function\":{\"description\":\"Get the current weather\",\"name\":\"get_weather\",\"parameters\":{\"properties\":{\"location\":{\"description\":\"City name\",\"type\":\"string\"}},\"required\":[\"location\"],\"type\":\"object\"}},\"type\":\"function\"} is not valid under any of the schemas listed in the 'anyOf' keyword"
-      }
-    },
-    {
-      "id": "required_attribute_not_present",
-      "message": "Required attribute 'gen_ai.provider.name' is not present.",
-      "context": {
-        "attribute_key": "gen_ai.provider.name"
-      }
-    }
-  ],
+  "findings": [],
   "entities": {}
 }

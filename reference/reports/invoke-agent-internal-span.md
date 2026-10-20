@@ -31,7 +31,7 @@
 | gen_ai.request.stop_sequences | [agent-framework], [autogen], [crewai], [google-adk], [pydantic-ai] |
 | gen_ai.request.temperature | [agent-framework], [autogen], [crewai], [google-adk], [pydantic-ai] |
 | gen_ai.request.top_p | [agent-framework], [autogen], [crewai], [google-adk], [pydantic-ai] |
-| gen_ai.response.finish_reasons | [autogen], [crewai], [google-adk], [openai-agents], [pydantic-ai] |
+| gen_ai.response.finish_reasons | [autogen], [crewai], [google-adk], [langchain], [openai-agents], [pydantic-ai] |
 | gen_ai.usage.input_tokens | [agent-framework], [autogen], [crewai], [google-adk], [langchain], [openai-agents], [pydantic-ai] |
 | gen_ai.usage.output_tokens | [agent-framework], [autogen], [crewai], [google-adk], [langchain], [openai-agents], [pydantic-ai] |
 

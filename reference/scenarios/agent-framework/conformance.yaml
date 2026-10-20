@@ -11,6 +11,107 @@ env:
 scenarios:
   reference:
     run: uv run --frozen --python 3.12 --project . python scenario.py
+    expected_violations:
+      # Weaver provides no event identity in this finding context.
+      - id: missing_event
+        context: {}
+        reason: Agent Framework native instrumentation emits legacy GenAI message events outside the registry.
+      - id: genai_span_name_format
+        context:
+          expected_form: execute_tool or 'execute_tool <gen_ai.tool.name>'
+          keyed_attr: gen_ai.tool.name
+          operation: execute_tool
+        reason: The runner does not recognize the span-name refinements for skill and command tools.
+      - id: missing_attribute
+        context:
+          attribute_key: agent_framework.function.invocation.duration
+        reason: Library uses proprietary namespaces not in the registry; fix in library.
+      - id: missing_attribute
+        context:
+          attribute_key: agent_framework.function.name
+        reason: Library uses proprietary namespaces not in the registry; fix in library.
+      - id: missing_attribute
+        context:
+          attribute_key: edge_group.delivered
+        reason: Library uses proprietary namespaces not in the registry; fix in library.
+      - id: missing_attribute
+        context:
+          attribute_key: edge_group.delivery_status
+        reason: Library uses proprietary namespaces not in the registry; fix in library.
+      - id: missing_attribute
+        context:
+          attribute_key: edge_group.id
+        reason: Library uses proprietary namespaces not in the registry; fix in library.
+      - id: missing_attribute
+        context:
+          attribute_key: edge_group.type
+        reason: Library uses proprietary namespaces not in the registry; fix in library.
+      - id: missing_attribute
+        context:
+          attribute_key: executor.id
+        reason: Library uses proprietary namespaces not in the registry; fix in library.
+      - id: missing_attribute
+        context:
+          attribute_key: executor.type
+        reason: Library uses proprietary namespaces not in the registry; fix in library.
+      - id: missing_attribute
+        context:
+          attribute_key: gen_ai.system
+        reason: Library emits the removed gen_ai.system attribute; use gen_ai.provider.name.
+      - id: missing_attribute
+        context:
+          attribute_key: gen_ai.usage.cache_creation.input_tokens
+        reason: Library emits the removed cache_creation attribute; use gen_ai.usage.cache_write.input_tokens.
+      - id: missing_attribute
+        context:
+          attribute_key: message.payload_type
+        reason: Library uses proprietary namespaces not in the registry; fix in library.
+      - id: missing_attribute
+        context:
+          attribute_key: message.source_id
+        reason: Library uses proprietary namespaces not in the registry; fix in library.
+      - id: missing_attribute
+        context:
+          attribute_key: message.target_id
+        reason: Library uses proprietary namespaces not in the registry; fix in library.
+      - id: missing_attribute
+        context:
+          attribute_key: message.type
+        reason: Library uses proprietary namespaces not in the registry; fix in library.
+      - id: missing_attribute
+        context:
+          attribute_key: workflow.definition
+        reason: Library uses proprietary namespaces not in the registry; fix in library.
+      - id: missing_attribute
+        context:
+          attribute_key: workflow.description
+        reason: Library uses proprietary namespaces not in the registry; fix in library.
+      - id: missing_attribute
+        context:
+          attribute_key: workflow.id
+        reason: Library uses proprietary namespaces not in the registry; fix in library.
+      - id: missing_attribute
+        context:
+          attribute_key: workflow.name
+        reason: Library uses proprietary namespaces not in the registry; fix in library.
+      - id: missing_attribute
+        context:
+          attribute_key: workflow_builder.description
+        reason: Library uses proprietary namespaces not in the registry; fix in library.
+      - id: missing_attribute
+        context:
+          attribute_key: workflow_builder.name
+        reason: Library uses proprietary namespaces not in the registry; fix in library.
+      - id: type_mismatch
+        context:
+          attribute_key: gen_ai.response.finish_reasons
+          attribute_type: string
+          expected: string[]
+        reason: Library sets finish_reasons as string, not string[]; fix in library.
+      # Weaver does not include metric identity in this finding context.
+      - id: missing_metric
+        context: {}
+        reason: Library emits custom metrics outside the registry; fix in library.
     spans:
       - match:
           attributes:
