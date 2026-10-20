@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=../case.schema.json
+description: Assistant audio with a provider-supplied transcription
+schema: gen-ai-output-messages.json
+document: [
+  {
+    "role": "assistant",
+    "parts": [
+      {
+        "type": "blob",
+        "modality": "audio",
+        "mime_type": "audio/pcm",
+        "content": "UklGRi4uLg=="
+      },
+      {
+        "type": "transcription",
+        "content": "It is rainy and 57 degrees in Paris."
+      }
+    ],
+    "finish_reason": "stop"
+  }
+]
+# Regenerate with `uv run pytest --update-snapshots`, do not edit by hand.
+errors: []

@@ -345,6 +345,9 @@ or `previous_interaction_id` in [Google GenAI Interactions API](https://ai.googl
 **[14] `gen_ai.response.finish_reasons`:** Values correspond to generations in the same order as the returned
 choices/candidates.
 
+For interrupted generations, instrumentations SHOULD report the
+provider-reported interruption reason when available.
+
 Each position SHOULD contain the finish reason for the corresponding
 choice/candidate. If a finish reason was expected but not received, for
 example because generation failed, was cancelled, or a stream ended before
@@ -673,6 +676,9 @@ Additional output format details may be recorded in the future in the `gen_ai.ou
 
 **[9] `gen_ai.response.finish_reasons`:** Values correspond to generations in the same order as the returned
 choices/candidates.
+
+For interrupted generations, instrumentations SHOULD report the
+provider-reported interruption reason when available.
 
 Each position SHOULD contain the finish reason for the corresponding
 choice/candidate. If a finish reason was expected but not received, for
