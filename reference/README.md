@@ -42,6 +42,7 @@ Run `uv run update-reports` to regenerate.
 | [Fetch Response](reports/fetch-response-span.md) | openai |
 | [Memory](reports/memory-span.md) | aws-bedrock-agentcore, google-adk |
 | [Execute Tool](reports/execute-tool-span.md) | agent-framework, autogen, crewai, google-adk, google-genai, langchain, llamaindex, openai-agents, openai-assistants, pydantic-ai, vertexai |
+| [Apply Guardrail Client](reports/apply-guardrail-client-span.md) | aws-bedrock, azure-ai-contentsafety |
 
 ### Events
 
@@ -57,6 +58,7 @@ Run `uv run update-reports` to regenerate.
 | [Evaluation Result](reports/gen-ai-evaluation-result-event.md) | azure-ai-evaluation, deepeval, dspy |
 | [Execute Tool Exception](reports/gen-ai-execute-tool-exception-event.md) | openai-agents |
 | [Invoke Agent Exception](reports/gen-ai-invoke-agent-exception-event.md) | openai-agents |
+| [Guardrail Result](reports/gen-ai-guardrail-result-event.md) | aws-bedrock, azure-ai-contentsafety, openai-agents |
 
 ### Entities
 

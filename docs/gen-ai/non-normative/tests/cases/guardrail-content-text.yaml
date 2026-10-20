@@ -1,0 +1,6 @@
+# yaml-language-server: $schema=../case.schema.json
+description: Guardrail content is the text a guardrail API evaluated
+schema: gen-ai-guardrail-content.json
+document: "Send an email to customer@example.com"
+# Regenerate with `uv run pytest --update-snapshots`, do not edit by hand.
+errors: []

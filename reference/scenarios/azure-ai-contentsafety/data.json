@@ -1,0 +1,31 @@
+{
+  "spans": {
+    "gen_ai.apply_guardrail.client": [
+      "gen_ai.guardrail.component.name",
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "server.address",
+      "server.port"
+    ]
+  },
+  "events": {
+    "gen_ai.guardrail.result": [
+      "gen_ai.guardrail.component.name",
+      "gen_ai.guardrail.content.input.value",
+      "gen_ai.guardrail.policy.rule.id",
+      "gen_ai.guardrail.result.type",
+      "gen_ai.guardrail.result.value",
+      "gen_ai.guardrail.risk.category",
+      "gen_ai.guardrail.risk.score",
+      "gen_ai.provider.name"
+    ]
+  },
+  "metrics": {
+    "gen_ai.client.apply_guardrail.duration": [
+      "gen_ai.guardrail.component.name",
+      "gen_ai.provider.name"
+    ]
+  },
+  "findings": [],
+  "entities": {}
+}

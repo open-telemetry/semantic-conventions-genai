@@ -1,0 +1,7 @@
+runner: genai-conformance
+instrumented_library: azure-ai-contentsafety
+instrumentation_library: reference
+
+scenarios:
+  reference:
+    run: uv run --frozen --python 3.12 --project . python scenario.py

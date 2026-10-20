@@ -47,6 +47,7 @@ _SPANS = {
     "plan": ("gen_ai.plan.internal", "Plan"),
     "realtime_inference": ("gen_ai.realtime_inference.client", "Realtime Inference"),
     "user_speech": ("gen_ai.user_speech.internal", "User Speech"),
+    "apply_guardrail_client": ("gen_ai.apply_guardrail.client", "Apply Guardrail Client"),
 }
 
 _EVENTS = {
@@ -60,6 +61,7 @@ _EVENTS = {
     "gen_ai.client.realtime_session.ended": "Realtime Session Ended",
     "gen_ai.execute_tool.exception": "Execute Tool Exception",
     "gen_ai.invoke_agent.exception": "Invoke Agent Exception",
+    "gen_ai.guardrail.result": "Guardrail Result",
 }
 
 # Client duration and token usage describe individual calls, unlike the
@@ -75,6 +77,7 @@ _METRICS = {
     "gen_ai.client.inference.operation.input_tokens": "Client Inference Operation Input Tokens",
     "gen_ai.client.inference.operation.output_tokens": "Client Inference Operation Output Tokens",
     "gen_ai.client.operation.duration": "Client Operation Duration",
+    "gen_ai.client.apply_guardrail.duration": "Apply Guardrail Client Duration",
     "gen_ai.client.inference.duration": "Client Inference Duration",
     "gen_ai.client.inference.time_per_output_chunk": "Client Inference Time Per Output Chunk",
     "gen_ai.client.embeddings.duration": "Client Embeddings Duration",
