@@ -41,6 +41,7 @@ GenAI clients, MCP, and provider-specific conventions. Attributes live in
 
 ```bash
 make generate-all      # regenerate registry docs, embedded tables, reports — run after editing model
+make test-json-schemas # validate sample documents against model/gen-ai/*.json; see docs/gen-ai/non-normative/tests/README.md
 
 cd reference
 uv run run-scenario <library>   # or --all; runs scenario, validates telemetry, writes data.json

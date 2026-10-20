@@ -3,6 +3,7 @@
 import json
 import os
 
+from opentelemetry.trace import SpanKind
 from reference_shared import (
     flush_and_shutdown,
     mock_server_host_port,
@@ -32,7 +33,9 @@ def run_chat_reference(client):
         span_attributes["server.address"] = host
     if port is not None:
         span_attributes["server.port"] = port
-    with _reference_tracer.start_as_current_span("chat gpt-4o-mini", attributes=span_attributes) as span:
+    with _reference_tracer.start_as_current_span(
+        "chat gpt-4o-mini", kind=SpanKind.CLIENT, attributes=span_attributes
+    ) as span:
         user_content = "Say hello."
         resp = client.complete(
             model=request_model,
@@ -49,6 +52,7 @@ def run_chat_reference(client):
         # Emit inference operation details event
         event_attrs = {
             "gen_ai.operation.name": "chat",
+            "gen_ai.provider.name": "azure.ai.inference",
             "gen_ai.request.model": request_model,
             "gen_ai.response.id": resp.id,
             "gen_ai.response.model": resp.model,
@@ -116,18 +120,18 @@ def run_chat_tool_call_reference(client):
         span_attributes_2["server.address"] = host
     if port is not None:
         span_attributes_2["server.port"] = port
-    with _reference_tracer.start_as_current_span("chat gpt-4o-mini", attributes=span_attributes_2) as span:
+    with _reference_tracer.start_as_current_span(
+        "chat gpt-4o-mini", kind=SpanKind.CLIENT, attributes=span_attributes_2
+    ) as span:
         span.set_attribute(
             "gen_ai.tool.definitions",
             json.dumps(
                 [
                     {
                         "type": "function",
-                        "function": {
-                            "name": tool.function.name,
-                            "description": tool.function.description,
-                            "parameters": tool.function.parameters,
-                        },
+                        "name": tool.function.name,
+                        "description": tool.function.description,
+                        "parameters": tool.function.parameters,
                     }
                 ]
             ),
@@ -167,7 +171,9 @@ def run_chat_streaming_reference(client):
         span_attributes_3["server.address"] = host
     if port is not None:
         span_attributes_3["server.port"] = port
-    with _reference_tracer.start_as_current_span("chat gpt-4o-mini", attributes=span_attributes_3) as span:
+    with _reference_tracer.start_as_current_span(
+        "chat gpt-4o-mini", kind=SpanKind.CLIENT, attributes=span_attributes_3
+    ) as span:
         stream = client.complete(
             model=request_model,
             messages=[UserMessage(content="Tell me a joke.")],
@@ -204,6 +210,7 @@ def run_embeddings_reference(client):
     print("  [embeddings] embedding generation (reference implementation)")
     request_model = "text-embedding-3-small"
     host, port = mock_server_host_port(MOCK_BASE_URL)
+    encoding_format = "float"
     span_attributes_4 = {
         "gen_ai.operation.name": "embeddings",
         "gen_ai.provider.name": "azure.ai.inference",
@@ -214,14 +221,18 @@ def run_embeddings_reference(client):
     if port is not None:
         span_attributes_4["server.port"] = port
     with _reference_tracer.start_as_current_span(
-        "embeddings text-embedding-3-small", attributes=span_attributes_4
+        "embeddings text-embedding-3-small", kind=SpanKind.CLIENT, attributes=span_attributes_4
     ) as span:
+        span.set_attribute("gen_ai.request.encoding_formats", [encoding_format])
         resp = client.embed(
             model=request_model,
             input=["Hello, world!"],
+            encoding_format=encoding_format,
         )
         if resp.model:
             span.set_attribute("gen_ai.response.model", resp.model)
+        if resp.data and resp.data[0].embedding:
+            span.set_attribute("gen_ai.embeddings.dimension.count", len(resp.data[0].embedding))
         if resp.usage:
             span.set_attribute("gen_ai.usage.input_tokens", resp.usage.prompt_tokens)
         print(f"    -> embedding dim: {len(resp.data[0].embedding)}")

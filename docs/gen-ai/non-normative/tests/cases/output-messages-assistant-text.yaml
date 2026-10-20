@@ -1,0 +1,17 @@
+# yaml-language-server: $schema=../case.schema.json
+description: An assistant text reply with a finish reason
+schema: gen-ai-output-messages.json
+document: [
+  {
+    "role": "assistant",
+    "parts": [
+      {
+        "type": "text",
+        "content": "Why did the developer bring OpenTelemetry to the party? Because it always knows how to trace the fun!"
+      }
+    ],
+    "finish_reason": "stop"
+  }
+]
+# Regenerate with `uv run pytest --update-snapshots`, do not edit by hand.
+errors: []

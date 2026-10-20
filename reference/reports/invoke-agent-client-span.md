@@ -36,7 +36,7 @@
 | gen_ai.request.stop_sequences | (none) |
 | gen_ai.request.temperature | [azure-ai-foundry], [openai-assistants] |
 | gen_ai.request.top_p | [azure-ai-foundry], [openai-assistants] |
-| gen_ai.response.finish_reasons | (none) |
+| gen_ai.response.finish_reasons | [azure-ai-foundry] |
 | gen_ai.usage.audio.cache_read.input_tokens | (none) |
 | gen_ai.usage.audio.input_tokens | (none) |
 | gen_ai.usage.audio.output_tokens | (none) |
@@ -50,7 +50,7 @@
 | gen_ai.usage.text.cache_read.input_tokens | (none) |
 | gen_ai.usage.text.input_tokens | (none) |
 | gen_ai.usage.text.output_tokens | (none) |
-| server.address | [aws-bedrock-agent], [azure-ai-foundry], [openai-assistants] |
+| server.address | [aws-bedrock-agent], [azure-ai-foundry], [google-genai], [openai-assistants] |
 
 ## Opt-In
 

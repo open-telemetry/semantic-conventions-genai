@@ -1,0 +1,15 @@
+# yaml-language-server: $schema=../case.schema.json
+description: System and user text messages, as sent for a simple chat completion
+schema: gen-ai-input-messages.json
+document: [
+  {
+    "role": "system",
+    "parts": [{ "type": "text", "content": "You are a helpful bot" }]
+  },
+  {
+    "role": "user",
+    "parts": [{ "type": "text", "content": "Tell me a joke about OpenTelemetry" }]
+  }
+]
+# Regenerate with `uv run pytest --update-snapshots`, do not edit by hand.
+errors: []

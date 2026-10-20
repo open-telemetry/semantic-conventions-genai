@@ -98,11 +98,9 @@ def run_tool_call():
                 [
                     {
                         "type": "function",
-                        "function": {
-                            "name": t.name,
-                            "description": t.description,
-                            "parameters": t.function_schema.json_schema,
-                        },
+                        "name": t.name,
+                        "description": t.description,
+                        "parameters": t.function_schema.json_schema,
                     }
                     for t in tools
                 ]

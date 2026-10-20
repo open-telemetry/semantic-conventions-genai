@@ -36,7 +36,7 @@
 
 {#- Render a single row on the entity table. -#}
 {% macro attribute_row(attribute, attribute_registry_base_url, upstream_docs_base, notes, role) -%}
-| {{ role_tag(role) | trim }} | {{ attrs.name_with_link(attribute, attribute_registry_base_url, upstream_docs_base) }} | {{ stability.badge(attribute.stability, attribute.deprecated, attribute.brief) | trim }} | {{ requirement.render({"level": attribute.requirement_level, "name": attrs.name(attribute)}, notes) | trim }} | {{ attrs.type(attribute) }} | {{ attribute.brief | trim }}{{ notes.add({"note": attribute.note, "name": attrs.name(attribute)}) }} | {{ examples.format(attribute) }}|
+| {{ role_tag(role) | trim }} | {{ attrs.name_with_link(attribute, attribute_registry_base_url, upstream_docs_base) }} | {{ stability.badge(attribute.stability, attribute.deprecated, attribute.brief) | trim }} | {{ requirement.render({"level": ("required" if role == "identity" else attribute.requirement_level), "name": attrs.name(attribute)}, notes) | trim }} | {{ attrs.type(attribute) }} | {{ attribute.brief | trim }}{{ notes.add({"note": attribute.note, "name": attrs.name(attribute)}) }} | {{ examples.format(attribute) }}|
 {%- endmacro %}
 
 {#- Render attribute tables for entities. -#}

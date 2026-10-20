@@ -1,0 +1,17 @@
+# yaml-language-server: $schema=../case.schema.json
+description: >
+  Reasoning followed by a generic part for a provider block with no matching
+  part type
+schema: gen-ai-output-messages.json
+document: [
+  {
+    "role": "assistant",
+    "parts": [
+      { "type": "reasoning", "content": "The user wants a short answer." },
+      { "type": "redacted_thinking", "data": "EmwKAhgBEgy3va3pzix/LafPsn4aDFIT2Xlxh0L5L8rLt..." }
+    ],
+    "finish_reason": "stop"
+  }
+]
+# Regenerate with `uv run pytest --update-snapshots`, do not edit by hand.
+errors: []
