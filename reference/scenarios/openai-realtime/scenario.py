@@ -43,7 +43,6 @@ from collections import deque
 
 from opentelemetry._logs import SeverityNumber
 from opentelemetry.trace import SpanKind
-
 from reference_shared import (
     flush_and_shutdown,
     mock_server_host_port,
