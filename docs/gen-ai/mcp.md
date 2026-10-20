@@ -278,6 +278,7 @@ This attribute MUST be recorded as an [AnyValue](https://opentelemetry.io/docs/s
 
 | Value | Description | Stability |
 | --- | --- | --- |
+| `apply_guardrail` | Apply a guardrail to content | ![Development](https://img.shields.io/badge/-development-blue) |
 | `chat` | Chat completion operation such as [OpenAI Chat API](https://platform.openai.com/docs/api-reference/chat) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `create_agent` | Create GenAI agent | ![Development](https://img.shields.io/badge/-development-blue) |
 | `create_memory` | Create new memory records | ![Development](https://img.shields.io/badge/-development-blue) |
@@ -523,6 +524,7 @@ This attribute MUST be recorded as an [AnyValue](https://opentelemetry.io/docs/s
 
 | Value | Description | Stability |
 | --- | --- | --- |
+| `apply_guardrail` | Apply a guardrail to content | ![Development](https://img.shields.io/badge/-development-blue) |
 | `chat` | Chat completion operation such as [OpenAI Chat API](https://platform.openai.com/docs/api-reference/chat) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `create_agent` | Create GenAI agent | ![Development](https://img.shields.io/badge/-development-blue) |
 | `create_memory` | Create new memory records | ![Development](https://img.shields.io/badge/-development-blue) |
@@ -707,6 +709,7 @@ Examples:
 
 | Value | Description | Stability |
 | --- | --- | --- |
+| `apply_guardrail` | Apply a guardrail to content | ![Development](https://img.shields.io/badge/-development-blue) |
 | `chat` | Chat completion operation such as [OpenAI Chat API](https://platform.openai.com/docs/api-reference/chat) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `create_agent` | Create GenAI agent | ![Development](https://img.shields.io/badge/-development-blue) |
 | `create_memory` | Create new memory records | ![Development](https://img.shields.io/badge/-development-blue) |
@@ -893,6 +896,7 @@ Examples:
 
 | Value | Description | Stability |
 | --- | --- | --- |
+| `apply_guardrail` | Apply a guardrail to content | ![Development](https://img.shields.io/badge/-development-blue) |
 | `chat` | Chat completion operation such as [OpenAI Chat API](https://platform.openai.com/docs/api-reference/chat) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `create_agent` | Create GenAI agent | ![Development](https://img.shields.io/badge/-development-blue) |
 | `create_memory` | Create new memory records | ![Development](https://img.shields.io/badge/-development-blue) |
