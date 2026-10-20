@@ -6,7 +6,7 @@
 
 | Attribute | Supporting Libraries |
 | --- | --- |
-| gen_ai.guardrail.policy.id | [aws-bedrock] |
+| gen_ai.guardrail.policy.id | [aws-bedrock], [azure-ai-contentsafety] |
 | gen_ai.guardrail.policy.version | [aws-bedrock] |
 | gen_ai.guardrail.result.type | [aws-bedrock], [azure-ai-contentsafety], [openai-agents] |
 | gen_ai.guardrail.result.value | [aws-bedrock], [azure-ai-contentsafety], [openai-agents] |
@@ -20,7 +20,7 @@
 | --- | --- |
 | gen_ai.guardrail.component.name | [aws-bedrock], [azure-ai-contentsafety], [openai-agents] |
 | gen_ai.guardrail.policy.rule.id | [azure-ai-contentsafety] |
-| gen_ai.guardrail.result.reason | [aws-bedrock], [openai-agents] |
+| gen_ai.guardrail.result.reason | [aws-bedrock] |
 | gen_ai.provider.name | [aws-bedrock], [azure-ai-contentsafety] |
 
 ## Opt-In

@@ -75,10 +75,6 @@ def install_guardrail_instrumentation():
         }
         if isinstance(input, str):
             event_attributes["gen_ai.guardrail.content.input.value"] = input
-        if isinstance(output.output_info, dict):
-            reason = output.output_info.get("reason")
-            if reason:
-                event_attributes["gen_ai.guardrail.result.reason"] = str(reason)
         reference_event_logger().emit(
             event_name="gen_ai.guardrail.result",
             body="Guardrail result",

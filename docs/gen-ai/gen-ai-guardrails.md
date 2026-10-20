@@ -390,12 +390,13 @@ response fields map to these conventions.
 For `ApplyGuardrail`, the client span wraps the SDK operation. The request
 provides the guardrail identifier, version, and `source`. The response provides
 the native `action`, optional `actionReason`, output content, and assessments.
+The component name is the service name from the SDK client's metadata.
 
 ```text
-apply_guardrail Amazon Bedrock Guardrails (CLIENT)
+apply_guardrail Amazon Bedrock Runtime (CLIENT)
   gen_ai.operation.name = "apply_guardrail"
   gen_ai.provider.name = "aws.bedrock"
-  gen_ai.guardrail.component.name = "Amazon Bedrock Guardrails"
+  gen_ai.guardrail.component.name = "Amazon Bedrock Runtime"
   gen_ai.guardrail.policy.id = <guardrailIdentifier>
   gen_ai.guardrail.policy.version = <guardrailVersion>
   gen_ai.guardrail.source = <source>
@@ -412,16 +413,27 @@ assessments using their native filter or category names.
 For `analyze_text`, the client span wraps the SDK operation. Azure returns
 per-category severity values but no overall verdict or caller action. Emit one
 result event per returned category and do not derive allow or deny from the
-severity.
+severity. The component name is the SDK client's name.
 
 ```text
 gen_ai.guardrail.result
-  gen_ai.guardrail.component.name = "Azure AI Content Safety"
+  gen_ai.guardrail.component.name = "ContentSafetyClient"
   gen_ai.provider.name = "azure.ai.content_safety"
   gen_ai.guardrail.result.type = "severity"
   gen_ai.guardrail.result.value = <category.severity as a string>
   gen_ai.guardrail.risk.category = <category.category>
   gen_ai.guardrail.risk.score = <category.severity>
+```
+
+A blocklist match identifies the blocklist and the matched item rather than a
+risk category. Emit one result event per match.
+
+```text
+gen_ai.guardrail.result
+  gen_ai.guardrail.component.name = "ContentSafetyClient"
+  gen_ai.provider.name = "azure.ai.content_safety"
+  gen_ai.guardrail.policy.id = <blocklistMatch.blocklistName>
+  gen_ai.guardrail.policy.rule.id = <blocklistMatch.blocklistItemId>
 ```
 
 ### OpenAI Agents
