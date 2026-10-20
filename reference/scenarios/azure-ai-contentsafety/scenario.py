@@ -108,8 +108,8 @@ def run_analyze_text_reference():
                     attributes={
                         "gen_ai.guardrail.component.name": component_name,
                         "gen_ai.guardrail.content.input.value": request.text,
+                        "gen_ai.guardrail.policy.id": blocklist_match.blocklist_name,
                         "gen_ai.guardrail.policy.rule.id": blocklist_match.blocklist_item_id,
-                        "gen_ai.guardrail.risk.category": blocklist_match.blocklist_name,
                         "gen_ai.provider.name": "azure.ai.content_safety",
                     },
                 )
