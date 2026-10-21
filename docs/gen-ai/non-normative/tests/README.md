@@ -5,6 +5,10 @@ Sample documents validated against the committed JSON schemas in
 reports snapshotted alongside. They catch unintended changes to what a schema
 accepts or rejects, and document the intended behaviour by example.
 
+The same test command also runs the `BlobPart` model regressions in
+[`test_blob_part.py`](../test_blob_part.py), including binary round trips and
+agreement between the generator and committed schemas.
+
 ```bash
 make test-json-schemas                 # from the repo root
 uv run pytest                          # from docs/gen-ai/non-normative

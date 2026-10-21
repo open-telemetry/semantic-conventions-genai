@@ -11,4 +11,7 @@ document: [
   }
 ]
 # Regenerate with `uv run pytest --update-snapshots`, do not edit by hand.
-errors: []
+errors:
+  - path: $[0].parts[1]
+    keyword: oneOf
+    message: "{'type': 'blob', 'mime_type': 'image/png'} is not valid under any of the given schemas"

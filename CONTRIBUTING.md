@@ -65,6 +65,20 @@ This validates the model against shared OpenTelemetry policies covering
 naming conventions, attribute type rules, stability requirements, and
 backwards compatibility.
 
+Run the Python reference-model and JSON-schema regressions (requires
+[uv](https://docs.astral.sh/uv/)):
+
+```bash
+make test-json-schemas
+```
+
+This discovers `test_*.py` under `docs/gen-ai/non-normative`, using the locked
+generator dependencies and a pinned JSON Schema validator. CI runs the same
+target.
+
+The tests validate message shapes and binary round trips. JSON Schema
+`contentEncoding` describes the encoding; Pydantic validates base64 content.
+
 Run the link checks (optional, requires [mise](https://mise.jdx.dev/)):
 
 ```bash
