@@ -436,6 +436,78 @@ def run_chat_with_image_input(handler):
     print(f"    -> {resp.content[0].text[:60]}")
 
 
+def run_chat_with_search_result_input(handler):
+    """Scenario: chat with a search result block (no matching semconv part type).
+
+    Search result blocks have no defined part type, so the block is recorded
+    with `type` prefixed by `gen_ai.provider.name` (`anthropic.`) and its own
+    fields kept as-is.
+    """
+    print("  [chat_search_result] chat with search result block (util-genai handler)")
+    request_model = "claude-sonnet-4-20250514"
+    request_max_tokens = 100
+    instruction = "Answer using the attached search result."
+    search_result = {
+        "type": "search_result",
+        "source": "https://example.com/docs/otel",
+        "title": "OpenTelemetry overview",
+        "content": [{"type": "text", "text": "OpenTelemetry is an observability framework."}],
+        "citations": {"enabled": True},
+    }
+    messages = [
+        {
+            "role": "user",
+            "content": [{"type": "text", "text": instruction}, search_result],
+        }
+    ]
+    client = anthropic.Anthropic(base_url=MOCK_BASE_URL, api_key="mock-key")
+
+    host, port = mock_server_host_port(MOCK_BASE_URL)
+    with handler.inference(
+        provider="anthropic",
+        request_model=request_model,
+        server_address=host,
+        server_port=port,
+    ) as inv:
+        inv.max_tokens = request_max_tokens  # -> gen_ai.request.max_tokens
+        # util-genai has no type for provider-specific parts, so pass a plain dict.
+        inv.input_messages = [  # -> gen_ai.input.messages
+            InputMessage(
+                role="user",
+                parts=[
+                    Text(content=instruction),
+                    {**search_result, "type": f"anthropic.{search_result['type']}"},
+                ],
+            )
+        ]
+
+        resp = client.messages.create(
+            model=request_model,
+            max_tokens=request_max_tokens,
+            messages=messages,
+        )
+
+        inv.response_model_name = resp.model  # -> gen_ai.response.model
+        inv.response_id = resp.id  # -> gen_ai.response.id
+        inv.finish_reasons = [resp.stop_reason]  # -> gen_ai.response.finish_reasons
+
+        if resp.usage:
+            inv.input_tokens = resp.usage.input_tokens  # -> gen_ai.usage.input_tokens
+            inv.output_tokens = resp.usage.output_tokens  # -> gen_ai.usage.output_tokens
+
+        inv.output_messages = [  # -> gen_ai.output.messages
+            OutputMessage(
+                role="assistant",
+                parts=[Text(content=block.text)],
+            )
+            for block in resp.content
+            if hasattr(block, "text")
+        ]
+        record_inference_usage(inv, request_model, host, port)
+
+    print(f"    -> {resp.content[0].text[:60]}")
+
+
 def run_create_agent():
     """Scenario: create a remote agent via the Managed Agents API (`beta.agents.create`).
 
@@ -497,6 +569,7 @@ def main():
     run_compaction(handler)
     run_chat_with_document_input(handler)
     run_chat_with_image_input(handler)
+    run_chat_with_search_result_input(handler)
     run_create_agent()
 
     flush_and_shutdown(tp, lp, mp)
