@@ -270,12 +270,8 @@ attributes:
   - key: gen_ai.response.time_to_first_chunk
     type: double
     brief: >
-      Time from the start of the client inference operation to receipt of the first response chunk, in seconds.
-    note: |
-      This attribute follows the same chunk definition and measurement boundaries as
-      `gen_ai.client.inference.time_to_first_chunk`, including retries and authentication.
-      See [Streaming response chunks](/docs/gen-ai/client-inference.md#streaming-response-chunks).
-      If no chunk is received, this attribute MUST NOT be set.
+      Time from the start of the client inference operation to receipt of the
+      [first response chunk](/docs/gen-ai/client-inference.md#time-to-first-response-chunk), in seconds.
     examples: [0.5, 1.2]
     stability: development
   - key: gen_ai.usage.input_tokens
