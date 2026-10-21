@@ -536,9 +536,50 @@ class ToolCallArguments(RootModel[dict[str, Any]]):
     pass
 
 
-class ToolCallResult(RootModel[dict[str, Any]]):
+class ToolCallResultValue(BaseModel):
     """
-    Represents object-like results returned by a tool call.
+    Represents the value returned by a tool call, recorded as returned.
+    """
+
+    type: Literal["value"] = Field(description="The type of the tool call result.")
+    content: Any = Field(
+        description="The value returned by the tool: a string, number, boolean, object, array, or null."
+    )
+    is_error: Optional[bool] = Field(
+        default=None,
+        description="Whether the tool reported a failure. When `true`, `content` holds the error the tool returned.",
+    )
+
+    model_config = ConfigDict(extra="allow")
+
+
+class GenericToolCallResult(BaseModel):
+    """
+    Represents a tool call result of any other type.
+    This allows for extensibility with new result types.
+    """
+
+    # Known types are excluded so that a malformed known result fails
+    # validation instead of passing as an unknown type.
+    type: str = Field(
+        description="The type of the tool call result.",
+        json_schema_extra={"not": {"enum": ["value"]}},
+    )
+
+    model_config = ConfigDict(extra="allow")
+
+
+# Add new result types here, e.g. a list of message parts, and to the
+# excluded types of GenericToolCallResult.
+ToolCallResultType = Union[
+    ToolCallResultValue,
+    GenericToolCallResult,  # Catch-all for any other type
+]
+
+
+class ToolCallResult(RootModel[ToolCallResultType]):
+    """
+    Represents the result returned by a tool call.
     """
 
     pass

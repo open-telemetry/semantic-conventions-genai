@@ -97,10 +97,18 @@ def _patch_automatic_function_calling():
                 single.candidates[0].content.parts = [part]
                 result_parts = original(single, function_map)
                 for result_part in result_parts:
-                    tool_span.set_attribute(
-                        "gen_ai.tool.call.result",
-                        json.dumps({"output": result_part.function_response.response}),
-                    )
+                    # `direct`: the SDK wraps the callable's return value as
+                    # `{"result": ...}`, or the exception it raised as
+                    # `{"error": str(e)}`, and sends that back to the model.
+                    func_response = result_part.function_response.response
+                    if "error" in func_response:
+                        # Only the exception message survives, so no class name is available.
+                        tool_span.set_attribute("error.type", "_OTHER")
+                        tool_span.set_status(StatusCode.ERROR, func_response["error"])
+                        tool_call_result = {"type": "value", "content": func_response, "is_error": True}
+                    else:
+                        tool_call_result = {"type": "value", "content": func_response["result"]}
+                    tool_span.set_attribute("gen_ai.tool.call.result", json.dumps(tool_call_result))
                 parts.extend(result_parts)
         return parts
 

@@ -42,7 +42,7 @@ def get_weather(ctx: ToolContext[None], location: str) -> str:
         tool_span.set_attribute("gen_ai.tool.call.id", ctx.tool_call_id)
         tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps({"location": location}))
         result = "Sunny, 72°F"
-        tool_span.set_attribute("gen_ai.tool.call.result", result)
+        tool_span.set_attribute("gen_ai.tool.call.result", json.dumps({"type": "value", "content": result}))
         return result
 
 
@@ -178,7 +178,7 @@ async def run_command_execution():
                     span.set_attribute("error.type", type(exc).__qualname__)
                     span.set_status(StatusCode.ERROR, str(exc))
                     raise
-                span.set_attribute("gen_ai.tool.call.result", result)
+                span.set_attribute("gen_ai.tool.call.result", json.dumps({"type": "value", "content": result}))
                 return result
 
     sandbox_client = UnixLocalSandboxClient()

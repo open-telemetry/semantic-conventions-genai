@@ -567,7 +567,7 @@ attributes:
     stability: development
   - key: gen_ai.tool.call.result
     type: any
-    brief: The result returned by the tool call (if any and if execution was successful).
+    brief: The result returned by the tool call, if any.
     annotations:
       type:
         json_schema: model/gen-ai/gen-ai-tool-call-result.json
@@ -575,17 +575,38 @@ attributes:
       > [!WARNING]
       > This attribute may contain sensitive information.
 
-      It's expected to be an object - in case a serialized string is available
-      to the instrumentation, the instrumentation SHOULD do the best effort to
-      deserialize it to an object.
+      The `type` property identifies the kind of result. With `type` set to
+      `value`, `content` holds the value the tool returned, as returned: a
+      string, an object, a list of content blocks, or any other JSON value.
+      Instrumentations SHOULD NOT parse a string the tool returned. When only
+      a serialized form of a non-string value is available, the
+      instrumentation SHOULD make a best effort to deserialize it.
+
+      When the tool reports a failure as its result, for example an error
+      message returned to the model, the instrumentation SHOULD record that
+      result and set `is_error` to `true`. When the tool produces no result,
+      for example because it raised an exception, this attribute SHOULD NOT
+      be set.
+
+      Consumers SHOULD tolerate `type` values they do not recognize; new
+      result types may be added in the future.
     examples:
       - |
         {
-          "temperature_range": {
-            "high": 75,
-            "low": 60
-          },
-          "conditions": "sunny"
+          "type": "value",
+          "content": {
+            "temperature_range": {
+              "high": 75,
+              "low": 60
+            },
+            "conditions": "sunny"
+          }
+        }
+      - |
+        {
+          "type": "value",
+          "content": "Location 'Atlantis' not found",
+          "is_error": true
         }
 
     stability: development

@@ -1,6 +1,70 @@
 {
-    "additionalProperties": true,
-    "description": "Represents object-like results returned by a tool call.",
-    "title": "ToolCallResult",
-    "type": "object"
+    "$defs": {
+        "GenericToolCallResult": {
+            "additionalProperties": true,
+            "description": "Represents a tool call result of any other type.\nThis allows for extensibility with new result types.",
+            "properties": {
+                "type": {
+                    "description": "The type of the tool call result.",
+                    "not": {
+                        "enum": [
+                            "value"
+                        ]
+                    },
+                    "title": "Type",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "type"
+            ],
+            "title": "GenericToolCallResult",
+            "type": "object"
+        },
+        "ToolCallResultValue": {
+            "additionalProperties": true,
+            "description": "Represents the value returned by a tool call, recorded as returned.",
+            "properties": {
+                "type": {
+                    "const": "value",
+                    "description": "The type of the tool call result.",
+                    "title": "Type",
+                    "type": "string"
+                },
+                "content": {
+                    "description": "The value returned by the tool: a string, number, boolean, object, array, or null.",
+                    "title": "Content"
+                },
+                "is_error": {
+                    "anyOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Whether the tool reported a failure. When `true`, `content` holds the error the tool returned.",
+                    "title": "Is Error"
+                }
+            },
+            "required": [
+                "type",
+                "content"
+            ],
+            "title": "ToolCallResultValue",
+            "type": "object"
+        }
+    },
+    "anyOf": [
+        {
+            "$ref": "#/$defs/ToolCallResultValue"
+        },
+        {
+            "$ref": "#/$defs/GenericToolCallResult"
+        }
+    ],
+    "description": "Represents the result returned by a tool call.",
+    "title": "ToolCallResult"
 }
