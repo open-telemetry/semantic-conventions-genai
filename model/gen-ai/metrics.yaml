@@ -59,11 +59,10 @@ metrics:
     requirement_level: recommended
     instrument: histogram
     unit: "s"
-    brief: 'Time from the start of the client inference operation to receipt of the first response chunk.'
+    brief: 'Time to receive the first chunk, measured from when the client issues the generation request to when the first chunk is received in the response stream.'
     note: >
       This metric SHOULD be reported for streaming calls and SHOULD NOT be reported otherwise.
-      See [Time to first response chunk](/docs/gen-ai/client-inference.md#time-to-first-response-chunk)
-      for the chunk definition and timing boundaries, including authentication and retries.
+      See [Time to first response chunk](/docs/gen-ai/client-inference.md#time-to-first-response-chunk) for the chunk definition and timing boundaries, including authentication and retries.
     stability: development
     annotations:
       code_generation:
