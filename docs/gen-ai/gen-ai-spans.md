@@ -104,7 +104,8 @@ Instrumentations SHOULD document the list of errors they report.
 
 **[6] `gen_ai.request.encoding_formats`:** In some GenAI systems the encoding formats are called embedding types. Also, some GenAI systems only accept a single format per request.
 
-**[7] `gen_ai.usage.input_tokens`:** This value SHOULD include all types of input tokens, including cached tokens.
+**[7] `gen_ai.usage.input_tokens`:** The value SHOULD reflect the usage reported by the provider for the whole request.
+This value SHOULD include all types of input tokens, including cached tokens.
 Instrumentations SHOULD make a best effort to populate this value, using a total
 provided by the provider when available or, depending on the provider API,
 by summing different token types parsed from the provider output.
