@@ -320,6 +320,12 @@ rest of the duration by the number of output tokens generated after the first
 token. This is important in measuring the performance of the decode phase of LLM
 inference.
 
+This metric is also known as inter-token latency (ITL). Instrumentations that
+observe when each output token is generated MAY record one value per pair of
+consecutive output tokens instead of one value per request. Both approaches
+produce the same mean, and per-token recording also captures the variation
+caused by batching, preemption, or generating several tokens per decode step.
+
 This metric SHOULD be specified with [ExplicitBucketBoundaries] of
 [0.01, 0.025, 0.05, 0.075, 0.1, 0.15, 0.2, 0.3, 0.4, 0.5, 0.75, 1.0, 2.5].
 
