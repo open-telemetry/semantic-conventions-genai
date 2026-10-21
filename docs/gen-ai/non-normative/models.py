@@ -545,6 +545,19 @@ class ToolCallResult(RootModel[dict[str, Any]]):
 
 
 # --------------------------------------------------------------------------
+# `gen_ai.guardrail.content.input.value` and `gen_ai.guardrail.content.output.value` models
+# --------------------------------------------------------------------------
+
+
+class GuardrailContent(RootModel[Any]):
+    """
+    Represents content evaluated or produced by a guardrail.
+    """
+
+    pass
+
+
+# --------------------------------------------------------------------------
 # Schema generation entry point
 # --------------------------------------------------------------------------
 
@@ -558,6 +571,7 @@ SCHEMAS: dict[str, type[BaseModel]] = {
     "gen-ai-tool-call-result.json": ToolCallResult,
     "gen-ai-retrieval-documents.json": RetrievalDocuments,
     "gen-ai-memory-records.json": MemoryRecords,
+    "gen-ai-guardrail-content.json": GuardrailContent,
 }
 
 

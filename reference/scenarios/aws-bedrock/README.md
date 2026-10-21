@@ -9,4 +9,6 @@ code. (Knowledge Bases / Agents live in separate Bedrock services and scenarios.
 | --- | --- | --- |
 | inference (`chat`) | Yes — `Converse` / `InvokeModel`, calls the model directly | ✅ Implemented |
 | embeddings | Yes — Titan / Cohere embedding models via `InvokeModel` | ✅ Implemented |
+| apply_guardrail | Yes — `ApplyGuardrail` calls the remote guardrail service | ✅ Implemented |
+| guardrail result event | Yes — `ApplyGuardrail` returns native action and assessment results | ✅ Implemented |
 | execute_tool | No — Converse returns tool-use requests but doesn't execute them; the tool runs in app code | ➖ Not instrumentable |

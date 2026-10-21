@@ -103,7 +103,15 @@ def _uv() -> str:
 def _environment() -> dict[str, str]:
     """A clean environment with the pinned weaver ahead of anything on PATH."""
     env = {k: v for k, v in os.environ.items() if k not in ("VIRTUAL_ENV", "PYTHONHOME", "PYTHONPATH")}
-    env["PATH"] = os.pathsep.join([str(ensure_weaver().parent), env.get("PATH", "")])
+    path_entries = [str(ensure_weaver().parent)]
+    if os.name == "nt" and shutil.which("sh") is None:
+        git = shutil.which("git")
+        if git is not None:
+            git_bin = Path(git).parent.parent / "bin"
+            if (git_bin / "sh.exe").is_file():
+                path_entries.append(str(git_bin))
+    path_entries.append(env.get("PATH", ""))
+    env["PATH"] = os.pathsep.join(path_entries)
     return env
 
 
@@ -149,6 +157,19 @@ def coverage_model(output: Path = COVERAGE_MODEL) -> Path:
 
 def run(directory: Path, *, report_only: bool, extra_args: list[str] | None = None) -> int:
     """Run one conformance directory's scenarios; return the runner's exit code."""
+    model_path = coverage_model()
+    runner_python = runner_project() / (".venv/Scripts/python.exe" if os.name == "nt" else ".venv/bin/python")
+    source_root = REFERENCE_ROOT / "src"
+    data_command = " ".join(
+        [
+            f"PYTHONPATH='{source_root.as_posix()}'",
+            f"'{runner_python.as_posix()}'",
+            "-m semconv_genai.reduce_coverage",
+            '"$1"',
+            f"'{directory.as_posix()}'",
+            f"'{model_path.as_posix()}'",
+        ]
+    )
     command = [
         _uv(),
         "run",
@@ -158,6 +179,8 @@ def run(directory: Path, *, report_only: bool, extra_args: list[str] | None = No
         str(directory),
         "--registry",
         str(MODEL_ROOT),
+        "--data-command",
+        data_command,
     ]
     if report_only:
         command.append("--report-only")
