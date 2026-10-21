@@ -1,5 +1,12 @@
 {
   "spans": {
+    "gen_ai.client.embeddings": [
+      "gen_ai.embeddings.dimension.count",
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "gen_ai.request.model",
+      "server.address"
+    ],
     "gen_ai.client.inference": [
       "gen_ai.operation.name",
       "gen_ai.provider.name",
@@ -31,13 +38,6 @@
       "gen_ai.provider.name",
       "gen_ai.request.model",
       "gen_ai.system_instructions",
-      "server.address"
-    ],
-    "gen_ai.embeddings.client": [
-      "gen_ai.embeddings.dimension.count",
-      "gen_ai.operation.name",
-      "gen_ai.provider.name",
-      "gen_ai.request.model",
       "server.address"
     ],
     "gen_ai.execute_tool.internal": [
@@ -87,6 +87,12 @@
     ]
   },
   "metrics": {
+    "gen_ai.client.embeddings.duration": [
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "gen_ai.request.model",
+      "server.address"
+    ],
     "gen_ai.client.inference.operation.input_tokens": [
       "gen_ai.operation.name",
       "gen_ai.provider.name",
@@ -129,30 +135,6 @@
     ]
   },
   "findings": [
-    {
-      "id": "genai_expected_attribute_missing",
-      "message": "Span 'embeddings text-embedding-004' (operation 'embeddings') is missing expected attribute 'gen_ai.request.encoding_formats'",
-      "context": {
-        "missing_attribute": "gen_ai.request.encoding_formats",
-        "operation": "embeddings"
-      }
-    },
-    {
-      "id": "genai_expected_attribute_missing",
-      "message": "Span 'embeddings text-embedding-004' (operation 'embeddings') is missing expected attribute 'gen_ai.response.model'",
-      "context": {
-        "missing_attribute": "gen_ai.response.model",
-        "operation": "embeddings"
-      }
-    },
-    {
-      "id": "genai_expected_attribute_missing",
-      "message": "Span 'embeddings text-embedding-004' (operation 'embeddings') is missing expected attribute 'gen_ai.usage.input_tokens'",
-      "context": {
-        "missing_attribute": "gen_ai.usage.input_tokens",
-        "operation": "embeddings"
-      }
-    },
     {
       "id": "genai_expected_attribute_missing",
       "message": "Span 'invoke_agent interactions_agent' (operation 'invoke_agent') is missing expected attribute 'gen_ai.response.finish_reasons'",
