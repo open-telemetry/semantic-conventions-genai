@@ -35,7 +35,7 @@ Run `uv run update-reports` to regenerate.
 | [Embeddings](reports/embeddings-span.md) | aws-bedrock, azure-ai-inference, azure-openai, cohere, google-genai, litellm, mistralai, openai |
 | [Retrieval](reports/retrieval-span.md) | haystack, langchain, llamaindex |
 | [Fetch Response](reports/fetch-response-span.md) | openai |
-| [Memory](reports/memory-span.md) | aws-bedrock-agentcore, google-adk |
+| [Memory](reports/memory-span.md) | aws-bedrock-agentcore, google-adk, mem0 |
 | [Execute Tool](reports/execute-tool-span.md) | agent-framework, autogen, crewai, google-adk, google-genai, langchain, llamaindex, openai-agents, openai-assistants, pydantic-ai, vertexai |
 
 ### Events
