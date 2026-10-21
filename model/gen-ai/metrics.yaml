@@ -59,9 +59,14 @@ metrics:
     requirement_level: recommended
     instrument: histogram
     unit: "s"
-    brief: 'Time to receive the first chunk, measured from when the client issues the generation request to when the first chunk is received in the response stream.'
-    note: >
+    brief: 'Time from the start of the client inference operation to receipt of the first response chunk.'
+    note: |
       This metric SHOULD be reported for streaming calls and SHOULD NOT be reported otherwise.
+      A chunk is defined in [Streaming response chunks](/docs/gen-ai/client-inference.md#streaming-response-chunks).
+
+      The measurement starts when the logical inference operation starts, before the first attempt,
+      and includes retries, retry backoff, authentication, and other work before the first chunk arrives.
+      If no chunk is received, this metric MUST NOT be reported.
     stability: development
     annotations:
       code_generation:
@@ -73,9 +78,14 @@ metrics:
     instrument: histogram
     unit: "s"
     brief: >
-      Time per output chunk, recorded for each chunk received after the first one, measured as the time elapsed from the end of the previous chunk to the end of the current chunk.
-    note: >
+      Time between receipt of consecutive response chunks, recorded for each chunk after the first.
+    note: |
       This metric SHOULD be reported for streaming calls and SHOULD NOT be reported otherwise.
+      A chunk is defined in [Streaming response chunks](/docs/gen-ai/client-inference.md#streaming-response-chunks).
+
+      Events that do not qualify as chunks MUST NOT reset the measurement interval.
+      If fewer than two chunks are received, this metric MUST NOT be reported.
+      Measurements for chunks already received SHOULD be retained if the operation fails or is cancelled.
     stability: development
     annotations:
       code_generation:

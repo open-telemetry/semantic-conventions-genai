@@ -2,6 +2,7 @@
 
 import json
 import os
+from time import monotonic
 
 from opentelemetry.trace import SpanKind
 from reference_shared import (
@@ -17,6 +18,49 @@ MOCK_BASE_URL = os.environ["MOCK_LLM_URL"] + "/v1"
 
 _reference_tracer = reference_tracer()
 _reference_meter = reference_meter()
+
+_time_to_first_chunk = _reference_meter.create_histogram(
+    "gen_ai.client.inference.time_to_first_chunk",
+    unit="s",
+    description="Time from the start of inference to receipt of the first response chunk.",
+    explicit_bucket_boundaries_advisory=[
+        0.01,
+        0.02,
+        0.04,
+        0.08,
+        0.16,
+        0.32,
+        0.64,
+        1.28,
+        2.56,
+        5.12,
+        10.24,
+        20.48,
+        40.96,
+        81.92,
+    ],
+)
+_time_per_output_chunk = _reference_meter.create_histogram(
+    "gen_ai.client.inference.time_per_output_chunk",
+    unit="s",
+    description="Time between receipt of consecutive response chunks.",
+    explicit_bucket_boundaries_advisory=[
+        0.01,
+        0.02,
+        0.04,
+        0.08,
+        0.16,
+        0.32,
+        0.64,
+        1.28,
+        2.56,
+        5.12,
+        10.24,
+        20.48,
+        40.96,
+        81.92,
+    ],
+)
 
 _operation_input_tokens = _reference_meter.create_histogram(
     "gen_ai.client.inference.operation.input_tokens",
@@ -507,6 +551,9 @@ def run_chat_streaming_reference(client):
                 [{"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]} for m in request_messages]
             ),
         )
+        # Start before the SDK call so authentication and internal retries are included.
+        started = monotonic()
+        previous_chunk = None
         stream = client.chat.completions.create(
             model=request_model,
             messages=request_messages,
@@ -521,14 +568,38 @@ def run_chat_streaming_reference(client):
         input_tokens = None
         output_tokens = None
         for chunk in stream:
+            received = monotonic()
             model = model or getattr(chunk, "model", None)
             response_id = response_id or getattr(chunk, "id", None)
+            # Each decoded provider event counts once, regardless of choice count.
+            # Role/ID-only, usage-only, and finish-only updates do not carry output.
+            has_output = False
             for choice in chunk.choices:
+                delta = choice.delta
+                has_output = has_output or bool(
+                    delta.content
+                    or delta.refusal
+                    or (delta.audio and (delta.audio.data or delta.audio.transcript))
+                    or (delta.function_call and (delta.function_call.name or delta.function_call.arguments))
+                    or any(
+                        tool.function and (tool.function.name or tool.function.arguments)
+                        for tool in delta.tool_calls or []
+                    )
+                )
                 seen_choice_indexes.add(choice.index)
                 if choice.index == 0 and choice.delta.content:
                     text += choice.delta.content
                 if choice.finish_reason is not None:
                     finish_reasons_by_index[choice.index] = choice.finish_reason
+            if has_output:
+                metric_attributes = usage_metric_attributes(request_model, model, host, port)
+                if previous_chunk is None:
+                    elapsed = received - started
+                    _time_to_first_chunk.record(elapsed, metric_attributes)
+                    span.set_attribute("gen_ai.response.time_to_first_chunk", elapsed)
+                else:
+                    _time_per_output_chunk.record(received - previous_chunk, metric_attributes)
+                previous_chunk = received
             if chunk.usage:
                 input_tokens = chunk.usage.prompt_tokens
                 output_tokens = chunk.usage.completion_tokens
