@@ -32,6 +32,12 @@ events:
           conditionally_required: If applicable.
       - ref: gen_ai.evaluation.explanation
         requirement_level: recommended
+      - ref: gen_ai.evaluation.score.direction
+        requirement_level:
+          recommended: When `gen_ai.evaluation.score.value` is set and the evaluator defines which direction is better.
+      - ref: gen_ai.evaluation.score.rating_scale
+        requirement_level:
+          recommended: When the evaluator defines it.
       - ref: gen_ai.response.id
         requirement_level:
           recommended: When available.

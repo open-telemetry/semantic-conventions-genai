@@ -43,7 +43,9 @@ This event captures the result of evaluating GenAI output for quality, accuracy,
 | [`gen_ai.evaluation.score.label`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If applicable. | string | Human readable label for evaluation. [2] | `relevant`; `not_relevant`; `correct`; `incorrect`; `pass`; `fail` |
 | [`gen_ai.evaluation.score.value`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If applicable. | double | The evaluation score returned by the evaluator. | `4.0` |
 | [`gen_ai.evaluation.explanation`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | A free-form explanation for the assigned score provided by the evaluator. | `The response is factually accurate but lacks sufficient detail to fully address the question.` |
-| [`gen_ai.response.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` When available. | string | The unique identifier for the completion. [3] | `chatcmpl-123` |
+| [`gen_ai.evaluation.score.direction`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` [3] | string | Whether a higher or a lower `gen_ai.evaluation.score.value` is better. [4] | `maximize`; `minimize` |
+| [`gen_ai.evaluation.score.rating_scale`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` When the evaluator defines it. | string | Whether the evaluator produces a numeric score or a category. [5] | `numerical`; `categorical` |
+| [`gen_ai.response.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` When available. | string | The unique identifier for the completion. [6] | `chatcmpl-123` |
 
 **[1] `error.type`:** The `error.type` SHOULD match the error code returned by the Generative AI provider or the client library,
 the canonical name of exception that occurred, or another low-cardinality error identifier.
@@ -51,7 +53,15 @@ Instrumentations SHOULD document the list of errors they report.
 
 **[2] `gen_ai.evaluation.score.label`:** This attribute provides a human-readable interpretation of the evaluation score produced by an evaluator. For example, a score value of 1 could mean "relevant" in one evaluation system and "not relevant" in another, depending on the scoring range and evaluator. The label SHOULD have low cardinality. Possible values depend on the evaluation metric and evaluator used; implementations SHOULD document the possible values.
 
-**[3] `gen_ai.response.id`:** The unique identifier assigned to the specific
+**[3] `gen_ai.evaluation.score.direction`:** When `gen_ai.evaluation.score.value` is set and the evaluator defines which direction is better.
+
+**[4] `gen_ai.evaluation.score.direction`:** Evaluators differ in which way is better: a higher relevance score is better, a higher toxicity score is worse. Without this attribute, consumers cannot tell a good result from a bad one when comparing, charting, or alerting on scores.
+This is a property of the evaluator, recorded on each result so the result can be interpreted on its own. It applies only to scores where one direction is always better. Evaluators whose acceptable scores lie within a range SHOULD NOT set this attribute.
+
+**[5] `gen_ai.evaluation.score.rating_scale`:** An evaluator can return both `gen_ai.evaluation.score.value` and `gen_ai.evaluation.score.label`. This attribute tells consumers which one is the result, for example whether to chart scores as a distribution or count categories.
+This is a property of the evaluator, recorded on each result so the result can be interpreted on its own.
+
+**[6] `gen_ai.response.id`:** The unique identifier assigned to the specific
 completion being evaluated. This attribute helps correlate the evaluation
 event with the corresponding operation when span id is not available.
 
@@ -62,6 +72,24 @@ event with the corresponding operation when span id is not available.
 | Value | Description | Stability |
 | --- | --- | --- |
 | `_OTHER` | A fallback error value to be used when the instrumentation doesn't define a custom value. | ![Stable](https://img.shields.io/badge/-stable-lightgreen) |
+
+---
+
+`gen_ai.evaluation.score.direction` has the following list of well-known values. If one of them applies, then the respective value MUST be used; otherwise, a custom value MAY be used.
+
+| Value | Description | Stability |
+| --- | --- | --- |
+| `maximize` | Higher scores are better. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `minimize` | Lower scores are better. | ![Development](https://img.shields.io/badge/-development-blue) |
+
+---
+
+`gen_ai.evaluation.score.rating_scale` has the following list of well-known values. If one of them applies, then the respective value MUST be used; otherwise, a custom value MAY be used.
+
+| Value | Description | Stability |
+| --- | --- | --- |
+| `categorical` | The evaluator picks one of a fixed set of categories. `gen_ai.evaluation.score.label` is the result; `gen_ai.evaluation.score.value`, when present, is a numeric code for the category. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `numerical` | The evaluator produces a number. `gen_ai.evaluation.score.value` is the result; `gen_ai.evaluation.score.label`, when present, names or judges that number. | ![Development](https://img.shields.io/badge/-development-blue) |
 
 <!-- prettier-ignore-end -->
 <!-- END AUTOGENERATED TEXT -->

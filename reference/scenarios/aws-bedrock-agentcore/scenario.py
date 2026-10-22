@@ -1,4 +1,4 @@
-"""Reference implementation: AWS Bedrock AgentCore memory APIs."""
+"""Reference implementation: AWS Bedrock AgentCore memory and evaluation APIs."""
 
 import json
 import os
@@ -6,7 +6,13 @@ from datetime import UTC, datetime
 
 import boto3
 from opentelemetry.trace import SpanKind
-from reference_shared import flush_and_shutdown, mock_server_host_port, reference_tracer, setup_otel
+from reference_shared import (
+    flush_and_shutdown,
+    mock_server_host_port,
+    reference_event_logger,
+    reference_tracer,
+    setup_otel,
+)
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"]
 
@@ -19,6 +25,14 @@ CREATE_MEMORY_TEXT = "User prefers vegetarian meals."
 UPDATED_MEMORY_TEXT = "User prefers vegetarian meals and dark mode."
 QUERY_TEXT = "vegetarian meal preference"
 TIMESTAMP = datetime(2026, 1, 1, 12, 0, 0, tzinfo=UTC)
+EVALUATOR_ID = "response_quality-mock01"
+# One agent span from the session being evaluated, in the OTel JSON shape Evaluate accepts.
+SESSION_SPAN = {
+    "traceId": "4bf92f3577b34da6a3ce929d0e0e4736",
+    "spanId": "00f067aa0ba902b7",
+    "name": "invoke_agent support-agent",
+    "attributes": {"gen_ai.operation.name": "invoke_agent", "session.id": "session-001"},
+}
 
 
 def create_agentcore_control_client():
@@ -250,8 +264,40 @@ def run_delete_memory_store_reference(client, memory_id):
         )
 
 
+def run_evaluation_reference(control_client, data_client):
+    """Scenario: evaluation result event via AgentCore Evaluate, with the evaluator's rating scale."""
+    print("  [evaluate] Bedrock AgentCore Evaluate")
+    # The evaluator definition says whether it produces a number or picks a category.
+    evaluator = control_client.get_evaluator(evaluatorId=EVALUATOR_ID)
+    rating_scale = evaluator["evaluatorConfig"]["llmAsAJudge"]["ratingScale"]
+    rating_scale_kind = "numerical" if "numerical" in rating_scale else "categorical"
+
+    with _reference_tracer.start_as_current_span("reference.evaluation", kind=SpanKind.INTERNAL):
+        response = data_client.evaluate(
+            evaluatorId=EVALUATOR_ID,
+            evaluationInput={"sessionSpans": [SESSION_SPAN]},
+        )
+        for result in response["evaluationResults"]:
+            attributes = {
+                "gen_ai.evaluation.name": result["evaluatorName"],
+                "gen_ai.evaluation.score.rating_scale": rating_scale_kind,
+            }
+            if "value" in result:
+                attributes["gen_ai.evaluation.score.value"] = result["value"]
+            if "label" in result:
+                attributes["gen_ai.evaluation.score.label"] = result["label"]
+            if "explanation" in result:
+                attributes["gen_ai.evaluation.explanation"] = result["explanation"]
+            reference_event_logger("gen_ai.evaluation.reference").emit(
+                event_name="gen_ai.evaluation.result",
+                body="Evaluation result",
+                attributes=attributes,
+            )
+            print(f"    -> {rating_scale_kind} score: {result.get('value')} ({result.get('label')})")
+
+
 def main():
-    print("=== Reference Implementation: AWS Bedrock AgentCore Memory ===")
+    print("=== Reference Implementation: AWS Bedrock AgentCore Memory and Evaluations ===")
     tp, lp, mp = setup_otel()
 
     control_client = create_agentcore_control_client()
@@ -261,6 +307,7 @@ def main():
     run_search_memory_reference(data_client, memory_id)
     run_delete_memory_reference(data_client, memory_id, memory_record_id)
     run_delete_memory_store_reference(control_client, memory_id)
+    run_evaluation_reference(control_client, data_client)
 
     flush_and_shutdown(tp, lp, mp)
 

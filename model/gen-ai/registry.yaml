@@ -1030,6 +1030,49 @@ attributes:
       Possible values depend on the evaluation metric and evaluator used; implementations SHOULD document the possible values.
     examples: ["relevant", "not_relevant", "correct", "incorrect", "pass", "fail"]
     stability: development
+  - key: gen_ai.evaluation.score.direction
+    type:
+      members:
+        - id: maximize
+          value: "maximize"
+          brief: 'Higher scores are better.'
+          stability: development
+        - id: minimize
+          value: "minimize"
+          brief: 'Lower scores are better.'
+          stability: development
+    brief: Whether a higher or a lower `gen_ai.evaluation.score.value` is better.
+    note: >
+      Evaluators differ in which way is better: a higher relevance score is better,
+      a higher toxicity score is worse. Without this attribute, consumers cannot tell
+      a good result from a bad one when comparing, charting, or alerting on scores.
+
+      This is a property of the evaluator, recorded on each result so the result can
+      be interpreted on its own. It applies only to scores where one direction is
+      always better. Evaluators whose acceptable scores lie within a range SHOULD NOT
+      set this attribute.
+    stability: development
+  - key: gen_ai.evaluation.score.rating_scale
+    type:
+      members:
+        - id: numerical
+          value: "numerical"
+          brief: 'The evaluator produces a number. `gen_ai.evaluation.score.value` is the result; `gen_ai.evaluation.score.label`, when present, names or judges that number.'
+          stability: development
+        - id: categorical
+          value: "categorical"
+          brief: 'The evaluator picks one of a fixed set of categories. `gen_ai.evaluation.score.label` is the result; `gen_ai.evaluation.score.value`, when present, is a numeric code for the category.'
+          stability: development
+    brief: Whether the evaluator produces a numeric score or a category.
+    note: >
+      An evaluator can return both `gen_ai.evaluation.score.value` and
+      `gen_ai.evaluation.score.label`. This attribute tells consumers which one is
+      the result, for example whether to chart scores as a distribution or count
+      categories.
+
+      This is a property of the evaluator, recorded on each result so the result can
+      be interpreted on its own.
+    stability: development
   - key: gen_ai.evaluation.explanation
     type: string
     brief: A free-form explanation for the assigned score provided by the evaluator.

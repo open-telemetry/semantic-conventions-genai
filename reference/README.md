@@ -43,7 +43,7 @@ Run `uv run update-reports` to regenerate.
 | Event | Libraries |
 | --- | --- |
 | [Inference Operation Details](reports/gen-ai-client-inference-operation-details-event.md) | anthropic, aws-bedrock, azure-ai-inference, cohere, google-genai, groq, litellm, mistralai, openai, vertexai |
-| [Evaluation Result](reports/gen-ai-evaluation-result-event.md) | azure-ai-evaluation, deepeval, dspy |
+| [Evaluation Result](reports/gen-ai-evaluation-result-event.md) | aws-bedrock-agentcore, azure-ai-evaluation, deepeval, dspy |
 
 ### Entities
 
