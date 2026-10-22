@@ -653,13 +653,13 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 **[10] `server.address`:** When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent the server address behind any intermediaries, for example proxies, if it's available.
 
 **[11] `gen_ai.memory.query.text`:** Instrumentations SHOULD NOT capture this attribute by default. Capture SHOULD be gated
-by an explicit user opt-in, for example `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT`.
+by an explicit user opt-in via [content capture configuration](/docs/gen-ai/gen-ai-spans.md#content-capture-configuration).
 
 > [!Warning]
 > This attribute may contain sensitive information.
 
 **[12] `gen_ai.memory.records`:** Instrumentations SHOULD NOT capture this attribute by default. Capture SHOULD be gated
-by an explicit user opt-in, for example `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT`.
+by an explicit user opt-in via [content capture configuration](/docs/gen-ai/gen-ai-spans.md#content-capture-configuration).
 
 > [!Warning]
 > This attribute may contain sensitive information including user/PII data.
@@ -970,6 +970,48 @@ recorded in its structured form on events.
 Instrumentation MAY provide a configuration option allowing to truncate properties
 such as individual message contents, preserving JSON structure.
 
+##### Content capture configuration
+
+Capturing model instructions, prompts, completions, retrieval queries, prompt template variables, and memory records is gated by an explicit user opt-in.
+Instrumentations that support capturing content MUST provide a configuration option to control
+whether content is captured and which telemetry signals receive it.
+
+The content capture configuration governs the following attributes and their representation on spans and events:
+
+- [`gen_ai.input.messages`](/docs/registry/attributes/gen-ai.md#gen-ai-input-messages)
+- [`gen_ai.output.messages`](/docs/registry/attributes/gen-ai.md#gen-ai-output-messages)
+- [`gen_ai.system_instructions`](/docs/registry/attributes/gen-ai.md#gen-ai-system-instructions)
+- [`gen_ai.tool.call.arguments`](/docs/registry/attributes/gen-ai.md#gen-ai-tool-call-arguments)
+- [`gen_ai.tool.call.result`](/docs/registry/attributes/gen-ai.md#gen-ai-tool-call-result)
+- [`gen_ai.retrieval.query.text`](/docs/registry/attributes/gen-ai.md#gen-ai-retrieval-query-text)
+- [`gen_ai.prompt.variable.*`](/docs/registry/attributes/gen-ai.md#gen-ai-prompt-variable)
+- [`gen_ai.memory.query.text`](/docs/registry/attributes/gen-ai.md#gen-ai-memory-query-text)
+- [`gen_ai.memory.records`](/docs/registry/attributes/gen-ai.md#gen-ai-memory-records)
+
+Attributes providing schemas rather than user/model payload content (such as [`gen_ai.tool.definitions`](/docs/registry/attributes/gen-ai.md#gen-ai-tool-definitions)) are not governed by this configuration.
+
+A content attribute MUST NOT be reported on a signal unless that signal's conventions
+reference the attribute or explicitly permit copying it from another signal.
+For example, [GenAI client operation exception events](gen-ai-exceptions.md#generative-ai-client-operation-exception)
+MAY include attributes captured on the corresponding span when configured to do so.
+In either case, the content capture configuration MUST enable content on the destination signal.
+
+If this configuration is provided via an environment variable, the environment variable MUST be
+named `OTEL_INSTRUMENTATION_GENAI_CAPTURE_CONTENT`.
+
+The configuration MUST support the following values:
+
+| Value | Behavior |
+| --- | --- |
+| `NO_CONTENT` | Do not capture content on spans or events. (Default) |
+| `SPAN_ONLY` | Capture content on spans only. |
+| `EVENT_ONLY` | Capture content on events only. |
+| `SPAN_AND_EVENT` | Capture content on both spans and events. |
+
+Environment variable value SHOULD be parsed case-insensitively.
+
+If an unrecognized or invalid value is provided, instrumentations SHOULD default to `NO_CONTENT`.
+
 #### Uploading content to external storage
 
 Instrumentations MAY support user-defined in-process hooks to handle content upload.
@@ -1008,6 +1050,24 @@ in the telemetry processing pipeline (in-process or via a collector), based on t
 `gen_ai.system_instructions`, `gen_ai.input.messages`, and `gen_ai.output.messages`
 attributes. Given the potential data volume, it is RECOMMENDED to tune batching
 and export settings accordingly in the OpenTelemetry SDK pipeline.
+
+##### Content upload configuration
+
+Instrumentations that support content uploading via completion hooks SHOULD support the following
+standard configuration options:
+
+- **Content hook**: Specifies the qualified method or component name to be called when an operation completes.
+  - Environment variable: `OTEL_INSTRUMENTATION_GENAI_CONTENT_HOOK` (e.g. `upload`).
+- **Upload base path**: Specifies the destination path or URI for uploaded prompt and response content.
+  It MAY be a local filesystem directory (e.g. `/var/log/genai/prompts`) or a cloud storage URI
+  (e.g. `s3://my-bucket/prompts`, `gs://my-bucket/prompts`, `az://my-container/prompts`).
+  - Environment variable: `OTEL_INSTRUMENTATION_GENAI_UPLOAD_BASE_PATH`
+- **Upload format**: Specifies the data serialization format for uploaded content. Supported values MUST include
+  `json` and `jsonl`. Defaults to `json`.
+  - Environment variable: `OTEL_INSTRUMENTATION_GENAI_UPLOAD_FORMAT`
+- **Upload maximum queue size**: Specifies the maximum number of concurrent uploads to queue in background
+  upload processing before dropping or throttling. Defaults to `20`.
+  - Environment variable: `OTEL_INSTRUMENTATION_GENAI_UPLOAD_MAX_QUEUE_SIZE`
 
 TODO: document a common approach to record references to externally stored content.
 
