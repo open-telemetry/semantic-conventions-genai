@@ -73,10 +73,10 @@ def usage_metric_attributes(request_model, response_model, host, port):
 
 def _add_by_modality(counter, total, audio_tokens, metric_attributes):
     """Split `total` into its audio and unknown parts and add each to `counter`."""
-    if audio_tokens:
+    if audio_tokens is not None and audio_tokens > 0:
         counter.add(audio_tokens, {**metric_attributes, "gen_ai.token.modality": "audio"})
     remainder = total - (audio_tokens or 0)
-    if remainder:
+    if remainder > 0:
         counter.add(remainder, {**metric_attributes, "gen_ai.token.modality": "unknown"})
 
 
@@ -103,7 +103,7 @@ def record_inference_usage(usage, metric_attributes):
         ("gen_ai.usage.reasoning.output_tokens", _reasoning_output_tokens),
     ):
         value = usage.get(attribute)
-        if value is not None:
+        if value is not None and value > 0:
             counter.add(value, {**metric_attributes, "gen_ai.token.modality": "unknown"})
 
 

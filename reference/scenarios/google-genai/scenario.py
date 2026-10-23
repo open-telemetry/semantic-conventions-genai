@@ -191,7 +191,7 @@ def _add_by_modality(counter, total, suffix, usage, metric_attributes):
     remainder = total
     for modality in _MODALITY_MAP.values():
         count = usage.get(f"gen_ai.usage.{modality}.{suffix}")
-        if count:
+        if count is not None and count > 0:
             counter.add(count, {**metric_attributes, "gen_ai.token.modality": modality})
             remainder -= count
     if remainder > 0:
@@ -209,12 +209,12 @@ def _record_inference_usage(usage, metric_attributes):
         _operation_output_tokens.record(output_tokens, metric_attributes)
         _add_by_modality(_output_tokens, output_tokens, "output_tokens", usage, metric_attributes)
     cache_read_tokens = usage.get("gen_ai.usage.cache_read.input_tokens")
-    if cache_read_tokens:
+    if cache_read_tokens is not None and cache_read_tokens > 0:
         _add_by_modality(
             _cache_read_input_tokens, cache_read_tokens, "cache_read.input_tokens", usage, metric_attributes
         )
     reasoning_tokens = usage.get("gen_ai.usage.reasoning.output_tokens")
-    if reasoning_tokens:
+    if reasoning_tokens is not None and reasoning_tokens > 0:
         # Google reports no modality for thoughts tokens.
         _reasoning_output_tokens.add(reasoning_tokens, {**metric_attributes, "gen_ai.token.modality": "unknown"})
 
