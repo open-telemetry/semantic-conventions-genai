@@ -5,11 +5,18 @@ import json
 import sys
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 import scenario as decisions
 from jsonschema import Draft202012Validator, ValidationError
 from openai import BadRequestError
+from openai.types.decision import (
+    AnswerAnswerResourceChoice,
+    AnswerAnswerResourcePredicate,
+    AnswerAnswerResourceRefusal,
+    AnswerAnswerResourceScore,
+)
 from opentelemetry._logs import SeverityNumber
 from opentelemetry.sdk._logs import LoggerProvider
 from opentelemetry.sdk._logs.export import InMemoryLogRecordExporter, SimpleLogRecordProcessor
@@ -30,6 +37,214 @@ RESULT_SCHEMA = json.loads(
     (Path(__file__).resolve().parents[3] / "model/gen-ai/gen-ai-decision-results.json").read_text(encoding="utf-8")
 )
 RESULT_VALIDATOR = Draft202012Validator(RESULT_SCHEMA)
+
+
+# Published OpenAI answer excerpts and the request context needed to interpret
+# them. These are parsed as SDK answer types; no synthetic response envelope is
+# added around the excerpts.
+# https://developers.openai.com/api/docs/guides/decisions
+OPENAI_CHOICE_QUESTION = {
+    "type": "choice",
+    "name": "department",
+    "instructions": "Which department should handle this complaint?",
+    "choices": [
+        {"value": "billing", "description": "Payments, invoices, and refunds."},
+        {"value": "technical", "description": "Problems using the product."},
+        {"value": "shipping", "description": "Delivery and tracking."},
+        {"value": "other", "description": "Requests outside these categories."},
+    ],
+}
+OPENAI_CHOICE_ANSWER = {
+    "type": "choice",
+    "name": "department",
+    "choice": "billing",
+    "probabilities": [
+        {"value": "billing", "probability": 0.95},
+        {"value": "technical", "probability": 0.02},
+        {"value": "shipping", "probability": 0.01},
+        {"value": "other", "probability": 0.02},
+    ],
+    "confidence": 0.93,
+}
+
+# The complete request levels and response excerpt are from the same guide.
+OPENAI_SCORE_QUESTION = {
+    "type": "score",
+    "name": "severity",
+    "instructions": "How severe is this issue?",
+    "levels": [
+        {"label": "Cosmetic", "description": "Appearance only; no lost functionality."},
+        {"label": "Workaround available", "description": "A task fails, but another way works."},
+        {"label": "Fully blocked", "description": "A task fails with no workaround."},
+    ],
+}
+OPENAI_SCORE_ANSWER = {
+    "type": "score",
+    "name": "severity",
+    "score": 1.1,
+    "probabilities": [
+        {"value": 0, "label": "Cosmetic", "probability": 0.1},
+        {"value": 1, "label": "Workaround available", "probability": 0.7},
+        {"value": 2, "label": "Fully blocked", "probability": 0.2},
+    ],
+    "confidence": 0.55,
+}
+
+# OpenAI documents the refusal response type and fields, but not a literal
+# refusal payload. This shape fixture uses the documented question name.
+OPENAI_REFUSAL_ANSWER = {"type": "refusal", "name": "department"}
+
+
+# These raw JSON response fixtures are copied from TypeSafe's published
+# System One and primitive examples. They exercise the HTTP contract only; no
+# TypeSafe SDK or live service is involved.
+# Noul request/response: https://docs.typesafe.ai/primitives/noul
+JEV_NOUL_QUESTIONS = {
+    "is_human_escalation": {"type": "noul"},
+    "is_repeat_contact": {"type": "noul"},
+}
+JEV_NOUL_RESPONSE = {
+    "model": "jev-1.13.0",
+    "answers": {
+        "is_human_escalation": {"type": "noul", "noul": 0.99},
+        "is_repeat_contact": {"type": "noul", "noul": 0.93},
+    },
+    "usage": {"input_tokens": 360, "output_tokens": 39},
+}
+
+# Choice request order and response: https://docs.typesafe.ai/primitives/choice
+JEV_CHOICE_QUESTIONS = {
+    "department": {"type": "choice"},
+    "return_reason": {"type": "choice"},
+    "shipping_issue": {"type": "choice"},
+    "requested_resolution": {"type": "choice"},
+    "tone": {"type": "choice"},
+}
+JEV_CHOICE_RESPONSE = {
+    "model": "jev-1.13.0",
+    "answers": {
+        "department": {
+            "type": "choice",
+            "choice": "returns",
+            "confidence": 0.42,
+            "probabilities": {"shipping": 0.04, "billing": 0.35, "returns": 0.61},
+        },
+        "return_reason": {
+            "type": "choice",
+            "choice": "wrong_size",
+            "confidence": 1.0,
+            "probabilities": {"other": 0.0, "wrong_size": 1.0, "changed_mind": 0.0, "damaged": 0.0, "wrong_item": 0.0},
+        },
+        "shipping_issue": {
+            "type": "choice",
+            "choice": "delayed",
+            "confidence": 0.67,
+            "probabilities": {
+                "wrong_address": 0.0,
+                "other": 0.26,
+                "not_delivered": 0.0,
+                "damaged_in_transit": 0.0,
+                "delayed": 0.74,
+            },
+        },
+        "requested_resolution": {
+            "type": "choice",
+            "choice": "refund",
+            "confidence": 0.2,
+            "probabilities": {"replacement": 0.34, "refund": 0.4, "information": 0.02, "exchange": 0.24},
+        },
+        "tone": {
+            "type": "choice",
+            "choice": "frustrated",
+            "confidence": 0.76,
+            "probabilities": {"frustrated": 0.84, "angry": 0.16, "calm": 0.0},
+        },
+    },
+    "usage": {"input_tokens": 589, "output_tokens": 212},
+}
+
+# Score request levels and response: https://docs.typesafe.ai/primitives/score
+JEV_SCORE_QUESTIONS = {
+    "bug_severity": {
+        "type": "score",
+        "criteria": [
+            "Cosmetic; no impact to functionality",
+            "Broken or degraded feature, but workaround exists",
+            "Blocking issue; no workaround exists",
+        ],
+    }
+}
+JEV_SCORE_RESPONSE = {
+    "model": "jev-1.13.0",
+    "answers": {
+        "bug_severity": {
+            "type": "score",
+            "score": 1.43,
+            "confidence": 0.35,
+            "legend": {
+                "0": "Cosmetic; no impact to functionality",
+                "1": "Broken or degraded feature, but workaround exists",
+                "2": "Blocking issue; no workaround exists",
+            },
+            "probabilities": {"0": 0.0, "1": 0.57, "2": 0.43},
+        }
+    },
+    "usage": {"input_tokens": 332, "output_tokens": 18},
+}
+
+# Documented result type outside this proposal: https://docs.typesafe.ai/primitives/box
+JEV_BOX_QUESTIONS = {"mug": {"type": "box"}}
+JEV_BOX_RESPONSE = {
+    "model": "jev-1.14.0",
+    "answers": {
+        "mug": {
+            "type": "box",
+            "box": {"top": 0.25, "bottom": 0.82, "left": 0.44, "right": 0.84},
+            "confidence": 0.92,
+        }
+    },
+    "usage": {"input_tokens": 290, "output_tokens": 21},
+}
+
+
+def normalize_jev_response(request_questions, response):
+    """Map documented Jev Noul, Choice, and Score answers to decision results.
+
+    Iterate request questions for stable original indices and correlate the
+    response's named answers by key. Request model and usage are intentionally
+    left to the request-level inference attributes.
+    """
+    results = []
+    answers = response.get("answers", {})
+    for index, (name, question) in enumerate(request_questions.items()):
+        answer = answers.get(name)
+        if not isinstance(answer, dict) or answer.get("type") != question.get("type"):
+            continue
+
+        result = {"question_index": index, "question_name": name}
+        if answer["type"] == "noul":
+            result.update(type="predicate", probability=answer["noul"])
+        elif answer["type"] == "choice":
+            result.update(type="choice", value=answer["choice"])
+            probability = answer.get("probabilities", {}).get(answer["choice"])
+            if probability is not None:
+                result["probability"] = probability
+        elif answer["type"] == "score":
+            legend = answer.get("legend", {})
+            labels = [legend.get(str(level)) for level in range(len(legend))]
+            if (
+                len(labels) < 2
+                or set(legend) != {str(level) for level in range(len(legend))}
+                or any(not isinstance(label, str) for label in labels)
+            ):
+                continue
+            result.update(type="score", value=answer["score"], levels=labels)
+        else:
+            # Documented Jev answer types outside this schema (for example Box)
+            # are not reinterpreted as one of its decision-result variants.
+            continue
+        results.append(result)
+    return results
 
 
 class DecisionTelemetryTest(unittest.TestCase):
@@ -86,11 +301,16 @@ class DecisionTelemetryTest(unittest.TestCase):
             with self.subTest(unsupported=unsupported):
                 self.assertNotIn(unsupported, attributes)
 
-    def test_multiple_answers_and_refusal_do_not_multiply_usage(self):
-        input_text, questions, answers = list(decisions.decision_cases())[-1]
+    def test_request_model_and_usage_remain_separate_from_results(self):
+        input_text, questions, answers = next(decisions.decision_cases())
         with decisions.mock_decision_client(input_text, questions, answers) as client:
-            result = decisions.decision_request(client, model="gpt-6-luna", input=input_text, questions=questions)
-        self.assertEqual([answer.type for answer in result.answers], ["choice", "refusal"])
+            decisions.decision_request(
+                client,
+                model="gpt-6-luna",
+                input=input_text,
+                questions=questions,
+                capture_results=True,
+            )
         spans = self.exporter.get_finished_spans()
         self.assertEqual(len(spans), 1)
         span = spans[0]
@@ -104,7 +324,15 @@ class DecisionTelemetryTest(unittest.TestCase):
         self.assertNotIn("gen_ai.output.messages", span.attributes)
         self.assertNotIn("gen_ai.input.messages", span.attributes)
         self.assertNotIn("gen_ai.output.type", span.attributes)
-        self.assertNotIn("gen_ai.decision.results", span.attributes)
+        results = json.loads(span.attributes["gen_ai.decision.results"])
+        self.assertEqual(
+            results,
+            [{"type": "predicate", "question_index": 0, "question_name": "damaged", "probability": 0.95}],
+        )
+        content_models.DecisionResults.model_validate(results)
+        RESULT_VALIDATOR.validate(results)
+        self.assertNotIn("model", json.dumps(results))
+        self.assertNotIn("usage", json.dumps(results))
         self.assertEqual(len(self.log_exporter.get_finished_logs()), 0)
         points = self.points()
         duration = points["gen_ai.client.inference.duration"][0]
@@ -143,7 +371,7 @@ class DecisionTelemetryTest(unittest.TestCase):
         self.assertNotIn("gen_ai.decision.results", event.attributes)
         self.assertFalse(any(key.startswith("gen_ai.usage.") for key in event.attributes))
 
-    def test_result_variants_are_exported_with_question_correlation(self):
+    def test_documented_predicate_response_is_exported_and_validated(self):
         for input_text, questions, answers in decisions.decision_cases():
             with decisions.mock_decision_client(input_text, questions, answers) as client:
                 decisions.decision_request(
@@ -159,30 +387,61 @@ class DecisionTelemetryTest(unittest.TestCase):
             RESULT_VALIDATOR.validate(result)
         self.assertEqual(
             results[0],
-            [
-                {
-                    "type": "choice",
-                    "question_index": 0,
-                    "question_name": "department",
-                    "value": "technical",
-                    "probability": 0.72,
-                }
-            ],
+            [{"type": "predicate", "question_index": 0, "question_name": "damaged", "probability": 0.95}],
         )
-        self.assertEqual(results[1][0]["value"], 0.84)
-        self.assertEqual(results[1][0]["levels"], ["irrelevant", "relevant"])
-        self.assertEqual(results[2][0], {"type": "predicate", "question_index": 0, "probability": 0.87})
-        self.assertIs(results[2][1]["value"], True)
-        self.assertEqual(results[2][1]["probability"], 0.87)
-        self.assertEqual(results[3][1], {"type": "refusal", "question_index": 1, "question_name": "urgent"})
         for metric in self.points().values():
             for point in metric:
                 self.assertNotIn("gen_ai.decision.results", point.attributes)
         self.assertNotIn("confidence", json.dumps(results))
         self.assertNotIn("probabilities", json.dumps(results))
 
+    def test_documented_openai_choice_and_score_excerpts_map_to_schema(self):
+        choice = AnswerAnswerResourceChoice.model_validate(OPENAI_CHOICE_ANSWER)
+        choice_result = decisions.openai_decision_results([OPENAI_CHOICE_QUESTION], [choice])
+        self.assertEqual(
+            choice_result,
+            [
+                {
+                    "type": "choice",
+                    "question_index": 0,
+                    "question_name": "department",
+                    "value": "billing",
+                    "probability": 0.95,
+                }
+            ],
+        )
+
+        score = AnswerAnswerResourceScore.model_validate(OPENAI_SCORE_ANSWER)
+        score_result = decisions.openai_decision_results([OPENAI_SCORE_QUESTION], [score])
+        self.assertEqual(
+            score_result,
+            [
+                {
+                    "type": "score",
+                    "question_index": 0,
+                    "question_name": "severity",
+                    "value": 1.1,
+                    "levels": ["Cosmetic", "Workaround available", "Fully blocked"],
+                }
+            ],
+        )
+        self.assertEqual(score_result[0]["levels"], [level["label"] for level in OPENAI_SCORE_QUESTION["levels"]])
+
+        for result in (choice_result, score_result):
+            content_models.DecisionResults.model_validate(result)
+            RESULT_VALIDATOR.validate(result)
+            self.assertNotIn("confidence", json.dumps(result))
+            self.assertNotIn("probabilities", json.dumps(result))
+
+    def test_documented_openai_refusal_contract_shape_maps_to_schema(self):
+        refusal = AnswerAnswerResourceRefusal.model_validate(OPENAI_REFUSAL_ANSWER)
+        result = decisions.openai_decision_results([OPENAI_CHOICE_QUESTION], [refusal])
+        self.assertEqual(result, [{"type": "refusal", "question_index": 0, "question_name": "department"}])
+        content_models.DecisionResults.model_validate(result)
+        RESULT_VALIDATOR.validate(result)
+
     def test_event_results_are_structured_and_correlated_to_inference(self):
-        input_text, questions, answers = list(decisions.decision_cases())[-1]
+        input_text, questions, answers = next(decisions.decision_cases())
         with decisions.mock_decision_client(input_text, questions, answers) as client:
             decisions.decision_request(
                 client,
@@ -205,7 +464,10 @@ class DecisionTelemetryTest(unittest.TestCase):
         event_results = json.loads(json.dumps(event.attributes["gen_ai.decision.results"]))
         content_models.DecisionResults.model_validate(event_results)
         RESULT_VALIDATOR.validate(event_results)
-        self.assertEqual(event.attributes["gen_ai.decision.results"][1]["type"], "refusal")
+        self.assertEqual(
+            event.attributes["gen_ai.decision.results"][0],
+            {"type": "predicate", "question_index": 0, "question_name": "damaged", "probability": 0.95},
+        )
         self.assertEqual(event.attributes["gen_ai.usage.input_tokens"], 42)
         self.assertEqual(event.attributes["gen_ai.usage.output_tokens"], 0)
         for metric in self.points().values():
@@ -253,44 +515,32 @@ class DecisionTelemetryTest(unittest.TestCase):
             )
 
     def test_unknown_answers_are_omitted_without_renumbering(self):
-        input_text, questions, answers = list(decisions.decision_cases())[-1]
-        answers[0] = {"type": "future_answer", "name": "department"}
-        with decisions.mock_decision_client(input_text, questions, answers) as client:
-            decisions.decision_request(
-                client, model="gpt-6-luna", input=input_text, questions=questions, capture_results=True
-            )
-        (span,) = self.exporter.get_finished_spans()
+        _, documented_questions, documented_answers = next(decisions.decision_cases())
+        questions = [{"type": "choice", "name": "future"}, documented_questions[0]]
+        answers = [
+            SimpleNamespace(type="future_answer", name="future"),
+            AnswerAnswerResourcePredicate.model_validate(documented_answers[0]),
+        ]
+        result = decisions.openai_decision_results(questions, answers)
         self.assertEqual(
-            json.loads(span.attributes["gen_ai.decision.results"]),
-            [{"type": "refusal", "question_index": 1, "question_name": "urgent"}],
+            result,
+            [{"type": "predicate", "question_index": 1, "question_name": "damaged", "probability": 0.95}],
         )
+        content_models.DecisionResults.model_validate(result)
+        RESULT_VALIDATOR.validate(result)
 
     def test_score_preserves_larger_scale_and_is_omitted_without_labels(self):
-        input_text, questions, answers = list(decisions.decision_cases())[1]
-        questions[0]["levels"] = [{"label": label} for label in ["irrelevant", "partial", "relevant"]]
-        answers[0]["score"] = 1.68
-        answers[0]["probabilities"] = [
-            {"value": 0, "label": "irrelevant", "probability": 0.16},
-            {"value": 1, "label": "partial", "probability": 0},
-            {"value": 2, "label": "relevant", "probability": 0.84},
-        ]
-        with decisions.mock_decision_client(input_text, questions, answers) as client:
-            decisions.decision_request(
-                client, model="gpt-6-luna", input=input_text, questions=questions, capture_results=True
-            )
-        result = json.loads(self.exporter.get_finished_spans()[0].attributes["gen_ai.decision.results"])[0]
-        self.assertEqual(result["value"], 1.68)
-        self.assertEqual(result["levels"], ["irrelevant", "partial", "relevant"])
-        content_models.DecisionResults.model_validate([result])
-        RESULT_VALIDATOR.validate([result])
-        # Exercise defensive omission when a request level cannot be captured.
-        # This malformed fixture is not an example of an accepted provider request.
+        answer = AnswerAnswerResourceScore.model_validate(OPENAI_SCORE_ANSWER)
+        questions = [OPENAI_SCORE_QUESTION]
+        result = decisions.openai_decision_results(questions, [answer])
+        self.assertEqual(result[0]["value"], 1.1)
+        self.assertEqual(result[0]["levels"], ["Cosmetic", "Workaround available", "Fully blocked"])
+        content_models.DecisionResults.model_validate(result)
+        RESULT_VALIDATOR.validate(result)
+        # A malformed request context is a defensive omission test, not a
+        # provider response fixture.
         questions[0]["levels"][1] = {}
-        with decisions.mock_decision_client(input_text, questions, answers) as client:
-            decisions.decision_request(
-                client, model="gpt-6-luna", input=input_text, questions=questions, capture_results=True
-            )
-        self.assertNotIn("gen_ai.decision.results", self.exporter.get_finished_spans()[1].attributes)
+        self.assertEqual(decisions.openai_decision_results(questions, [answer]), [])
 
     def test_missing_answers_do_not_create_abstention(self):
         input_text, questions, _ = next(decisions.decision_cases())
@@ -305,6 +555,81 @@ class DecisionTelemetryTest(unittest.TestCase):
     def test_generated_schema_matches_source_and_is_valid(self):
         Draft202012Validator.check_schema(RESULT_SCHEMA)
         self.assertEqual(RESULT_SCHEMA, content_models.DecisionResults.model_json_schema())
+
+    def test_jev_documented_responses_map_to_valid_results(self):
+        cases = (
+            (JEV_NOUL_QUESTIONS, JEV_NOUL_RESPONSE),
+            (JEV_CHOICE_QUESTIONS, JEV_CHOICE_RESPONSE),
+            (JEV_SCORE_QUESTIONS, JEV_SCORE_RESPONSE),
+        )
+        all_results = []
+        for questions, response in cases:
+            # Provider wire envelopes contain provider fields that the telemetry
+            # result schema intentionally does not model.
+            with self.assertRaises(ValidationError):
+                RESULT_VALIDATOR.validate(response)
+            results = normalize_jev_response(questions, response)
+            content_models.DecisionResults.model_validate(results)
+            RESULT_VALIDATOR.validate(results)
+            all_results.extend(results)
+            self.assertNotIn("model", json.dumps(results))
+            self.assertNotIn("usage", json.dumps(results))
+            self.assertNotIn("confidence", json.dumps(results))
+            self.assertNotIn("probabilities", json.dumps(results))
+
+        self.assertEqual(
+            all_results[:2],
+            [
+                {
+                    "type": "predicate",
+                    "question_index": 0,
+                    "question_name": "is_human_escalation",
+                    "probability": 0.99,
+                },
+                {
+                    "type": "predicate",
+                    "question_index": 1,
+                    "question_name": "is_repeat_contact",
+                    "probability": 0.93,
+                },
+            ],
+        )
+        choice_results = all_results[2:7]
+        self.assertEqual(
+            [(r["question_index"], r["question_name"], r["value"], r["probability"]) for r in choice_results],
+            [
+                (0, "department", "returns", 0.61),
+                (1, "return_reason", "wrong_size", 1.0),
+                (2, "shipping_issue", "delayed", 0.74),
+                (3, "requested_resolution", "refund", 0.4),
+                (4, "tone", "frustrated", 0.84),
+            ],
+        )
+        self.assertEqual(
+            all_results[7],
+            {
+                "type": "score",
+                "question_index": 0,
+                "question_name": "bug_severity",
+                "value": 1.43,
+                "levels": [
+                    "Cosmetic; no impact to functionality",
+                    "Broken or degraded feature, but workaround exists",
+                    "Blocking issue; no workaround exists",
+                ],
+            },
+        )
+        self.assertEqual(all_results[7]["levels"], JEV_SCORE_QUESTIONS["bug_severity"]["criteria"])
+
+        # Model and usage appear in each provider response envelope and stay at
+        # request scope; they are not copied into individual result objects.
+        self.assertEqual(JEV_NOUL_RESPONSE["model"], "jev-1.13.0")
+        self.assertEqual(JEV_NOUL_RESPONSE["usage"], {"input_tokens": 360, "output_tokens": 39})
+        self.assertEqual(JEV_CHOICE_RESPONSE["usage"], {"input_tokens": 589, "output_tokens": 212})
+        self.assertEqual(JEV_SCORE_RESPONSE["usage"], {"input_tokens": 332, "output_tokens": 18})
+
+    def test_jev_box_is_a_documented_coverage_gap(self):
+        self.assertEqual(normalize_jev_response(JEV_BOX_QUESTIONS, JEV_BOX_RESPONSE), [])
 
 
 if __name__ == "__main__":

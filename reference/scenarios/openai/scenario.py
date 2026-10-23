@@ -1158,6 +1158,36 @@ def run_fetch_response_reference(client):
     _emit_fetch_response_span(client, "resp-failed-001")
 
 
+def openai_decision_results(questions, answers):
+    """Normalize OpenAI SDK answer objects with their original request context."""
+    results = []
+    # OpenAI guarantees answer order matches request question order.
+    for index, answer in enumerate(answers):
+        result = {"question_index": index, "type": answer.type}
+        if answer.name is not None:
+            result["question_name"] = answer.name
+        if answer.type == "predicate":
+            result["probability"] = answer.probability
+        elif answer.type == "choice":
+            result["value"] = answer.choice
+            for option in answer.probabilities:
+                if type(option.value) is type(answer.choice) and option.value == answer.choice:
+                    result["probability"] = option.probability
+                    break
+        elif answer.type == "score":
+            # The API's score is an expected index into these request levels.
+            levels = questions[index].get("levels", [])
+            if len(levels) < 2 or any(not isinstance(level.get("label"), str) for level in levels):
+                continue
+            result["value"] = answer.score
+            result["levels"] = [level["label"] for level in levels]
+        elif answer.type != "refusal":
+            # Unknown future answers are not abstentions or refusals.
+            continue
+        results.append(result)
+    return results
+
+
 def decision_request(client, *, model, input, questions, capture_results=False, results_on_event=False):
     """Instrument one Decisions SDK call, including all its returned answers."""
     attributes = {
@@ -1185,30 +1215,7 @@ def decision_request(client, *, model, input, questions, capture_results=False, 
             attributes["gen_ai.response.model"] = response.model
             results = []
             if capture_results:
-                # OpenAI guarantees answer order matches request question order.
-                for index, answer in enumerate(response.answers):
-                    result = {"question_index": index, "type": answer.type}
-                    if answer.name is not None:
-                        result["question_name"] = answer.name
-                    if answer.type == "predicate":
-                        result["probability"] = answer.probability
-                    elif answer.type == "choice":
-                        result["value"] = answer.choice
-                        for option in answer.probabilities:
-                            if type(option.value) is type(answer.choice) and option.value == answer.choice:
-                                result["probability"] = option.probability
-                                break
-                    elif answer.type == "score":
-                        # The API's score is an expected index into these request levels.
-                        levels = questions[index].get("levels", [])
-                        if len(levels) < 2 or any(not isinstance(level.get("label"), str) for level in levels):
-                            continue
-                        result["value"] = answer.score
-                        result["levels"] = [level["label"] for level in levels]
-                    elif answer.type != "refusal":
-                        # Unknown future answers are not abstentions or refusals.
-                        continue
-                    results.append(result)
+                results = openai_decision_results(questions, response.answers)
                 if results and not results_on_event:
                     span.set_attribute("gen_ai.decision.results", json.dumps(results))
             # Usage belongs to the request, including when some questions are refused.
@@ -1251,92 +1258,29 @@ def decision_request(client, *, model, input, questions, capture_results=False, 
 
 
 def decision_cases():
-    """Synthetic predictions paired with SDK requests; these do not test model quality.
+    """Full documented OpenAI Decisions response example and its request.
 
-    API contract: https://developers.openai.com/api/reference/resources/decisions/methods/create
+    Source: https://developers.openai.com/api/reference/resources/decisions/methods/create
     """
-    routing_question = {
-        "type": "choice",
-        "name": "department",
-        "instructions": "Which team should handle this request?",
-        "choices": [{"value": "billing"}, {"value": "technical"}, {"value": "sales"}],
-    }
-    routing_answer = {
-        "type": "choice",
-        "name": "department",
-        "choice": "technical",
-        "probabilities": [
-            {"value": "billing", "probability": 0.2},
-            {"value": "technical", "probability": 0.72},
-            {"value": "sales", "probability": 0.08},
-        ],
-        "confidence": 0.55,
-    }
     yield (
-        "Checkout returns an error when I submit an order.",
-        [routing_question],
-        [routing_answer],
-    )
-    yield (
-        "Query: reset a password. Passage: choose Forgot password to reset it.",
+        "The package arrived with a broken screen.",
         [
             {
-                "type": "score",
-                "name": "relevance",
-                "instructions": "How useful is the passage for answering the query?",
-                "levels": [{"label": "irrelevant"}, {"label": "relevant"}],
+                "type": "predicate",
+                "name": "damaged",
+                "instructions": "Does the customer report a damaged item?",
             }
         ],
-        [
-            {
-                "type": "score",
-                "name": "relevance",
-                "score": 0.84,
-                "confidence": 0.6,
-                "probabilities": [
-                    {"value": 0, "label": "irrelevant", "probability": 0.16},
-                    {"value": 1, "label": "relevant", "probability": 0.84},
-                ],
-            }
-        ],
-    )
-    yield (
-        "Please escalate this request.",
-        [
-            {"type": "predicate", "instructions": "Does the user request escalation?"},
-            {
-                "type": "choice",
-                "name": "escalate",
-                "instructions": "Should the request be escalated?",
-                "choices": [{"value": True}, {"value": "true"}],
-            },
-        ],
-        [
-            {"type": "predicate", "probability": 0.87},
-            {
-                "type": "choice",
-                "name": "escalate",
-                "choice": True,
-                "probabilities": [
-                    {"value": "true", "probability": 0.13},
-                    {"value": True, "probability": 0.87},
-                ],
-                "confidence": 0.74,
-            },
-        ],
-    )
-    yield (
-        "Synthetic input exercising partial refusal, without inferring its cause.",
-        [
-            routing_question,
-            {"type": "predicate", "name": "urgent", "instructions": "Is the request urgent?"},
-        ],
-        [routing_answer, {"type": "refusal", "name": "urgent"}],
+        [{"type": "predicate", "name": "damaged", "probability": 0.95}],
     )
 
 
 def mock_decision_client(expected_input, expected_questions, answers, *, status_code=200):
-    """Intercept HTTP after real SDK serialization; parse responses through the SDK."""
+    """Intercept HTTP after real SDK serialization; parse responses through the SDK.
+
+    The success response is the full documented predicate example. This mock
+    does not represent a live service or live integration test.
+    """
 
     def handle(request):
         assert request.method == "POST"

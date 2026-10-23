@@ -4,6 +4,7 @@ Design rationale for the first implementation. This document is non-normative.
 Provider documentation and SDK source were inspected on 2026-10-12.
 The result mapping was rechecked on 2026-10-13.
 Request attribute applicability was rechecked on 2026-10-14.
+OpenAI and TypeSafe response examples were rechecked on 2026-10-23.
 Repository baseline: `6fd0d763a092db245a54104fc1124031eb3c51d2`.
 Related issue: [#580](https://github.com/open-telemetry/semantic-conventions-genai/issues/580).
 
@@ -11,8 +12,11 @@ This changeset adds `decision` to `gen_ai.operation.name` and attaches its recor
 guidance to the existing inference span. Existing inference metrics carry the same
 operation value. Opt-in `gen_ai.decision.results` captures correlated predicate,
 choice, score, and refusal results on that span or the existing inference-detail
-event. The OpenAI reference emits these results through real SDK calls with HTTP
-mock responses.
+event. The OpenAI reference emits the predicate result through a real SDK call
+with an HTTP mock for the complete published response example. Choice and score
+answer excerpts use the same SDK answer models and normalization code in unit
+tests; they are not wrapped in invented top-level response fields. Refusal is
+covered as a documented SDK contract shape.
 
 Result content is disabled by default. Generic confidence, inferred abstention,
 complete candidate lists, full distributions, and arbitrary rubric text remain
@@ -108,15 +112,30 @@ The inspected decision-related PR search did not identify another implementation
 | Provider/API | Decision types and inputs | Returned result | Probability/confidence | Abstention/refusal |
 | --- | --- | --- | --- | --- |
 | OpenAI `POST /v1/decisions` | Shared `input`; ordered `questions`; `predicate`, `choice`, `score`. | Ordered `answers`; optional question names; typed choice or numeric score. | Predicate probability; distributions and a separate confidence for choice/score. | Per-answer `type="refusal"`; other answers may succeed. No dedicated abstention found. |
-| TypeSafe Jev `POST /v1/systemone` | Shared `state`; named question map; `noul`, `choice`, `score`. | Answer map; string choice; numeric score with `legend`. | Noul probability; distributions and derived confidence for choice/score. | No refusal/abstention variant in inspected answer types. Low-confidence fallback is caller behavior. |
+| TypeSafe Jev `POST /v1/systemone` | Shared `state`; named question map; `noul`, `choice`, `score`, `box`. | Answer map; string choice; numeric score with `legend`; box edges for `box`. | Noul probability; distributions and derived confidence for choice/score; box confidence. | No refusal/abstention variant in inspected answer types. Low-confidence fallback is caller behavior. |
 | Cloudflare Clef Workers AI | `state` and named `noul`, `choice`, `score` questions. | Answer map; routing choice and weighted level score. | Per-option probabilities documented. Exact confidence contract not established in the inspected page. | Unknown from inspected page. |
 
 Sources: [OpenAI API reference](https://developers.openai.com/api/reference/resources/decisions/methods/create),
-[TypeSafe HTTP reference](https://docs.typesafe.ai/api),
+[OpenAI Decisions guide](https://developers.openai.com/api/docs/guides/decisions),
+[TypeSafe System One HTTP reference](https://docs.typesafe.ai/api/system-one),
+[TypeSafe Noul](https://docs.typesafe.ai/primitives/noul),
+[TypeSafe Choice](https://docs.typesafe.ai/primitives/choice),
+[TypeSafe Score](https://docs.typesafe.ai/primitives/score),
+[TypeSafe Box](https://docs.typesafe.ai/primitives/box),
 [Cloudflare Clef](https://developers.cloudflare.com/workers-ai/models/clef/).
 Unknown means unverified, not unsupported. These are documentation/source findings,
 not observations from production calls. Cloudflare corroborates breadth but was
 not used to infer missing fields from another provider's contract.
+
+### Documented result types outside the proposal
+
+TypeSafe also documents a `box` answer containing normalized image bounds
+(`top`, `bottom`, `left`, and `right`) and a separate confidence value. These
+spatial results do not have the meaning of predicate, choice, score, or refusal;
+the current schema deliberately does not coerce them into those variants. The
+reference tests record this as a coverage gap. OpenAI's refusal variant is
+documented in the response contract and supports partial refusal, but the docs do
+not show a literal refusal response example; its test is contract-shape coverage.
 
 The OpenAI request body defines `model`, `input`, `questions`, and optional
 `safety_identifier`; TypeSafe defines `model`, `state`, and `questions`.
@@ -255,15 +274,22 @@ requests: identical labels do not prove identical instructions or rubric version
 The runnable [OpenAI decision scenario](../../../reference/scenarios/openai/scenario.py)
 uses SDK 3.29.0, retaining the repository's dependency update on main. Standalone
 Decisions support first appeared in SDK 3.26.0. Its HTTP
-transport asserts the serialized request, then returns synthetic predictions in
-the documented response schema. Instrumentation reads the resulting SDK objects.
-Unit tests inspect exported results, trace-correlated structured events, privacy
-defaults, original score scales, typed choices, and refusal versus error.
-This proves SDK capturability, not live-service behavior or model accuracy.
+transport asserts the serialized request, then returns the full predicate
+response from the API reference through the SDK. Choice and score excerpts from
+the Decisions guide are parsed as SDK answer models and passed to the same
+normalization function, without adding a response envelope the guide does not
+publish. The predicate response model and usage remain request-scoped in
+telemetry. Unit tests inspect exported results,
+trace-correlated structured events, privacy defaults, original score scales,
+typed choices, and refusal versus error. This is mocked contract validation,
+not live-service behavior or model-accuracy testing.
 
-Below are provider call shapes supporting the mapping. The TypeSafe sketch has not
-been executed; OpenAI operation and result capture are implemented in the linked
-scenario. TypeSafe mapping is based on its official API and SDK contracts.
+The same tests map TypeSafe's documented raw System One JSON responses for Noul,
+Choice, and Score into normalized results. They validate the result arrays against
+the JSON Schema and companion Pydantic model without adding a TypeSafe SDK
+dependency or making API calls. This proves response-contract mapping, not TypeSafe
+SDK integration. OpenAI operation and result capture are implemented in the
+linked scenario.
 
 ### Routing: TypeSafe Python SDK
 
@@ -337,19 +363,24 @@ Do not populate `gen_ai.evaluation.*` solely because the question is named
 
 ### Result validation
 
-The reference exercises all four schema variants through SDK serialization and
-response parsing. Tests verify explicit opt-in, boolean/string choice separation,
-scores above one on a three-level scale, omitted unknown answers without index
-renumbering, event trace correlation, and exclusion of results from metric labels.
-Missing answers and HTTP errors produce no fabricated result. Malformed-input
-defensive tests are labeled separately from valid provider contract examples.
+The OpenAI reference exercises a documented predicate response through full SDK
+serialization and parsing. The same normalizer maps documented choice and score
+answer excerpts parsed with the SDK response models. A refusal is covered using
+its documented SDK response shape. TypeSafe fixtures exercise predicate mapping
+from `noul`, named choices with selected-option probabilities, and scores with
+complete ordered legends. Tests check model and token usage at request scope,
+question indices and names, selected probabilities rather than confidence,
+and exclusion of confidence and full distributions from results. OpenAI refusal
+coverage uses the documented response shape because no literal refusal example is
+published. Missing answers and HTTP errors produce no fabricated result.
 
 The generated JSON Schema enforces variant fields, scalar types, probability bounds,
 and scale presence. Its companion Python model additionally checks score bounds
 that depend on the number of levels and uniqueness of question indices. Those
 cross-field constraints cannot be expressed by this JSON Schema alone.
-Tests validate actual exported content against the generated JSON Schema and check
-it matches the Python source. This is necessary because the pinned conformance
+Tests validate OpenAI exported content and TypeSafe normalized fixture output
+against the generated JSON Schema and companion Pydantic model, then check the
+schema matches the Python source. This is necessary because the pinned conformance
 runner's content policy uses a fixed list of schemas that excludes this new one.
 
 ## Maintainer decisions
