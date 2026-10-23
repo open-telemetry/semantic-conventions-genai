@@ -8,7 +8,6 @@ linkTitle: Client Inference
 
 <!-- toc -->
 
-- [Time to first response chunk](#time-to-first-response-chunk)
 - [Span: `gen_ai.client.inference`](#span-gen_aiclientinference)
 - [Metrics](#metrics)
   - [Metric: `gen_ai.client.inference.duration`](#metric-gen_aiclientinferenceduration)
@@ -39,16 +38,6 @@ Examples of inference operations include:
 - [Google Gemini Generate Content](https://ai.google.dev/api/generate-content)
 
 including their streaming and non-streaming variants.
-
-## Time to first response chunk
-
-For the `gen_ai.client.inference.time_to_first_chunk` metric and `gen_ai.response.time_to_first_chunk` span attribute, count the first provider stream event containing new, non-empty output. Output includes text, refusals, reasoning (including opaque payloads), audio, images, and tool-call names or arguments.
-
-Ignore events that contain only usage, roles, IDs, signatures, keep-alives, status updates, or end markers. A tool-call start containing a tool name counts; an empty start event does not. Chunk boundaries follow the provider's streaming protocol, not TCP reads, HTTP frames, tokens, or additional SDK callbacks for the same event.
-
-Measure from the start of the client inference operation, before the first attempt, until the first chunk is fully received by the client and before application processing. Include authentication, failed attempts, and retry backoff. If no chunk is received, do not record the metric or span attribute.
-
-The first chunk may contain reasoning or a tool call, so this value does not necessarily measure time to the first user-visible text.
 
 ## Span: `gen_ai.client.inference`
 
@@ -595,7 +584,15 @@ This metric SHOULD be specified with [ExplicitBucketBoundaries] of [0.01, 0.02, 
 | -------- | --------------- | ----------- | -------------- | --------- | ------ |
 | `gen_ai.client.inference.time_to_first_chunk` | Histogram | `s` | Time to receive the first chunk, measured from when the client issues the generation request to when the first chunk is received in the response stream. [1] | ![Development](https://img.shields.io/badge/-development-blue) | |
 
-**[1]:** This metric SHOULD be reported for streaming calls and SHOULD NOT be reported otherwise. See [Time to first response chunk](/docs/gen-ai/client-inference.md#time-to-first-response-chunk) for the chunk definition and timing boundaries, including authentication and retries.
+**[1]:** This metric SHOULD be reported for streaming calls and SHOULD NOT be reported otherwise.
+
+For the `gen_ai.client.inference.time_to_first_chunk` metric and `gen_ai.response.time_to_first_chunk` span attribute, count the first provider stream event containing new, non-empty output. Output includes text, refusals, reasoning (including opaque payloads), audio, images, and tool-call names or arguments.
+
+Ignore events that contain only usage, roles, IDs, signatures, keep-alives, status updates, or end markers. A tool-call start containing a tool name counts; an empty start event does not. Chunk boundaries follow the provider's streaming protocol, not TCP reads, HTTP frames, tokens, or additional SDK callbacks for the same event.
+
+Measure from the start of the client inference operation, before the first attempt, until the first chunk is fully received by the client and before application processing. Include authentication, failed attempts, and retry backoff. If no chunk is received, do not record the metric or span attribute.
+
+The first chunk may contain reasoning or a tool call, so this value does not necessarily measure time to the first user-visible text.
 
 **Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/signal-requirement-level.md).
 
