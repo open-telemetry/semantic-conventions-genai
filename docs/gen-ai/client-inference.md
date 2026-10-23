@@ -39,6 +39,16 @@ Examples of inference operations include:
 
 including their streaming and non-streaming variants.
 
+<a id="time-to-first-response-chunk"></a>
+
+For the `gen_ai.client.inference.time_to_first_chunk` metric and `gen_ai.response.time_to_first_chunk` span attribute, count the first provider stream event containing new, non-empty output. Output includes text, refusals, reasoning (including opaque payloads), audio, images, and tool-call names or arguments.
+
+Ignore events that contain only usage, roles, IDs, signatures, keep-alives, status updates, or end markers. A tool-call start containing a tool name counts; an empty start event does not. Chunk boundaries follow the provider's streaming protocol, not TCP reads, HTTP frames, tokens, or additional SDK callbacks for the same event.
+
+Measure from the start of the client inference operation, before the first attempt, until the first chunk is fully received by the client and before application processing. Include authentication, failed attempts, and retry backoff. If no chunk is received, do not record the metric or span attribute.
+
+The first chunk may contain reasoning or a tool call, so this value does not necessarily measure time to the first user-visible text.
+
 ## Span: `gen_ai.client.inference`
 
 <!-- weaver .registry.spans[] | select(.type == "gen_ai.client.inference") -->
@@ -92,7 +102,7 @@ and MUST follow the overall [guidelines for span names](https://github.com/open-
 | [`gen_ai.response.finish_reasons`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string[] | Array of reasons the model stopped generating tokens, corresponding to each generation received. [18] | `["stop"]`; `["stop", "length"]`; `["stop", "length", "error"]` |
 | [`gen_ai.response.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The unique identifier for the completion. | `chatcmpl-123` |
 | [`gen_ai.response.model`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The name of the model that generated the response. [19] | `gpt-4-0613` |
-| [`gen_ai.response.time_to_first_chunk`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If the request was a streaming request. | double | Time to first chunk in a streaming response, measured from request issuance, in seconds. The value is measured from when the client issues the generation request to when the first chunk is received in the response stream. | `0.5`; `1.2` |
+| [`gen_ai.response.time_to_first_chunk`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If the request was a streaming request. | double | Time to [first chunk](/docs/gen-ai/client-inference.md#time-to-first-response-chunk) in a streaming response, measured from request issuance, in seconds. The value is measured from when the client issues the generation request to when the first chunk is received in the response stream. | `0.5`; `1.2` |
 | [`gen_ai.usage.audio.cache_read.input_tokens`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` When available and non-zero. | int | The number of audio input tokens served from a provider-managed cache. [20] | `60` |
 | [`gen_ai.usage.audio.input_tokens`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` When available and non-zero. | int | The number of audio input tokens. [21] | `120` |
 | [`gen_ai.usage.audio.output_tokens`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` When available and non-zero. | int | The number of audio output tokens. [22] | `240` |
@@ -584,15 +594,7 @@ This metric SHOULD be specified with [ExplicitBucketBoundaries] of [0.01, 0.02, 
 | -------- | --------------- | ----------- | -------------- | --------- | ------ |
 | `gen_ai.client.inference.time_to_first_chunk` | Histogram | `s` | Time to receive the first chunk, measured from when the client issues the generation request to when the first chunk is received in the response stream. [1] | ![Development](https://img.shields.io/badge/-development-blue) | |
 
-**[1]:** This metric SHOULD be reported for streaming calls and SHOULD NOT be reported otherwise.
-
-For the `gen_ai.client.inference.time_to_first_chunk` metric and `gen_ai.response.time_to_first_chunk` span attribute, count the first provider stream event containing new, non-empty output. Output includes text, refusals, reasoning (including opaque payloads), audio, images, and tool-call names or arguments.
-
-Ignore events that contain only usage, roles, IDs, signatures, keep-alives, status updates, or end markers. A tool-call start containing a tool name counts; an empty start event does not. Chunk boundaries follow the provider's streaming protocol, not TCP reads, HTTP frames, tokens, or additional SDK callbacks for the same event.
-
-Measure from the start of the client inference operation, before the first attempt, until the first chunk is fully received by the client and before application processing. Include authentication, failed attempts, and retry backoff. If no chunk is received, do not record the metric or span attribute.
-
-The first chunk may contain reasoning or a tool call, so this value does not necessarily measure time to the first user-visible text.
+**[1]:** This metric SHOULD be reported for streaming calls and SHOULD NOT be reported otherwise. See the [chunk definition and measurement boundaries](/docs/gen-ai/client-inference.md#time-to-first-response-chunk).
 
 **Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/signal-requirement-level.md).
 
@@ -887,7 +889,7 @@ Instrumentations SHOULD set the severity to DEBUG (severity number 5) when recor
 | [`gen_ai.response.finish_reasons`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string[] | Array of reasons the model stopped generating tokens, corresponding to each generation received. [18] | `["stop"]`; `["stop", "length"]`; `["stop", "length", "error"]` |
 | [`gen_ai.response.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The unique identifier for the completion. | `chatcmpl-123` |
 | [`gen_ai.response.model`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The name of the model that generated the response. [19] | `gpt-4-0613` |
-| [`gen_ai.response.time_to_first_chunk`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If the request was a streaming request. | double | Time to first chunk in a streaming response, measured from request issuance, in seconds. The value is measured from when the client issues the generation request to when the first chunk is received in the response stream. | `0.5`; `1.2` |
+| [`gen_ai.response.time_to_first_chunk`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If the request was a streaming request. | double | Time to [first chunk](/docs/gen-ai/client-inference.md#time-to-first-response-chunk) in a streaming response, measured from request issuance, in seconds. The value is measured from when the client issues the generation request to when the first chunk is received in the response stream. | `0.5`; `1.2` |
 | [`gen_ai.usage.audio.cache_read.input_tokens`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` When available and non-zero. | int | The number of audio input tokens served from a provider-managed cache. [20] | `60` |
 | [`gen_ai.usage.audio.input_tokens`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` When available and non-zero. | int | The number of audio input tokens. [21] | `120` |
 | [`gen_ai.usage.audio.output_tokens`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` When available and non-zero. | int | The number of audio output tokens. [22] | `240` |

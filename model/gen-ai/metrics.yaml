@@ -60,16 +60,9 @@ metrics:
     instrument: histogram
     unit: "s"
     brief: 'Time to receive the first chunk, measured from when the client issues the generation request to when the first chunk is received in the response stream.'
-    note: |
+    note: >
       This metric SHOULD be reported for streaming calls and SHOULD NOT be reported otherwise.
-
-      For the `gen_ai.client.inference.time_to_first_chunk` metric and `gen_ai.response.time_to_first_chunk` span attribute, count the first provider stream event containing new, non-empty output. Output includes text, refusals, reasoning (including opaque payloads), audio, images, and tool-call names or arguments.
-
-      Ignore events that contain only usage, roles, IDs, signatures, keep-alives, status updates, or end markers. A tool-call start containing a tool name counts; an empty start event does not. Chunk boundaries follow the provider's streaming protocol, not TCP reads, HTTP frames, tokens, or additional SDK callbacks for the same event.
-
-      Measure from the start of the client inference operation, before the first attempt, until the first chunk is fully received by the client and before application processing. Include authentication, failed attempts, and retry backoff. If no chunk is received, do not record the metric or span attribute.
-
-      The first chunk may contain reasoning or a tool call, so this value does not necessarily measure time to the first user-visible text.
+      See the [chunk definition and measurement boundaries](/docs/gen-ai/client-inference.md#time-to-first-response-chunk).
     stability: development
     annotations:
       code_generation:
