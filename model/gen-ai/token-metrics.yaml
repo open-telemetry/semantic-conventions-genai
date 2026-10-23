@@ -1,9 +1,16 @@
 file_format: definition/2
 attribute_groups:
-  - id: metric_attributes.gen_ai.inference_usage
+  - id: metric_attributes.gen_ai.inference
     visibility: internal
     attributes:
       - ref_group: metric_attributes.gen_ai
+      - ref: gen_ai.operation.name
+        examples: ["chat", "generate_content"]
+
+  - id: metric_attributes.gen_ai.inference_usage
+    visibility: internal
+    attributes:
+      - ref_group: metric_attributes.gen_ai.inference
       - ref: gen_ai.token.modality
         requirement_level: required
 metrics:
@@ -131,7 +138,7 @@ metrics:
       code_generation:
         metric_value_type: int
     attributes:
-      - ref_group: metric_attributes.gen_ai
+      - ref_group: metric_attributes.gen_ai.inference
       - ref_group: attributes.gen_ai.error
   - name: gen_ai.client.inference.operation.output_tokens
     requirement_level: recommended
@@ -144,7 +151,7 @@ metrics:
       code_generation:
         metric_value_type: int
     attributes:
-      - ref_group: metric_attributes.gen_ai
+      - ref_group: metric_attributes.gen_ai.inference
       - ref_group: attributes.gen_ai.error
 metric_refinements:
   - id: openai.gen_ai.client.inference.usage.input_tokens

@@ -192,6 +192,19 @@ class CompactionPart(BaseModel):
     model_config = ConfigDict(extra="allow")
 
 
+class TranscriptionPart(BaseModel):
+    """Represents a text transcript of spoken audio, captured as a standalone part."""
+
+    type: Literal["transcription"] = Field(
+        description="The type of the content captured in this part."
+    )
+    content: str = Field(
+        description="The text transcript of spoken audio. For input audio this is the transcription of the user's speech; for output audio it is the transcript of the model's spoken response."
+    )
+
+    model_config = ConfigDict(extra="allow")
+
+
 class BlobPart(BaseModel):
     """Represents blob binary data sent inline to the model"""
 
@@ -207,7 +220,6 @@ class BlobPart(BaseModel):
     content: bytes = Field(
         description="Raw bytes of the attached data. This field SHOULD be encoded as a base64 string when serialized to JSON."
     )
-
 
 class FilePart(BaseModel):
     """Represents an external referenced file sent to the model by file id"""
@@ -272,6 +284,7 @@ MessagePart = Union[
     BlobPart,
     FilePart,
     UriPart,
+    TranscriptionPart,
     ReasoningPart,
     CompactionPart,
     GenericPart,  # Catch-all for any other type
