@@ -239,13 +239,9 @@ spans:
         requirement_level:
           recommended: If the request was a streaming request.
         note: |
-          The first chunk is the first provider stream event containing new, non-empty output. Output includes text, refusals, reasoning (including opaque payloads), audio, images, and tool-call names or arguments.
+          A chunk is a decoded provider stream event carrying new, non-empty text, refusals, reasoning (including opaque payloads), audio, images, or tool-call names or arguments. Ignore empty start events and events carrying only usage, roles, IDs, signatures, keep-alives, progress/status updates, or end markers. Chunk boundaries follow provider events, not TCP reads, HTTP frames, or extra SDK callbacks.
 
-          Ignore events that contain only usage, roles, IDs, signatures, keep-alives, status updates, or end markers. A tool-call start containing a tool name counts; an empty start event does not. Chunk boundaries follow the provider's streaming protocol, not TCP reads, HTTP frames, tokens, or additional SDK callbacks for the same event.
-
-          Measure from the start of the client inference operation, before the first attempt, until the first chunk is fully received by the client and before application processing. Include authentication, failed attempts, and retry backoff. If no chunk is received, do not set this attribute.
-
-          The first chunk may contain reasoning or a tool call, so this value does not necessarily measure time to the first user-visible text.
+          Measure from the start of the logical inference operation, before the first attempt, until the first chunk is fully received by the client, before application processing. Include authentication, failed attempts, and retry backoff. If no chunk is received, do not set this attribute.
       - ref: gen_ai.usage.reasoning.output_tokens
         requirement_level:
           recommended: When available and non-zero.
