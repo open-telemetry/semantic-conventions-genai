@@ -60,8 +60,12 @@ metrics:
     instrument: histogram
     unit: "s"
     brief: 'Time to receive the first chunk, measured from when the client issues the generation request to when the first chunk is received in the response stream.'
-    note: >
+    note: |
       This metric SHOULD be reported for streaming calls and SHOULD NOT be reported otherwise.
+
+      A chunk is a decoded provider stream event carrying new, non-empty text, refusals, reasoning (including opaque payloads), audio, images, or tool-call names or arguments. Ignore empty start events and events carrying only usage, roles, IDs, signatures, keep-alives, progress/status updates, or end markers. Chunk boundaries follow provider events, not TCP reads, HTTP frames, or extra SDK callbacks.
+
+      Measure from the start of the logical inference operation, before the first attempt, until the first chunk is fully received by the client, before application processing. Include authentication, failed attempts, and retry backoff. If no chunk is received, do not report this metric.
     stability: development
     annotations:
       code_generation:
