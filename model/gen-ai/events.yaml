@@ -3,8 +3,8 @@ events:
   - name: gen_ai.client.inference.operation.details
     requirement_level: recommended
     brief: >
-      Describes the details of a GenAI completion request including chat history
-      and parameters.
+      Describes the details of a GenAI inference request, including chat history,
+      parameters, or decision results.
     note: >
       This event could be used to store input and output details
       independently from traces.

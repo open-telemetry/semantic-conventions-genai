@@ -13,6 +13,7 @@
         "schema": {
             "description": "File name of the schema under model/gen-ai/ to validate `document` against.",
             "enum": [
+                "gen-ai-decision-results.json",
                 "gen-ai-input-messages.json",
                 "gen-ai-memory-records.json",
                 "gen-ai-output-messages.json",
@@ -33,6 +34,10 @@
         }
     },
     "allOf": [
+        {
+            "if": { "properties": { "schema": { "const": "gen-ai-decision-results.json" } } },
+            "then": { "properties": { "document": { "$ref": "../../../../model/gen-ai/gen-ai-decision-results.json" } } }
+        },
         {
             "if": { "properties": { "schema": { "const": "gen-ai-input-messages.json" } } },
             "then": { "properties": { "document": { "$ref": "../../../../model/gen-ai/gen-ai-input-messages.json" } } }

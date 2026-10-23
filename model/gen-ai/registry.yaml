@@ -658,6 +658,10 @@ attributes:
           value: "text_completion"
           brief: 'Text completions operation such as [OpenAI Completions API (Legacy)](https://platform.openai.com/docs/api-reference/completions)'
           stability: development
+        - id: decision
+          value: "decision"
+          brief: 'Decision-model inference that answers typed questions about input, such as predicates, choices, or scores.'
+          stability: development
         - id: embeddings
           value: "embeddings"
           brief: 'Embeddings operation such as [OpenAI Create embeddings API](https://platform.openai.com/docs/api-reference/embeddings/create)'
@@ -764,6 +768,30 @@ attributes:
     type: int
     brief: The number of dimensions the resulting output embeddings should have.
     examples: [512, 1024]
+    stability: development
+  - key: gen_ai.decision.results
+    type: any
+    brief: Per-question results returned by a decision-model inference operation.
+    annotations:
+      type:
+        json_schema: model/gen-ai/gen-ai-decision-results.json
+    note: |
+      Only applies to decision-model inference operations.
+      Each result identifies its question by the original zero-based request index.
+      Record only returned answers, preserving their types and score scales.
+      Do not infer abstention or refusal from missing answers or low probabilities.
+
+      This attribute MUST NOT be recorded by default. It can contain sensitive
+      choices, question names, and score level labels. It MUST NOT be used as a metric dimension.
+      Instrumentations SHOULD support filtering results without renumbering question indices.
+      If a complete score scale cannot be recorded, omit that score result.
+
+      On events, record the structured value. On spans, use a JSON string when
+      structured attributes are not supported.
+      See [Decision results](/docs/gen-ai/client-inference.md#decision-results)
+      for the result schema and provider mappings.
+    examples:
+      - '[{"question_index":0,"type":"choice","value":"technical","probability":0.72}]'
     stability: development
   - key: gen_ai.retrieval.documents
     type: any

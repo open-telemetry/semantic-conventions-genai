@@ -10,5 +10,10 @@ dependencies = [
 [tool.uv.sources]
 genai-reference-shared = { path = "../../shared", editable = true }
 
+[dependency-groups]
+dev = [
+    "jsonschema>=4.26.0",
+]
+
 [tool.uv]
 package = false

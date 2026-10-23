@@ -1,7 +1,9 @@
 {
   "spans": {
     "gen_ai.client.inference": [
+      "error.type",
       "gen_ai.conversation.compacted",
+      "gen_ai.decision.results",
       "gen_ai.input.messages",
       "gen_ai.operation.name",
       "gen_ai.output.messages",
@@ -62,6 +64,7 @@
   "events": {
     "gen_ai.client.inference.operation.details": [
       "gen_ai.conversation.compacted",
+      "gen_ai.decision.results",
       "gen_ai.input.messages",
       "gen_ai.operation.name",
       "gen_ai.output.messages",
@@ -82,9 +85,21 @@
       "gen_ai.usage.reasoning.output_tokens",
       "server.address",
       "server.port"
+    ],
+    "gen_ai.client.operation.exception": [
+      "exception.type"
     ]
   },
   "metrics": {
+    "gen_ai.client.inference.duration": [
+      "error.type",
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "gen_ai.request.model",
+      "gen_ai.response.model",
+      "server.address",
+      "server.port"
+    ],
     "gen_ai.client.inference.operation.input_tokens": [
       "gen_ai.operation.name",
       "gen_ai.provider.name",
