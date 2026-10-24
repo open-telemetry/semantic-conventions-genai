@@ -1039,10 +1039,12 @@ def _emit_fetch_response_span(client, response_id, starting_after=None):
     - `gen_ai.request.stream_cursor` is the resume cursor (OpenAI `starting_after`),
       a request-side parameter available at the call boundary, recorded only when
       the fetch resumes a streamed response from a prior position.
-    - Token usage is intentionally NOT recorded: no inference happens here, and
-      the fetched response's token counts belong to the original generation.
-      Recording them would double-count tokens when summing spans in a
-      multi-step run.
+    - `gen_ai.usage.input_tokens`, `gen_ai.usage.output_tokens` and the cache
+      and reasoning details come from `usage` on the fetched response object when
+      present, read the same way as on the Responses inference span. They
+      describe the original generation identified by `gen_ai.response.id`, a
+      snapshot that is not additive across spans. A `failed` response without
+      usage sets none of them.
     - `openai.api.type` is `responses`; `openai.response.service_tier` comes from
       the fetched object.
     """
@@ -1093,9 +1095,21 @@ def _emit_fetch_response_span(client, response_id, starting_after=None):
         output_messages = responses_output_messages(fetched)
         if output_messages:
             span.set_attribute("gen_ai.output.messages", json.dumps(output_messages))
-        # Token usage is intentionally NOT recorded on this span: no inference
-        # happens on a fetch, and the fetched response's token counts belong to
-        # the original generation (already accounted for on that operation).
+        usage = getattr(fetched, "usage", None)
+        if usage is not None:
+            span.set_attribute("gen_ai.usage.input_tokens", usage.input_tokens)
+            span.set_attribute("gen_ai.usage.output_tokens", usage.output_tokens)
+            itd = getattr(usage, "input_tokens_details", None)
+            otd = getattr(usage, "output_tokens_details", None)
+            cached_tokens = getattr(itd, "cached_tokens", None) if itd else None
+            cache_write_tokens = getattr(itd, "cache_write_tokens", None) if itd else None
+            reasoning_tokens = getattr(otd, "reasoning_tokens", None) if otd else None
+            if cached_tokens:
+                span.set_attribute("gen_ai.usage.cache_read.input_tokens", cached_tokens)
+            if cache_write_tokens:
+                span.set_attribute("gen_ai.usage.cache_write.input_tokens", cache_write_tokens)
+            if reasoning_tokens:
+                span.set_attribute("gen_ai.usage.reasoning.output_tokens", reasoning_tokens)
         print(f"    -> fetched {fetched.id} (status={getattr(fetched, 'status', None)})")
 
 
