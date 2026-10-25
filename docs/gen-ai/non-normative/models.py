@@ -360,7 +360,7 @@ class ChatMessage(BaseModel):
     parts: List[MessagePart] = Field(
         description="List of message parts that make up the message content."
     )
-    name: str | MISSING = omittable_field(
+    name: str | None | MISSING = omittable_field(
         description="The name of the participant."
     )
 
@@ -404,8 +404,7 @@ class OutputMessage(ChatMessage):
     specific response (choice, candidate).
     """
 
-    finish_reason: Optional[Union[FinishReason, str]] = Field(
-        default=None,
+    finish_reason: FinishReason | str | MISSING = omittable_field(
         description=(
             "Deprecated: report finish reasons in `gen_ai.response.finish_reasons` instead. "
             "Reason for finishing the generation."

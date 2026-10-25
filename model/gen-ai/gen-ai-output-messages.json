@@ -253,9 +253,16 @@
                     "type": "array"
                 },
                 "name": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
                     "description": "The name of the participant.",
-                    "title": "Name",
-                    "type": "string"
+                    "title": "Name"
                 },
                 "finish_reason": {
                     "anyOf": [
@@ -264,12 +271,8 @@
                         },
                         {
                             "type": "string"
-                        },
-                        {
-                            "type": "null"
                         }
                     ],
-                    "default": null,
                     "deprecated": true,
                     "description": "Deprecated: report finish reasons in `gen_ai.response.finish_reasons` instead. Reason for finishing the generation.",
                     "title": "Finish Reason"

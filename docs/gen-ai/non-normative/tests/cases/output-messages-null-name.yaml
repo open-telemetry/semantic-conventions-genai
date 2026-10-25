@@ -1,0 +1,17 @@
+# yaml-language-server: $schema=../case.schema.json
+description: An output message emitted by python-genai with an unset participant name
+schema: gen-ai-output-messages.json
+document: [
+  {
+    "role": "assistant",
+    "name": null,
+    "parts": [
+      {
+        "type": "text",
+        "content": "The tool call completed."
+      }
+    ]
+  }
+]
+# Regenerate with `uv run pytest --update-snapshots`, do not edit by hand.
+errors: []

@@ -99,9 +99,16 @@
                     "type": "array"
                 },
                 "name": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
                     "description": "The name of the participant.",
-                    "title": "Name",
-                    "type": "string"
+                    "title": "Name"
                 }
             },
             "required": [
