@@ -312,9 +312,25 @@ MessagePart = Union[
 # the input/output message parts. TextPart is the only member today;
 # add other system instruction part types once there is an existing
 # provider with non-text system instructions.
+class GenericSystemInstructionPart(GenericPart):
+    """
+    Fallback for consumers when a message part has a `type` not defined by this
+    version of semantic conventions. When the instrumented API sends or returns
+    content that none of the defined part types fit, record the part keeping
+    the provider's fields. Consumers SHOULD expect parts with `type` values
+    they don't recognize, including provider-specific parts and part types
+    added in newer versions of semantic conventions.
+    """
+
+    type: str = Field(
+        description=GenericPart.model_fields["type"].description,
+        json_schema_extra=_not_known_types(TextPart),
+    )
+
+
 SystemInstructionPart = Union[
     TextPart,
-    GenericPart,  # Catch-all for any other type
+    GenericSystemInstructionPart,  # Catch-all for any other type
     # Add other message part types here as needed
 ]
 
