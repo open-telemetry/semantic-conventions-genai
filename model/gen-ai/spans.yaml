@@ -43,6 +43,37 @@ attribute_groups:
       - ref: gen_ai.usage.output_tokens
         requirement_level: recommended
 
+  - id: attributes.gen_ai.usage.cost
+    visibility: internal
+    attributes:
+      - ref: gen_ai.usage.cost.amount
+        requirement_level: recommended
+      - ref: gen_ai.usage.cost.currency
+        requirement_level:
+          conditionally_required: If `gen_ai.usage.cost.amount` is set.
+      - ref: gen_ai.usage.cost.source
+        requirement_level:
+          conditionally_required: If `gen_ai.usage.cost.amount` is set.
+
+  - id: attributes.gen_ai.usage.cost.breakdown
+    visibility: internal
+    attributes:
+      - ref: gen_ai.usage.cost.input
+        requirement_level:
+          recommended: When priced and non-zero.
+      - ref: gen_ai.usage.cost.cache_read
+        requirement_level:
+          recommended: When priced and non-zero.
+      - ref: gen_ai.usage.cost.cache_write
+        requirement_level:
+          recommended: When priced and non-zero.
+      - ref: gen_ai.usage.cost.output
+        requirement_level:
+          recommended: When priced and non-zero.
+      - ref: gen_ai.usage.cost.reasoning
+        requirement_level:
+          recommended: When priced and non-zero.
+
   - id: attributes.gen_ai.usage.breakdown
     visibility: internal
     attributes:
@@ -269,6 +300,8 @@ spans:
           as reported by the provider for this inference operation.
         requirement_level:
           recommended: When available and non-zero.
+      - ref_group: attributes.gen_ai.usage.cost
+      - ref_group: attributes.gen_ai.usage.cost.breakdown
       - ref_group: attributes.gen_ai.content
       - ref_group: attributes.gen_ai.error
       - ref: gen_ai.request.max_tokens

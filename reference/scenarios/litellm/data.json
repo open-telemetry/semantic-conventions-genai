@@ -20,8 +20,19 @@
       "gen_ai.response.id",
       "gen_ai.response.model",
       "gen_ai.tool.definitions",
+      "gen_ai.usage.cache_read.input_tokens",
+      "gen_ai.usage.cache_write.input_tokens",
+      "gen_ai.usage.cost.amount",
+      "gen_ai.usage.cost.cache_read",
+      "gen_ai.usage.cost.cache_write",
+      "gen_ai.usage.cost.currency",
+      "gen_ai.usage.cost.input",
+      "gen_ai.usage.cost.output",
+      "gen_ai.usage.cost.reasoning",
+      "gen_ai.usage.cost.source",
       "gen_ai.usage.input_tokens",
       "gen_ai.usage.output_tokens",
+      "gen_ai.usage.reasoning.output_tokens",
       "server.address"
     ]
   },
@@ -35,8 +46,20 @@
       "gen_ai.response.finish_reasons",
       "gen_ai.response.id",
       "gen_ai.response.model",
+      "gen_ai.usage.cache_read.input_tokens",
+      "gen_ai.usage.cache_write.input_tokens",
+      "gen_ai.usage.cost.amount",
+      "gen_ai.usage.cost.cache_read",
+      "gen_ai.usage.cost.cache_write",
+      "gen_ai.usage.cost.currency",
+      "gen_ai.usage.cost.input",
+      "gen_ai.usage.cost.output",
+      "gen_ai.usage.cost.reasoning",
+      "gen_ai.usage.cost.source",
       "gen_ai.usage.input_tokens",
-      "gen_ai.usage.output_tokens"
+      "gen_ai.usage.output_tokens",
+      "gen_ai.usage.reasoning.output_tokens",
+      "server.address"
     ]
   },
   "metrics": {
@@ -53,6 +76,16 @@
       "gen_ai.request.model",
       "gen_ai.response.model",
       "server.address"
+    ],
+    "gen_ai.client.operation.cost": [
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "gen_ai.request.model",
+      "gen_ai.response.model",
+      "gen_ai.usage.cost.currency",
+      "gen_ai.usage.cost.source",
+      "server.address",
+      "server.port"
     ]
   },
   "findings": [],
