@@ -195,8 +195,80 @@ spans:
     attributes:
       - ref_group: attributes.gen_ai.common
       - ref_group: attributes.gen_ai.address_and_port
-      - ref_group: attributes.gen_ai.usage
-      - ref_group: attributes.gen_ai.usage.breakdown
+      - ref: gen_ai.usage.input_tokens
+        brief: >
+          The number of input tokens reported by the provider for this inference operation.
+        requirement_level: recommended
+      - ref: gen_ai.usage.output_tokens
+        brief: >
+          The number of output tokens reported by the provider for this inference operation.
+        requirement_level: recommended
+      - ref: gen_ai.usage.text.input_tokens
+        brief: >
+          The number of text input tokens,
+          as reported by the provider for this inference operation.
+        requirement_level:
+          recommended: When available and non-zero.
+      - ref: gen_ai.usage.image.input_tokens
+        brief: >
+          The number of image input tokens,
+          as reported by the provider for this inference operation.
+        requirement_level:
+          recommended: When available and non-zero.
+      - ref: gen_ai.usage.audio.input_tokens
+        brief: >
+          The number of audio input tokens,
+          as reported by the provider for this inference operation.
+        requirement_level:
+          recommended: When available and non-zero.
+      - ref: gen_ai.usage.text.cache_read.input_tokens
+        brief: >
+          The number of text input tokens served from a provider-managed cache,
+          as reported by the provider for this inference operation.
+        requirement_level:
+          recommended: When available and non-zero.
+      - ref: gen_ai.usage.image.cache_read.input_tokens
+        brief: >
+          The number of image input tokens served from a provider-managed cache,
+          as reported by the provider for this inference operation.
+        requirement_level:
+          recommended: When available and non-zero.
+      - ref: gen_ai.usage.audio.cache_read.input_tokens
+        brief: >
+          The number of audio input tokens served from a provider-managed cache,
+          as reported by the provider for this inference operation.
+        requirement_level:
+          recommended: When available and non-zero.
+      - ref: gen_ai.usage.text.output_tokens
+        brief: >
+          The number of text output tokens,
+          as reported by the provider for this inference operation.
+        requirement_level:
+          recommended: When available and non-zero.
+      - ref: gen_ai.usage.image.output_tokens
+        brief: >
+          The number of image output tokens,
+          as reported by the provider for this inference operation.
+        requirement_level:
+          recommended: When available and non-zero.
+      - ref: gen_ai.usage.audio.output_tokens
+        brief: >
+          The number of audio output tokens,
+          as reported by the provider for this inference operation.
+        requirement_level:
+          recommended: When available and non-zero.
+      - ref: gen_ai.usage.cache_read.input_tokens
+        brief: >
+          The number of input tokens served from a provider-managed cache,
+          as reported by the provider for this inference operation.
+        requirement_level:
+          recommended: When available and non-zero.
+      - ref: gen_ai.usage.cache_write.input_tokens
+        brief: >
+          The number of input tokens written to a provider-managed cache,
+          as reported by the provider for this inference operation.
+        requirement_level:
+          recommended: When available and non-zero.
       - ref_group: attributes.gen_ai.content
       - ref_group: attributes.gen_ai.error
       - ref: gen_ai.request.max_tokens
@@ -244,6 +316,9 @@ spans:
         requirement_level:
           recommended: If the request was a streaming request.
       - ref: gen_ai.usage.reasoning.output_tokens
+        brief: >
+          The number of output tokens used for reasoning (e.g. chain-of-thought, extended thinking),
+          as reported by the provider for this inference operation.
         requirement_level:
           recommended: When available and non-zero.
         note: >
