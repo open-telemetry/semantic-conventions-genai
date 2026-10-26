@@ -600,12 +600,12 @@ spans:
       own code and to manually instrument any tool calls that automatic
       instrumentations do not cover.
 
-      Some tools are specialized, such as [Agent Skills](https://agentskills.io)
-      that agentic frameworks expose as tools. Instrumentations SHOULD distinguish
-      generic tools from specialized ones using framework-specific tool names or
-      other heuristics and record the applicable
-      [refinement](/docs/gen-ai/gen-ai-agent-spans.md#execute-tool-span).
-      They SHOULD NOT record two different spans for one call.
+      When the library API or state identifies a specialized tool call,
+      instrumentation SHOULD apply the corresponding
+      [refinement](/docs/gen-ai/gen-ai-agent-spans.md#execute-tool-span) to the execute-tool
+      span. Available refinements include
+      [agents exposed as tools](/docs/gen-ai/gen-ai-agent-spans.md#agent-as-a-tool) and
+      [Agent Skills](/docs/gen-ai/gen-ai-agent-spans.md#agent-skills).
     stability: development
     entity_associations:
       - "gen_ai.main_agent"
@@ -889,6 +889,38 @@ span_refinements:
         requirement_level: required
       - ref: aws.bedrock.knowledge_base.id
         requirement_level: recommended
+
+  - id: gen_ai.execute_tool.transfer.internal
+    ref: gen_ai.execute_tool.internal
+    name:
+      note: |
+        **Span name** SHOULD be `execute_tool {gen_ai.tool.name}`.
+        Semantic conventions for individual frameworks MAY specify different span name format.
+    brief: >
+      Describes a tool call that transfers work or control to another agent.
+    note: |
+      Instrumentation SHOULD use this refinement for tool calls that the
+      instrumented framework or protocol identifies as agent transfers and
+      SHOULD NOT report additional spans for these tool calls.
+      It MUST NOT be used for transfers that do not happen through a tool call.
+
+      Examples include:
+
+      - [Google ADK agent tools](https://google.github.io/adk-docs/tools-custom/function-tools/#agent-tool)
+        that invoke a configured sub-agent;
+      - [LangChain or LangGraph transfer tools](https://docs.langchain.com/oss/python/langchain/multi-agent/handoffs)
+        that return a `Command` targeting another agent node;
+      - [OpenAI Agents tools](https://openai.github.io/openai-agents-python/tools/#agents-as-tools)
+        created from another agent.
+    stability: development
+    attributes:
+      - ref: gen_ai.transfer.mode
+        requirement_level:
+          conditionally_required: When readily available from the instrumented library API or state, including when the transfer attempt fails.
+      - ref: gen_ai.transfer.target.name
+        requirement_level:
+          conditionally_required: When readily available from the instrumented library API or state, including when the transfer attempt fails.
+        sampling_relevant: true
   - id: gen_ai.execute_tool.load_skill.internal
     ref: gen_ai.execute_tool.internal
     brief: Describes a tool call that loads a skill into an agent's context.
