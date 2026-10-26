@@ -377,7 +377,7 @@ and SHOULD be provided **at span creation time** (if provided at all):
 
 ### Embedding
 
-See [common embedding span definition](./gen-ai-spans.md#embeddings).
+See [common embedding span definition](./client-embeddings.md#span-gen_aiclientembeddings).
 
 ## Metrics
 

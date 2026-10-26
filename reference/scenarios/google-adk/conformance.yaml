@@ -11,3 +11,48 @@ env:
 scenarios:
   reference:
     run: uv run --frozen --python 3.12 --project . python scenario.py
+    expected_violations:
+      - id: missing_attribute
+        context:
+          attribute_key: gcp.vertex.agent.event_id
+        reason: ADK native instrumentation emits a proprietary attribute outside the registry.
+      - id: missing_attribute
+        context:
+          attribute_key: gcp.vertex.agent.invocation_id
+        reason: ADK native instrumentation emits a proprietary attribute outside the registry.
+      - id: missing_attribute
+        context:
+          attribute_key: gcp.vertex.agent.llm_request
+        reason: ADK native instrumentation emits a proprietary attribute outside the registry.
+      - id: missing_attribute
+        context:
+          attribute_key: gcp.vertex.agent.llm_response
+        reason: ADK native instrumentation emits a proprietary attribute outside the registry.
+      - id: missing_attribute
+        context:
+          attribute_key: gcp.vertex.agent.session_id
+        reason: ADK native instrumentation emits a proprietary attribute outside the registry.
+      - id: missing_attribute
+        context:
+          attribute_key: gen_ai.system
+        reason: ADK native instrumentation emits the removed gen_ai.system attribute; use gen_ai.provider.name.
+      - id: missing_attribute
+        context:
+          attribute_key: process.exit.code
+        reason: Registry validation does not recognize this process attribute referenced by the command-tool refinement.
+      - id: genai_span_name_format
+        context:
+          expected_form: execute_tool or 'execute_tool <gen_ai.tool.name>'
+          keyed_attr: gen_ai.tool.name
+          operation: execute_tool
+        reason: The runner does not recognize the span-name refinements for skill and command tools.
+      - id: unit_mismatch
+        context:
+          expected: '{inference_call}'
+          unit: '1'
+        reason: OTel SDK emits unit '1' instead of '{inference_call}'/'{tool_call}'; fix histogram unit.
+      - id: unit_mismatch
+        context:
+          expected: '{tool_call}'
+          unit: '1'
+        reason: OTel SDK emits unit '1' instead of '{inference_call}'/'{tool_call}'; fix histogram unit.

@@ -83,7 +83,9 @@ async def run_agent():
                 [
                     {
                         "type": "function",
-                        "function": {"name": t.name, "description": t.description, "parameters": t.params_json_schema},
+                        "name": t.name,
+                        "description": t.description,
+                        "parameters": t.params_json_schema,
                     }
                     for t in tools
                     if isinstance(t, FunctionTool)

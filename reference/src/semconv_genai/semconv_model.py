@@ -32,7 +32,7 @@ from semconv_genai.conformance import coverage_model
 # and recorded in data.json; it just has no report page.
 _SPANS = {
     "inference": ("gen_ai.client.inference", "Inference"),
-    "embeddings": ("gen_ai.embeddings.client", "Embeddings"),
+    "embeddings": ("gen_ai.client.embeddings", "Embeddings"),
     "retrieval": ("gen_ai.retrieval.client", "Retrieval"),
     "fetch_response": ("gen_ai.fetch_response.client", "Fetch Response"),
     "memory": ("gen_ai.memory.client", "Memory"),
@@ -63,6 +63,8 @@ _METRICS = {
     "gen_ai.client.inference.operation.output_tokens": "Client Inference Operation Output Tokens",
     "gen_ai.client.operation.duration": "Client Operation Duration",
     "gen_ai.client.inference.duration": "Client Inference Duration",
+    "gen_ai.client.embeddings.duration": "Client Embeddings Duration",
+    "gen_ai.client.embeddings.operation.input_tokens": "Client Embeddings Operation Input Tokens",
     "gen_ai.invoke_agent.inference_calls": "Invoke Agent Inference Calls",
     "gen_ai.invoke_agent.tool_calls": "Invoke Agent Tool Calls",
 }
