@@ -402,7 +402,7 @@ instead.
 
 ### Embedding
 
-See [common embedding span definition](./gen-ai-spans.md#embeddings).
+See [common embedding span definition](./client-embeddings.md#span-gen_aiclientembeddings).
 
 ## Metrics
 

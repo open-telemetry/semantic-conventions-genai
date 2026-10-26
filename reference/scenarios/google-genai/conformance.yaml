@@ -14,24 +14,9 @@ scenarios:
     expected_violations:
       - id: genai_expected_attribute_missing
         context:
-          missing_attribute: gen_ai.request.encoding_formats
-          operation: embeddings
-        reason: The SDK exposes no requested encoding format; the runner requires this attribute even when unspecified.
-      - id: genai_expected_attribute_missing
-        context:
           missing_attribute: gen_ai.response.finish_reasons
           operation: invoke_agent
         reason: The agent response exposes no per-generation finish reason; completion status alone does not supply one.
-      - id: genai_expected_attribute_missing
-        context:
-          missing_attribute: gen_ai.response.model
-          operation: embeddings
-        reason: Mock needs to return modelVersion in batchEmbedContents; SDK EmbedContentResponse has no model field.
-      - id: genai_expected_attribute_missing
-        context:
-          missing_attribute: gen_ai.usage.input_tokens
-          operation: embeddings
-        reason: Mock needs to return usageMetadata in batchEmbedContents; SDK EmbedContentResponse has no usage field.
     spans:
       - match:
           attributes:
@@ -45,3 +30,7 @@ scenarios:
           attributes:
             gen_ai.operation.name: text_completion
           type: gen_ai.client.inference
+      - match:
+          attributes:
+            gen_ai.operation.name: embeddings
+          type: gen_ai.client.embeddings
