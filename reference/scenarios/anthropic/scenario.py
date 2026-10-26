@@ -546,17 +546,14 @@ def run_chat_with_search_result_input(handler):
             inv.input_tokens = resp.usage.input_tokens  # -> gen_ai.usage.input_tokens
             inv.output_tokens = resp.usage.output_tokens  # -> gen_ai.usage.output_tokens
 
-        inv.output_messages = [  # -> gen_ai.output.messages
-            OutputMessage(
-                role="assistant",
-                parts=[Text(content=block.text)],
-            )
-            for block in resp.content
-            if hasattr(block, "text")
-        ]
+        output_parts = [Text(content=block.text) for block in resp.content if hasattr(block, "text")]
+        if output_parts:
+            inv.output_messages = [  # -> gen_ai.output.messages
+                OutputMessage(role="assistant", parts=output_parts)
+            ]
         record_inference_usage(inv, request_model, host, port)
 
-    print(f"    -> {resp.content[0].text[:60]}")
+    print(f"    -> {resp.content[0].type}")
 
 
 def run_create_agent():
