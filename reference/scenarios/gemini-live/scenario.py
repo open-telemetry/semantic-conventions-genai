@@ -27,18 +27,17 @@ client-created per-connection id (the live connection is the session boundary)
 and use it as ``gen_ai.realtime_session.id`` to correlate the session events with
 the generations.
 
-The Gemini Developer API also exposes no user voice-activity (VAD) events, so
-there is no ``user_speech`` span here (another honest capture gap for this
-provider); the user's spoken input is carried on the generation span through
-``gen_ai.input.messages`` instead.
+The Gemini Developer API exposes ``voice_activity`` events, so each
+``user_speech`` span is bounded by the provider's ``ACTIVITY_START`` and
+``ACTIVITY_END`` signals.
 
 This proves that Gemini Live server-side generations, their audio token usage,
-their audio transcripts, sibling tool calls, and their session lifecycle are
-capturable by generic instrumentation of ``client.aio.live.connect``. It is the
-second provider (after OpenAI Realtime) demonstrating the same convention
-against a differently-shaped bidi protocol. Turn-level containers (a full
-user-and-model exchange) are intentionally out of scope: turn boundaries cannot
-be detected reliably across providers.
+their audio transcripts, user speech, sibling tool calls, and their session
+lifecycle are capturable by generic instrumentation of
+``client.aio.live.connect``. It is the second provider (after OpenAI Realtime)
+demonstrating the same convention against a differently-shaped bidi protocol.
+Turn-level containers (a full user-and-model exchange) are intentionally out of
+scope: turn boundaries cannot be detected reliably across providers.
 """
 
 import asyncio
@@ -248,6 +247,32 @@ async def _send_user_audio(session):
     await session.send_realtime_input(audio_stream_end=True)
 
 
+async def _record_user_speech(session):
+    """Record user speech from Gemini Live voice-activity events."""
+    from google.genai import types
+
+    speech_span = None
+    async for message in session.receive():
+        voice_activity = message.voice_activity
+        if voice_activity is None:
+            continue
+        if voice_activity.voice_activity_type == types.VoiceActivityType.ACTIVITY_START:
+            speech_span = _reference_tracer.start_span(
+                "user_speech",
+                attributes={
+                    "gen_ai.operation.name": "user_speech",
+                    "gen_ai.provider.name": "gcp.gemini",
+                },
+            )
+        elif voice_activity.voice_activity_type == types.VoiceActivityType.ACTIVITY_END:
+            if speech_span is None:
+                raise RuntimeError("Received ACTIVITY_END without ACTIVITY_START")
+            speech_span.end()
+            return
+
+    raise RuntimeError("Gemini Live stream ended before ACTIVITY_END")
+
+
 async def run_gemini_live_reference():
     """Scenario: two Gemini Live voice-native turns within a single realtime session."""
     from google import genai
@@ -293,11 +318,10 @@ async def run_gemini_live_reference():
             attributes=session_attributes,
         )
         try:
-            # Turn 1: a simple voice exchange. The Gemini Developer API exposes no
-            # user voice-activity events, so there is no user_speech span (an honest
-            # capture gap for this provider); the user input is carried on the
-            # generation span through gen_ai.input.messages instead.
+            # Turn 1: a simple voice exchange. Gemini Live voice-activity events
+            # bound the user_speech span before the model generation begins.
             await _send_user_audio(session)
+            await _record_user_speech(session)
             await _run_generation(
                 session, request_model, host, live_port, _user_audio_message(), break_on_tool_call=False
             )
@@ -308,6 +332,7 @@ async def run_gemini_live_reference():
             # and result are carried as message parts (tool_call /
             # tool_call_response) rather than a client-side execute_tool span.
             await _send_user_audio(session)
+            await _record_user_speech(session)
             function_call = await _run_generation(
                 session, request_model, host, live_port, _user_audio_message(), break_on_tool_call=True
             )

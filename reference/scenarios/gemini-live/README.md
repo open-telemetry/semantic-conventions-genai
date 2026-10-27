@@ -15,5 +15,5 @@ instead. The session is reported through the
 | Operation | Should be instrumented here | Status |
 | --- | --- | --- |
 | realtime_inference | Yes — calls the Live API directly | ✅ Implemented |
-| user_speech | No — the Gemini Developer API exposes no user voice-activity (VAD) events | ➖ Not instrumentable |
+| user_speech | Yes - bounded by server voice-activity events (`voice_activity` `ACTIVITY_START` / `ACTIVITY_END`) | ✅ Implemented |
 | execute_tool | No — the tool runs in application code; captured as `tool_call` / `tool_call_response` parts on the generations | ➖ Not instrumentable |

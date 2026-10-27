@@ -33,7 +33,7 @@ Run `uv run update-reports` to regenerate.
 | [Plan](reports/plan-span.md) | crewai, langchain |
 | [Inference](reports/inference-span.md) | adk_a2a, agent-framework, anthropic, aws-bedrock, azure-ai-inference, azure-openai, claude-agent-sdk, cohere, google-genai, groq, litellm, mistralai, openai, vertexai |
 | [Realtime Inference](reports/realtime-inference-span.md) | google-genai, openai |
-| [User Speech](reports/user-speech-span.md) | openai |
+| [User Speech](reports/user-speech-span.md) | google-genai, openai |
 | [Embeddings](reports/embeddings-span.md) | aws-bedrock, azure-ai-inference, azure-openai, cohere, google-genai, litellm, mistralai, openai |
 | [Retrieval](reports/retrieval-span.md) | haystack, langchain, llamaindex |
 | [Fetch Response](reports/fetch-response-span.md) | openai |

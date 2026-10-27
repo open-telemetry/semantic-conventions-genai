@@ -4,7 +4,7 @@
 
 | Attribute | Supporting Libraries |
 | --- | --- |
-| gen_ai.operation.name | [openai] |
+| gen_ai.operation.name | [google-genai], [openai] |
 
 ## Conditionally Required
 
@@ -16,6 +16,7 @@
 
 | Attribute | Supporting Libraries |
 | --- | --- |
-| gen_ai.provider.name | [openai] |
+| gen_ai.provider.name | [google-genai], [openai] |
 
+[google-genai]: ../scenarios/google-genai/scenario.py
 [openai]: ../scenarios/openai/scenario.py
