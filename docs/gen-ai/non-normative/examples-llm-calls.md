@@ -693,11 +693,9 @@ use the same `gen_ai.realtime_session.id` when it is available.
 
 ## Realtime inference with tool calls
 
-Realtime APIs expose different generation boundaries around tool calls. The
-instrumentation records one `realtime_inference` span for each generation
-identified by the provider. A tool request may end one generation and the final
-answer may belong to another, or the provider may keep one generation active
-across the tool round trip.
+Realtime APIs expose different generation boundaries around tool calls.
+Recording tool calls when a single generation covers both the tool request and
+the final answer is TBD.
 
 The diagrams include the optional `user_speech` span. Instrumentation records
 this span only when it can reliably determine when the user starts and stops
