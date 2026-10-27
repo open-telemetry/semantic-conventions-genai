@@ -658,7 +658,7 @@ The event name MUST be `gen_ai.client.realtime_session.ended`.
 
 Recorded when a realtime, bidirectional streaming session is closed.
 
-Emitted when the session connection is closed, whether normally or because of an error. Paired with the `gen_ai.client.realtime_session.started` event through `gen_ai.realtime_session.id`. The session duration measures the lifetime of the session and SHOULD NOT be interpreted as model generation time.
+Emitted when the session connection is closed, whether normally or because of an error.
 Instrumentations SHOULD set the severity to INFO (severity number 9) when the session closes normally and WARN (severity number 13) when `error.type` is set.
 
 **Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/signal-requirement-level.md).
