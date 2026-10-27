@@ -43,6 +43,5 @@ Instrumentations SHOULD NOT use these attributes on signals that don't reference
 explicitly.
 
 * [`gen_ai.conversation.id`](/docs/registry/attributes/gen-ai.md#gen-ai-conversation-id)
-* [`gen_ai.agent.name`](/docs/registry/attributes/gen-ai.md#gen-ai-agent-name)
 
 [DocumentStatus]: https://opentelemetry.io/docs/specs/otel/document-status
