@@ -25,13 +25,12 @@ speech-then-generation sequence. Three turns run inside the one session:
    cancelled generation ends with ``gen_ai.response.finish_reasons`` set to the
    provider-reported ``turn_detected`` reason, and the barge-in utterance is then
    answered by a follow-up generation.
-3. A tool-calling turn demonstrating the **sibling** tool-call pattern: the
-   first ``realtime_inference`` span resolves to a function call and ends, the
-   client runs the tool, then a second ``realtime_inference`` span speaks the
-   answer. Running the tool is application work, not a model operation, so it is
-   not wrapped in a span; instead the model's request is captured as a
-   ``tool_call`` output part on the first generation and the client's result as
-   a ``tool_call_response`` input part on the answer generation.
+3. A tool-calling turn where OpenAI Realtime reports the function call as the
+   end of one generation. The application sends the tool result, then a second
+   ``realtime_inference`` span records the answer. The model's request is a
+   ``tool_call`` output part on the first generation, and the application's
+   result is a ``tool_call_response`` input part on the answer generation.
+   Application tool execution does not produce an ``execute_tool`` span.
 
 Turn-level containers (a full user-and-model exchange) are intentionally out of
 scope: turn boundaries cannot be detected reliably across providers.

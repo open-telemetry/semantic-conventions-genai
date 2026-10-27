@@ -7,15 +7,13 @@ crucially, the audio token usage (``gen_ai.usage.audio.input_tokens`` /
 ``gen_ai.usage.audio.output_tokens``) alongside the transcript of the spoken
 audio.
 
-The second turn exercises the sibling tool-call pattern: the first generation
-resolves to a tool call, the client runs the tool, and a second generation
-speaks the answer. On Gemini Live the tool call surfaces as a top-level
-``toolCall`` message rather than nested inside the generation, so the generation
-span closes before the tool runs and the answer is a separate generation.
-Running the tool is application work, not a model operation, so it is not
-wrapped in a span; the model's request is captured as a ``tool_call`` output
-part on the first generation and the client's result as a ``tool_call_response``
-input part on the answer generation.
+In the second turn, Gemini Live 2.5 reports the tool call as the end of a
+generation. The application sends the tool result, and a second generation
+speaks the answer. The model's request is captured as a ``tool_call`` output
+part on the first generation and the application's result as a
+``tool_call_response`` input part on the answer generation. The application
+executes the tool, so this client scenario does not emit an ``execute_tool``
+span.
 
 A realtime session is long-lived and mostly idle, so it is not modeled as a span.
 Instead the session is represented by the ``gen_ai.client.realtime_session.started``
@@ -31,13 +29,11 @@ The Gemini Developer API exposes ``voice_activity`` events, so each
 ``user_speech`` span is bounded by the provider's ``ACTIVITY_START`` and
 ``ACTIVITY_END`` signals.
 
-This proves that Gemini Live server-side generations, their audio token usage,
-their audio transcripts, user speech, sibling tool calls, and their session
-lifecycle are capturable by generic instrumentation of
-``client.aio.live.connect``. It is the second provider (after OpenAI Realtime)
-demonstrating the same convention against a differently-shaped bidi protocol.
-Turn-level containers (a full user-and-model exchange) are intentionally out of
-scope: turn boundaries cannot be detected reliably across providers.
+This proves that generic instrumentation of ``client.aio.live.connect`` can
+capture Gemini Live server-side generations, audio token usage, audio
+transcripts, user speech, tool calls, and session lifecycle events. Turn-level
+containers are outside this scenario because providers do not expose consistent
+boundaries for a full user-and-model exchange.
 """
 
 import asyncio
@@ -326,11 +322,10 @@ async def run_gemini_live_reference():
                 session, request_model, host, live_port, _user_audio_message(), break_on_tool_call=False
             )
 
-            # Turn 2: a tool-calling exchange (sibling pattern, Gemini Live 2.5).
-            # The first generation resolves to a tool call, the client runs the
-            # tool, then a second generation speaks the answer. The tool request
-            # and result are carried as message parts (tool_call /
-            # tool_call_response) rather than a client-side execute_tool span.
+            # Turn 2: Gemini Live 2.5 ends the first generation with a tool call.
+            # The application sends the tool result, then a second generation
+            # speaks the answer. The tool request and result are message parts;
+            # application tool execution does not produce an execute_tool span.
             await _send_user_audio(session)
             await _record_user_speech(session)
             function_call = await _run_generation(

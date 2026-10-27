@@ -25,7 +25,7 @@ The scenario selects the per-turn behavior by setting
 - ``complete``      -> the turn finishes normally (``response.done`` completed).
 - ``function_call`` -> the generation emits a function-call output item and ends
   (``response.done`` completed); the scenario then runs the tool and asks for a
-  second ``complete`` response. This is the sibling tool-call pattern.
+  second ``complete`` response.
 - ``interrupted``   -> the user barges in mid-response; the server emits
   ``input_audio_buffer.speech_started`` and a cancelled ``response.done`` with
   ``status_details.reason == "turn_detected"``.
@@ -73,9 +73,9 @@ async def _run_response(ws, behavior):
     item_id = "item_mock_assistant_001"
 
     if behavior == "function_call":
-        # The generation resolves to a tool call and then ends. The tool runs on
-        # the client (sibling pattern); a subsequent response.create produces the
-        # spoken answer.
+        # The generation resolves to a tool call and then ends. After the
+        # application sends the tool result, a subsequent response.create
+        # produces the spoken answer.
         await _send(
             ws,
             {
