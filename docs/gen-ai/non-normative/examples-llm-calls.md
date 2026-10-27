@@ -17,7 +17,6 @@
   - [Realtime inference span when content capturing is enabled on span attributes](#realtime-inference-span-when-content-capturing-is-enabled-on-span-attributes)
 - [Realtime inference with tool calls](#realtime-inference-with-tool-calls)
   - [Tool execution across two generations](#tool-execution-across-two-generations)
-  - [Tool execution within one generation](#tool-execution-within-one-generation)
 - [System instructions along with chat history (content enabled)](#system-instructions-along-with-chat-history-content-enabled)
 - [Chat completion with reasoning (content enabled)](#chat-completion-with-reasoning-content-enabled)
 - [Tool calls (built-in)](#tool-calls-built-in)
@@ -907,14 +906,6 @@ model's answer as output:
   }
 ]
 ```
-
-### Tool execution within one generation
-
-Some providers keep one generation active across the tool request, application
-tool execution, and final answer. The `realtime_inference` span covers that
-provider-reported generation. Recording intermediate tool calls and results
-without losing their ordering and timing is TBD and tracked in
-[issue 633](https://github.com/open-telemetry/semantic-conventions-genai/issues/633).
 
 ## System instructions along with chat history (content enabled)
 

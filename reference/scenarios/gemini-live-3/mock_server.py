@@ -24,7 +24,7 @@ ephemeral self-signed certificate generated in memory at startup. The scenario
 connects with an unverified SSL context, so the certificate's contents and
 hostname are irrelevant, and nothing needs to be checked into the repository.
 
-Server -> client turn sequence for one voice response:
+Server -> client sequence for one voice response:
 
 1. ``{"serverContent": {"outputTranscription": {"text": ...}}}`` deltas -- the
    spoken audio transcript, streamed incrementally.
@@ -35,16 +35,8 @@ Server -> client turn sequence for one voice response:
    the turn and reports token usage with an ``AUDIO`` / ``TEXT`` modality
    breakdown for both prompt and response.
 
-The first ``audioStreamEnd`` drives a simple spoken turn. A subsequent
-``audioStreamEnd`` drives a tool-calling turn: the server emits a ``toolCall``
-(and nothing else) so the client runs the tool and replies with a
-``toolResponse``; the server then produces the spoken answer as a new
-generation, matching Gemini Live 2.5.
-
-When the requested model is a Gemini Live 3.x model, the very first
-``audioStreamEnd`` drives the tool-calling turn directly (a single utterance
-that resolves to a tool call and then the spoken answer). The server reports
-generation completion only after the spoken answer.
+The client's ``audioStreamEnd`` message causes the server to produce the spoken
+response.
 """
 
 import argparse
@@ -64,9 +56,6 @@ import websockets
 OUTPUT_AUDIO_B64 = "bW9jay1nZW1pbmktYXVkaW8="
 
 TRANSCRIPT_DELTAS = ["It is ", "sunny and ", "about 72 degrees ", "in Seattle."]
-
-# The tool the model asks the client to run on the tool-calling turn.
-FUNCTION_CALL = {"id": "fc_mock_gemini_001", "name": "get_weather", "args": {"location": "Seattle"}}
 
 
 async def _send(ws, obj):
@@ -108,38 +97,17 @@ async def _run_turn(ws):
     await _send(ws, {"serverContent": {"turnComplete": True}, "usageMetadata": _usage()})
 
 
-async def _run_tool_call(ws):
-    """Emit a tool call and nothing else; the client must reply with a toolResponse."""
-    await _send(ws, {"toolCall": {"functionCalls": [FUNCTION_CALL]}})
-
-
 async def _handler(ws):
-    audio_turns = 0
-    uses_single_generation_tool_exchange = False
     async for raw in ws:
         message = json.loads(raw)
         if "setup" in message:
-            # Gemini Live 3.x reports one generation across the tool exchange;
-            # 2.5 reports the tool request and answer as separate generations.
-            model = str((message["setup"] or {}).get("model", ""))
-            uses_single_generation_tool_exchange = "gemini-3" in model
             await _send(ws, {"setupComplete": {}})
-        elif "tool_response" in message or "toolResponse" in message:
-            # The client returned the tool result; the model now speaks its answer.
-            await _run_turn(ws)
         elif "realtime_input" in message:
             realtime_input = message["realtime_input"] or {}
             # The client signals the end of the user's utterance; the model then
             # generates its spoken response for the accumulated audio.
             if realtime_input.get("audioStreamEnd"):
-                audio_turns += 1
-                if uses_single_generation_tool_exchange:
-                    # A single utterance that immediately requires a tool call.
-                    await _run_tool_call(ws)
-                elif audio_turns == 1:
-                    await _run_turn(ws)
-                else:
-                    await _run_tool_call(ws)
+                await _run_turn(ws)
 
 
 class _HealthHandler(BaseHTTPRequestHandler):

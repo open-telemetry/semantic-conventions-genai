@@ -1,14 +1,8 @@
 """Reference implementation for Google Gemini Live 3.x voice inference.
 
-The mock server reports the tool request and the spoken answer within one
-generation. The ``realtime_inference`` span remains open until the provider
-reports generation or turn completion.
-
-The SDK exposes the tool request through ``session.receive`` and accepts the
-result through ``session.send_tool_response``. These intermediate events are not
-recorded in ``gen_ai.input.messages`` or ``gen_ai.output.messages``. Their
-telemetry representation is tracked in issue 633. The application executes the
-tool, so this client scenario does not emit an ``execute_tool`` span.
+The mock server reports one spoken response as one generation. The
+``realtime_inference`` span remains open until the provider reports generation
+or turn completion.
 
 The session is represented by ``gen_ai.client.realtime_session.started`` and
 ``gen_ai.client.realtime_session.ended`` events. The Gemini Developer API's
@@ -26,7 +20,6 @@ import json
 import os
 import ssl
 
-from opentelemetry import context as otel_context
 from opentelemetry._logs import SeverityNumber
 from opentelemetry.trace import SpanKind
 from reference_shared import (
@@ -77,22 +70,8 @@ def _user_audio_message():
     }
 
 
-def _execute_tool(function_call):
-    """Run the requested tool in the application and return its result.
-
-    In the Gemini Live API the application executes tool calls and sends the
-    result back to the model. The client instrumentation does not own this
-    operation and does not emit an ``execute_tool`` span.
-    """
-    return {
-        "location": function_call["args"].get("location"),
-        "temperature_f": 72,
-        "conditions": "sunny",
-    }
-
-
 async def _run_generation(session, request_model, host, port):
-    """Drive one voice turn with a tool exchange within one generation."""
+    """Drive one voice generation."""
     from google.genai import types
 
     span_attributes = {
@@ -110,7 +89,6 @@ async def _run_generation(session, request_model, host, port):
     await session.send_realtime_input(audio=types.Blob(data=base64.b64decode(INPUT_AUDIO_B64), mime_type="audio/pcm"))
     await session.send_realtime_input(audio_stream_end=True)
 
-    caller_context = otel_context.get_current()
     with _reference_tracer.start_as_current_span(
         f"realtime_inference {request_model}", kind=SpanKind.CLIENT, attributes=span_attributes
     ) as span:
@@ -120,30 +98,6 @@ async def _run_generation(session, request_model, host, port):
         audio_chunks = []
         usage = None
 
-        # First leg of the generation: the model requests a tool call.
-        function_call = None
-        async for message in session.receive():
-            if message.tool_call is not None and message.tool_call.function_calls:
-                call = message.tool_call.function_calls[0]
-                function_call = {"id": call.id, "name": call.name, "args": dict(call.args or {})}
-                break
-            if message.usage_metadata is not None:
-                usage = message.usage_metadata
-
-        # The generation span remains open, but application tool execution uses
-        # the caller's context rather than inheriting the client span.
-        context_token = otel_context.attach(caller_context)
-        try:
-            result = _execute_tool(function_call)
-        finally:
-            otel_context.detach(context_token)
-        await session.send_tool_response(
-            function_responses=[
-                types.FunctionResponse(id=function_call["id"], name=function_call["name"], response=result)
-            ]
-        )
-
-        # Second leg of the same generation: the model speaks its answer.
         async for message in session.receive():
             server_content = message.server_content
             if server_content is not None:
@@ -193,11 +147,11 @@ async def _run_generation(session, request_model, host, port):
 
 
 async def run_gemini_live_3_reference():
-    """Run a Gemini Live 3.x tool exchange within one generation."""
+    """Run a Gemini Live 3.x voice generation."""
     from google import genai
     from google.genai import types
 
-    print("  [gemini-live-3] voice inference with a tool exchange in one generation")
+    print("  [gemini-live-3] voice-native inference")
     request_model = "gemini-3-flash-native-audio-preview"
     host, live_port = _gemini_live_base_url(MOCK_BASE_URL)
 
