@@ -292,6 +292,12 @@ spans:
         the first chunk of output content
       - end of generation may be determined based on completion or interruption event
 
+      Instrumentation SHOULD record one `realtime_inference` span for each generation
+      identified by the model provider. If a provider ends a generation when it requests
+      a tool and starts another generation after receiving the tool result, instrumentation
+      SHOULD record two spans. If the provider keeps one generation active across the tool
+      round trip, instrumentation SHOULD record one span covering the complete generation.
+
       Instrumentation SHOULD do the best effort to include information about the generation
       that may come after generation completing event, such as usage but SHOULD only
       wait for this information if there is a way to end the span reliably.
@@ -306,8 +312,25 @@ spans:
       - ref_group: attributes.gen_ai.address_and_port
       - ref_group: attributes.gen_ai.usage
       - ref_group: attributes.gen_ai.usage.breakdown
-      - ref_group: attributes.gen_ai.content
       - ref_group: attributes.gen_ai.error
+      - ref: gen_ai.system_instructions
+        requirement_level: opt_in
+      - ref: gen_ai.input.messages
+        requirement_level: opt_in
+        note: >
+          This attribute represents the input that initiated the generation. It SHOULD NOT
+          include intermediate events that occur while the generation is active, such as a
+          tool result sent in response to a tool call.
+      - ref: gen_ai.output.messages
+        requirement_level: opt_in
+        note: >
+          This attribute represents the output produced by the completed generation. It SHOULD
+          NOT include intermediate events that occur while the generation is active, such as a
+          tool call that the application handles before the generation completes. Recording
+          intermediate realtime events is outside the scope of this convention and is tracked
+          in [#633](https://github.com/open-telemetry/semantic-conventions-genai/issues/633).
+      - ref: gen_ai.tool.definitions
+        requirement_level: opt_in
       - ref: gen_ai.request.max_tokens
         requirement_level: recommended
       - ref: gen_ai.request.reasoning.level

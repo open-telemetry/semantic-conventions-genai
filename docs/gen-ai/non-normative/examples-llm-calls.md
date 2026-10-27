@@ -694,8 +694,10 @@ use the same `gen_ai.realtime_session.id` when it is available.
 ## Realtime inference with tool calls
 
 Realtime APIs expose different generation boundaries around tool calls. The
-provider's observable completion events determine whether the tool request ends
-one generation or the same generation remains open until the final answer.
+instrumentation records one `realtime_inference` span for each generation
+identified by the provider. A tool request may end one generation and the final
+answer may belong to another, or the provider may keep one generation active
+across the tool round trip.
 
 The diagrams include the optional `user_speech` span. Instrumentation records
 this span only when it can reliably determine when the user starts and stops
@@ -910,164 +912,11 @@ model's answer as output:
 
 ### Tool execution within one generation
 
-Gemini Live 3.x can report the tool request and the output produced after the
-tool result as one generation. The `realtime_inference` span remains open until
-the provider's generation or turn completion event:
-
-```mermaid
-%%{init:
-{
-  "sequence": { "messageAlign": "left", "htmlLabels":true },
-  "themeVariables": { "noteBkgColor" : "green", "noteTextColor": "black", "activationBkgColor": "green", "htmlLabels":true }
-}
-}%%
-sequenceDiagram
-    participant A as Application
-    participant I as Instrumented realtime client
-    participant M as Model
-    participant T as Tool
-    A->>I: Open realtime connection
-    I->>M: Establish realtime connection
-    M-->>I: Connection established
-    I-->>A: Connection established
-    Note left of I: realtime_session.started event
-    A->>I: User speech starts
-    activate I
-    Note left of I: user_speech span
-    loop While user is speaking
-        A->>I: Stream user audio
-        I->>M: Stream user audio
-    end
-    A->>I: User speech ends
-    deactivate I
-    I->>M: Commit user input
-    activate I
-    Note left of I: realtime_inference span
-    M-->>I: Tool call
-    I-->>A: Tool call
-    A->>T: Execute tool
-    activate A
-    Note right of A: execute_tool span
-    T-->>A: Tool result
-    deactivate A
-    A->>I: Send tool result
-    M-->>I: Final answer and turn completion
-    deactivate I
-    I-->>A: Final answer
-    A->>I: Close realtime connection
-    I->>M: Close realtime connection
-    M-->>I: Connection closed
-    Note left of I: realtime_session.ended event
-    I-->>A: Connection closed
-```
-
-#### Span within one generation when content capturing is disabled
-
-The span covers the complete generation, including the interval while
-the provider waits for the tool result:
-
-| Property                         | Value                                 |
-| -------------------------------- | ------------------------------------- |
-| Span name                        | `"realtime_inference gemini-live"`    |
-| `gen_ai.operation.name`          | `"realtime_inference"`                |
-| `gen_ai.realtime_session.id`     | `"sess_5j66UpCpwteGg4YSxUnt7lPY"`     |
-| `gen_ai.response.finish_reasons` | `["stop"]`                            |
-
-Application or agent instrumentation may record the tool execution. Its parent
-depends on the active context in that layer:
-
-| Property                | Value                        |
-| ----------------------- | ---------------------------- |
-| Span name               | `"execute_tool get_weather"` |
-| `gen_ai.operation.name` | `"execute_tool"`             |
-| `gen_ai.tool.name`      | `"get_weather"`              |
-
-#### Span within one generation when content capturing is enabled on span attributes
-
-The `realtime_inference` span covers the provider's complete generation,
-including the interval while the provider waits for the tool result. It ends
-when the provider reports generation or turn completion.
-
-| Property                         | Value                                 |
-| -------------------------------- | ------------------------------------- |
-| Span name                        | `"realtime_inference gemini-live"`    |
-| `gen_ai.operation.name`          | `"realtime_inference"`                |
-| `gen_ai.realtime_session.id`     | `"sess_5j66UpCpwteGg4YSxUnt7lPY"`     |
-| `gen_ai.input.messages`          | [`gen_ai.input.messages`](#gen-ai-input-messages-realtime-tool-single-generation) |
-| `gen_ai.output.messages`         | [`gen_ai.output.messages`](#gen-ai-output-messages-realtime-tool-single-generation) |
-| `gen_ai.response.finish_reasons` | `["stop"]`                            |
-
-<span id="gen-ai-input-messages-realtime-tool-single-generation">`gen_ai.input.messages` value</span>
-
-```json
-[
-  {
-    "role": "user",
-    "parts": [
-      {
-        "type": "blob",
-        "modality": "audio",
-        "mime_type": "audio/pcm",
-        "content": "UklGRi4uLg=="
-      },
-      {
-        "type": "transcription",
-        "content": "What is the weather in Paris?"
-      }
-    ]
-  },
-  {
-    "role": "tool",
-    "parts": [
-      {
-        "type": "tool_call_response",
-        "id": "call_VSPygqKTWdrhaFErNvMV18Yl",
-        "response": {
-          "location": "Paris",
-          "temperature_f": 57,
-          "conditions": "rainy"
-        }
-      }
-    ]
-  }
-]
-```
-
-<span id="gen-ai-output-messages-realtime-tool-single-generation">`gen_ai.output.messages` value</span>
-
-```json
-[
-  {
-    "role": "assistant",
-    "parts": [
-      {
-        "type": "tool_call",
-        "id": "call_VSPygqKTWdrhaFErNvMV18Yl",
-        "name": "get_weather",
-        "arguments": {
-          "location": "Paris"
-        }
-      }
-    ]
-  },
-  {
-    "role": "assistant",
-    "parts": [
-      {
-        "type": "blob",
-        "modality": "audio",
-        "mime_type": "audio/pcm",
-        "content": "UklGRi4uLg=="
-      },
-      {
-        "type": "transcription",
-        "content": "It is rainy and 57 degrees in Paris."
-      }
-    ],
-    "finish_reason": "stop"
-  }
-]
-```
+Some providers keep one generation active across the tool request, application
+tool execution, and final answer. The `realtime_inference` span covers that
+provider-reported generation. Recording intermediate tool calls and results
+without losing their ordering and timing is TBD and tracked in
+[issue 633](https://github.com/open-telemetry/semantic-conventions-genai/issues/633).
 
 ## System instructions along with chat history (content enabled)
 

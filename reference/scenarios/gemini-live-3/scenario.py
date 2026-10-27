@@ -5,9 +5,10 @@ generation. The ``realtime_inference`` span remains open until the provider
 reports generation or turn completion.
 
 The SDK exposes the tool request through ``session.receive`` and accepts the
-result through ``session.send_tool_response``. Instrumentation records both as
-``tool_call`` and ``tool_call_response`` message parts. The application executes
-the tool, so this client scenario does not emit an ``execute_tool`` span.
+result through ``session.send_tool_response``. These intermediate events are not
+recorded in ``gen_ai.input.messages`` or ``gen_ai.output.messages``. Their
+telemetry representation is tracked in issue 633. The application executes the
+tool, so this client scenario does not emit an ``execute_tool`` span.
 
 The session is represented by ``gen_ai.client.realtime_session.started`` and
 ``gen_ai.client.realtime_session.ended`` events. The Gemini Developer API's
@@ -76,35 +77,6 @@ def _user_audio_message():
     }
 
 
-def _tool_call_message(function_call):
-    """Return the model's tool request as an assistant message."""
-    return {
-        "role": "assistant",
-        "parts": [
-            {
-                "type": "tool_call",
-                "id": function_call["id"],
-                "name": function_call["name"],
-                "arguments": function_call["args"],
-            }
-        ],
-    }
-
-
-def _tool_response_message(function_call, result):
-    """Return the application's tool result as a tool message."""
-    return {
-        "role": "tool",
-        "parts": [
-            {
-                "type": "tool_call_response",
-                "id": function_call["id"],
-                "response": result,
-            }
-        ],
-    }
-
-
 def _execute_tool(function_call):
     """Run the requested tool in the application and return its result.
 
@@ -142,8 +114,7 @@ async def _run_generation(session, request_model, host, port):
     with _reference_tracer.start_as_current_span(
         f"realtime_inference {request_model}", kind=SpanKind.CLIENT, attributes=span_attributes
     ) as span:
-        input_messages = [_user_audio_message()]
-        span.set_attribute("gen_ai.input.messages", json.dumps(input_messages))
+        span.set_attribute("gen_ai.input.messages", json.dumps([_user_audio_message()]))
 
         transcript_deltas = []
         audio_chunks = []
@@ -164,10 +135,8 @@ async def _run_generation(session, request_model, host, port):
         context_token = otel_context.attach(caller_context)
         try:
             result = _execute_tool(function_call)
-            input_messages.append(_tool_response_message(function_call, result))
         finally:
             otel_context.detach(context_token)
-        span.set_attribute("gen_ai.input.messages", json.dumps(input_messages))
         await session.send_tool_response(
             function_responses=[
                 types.FunctionResponse(id=function_call["id"], name=function_call["name"], response=result)
@@ -190,7 +159,6 @@ async def _run_generation(session, request_model, host, port):
         transcript = "".join(transcript_deltas)
         output_audio = base64.b64encode(b"".join(audio_chunks)).decode() if audio_chunks else ""
         output_messages = [
-            _tool_call_message(function_call),
             {
                 "role": "assistant",
                 "parts": [
@@ -206,7 +174,7 @@ async def _run_generation(session, request_model, host, port):
                     },
                 ],
                 "finish_reason": "stop",
-            },
+            }
         ]
         span.set_attribute("gen_ai.response.finish_reasons", ["stop"])
         span.set_attribute("gen_ai.output.messages", json.dumps(output_messages))

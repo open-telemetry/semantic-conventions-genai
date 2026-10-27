@@ -5,8 +5,10 @@ The Gemini Live API, reached through `google-genai`'s
 to and from the model over a bidirectional WebSocket session, so it owns the
 server-side generations. In this scenario, Gemini reports the tool request and
 spoken answer within one generation, so the `realtime_inference` span remains
-open across the tool exchange. The SDK exposes the tool request and response,
-which are recorded as `tool_call` and `tool_call_response` message parts.
+open across the tool exchange. The tool request and result are intermediate
+events and are not added to `gen_ai.input.messages` or
+`gen_ai.output.messages`; their telemetry representation is tracked in
+[issue 633](https://github.com/open-telemetry/semantic-conventions-genai/issues/633).
 The application executes the tool, so this client scenario does not emit an
 `execute_tool` span. The session is reported through the
 `gen_ai.client.realtime_session.started` and `.ended` events.
