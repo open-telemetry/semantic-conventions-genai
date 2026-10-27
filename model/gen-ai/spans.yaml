@@ -429,7 +429,7 @@ spans:
           conditionally_required: When applicable and if the request includes an output format.
       - ref: gen_ai.response.id
         requirement_level:
-          recommended: When available. A realtime generation may not carry a response id on all providers.
+          recommended: When available.
       - ref: gen_ai.response.model
         requirement_level: recommended
       - ref: gen_ai.response.finish_reasons
@@ -468,12 +468,11 @@ spans:
     brief: >
       This span represents the capture of a user speech utterance.
     note: |
-      It SHOULD be recorded when instrumentation can
-      reliably determine the start and end of user speech, either through user voice-activity
-      detection (VAD) events in the model response (for example OpenAI Realtime
-      `input_audio_buffer.speech_started` / `input_audio_buffer.speech_stopped`) or through
-      client-side events when the application requires the user to manually start and stop
-      recording.
+      Instrumentation MAY record this span when it can reliably determine the start and end
+      of user speech, either through voice-activity detection (VAD) events in the model
+      response (for example OpenAI Realtime `input_audio_buffer.speech_started` /
+      `input_audio_buffer.speech_stopped`) or through client-side events when the application
+      requires the user to manually start and stop recording.
 
       If instrumentation cannot reliably determine when user speech starts and ends,
       it SHOULD NOT record this span.
