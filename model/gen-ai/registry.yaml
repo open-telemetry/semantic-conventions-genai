@@ -476,8 +476,7 @@ attributes:
       Instrumentation MAY generate or reuse a per-connection identifier or leave it unset when the
       instrumented library does not provide one.
 
-      Instrumentations MUST NOT use `gen_ai.conversation.id` as a realtime session identifier
-      since a single conversation  can span multiple realtime sessions.
+      Instrumentations MUST NOT use `gen_ai.conversation.id` as a realtime session identifier.
     examples: ["sess_5j66UpCpwteGg4YSxUnt7lPY"]
     stability: development
   - key: gen_ai.agent.id

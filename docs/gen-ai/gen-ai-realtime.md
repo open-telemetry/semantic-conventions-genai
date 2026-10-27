@@ -169,8 +169,7 @@ Examples:
 Instrumentation MAY generate or reuse a per-connection identifier or leave it unset when the
 instrumented library does not provide one.
 
-Instrumentations MUST NOT use `gen_ai.conversation.id` as a realtime session identifier
-since a single conversation  can span multiple realtime sessions.
+Instrumentations MUST NOT use `gen_ai.conversation.id` as a realtime session identifier.
 
 **[10] `gen_ai.request.model`:** The name of the GenAI model a request is being made to. If the model is supplied by a vendor, then the value must be the exact name of the model requested. If the model is a fine-tuned custom model, the value should have a more specific name than the base model that's been fine-tuned.
 
@@ -447,8 +446,7 @@ Examples:
 Instrumentation MAY generate or reuse a per-connection identifier or leave it unset when the
 instrumented library does not provide one.
 
-Instrumentations MUST NOT use `gen_ai.conversation.id` as a realtime session identifier
-since a single conversation  can span multiple realtime sessions.
+Instrumentations MUST NOT use `gen_ai.conversation.id` as a realtime session identifier.
 
 **[5] `gen_ai.provider.name`:** If the start and end of user speech are determined from events in the model response.
 
@@ -608,8 +606,7 @@ Examples:
 Instrumentation MAY generate or reuse a per-connection identifier or leave it unset when the
 instrumented library does not provide one.
 
-Instrumentations MUST NOT use `gen_ai.conversation.id` as a realtime session identifier
-since a single conversation  can span multiple realtime sessions.
+Instrumentations MUST NOT use `gen_ai.conversation.id` as a realtime session identifier.
 
 **[4] `server.port`:** When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries, for example proxies, if it's available.
 
@@ -737,8 +734,7 @@ Examples:
 Instrumentation MAY generate or reuse a per-connection identifier or leave it unset when the
 instrumented library does not provide one.
 
-Instrumentations MUST NOT use `gen_ai.conversation.id` as a realtime session identifier
-since a single conversation  can span multiple realtime sessions.
+Instrumentations MUST NOT use `gen_ai.conversation.id` as a realtime session identifier.
 
 **[5] `server.port`:** When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries, for example proxies, if it's available.
 
