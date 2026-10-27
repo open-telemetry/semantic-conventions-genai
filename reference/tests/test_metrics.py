@@ -17,7 +17,7 @@ _TOOL_CALLS = "gen_ai.invoke_agent.tool_calls"
 _INFERENCE_CALLS = "gen_ai.invoke_agent.inference_calls"
 
 
-def test_metric_specs_expose_recommended_agent_name():
+def test_metric_specs_expose_conditionally_required_agent_name():
     specs = metric_specs()
     assert specs, "expected at least one tracked metric"
     # Only the per-invocation agent metrics are agent-scoped; gen_ai.client.*
@@ -25,7 +25,7 @@ def test_metric_specs_expose_recommended_agent_name():
     # gen_ai.agent.name, so this checks the invoke_agent metrics specifically
     # rather than every tracked metric.
     for name in (_INFERENCE_CALLS, _TOOL_CALLS):
-        assert "gen_ai.agent.name" in specs[name].recommended, name
+        assert "gen_ai.agent.name" in specs[name].conditionally_required, name
 
 
 def test_metric_specs_are_named_as_the_registry_names_them():
@@ -123,7 +123,7 @@ def test_span_specs_are_named_in_recognized_registry_namespaces():
 
 
 if __name__ == "__main__":
-    test_metric_specs_expose_recommended_agent_name()
+    test_metric_specs_expose_conditionally_required_agent_name()
     test_metric_specs_are_named_as_the_registry_names_them()
     test_committed_google_adk_metrics_round_trip()
     test_inference_scenarios_report_inference_duration()

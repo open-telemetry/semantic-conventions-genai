@@ -294,7 +294,7 @@ async def run_workflow_reference():
     with _reference_tracer.start_as_current_span(
         f"invoke_workflow {workflow_name}", attributes=workflow_span_attributes
     ) as workflow_span:
-        workflow_span.set_attribute("gen_ai.workflow.name", workflow_name)
+        workflow_span.set_attribute("gen_ai.agent.name", workflow_name)
         workflow_span.set_attribute(
             "gen_ai.input.messages", json.dumps([{"role": "user", "parts": [{"type": "text", "content": input_text}]}])
         )

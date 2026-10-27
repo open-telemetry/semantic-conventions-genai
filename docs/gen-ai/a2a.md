@@ -68,13 +68,13 @@ higher level GenAI agent operations.
 | [`a2a.tenant`](/docs/registry/attributes/a2a.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When the A2A request `tenant` field is set. | string | The opaque routing identifier of the target [A2A tenant](https://github.com/a2aproject/A2A/blob/main/docs/topics/multi-tenancy.md). | `billing` |
 | [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/error.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If and only if the operation fails. | string | Describes a class of error the operation ended with. [7] | `timeout`; `java.net.UnknownHostException`; `server_certificate_invalid`; `500` |
 | [`gen_ai.agent.description`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When available from the Agent Card. | string | Free-form description of the GenAI agent provided by the application. | `Helps with math problems`; `Generates fiction stories` |
-| [`gen_ai.agent.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When available from the Agent Card. | string | Human-readable name of the GenAI agent provided by the application. | `Math Tutor`; `Fiction Writer` |
+| [`gen_ai.agent.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When available from the Agent Card. | string | Human-readable name of the GenAI agent provided by the application. [8] | `Math Tutor`; `Fiction Writer` |
 | [`gen_ai.agent.version`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When available from the Agent Card. | string | The version of the GenAI agent. | `1.0.0`; `2025-05-01` |
-| [`gen_ai.conversation.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [8] | string | Identifies the A2A [context identifier](https://a2a-protocol.org/latest/specification/#341-context-identifier-semantics). [9] | `conv_5j66UpCpwteGg4YSxUnt7lPY` |
-| [`a2a.message.reference_task_ids`](/docs/registry/attributes/a2a.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` When the request message references task IDs. | string[] | Task IDs referenced by the A2A request message. [10] | `["task-abc-5678"]` |
-| [`a2a.protocol.version`](/docs/registry/attributes/a2a.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The version of the A2A protocol used. [11] | `1.0` |
-| [`server.address`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` If applicable. | string | Host component of the selected Agent Card interface URL. [12] | `example.com`; `10.1.2.80`; `/tmp/my.sock` |
-| [`server.port`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When `server.address` is set. | int | Port component of the selected Agent Card interface URL. [13] | `80`; `8080`; `443` |
+| [`gen_ai.conversation.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [9] | string | Identifies the A2A [context identifier](https://a2a-protocol.org/latest/specification/#341-context-identifier-semantics). [10] | `conv_5j66UpCpwteGg4YSxUnt7lPY` |
+| [`a2a.message.reference_task_ids`](/docs/registry/attributes/a2a.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` When the request message references task IDs. | string[] | Task IDs referenced by the A2A request message. [11] | `["task-abc-5678"]` |
+| [`a2a.protocol.version`](/docs/registry/attributes/a2a.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The version of the A2A protocol used. [12] | `1.0` |
+| [`server.address`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` If applicable. | string | Host component of the selected Agent Card interface URL. [13] | `example.com`; `10.1.2.80`; `/tmp/my.sock` |
+| [`server.port`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When `server.address` is set. | int | Port component of the selected Agent Card interface URL. [14] | `80`; `8080`; `443` |
 
 **[1] `a2a.method.name`:** This attribute records the logical A2A operation name defined by the protocol. For example, `SendMessage` is the A2A operation name, while HTTP+JSON maps it to `POST /message:send`. See the A2A specification for [core operations](https://a2a-protocol.org/latest/specification/#31-core-operations) and [method mappings](https://a2a-protocol.org/latest/specification/#53-method-mapping-reference).
 
@@ -105,17 +105,25 @@ See the A2A specification for
 and
 [error code mappings](https://a2a-protocol.org/latest/specification/#54-error-code-mappings).
 
-**[8] `gen_ai.conversation.id`:** When the A2A request or response contains a single context ID.
+**[8] `gen_ai.agent.name`:** For `invoke_workflow` operations, this is the name of the workflow, for example
+the name of a compiled LangGraph graph, a CrewAI `Crew`, or an ADK `Workflow`.
 
-**[9] `gen_ai.conversation.id`:** Set from the A2A `contextId` field. Omit when the operation contains multiple distinct context IDs, for example in a `ListTasks` response.
+This attribute MUST have low cardinality. It is NOT RECOMMENDED to use
+instrumentation-time constants, framework defaults, or names of types
+representing the agent or workflow, such as "StateGraph". When no meaningful,
+low-cardinality name is available, this attribute MUST NOT be captured by default.
 
-**[10] `a2a.message.reference_task_ids`:** See the A2A specification for the [Message](https://a2a-protocol.org/latest/specification/#414-message) object.
+**[9] `gen_ai.conversation.id`:** When the A2A request or response contains a single context ID.
 
-**[11] `a2a.protocol.version`:** See the A2A specification for [versioning](https://a2a-protocol.org/latest/specification/#36-versioning).
+**[10] `gen_ai.conversation.id`:** Set from the A2A `contextId` field. Omit when the operation contains multiple distinct context IDs, for example in a `ListTasks` response.
 
-**[12] `server.address`:** When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent the server address behind any intermediaries, for example proxies, if it's available.
+**[11] `a2a.message.reference_task_ids`:** See the A2A specification for the [Message](https://a2a-protocol.org/latest/specification/#414-message) object.
 
-**[13] `server.port`:** When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries, for example proxies, if it's available.
+**[12] `a2a.protocol.version`:** See the A2A specification for [versioning](https://a2a-protocol.org/latest/specification/#36-versioning).
+
+**[13] `server.address`:** When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent the server address behind any intermediaries, for example proxies, if it's available.
+
+**[14] `server.port`:** When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries, for example proxies, if it's available.
 
 ---
 
@@ -202,15 +210,15 @@ SHOULD enrich the transport server span instead - see A2A
 | [`a2a.tenant`](/docs/registry/attributes/a2a.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When the A2A request `tenant` field is set. | string | The opaque routing identifier of the target [A2A tenant](https://github.com/a2aproject/A2A/blob/main/docs/topics/multi-tenancy.md). | `billing` |
 | [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/error.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If and only if the operation fails. | string | Describes a class of error the operation ended with. [7] | `timeout`; `java.net.UnknownHostException`; `server_certificate_invalid`; `500` |
 | [`gen_ai.agent.description`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When available from the Agent Card. | string | Free-form description of the GenAI agent provided by the application. | `Helps with math problems`; `Generates fiction stories` |
-| [`gen_ai.agent.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When available from the Agent Card. | string | Human-readable name of the GenAI agent provided by the application. | `Math Tutor`; `Fiction Writer` |
+| [`gen_ai.agent.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When available from the Agent Card. | string | Human-readable name of the GenAI agent provided by the application. [8] | `Math Tutor`; `Fiction Writer` |
 | [`gen_ai.agent.version`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When available from the Agent Card. | string | The version of the GenAI agent. | `1.0.0`; `2025-05-01` |
-| [`gen_ai.conversation.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [8] | string | Identifies the A2A [context identifier](https://a2a-protocol.org/latest/specification/#341-context-identifier-semantics). [9] | `conv_5j66UpCpwteGg4YSxUnt7lPY` |
-| [`a2a.message.reference_task_ids`](/docs/registry/attributes/a2a.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` When the request message references task IDs. | string[] | Task IDs referenced by the A2A request message. [10] | `["task-abc-5678"]` |
-| [`a2a.protocol.version`](/docs/registry/attributes/a2a.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The version of the A2A protocol used. [11] | `1.0` |
-| [`client.address`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/client.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` If applicable. | string | Client address - domain name if available without reverse DNS lookup; otherwise, IP address or UNIX domain socket name. [12] | `client.example.com`; `10.1.2.80`; `/tmp/my.sock` |
-| [`client.port`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/client.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When `client.address` is set. | int | Client port number. [13] | `65123` |
-| [`server.address`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` If applicable. | string | Server domain name if available without reverse DNS lookup; otherwise, IP address or UNIX domain socket name. [14] | `example.com`; `10.1.2.80`; `/tmp/my.sock` |
-| [`server.port`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When `server.address` is set. | int | Server port number. [15] | `80`; `8080`; `443` |
+| [`gen_ai.conversation.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [9] | string | Identifies the A2A [context identifier](https://a2a-protocol.org/latest/specification/#341-context-identifier-semantics). [10] | `conv_5j66UpCpwteGg4YSxUnt7lPY` |
+| [`a2a.message.reference_task_ids`](/docs/registry/attributes/a2a.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` When the request message references task IDs. | string[] | Task IDs referenced by the A2A request message. [11] | `["task-abc-5678"]` |
+| [`a2a.protocol.version`](/docs/registry/attributes/a2a.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The version of the A2A protocol used. [12] | `1.0` |
+| [`client.address`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/client.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` If applicable. | string | Client address - domain name if available without reverse DNS lookup; otherwise, IP address or UNIX domain socket name. [13] | `client.example.com`; `10.1.2.80`; `/tmp/my.sock` |
+| [`client.port`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/client.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When `client.address` is set. | int | Client port number. [14] | `65123` |
+| [`server.address`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` If applicable. | string | Server domain name if available without reverse DNS lookup; otherwise, IP address or UNIX domain socket name. [15] | `example.com`; `10.1.2.80`; `/tmp/my.sock` |
+| [`server.port`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When `server.address` is set. | int | Server port number. [16] | `80`; `8080`; `443` |
 
 **[1] `a2a.method.name`:** This attribute records the logical A2A operation name defined by the protocol. For example, `SendMessage` is the A2A operation name, while HTTP+JSON maps it to `POST /message:send`. See the A2A specification for [core operations](https://a2a-protocol.org/latest/specification/#31-core-operations) and [method mappings](https://a2a-protocol.org/latest/specification/#53-method-mapping-reference).
 
@@ -241,21 +249,29 @@ See the A2A specification for
 and
 [error code mappings](https://a2a-protocol.org/latest/specification/#54-error-code-mappings).
 
-**[8] `gen_ai.conversation.id`:** When the A2A request or response contains a single context ID.
+**[8] `gen_ai.agent.name`:** For `invoke_workflow` operations, this is the name of the workflow, for example
+the name of a compiled LangGraph graph, a CrewAI `Crew`, or an ADK `Workflow`.
 
-**[9] `gen_ai.conversation.id`:** Set from the A2A `contextId` field. Omit when the operation contains multiple distinct context IDs, for example in a `ListTasks` response.
+This attribute MUST have low cardinality. It is NOT RECOMMENDED to use
+instrumentation-time constants, framework defaults, or names of types
+representing the agent or workflow, such as "StateGraph". When no meaningful,
+low-cardinality name is available, this attribute MUST NOT be captured by default.
 
-**[10] `a2a.message.reference_task_ids`:** See the A2A specification for the [Message](https://a2a-protocol.org/latest/specification/#414-message) object.
+**[9] `gen_ai.conversation.id`:** When the A2A request or response contains a single context ID.
 
-**[11] `a2a.protocol.version`:** See the A2A specification for [versioning](https://a2a-protocol.org/latest/specification/#36-versioning).
+**[10] `gen_ai.conversation.id`:** Set from the A2A `contextId` field. Omit when the operation contains multiple distinct context IDs, for example in a `ListTasks` response.
 
-**[12] `client.address`:** When observed from the server side, and when communicating through an intermediary, `client.address` SHOULD represent the client address behind any intermediaries,  for example proxies, if it's available.
+**[11] `a2a.message.reference_task_ids`:** See the A2A specification for the [Message](https://a2a-protocol.org/latest/specification/#414-message) object.
 
-**[13] `client.port`:** When observed from the server side, and when communicating through an intermediary, `client.port` SHOULD represent the client port behind any intermediaries,  for example proxies, if it's available.
+**[12] `a2a.protocol.version`:** See the A2A specification for [versioning](https://a2a-protocol.org/latest/specification/#36-versioning).
 
-**[14] `server.address`:** When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent the server address behind any intermediaries, for example proxies, if it's available.
+**[13] `client.address`:** When observed from the server side, and when communicating through an intermediary, `client.address` SHOULD represent the client address behind any intermediaries,  for example proxies, if it's available.
 
-**[15] `server.port`:** When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries, for example proxies, if it's available.
+**[14] `client.port`:** When observed from the server side, and when communicating through an intermediary, `client.port` SHOULD represent the client port behind any intermediaries,  for example proxies, if it's available.
+
+**[15] `server.address`:** When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent the server address behind any intermediaries, for example proxies, if it's available.
+
+**[16] `server.port`:** When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries, for example proxies, if it's available.
 
 ---
 
@@ -361,34 +377,34 @@ the status code, so the A2A error classification is preserved.
 | [`a2a.tenant`](/docs/registry/attributes/a2a.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When the A2A request `tenant` field is set. | string | The opaque routing identifier of the target [A2A tenant](https://github.com/a2aproject/A2A/blob/main/docs/topics/multi-tenancy.md). | `billing` |
 | [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/error.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If request has ended with an error. | string | Describes a class of error the operation ended with. [10] | `timeout`; `java.net.UnknownHostException`; `server_certificate_invalid`; `500` |
 | [`gen_ai.agent.description`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When available from the Agent Card. | string | Free-form description of the GenAI agent provided by the application. | `Helps with math problems`; `Generates fiction stories` |
-| [`gen_ai.agent.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When available from the Agent Card. | string | Human-readable name of the GenAI agent provided by the application. | `Math Tutor`; `Fiction Writer` |
+| [`gen_ai.agent.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When available from the Agent Card. | string | Human-readable name of the GenAI agent provided by the application. [11] | `Math Tutor`; `Fiction Writer` |
 | [`gen_ai.agent.version`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When available from the Agent Card. | string | The version of the GenAI agent. | `1.0.0`; `2025-05-01` |
-| [`gen_ai.conversation.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [11] | string | Identifies the A2A [context identifier](https://a2a-protocol.org/latest/specification/#341-context-identifier-semantics). [12] | `conv_5j66UpCpwteGg4YSxUnt7lPY` |
-| [`http.request.method_original`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/http.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` [13] | string | Original HTTP method sent by the client in the request line. | `GeT`; `ACL`; `foo` |
+| [`gen_ai.conversation.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [12] | string | Identifies the A2A [context identifier](https://a2a-protocol.org/latest/specification/#341-context-identifier-semantics). [13] | `conv_5j66UpCpwteGg4YSxUnt7lPY` |
+| [`http.request.method_original`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/http.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` [14] | string | Original HTTP method sent by the client in the request line. | `GeT`; `ACL`; `foo` |
 | [`http.response.status_code`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/http.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If and only if one was received/sent. | int | [HTTP response status code](https://tools.ietf.org/html/rfc7231#section-6). | `200` |
-| [`http.route`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/http.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If and only if it's available | string | The matched route template for the request. This MUST be low-cardinality and include all static path segments, with dynamic path segments represented with placeholders. [14] | `/users/:userID?`; `my-controller/my-action/{id?}` |
-| [`network.protocol.name`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` [15] | string | [OSI application layer](https://wikipedia.org/wiki/Application_layer) or non-OSI equivalent. [16] | `http`; `spdy` |
-| [`server.port`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If available and `server.address` is set. | int | Port of the local HTTP server that received the request. [17] | `80`; `8080`; `443` |
-| [`url.query`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/url.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If and only if one was received/sent. | string | The [URI query](https://www.rfc-editor.org/rfc/rfc3986#section-3.4) component [18] | `q=OpenTelemetry` |
-| [`a2a.message.reference_task_ids`](/docs/registry/attributes/a2a.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` When the request message references task IDs. | string[] | Task IDs referenced by the A2A request message. [19] | `["task-abc-5678"]` |
-| [`a2a.protocol.version`](/docs/registry/attributes/a2a.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The version of the A2A protocol used. [20] | `1.0` |
-| [`client.address`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/client.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | Client address - domain name if available without reverse DNS lookup; otherwise, IP address or UNIX domain socket name. [21] | `83.164.160.102` |
+| [`http.route`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/http.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If and only if it's available | string | The matched route template for the request. This MUST be low-cardinality and include all static path segments, with dynamic path segments represented with placeholders. [15] | `/users/:userID?`; `my-controller/my-action/{id?}` |
+| [`network.protocol.name`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` [16] | string | [OSI application layer](https://wikipedia.org/wiki/Application_layer) or non-OSI equivalent. [17] | `http`; `spdy` |
+| [`server.port`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If available and `server.address` is set. | int | Port of the local HTTP server that received the request. [18] | `80`; `8080`; `443` |
+| [`url.query`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/url.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If and only if one was received/sent. | string | The [URI query](https://www.rfc-editor.org/rfc/rfc3986#section-3.4) component [19] | `q=OpenTelemetry` |
+| [`a2a.message.reference_task_ids`](/docs/registry/attributes/a2a.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` When the request message references task IDs. | string[] | Task IDs referenced by the A2A request message. [20] | `["task-abc-5678"]` |
+| [`a2a.protocol.version`](/docs/registry/attributes/a2a.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The version of the A2A protocol used. [21] | `1.0` |
+| [`client.address`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/client.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | Client address - domain name if available without reverse DNS lookup; otherwise, IP address or UNIX domain socket name. [22] | `83.164.160.102` |
 | [`network.peer.address`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | Peer address of the network connection - IP address or UNIX domain socket name. | `10.1.2.80`; `/tmp/my.sock` |
 | [`network.peer.port`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` If `network.peer.address` is set. | int | Peer port number of the network connection. | `65123` |
-| [`network.protocol.version`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | The actual version of the protocol used for network communication. [22] | `1.0`; `1.1`; `2`; `3` |
-| [`server.address`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | Name of the local HTTP server that received the request. [23] | `example.com`; `10.1.2.80`; `/tmp/my.sock` |
+| [`network.protocol.version`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | The actual version of the protocol used for network communication. [23] | `1.0`; `1.1`; `2`; `3` |
+| [`server.address`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | Name of the local HTTP server that received the request. [24] | `example.com`; `10.1.2.80`; `/tmp/my.sock` |
 | [`user_agent.original`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/user-agent.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | Value of the [HTTP User-Agent](https://www.rfc-editor.org/rfc/rfc9110.html#field.user-agent) header sent by the client. | `CERN-LineMode/2.15 libwww/2.17b3`; `Mozilla/5.0 (iPhone; CPU iPhone OS 14_7_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.2 Mobile/15E148 Safari/604.1`; `YourApp/1.0.0 grpc-java-okhttp/1.27.2` |
-| [`client.port`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/client.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Opt-In` | int | The port of whichever client was captured in `client.address`. [24] | `65123` |
+| [`client.port`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/client.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Opt-In` | int | The port of whichever client was captured in `client.address`. [25] | `65123` |
 | [`http.request.body.size`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/http.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | int | The size of the request payload body in bytes. This is the number of bytes transferred excluding headers and is often, but not always, present as the [Content-Length](https://www.rfc-editor.org/rfc/rfc9110.html#field.content-length) header. For requests using transport encoding, this should be the compressed size. | `3495` |
-| [`http.request.header`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/http.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Opt-In` | string[] | HTTP request headers, `<key>` being the normalized HTTP Header name (lowercase), the value being the header values. [25] | `["application/json"]`; `["1.2.3.4", "1.2.3.5"]` |
+| [`http.request.header`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/http.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Opt-In` | string[] | HTTP request headers, `<key>` being the normalized HTTP Header name (lowercase), the value being the header values. [26] | `["application/json"]`; `["1.2.3.4", "1.2.3.5"]` |
 | [`http.request.size`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/http.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | int | The total size of the request in bytes. This should be the total number of bytes sent over the wire, including the request line (HTTP/1.1), framing (HTTP/2 and HTTP/3), headers, and request body if any. | `1437` |
 | [`http.response.body.size`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/http.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | int | The size of the response payload body in bytes. This is the number of bytes transferred excluding headers and is often, but not always, present as the [Content-Length](https://www.rfc-editor.org/rfc/rfc9110.html#field.content-length) header. For requests using transport encoding, this should be the compressed size. | `3495` |
-| [`http.response.header`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/http.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Opt-In` | string[] | HTTP response headers, `<key>` being the normalized HTTP Header name (lowercase), the value being the header values. [26] | `["application/json"]`; `["abc", "def"]` |
+| [`http.response.header`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/http.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Opt-In` | string[] | HTTP response headers, `<key>` being the normalized HTTP Header name (lowercase), the value being the header values. [27] | `["application/json"]`; `["abc", "def"]` |
 | [`http.response.size`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/http.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | int | The total size of the response in bytes. This should be the total number of bytes sent over the wire, including the status line (HTTP/1.1), framing (HTTP/2 and HTTP/3), headers, and response body and trailers if any. | `1437` |
 | [`network.local.address`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Opt-In` | string | Local socket address. Useful in case of a multi-IP host. | `10.1.2.80`; `/tmp/my.sock` |
 | [`network.local.port`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Opt-In` | int | Local socket port. Useful in case of a multi-port host. | `65123` |
-| [`network.transport`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Opt-In` | string | [OSI transport layer](https://wikipedia.org/wiki/Transport_layer) or [inter-process communication method](https://wikipedia.org/wiki/Inter-process_communication). [27] | `tcp`; `udp` |
-| [`user_agent.synthetic.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/user-agent.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | string | Specifies the category of synthetic traffic, such as tests or bots. [28] | `bot`; `test` |
+| [`network.transport`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Opt-In` | string | [OSI transport layer](https://wikipedia.org/wiki/Transport_layer) or [inter-process communication method](https://wikipedia.org/wiki/Inter-process_communication). [28] | `tcp`; `udp` |
+| [`user_agent.synthetic.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/user-agent.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | string | Specifies the category of synthetic traffic, such as tests or bots. [29] | `bot`; `test` |
 
 **[1] `a2a.method.name`:** This attribute records the logical A2A operation name defined by the protocol. For example, `SendMessage` is the A2A operation name, while HTTP+JSON maps it to `POST /message:send`. See the A2A specification for [core operations](https://a2a-protocol.org/latest/specification/#31-core-operations) and [method mappings](https://a2a-protocol.org/latest/specification/#53-method-mapping-reference).
 
@@ -446,13 +462,21 @@ additional filters are applied.
 
 If the request has completed successfully, instrumentations SHOULD NOT set `error.type`.
 
-**[11] `gen_ai.conversation.id`:** When the A2A request or response contains a single context ID.
+**[11] `gen_ai.agent.name`:** For `invoke_workflow` operations, this is the name of the workflow, for example
+the name of a compiled LangGraph graph, a CrewAI `Crew`, or an ADK `Workflow`.
 
-**[12] `gen_ai.conversation.id`:** Set from the A2A `contextId` field. Omit when the operation contains multiple distinct context IDs, for example in a `ListTasks` response.
+This attribute MUST have low cardinality. It is NOT RECOMMENDED to use
+instrumentation-time constants, framework defaults, or names of types
+representing the agent or workflow, such as "StateGraph". When no meaningful,
+low-cardinality name is available, this attribute MUST NOT be captured by default.
 
-**[13] `http.request.method_original`:** If and only if it's different than `http.request.method`.
+**[12] `gen_ai.conversation.id`:** When the A2A request or response contains a single context ID.
 
-**[14] `http.route`:** MUST NOT be populated when this is not supported by the HTTP server framework as the route attribute should have low-cardinality and the URI path can NOT substitute it.
+**[13] `gen_ai.conversation.id`:** Set from the A2A `contextId` field. Omit when the operation contains multiple distinct context IDs, for example in a `ListTasks` response.
+
+**[14] `http.request.method_original`:** If and only if it's different than `http.request.method`.
+
+**[15] `http.route`:** MUST NOT be populated when this is not supported by the HTTP server framework as the route attribute should have low-cardinality and the URI path can NOT substitute it.
 SHOULD include the [application root](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/http/http-spans.md#http-server-definitions) if there is one.
 
 A static path segment is a part of the route template with a fixed, low-cardinality value. This includes literal strings like `/users/` and placeholders that
@@ -463,13 +487,13 @@ A dynamic path segment is a placeholder for a value that can have high cardinali
 Instrumentations SHOULD use routing information provided by the corresponding web framework. They SHOULD pick the most precise source of routing information and MAY
 support custom route formatting. Instrumentations SHOULD document the format and the API used to obtain the route string.
 
-**[15] `network.protocol.name`:** If not `http` and `network.protocol.version` is set.
+**[16] `network.protocol.name`:** If not `http` and `network.protocol.version` is set.
 
-**[16] `network.protocol.name`:** The value SHOULD be normalized to lowercase.
+**[17] `network.protocol.name`:** The value SHOULD be normalized to lowercase.
 
-**[17] `server.port`:** See [Setting `server.address` and `server.port` attributes](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/http/http-spans.md#setting-serveraddress-and-serverport-attributes).
+**[18] `server.port`:** See [Setting `server.address` and `server.port` attributes](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/http/http-spans.md#setting-serveraddress-and-serverport-attributes).
 
-**[18] `url.query`:** Sensitive content provided in `url.query` SHOULD be scrubbed when instrumentations can identify it.
+**[19] `url.query`:** Sensitive content provided in `url.query` SHOULD be scrubbed when instrumentations can identify it.
 
 ![Development](https://img.shields.io/badge/-development-blue)
 Query string values for the following keys SHOULD be redacted by default and replaced by the value `REDACTED`:
@@ -494,19 +518,19 @@ it is not a list of keys in addition to the defaults.
 When a query string value is redacted, the query string key SHOULD still be preserved, e.g.
 `q=OpenTelemetry&sig=REDACTED`.
 
-**[19] `a2a.message.reference_task_ids`:** See the A2A specification for the [Message](https://a2a-protocol.org/latest/specification/#414-message) object.
+**[20] `a2a.message.reference_task_ids`:** See the A2A specification for the [Message](https://a2a-protocol.org/latest/specification/#414-message) object.
 
-**[20] `a2a.protocol.version`:** See the A2A specification for [versioning](https://a2a-protocol.org/latest/specification/#36-versioning).
+**[21] `a2a.protocol.version`:** See the A2A specification for [versioning](https://a2a-protocol.org/latest/specification/#36-versioning).
 
-**[21] `client.address`:** The IP address of the original client behind all proxies, if known (e.g. from [Forwarded#for](https://developer.mozilla.org/docs/Web/HTTP/Headers/Forwarded#for), [X-Forwarded-For](https://developer.mozilla.org/docs/Web/HTTP/Headers/X-Forwarded-For), or a similar header). Otherwise, the immediate client peer address.
+**[22] `client.address`:** The IP address of the original client behind all proxies, if known (e.g. from [Forwarded#for](https://developer.mozilla.org/docs/Web/HTTP/Headers/Forwarded#for), [X-Forwarded-For](https://developer.mozilla.org/docs/Web/HTTP/Headers/X-Forwarded-For), or a similar header). Otherwise, the immediate client peer address.
 
-**[22] `network.protocol.version`:** If protocol version is subject to negotiation (for example using [ALPN](https://www.rfc-editor.org/rfc/rfc7301.html)), this attribute SHOULD be set to the negotiated version. If the actual protocol version is not known, this attribute SHOULD NOT be set.
+**[23] `network.protocol.version`:** If protocol version is subject to negotiation (for example using [ALPN](https://www.rfc-editor.org/rfc/rfc7301.html)), this attribute SHOULD be set to the negotiated version. If the actual protocol version is not known, this attribute SHOULD NOT be set.
 
-**[23] `server.address`:** See [Setting `server.address` and `server.port` attributes](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/http/http-spans.md#setting-serveraddress-and-serverport-attributes).
+**[24] `server.address`:** See [Setting `server.address` and `server.port` attributes](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/http/http-spans.md#setting-serveraddress-and-serverport-attributes).
 
-**[24] `client.port`:** When observed from the server side, and when communicating through an intermediary, `client.port` SHOULD represent the client port behind any intermediaries,  for example proxies, if it's available.
+**[25] `client.port`:** When observed from the server side, and when communicating through an intermediary, `client.port` SHOULD represent the client port behind any intermediaries,  for example proxies, if it's available.
 
-**[25] `http.request.header`:** Instrumentations SHOULD require an explicit configuration of which headers are to be captured.
+**[26] `http.request.header`:** Instrumentations SHOULD require an explicit configuration of which headers are to be captured.
 Including all request headers can be a security risk - explicit configuration helps avoid leaking sensitive information.
 
 The `User-Agent` header is already captured in the `user_agent.original` attribute.
@@ -523,7 +547,7 @@ Examples:
 - A header `X-Forwarded-For: 1.2.3.4, 1.2.3.5` SHOULD be recorded as the `http.request.header.x-forwarded-for`
   attribute with value `["1.2.3.4", "1.2.3.5"]` or `["1.2.3.4, 1.2.3.5"]` depending on the HTTP library.
 
-**[26] `http.response.header`:** Instrumentations SHOULD require an explicit configuration of which headers are to be captured.
+**[27] `http.response.header`:** Instrumentations SHOULD require an explicit configuration of which headers are to be captured.
 Including all response headers can be a security risk - explicit configuration helps avoid leaking sensitive information.
 
 Users MAY explicitly configure instrumentations to capture them even though it is not recommended.
@@ -539,9 +563,9 @@ Examples:
 - A header `My-custom-header: abc, def` header SHOULD be recorded as the `http.response.header.my-custom-header`
   attribute with value `["abc", "def"]` or `["abc, def"]` depending on the HTTP library.
 
-**[27] `network.transport`:** Generally `tcp` for `HTTP/1.0`, `HTTP/1.1`, and `HTTP/2`. Generally `udp` for `HTTP/3`. Other obscure implementations are possible.
+**[28] `network.transport`:** Generally `tcp` for `HTTP/1.0`, `HTTP/1.1`, and `HTTP/2`. Generally `udp` for `HTTP/3`. Other obscure implementations are possible.
 
-**[28] `user_agent.synthetic.type`:** This attribute MAY be derived from the contents of the `user_agent.original` attribute. Components that populate the attribute are responsible for determining what they consider to be synthetic bot or test traffic. This attribute can either be set for self-identification purposes, or on telemetry detected to be generated as a result of a synthetic request. This attribute is useful for distinguishing between genuine client traffic and synthetic traffic generated by bots or tests.
+**[29] `user_agent.synthetic.type`:** This attribute MAY be derived from the contents of the `user_agent.original` attribute. Components that populate the attribute are responsible for determining what they consider to be synthetic bot or test traffic. This attribute can either be set for self-identification purposes, or on telemetry detected to be generated as a result of a synthetic request. This attribute is useful for distinguishing between genuine client traffic and synthetic traffic generated by bots or tests.
 
 The following attributes can be important for making sampling decisions
 and SHOULD be provided **at span creation time** (if provided at all):
@@ -688,19 +712,19 @@ identifies the A2A method, so A2A instrumentation SHOULD NOT change it.
 | [`a2a.tenant`](/docs/registry/attributes/a2a.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When the A2A request `tenant` field is set. | string | The opaque routing identifier of the target [A2A tenant](https://github.com/a2aproject/A2A/blob/main/docs/topics/multi-tenancy.md). | `billing` |
 | [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/error.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If and only if the operation failed. | string | Describes a class of error the operation ended with. [8] | `DEADLINE_EXCEEDED`; `java.net.UnknownHostException`; `-32602` |
 | [`gen_ai.agent.description`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When available from the Agent Card. | string | Free-form description of the GenAI agent provided by the application. | `Helps with math problems`; `Generates fiction stories` |
-| [`gen_ai.agent.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When available from the Agent Card. | string | Human-readable name of the GenAI agent provided by the application. | `Math Tutor`; `Fiction Writer` |
+| [`gen_ai.agent.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When available from the Agent Card. | string | Human-readable name of the GenAI agent provided by the application. [9] | `Math Tutor`; `Fiction Writer` |
 | [`gen_ai.agent.version`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When available from the Agent Card. | string | The version of the GenAI agent. | `1.0.0`; `2025-05-01` |
-| [`gen_ai.conversation.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [9] | string | Identifies the A2A [context identifier](https://a2a-protocol.org/latest/specification/#341-context-identifier-semantics). [10] | `conv_5j66UpCpwteGg4YSxUnt7lPY` |
-| [`rpc.method`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/rpc.md) | ![Release Candidate](https://img.shields.io/badge/-rc-mediumorchid) | `Conditionally Required` if available. | string | The fully-qualified logical name of the method from the RPC interface perspective. [11] | `com.example.ExampleService/exampleMethod`; `EchoService/Echo`; `_OTHER` |
+| [`gen_ai.conversation.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [10] | string | Identifies the A2A [context identifier](https://a2a-protocol.org/latest/specification/#341-context-identifier-semantics). [11] | `conv_5j66UpCpwteGg4YSxUnt7lPY` |
+| [`rpc.method`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/rpc.md) | ![Release Candidate](https://img.shields.io/badge/-rc-mediumorchid) | `Conditionally Required` if available. | string | The fully-qualified logical name of the method from the RPC interface perspective. [12] | `com.example.ExampleService/exampleMethod`; `EchoService/Echo`; `_OTHER` |
 | [`rpc.method_original`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/rpc.md) | ![Release Candidate](https://img.shields.io/badge/-rc-mediumorchid) | `Conditionally Required` If and only if it's different than `rpc.method`. | string | The original name of the method used by the client. | `com.myservice.EchoService/catchAll`; `com.myservice.EchoService/unknownMethod`; `InvalidMethod` |
-| [`server.address`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If available. | string | A string identifying a group of RPC server instances request is sent to. [12] | `example.com`; `10.1.2.80`; `/tmp/my.sock` |
-| [`server.port`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` if applicable and if `server.address` is set. | int | Server port number. [13] | `80`; `8080`; `443` |
-| [`a2a.message.reference_task_ids`](/docs/registry/attributes/a2a.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` When the request message references task IDs. | string[] | Task IDs referenced by the A2A request message. [14] | `["task-abc-5678"]` |
-| [`a2a.protocol.version`](/docs/registry/attributes/a2a.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The version of the A2A protocol used. [15] | `1.0` |
-| [`network.peer.address`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | Peer address of the network connection - IP address or UNIX domain socket name. [16] | `10.1.2.80`; `/tmp/my.sock` |
+| [`server.address`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If available. | string | A string identifying a group of RPC server instances request is sent to. [13] | `example.com`; `10.1.2.80`; `/tmp/my.sock` |
+| [`server.port`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` if applicable and if `server.address` is set. | int | Server port number. [14] | `80`; `8080`; `443` |
+| [`a2a.message.reference_task_ids`](/docs/registry/attributes/a2a.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` When the request message references task IDs. | string[] | Task IDs referenced by the A2A request message. [15] | `["task-abc-5678"]` |
+| [`a2a.protocol.version`](/docs/registry/attributes/a2a.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The version of the A2A protocol used. [16] | `1.0` |
+| [`network.peer.address`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | Peer address of the network connection - IP address or UNIX domain socket name. [17] | `10.1.2.80`; `/tmp/my.sock` |
 | [`network.peer.port`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` If `network.peer.address` is set. | int | Peer port number of the network connection. | `65123` |
-| [`rpc.request.metadata`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/rpc.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | string[] | RPC request metadata, `<key>` being the normalized RPC metadata key (lowercase), the value being the metadata values. [17] | `["1.2.3.4", "1.2.3.5"]` |
-| [`rpc.response.metadata`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/rpc.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | string[] | RPC response metadata, `<key>` being the normalized RPC metadata key (lowercase), the value being the metadata values. [18] | `["attribute_value"]` |
+| [`rpc.request.metadata`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/rpc.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | string[] | RPC request metadata, `<key>` being the normalized RPC metadata key (lowercase), the value being the metadata values. [18] | `["1.2.3.4", "1.2.3.5"]` |
+| [`rpc.response.metadata`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/rpc.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | string[] | RPC response metadata, `<key>` being the normalized RPC metadata key (lowercase), the value being the metadata values. [19] | `["attribute_value"]` |
 
 **[1] `a2a.method.name`:** This attribute records the logical A2A operation name defined by the protocol. For example, `SendMessage` is the A2A operation name, while HTTP+JSON maps it to `POST /message:send`. See the A2A specification for [core operations](https://a2a-protocol.org/latest/specification/#31-core-operations) and [method mappings](https://a2a-protocol.org/latest/specification/#53-method-mapping-reference).
 
@@ -737,11 +761,19 @@ Instrumentations SHOULD document the list of errors they report.
 If the request has completed successfully, instrumentations SHOULD NOT set
 `error.type`.
 
-**[9] `gen_ai.conversation.id`:** When the A2A request or response contains a single context ID.
+**[9] `gen_ai.agent.name`:** For `invoke_workflow` operations, this is the name of the workflow, for example
+the name of a compiled LangGraph graph, a CrewAI `Crew`, or an ADK `Workflow`.
 
-**[10] `gen_ai.conversation.id`:** Set from the A2A `contextId` field. Omit when the operation contains multiple distinct context IDs, for example in a `ListTasks` response.
+This attribute MUST have low cardinality. It is NOT RECOMMENDED to use
+instrumentation-time constants, framework defaults, or names of types
+representing the agent or workflow, such as "StateGraph". When no meaningful,
+low-cardinality name is available, this attribute MUST NOT be captured by default.
 
-**[11] `rpc.method`:** The method name MAY have unbounded cardinality in edge or error cases.
+**[10] `gen_ai.conversation.id`:** When the A2A request or response contains a single context ID.
+
+**[11] `gen_ai.conversation.id`:** Set from the A2A `contextId` field. Omit when the operation contains multiple distinct context IDs, for example in a `ListTasks` response.
+
+**[12] `rpc.method`:** The method name MAY have unbounded cardinality in edge or error cases.
 
 Some RPC frameworks or libraries provide a fixed set of recognized methods
 for client stubs and server implementations. Instrumentations for such
@@ -763,25 +795,25 @@ The `code.function.name` attribute may be used to record the fully-qualified
 method actually executing the call on the server side, or the
 RPC client stub method on the client side.
 
-**[12] `server.address`:** May contain a DNS name, an endpoint and path in the service registry, local socket name or an IP address.
+**[13] `server.address`:** May contain a DNS name, an endpoint and path in the service registry, local socket name or an IP address.
 Semantic conventions for individual RPC systems SHOULD document how to populate this attribute.
 When address is an IP address, instrumentations SHOULD NOT do a reverse DNS lookup to obtain a DNS name and SHOULD set `server.address` to the provided IP address.
 
-**[13] `server.port`:** When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries, for example proxies, if it's available.
+**[14] `server.port`:** When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries, for example proxies, if it's available.
 
-**[14] `a2a.message.reference_task_ids`:** See the A2A specification for the [Message](https://a2a-protocol.org/latest/specification/#414-message) object.
+**[15] `a2a.message.reference_task_ids`:** See the A2A specification for the [Message](https://a2a-protocol.org/latest/specification/#414-message) object.
 
-**[15] `a2a.protocol.version`:** See the A2A specification for [versioning](https://a2a-protocol.org/latest/specification/#36-versioning).
+**[16] `a2a.protocol.version`:** See the A2A specification for [versioning](https://a2a-protocol.org/latest/specification/#36-versioning).
 
-**[16] `network.peer.address`:** If a RPC involved multiple network calls (for example retries), the last contacted address SHOULD be used.
+**[17] `network.peer.address`:** If a RPC involved multiple network calls (for example retries), the last contacted address SHOULD be used.
 
-**[17] `rpc.request.metadata`:** Instrumentations SHOULD require an explicit configuration of which metadata values are to be captured.
+**[18] `rpc.request.metadata`:** Instrumentations SHOULD require an explicit configuration of which metadata values are to be captured.
 Including all request metadata values can be a security risk - explicit configuration helps avoid leaking sensitive information.
 
 For example, a property `my-custom-key` with value `["1.2.3.4", "1.2.3.5"]` SHOULD be recorded as
 `rpc.request.metadata.my-custom-key` attribute with value `["1.2.3.4", "1.2.3.5"]`
 
-**[18] `rpc.response.metadata`:** Instrumentations SHOULD require an explicit configuration of which metadata values are to be captured.
+**[19] `rpc.response.metadata`:** Instrumentations SHOULD require an explicit configuration of which metadata values are to be captured.
 Including all response metadata values can be a security risk - explicit configuration helps avoid leaking sensitive information.
 
 For example, a property `my-custom-key` with value `["attribute_value"]` SHOULD be recorded as

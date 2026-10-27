@@ -76,7 +76,7 @@ Content capturing is disabled.
 | Trace id | `"7d3a91e25c6f408ab2e019f7d4c83560"` |
 | Span id | `"5d9fb1324680ace2"` |
 | `gen_ai.operation.name` | `"invoke_workflow"` |
-| `gen_ai.workflow.name` | `"sequential-agents"` |
+| `gen_ai.agent.name` | `"sequential-agents"` |
 
 **Source agent span:**
 

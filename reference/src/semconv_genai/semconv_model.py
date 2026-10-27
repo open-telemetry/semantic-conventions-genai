@@ -42,7 +42,6 @@ _SPANS = {
     "create_agent": ("gen_ai.create_agent.client", "Create Agent"),
     "invoke_agent_client": ("gen_ai.invoke_agent.client", "Invoke Agent Client"),
     "invoke_agent_internal": ("gen_ai.invoke_agent.internal", "Invoke Agent Internal"),
-    "invoke_workflow": ("gen_ai.invoke_workflow.internal", "Invoke Workflow"),
     "plan": ("gen_ai.plan.internal", "Plan"),
 }
 

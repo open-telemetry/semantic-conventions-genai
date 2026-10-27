@@ -87,17 +87,17 @@ def run_crew():
         agent=researcher,
     )
 
-    crew = Crew(agents=[researcher], tasks=[task], verbose=False)
-    workflow_name = getattr(crew, "name", None)
+    # CrewAI names every crew "crew" unless the application names it, and that default
+    # identifies nothing, so the crew gets an application-defined name.
+    crew = Crew(name="weather_crew", agents=[researcher], tasks=[task], verbose=False)
 
     workflow_span_attributes = {
         "gen_ai.operation.name": "invoke_workflow",
+        "gen_ai.agent.name": crew.name,
     }
     with _reference_tracer.start_as_current_span(
-        "invoke_workflow crew", attributes=workflow_span_attributes
+        f"invoke_workflow {crew.name}", attributes=workflow_span_attributes
     ) as workflow_span:
-        if workflow_name:
-            workflow_span.set_attribute("gen_ai.workflow.name", workflow_name)
         workflow_span.set_attribute(
             "gen_ai.input.messages",
             json.dumps([{"role": "user", "parts": [{"type": "text", "content": task.description}]}]),

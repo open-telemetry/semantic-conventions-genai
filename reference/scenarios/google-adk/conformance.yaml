@@ -56,3 +56,7 @@ scenarios:
           expected: '{tool_call}'
           unit: '1'
         reason: OTel SDK emits unit '1' instead of '{inference_call}'/'{tool_call}'; fix histogram unit.
+      - id: required_attribute_not_present
+        context:
+          attribute_key: gen_ai.operation.name
+        reason: ADK native instrumentation records the gen_ai.invoke_agent.* metrics without gen_ai.operation.name.

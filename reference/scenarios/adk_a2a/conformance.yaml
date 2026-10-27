@@ -41,21 +41,10 @@ scenarios:
       - id: missing_event
         context: {}
         reason: ADK native instrumentation emits legacy gen_ai.choice, gen_ai.system.message, and gen_ai.user.message events.
-      - id: genai_expected_attribute_missing
+      - id: required_attribute_not_present
         context:
-          missing_attribute: gen_ai.response.finish_reasons
-          operation: invoke_agent
-        reason: ADK records this attribute on inference spans, not its invoke_agent span.
-      - id: genai_expected_attribute_missing
-        context:
-          missing_attribute: gen_ai.usage.input_tokens
-          operation: invoke_agent
-        reason: ADK records this attribute on inference spans, not its invoke_agent span.
-      - id: genai_expected_attribute_missing
-        context:
-          missing_attribute: gen_ai.usage.output_tokens
-          operation: invoke_agent
-        reason: ADK records this attribute on inference spans, not its invoke_agent span.
+          attribute_key: gen_ai.operation.name
+        reason: ADK native instrumentation records the gen_ai.invoke_agent.* metrics without gen_ai.operation.name.
       - id: unit_mismatch
         context:
           expected: '{inference_call}'

@@ -142,58 +142,23 @@ metrics:
         metric_value_type: double
     attributes:
       - ref_group: metric_attributes.gen_ai
-  - name: gen_ai.invoke_workflow.duration
-    requirement_level: recommended
-    annotations:
-      code_generation:
-        metric_value_type: double
-    brief: 'Records duration of GenAI workflow.'
-    note: >
-      Represents the end-to-end duration of a workflow execution, measured from the point
-      where application code initiates the workflow to the point where the workflow completes,
-      independent of workflow complexity.
-
-      A workflow is a coordinated process composed of multiple agents or other
-      operations involving generative AI.
-
-      If instrumentation measures only a single provider-facing client operation
-      (for example, one model API call), `gen_ai.client.operation.duration` SHOULD be used instead.
-      Instrumentation MAY emit both metrics for the same request path when both boundaries are available.
-
-      When this metric is reported alongside a `gen_ai.invoke_workflow.internal` span, the metric value SHOULD be the same as the span duration.
-
-      Individual systems may include additional system-specific attributes.
-      Refer to system-specific documentation, if available.
-    instrument: histogram
-    unit: "s"
-    stability: development
-    attributes:
-      - ref_group: attributes.gen_ai.error
-      - ref: gen_ai.workflow.name
-        requirement_level:
-          conditionally_required: If available.
   - name: gen_ai.invoke_agent.duration
     requirement_level: recommended
     annotations:
       code_generation:
         metric_value_type: double
     brief: >
-      The end-to-end duration of a single in-process agent invocation,
-      from the moment the invocation starts until the agent emits
-      the last chunk of its final response or terminates with an error.
+      The end-to-end duration of a single in-process agent, workflow, or
+      framework entrypoint invocation, from the moment the invocation starts until
+      it emits the last chunk of its final response or terminates with an error.
     note: |
       Intended for instrumentations of agent frameworks (for example, ADK,
       LangChain agents, CrewAI agents) that can reliably bound a single
-      agent invocation.
+      agent, workflow, or framework entrypoint invocation.
 
       If instrumentation can only measure a single provider-facing client
       operation (for example, one model API call),
-      `gen_ai.client.operation.duration` SHOULD be used instead. If
-      instrumentation can reliably bound a higher-level workflow that
-      coordinates multiple agents, `gen_ai.invoke_workflow.duration` SHOULD be
-      used for that workflow. Instrumentation MAY emit several of these
-      metrics for the same request path when more than one boundary is
-      available.
+      `gen_ai.client.operation.duration` SHOULD be used instead.
 
       When this metric is reported alongside a `gen_ai.invoke_agent.internal`
       span, the metric value SHOULD be the same as the span duration.
@@ -202,20 +167,25 @@ metrics:
     stability: development
     attributes:
       - ref_group: attributes.gen_ai.error
+      - ref: gen_ai.operation.name
+        requirement_level: required
       - ref_group: attributes.gen_ai.invoked_agent.internal.common
+      - ref: gen_ai.request.model
+        requirement_level:
+          recommended: When `gen_ai.operation.name` is `invoke_agent`, if applicable.
   - name: gen_ai.invoke_agent.inference_calls
     annotations:
       code_generation:
         metric_value_type: int
     brief: >
-      The number of inference (model) calls a GenAI agent makes during a
-      single invocation.
+      The number of inference (model) calls a GenAI agent, workflow, or
+      framework entrypoint makes during a single invocation.
     note: |
-      The distribution is scoped to a single agent invocation and SHOULD include
-      only the inference calls the agent itself issued including failed ones;
-      calls made by sub-agents or transferred-to agents are recorded against
-      those agents' own invocations so that each inference call is counted
-      exactly once across the call tree.
+      The distribution is scoped to a single invocation and SHOULD include
+      only the inference calls the invocation itself issued including failed
+      ones; calls made by nested invocations (for example, sub-agents or
+      transferred-to agents) are recorded against those invocations so that
+      each inference call is counted exactly once across the call tree.
 
       This metric SHOULD be emitted together with the
       `gen_ai.invoke_agent.internal` span for the same invocation.
@@ -223,21 +193,24 @@ metrics:
     unit: "{inference_call}"
     stability: development
     attributes:
+      - ref: gen_ai.operation.name
+        requirement_level: required
       - ref: gen_ai.agent.name
-        requirement_level: recommended
+        requirement_level:
+          conditionally_required: When available.
   - name: gen_ai.invoke_agent.tool_calls
     annotations:
       code_generation:
         metric_value_type: int
     brief: >
-      The number of tool calls a GenAI agent makes during a single
-      invocation.
+      The number of tool calls a GenAI agent, workflow, or framework
+      entrypoint makes during a single invocation.
     note: |
-      The distribution is scoped to a single agent invocation and SHOULD include
-      only the tool calls the agent itself triggers including failed ones;
-      calls made by sub-agents or transferred-to agents are recorded against
-      those agents' own invocations so that each tool call is counted exactly
-      once across the call tree.
+      The distribution is scoped to a single invocation and SHOULD include
+      only the tool calls the invocation itself triggers including failed
+      ones; calls made by nested invocations (for example, sub-agents or
+      transferred-to agents) are recorded against those invocations so that
+      each tool call is counted exactly once across the call tree.
 
       Only client-side tool calls (tools executed by the agent or framework)
       are counted. Tools executed server-side by the model provider (for
@@ -250,8 +223,11 @@ metrics:
     unit: "{tool_call}"
     stability: development
     attributes:
+      - ref: gen_ai.operation.name
+        requirement_level: required
       - ref: gen_ai.agent.name
-        requirement_level: recommended
+        requirement_level:
+          conditionally_required: When available.
   - name: gen_ai.execute_tool.duration
     requirement_level: recommended
     annotations:

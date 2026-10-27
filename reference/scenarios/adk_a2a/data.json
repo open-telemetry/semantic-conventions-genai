@@ -91,27 +91,10 @@
       "message": "Event 'gen_ai.user.message' does not exist in the registry."
     },
     {
-      "id": "genai_expected_attribute_missing",
-      "message": "Span 'invoke_agent travel_assistant' (operation 'invoke_agent') is missing expected attribute 'gen_ai.response.finish_reasons'",
+      "id": "required_attribute_not_present",
+      "message": "Required attribute 'gen_ai.operation.name' is not present.",
       "context": {
-        "missing_attribute": "gen_ai.response.finish_reasons",
-        "operation": "invoke_agent"
-      }
-    },
-    {
-      "id": "genai_expected_attribute_missing",
-      "message": "Span 'invoke_agent travel_assistant' (operation 'invoke_agent') is missing expected attribute 'gen_ai.usage.input_tokens'",
-      "context": {
-        "missing_attribute": "gen_ai.usage.input_tokens",
-        "operation": "invoke_agent"
-      }
-    },
-    {
-      "id": "genai_expected_attribute_missing",
-      "message": "Span 'invoke_agent travel_assistant' (operation 'invoke_agent') is missing expected attribute 'gen_ai.usage.output_tokens'",
-      "context": {
-        "missing_attribute": "gen_ai.usage.output_tokens",
-        "operation": "invoke_agent"
+        "attribute_key": "gen_ai.operation.name"
       }
     },
     {

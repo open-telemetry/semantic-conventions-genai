@@ -33,13 +33,6 @@
       "gen_ai.usage.input_tokens",
       "gen_ai.usage.output_tokens"
     ],
-    "gen_ai.invoke_workflow.internal": [
-      "gen_ai.conversation.id",
-      "gen_ai.input.messages",
-      "gen_ai.operation.name",
-      "gen_ai.output.messages",
-      "gen_ai.workflow.name"
-    ],
     "gen_ai.memory.client": [
       "gen_ai.memory.query.text",
       "gen_ai.memory.record.count",
@@ -60,10 +53,12 @@
       "gen_ai.agent.name"
     ],
     "gen_ai.invoke_agent.inference_calls": [
-      "gen_ai.agent.name"
+      "gen_ai.agent.name",
+      "gen_ai.operation.name"
     ],
     "gen_ai.invoke_agent.tool_calls": [
-      "gen_ai.agent.name"
+      "gen_ai.agent.name",
+      "gen_ai.operation.name"
     ]
   },
   "findings": [
@@ -114,6 +109,13 @@
       "message": "Attribute 'process.exit.code' does not exist in the registry.",
       "context": {
         "attribute_key": "process.exit.code"
+      }
+    },
+    {
+      "id": "required_attribute_not_present",
+      "message": "Required attribute 'gen_ai.operation.name' is not present.",
+      "context": {
+        "attribute_key": "gen_ai.operation.name"
       }
     },
     {
