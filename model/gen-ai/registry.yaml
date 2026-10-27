@@ -593,17 +593,31 @@ attributes:
       > [!WARNING]
       > This attribute may contain sensitive information.
 
-      It's expected to be an object - in case a serialized string is available
-      to the instrumentation, the instrumentation SHOULD do the best effort to
-      deserialize it to an object.
+      The `type` property identifies the kind of result. With `type` set to
+      `value`, `content` holds the value the tool returned, as returned: a
+      string, an object, a list of content blocks, or any other JSON value.
+      Instrumentations SHOULD NOT parse a string the tool returned. When only
+      a serialized form of a non-string value is available, the
+      instrumentation SHOULD make a best effort to deserialize it.
+
+      Consumers SHOULD tolerate `type` values they do not recognize; new
+      result types may be added in the future.
     examples:
       - |
         {
-          "temperature_range": {
-            "high": 75,
-            "low": 60
-          },
-          "conditions": "sunny"
+          "type": "value",
+          "content": {
+            "temperature_range": {
+              "high": 75,
+              "low": 60
+            },
+            "conditions": "sunny"
+          }
+        }
+      - |
+        {
+          "type": "value",
+          "content": "Sunny, 72°F"
         }
 
     stability: development

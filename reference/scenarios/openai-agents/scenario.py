@@ -45,7 +45,7 @@ def get_weather(ctx: ToolContext[None], location: str) -> str:
         tool_span.set_attribute("gen_ai.tool.call.id", ctx.tool_call_id)
         tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps({"location": location}))
         result = "Sunny, 72°F"
-        tool_span.set_attribute("gen_ai.tool.call.result", result)
+        tool_span.set_attribute("gen_ai.tool.call.result", json.dumps({"type": "value", "content": result}))
         return result
 
 
@@ -181,7 +181,7 @@ async def run_agent_as_tool_delegation():
             tool_span.set_attribute("gen_ai.tool.call.id", tool_context.tool_call_id)
             tool_span.set_attribute("gen_ai.tool.call.arguments", input_json)
             result = await original_on_invoke_tool(tool_context, input_json)
-            tool_span.set_attribute("gen_ai.tool.call.result", str(result))
+            tool_span.set_attribute("gen_ai.tool.call.result", json.dumps({"type": "value", "content": result}))
         return result
 
     model_responses = ContextVar("delegation_model_responses", default=None)
@@ -303,7 +303,7 @@ async def run_command_execution():
                     span.set_attribute("error.type", type(exc).__qualname__)
                     span.set_status(StatusCode.ERROR, str(exc))
                     raise
-                span.set_attribute("gen_ai.tool.call.result", result)
+                span.set_attribute("gen_ai.tool.call.result", json.dumps({"type": "value", "content": result}))
                 return result
 
     sandbox_client = UnixLocalSandboxClient()
@@ -404,7 +404,10 @@ async def run_workflow():
                 target = await original_invoke(context, arguments)
                 span.set_attribute("gen_ai.transfer.mode", "pass_control")
                 span.set_attribute("gen_ai.transfer.target.name", target.name)
-                span.set_attribute("gen_ai.tool.call.result", selected.handoff.get_transfer_message(target))
+                span.set_attribute(
+                    "gen_ai.tool.call.result",
+                    json.dumps({"type": "value", "content": selected.handoff.get_transfer_message(target)}),
+                )
                 return target
 
         with patch.object(selected.handoff, "on_invoke_handoff", traced_invoke):

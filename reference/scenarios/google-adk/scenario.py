@@ -160,7 +160,7 @@ def run_agent_reference():
                 tool_span.set_attribute("gen_ai.tool.call.id", tool_context.function_call_id)
             tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps({"location": location}))
             result = f"Sunny in {location}"
-            tool_span.set_attribute("gen_ai.tool.call.result", result)
+            tool_span.set_attribute("gen_ai.tool.call.result", json.dumps({"type": "value", "content": result}))
         return result
 
     tool_defs = [
@@ -445,7 +445,9 @@ def run_multi_agent_delegation_reference():
                     tool_span.set_attribute("gen_ai.tool.call.id", tool_context.function_call_id)
                 tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps(args))
                 result = await original_run_async(args=args, tool_context=tool_context)
-                tool_span.set_attribute("gen_ai.tool.call.result", str(result))
+                tool_span.set_attribute(
+                    "gen_ai.tool.call.result", json.dumps({"type": "value", "content": result}, default=str)
+                )
             return result
 
         async def _traced_specialist_run_async(active_runner, *, session_id, **kwargs):
@@ -609,7 +611,7 @@ def run_multi_agent_handoff_reference():
             if target_name:
                 span.set_attribute("gen_ai.transfer.mode", "pass_control")
                 span.set_attribute("gen_ai.transfer.target.name", target_name)
-            span.set_attribute("gen_ai.tool.call.result", json.dumps(result))
+            span.set_attribute("gen_ai.tool.call.result", json.dumps({"type": "value", "content": result}))
             return result
 
     async def traced_agent_run(agent, parent_context):
@@ -769,7 +771,10 @@ def run_skills_reference():
                     span.set_attribute("error.type", error_type)
                     span.set_status(StatusCode.ERROR, result.get("error", ""))
                 else:
-                    span.set_attribute("gen_ai.tool.call.result", json.dumps(result, default=str))
+                    span.set_attribute(
+                        "gen_ai.tool.call.result",
+                        json.dumps({"type": "value", "content": result}, default=str),
+                    )
                 self._record_skill_signals(span, args, result, error_type, tool_context)
                 return result
 
