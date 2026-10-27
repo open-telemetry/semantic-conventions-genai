@@ -1,0 +1,124 @@
+file_format: definition/2
+attribute_groups:
+  - id: a2a.agent.attributes
+    visibility: internal
+    attributes:
+      - ref: gen_ai.agent.name
+        requirement_level:
+          conditionally_required: When available from the Agent Card.
+      - ref: gen_ai.agent.description
+        requirement_level:
+          conditionally_required: When available from the Agent Card.
+      - ref: gen_ai.agent.version
+        requirement_level:
+          conditionally_required: When available from the Agent Card.
+
+spans:
+  - type: a2a.client
+    kind: client
+    name:
+      note: |
+        **Span name** SHOULD be `{a2a.method.name}`.
+    brief: This span describes an A2A call from the client side.
+    note: |
+      It covers the time to receive the response for non-streaming
+      calls and the time to consume the response stream for streaming calls.
+
+      A2A `SendMessage`, `SendStreamingMessage` and other operations may be performed
+      as part of a higher-level GenAI agent invocation. A2A instrumentations report
+      spans for A2A requests only and SHOULD NOT report telemetry describing
+      higher level GenAI agent operations.
+    stability: development
+    attributes:
+      - ref_group: a2a.common.attributes
+      - ref_group: a2a.agent.attributes
+      - ref_group: a2a.client.address_and_port.attributes
+
+  - type: a2a.server
+    kind: server
+    name:
+      note: |
+        **Span name** SHOULD be `{a2a.method.name}`.
+    brief: This span describes processing of an A2A request by the server.
+    note: |
+      It covers the time to produce the response for non-streaming
+      calls and the time to produce the response stream for streaming calls.
+
+      This span is reported when instrumentation cannot detect the transport
+      server span the A2A request is handled in. When it can, instrumentation
+      SHOULD enrich the transport server span instead - see A2A
+      [HTTP](/docs/gen-ai/a2a.md#server-over-http) and
+      [gRPC](/docs/gen-ai/a2a.md#server-over-grpc) server spans.
+    stability: development
+    attributes:
+      - ref_group: a2a.common.attributes
+      - ref_group: a2a.agent.attributes
+      - ref_group: a2a.server.address_and_port.attributes
+
+span_refinements:
+  - id: a2a.http.server
+    ref: http.server
+    brief: >
+      This span describes processing of an A2A request received over an HTTP
+      binding (HTTP+JSON or JSON-RPC over HTTP).
+    note: |
+      When instrumentation can detect that the A2A request is handled within an
+      instrumented HTTP server call, it SHOULD enrich the HTTP server span with
+      A2A attributes instead of reporting a nested `a2a.server` span.
+
+      Instrumentation SHOULD update the span name to `{a2a.method.name}` once
+      the A2A method is known.
+
+      Instrumentation SHOULD use the additional A2A error context to set the
+      span status to `ERROR`, as permitted by the
+      [HTTP span status conventions](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/http/http-spans.md#status),
+      and SHOULD set `error.type` according to the
+      [A2A error guidance](/docs/gen-ai/a2a.md#server), even when the HTTP response
+      indicates success.
+
+      Instrumentation coordinating A2A and HTTP telemetry SHOULD preserve the
+      A2A error classification when HTTP processing succeeds. If HTTP processing
+      also fails, its error classification SHOULD take precedence in `error.type`,
+      following the HTTP server conventions. In that case, the A2A error code
+      is not retained separately on the span.
+
+      This precedence normally applies to HTTP 5xx responses or transport
+      exceptions. Without additional context, HTTP server instrumentation leaves
+      span status unset for 4xx responses and does not set `error.type` based on
+      the status code, so the A2A error classification is preserved.
+    stability: development
+    name:
+      note: |
+        **Span name** SHOULD be `{a2a.method.name}`.
+    attributes:
+      - ref_group: a2a.protocol.attributes
+      - ref_group: a2a.agent.attributes
+
+  - id: a2a.grpc.server
+    ref: rpc.grpc.call.server
+    brief: >
+      This span describes processing of an A2A request received over the gRPC
+      binding.
+    note: |
+      When instrumentation can detect that the A2A request is handled within an
+      instrumented gRPC server call, it SHOULD enrich the gRPC server span with
+      A2A attributes instead of reporting a nested `a2a.server` span.
+
+      A2A protocol errors SHOULD set the span status to `ERROR` and SHOULD set
+      `error.type` according to the [A2A error guidance](/docs/gen-ai/a2a.md#server),
+      preferring an available A2A error reason over its mapped gRPC status code.
+
+      Instrumentation coordinating A2A and gRPC telemetry SHOULD preserve the
+      A2A error classification when gRPC processing succeeds or the gRPC status
+      represents the same A2A error. If an independent transport failure prevents
+      completion of the request, the transport error SHOULD take precedence in
+      `error.type`, following the gRPC server conventions. In that case, the
+      A2A error identifier is not retained separately on the span.
+    stability: development
+    name:
+      note: |
+        **Span name** SHOULD follow the gRPC semantic conventions: it already
+        identifies the A2A method, so A2A instrumentation SHOULD NOT change it.
+    attributes:
+      - ref_group: a2a.protocol.attributes
+      - ref_group: a2a.agent.attributes

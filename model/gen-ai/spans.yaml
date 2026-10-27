@@ -91,6 +91,14 @@ attribute_groups:
         requirement_level: opt_in
       - ref: gen_ai.tool.definitions
         requirement_level: opt_in
+      - ref: gen_ai.system_instructions_ref
+        requirement_level: opt_in
+      - ref: gen_ai.input.messages_ref
+        requirement_level: opt_in
+      - ref: gen_ai.output.messages_ref
+        requirement_level: opt_in
+      - ref: gen_ai.tool.definitions_ref
+        requirement_level: opt_in
 
   - id: attributes.gen_ai.invoked_agent.internal.common
     visibility: internal
@@ -177,19 +185,98 @@ spans:
         Semantic conventions for individual GenAI systems and frameworks MAY specify different span name format
         and MUST follow the overall [guidelines for span names](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.56.0/specification/trace/api.md#span).
     brief: >
-      This span represents a client call to Generative AI model or service that generates
-      a response or requests a tool call based on the input prompt.
+      This span represents a logical client call to Generative AI model or 
+      service that generates a response or requests a tool call based on the input prompt.
     note: |
       **Span kind** SHOULD be `CLIENT` and MAY be set to `INTERNAL` on spans representing
       call to models running in the same process. It's RECOMMENDED to use `CLIENT` kind
       when the GenAI system being instrumented usually runs in a different process than its
       client or when the GenAI call happens over instrumented protocol such as HTTP.
+
+      One client request may involve multiple server-side inference operations.
+      The model provider or server, when instrumented, may record those operations
+      as nested inference spans.
+
+      Telemetry consumers should group inference spans by [`service.name`](https://opentelemetry.io/docs/specs/semconv/registry/entities/service/)
+      when counting operations or tokens.
     stability: development
     attributes:
       - ref_group: attributes.gen_ai.common
       - ref_group: attributes.gen_ai.address_and_port
-      - ref_group: attributes.gen_ai.usage
-      - ref_group: attributes.gen_ai.usage.breakdown
+      - ref: gen_ai.usage.input_tokens
+        brief: >
+          The number of input tokens reported by the provider for this inference operation.
+        requirement_level: recommended
+      - ref: gen_ai.usage.output_tokens
+        brief: >
+          The number of output tokens reported by the provider for this inference operation.
+        requirement_level: recommended
+      - ref: gen_ai.usage.text.input_tokens
+        brief: >
+          The number of text input tokens,
+          as reported by the provider for this inference operation.
+        requirement_level:
+          recommended: When available and non-zero.
+      - ref: gen_ai.usage.image.input_tokens
+        brief: >
+          The number of image input tokens,
+          as reported by the provider for this inference operation.
+        requirement_level:
+          recommended: When available and non-zero.
+      - ref: gen_ai.usage.audio.input_tokens
+        brief: >
+          The number of audio input tokens,
+          as reported by the provider for this inference operation.
+        requirement_level:
+          recommended: When available and non-zero.
+      - ref: gen_ai.usage.text.cache_read.input_tokens
+        brief: >
+          The number of text input tokens served from a provider-managed cache,
+          as reported by the provider for this inference operation.
+        requirement_level:
+          recommended: When available and non-zero.
+      - ref: gen_ai.usage.image.cache_read.input_tokens
+        brief: >
+          The number of image input tokens served from a provider-managed cache,
+          as reported by the provider for this inference operation.
+        requirement_level:
+          recommended: When available and non-zero.
+      - ref: gen_ai.usage.audio.cache_read.input_tokens
+        brief: >
+          The number of audio input tokens served from a provider-managed cache,
+          as reported by the provider for this inference operation.
+        requirement_level:
+          recommended: When available and non-zero.
+      - ref: gen_ai.usage.text.output_tokens
+        brief: >
+          The number of text output tokens,
+          as reported by the provider for this inference operation.
+        requirement_level:
+          recommended: When available and non-zero.
+      - ref: gen_ai.usage.image.output_tokens
+        brief: >
+          The number of image output tokens,
+          as reported by the provider for this inference operation.
+        requirement_level:
+          recommended: When available and non-zero.
+      - ref: gen_ai.usage.audio.output_tokens
+        brief: >
+          The number of audio output tokens,
+          as reported by the provider for this inference operation.
+        requirement_level:
+          recommended: When available and non-zero.
+      - ref: gen_ai.usage.cache_read.input_tokens
+        brief: >
+          The number of input tokens served from a provider-managed cache,
+          as reported by the provider for this inference operation.
+        requirement_level:
+          recommended: When available and non-zero.
+      - ref: gen_ai.usage.cache_write.input_tokens
+        brief: >
+          The number of input tokens written to a provider-managed cache,
+          as reported by the provider for this inference operation.
+        requirement_level:
+          recommended: When available and non-zero.
       - ref_group: attributes.gen_ai.content
       - ref_group: attributes.gen_ai.error
       - ref: gen_ai.request.max_tokens
@@ -226,19 +313,20 @@ spans:
         requirement_level:
           recommended: When available and if the request references a previous response.
       - ref: gen_ai.response.id
+        brief: The identifier for the completion returned in the response.
         requirement_level: recommended
       - ref: gen_ai.response.model
+        brief: The model name returned in the response.
         requirement_level: recommended
-        note: >
-          If available. The name of the GenAI model that provided the response. If the model is supplied by a vendor,
-          then the value must be the exact name of the model actually used. If the model is a
-          fine-tuned custom model, the value should have a more specific name than the base model that's been fine-tuned.
       - ref: gen_ai.response.finish_reasons
         requirement_level: recommended
       - ref: gen_ai.response.time_to_first_chunk
         requirement_level:
           recommended: If the request was a streaming request.
       - ref: gen_ai.usage.reasoning.output_tokens
+        brief: >
+          The number of output tokens used for reasoning (e.g. chain-of-thought, extended thinking),
+          as reported by the provider for this inference operation.
         requirement_level:
           recommended: When available and non-zero.
         note: >
@@ -739,12 +827,12 @@ spans:
       own code and to manually instrument any tool calls that automatic
       instrumentations do not cover.
 
-      Some tools are specialized, such as [Agent Skills](https://agentskills.io)
-      that agentic frameworks expose as tools. Instrumentations SHOULD distinguish
-      generic tools from specialized ones using framework-specific tool names or
-      other heuristics and record the applicable
-      [refinement](/docs/gen-ai/gen-ai-agent-spans.md#execute-tool-span).
-      They SHOULD NOT record two different spans for one call.
+      When the library API or state identifies a specialized tool call,
+      instrumentation SHOULD apply the corresponding
+      [refinement](/docs/gen-ai/gen-ai-agent-spans.md#execute-tool-span) to the execute-tool
+      span. Available refinements include
+      [agents exposed as tools](/docs/gen-ai/gen-ai-agent-spans.md#agent-as-a-tool) and
+      [Agent Skills](/docs/gen-ai/gen-ai-agent-spans.md#agent-skills).
     stability: development
     entity_associations:
       - "gen_ai.main_agent"
@@ -1028,6 +1116,38 @@ span_refinements:
         requirement_level: required
       - ref: aws.bedrock.knowledge_base.id
         requirement_level: recommended
+
+  - id: gen_ai.execute_tool.transfer.internal
+    ref: gen_ai.execute_tool.internal
+    name:
+      note: |
+        **Span name** SHOULD be `execute_tool {gen_ai.tool.name}`.
+        Semantic conventions for individual frameworks MAY specify different span name format.
+    brief: >
+      Describes a tool call that transfers work or control to another agent.
+    note: |
+      Instrumentation SHOULD use this refinement for tool calls that the
+      instrumented framework or protocol identifies as agent transfers and
+      SHOULD NOT report additional spans for these tool calls.
+      It MUST NOT be used for transfers that do not happen through a tool call.
+
+      Examples include:
+
+      - [Google ADK agent tools](https://google.github.io/adk-docs/tools-custom/function-tools/#agent-tool)
+        that invoke a configured sub-agent;
+      - [LangChain or LangGraph transfer tools](https://docs.langchain.com/oss/python/langchain/multi-agent/handoffs)
+        that return a `Command` targeting another agent node;
+      - [OpenAI Agents tools](https://openai.github.io/openai-agents-python/tools/#agents-as-tools)
+        created from another agent.
+    stability: development
+    attributes:
+      - ref: gen_ai.transfer.mode
+        requirement_level:
+          conditionally_required: When readily available from the instrumented library API or state, including when the transfer attempt fails.
+      - ref: gen_ai.transfer.target.name
+        requirement_level:
+          conditionally_required: When readily available from the instrumented library API or state, including when the transfer attempt fails.
+        sampling_relevant: true
   - id: gen_ai.execute_tool.load_skill.internal
     ref: gen_ai.execute_tool.internal
     brief: Describes a tool call that loads a skill into an agent's context.

@@ -1,0 +1,41 @@
+{
+  "spans": {
+    "a2a.client": [
+      "a2a.message.id",
+      "a2a.message.reference_task_ids",
+      "a2a.method.name",
+      "a2a.protocol.version",
+      "a2a.task.id",
+      "a2a.task.state",
+      "a2a.tenant",
+      "gen_ai.agent.description",
+      "gen_ai.agent.name",
+      "gen_ai.agent.version",
+      "gen_ai.conversation.id",
+      "server.address",
+      "server.port"
+    ],
+    "a2a.server": [
+      "a2a.message.id",
+      "a2a.message.reference_task_ids",
+      "a2a.method.name",
+      "a2a.protocol.version",
+      "a2a.task.id",
+      "a2a.task.state",
+      "a2a.tenant",
+      "client.address",
+      "client.port",
+      "error.type",
+      "gen_ai.agent.description",
+      "gen_ai.agent.name",
+      "gen_ai.agent.version",
+      "gen_ai.conversation.id",
+      "server.address",
+      "server.port"
+    ]
+  },
+  "events": {},
+  "metrics": {},
+  "findings": [],
+  "entities": {}
+}

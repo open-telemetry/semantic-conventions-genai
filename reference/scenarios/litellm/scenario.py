@@ -14,6 +14,7 @@ from reference_shared import flush_and_shutdown, reference_event_logger, referen
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"] + "/v1"
 _SERVER_ADDRESS = urlparse(os.environ["MOCK_LLM_URL"]).hostname
+_SERVER_PORT = urlparse(os.environ["MOCK_LLM_URL"]).port
 
 _reference_tracer = reference_tracer()
 _reference_meter = reference_meter()
@@ -82,6 +83,7 @@ def run_chat():
         "gen_ai.provider.name": provider_name,
         "gen_ai.request.model": request_model,
         "server.address": _SERVER_ADDRESS,
+        "server.port": _SERVER_PORT,
     }
     with _reference_tracer.start_as_current_span(
         "chat gpt-4o-mini", kind=SpanKind.CLIENT, attributes=span_attributes
@@ -170,6 +172,7 @@ def run_chat_streaming():
         "gen_ai.provider.name": provider_name,
         "gen_ai.request.model": request_model,
         "server.address": _SERVER_ADDRESS,
+        "server.port": _SERVER_PORT,
     }
     with _reference_tracer.start_as_current_span(
         "chat gpt-4o-mini", kind=SpanKind.CLIENT, attributes=span_attributes_2
@@ -259,6 +262,7 @@ def run_chat_tool_call():
         "gen_ai.provider.name": provider_name,
         "gen_ai.request.model": request_model,
         "server.address": _SERVER_ADDRESS,
+        "server.port": _SERVER_PORT,
     }
     with _reference_tracer.start_as_current_span(
         "chat gpt-4o-mini", kind=SpanKind.CLIENT, attributes=span_attributes_3
@@ -311,6 +315,7 @@ def run_embeddings():
         "gen_ai.provider.name": provider_name,
         "gen_ai.request.model": request_model,
         "server.address": _SERVER_ADDRESS,
+        "server.port": _SERVER_PORT,
     }
     start_time = time.perf_counter()
     metric_attributes = dict(span_attributes_4)

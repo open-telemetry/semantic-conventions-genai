@@ -156,10 +156,24 @@
         },
         "GenericPart": {
             "additionalProperties": true,
-            "description": "Represents an arbitrary message part with any type and properties.\nThis allows for extensibility with custom message part types.",
+            "description": "Fallback for consumers when a message part has a `type` not defined by this\nversion of semantic conventions. When the instrumented API sends or returns\ncontent that none of the defined part types fit, record the part keeping\nthe provider's fields. Consumers SHOULD expect parts with `type` values\nthey don't recognize, including provider-specific parts and part types\nadded in newer versions of semantic conventions.",
             "properties": {
                 "type": {
-                    "description": "The type of the content captured in this part.",
+                    "description": "The type of the content captured in this part. When recording a provider-specific part, it is RECOMMENDED to prefix the value with `gen_ai.provider.name` (for example `anthropic.search_result`) to avoid name collisions with current or future part types defined by semantic conventions.",
+                    "not": {
+                        "enum": [
+                            "text",
+                            "tool_call",
+                            "tool_call_response",
+                            "server_tool_call",
+                            "server_tool_call_response",
+                            "blob",
+                            "file",
+                            "uri",
+                            "reasoning",
+                            "compaction"
+                        ]
+                    },
                     "title": "Type",
                     "type": "string"
                 }
