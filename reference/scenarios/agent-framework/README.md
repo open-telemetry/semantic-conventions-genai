@@ -4,7 +4,9 @@ Microsoft Agent Framework is an **agent framework** with built-in OpenTelemetry
 instrumentation, so this scenario turns that on
 (`enable_sensitive_telemetry`) and exercises the library rather than wrapping
 it. It owns agents, workflows and tool execution, and its chat clients report
-the model call themselves.
+the model call themselves. Native telemetry emits model-call spans and duration
+measurements; this scenario publishes those durations as
+`gen_ai.client.inference.duration` with an OTel SDK view.
 
 | Operation | Should be instrumented here | Status |
 | --- | --- | --- |

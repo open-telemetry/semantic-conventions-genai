@@ -24,7 +24,7 @@ import argparse
 import json
 from enum import StrEnum
 from pathlib import Path
-from typing import Annotated, Any, List, Literal, Optional, Union
+from typing import Annotated, Any, List, Literal, Optional, Union, get_args
 
 from pydantic import (
     BaseModel,
@@ -251,19 +251,19 @@ class UriPart(BaseModel):
     model_config = ConfigDict(extra="allow")
 
 
-class GenericPart(BaseModel):
-    """
-    Represents an arbitrary message part with any type and properties.
-    This allows for extensibility with custom message part types.
-    """
+def _not_known_types(known: Any) -> dict[str, Any]:
+    """Build a `{"not": {"enum": [...]}}` schema constraint from Literal `type` fields in `known`."""
+    models = get_args(known) or (known,)
+    return {
+        "not": {
+            "enum": [
+                get_args(m.model_fields["type"].annotation)[0] for m in models
+            ]
+        }
+    }
 
-    type: str = Field(description="The type of the content captured in this part.")
 
-    model_config = ConfigDict(extra="allow")
-
-
-# This Union without discriminator will generate anyOf in JSON schema
-MessagePart = Union[
+KnownMessagePart = Union[
     TextPart,
     ToolCallRequestPart,
     ToolCallResponsePart,
@@ -274,18 +274,63 @@ MessagePart = Union[
     UriPart,
     ReasoningPart,
     CompactionPart,
-    GenericPart,  # Catch-all for any other type
     # Add other message part types here as needed,
     # e.g. structured output, hosted tool call, etc.
+]
+
+
+class GenericPart(BaseModel):
+    """
+    Fallback for consumers when a message part has a `type` not defined by this
+    version of semantic conventions. When the instrumented API sends or returns
+    content that none of the defined part types fit, record the part keeping
+    the provider's fields. Consumers SHOULD expect parts with `type` values
+    they don't recognize, including provider-specific parts and part types
+    added in newer versions of semantic conventions.
+    """
+
+    type: str = Field(
+        description=(
+            "The type of the content captured in this part. "
+            "When recording a provider-specific part, it is RECOMMENDED to prefix "
+            "the value with `gen_ai.provider.name` (for example `anthropic.search_result`) "
+            "to avoid name collisions with current or future part types defined by semantic conventions."
+        ),
+        json_schema_extra=_not_known_types(KnownMessagePart),
+    )
+
+    model_config = ConfigDict(extra="allow")
+
+
+# This Union without discriminator will generate anyOf in JSON schema
+MessagePart = Union[
+    KnownMessagePart,
+    GenericPart,  # Catch-all for any other type
 ]
 
 # System instructions are modeled as their own list of parts, independent of
 # the input/output message parts. TextPart is the only member today;
 # add other system instruction part types once there is an existing
 # provider with non-text system instructions.
+class GenericSystemInstructionPart(GenericPart):
+    """
+    Fallback for consumers when a message part has a `type` not defined by this
+    version of semantic conventions. When the instrumented API sends or returns
+    content that none of the defined part types fit, record the part keeping
+    the provider's fields. Consumers SHOULD expect parts with `type` values
+    they don't recognize, including provider-specific parts and part types
+    added in newer versions of semantic conventions.
+    """
+
+    type: str = Field(
+        description=GenericPart.model_fields["type"].description,
+        json_schema_extra=_not_known_types(TextPart),
+    )
+
+
 SystemInstructionPart = Union[
     TextPart,
-    GenericPart,  # Catch-all for any other type
+    GenericSystemInstructionPart,  # Catch-all for any other type
     # Add other message part types here as needed
 ]
 

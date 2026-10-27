@@ -11,3 +11,26 @@ env:
 scenarios:
   reference:
     run: uv run --frozen --python 3.12 --project . python scenario.py
+    expected_violations:
+      - id: genai_expected_attribute_missing
+        context:
+          missing_attribute: gen_ai.response.finish_reasons
+          operation: invoke_agent
+        reason: The agent response exposes no per-generation finish reason; completion status alone does not supply one.
+    spans:
+      - match:
+          attributes:
+            gen_ai.operation.name: chat
+          type: gen_ai.client.inference
+      - match:
+          attributes:
+            gen_ai.operation.name: generate_content
+          type: gen_ai.client.inference
+      - match:
+          attributes:
+            gen_ai.operation.name: text_completion
+          type: gen_ai.client.inference
+      - match:
+          attributes:
+            gen_ai.operation.name: embeddings
+          type: gen_ai.client.embeddings

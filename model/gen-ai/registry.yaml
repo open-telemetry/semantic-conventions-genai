@@ -66,10 +66,10 @@ attributes:
           stability: development
           value: "groq"
           brief: '[Groq](https://groq.com/)'
-        - id: mistral_ai
+        - id: mistral
           stability: development
-          value: "mistral_ai"
-          brief: '[Mistral AI](https://mistral.ai/)'
+          value: "mistral"
+          brief: '[Mistral](https://mistral.ai/)'
         - id: moonshot_ai
           stability: development
           value: "moonshot_ai"
@@ -482,6 +482,55 @@ attributes:
     brief: The version of the GenAI agent.
     examples: ["1.0.0", "2025-05-01"]
     stability: development
+  - key: gen_ai.transfer.mode
+    type:
+      members:
+        - id: return_to_caller
+          value: "return_to_caller"
+          brief: The initiator waits for the target to finish and then resumes execution.
+          stability: development
+        - id: pass_control
+          value: "pass_control"
+          brief: The initiator does not wait for the target to finish. The target takes control of the remaining work.
+          stability: development
+    brief: Describes how control passes to the transfer target.
+    stability: development
+  - key: gen_ai.transfer.target.name
+    type: string
+    brief: The human-readable name of the agent targeted by the transfer.
+    examples: ["weather_agent"]
+    stability: development
+  - key: gen_ai.main_agent.id
+    type: string
+    brief: The unique and stable identifier of the top-level Generative AI agent in the process
+    note: >
+      For main agents, this SHOULD be the provider-assigned stable identifier of the
+      agent resource such as [AWS Bedrock agent ARN](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_Agent.html)
+      or [GCP Agent Registry identifier](https://docs.cloud.google.com/agent-registry/concepts#agent-identifier).
+
+      Instrumentation MUST NOT generate `gen_ai.main_agent.id` from an in-memory or
+      process-local identifier. If no stable identifier is available, the agent entity
+      is not emitted, and instrumentation continues to report `gen_ai.agent.name` at
+      the span level when relevant.
+
+    examples: ['asst_5j66UpCpwteGg4YSxUnt7lPY', 'arn:aws:bedrock:us-east-1:123:agent/42', 'urn:agent:projects-123:projects:123:locations:us-east1:aiplatform:reasoningEngines:456']
+    stability: development
+  - key: gen_ai.main_agent.name
+    type: string
+    brief: The human-readable name of the top-level Generative AI agent in the process.
+    note: >
+      In Agent-to-Agent (A2A) communication, this maps to the `name` property declared
+      in the Agent Card.
+    examples: ["Math Tutor", "Fiction Writer"]
+    stability: development
+  - key: gen_ai.main_agent.description
+    type: string
+    brief: The free-form description of the top-level Generative AI agent in the process.
+    note: >
+      In Agent-to-Agent (A2A) communication, this maps to the `description` property declared
+      in the Agent Card.
+    examples: ["Helps with math problems", "Generates fiction stories"]
+    stability: development
   - key: gen_ai.tool.name
     type: string
     brief: Name of the tool utilized by the agent.
@@ -489,7 +538,10 @@ attributes:
     stability: development
   - key: gen_ai.tool.call.id
     type: string
-    brief: The tool call identifier.
+    brief: The tool call identifier supplied by the model or provider.
+    note: |
+      This attribute SHOULD be set to the identifier received from the model or provider
+      if and only if one was supplied.
     examples: ['call_mszuSIzqtI65i1wAUOE8w5H4']
     stability: development
   - key: gen_ai.tool.description
@@ -802,7 +854,7 @@ attributes:
     brief: The search query used to retrieve memories.
     note: |
       Instrumentations SHOULD NOT capture this attribute by default. Capture SHOULD be gated
-      by an explicit user opt-in, for example `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT`.
+      by an explicit user opt-in via [content capture configuration](/docs/gen-ai/gen-ai-spans.md#content-capture-configuration).
 
       > [!Warning]
       > This attribute may contain sensitive information.
@@ -816,7 +868,7 @@ attributes:
         json_schema: model/gen-ai/gen-ai-memory-records.json
     note: |
       Instrumentations SHOULD NOT capture this attribute by default. Capture SHOULD be gated
-      by an explicit user opt-in, for example `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT`.
+      by an explicit user opt-in via [content capture configuration](/docs/gen-ai/gen-ai-spans.md#content-capture-configuration).
 
       > [!Warning]
       > This attribute may contain sensitive information including user/PII data.
@@ -952,6 +1004,11 @@ attributes:
       generations returned by the provider, not with a filtered or truncated
       `gen_ai.output.messages` value.
 
+      When an operation ends in an error, this attribute SHOULD only be set
+      when the operation produced output, including partial streamed output.
+      Instrumentation SHOULD NOT synthesize output content for a failed
+      operation.
+
       > [!Warning]
       > This attribute is likely to contain sensitive information including user/PII data.
 
@@ -1062,15 +1119,15 @@ attributes:
     note: |
       This SHOULD be the identifier provided by the skill source or runtime.
       Instrumentations SHOULD NOT generate an identifier when none is available.
+      A namespaced skill name is an identifier only if the source or runtime uses it as one.
     examples: ["skill_29bbe8a7", "code-review_filesystem-default"]
     stability: development
   - key: gen_ai.skill.version
     type: string
     brief: The version of the Agent Skill.
     note: |
-      The version string can follow any versioning scheme used by the skill
-      source or runtime. Instrumentations SHOULD record the version that was
-      resolved for the operation when it is available.
+      The version string can follow any versioning scheme used by the skill source or runtime.
+      Instrumentations SHOULD record the version resolved for the operation and SHOULD NOT record unresolved aliases such as `latest`.
     examples: ["1.0.0", "3", "2026-09-30"]
     stability: development
   - key: gen_ai.skill.description

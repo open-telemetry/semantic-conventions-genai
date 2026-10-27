@@ -61,16 +61,14 @@ def run_agent_reference():
     tool_defs = [
         {
             "type": "function",
-            "function": {
-                "name": "get_weather",
-                "description": "Get the current weather.",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "location": {"type": "string", "description": "City name"},
-                    },
-                    "required": ["location"],
+            "name": "get_weather",
+            "description": "Get the current weather.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "location": {"type": "string", "description": "City name"},
                 },
+                "required": ["location"],
             },
         }
     ]

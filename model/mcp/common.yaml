@@ -41,6 +41,10 @@ attribute_groups:
           [CallToolResult](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/9c8a44e47e16b789a1f9d47c89ea23ed13a37cf9/schema/2025-06-18/schema.ts#L715)
           is returned with `isError` set to `true`, this attribute SHOULD be set to
           `tool_error`.
+
+          `rpc.response.status_code` carries the same string representation of
+          the JSON-RPC error code. Unlike `rpc.response.status_code`,
+          `error.type` is also set when no JSON-RPC error response is available.
       - ref: mcp.method.name
         requirement_level: required
       - ref: mcp.protocol.version
@@ -86,7 +90,7 @@ attribute_groups:
     visibility: internal
     attributes:
       - ref: network.transport
-        brief: The transport protocol used for the MCP session.
+        brief: The transport protocol used for the observed MCP operation.
         note: |
           This attribute SHOULD be set to `tcp` or `quic` if the transport protocol
           is HTTP. It SHOULD be set to `pipe` if the transport is stdio.
@@ -97,13 +101,13 @@ attribute_groups:
         examples:
           - "http"
           - "websocket"
+      - ref: jsonrpc.protocol.version
+        requirement_level:
+          recommended: When it's not `2.0`.
       - ref: network.protocol.version
         note: ""  # overriding the default note
         requirement_level:
           recommended: When applicable.
-      - ref: jsonrpc.protocol.version
-        requirement_level:
-          recommended: When it's not `2.0`.
 
   - id: mcp.client.address_and_port.attributes
     visibility: internal

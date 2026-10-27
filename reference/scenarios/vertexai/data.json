@@ -1,19 +1,11 @@
 {
   "spans": {
-    "gen_ai.execute_tool.internal": [
-      "gen_ai.operation.name",
-      "gen_ai.tool.call.arguments",
-      "gen_ai.tool.call.id",
-      "gen_ai.tool.call.result",
-      "gen_ai.tool.description",
-      "gen_ai.tool.name",
-      "gen_ai.tool.type"
-    ],
-    "gen_ai.inference.client": [
+    "gen_ai.client.inference": [
       "gen_ai.operation.name",
       "gen_ai.provider.name",
       "gen_ai.request.model",
       "gen_ai.response.finish_reasons",
+      "gen_ai.response.id",
       "gen_ai.tool.definitions",
       "gen_ai.usage.audio.cache_read.input_tokens",
       "gen_ai.usage.audio.input_tokens",
@@ -25,7 +17,17 @@
       "gen_ai.usage.reasoning.output_tokens",
       "gen_ai.usage.text.cache_read.input_tokens",
       "gen_ai.usage.text.input_tokens",
-      "gen_ai.usage.text.output_tokens"
+      "gen_ai.usage.text.output_tokens",
+      "server.address"
+    ],
+    "gen_ai.execute_tool.internal": [
+      "gen_ai.operation.name",
+      "gen_ai.tool.call.arguments",
+      "gen_ai.tool.call.id",
+      "gen_ai.tool.call.result",
+      "gen_ai.tool.description",
+      "gen_ai.tool.name",
+      "gen_ai.tool.type"
     ]
   },
   "events": {
@@ -36,6 +38,7 @@
       "gen_ai.provider.name",
       "gen_ai.request.model",
       "gen_ai.response.finish_reasons",
+      "gen_ai.response.id",
       "gen_ai.usage.audio.cache_read.input_tokens",
       "gen_ai.usage.audio.input_tokens",
       "gen_ai.usage.cache_read.input_tokens",
@@ -50,39 +53,6 @@
     ]
   },
   "metrics": {},
-  "findings": [
-    {
-      "id": "genai_content_schema",
-      "message": "Attribute 'gen_ai.tool.definitions' value does not conform to the GenAI schema: {\"function_declarations\":[{\"description\":\"Get the current weather\",\"name\":\"get_weather\",\"parameters\":{\"properties\":{\"location\":{\"description\":\"City name\",\"type\":\"string\"}},\"required\":[\"location\"],\"type\":\"object\"}}]} is not valid under any of the schemas listed in the 'anyOf' keyword",
-      "context": {
-        "attribute": "gen_ai.tool.definitions",
-        "errors": "{\"function_declarations\":[{\"description\":\"Get the current weather\",\"name\":\"get_weather\",\"parameters\":{\"properties\":{\"location\":{\"description\":\"City name\",\"type\":\"string\"}},\"required\":[\"location\"],\"type\":\"object\"}}]} is not valid under any of the schemas listed in the 'anyOf' keyword"
-      }
-    },
-    {
-      "id": "genai_expected_attribute_missing",
-      "message": "Span 'chat gemini-2.0-flash' (operation 'chat') is missing expected attribute 'gen_ai.response.id'",
-      "context": {
-        "missing_attribute": "gen_ai.response.id",
-        "operation": "chat"
-      }
-    },
-    {
-      "id": "genai_expected_attribute_missing",
-      "message": "Span 'chat gemini-2.0-flash' (operation 'chat') is missing expected attribute 'gen_ai.response.model'",
-      "context": {
-        "missing_attribute": "gen_ai.response.model",
-        "operation": "chat"
-      }
-    },
-    {
-      "id": "genai_expected_attribute_missing",
-      "message": "Span 'chat gemini-2.0-flash' (operation 'chat') is missing expected attribute 'server.address'",
-      "context": {
-        "missing_attribute": "server.address",
-        "operation": "chat"
-      }
-    }
-  ],
+  "findings": [],
   "entities": {}
 }

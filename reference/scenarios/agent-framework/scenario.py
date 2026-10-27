@@ -8,7 +8,7 @@ import sys
 from typing import Annotated
 
 from opentelemetry import trace
-from reference_shared import flush_and_shutdown, setup_otel
+from reference_shared import flush_and_shutdown, inference_duration_view, setup_otel
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"] + "/v1"
 SKILLS_DIR = pathlib.Path(__file__).parent / "skills"
@@ -322,7 +322,7 @@ async def run_skills():
 def main():
     print("=== Native Telemetry: Microsoft Agent Framework ===")
 
-    tp, lp, mp = setup_otel()
+    tp, lp, mp = setup_otel(metric_views=(inference_duration_view(),))
 
     asyncio.run(run_agent_tool_call())
     asyncio.run(run_tool_call())

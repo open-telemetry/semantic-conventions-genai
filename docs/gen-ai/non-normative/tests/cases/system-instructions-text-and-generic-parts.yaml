@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=../case.schema.json
+description: >
+  System instructions are a list of text parts, with generic parts for
+  anything else (including provider-specific parts and message part types
+  not defined for system instructions)
+schema: gen-ai-system-instructions.json
+document: [
+  { "type": "text", "content": "You are a helpful bot" },
+  { "type": "anthropic.cache_control", "cache_control": { "type": "ephemeral" } },
+  { "type": "uri", "modality": "document", "mime_type": "application/pdf", "uri": "https://example.com/policy.pdf" }
+]
+# Regenerate with `uv run pytest --update-snapshots`, do not edit by hand.
+errors: []

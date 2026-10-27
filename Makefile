@@ -43,7 +43,7 @@ endif
 # command line to compare against a different ref or fork.
 BASELINE_REGISTRY := https://github.com/trask/semantic-conventions-genai.git[model]
 
-.PHONY: check-policies generate-registry generate-docs generate-json-schemas generate-all clean package-dev \
+.PHONY: check-policies generate-registry generate-docs generate-json-schemas test-json-schemas generate-all clean package-dev \
 	generate-reference-reports update-upstream-links
 
 # Upstream semantic-conventions version, derived from the pinned git tag in the
@@ -104,6 +104,12 @@ update-upstream-links:
 generate-json-schemas:
 	cd docs/gen-ai/non-normative && uv run models.py $(CURDIR)/model/gen-ai
 
+# Validate the sample documents under docs/gen-ai/non-normative/tests/cases/
+# against the committed JSON schemas and compare with their snapshotted errors.
+# Run `uv run pytest --update-snapshots` there to refresh the snapshots.
+test-json-schemas:
+	cd docs/gen-ai/non-normative && uv run --locked pytest
+
 # Update reference reports (README.md and reports/) from data.json files.
 generate-reference-reports:
 	cd reference && uv run --frozen update-reports
@@ -111,6 +117,9 @@ generate-reference-reports:
 # Run every regeneration the repo owns (weaver-driven + pydantic-driven + reports).
 # CI checks that all committed outputs match what this target generates.
 generate-all: update-upstream-links generate-registry generate-docs generate-json-schemas generate-reference-reports
+	# Again over the freshly generated docs: snippets inherit upstream `note`
+	# text whose links are root-relative to the upstream repo.
+	$(MAKE) update-upstream-links
 
 # Package the registry into a publication artifact. The version comes from
 # model/manifest.yaml's schema_url; bump it there to cut a new release.

@@ -2,12 +2,15 @@
 
 import asyncio
 import contextlib
+import io
 import json
 import os
 import pathlib
 import shutil
 import tempfile
 import time
+import zipfile
+from unittest.mock import patch
 
 from opentelemetry import trace as _trace
 from opentelemetry.sdk.trace import SpanProcessor
@@ -164,12 +167,13 @@ def run_agent_reference():
 
     tool_defs = [
         {
+            "type": "function",
             "name": "get_weather",
             "description": "Get the current weather.",
             "parameters": {
-                "type": "OBJECT",
+                "type": "object",
                 "properties": {
-                    "location": {"type": "STRING", "description": "City name"},
+                    "location": {"type": "string", "description": "City name"},
                 },
                 "required": ["location"],
             },
@@ -385,7 +389,298 @@ def run_memory_reference():
     asyncio.run(_run())
 
 
-def run_skills_reference():
+def run_multi_agent_delegation_reference():
+    """Delegation: a caller agent invokes a sub-agent exposed via ``AgentTool``.
+
+    ``AgentTool`` runs the wrapped agent and returns its result to the caller.
+    The caller-owned ``execute_tool`` span records the transfer; the child
+    ``invoke_agent`` span records the target's execution.
+    """
+    from google.adk.agents import Agent
+    from google.adk.models.google_llm import Gemini
+    from google.adk.runners import Runner
+    from google.adk.sessions import InMemorySessionService
+    from google.adk.tools.agent_tool import AgentTool
+    from google.genai import types
+
+    print("  [delegation] agent-as-tool via AgentTool (reference implementation)")
+
+    os.environ.setdefault("GOOGLE_API_KEY", "mock-key")
+    request_model = "gemini-2.0-flash"
+    input_text = "What's the weather in Seattle?"
+
+    with _suppress_adk_native_telemetry():
+        # The target sub-agent has no tools, so its mock model call returns text.
+        specialist = Agent(
+            name="weather_specialist",
+            description="Answers weather questions for a given location.",
+            model=Gemini(model=request_model, base_url=MOCK_BASE_URL),
+            instruction="You report the weather.",
+        )
+        agent_tool = AgentTool(agent=specialist)
+
+        original_run_async = agent_tool.run_async
+        original_runner_run_async = Runner.run_async
+
+        async def _traced_run_async(*, args, tool_context):
+            transfer_attributes = {
+                "gen_ai.agent.name": tool_context.agent_name,
+                "gen_ai.transfer.mode": "return_to_caller",
+                "gen_ai.transfer.target.name": agent_tool.agent.name,
+            }
+            assert transfer_attributes == {
+                "gen_ai.agent.name": "root_agent",
+                "gen_ai.transfer.mode": "return_to_caller",
+                "gen_ai.transfer.target.name": "weather_specialist",
+            }
+            tool_span_attributes = {
+                "gen_ai.operation.name": "execute_tool",
+                "gen_ai.tool.name": agent_tool.name,
+                "gen_ai.tool.type": "function",
+                "gen_ai.conversation.id": tool_context.session.id,
+                **transfer_attributes,
+            }
+            with _reference_tracer.start_as_current_span(
+                f"execute_tool {agent_tool.name}", attributes=tool_span_attributes
+            ) as tool_span:
+                if tool_context.function_call_id:
+                    tool_span.set_attribute("gen_ai.tool.call.id", tool_context.function_call_id)
+                tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps(args))
+                result = await original_run_async(args=args, tool_context=tool_context)
+                tool_span.set_attribute("gen_ai.tool.call.result", str(result))
+            return result
+
+        async def _traced_specialist_run_async(active_runner, *, session_id, **kwargs):
+            agent = active_runner.agent
+            if agent is not agent_tool.agent:
+                async for event in original_runner_run_async(active_runner, session_id=session_id, **kwargs):
+                    yield event
+                return
+            sub_agent_span_attributes = {
+                "gen_ai.operation.name": "invoke_agent",
+                "gen_ai.request.model": agent.model.model,
+                "gen_ai.agent.name": agent.name,
+                "gen_ai.agent.description": agent.description,
+                "gen_ai.conversation.id": session_id,
+            }
+            with _reference_tracer.start_as_current_span(
+                f"invoke_agent {agent.name}", attributes=sub_agent_span_attributes
+            ) as sub_agent_span:
+                input_tokens = None
+                output_tokens = None
+                last_text = ""
+                async for event in original_runner_run_async(active_runner, session_id=session_id, **kwargs):
+                    if event.author == agent.name:
+                        usage = event.usage_metadata
+                        if usage is not None:
+                            if usage.prompt_token_count is not None:
+                                input_tokens = (input_tokens or 0) + usage.prompt_token_count
+                            if usage.candidates_token_count is not None:
+                                output_tokens = (output_tokens or 0) + usage.candidates_token_count
+                        if event.finish_reason is not None:
+                            finish_reason = getattr(event.finish_reason, "value", event.finish_reason)
+                            sub_agent_span.set_attribute("gen_ai.response.finish_reasons", [str(finish_reason).lower()])
+                        if event.content and event.content.parts:
+                            for part in event.content.parts:
+                                if part.text:
+                                    last_text = part.text
+                    yield event
+                if input_tokens is not None:
+                    sub_agent_span.set_attribute("gen_ai.usage.input_tokens", input_tokens)
+                if output_tokens is not None:
+                    sub_agent_span.set_attribute("gen_ai.usage.output_tokens", output_tokens)
+                if last_text:
+                    sub_agent_span.set_attribute(
+                        "gen_ai.output.messages",
+                        json.dumps([{"role": "assistant", "parts": [{"type": "text", "content": last_text}]}]),
+                    )
+
+        root_agent = Agent(
+            name="root_agent",
+            description="Routes questions to specialist agents.",
+            model=Gemini(model=request_model, base_url=MOCK_BASE_URL),
+            instruction="Delegate weather questions to the weather_specialist tool.",
+            tools=[agent_tool],
+        )
+        session_service = InMemorySessionService()
+        runner = Runner(agent=root_agent, app_name="delegation_app", session_service=session_service)
+
+        async def _run():
+            session = await session_service.create_session(app_name="delegation_app", user_id="test_user")
+            agent_span_attributes = {
+                "gen_ai.operation.name": "invoke_agent",
+                "gen_ai.request.model": request_model,
+                "gen_ai.agent.name": root_agent.name,
+                "gen_ai.agent.description": root_agent.description,
+            }
+            with _reference_tracer.start_as_current_span(
+                "invoke_agent root_agent", attributes=agent_span_attributes
+            ) as agent_span:
+                agent_span.set_attribute("gen_ai.conversation.id", session.id)
+                agent_span.set_attribute(
+                    "gen_ai.input.messages",
+                    json.dumps([{"role": "user", "parts": [{"type": "text", "content": input_text}]}]),
+                )
+                last_text = ""
+                finish_reason = None
+                input_tokens = None
+                output_tokens = None
+                async for event in runner.run_async(
+                    user_id="test_user",
+                    session_id=session.id,
+                    new_message=types.Content(role="user", parts=[types.Part(text=input_text)]),
+                ):
+                    if event.author == root_agent.name:
+                        usage = event.usage_metadata
+                        if usage is not None:
+                            if usage.prompt_token_count is not None:
+                                input_tokens = (input_tokens or 0) + usage.prompt_token_count
+                            if usage.candidates_token_count is not None:
+                                output_tokens = (output_tokens or 0) + usage.candidates_token_count
+                        if event.finish_reason is not None:
+                            finish_reason = getattr(event.finish_reason, "value", event.finish_reason)
+                        if event.content and event.content.parts:
+                            for part in event.content.parts:
+                                if part.text:
+                                    last_text = part.text
+                if input_tokens is not None:
+                    agent_span.set_attribute("gen_ai.usage.input_tokens", input_tokens)
+                if output_tokens is not None:
+                    agent_span.set_attribute("gen_ai.usage.output_tokens", output_tokens)
+                if finish_reason is not None:
+                    agent_span.set_attribute("gen_ai.response.finish_reasons", [str(finish_reason).lower()])
+                if last_text:
+                    agent_span.set_attribute(
+                        "gen_ai.output.messages",
+                        json.dumps([{"role": "assistant", "parts": [{"type": "text", "content": last_text}]}]),
+                    )
+                    print(f"    -> {last_text[:60]}")
+
+        with (
+            patch.object(agent_tool, "run_async", _traced_run_async),
+            patch.object(Runner, "run_async", _traced_specialist_run_async),
+        ):
+            asyncio.run(_run())
+
+
+def run_multi_agent_handoff_reference():
+    """Pass control with ADK's built-in transfer tool and sub-agent runner."""
+    from google.adk.agents import Agent, BaseAgent
+    from google.adk.models.google_llm import Gemini
+    from google.adk.runners import Runner
+    from google.adk.sessions import InMemorySessionService
+    from google.adk.tools.transfer_to_agent_tool import TransferToAgentTool
+    from google.genai import types
+
+    print("  [handoff] native ADK transfer_to_agent (reference implementation)")
+    os.environ.setdefault("GOOGLE_API_KEY", "mock-key")
+    request_model = "gemini-2.0-flash"
+    specialist = Agent(
+        name="weather_specialist",
+        description="Answers weather questions.",
+        model=Gemini(model=request_model, base_url=MOCK_BASE_URL),
+        instruction="Report the weather.",
+        disallow_transfer_to_parent=True,
+        disallow_transfer_to_peers=True,
+    )
+    root_agent = Agent(
+        name="root_agent",
+        model=Gemini(model=request_model, base_url=MOCK_BASE_URL),
+        instruction="Transfer weather questions to weather_specialist.",
+        sub_agents=[specialist],
+    )
+    session_service = InMemorySessionService()
+    runner = Runner(agent=root_agent, app_name="handoff_app", session_service=session_service)
+    original_tool_run = TransferToAgentTool.run_async
+    original_agent_run = BaseAgent.run_async
+
+    async def traced_tool_run(tool, *, args, tool_context):
+        attributes = {
+            "gen_ai.operation.name": "execute_tool",
+            "gen_ai.tool.name": tool.name,
+            "gen_ai.tool.type": "function",
+            "gen_ai.agent.name": tool_context.agent_name,
+            "gen_ai.conversation.id": tool_context.session.id,
+        }
+        with _reference_tracer.start_as_current_span(f"execute_tool {tool.name}", attributes=attributes) as span:
+            if tool_context.function_call_id:
+                span.set_attribute("gen_ai.tool.call.id", tool_context.function_call_id)
+            span.set_attribute("gen_ai.tool.call.arguments", json.dumps(args))
+            result = await original_tool_run(tool, args=args, tool_context=tool_context)
+            target_name = tool_context.actions.transfer_to_agent
+            if target_name:
+                span.set_attribute("gen_ai.transfer.mode", "pass_control")
+                span.set_attribute("gen_ai.transfer.target.name", target_name)
+            span.set_attribute("gen_ai.tool.call.result", json.dumps(result))
+            return result
+
+    async def traced_agent_run(agent, parent_context):
+        attributes = {
+            "gen_ai.operation.name": "invoke_agent",
+            "gen_ai.agent.name": agent.name,
+            "gen_ai.request.model": agent.model.model,
+            "gen_ai.conversation.id": parent_context.session.id,
+        }
+        span = _reference_tracer.start_span(f"invoke_agent {agent.name}", attributes=attributes)
+        input_tokens = None
+        output_tokens = None
+        try:
+            async with contextlib.aclosing(original_agent_run(agent, parent_context)) as events:
+                while True:
+                    # Restore agent context for each SDK step, not across a yield
+                    # where Runner restores the caller's context.
+                    with _trace.use_span(span, end_on_exit=False):
+                        event = await anext(events, None)
+                    if event is None:
+                        break
+                    if event.author == agent.name:
+                        if event.usage_metadata is not None:
+                            if event.usage_metadata.prompt_token_count is not None:
+                                input_tokens = (input_tokens or 0) + event.usage_metadata.prompt_token_count
+                            if event.usage_metadata.candidates_token_count is not None:
+                                output_tokens = (output_tokens or 0) + event.usage_metadata.candidates_token_count
+                        if event.finish_reason is not None:
+                            span.set_attribute("gen_ai.response.finish_reasons", [event.finish_reason.value.lower()])
+                        if event.content and event.content.parts:
+                            text = "".join(part.text for part in event.content.parts if part.text)
+                            if text:
+                                span.set_attribute(
+                                    "gen_ai.output.messages",
+                                    json.dumps([{"role": "assistant", "parts": [{"type": "text", "content": text}]}]),
+                                )
+                    yield event
+        finally:
+            if input_tokens is not None:
+                span.set_attribute("gen_ai.usage.input_tokens", input_tokens)
+            if output_tokens is not None:
+                span.set_attribute("gen_ai.usage.output_tokens", output_tokens)
+            span.end()
+
+    async def run():
+        session = await session_service.create_session(app_name=runner.app_name, user_id="test_user")
+        with _reference_tracer.start_as_current_span(
+            f"invoke_workflow {runner.app_name}",
+            attributes={"gen_ai.operation.name": "invoke_workflow", "gen_ai.workflow.name": runner.app_name},
+        ):
+            async for event in runner.run_async(
+                user_id=session.user_id,
+                session_id=session.id,
+                new_message=types.Content(role="user", parts=[types.Part(text="What's the weather in Seattle?")]),
+            ):
+                if event.content and event.content.parts:
+                    for part in event.content.parts:
+                        if part.text:
+                            print(f"    -> {part.text[:60]}")
+
+    with (
+        _suppress_adk_native_telemetry(),
+        patch.object(TransferToAgentTool, "run_async", traced_tool_run),
+        patch.object(BaseAgent, "run_async", traced_agent_run),
+    ):
+        asyncio.run(run())
+
+
+def run_skills_reference(registry=None):
     """Scenario: Agent Skills usage via Google ADK's SkillToolset.
 
     ADK implements the [Agent Skills](https://agentskills.io) lifecycle as a
@@ -401,6 +696,7 @@ def run_skills_reference():
     from google.adk.agents import Agent
     from google.adk.apps.app import App
     from google.adk.environment import LocalEnvironment
+    from google.adk.integrations.skill_registry.gcp_skill_registry import GCPSkillRegistry
     from google.adk.models.google_llm import Gemini
     from google.adk.runners import Runner
     from google.adk.sessions import InMemorySessionService
@@ -419,8 +715,9 @@ def run_skills_reference():
     # `direct`: the application hands each skill folder to `load_skill_from_dir`,
     # so the load boundary owns the location the skill came from, and ADK records
     # it on the `Skill` it returns as `_uri`.
-    skills = [load_skill_from_dir((SKILLS_DIR / name).resolve()) for name in ("code-review",)]
-    skills_by_name = {skill.name: skill for skill in skills}
+    skills = [] if registry else [load_skill_from_dir((SKILLS_DIR / "code-review").resolve())]
+    invocation_name = "example.code-review" if registry else "code-review"
+    recorded_skills = []
 
     class _TracedSkillTool:
         """Records an `execute_tool` span around `BaseTool.run_async`.
@@ -461,14 +758,24 @@ def run_skills_reference():
                 if tool_context.function_call_id:
                     span.set_attribute("gen_ai.tool.call.id", tool_context.function_call_id)
                 span.set_attribute("gen_ai.tool.call.arguments", json.dumps(args))
-                # `direct`: the toolset holds the `Skill` the call names, so its
-                # frontmatter and the location ADK loaded it from are in hand.
-                skill = skills_by_name.get(skill_name)
+                result = await super().run_async(args=args, tool_context=tool_context)
+                # ADK retains local skills and caches registry results per invocation.
+                skill = self._toolset._skills.get(skill_name)
+                if skill is None:
+                    skill = self._toolset._fetched_skill_cache.get(tool_context.invocation_id, {}).get(skill_name)
                 if skill is not None:
                     span.set_attribute("gen_ai.skill.description", skill.description)
                     if skill._uri is not None:
                         span.set_attribute("gen_ai.skill.source.uri", skill._uri)
-                result = await super().run_async(args=args, tool_context=tool_context)
+                        source = self._toolset._registry
+                        if isinstance(source, GCPSkillRegistry) and skill._uri.startswith(source.base_url + "/"):
+                            # GCPSkillRegistry stores the server's resolved defaultRevision in _uri.
+                            # Extract the IDs from that documented resource format.
+                            resource = skill._uri.removeprefix(source.base_url + "/")
+                            skill_id, separator, version = resource.rpartition("/revisions/")
+                            if separator and version:
+                                span.set_attribute("gen_ai.skill.id", skill_id)
+                                span.set_attribute("gen_ai.skill.version", version)
                 # `direct`: every skill tool reports a failure as an `error_code` on
                 # its result, which is the value ADK's own telemetry hook reads too.
                 error_type = result.get("error_code") if isinstance(result, dict) else None
@@ -478,6 +785,7 @@ def run_skills_reference():
                 else:
                     span.set_attribute("gen_ai.tool.call.result", json.dumps(result, default=str))
                 self._record_skill_signals(span, args, result, error_type, tool_context)
+                recorded_skills.append(dict(span.attributes))
                 return result
 
         def _record_skill_signals(self, span, args, result, error_type, tool_context):
@@ -576,19 +884,19 @@ def run_skills_reference():
         # known before the first call rather than only once a script has run.
         working_dir = pathlib.Path(tempfile.mkdtemp(prefix="adk_skills_"))
         environment = LocalEnvironment(working_dir=working_dir)
-        toolset = SkillToolset(skills, environment=environment)
+        toolset = SkillToolset(skills, environment=environment, registry=registry)
         script_path = "scripts/run_checks.py"
         # The environment materializes the skill's files under the toolset's
         # `skills_folder`, and the toolset's system instruction tells the model to
         # build the command from that path, so this is the command a model call
         # carries.
         script_command = f"python3 {toolset.skills_folder / 'code-review' / script_path}"
-        load_skill_tool = _LoadSkillTool(toolset, ["code-review"])
-        run_script_tool = _RunSkillScriptTool(toolset, ["code-review"], [script_path], [script_command])
+        load_skill_tool = _LoadSkillTool(toolset, [invocation_name])
+        run_script_tool = _RunSkillScriptTool(toolset, [invocation_name], [script_path], [script_command])
         toolset._tools = [
             _ListSkillsTool(toolset),
             load_skill_tool,
-            _LoadSkillResourceTool(toolset, ["code-review"], ["references/review_policy.md"]),
+            _LoadSkillResourceTool(toolset, [invocation_name], ["references/review_policy.md"]),
             run_script_tool,
         ]
 
@@ -711,6 +1019,54 @@ def run_skills_reference():
         finally:
             shutil.rmtree(working_dir, ignore_errors=True)
 
+    if registry is None:
+        assert recorded_skills
+        assert all("gen_ai.skill.id" not in attrs and "gen_ai.skill.version" not in attrs for attrs in recorded_skills)
+    return recorded_skills
+
+
+def run_registry_skills_reference():
+    """Run the same skill tools with ADK's real GCP registry client and mock HTTP."""
+    import httpx
+    from google.adk.integrations.skill_registry.gcp_skill_registry import GCPSkillRegistry
+    from google.auth.credentials import AnonymousCredentials
+
+    skill_id = "projects/reference-project/locations/global/skills/example.code-review"
+    revision = f"{skill_id}/revisions/rev-7"
+    archive = io.BytesIO()
+    with zipfile.ZipFile(archive, "w") as bundle:
+        for path in sorted((SKILLS_DIR / "code-review").rglob("*")):
+            if path.is_file():
+                bundle.write(path, path.relative_to(SKILLS_DIR / "code-review"))
+
+    def respond(request):
+        if request.url.path == f"/v1alpha/{skill_id}":
+            return httpx.Response(200, json={"name": skill_id, "defaultRevision": revision})
+        if request.url.path == f"/v1alpha/{revision}" and request.url.params.get("alt") == "media":
+            return httpx.Response(200, content=archive.getvalue(), headers={"content-type": "application/zip"})
+        return httpx.Response(404, json={"error": "Skill not found"})
+
+    registry = GCPSkillRegistry(project_id="reference-project", location="global", credentials=AnonymousCredentials())
+    with patch.object(
+        registry, "_create_httpx_client", side_effect=lambda: httpx.AsyncClient(transport=httpx.MockTransport(respond))
+    ):
+        spans = run_skills_reference(registry)
+
+    successful = [attrs for attrs in spans if attrs.get("gen_ai.skill.id") and "error.type" not in attrs]
+    assert {attrs["gen_ai.tool.name"] for attrs in successful} == {
+        "load_skill",
+        "load_skill_resource",
+        "run_skill_script",
+    }
+    for attrs in successful:
+        assert attrs["gen_ai.skill.name"] == "example.code-review"
+        assert attrs["gen_ai.skill.id"] == skill_id
+        assert attrs["gen_ai.skill.version"] == "rev-7"
+        assert attrs["gen_ai.skill.source.uri"] == f"{registry.base_url}/{revision}"
+    missing = [attrs for attrs in spans if attrs.get("gen_ai.skill.name") == "ocr-tables"]
+    assert missing and all(attrs.get("error.type") == "REGISTRY_ERROR" for attrs in missing)
+    assert all("gen_ai.skill.id" not in attrs and "gen_ai.skill.version" not in attrs for attrs in missing)
+
 
 def main():
     print("=== Reference Implementation: Google ADK Reference Implementation ===")
@@ -721,8 +1077,11 @@ def main():
     tp.add_span_processor(span_counter)
 
     run_agent_reference()
+    run_multi_agent_delegation_reference()
+    run_multi_agent_handoff_reference()
     run_memory_reference()
     run_skills_reference()
+    run_registry_skills_reference()
 
     print(f"\n  [diagnostic] Spans generated: {span_counter.count}")
 

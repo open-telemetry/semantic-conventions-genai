@@ -11,3 +11,22 @@ env:
 scenarios:
   reference:
     run: uv run --frozen --python 3.12 --project . python scenario.py
+    expected_violations:
+      - id: missing_attribute
+        context:
+          attribute_key: process.executable.name
+        reason: Registry validation does not recognize this process attribute referenced by the command-tool refinement.
+      - id: missing_attribute
+        context:
+          attribute_key: process.executable.path
+        reason: Registry validation does not recognize this process attribute referenced by the command-tool refinement.
+      - id: missing_attribute
+        context:
+          attribute_key: process.exit.code
+        reason: Registry validation does not recognize this process attribute referenced by the command-tool refinement.
+      - id: genai_span_name_format
+        context:
+          expected_form: execute_tool or 'execute_tool <gen_ai.tool.name>'
+          keyed_attr: gen_ai.tool.name
+          operation: execute_tool
+        reason: The runner does not recognize the span-name refinements for skill and command tools.

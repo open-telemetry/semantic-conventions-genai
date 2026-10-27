@@ -6,15 +6,15 @@
 
 | Attribute | Supporting Libraries |
 | --- | --- |
-| gen_ai.operation.name | [agent-framework], [autogen], [crewai], [google-adk], [langchain], [openai-agents], [pydantic-ai] |
+| gen_ai.operation.name | [adk_a2a], [agent-framework], [autogen], [crewai], [google-adk], [langchain], [openai-agents], [pydantic-ai] |
 
 ## Conditionally Required
 
 | Attribute | Supporting Libraries |
 | --- | --- |
-| gen_ai.agent.description | [agent-framework], [autogen] |
-| gen_ai.agent.name | [agent-framework], [autogen], [crewai], [google-adk], [langchain], [openai-agents], [pydantic-ai] |
-| gen_ai.conversation.id | [google-adk] |
+| gen_ai.agent.description | [adk_a2a], [agent-framework], [autogen], [google-adk] |
+| gen_ai.agent.name | [adk_a2a], [agent-framework], [autogen], [crewai], [google-adk], [langchain], [openai-agents], [pydantic-ai] |
+| gen_ai.conversation.id | [adk_a2a], [google-adk] |
 | gen_ai.data_source.id | (none) |
 | gen_ai.output.type | (none) |
 | gen_ai.request.choice.count | [agent-framework], [crewai], [google-adk] |
@@ -31,7 +31,7 @@
 | gen_ai.request.stop_sequences | [agent-framework], [autogen], [crewai], [google-adk], [pydantic-ai] |
 | gen_ai.request.temperature | [agent-framework], [autogen], [crewai], [google-adk], [pydantic-ai] |
 | gen_ai.request.top_p | [agent-framework], [autogen], [crewai], [google-adk], [pydantic-ai] |
-| gen_ai.response.finish_reasons | [autogen], [crewai], [google-adk], [openai-agents], [pydantic-ai] |
+| gen_ai.response.finish_reasons | [autogen], [crewai], [google-adk], [langchain], [openai-agents], [pydantic-ai] |
 | gen_ai.usage.input_tokens | [agent-framework], [autogen], [crewai], [google-adk], [langchain], [openai-agents], [pydantic-ai] |
 | gen_ai.usage.output_tokens | [agent-framework], [autogen], [crewai], [google-adk], [langchain], [openai-agents], [pydantic-ai] |
 
@@ -44,6 +44,7 @@
 | gen_ai.system_instructions | [agent-framework], [autogen], [crewai], [google-adk], [langchain], [openai-agents], [pydantic-ai] |
 | gen_ai.tool.definitions | [agent-framework], [autogen], [crewai], [google-adk], [langchain], [openai-agents], [pydantic-ai] |
 
+[adk_a2a]: ../scenarios/adk_a2a/scenario.py
 [agent-framework]: ../scenarios/agent-framework/scenario.py
 [autogen]: ../scenarios/autogen/scenario.py
 [crewai]: ../scenarios/crewai/scenario.py
