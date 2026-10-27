@@ -61,11 +61,11 @@
 
 | Attribute | Supporting Libraries |
 | --- | --- |
-| gen_ai.input.messages | [agent-framework], [anthropic], [aws-bedrock], [claude-agent-sdk], [groq], [litellm], [mistralai], [openai] |
+| gen_ai.input.messages | [agent-framework], [anthropic], [aws-bedrock], [claude-agent-sdk], [google-genai], [groq], [litellm], [mistralai], [openai] |
 | gen_ai.output.messages | [agent-framework], [anthropic], [aws-bedrock], [claude-agent-sdk], [litellm], [mistralai], [openai] |
 | gen_ai.prompt.variable | (none) |
 | gen_ai.system_instructions | [agent-framework] |
-| gen_ai.tool.definitions | [aws-bedrock], [azure-ai-inference], [cohere], [google-genai], [groq], [litellm], [mistralai], [openai], [vertexai] |
+| gen_ai.tool.definitions | [anthropic], [aws-bedrock], [azure-ai-inference], [cohere], [google-genai], [groq], [litellm], [mistralai], [openai], [vertexai] |
 
 [adk_a2a]: ../scenarios/adk_a2a/scenario.py
 [agent-framework]: ../scenarios/agent-framework/scenario.py
