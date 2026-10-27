@@ -557,7 +557,7 @@ The event name MUST be `gen_ai.client.realtime_session.started`.
 
 Recorded when a realtime, bidirectional streaming session (such as OpenAI Realtime or Gemini Live) is established.
 
-A realtime session is long-lived and mostly idle, so it is not modeled as a span. This event marks the start of the session; the matching `gen_ai.client.realtime_session.ended` event marks its end. Individual server-side generations within the session are modeled by the `gen_ai.realtime_inference.client` span and correlated through `gen_ai.realtime_session.id`.
+The matching `gen_ai.client.realtime_session.ended` event marks the end of the session.
 Instrumentations SHOULD set the severity to INFO (severity number 9) when recording this event.
 
 **Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/signal-requirement-level.md).
