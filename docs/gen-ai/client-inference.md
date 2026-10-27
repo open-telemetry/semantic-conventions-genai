@@ -210,7 +210,7 @@ by the provider or inferred by the instrumentation.
 
 **[20] `gen_ai.response.time_to_first_chunk`:** A chunk is a decoded provider stream event carrying new, non-empty text, refusals, reasoning (including opaque payloads), audio, images, or tool-call names or arguments. Ignore empty start events and events carrying only usage, roles, IDs, signatures, keep-alives, progress/status updates, or end markers. Chunk boundaries follow provider events, not TCP reads, HTTP frames, or extra SDK callbacks.
 
-Measure from the start of the logical inference operation, before the first attempt, until the first chunk is fully received by the client, before application processing. Include authentication, failed attempts, and retry backoff. If no chunk is received, do not set this attribute.
+Request issuance is the start of the logical inference operation, before authentication and the first attempt. Measure until the first chunk is fully received by the client, before application processing. Include failed attempts and retry backoff. If no chunk is received, do not set this attribute.
 
 **[21] `gen_ai.usage.audio.cache_read.input_tokens`:** The value SHOULD be included in `gen_ai.usage.cache_read.input_tokens` and in `gen_ai.usage.audio.input_tokens`.
 
@@ -592,7 +592,7 @@ This metric SHOULD be specified with [ExplicitBucketBoundaries] of [0.01, 0.02, 
 
 A chunk is a decoded provider stream event carrying new, non-empty text, refusals, reasoning (including opaque payloads), audio, images, or tool-call names or arguments. Ignore empty start events and events carrying only usage, roles, IDs, signatures, keep-alives, progress/status updates, or end markers. Chunk boundaries follow provider events, not TCP reads, HTTP frames, or extra SDK callbacks.
 
-Measure from the start of the logical inference operation, before the first attempt, until the first chunk is fully received by the client, before application processing. Include authentication, failed attempts, and retry backoff. If no chunk is received, do not report this metric.
+Request issuance is the start of the logical inference operation, before authentication and the first attempt. Measure until the first chunk is fully received by the client, before application processing. Include failed attempts and retry backoff. If no chunk is received, do not report this metric.
 
 **Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/signal-requirement-level.md).
 
@@ -1005,7 +1005,7 @@ by the provider or inferred by the instrumentation.
 
 **[20] `gen_ai.response.time_to_first_chunk`:** A chunk is a decoded provider stream event carrying new, non-empty text, refusals, reasoning (including opaque payloads), audio, images, or tool-call names or arguments. Ignore empty start events and events carrying only usage, roles, IDs, signatures, keep-alives, progress/status updates, or end markers. Chunk boundaries follow provider events, not TCP reads, HTTP frames, or extra SDK callbacks.
 
-Measure from the start of the logical inference operation, before the first attempt, until the first chunk is fully received by the client, before application processing. Include authentication, failed attempts, and retry backoff. If no chunk is received, do not set this attribute.
+Request issuance is the start of the logical inference operation, before authentication and the first attempt. Measure until the first chunk is fully received by the client, before application processing. Include failed attempts and retry backoff. If no chunk is received, do not set this attribute.
 
 **[21] `gen_ai.usage.audio.cache_read.input_tokens`:** The value SHOULD be included in `gen_ai.usage.cache_read.input_tokens` and in `gen_ai.usage.audio.input_tokens`.
 
