@@ -12,16 +12,16 @@
 - [Tool calls (functions)](#tool-calls-functions)
   - [GenAI client spans when content capturing is disabled](#genai-client-spans-when-content-capturing-is-disabled)
   - [GenAI client spans when content capturing is enabled on span attributes](#genai-client-spans-when-content-capturing-is-enabled-on-span-attributes)
-- [Realtime inference without tool calls](#realtime-inference-without-tool-calls)
-  - [Realtime inference span when content capturing is disabled](#realtime-inference-span-when-content-capturing-is-disabled)
-  - [Realtime inference span when content capturing is enabled on span attributes](#realtime-inference-span-when-content-capturing-is-enabled-on-span-attributes)
-- [Realtime inference with tool calls](#realtime-inference-with-tool-calls)
-  - [Tool execution across two generations](#tool-execution-across-two-generations)
 - [System instructions along with chat history (content enabled)](#system-instructions-along-with-chat-history-content-enabled)
 - [Chat completion with reasoning (content enabled)](#chat-completion-with-reasoning-content-enabled)
 - [Tool calls (built-in)](#tool-calls-built-in)
 - [Chat completion with multiple choices](#chat-completion-with-multiple-choices)
   - [GenAI client span when content capturing is enabled on span attributes](#genai-client-span-when-content-capturing-is-enabled-on-span-attributes-1)
+- [Realtime inference without tool calls](#realtime-inference-without-tool-calls)
+  - [Realtime inference span when content capturing is disabled](#realtime-inference-span-when-content-capturing-is-disabled)
+  - [Realtime inference span when content capturing is enabled on span attributes](#realtime-inference-span-when-content-capturing-is-enabled-on-span-attributes)
+- [Realtime inference with tool calls](#realtime-inference-with-tool-calls)
+  - [Tool execution across two generations](#tool-execution-across-two-generations)
 
 <!-- tocstop -->
 
@@ -577,6 +577,369 @@ If tool call is [instrumented according to execute-tool span definition](/docs/g
 ]
 ```
 
+## System instructions along with chat history (content enabled)
+
+Some providers allow to provide instructions separately from the chat history provided in the inputs
+or in addition to `system` (`developer`, etc) message provided in the input.
+
+This example demonstrates en edge case when conflicting instructions are provided
+to the OpenAI responses API. In this case instructions are recorded in the `gen_ai.system_instructions` attribute.
+
+```py
+response = openai.responses.create(
+  model="gpt-4",
+  instructions="You must never tell jokes",
+  input=[{"role": "system", "content": "You are a helpful assistant"}, {"role": "user", "content": "Tell me a joke"}])
+```
+
+Span:
+
+| Property                         | Value                                                            |
+| -------------------------------- | ---------------------------------------------------------------- |
+| Span name                        | `"chat gpt-4"`                                                   |
+| `gen_ai.provider.name`           | `"openai"`                                                       |
+| `gen_ai.operation.name`          | `"chat"`                                                         |
+| `gen_ai.request.model`           | `"gpt-4"`                                                        |
+| `gen_ai.response.id`             | `"chatcmpl-9J3uIL87gldCFtiIbyaOvTeYBRA3l"`                       |
+| `gen_ai.response.model`          | `"gpt-4-0613"`                                                   |
+| `gen_ai.usage.input_tokens`      | `28`                                                             |
+| `gen_ai.usage.output_tokens`     | `10`                                                             |
+| `gen_ai.usage.cache_write.input_tokens` | `28`                                                      |
+| `gen_ai.response.finish_reasons` | `["stop"]`                                                       |
+| `gen_ai.system_instructions`     | [`gen_ai.system_instructions`](#gen-ai-system-instructions)      |
+| `gen_ai.input.messages`          | [`gen_ai.input.messages`](#gen-ai-input-messages-instructions)   |
+| `gen_ai.output.messages`         | [`gen_ai.output.messages`](#gen-ai-output-messages-instructions) |
+
+<span id="gen-ai-system-instructions">`gen_ai.system_instructions` value</span>
+
+```json
+[
+  {
+    "type": "text",
+    "content": "You must never tell jokes"
+  }
+]
+```
+
+<span id="gen-ai-input-messages-instructions">`gen_ai.input.messages` value</span>
+
+```json
+[
+  {
+    "role": "system",
+    "parts": [
+      {
+        "type": "text",
+        "content": "You are a helpful bot"
+      }
+    ]
+  },
+  {
+    "role": "user",
+    "parts": [
+      {
+        "type": "text",
+        "content": "Tell me a joke about OpenTelemetry"
+      }
+    ]
+  }
+]
+```
+
+<span id="gen-ai-output-messages-instructions">`gen_ai.output.messages` value</span>
+
+```json
+[
+  {
+    "role": "assistant",
+    "parts": [
+      {
+        "type": "text",
+        "content": "I'm sorry, but I can't assist with that"
+      }
+    ]
+  }
+]
+```
+
+## Chat completion with reasoning (content enabled)
+
+| Property                         | Value                                                         |
+| -------------------------------- | ------------------------------------------------------------- |
+| Span name                        | `"chat gpt-4"`                                                |
+| Trace id                         | `"4bf92f3577b34da6a3ce929d0e0e4736"`                          |
+| Span id                          | `"00f067aa0ba902b7"`                                          |
+| `gen_ai.provider.name`           | `"openai"`                                                    |
+| `gen_ai.operation.name`          | `"chat"`                                                      |
+| `gen_ai.request.model`           | `"gpt-4"`                                                     |
+| `gen_ai.request.max_tokens`      | `200`                                                         |
+| `gen_ai.request.top_p`           | `1.0`                                                         |
+| `gen_ai.response.id`                          | `"chatcmpl-9J3uIL87gldCFtiIbyaOvTeYBRA3l"`                    |
+| `gen_ai.response.model`                       | `"gpt-4-0613"`                                                |
+| `gen_ai.usage.input_tokens`                   | `52`                                                          |
+| `gen_ai.usage.output_tokens`                  | `47`                                                          |
+| `gen_ai.usage.cache_read.input_tokens`        | `16`                                                          |
+| `gen_ai.usage.reasoning.output_tokens`        | `27`                                                          |
+| `gen_ai.response.finish_reasons`              | `["stop"]`                                                    |
+| `gen_ai.input.messages`          | [`gen_ai.input.messages`](#gen-ai-input-messages-reasoning)   |
+| `gen_ai.output.messages`         | [`gen_ai.output.messages`](#gen-ai-output-messages-reasoning) |
+
+<span id="gen-ai-input-messages-reasoning">`gen_ai.input.messages` value</span>
+
+```json
+[
+  {
+    "role": "system",
+    "parts": [
+      {
+        "type": "text",
+        "content": "You are a helpful bot"
+      }
+    ]
+  },
+  {
+    "role": "user",
+    "parts": [
+      {
+        "type": "text",
+        "content": "Tell me a joke about OpenTelemetry"
+      }
+    ]
+  }
+]
+```
+
+<span id="gen-ai-output-messages-reasoning">`gen_ai.output.messages` value</span>
+
+```json
+[
+  {
+    "role": "assistant",
+    "parts": [
+      {
+        "type": "reasoning",
+        "content": "Alright, the user wants a joke about OpenTelemetry… Hmm, OpenTelemetry is all about distributed tracing and metrics, right? So maybe I can play with the word \"trace.\" That's a core concept — tracing requests through systems. But how do I make that funny? What if I take \"trace\" literally and apply it to something unexpected, like a party? If I personify OpenTelemetry as a tool that \"knows where the fun is,\" I can make a pun out of tracing requests vs. tracing enjoyment. Yeah, that could work — let me put it all together."
+      },
+      {
+        "type": "text",
+        "content": " Why did the developer bring OpenTelemetry to the party? Because it always knows how to trace the fun!"
+      }
+    ]
+  }
+]
+```
+
+## Tool calls (built-in)
+
+This is an example of telemetry generated for OpenAI Responses API call with `code_interpreter` tool that results in
+a model provider executing a tool and returning response along with tool call details. Built-in tools use
+`server_tool_call` and `server_tool_call_response` part types with polymorphic content to separate them from
+client-side function tool calls.
+
+```py
+response = client.responses.create(
+  model="gpt-4",
+  input="Write Python code that generates a random number, executes it, and returns the result.",
+  tools=[{"type": "code_interpreter"}],
+  include=['code_interpreter_call.outputs'],
+  tool_choice="required",
+)
+```
+
+```mermaid
+%%{init:
+{
+  "sequence": { "messageAlign": "left", "htmlLabels":true },
+  "themeVariables": { "noteBkgColor" : "green", "noteTextColor": "black", "activationBkgColor": "green", "htmlLabels":true }
+}
+}%%
+sequenceDiagram
+  participant A as Application
+  participant I as Instrumented Client
+  participant M as Model
+
+  A ->>+ I: #U+200D
+  I ->> M: input = [system: You are a helpful bot, user: Write Python code that generates a random number, executes it, and returns the result.]
+  Note left of I: GenAI Client span
+  I --> M: tool:code='import random ....'<br>assistant: The generated random number is 95.
+  I -->>- A: #U+200D
+```
+
+**GenAI client span:**
+
+| Property                         | Value                                                              |
+| -------------------------------- | ------------------------------------------------------------------ |
+| Span name                        | `"chat gpt-4"`                                                     |
+| `gen_ai.provider.name`           | `"openai"`                                                         |
+| `gen_ai.operation.name`          | `"chat"`                                                           |
+| `gen_ai.request.model`           | `"gpt-4"`                                                          |
+| `gen_ai.request.max_tokens`      | `200`                                                              |
+| `gen_ai.request.top_p`           | `1.0`                                                              |
+| `gen_ai.response.id`                          | `"chatcmpl-9J3uIL87gldCFtiIbyaOvTeYBRA3l"`                         |
+| `gen_ai.response.model`                       | `"gpt-4-0613"`                                                     |
+| `gen_ai.usage.input_tokens`                   | `385`                                                              |
+| `gen_ai.usage.output_tokens`                  | `44`                                                               |
+| `gen_ai.usage.cache_read.input_tokens`        | `128`                                                              |
+| `gen_ai.usage.cache_write.input_tokens`       | `257`                                                              |
+| `gen_ai.response.finish_reasons`              | `["stop"]`                                                         |
+| `gen_ai.input.messages`          | [`gen_ai.input.messages`](#gen-ai-input-messages-built-in-tools)   |
+| `gen_ai.output.messages`         | [`gen_ai.output.messages`](#gen-ai-output-messages-built-in-tools) |
+
+<span id="gen-ai-input-messages-built-in-tools">`gen_ai.input.messages` value</span>
+
+```json
+[
+  {
+    "role": "system",
+    "parts": [
+      {
+        "type": "text",
+        "content": "You are a helpful bot"
+      }
+    ]
+  },
+  {
+    "role": "user",
+    "parts": [
+      {
+        "type": "text",
+        "content": "Write Python code that generates a random number, executes it, and returns the result."
+      }
+    ]
+  }
+]
+```
+
+<span id="gen-ai-output-messages-built-in-tools">`gen_ai.output.messages` value</span>
+
+```json
+[
+  {
+    "role": "assistant",
+    "parts": [
+      {
+        "type": "server_tool_call",
+        "id": "call_VSPygqKTWdrhaFErNvMV18Yl",
+        "name": "code_interpreter",
+        "server_tool_call": {
+          "type": "code_interpreter",
+          "code": "import random\n\n# Generate a random number\nrandom_number = random.randint(1, 100)\n\n# Execute some operation with the random number (e.g., squaring it)\nresult = random_number ** 2\n\nrandom_number, result",
+          "container_id": "cntr_690bdbfed8688190884efd4c7ae6435b0db1f006442e8941"
+        }
+      },
+      {
+        "type": "server_tool_call_response",
+        "id": "call_VSPygqKTWdrhaFErNvMV18Yl",
+        "server_tool_call_response": {
+          "type": "code_interpreter",
+          "outputs": [
+            {
+              "type": "logs",
+              "logs": "(10, 20)"
+            }
+          ]
+        }
+      },
+      {
+        "type": "text",
+        "content": "The generated random number is **89**, and the result of squaring it is **7921**"
+      }
+    ]
+  }
+]
+```
+
+## Chat completion with multiple choices
+
+This example covers the scenario when user requests model to generate two completions for the same prompt:
+
+```mermaid
+%%{init:
+{
+  "sequence": { "messageAlign": "left", "htmlLabels":true },
+  "themeVariables": { "noteBkgColor" : "green", "noteTextColor": "black", "activationBkgColor": "green", "htmlLabels":true }
+}
+}%%
+sequenceDiagram
+    participant A as Application
+    participant I as Instrumented Client
+    participant M as Model
+    A->>+I: #U+200D
+    I->>M: input = [system: You are a helpful bot, user: Tell me a joke about OpenTelemetry]
+    Note left of I: GenAI Client span
+    I-->M: assistant: Why did the developer bring OpenTelemetry to the party? Because it always knows how to trace the fun!<br/> assistant: Why did OpenTelemetry get promoted? It had great span of control!
+    I-->>-A: #U+200D
+```
+
+### GenAI client span when content capturing is enabled on span attributes
+
+| Property                         | Value                                                       |
+| -------------------------------- | ----------------------------------------------------------- |
+| Span name                        | `"chat gpt-4"`                                              |
+| `gen_ai.provider.name`           | `"openai"`                                                  |
+| `gen_ai.operation.name`          | `"chat"`                                                    |
+| `gen_ai.request.model`           | `"gpt-4"`                                                   |
+| `gen_ai.request.max_tokens`      | `200`                                                       |
+| `gen_ai.request.top_p`           | `1.0`                                                       |
+| `gen_ai.response.id`                          | `"chatcmpl-9J3uIL87gldCFtiIbyaOvTeYBRA3l"`                  |
+| `gen_ai.response.model`                       | `"gpt-4-0613"`                                              |
+| `gen_ai.usage.input_tokens`                   | `52`                                                        |
+| `gen_ai.usage.output_tokens`                  | `77`                                                        |
+| `gen_ai.usage.cache_read.input_tokens`        | `32`                                                        |
+| `gen_ai.response.finish_reasons`              | `["stop", "stop"]`                                          |
+| `gen_ai.input.messages`          | [`gen_ai.input.messages`](#gen-ai-input-messages-choices)   |
+| `gen_ai.output.messages`         | [`gen_ai.output.messages`](#gen-ai-output-messages-choices) |
+
+<span id="gen-ai-input-messages-choices">`gen_ai.input.messages` value</span>
+
+```json
+[
+  {
+    "role": "system",
+    "parts": [
+      {
+        "type": "text",
+        "content": "You are a helpful bot"
+      }
+    ]
+  },
+  {
+    "role": "user",
+    "parts": [
+      {
+        "type": "text",
+        "content": "Tell me a joke about OpenTelemetry"
+      }
+    ]
+  }
+]
+```
+
+<span id="gen-ai-output-messages-choices">`gen_ai.output.messages` value</span>
+
+```json
+[
+  {
+    "role": "assistant",
+    "parts": [
+      {
+        "type": "text",
+        "content": " Why did the developer bring OpenTelemetry to the party? Because it always knows how to trace the fun!"
+      }
+    ]
+  },
+  {
+    "role": "assistant",
+    "parts": [
+      {
+        "type": "text",
+        "content": " Why did OpenTelemetry get promoted? It had great span of control!"
+      }
+    ]
+  }
+]
+```
+
 ## Realtime inference without tool calls
 
 This example shows one generation in a realtime session. The session lifecycle
@@ -903,369 +1266,6 @@ model's answer as output:
       }
     ],
     "finish_reason": "stop"
-  }
-]
-```
-
-## System instructions along with chat history (content enabled)
-
-Some providers allow to provide instructions separately from the chat history provided in the inputs
-or in addition to `system` (`developer`, etc) message provided in the input.
-
-This example demonstrates en edge case when conflicting instructions are provided
-to the OpenAI responses API. In this case instructions are recorded in the `gen_ai.system_instructions` attribute.
-
-```py
-response = openai.responses.create(
-  model="gpt-4",
-  instructions="You must never tell jokes",
-  input=[{"role": "system", "content": "You are a helpful assistant"}, {"role": "user", "content": "Tell me a joke"}])
-```
-
-Span:
-
-| Property                         | Value                                                            |
-| -------------------------------- | ---------------------------------------------------------------- |
-| Span name                        | `"chat gpt-4"`                                                   |
-| `gen_ai.provider.name`           | `"openai"`                                                       |
-| `gen_ai.operation.name`          | `"chat"`                                                         |
-| `gen_ai.request.model`           | `"gpt-4"`                                                        |
-| `gen_ai.response.id`             | `"chatcmpl-9J3uIL87gldCFtiIbyaOvTeYBRA3l"`                       |
-| `gen_ai.response.model`          | `"gpt-4-0613"`                                                   |
-| `gen_ai.usage.input_tokens`      | `28`                                                             |
-| `gen_ai.usage.output_tokens`     | `10`                                                             |
-| `gen_ai.usage.cache_write.input_tokens` | `28`                                                      |
-| `gen_ai.response.finish_reasons` | `["stop"]`                                                       |
-| `gen_ai.system_instructions`     | [`gen_ai.system_instructions`](#gen-ai-system-instructions)      |
-| `gen_ai.input.messages`          | [`gen_ai.input.messages`](#gen-ai-input-messages-instructions)   |
-| `gen_ai.output.messages`         | [`gen_ai.output.messages`](#gen-ai-output-messages-instructions) |
-
-<span id="gen-ai-system-instructions">`gen_ai.system_instructions` value</span>
-
-```json
-[
-  {
-    "type": "text",
-    "content": "You must never tell jokes"
-  }
-]
-```
-
-<span id="gen-ai-input-messages-instructions">`gen_ai.input.messages` value</span>
-
-```json
-[
-  {
-    "role": "system",
-    "parts": [
-      {
-        "type": "text",
-        "content": "You are a helpful bot"
-      }
-    ]
-  },
-  {
-    "role": "user",
-    "parts": [
-      {
-        "type": "text",
-        "content": "Tell me a joke about OpenTelemetry"
-      }
-    ]
-  }
-]
-```
-
-<span id="gen-ai-output-messages-instructions">`gen_ai.output.messages` value</span>
-
-```json
-[
-  {
-    "role": "assistant",
-    "parts": [
-      {
-        "type": "text",
-        "content": "I'm sorry, but I can't assist with that"
-      }
-    ]
-  }
-]
-```
-
-## Chat completion with reasoning (content enabled)
-
-| Property                         | Value                                                         |
-| -------------------------------- | ------------------------------------------------------------- |
-| Span name                        | `"chat gpt-4"`                                                |
-| Trace id                         | `"4bf92f3577b34da6a3ce929d0e0e4736"`                          |
-| Span id                          | `"00f067aa0ba902b7"`                                          |
-| `gen_ai.provider.name`           | `"openai"`                                                    |
-| `gen_ai.operation.name`          | `"chat"`                                                      |
-| `gen_ai.request.model`           | `"gpt-4"`                                                     |
-| `gen_ai.request.max_tokens`      | `200`                                                         |
-| `gen_ai.request.top_p`           | `1.0`                                                         |
-| `gen_ai.response.id`                          | `"chatcmpl-9J3uIL87gldCFtiIbyaOvTeYBRA3l"`                    |
-| `gen_ai.response.model`                       | `"gpt-4-0613"`                                                |
-| `gen_ai.usage.input_tokens`                   | `52`                                                          |
-| `gen_ai.usage.output_tokens`                  | `47`                                                          |
-| `gen_ai.usage.cache_read.input_tokens`        | `16`                                                          |
-| `gen_ai.usage.reasoning.output_tokens`        | `27`                                                          |
-| `gen_ai.response.finish_reasons`              | `["stop"]`                                                    |
-| `gen_ai.input.messages`          | [`gen_ai.input.messages`](#gen-ai-input-messages-reasoning)   |
-| `gen_ai.output.messages`         | [`gen_ai.output.messages`](#gen-ai-output-messages-reasoning) |
-
-<span id="gen-ai-input-messages-reasoning">`gen_ai.input.messages` value</span>
-
-```json
-[
-  {
-    "role": "system",
-    "parts": [
-      {
-        "type": "text",
-        "content": "You are a helpful bot"
-      }
-    ]
-  },
-  {
-    "role": "user",
-    "parts": [
-      {
-        "type": "text",
-        "content": "Tell me a joke about OpenTelemetry"
-      }
-    ]
-  }
-]
-```
-
-<span id="gen-ai-output-messages-reasoning">`gen_ai.output.messages` value</span>
-
-```json
-[
-  {
-    "role": "assistant",
-    "parts": [
-      {
-        "type": "reasoning",
-        "content": "Alright, the user wants a joke about OpenTelemetry… Hmm, OpenTelemetry is all about distributed tracing and metrics, right? So maybe I can play with the word \"trace.\" That's a core concept — tracing requests through systems. But how do I make that funny? What if I take \"trace\" literally and apply it to something unexpected, like a party? If I personify OpenTelemetry as a tool that \"knows where the fun is,\" I can make a pun out of tracing requests vs. tracing enjoyment. Yeah, that could work — let me put it all together."
-      },
-      {
-        "type": "text",
-        "content": " Why did the developer bring OpenTelemetry to the party? Because it always knows how to trace the fun!"
-      }
-    ]
-  }
-]
-```
-
-## Tool calls (built-in)
-
-This is an example of telemetry generated for OpenAI Responses API call with `code_interpreter` tool that results in
-a model provider executing a tool and returning response along with tool call details. Built-in tools use
-`server_tool_call` and `server_tool_call_response` part types with polymorphic content to separate them from
-client-side function tool calls.
-
-```py
-response = client.responses.create(   
-  model="gpt-4",
-  input="Write Python code that generates a random number, executes it, and returns the result.",
-  tools=[{"type": "code_interpreter"}],
-  include=['code_interpreter_call.outputs'],
-  tool_choice="required",
-)
-```
-
-```mermaid
-%%{init:
-{
-  "sequence": { "messageAlign": "left", "htmlLabels":true },
-  "themeVariables": { "noteBkgColor" : "green", "noteTextColor": "black", "activationBkgColor": "green", "htmlLabels":true }
-}
-}%%
-sequenceDiagram
-  participant A as Application
-  participant I as Instrumented Client
-  participant M as Model
-
-  A ->>+ I: #U+200D
-  I ->> M: input = [system: You are a helpful bot, user: Write Python code that generates a random number, executes it, and returns the result.]
-  Note left of I: GenAI Client span
-  I --> M: tool:code='import random ....'<br>assistant: The generated random number is 95.
-  I -->>- A: #U+200D
-```
-
-**GenAI client span:**
-
-| Property                         | Value                                                              |
-| -------------------------------- | ------------------------------------------------------------------ |
-| Span name                        | `"chat gpt-4"`                                                     |
-| `gen_ai.provider.name`           | `"openai"`                                                         |
-| `gen_ai.operation.name`          | `"chat"`                                                           |
-| `gen_ai.request.model`           | `"gpt-4"`                                                          |
-| `gen_ai.request.max_tokens`      | `200`                                                              |
-| `gen_ai.request.top_p`           | `1.0`                                                              |
-| `gen_ai.response.id`                          | `"chatcmpl-9J3uIL87gldCFtiIbyaOvTeYBRA3l"`                         |
-| `gen_ai.response.model`                       | `"gpt-4-0613"`                                                     |
-| `gen_ai.usage.input_tokens`                   | `385`                                                              |
-| `gen_ai.usage.output_tokens`                  | `44`                                                               |
-| `gen_ai.usage.cache_read.input_tokens`        | `128`                                                              |
-| `gen_ai.usage.cache_write.input_tokens`       | `257`                                                              |
-| `gen_ai.response.finish_reasons`              | `["stop"]`                                                         |
-| `gen_ai.input.messages`          | [`gen_ai.input.messages`](#gen-ai-input-messages-built-in-tools)   |
-| `gen_ai.output.messages`         | [`gen_ai.output.messages`](#gen-ai-output-messages-built-in-tools) |
-
-<span id="gen-ai-input-messages-built-in-tools">`gen_ai.input.messages` value</span>
-
-```json
-[
-  {
-    "role": "system",
-    "parts": [
-      {
-        "type": "text",
-        "content": "You are a helpful bot"
-      }
-    ]
-  },
-  {
-    "role": "user",
-    "parts": [
-      {
-        "type": "text",
-        "content": "Write Python code that generates a random number, executes it, and returns the result."
-      }
-    ]
-  }
-]
-```
-
-<span id="gen-ai-output-messages-built-in-tools">`gen_ai.output.messages` value</span>
-
-```json
-[
-  {
-    "role": "assistant",
-    "parts": [
-      {
-        "type": "server_tool_call",
-        "id": "call_VSPygqKTWdrhaFErNvMV18Yl",
-        "name": "code_interpreter",
-        "server_tool_call": {
-          "type": "code_interpreter",
-          "code": "import random\n\n# Generate a random number\nrandom_number = random.randint(1, 100)\n\n# Execute some operation with the random number (e.g., squaring it)\nresult = random_number ** 2\n\nrandom_number, result",
-          "container_id": "cntr_690bdbfed8688190884efd4c7ae6435b0db1f006442e8941"
-        }
-      },
-      {
-        "type": "server_tool_call_response",
-        "id": "call_VSPygqKTWdrhaFErNvMV18Yl",
-        "server_tool_call_response": {
-          "type": "code_interpreter",
-          "outputs": [
-            {
-              "type": "logs",
-              "logs": "(10, 20)"
-            }
-          ]
-        }
-      },
-      {
-        "type": "text",
-        "content": "The generated random number is **89**, and the result of squaring it is **7921**"
-      }
-    ]
-  }
-]
-```
-
-## Chat completion with multiple choices
-
-This example covers the scenario when user requests model to generate two completions for the same prompt:
-
-```mermaid
-%%{init:
-{
-  "sequence": { "messageAlign": "left", "htmlLabels":true },
-  "themeVariables": { "noteBkgColor" : "green", "noteTextColor": "black", "activationBkgColor": "green", "htmlLabels":true }
-}
-}%%
-sequenceDiagram
-    participant A as Application
-    participant I as Instrumented Client
-    participant M as Model
-    A->>+I: #U+200D
-    I->>M: input = [system: You are a helpful bot, user: Tell me a joke about OpenTelemetry]
-    Note left of I: GenAI Client span
-    I-->M: assistant: Why did the developer bring OpenTelemetry to the party? Because it always knows how to trace the fun!<br/> assistant: Why did OpenTelemetry get promoted? It had great span of control!
-    I-->>-A: #U+200D
-```
-
-### GenAI client span when content capturing is enabled on span attributes
-
-| Property                         | Value                                                       |
-| -------------------------------- | ----------------------------------------------------------- |
-| Span name                        | `"chat gpt-4"`                                              |
-| `gen_ai.provider.name`           | `"openai"`                                                  |
-| `gen_ai.operation.name`          | `"chat"`                                                    |
-| `gen_ai.request.model`           | `"gpt-4"`                                                   |
-| `gen_ai.request.max_tokens`      | `200`                                                       |
-| `gen_ai.request.top_p`           | `1.0`                                                       |
-| `gen_ai.response.id`                          | `"chatcmpl-9J3uIL87gldCFtiIbyaOvTeYBRA3l"`                  |
-| `gen_ai.response.model`                       | `"gpt-4-0613"`                                              |
-| `gen_ai.usage.input_tokens`                   | `52`                                                        |
-| `gen_ai.usage.output_tokens`                  | `77`                                                        |
-| `gen_ai.usage.cache_read.input_tokens`        | `32`                                                        |
-| `gen_ai.response.finish_reasons`              | `["stop", "stop"]`                                          |
-| `gen_ai.input.messages`          | [`gen_ai.input.messages`](#gen-ai-input-messages-choices)   |
-| `gen_ai.output.messages`         | [`gen_ai.output.messages`](#gen-ai-output-messages-choices) |
-
-<span id="gen-ai-input-messages-choices">`gen_ai.input.messages` value</span>
-
-```json
-[
-  {
-    "role": "system",
-    "parts": [
-      {
-        "type": "text",
-        "content": "You are a helpful bot"
-      }
-    ]
-  },
-  {
-    "role": "user",
-    "parts": [
-      {
-        "type": "text",
-        "content": "Tell me a joke about OpenTelemetry"
-      }
-    ]
-  }
-]
-```
-
-<span id="gen-ai-output-messages-choices">`gen_ai.output.messages` value</span>
-
-```json
-[
-  {
-    "role": "assistant",
-    "parts": [
-      {
-        "type": "text",
-        "content": " Why did the developer bring OpenTelemetry to the party? Because it always knows how to trace the fun!"
-      }
-    ]
-  },
-  {
-    "role": "assistant",
-    "parts": [
-      {
-        "type": "text",
-        "content": " Why did OpenTelemetry get promoted? It had great span of control!"
-      }
-    ]
   }
 ]
 ```
