@@ -124,8 +124,9 @@ def run_retrieval_reference():
             json.dumps(
                 [
                     {
+                        **({"id": document.id} if document.id is not None else {}),
                         "content": document.page_content,
-                        "source_id": document.metadata.get("source_id"),
+                        "metadata": document.metadata,
                     }
                     for document in documents
                 ]

@@ -101,8 +101,10 @@ def run_retrieval_reference():
             json.dumps(
                 [
                     {
+                        "id": node.node.node_id,
+                        **({"score": node.score} if node.score is not None else {}),
                         "content": node.text,
-                        "source_id": node.metadata.get("source_id"),
+                        "metadata": node.metadata,
                     }
                     for node in nodes
                 ]

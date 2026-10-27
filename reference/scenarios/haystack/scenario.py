@@ -47,8 +47,7 @@ def run_retrieval():
                     {
                         "id": getattr(document, "id", None),
                         "content": document.content,
-                        "title": document.meta.get("title"),
-                        "source_id": document.meta.get("source_id"),
+                        "metadata": document.meta,
                     }
                     for document in documents
                 ]

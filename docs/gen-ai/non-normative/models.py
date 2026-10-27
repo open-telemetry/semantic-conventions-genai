@@ -520,10 +520,14 @@ class RetrievalDocument(BaseModel):
     score: float | None = Field(
         default=None, description="The relevance score of the document."
     )
+    content: Any = Field(default=None, description="The content of the document.")
+    metadata: dict[str, Any] | None = Field(
+        default=None, description="Provider-specific metadata associated with the document."
+    )
 
     model_config = ConfigDict(
         extra="allow"
-    )  # Allows additional properties like content, metadata, title, uri, etc.
+    )  # Allows additional properties like title, uri, etc.
 
 
 class RetrievalDocuments(RootModel[List[RetrievalDocument]]):

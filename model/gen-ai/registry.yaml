@@ -791,7 +791,18 @@ attributes:
         json_schema: model/gen-ai/gen-ai-retrieval-documents.json
     note: |
       Each document object SHOULD contain the following properties when available:
-      `id` (string): A unique identifier for the document, `score` (double): The relevance score of the document
+      `id` (string): A unique identifier for the document, `score` (double): The relevance score of the document,
+      `content` (any): The document content, and `metadata` (object): Provider-specific document metadata.
+
+      Instrumentations SHOULD omit unavailable fields and SHOULD NOT synthesize identifiers or scores.
+      Documents without an identifier or score can still be recorded using their content or metadata.
+      Instrumentations SHOULD omit document objects with no recordable fields. For a non-empty
+      result set with no recordable documents, instrumentations SHOULD omit this attribute.
+
+      Content and metadata are subject to the same opt-in capture as this attribute.
+
+      > [!Warning]
+      > This attribute may contain sensitive information including user/PII data.
     examples:
       - |
         [
@@ -806,6 +817,10 @@ attributes:
           {
             "id": "doc_789",
             "score": 0.82
+          },
+          {
+            "content": "Seattle weather is rainy and cool.",
+            "metadata": {"source": "weather-guide"}
           }
         ]
     stability: development

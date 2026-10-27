@@ -6,6 +6,10 @@ that belongs to the LLM library and is captured as a child span. LangChain owns
 the framework operations it performs directly: retrieval, planning, and tool
 execution.
 
+Retrieval records the returned `Document.page_content` and `Document.metadata`.
+The sample documents have neither an ID nor a relevance score; these fields are
+omitted rather than synthesized.
+
 | Operation | Should be instrumented here | Status |
 | --- | --- | --- |
 | inference (`chat`) | No — delegates to the LLM client (`openai`) | ✅ Correctly not emitted |
