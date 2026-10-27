@@ -22,4 +22,8 @@ tool executes. The transfer records `pass_control`; the target's separate
 | invoke_workflow | Yes — workflow agents (e.g. `SequentialAgent`) | ✅ Implemented |
 | execute_tool | Yes — ADK runs the tool | ✅ Implemented |
 | memory | Yes — memory service upsert / search | ✅ Implemented |
-| skills | Yes — `SkillToolset` runs the skill tools | ✅ Implemented |
+| skills | Yes — `SkillToolset` runs the skill tools | ✅ Implemented, including Registry skill IDs and revisions |
+
+The skill scenarios cover local files and the [GCP Skill Registry](https://adk.dev/integrations/skills-registry/), using ADK's real client with mock HTTP responses. After each tool runs, instrumentation reads the resolved skill from ADK's cache. Its `Skill._uri` preserves the [revision resource URI](https://docs.cloud.google.com/agent-registry/reference/rest/v1alpha/projects.locations.skills.revisions), which supplies `gen_ai.skill.id` and `gen_ai.skill.version`.
+
+Assertions cover loading, resource reading, script execution, and omission of IDs and versions for local skills and failed lookups. The runtime lookup name (`example.code-review`) remains separate from the Registry resource ID.

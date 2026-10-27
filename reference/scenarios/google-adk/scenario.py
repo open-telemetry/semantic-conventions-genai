@@ -2,12 +2,14 @@
 
 import asyncio
 import contextlib
+import io
 import json
 import os
 import pathlib
 import shutil
 import tempfile
 import time
+import zipfile
 from unittest.mock import patch
 
 from opentelemetry import trace as _trace
@@ -678,7 +680,7 @@ def run_multi_agent_handoff_reference():
         asyncio.run(run())
 
 
-def run_skills_reference():
+def run_skills_reference(registry=None):
     """Scenario: Agent Skills usage via Google ADK's SkillToolset.
 
     ADK implements the [Agent Skills](https://agentskills.io) lifecycle as a
@@ -694,6 +696,7 @@ def run_skills_reference():
     from google.adk.agents import Agent
     from google.adk.apps.app import App
     from google.adk.environment import LocalEnvironment
+    from google.adk.integrations.skill_registry.gcp_skill_registry import GCPSkillRegistry
     from google.adk.models.google_llm import Gemini
     from google.adk.runners import Runner
     from google.adk.sessions import InMemorySessionService
@@ -712,8 +715,9 @@ def run_skills_reference():
     # `direct`: the application hands each skill folder to `load_skill_from_dir`,
     # so the load boundary owns the location the skill came from, and ADK records
     # it on the `Skill` it returns as `_uri`.
-    skills = [load_skill_from_dir((SKILLS_DIR / name).resolve()) for name in ("code-review",)]
-    skills_by_name = {skill.name: skill for skill in skills}
+    skills = [] if registry else [load_skill_from_dir((SKILLS_DIR / "code-review").resolve())]
+    invocation_name = "example.code-review" if registry else "code-review"
+    recorded_skills = []
 
     class _TracedSkillTool:
         """Records an `execute_tool` span around `BaseTool.run_async`.
@@ -754,14 +758,24 @@ def run_skills_reference():
                 if tool_context.function_call_id:
                     span.set_attribute("gen_ai.tool.call.id", tool_context.function_call_id)
                 span.set_attribute("gen_ai.tool.call.arguments", json.dumps(args))
-                # `direct`: the toolset holds the `Skill` the call names, so its
-                # frontmatter and the location ADK loaded it from are in hand.
-                skill = skills_by_name.get(skill_name)
+                result = await super().run_async(args=args, tool_context=tool_context)
+                # ADK retains local skills and caches registry results per invocation.
+                skill = self._toolset._skills.get(skill_name)
+                if skill is None:
+                    skill = self._toolset._fetched_skill_cache.get(tool_context.invocation_id, {}).get(skill_name)
                 if skill is not None:
                     span.set_attribute("gen_ai.skill.description", skill.description)
                     if skill._uri is not None:
                         span.set_attribute("gen_ai.skill.source.uri", skill._uri)
-                result = await super().run_async(args=args, tool_context=tool_context)
+                        source = self._toolset._registry
+                        if isinstance(source, GCPSkillRegistry) and skill._uri.startswith(source.base_url + "/"):
+                            # GCPSkillRegistry stores the server's resolved defaultRevision in _uri.
+                            # Extract the IDs from that documented resource format.
+                            resource = skill._uri.removeprefix(source.base_url + "/")
+                            skill_id, separator, version = resource.rpartition("/revisions/")
+                            if separator and version:
+                                span.set_attribute("gen_ai.skill.id", skill_id)
+                                span.set_attribute("gen_ai.skill.version", version)
                 # `direct`: every skill tool reports a failure as an `error_code` on
                 # its result, which is the value ADK's own telemetry hook reads too.
                 error_type = result.get("error_code") if isinstance(result, dict) else None
@@ -771,6 +785,7 @@ def run_skills_reference():
                 else:
                     span.set_attribute("gen_ai.tool.call.result", json.dumps(result, default=str))
                 self._record_skill_signals(span, args, result, error_type, tool_context)
+                recorded_skills.append(dict(span.attributes))
                 return result
 
         def _record_skill_signals(self, span, args, result, error_type, tool_context):
@@ -869,19 +884,19 @@ def run_skills_reference():
         # known before the first call rather than only once a script has run.
         working_dir = pathlib.Path(tempfile.mkdtemp(prefix="adk_skills_"))
         environment = LocalEnvironment(working_dir=working_dir)
-        toolset = SkillToolset(skills, environment=environment)
+        toolset = SkillToolset(skills, environment=environment, registry=registry)
         script_path = "scripts/run_checks.py"
         # The environment materializes the skill's files under the toolset's
         # `skills_folder`, and the toolset's system instruction tells the model to
         # build the command from that path, so this is the command a model call
         # carries.
         script_command = f"python3 {toolset.skills_folder / 'code-review' / script_path}"
-        load_skill_tool = _LoadSkillTool(toolset, ["code-review"])
-        run_script_tool = _RunSkillScriptTool(toolset, ["code-review"], [script_path], [script_command])
+        load_skill_tool = _LoadSkillTool(toolset, [invocation_name])
+        run_script_tool = _RunSkillScriptTool(toolset, [invocation_name], [script_path], [script_command])
         toolset._tools = [
             _ListSkillsTool(toolset),
             load_skill_tool,
-            _LoadSkillResourceTool(toolset, ["code-review"], ["references/review_policy.md"]),
+            _LoadSkillResourceTool(toolset, [invocation_name], ["references/review_policy.md"]),
             run_script_tool,
         ]
 
@@ -1004,6 +1019,54 @@ def run_skills_reference():
         finally:
             shutil.rmtree(working_dir, ignore_errors=True)
 
+    if registry is None:
+        assert recorded_skills
+        assert all("gen_ai.skill.id" not in attrs and "gen_ai.skill.version" not in attrs for attrs in recorded_skills)
+    return recorded_skills
+
+
+def run_registry_skills_reference():
+    """Run the same skill tools with ADK's real GCP registry client and mock HTTP."""
+    import httpx
+    from google.adk.integrations.skill_registry.gcp_skill_registry import GCPSkillRegistry
+    from google.auth.credentials import AnonymousCredentials
+
+    skill_id = "projects/reference-project/locations/global/skills/example.code-review"
+    revision = f"{skill_id}/revisions/rev-7"
+    archive = io.BytesIO()
+    with zipfile.ZipFile(archive, "w") as bundle:
+        for path in sorted((SKILLS_DIR / "code-review").rglob("*")):
+            if path.is_file():
+                bundle.write(path, path.relative_to(SKILLS_DIR / "code-review"))
+
+    def respond(request):
+        if request.url.path == f"/v1alpha/{skill_id}":
+            return httpx.Response(200, json={"name": skill_id, "defaultRevision": revision})
+        if request.url.path == f"/v1alpha/{revision}" and request.url.params.get("alt") == "media":
+            return httpx.Response(200, content=archive.getvalue(), headers={"content-type": "application/zip"})
+        return httpx.Response(404, json={"error": "Skill not found"})
+
+    registry = GCPSkillRegistry(project_id="reference-project", location="global", credentials=AnonymousCredentials())
+    with patch.object(
+        registry, "_create_httpx_client", side_effect=lambda: httpx.AsyncClient(transport=httpx.MockTransport(respond))
+    ):
+        spans = run_skills_reference(registry)
+
+    successful = [attrs for attrs in spans if attrs.get("gen_ai.skill.id") and "error.type" not in attrs]
+    assert {attrs["gen_ai.tool.name"] for attrs in successful} == {
+        "load_skill",
+        "load_skill_resource",
+        "run_skill_script",
+    }
+    for attrs in successful:
+        assert attrs["gen_ai.skill.name"] == "example.code-review"
+        assert attrs["gen_ai.skill.id"] == skill_id
+        assert attrs["gen_ai.skill.version"] == "rev-7"
+        assert attrs["gen_ai.skill.source.uri"] == f"{registry.base_url}/{revision}"
+    missing = [attrs for attrs in spans if attrs.get("gen_ai.skill.name") == "ocr-tables"]
+    assert missing and all(attrs.get("error.type") == "REGISTRY_ERROR" for attrs in missing)
+    assert all("gen_ai.skill.id" not in attrs and "gen_ai.skill.version" not in attrs for attrs in missing)
+
 
 def main():
     print("=== Reference Implementation: Google ADK Reference Implementation ===")
@@ -1018,6 +1081,7 @@ def main():
     run_multi_agent_handoff_reference()
     run_memory_reference()
     run_skills_reference()
+    run_registry_skills_reference()
 
     print(f"\n  [diagnostic] Spans generated: {span_counter.count}")
 
