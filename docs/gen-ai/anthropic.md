@@ -333,27 +333,11 @@ and SHOULD be provided **at span creation time** (if provided at all):
 | `text_completion` | Text completions operation such as [OpenAI Completions API (Legacy)](https://platform.openai.com/docs/api-reference/completions) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `update_memory` | Update existing memory records | ![Development](https://img.shields.io/badge/-development-blue) |
 | `upsert_memory` | Create or update memory records without the caller choosing which | ![Development](https://img.shields.io/badge/-development-blue) |
-| `user_speech` | Describes the process of recording user speech input. [41] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `user_speech` | Describes the process of recording user speech input. | ![Development](https://img.shields.io/badge/-development-blue) |
 
 **[39]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
 
 **[40]:** This operation describes one server-side generation within a long-lived realtime session. A session can contain multiple generations, each represented by a separate `realtime_inference` span. The span follows the generation boundaries determined from the available provider signals, not the lifetime of the session or an individual client method call.
-
-**[41]:** This operation SHOULD be reported when instrumentation can reliably determine the
-start and end of user speech, either through user voice-activity detection (VAD) events
-in the model response or through client-side events when the application requires the
-user to manually start and stop recording.
-
-Examples:
-
-- OpenAI Realtime `input_audio_buffer.speech_started` /
-  `input_audio_buffer.speech_stopped` (provider VAD events).
-- A push-to-talk application that starts and stops recording on an explicit user action
-  (client-side start/stop events).
-
-It is speech-specific: text and other non-speech input have no such speaking interval
-and are carried on the `realtime_inference` operation through `gen_ai.input.messages`
-instead.
 
 ---
 

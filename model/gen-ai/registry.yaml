@@ -692,22 +692,6 @@ attributes:
         - id: user_speech
           value: "user_speech"
           brief: 'Describes the process of recording user speech input.'
-          note: |
-            This operation SHOULD be reported when instrumentation can reliably determine the
-            start and end of user speech, either through user voice-activity detection (VAD) events
-            in the model response or through client-side events when the application requires the
-            user to manually start and stop recording.
-
-            Examples:
-
-            - OpenAI Realtime `input_audio_buffer.speech_started` /
-              `input_audio_buffer.speech_stopped` (provider VAD events).
-            - A push-to-talk application that starts and stops recording on an explicit user action
-              (client-side start/stop events).
-
-            It is speech-specific: text and other non-speech input have no such speaking interval
-            and are carried on the `realtime_inference` operation through `gen_ai.input.messages`
-            instead.
           stability: development
         - id: text_completion
           value: "text_completion"
