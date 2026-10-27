@@ -18,3 +18,6 @@ Assistants API is covered by the `openai-assistants` scenario).
 Streaming TTFC is recorded on the span and metric at the first non-empty text, refusal, audio data/transcript, or function-call name/argument delta. Role, ID, usage, and empty deltas do not stop the timer.
 
 The scenario also checks metadata filtering, non-text output, authentication, retry backoff, and streams with no output using the real SDK, mock HTTP responses, and a controlled clock. These assertions run through the existing `run-scenario openai --strict` entry point.
+
+Embeddings covers successful requests and an SDK error from a mock HTTP response.
+Failed requests record duration and zero input tokens with `error.type`.

@@ -15,6 +15,7 @@
 - [System instructions along with chat history (content enabled)](#system-instructions-along-with-chat-history-content-enabled)
 - [Chat completion with reasoning (content enabled)](#chat-completion-with-reasoning-content-enabled)
 - [Tool calls (built-in)](#tool-calls-built-in)
+- [Content without a matching part type](#content-without-a-matching-part-type)
 - [Chat completion with multiple choices](#chat-completion-with-multiple-choices)
   - [GenAI client span when content capturing is enabled on span attributes](#genai-client-span-when-content-capturing-is-enabled-on-span-attributes-1)
 
@@ -838,6 +839,41 @@ sequenceDiagram
       {
         "type": "text",
         "content": "The generated random number is **89**, and the result of squaring it is **7921**"
+      }
+    ]
+  }
+]
+```
+
+## Content without a matching part type
+
+This example is an Anthropic Messages API call with a `search_result` content
+block recorded with `type` prefixed by `gen_ai.provider.name`
+(`"anthropic.search_result"`):
+
+```jsonc
+[
+  {
+    "role": "user",
+    "parts": [
+      {
+        "type": "text",
+        "content": "Answer using the attached search result."
+      },
+      // Anthropic search_result block, recorded with its original fields
+      {
+        "type": "anthropic.search_result",
+        "source": "https://example.com/docs/otel",
+        "title": "OpenTelemetry overview",
+        "content": [
+          {
+            "type": "text",
+            "text": "OpenTelemetry is an observability framework."
+          }
+        ],
+        "citations": {
+          "enabled": true
+        }
       }
     ]
   }

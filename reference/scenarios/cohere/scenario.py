@@ -6,12 +6,14 @@ against a mock Cohere server, with manual OTel spans.
 
 import json
 import os
+import time
 
-from opentelemetry.trace import SpanKind
+from opentelemetry.trace import SpanKind, StatusCode
 from reference_shared import (
     flush_and_shutdown,
     mock_server_host_port,
     reference_event_logger,
+    reference_meter,
     reference_tracer,
     setup_otel,
 )
@@ -19,6 +21,50 @@ from reference_shared import (
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"]
 
 _reference_tracer = reference_tracer()
+_reference_meter = reference_meter()
+
+_embeddings_duration = _reference_meter.create_histogram(
+    "gen_ai.client.embeddings.duration",
+    unit="s",
+    description="GenAI client embeddings operation duration.",
+    explicit_bucket_boundaries_advisory=[
+        0.01,
+        0.02,
+        0.04,
+        0.08,
+        0.16,
+        0.32,
+        0.64,
+        1.28,
+        2.56,
+        5.12,
+        10.24,
+        20.48,
+        40.96,
+        81.92,
+    ],
+)
+_embeddings_input_tokens = _reference_meter.create_histogram(
+    "gen_ai.client.embeddings.operation.input_tokens",
+    unit="{token}",
+    description="The number of input tokens used per embeddings operation.",
+    explicit_bucket_boundaries_advisory=[
+        1,
+        4,
+        16,
+        64,
+        256,
+        1024,
+        4096,
+        16384,
+        65536,
+        262144,
+        1048576,
+        4194304,
+        16777216,
+        67108864,
+    ],
+)
 
 
 def run_chat(client):
@@ -160,23 +206,39 @@ def run_embeddings(client):
         span_attributes_3["server.address"] = host
     if port is not None:
         span_attributes_3["server.port"] = port
+    start_time = time.perf_counter()
+    metric_attributes = dict(span_attributes_3)
+    input_token_count = 0
     with _reference_tracer.start_as_current_span(
-        "embeddings embed-v4.0", kind=SpanKind.CLIENT, attributes=span_attributes_3
+        "embeddings embed-v4.0",
+        kind=SpanKind.CLIENT,
+        attributes=span_attributes_3,
+        record_exception=False,
     ) as span:
-        span.set_attribute("gen_ai.request.encoding_formats", encoding_formats)
-        resp = client.embed(
-            model=request_model,
-            texts=["Hello, world!"],
-            input_type="search_document",
-            embedding_types=encoding_formats,
-        )
-        if hasattr(resp, "meta") and resp.meta and hasattr(resp.meta, "billed_units") and resp.meta.billed_units:
-            input_tokens = getattr(resp.meta.billed_units, "input_tokens", None)
-            if input_tokens is not None:
-                span.set_attribute("gen_ai.usage.input_tokens", int(input_tokens))
-        if resp.embeddings and resp.embeddings.float_ and resp.embeddings.float_[0]:
-            span.set_attribute("gen_ai.embeddings.dimension.count", len(resp.embeddings.float_[0]))
-        print(f"    -> embedding dim: {len(resp.embeddings.float_[0])}")
+        try:
+            span.set_attribute("gen_ai.request.encoding_formats", encoding_formats)
+            resp = client.embed(
+                model=request_model,
+                texts=["Hello, world!"],
+                input_type="search_document",
+                embedding_types=encoding_formats,
+            )
+            if hasattr(resp, "meta") and resp.meta and hasattr(resp.meta, "billed_units") and resp.meta.billed_units:
+                input_tokens = getattr(resp.meta.billed_units, "input_tokens", None)
+                if input_tokens is not None:
+                    span.set_attribute("gen_ai.usage.input_tokens", int(input_tokens))
+                    input_token_count = int(input_tokens)
+            if resp.embeddings and resp.embeddings.float_ and resp.embeddings.float_[0]:
+                span.set_attribute("gen_ai.embeddings.dimension.count", len(resp.embeddings.float_[0]))
+            print(f"    -> embedding dim: {len(resp.embeddings.float_[0])}")
+        except Exception as e:
+            span.set_status(StatusCode.ERROR, str(e))
+            span.set_attribute("error.type", type(e).__qualname__)
+            metric_attributes["error.type"] = type(e).__qualname__
+            raise
+        finally:
+            _embeddings_duration.record(time.perf_counter() - start_time, metric_attributes)
+            _embeddings_input_tokens.record(input_token_count, metric_attributes)
 
 
 def main():

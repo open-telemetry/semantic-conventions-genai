@@ -50,6 +50,17 @@ def test_inference_scenarios_report_inference_duration():
         assert metrics["gen_ai.client.inference.duration"]["gen_ai.provider.name"] == "present", library
 
 
+def test_embeddings_scenarios_report_embeddings_metrics():
+    entries = {entry.library: entry for entry in load_scenario_data_files()}
+    libraries = ("aws-bedrock", "azure-ai-inference", "azure-openai", "cohere", "google-genai", "litellm", "mistralai", "openai")
+    for library in libraries:
+        metrics = entries[library].metrics
+        assert "gen_ai.client.embeddings.duration" in metrics, library
+        assert metrics["gen_ai.client.embeddings.duration"]["gen_ai.operation.name"] == "present", library
+    for library in set(libraries) - {"google-genai"}:
+        assert "gen_ai.client.embeddings.operation.input_tokens" in entries[library].metrics, library
+
+
 def test_entity_specs_expose_required_id():
     specs = entity_specs()
     assert "gen_ai.main_agent" in specs
@@ -106,9 +117,9 @@ def test_span_types_absent_from_a_data_file_are_not_reported():
     assert entry.spans == {}
 
 
-def test_span_specs_are_named_as_the_registry_names_them():
+def test_span_specs_are_named_in_recognized_registry_namespaces():
     for key, spec in span_specs().items():
-        assert spec.registry_id.startswith("gen_ai."), key
+        assert spec.registry_id.startswith(("a2a.", "gen_ai.")), key
 
 
 if __name__ == "__main__":
@@ -116,11 +127,12 @@ if __name__ == "__main__":
     test_metric_specs_are_named_as_the_registry_names_them()
     test_committed_google_adk_metrics_round_trip()
     test_inference_scenarios_report_inference_duration()
+    test_embeddings_scenarios_report_embeddings_metrics()
     test_entity_specs_expose_required_id()
     test_entities_keep_their_registry_names()
     test_entities_with_sections_round_trip()
     test_registry_span_names_map_onto_report_keys()
     test_events_keep_their_registry_names()
     test_span_types_absent_from_a_data_file_are_not_reported()
-    test_span_specs_are_named_as_the_registry_names_them()
+    test_span_specs_are_named_in_recognized_registry_namespaces()
     print("ok")

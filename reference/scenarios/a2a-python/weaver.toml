@@ -1,0 +1,4 @@
+# Validate ASGI transport telemetry against the pinned upstream conventions as
+# well as the A2A conventions in this repository.
+[registry]
+include_unreferenced = true

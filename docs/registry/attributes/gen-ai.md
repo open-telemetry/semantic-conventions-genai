@@ -71,6 +71,8 @@
 | <a id="gen-ai-tool-description" href="#gen-ai-tool-description">`gen_ai.tool.description`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The tool description. [37] | `Multiply two numbers` |
 | <a id="gen-ai-tool-name" href="#gen-ai-tool-name">`gen_ai.tool.name`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | Name of the tool utilized by the agent. | `Flights` |
 | <a id="gen-ai-tool-type" href="#gen-ai-tool-type">`gen_ai.tool.type`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | Type of the tool utilized by the agent [38] | `function`; `extension`; `datastore` |
+| <a id="gen-ai-transfer-mode" href="#gen-ai-transfer-mode">`gen_ai.transfer.mode`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | Describes how control passes to the transfer target. | `return_to_caller`; `pass_control` |
+| <a id="gen-ai-transfer-target-name" href="#gen-ai-transfer-target-name">`gen_ai.transfer.target.name`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The human-readable name of the agent targeted by the transfer. | `weather_agent` |
 | <a id="gen-ai-usage-audio-cache-read-input-tokens" href="#gen-ai-usage-audio-cache-read-input-tokens">`gen_ai.usage.audio.cache_read.input_tokens`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The number of audio input tokens served from a provider-managed cache. [39] | `60` |
 | <a id="gen-ai-usage-audio-input-tokens" href="#gen-ai-usage-audio-input-tokens">`gen_ai.usage.audio.input_tokens`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The number of audio input tokens. [40] | `120` |
 | <a id="gen-ai-usage-audio-output-tokens" href="#gen-ai-usage-audio-output-tokens">`gen_ai.usage.audio.output_tokens`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The number of audio output tokens. [41] | `240` |
@@ -141,7 +143,7 @@ Instrumentation MUST NOT generate `gen_ai.main_agent.id` from an in-memory or pr
 **[9] `gen_ai.main_agent.name`:** In Agent-to-Agent (A2A) communication, this maps to the `name` property declared in the Agent Card.
 
 **[10] `gen_ai.memory.query.text`:** Instrumentations SHOULD NOT capture this attribute by default. Capture SHOULD be gated
-by an explicit user opt-in, for example `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT`.
+by an explicit user opt-in via [content capture configuration](/docs/gen-ai/gen-ai-spans.md#content-capture-configuration).
 
 > [!Warning]
 > This attribute may contain sensitive information.
@@ -149,7 +151,7 @@ by an explicit user opt-in, for example `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESS
 **[11] `gen_ai.memory.record.count`:** For `search_memory` operations, this is the number of memory records returned by the operation. For `create_memory` operations, this is the number of memory records the operation attempted to create. For `update_memory` operations, this is the number of memory records the operation attempted to modify. For `upsert_memory` operations, this is the number of memory records the operation attempted to create or update. For `delete_memory` operations, this is the number of memory records the operation attempted to delete.
 
 **[12] `gen_ai.memory.records`:** Instrumentations SHOULD NOT capture this attribute by default. Capture SHOULD be gated
-by an explicit user opt-in, for example `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT`.
+by an explicit user opt-in via [content capture configuration](/docs/gen-ai/gen-ai-spans.md#content-capture-configuration).
 
 > [!Warning]
 > This attribute may contain sensitive information including user/PII data.
@@ -512,3 +514,12 @@ what `gen_ai.workflow.name` means in the context of that framework.
 | `image` | Image tokens. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `text` | Text tokens. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `unknown` | The modality is not known. | ![Development](https://img.shields.io/badge/-development-blue) |
+
+---
+
+`gen_ai.transfer.mode` has the following list of well-known values. If one of them applies, then the respective value MUST be used; otherwise, a custom value MAY be used.
+
+| Value | Description | Stability |
+| --- | --- | --- |
+| `pass_control` | The initiator does not wait for the target to finish. The target takes control of the remaining work. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `return_to_caller` | The initiator waits for the target to finish and then resumes execution. | ![Development](https://img.shields.io/badge/-development-blue) |

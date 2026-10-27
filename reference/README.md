@@ -26,6 +26,8 @@ Run `uv run update-reports` to regenerate.
 
 | Span | Libraries |
 | --- | --- |
+| [A2A Client](reports/a2a-client-span.md) | a2a-python |
+| [A2A Server](reports/a2a-server-span.md) | a2a-python |
 | [Create Agent](reports/create-agent-span.md) | anthropic, aws-bedrock-agent, azure-ai-foundry, google-genai, mistralai, openai-assistants |
 | [Invoke Agent Client](reports/invoke-agent-client-span.md) | aws-bedrock-agent, azure-ai-foundry, google-genai, openai-assistants |
 | [Invoke Agent Internal](reports/invoke-agent-internal-span.md) | adk_a2a, agent-framework, autogen, crewai, google-adk, langchain, openai-agents, pydantic-ai |
@@ -64,6 +66,8 @@ Run `uv run update-reports` to regenerate.
 | [Client Inference Operation Output Tokens](reports/gen-ai-client-inference-operation-output-tokens-metric.md) | anthropic, google-genai, openai |
 | [Client Operation Duration](reports/gen-ai-client-operation-duration-metric.md) | adk_a2a |
 | [Client Inference Duration](reports/gen-ai-client-inference-duration-metric.md) | agent-framework, anthropic, groq |
+| [Client Embeddings Duration](reports/gen-ai-client-embeddings-duration-metric.md) | aws-bedrock, azure-ai-inference, azure-openai, cohere, google-genai, litellm, mistralai, openai |
+| [Client Embeddings Operation Input Tokens](reports/gen-ai-client-embeddings-operation-input-tokens-metric.md) | aws-bedrock, azure-ai-inference, azure-openai, cohere, litellm, mistralai, openai |
 | [Invoke Agent Inference Calls](reports/gen-ai-invoke-agent-inference-calls-metric.md) | adk_a2a, google-adk |
 | [Invoke Agent Tool Calls](reports/gen-ai-invoke-agent-tool-calls-metric.md) | adk_a2a, google-adk |
 <!-- status:end -->
