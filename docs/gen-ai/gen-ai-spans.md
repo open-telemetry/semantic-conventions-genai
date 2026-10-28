@@ -52,7 +52,7 @@ are defined in [Retrieval](retrieval.md).
 <!-- see templates/registry/markdown/snippet.md.j2 -->
 <!-- prettier-ignore-start -->
 
-**Status:** ![Development](https://img.shields.io/badge/-development-blue)
+**Status:** ![Deprecated](https://img.shields.io/badge/-deprecated-red)<br>Calls to retrieval or search services SHOULD be instrumented following database or other applicable client semantic conventions. Retrieval performed by GenAI frameworks and applications SHOULD be reported with the `gen_ai.retrieval` span.
 
 Describes GenAI retrieval span - a request to a Generative AI service or framework that retrieves relevant information or context from a vector database or search system.
 
