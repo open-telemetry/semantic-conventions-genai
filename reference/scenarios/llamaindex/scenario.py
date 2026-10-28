@@ -2,11 +2,12 @@
 
 import json
 import os
+import time
 
-from opentelemetry.trace import SpanKind
+from opentelemetry.trace import StatusCode
 from reference_shared import (
     flush_and_shutdown,
-    mock_server_host_port,
+    reference_meter,
     reference_tracer,
     setup_otel,
 )
@@ -14,6 +15,28 @@ from reference_shared import (
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"] + "/v1"
 
 _reference_tracer = reference_tracer()
+_reference_meter = reference_meter()
+_retrieval_duration = _reference_meter.create_histogram(
+    name="gen_ai.retrieval.duration",
+    unit="s",
+    description="The duration of a single retrieval operation.",
+    explicit_bucket_boundaries_advisory=[
+        0.01,
+        0.02,
+        0.04,
+        0.08,
+        0.16,
+        0.32,
+        0.64,
+        1.28,
+        2.56,
+        5.12,
+        10.24,
+        20.48,
+        40.96,
+        81.92,
+    ],
+)
 
 
 def run_agent_reference(llm):
@@ -70,7 +93,6 @@ def run_retrieval_reference():
 
     request_model = "text-embedding-3-small"
     data_source_id = "weather-knowledge-base"
-    host, port = mock_server_host_port(MOCK_BASE_URL)
     documents = [
         Document(text="Seattle weather is rainy and cool.", metadata={"source_id": data_source_id}),
     ]
@@ -84,31 +106,37 @@ def run_retrieval_reference():
     retriever = index.as_retriever(similarity_top_k=top_k)
     query_text = "Seattle weather"
 
-    with _reference_tracer.start_as_current_span("retrieval weather-knowledge-base", kind=SpanKind.CLIENT) as span:
-        span.set_attribute("gen_ai.operation.name", "retrieval")
-        span.set_attribute("gen_ai.data_source.id", data_source_id)
-        span.set_attribute("gen_ai.provider.name", "openai")
-        span.set_attribute("gen_ai.request.model", request_model)
-        span.set_attribute("gen_ai.retrieval.top_k", top_k)
-        span.set_attribute("gen_ai.retrieval.query.text", query_text)
-        if host:
-            span.set_attribute("server.address", host)
-        if port is not None:
-            span.set_attribute("server.port", port)
-        nodes = retriever.retrieve(query_text)
-        span.set_attribute(
-            "gen_ai.retrieval.documents",
-            json.dumps(
-                [
-                    {
-                        "content": node.text,
-                        "source_id": node.metadata.get("source_id"),
-                    }
-                    for node in nodes
-                ]
-            ),
-        )
-        print(f"    -> {nodes[0].text[:60]}")
+    # The query embeddings call inside retrieve() belongs to the embeddings
+    # instrumentation, so the retrieval span carries no provider, model, or server.
+    metric_attributes = {"gen_ai.operation.name": "retrieval", "gen_ai.data_source.id": data_source_id}
+    start_time = time.perf_counter()
+    with _reference_tracer.start_as_current_span(
+        f"retrieval {data_source_id}", attributes=metric_attributes, record_exception=False
+    ) as span:
+        try:
+            span.set_attribute("gen_ai.retrieval.top_k", top_k)
+            span.set_attribute("gen_ai.retrieval.query.text", query_text)
+            nodes = retriever.retrieve(query_text)
+            span.set_attribute(
+                "gen_ai.retrieval.documents",
+                json.dumps(
+                    [
+                        {
+                            "content": node.text,
+                            "source_id": node.metadata.get("source_id"),
+                        }
+                        for node in nodes
+                    ]
+                ),
+            )
+            print(f"    -> {nodes[0].text[:60]}")
+        except Exception as e:
+            span.set_status(StatusCode.ERROR, str(e))
+            span.set_attribute("error.type", type(e).__qualname__)
+            metric_attributes = {**metric_attributes, "error.type": type(e).__qualname__}
+            raise
+        finally:
+            _retrieval_duration.record(time.perf_counter() - start_time, metric_attributes)
 
 
 def main():

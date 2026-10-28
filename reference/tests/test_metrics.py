@@ -61,6 +61,15 @@ def test_embeddings_scenarios_report_embeddings_metrics():
         assert "gen_ai.client.embeddings.operation.input_tokens" in entries[library].metrics, library
 
 
+def test_retrieval_scenarios_report_retrieval_metrics():
+    entries = {entry.library: entry for entry in load_scenario_data_files()}
+    for library in ("haystack", "langchain", "llamaindex"):
+        metrics = entries[library].metrics
+        assert "gen_ai.client.operation.duration" not in metrics, library
+        assert metrics["gen_ai.retrieval.duration"]["gen_ai.operation.name"] == "present", library
+        assert metrics["gen_ai.retrieval.duration"]["gen_ai.data_source.id"] == "present", library
+
+
 def test_entity_specs_expose_required_id():
     specs = entity_specs()
     assert "gen_ai.main_agent" in specs

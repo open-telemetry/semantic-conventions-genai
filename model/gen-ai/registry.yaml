@@ -700,7 +700,7 @@ attributes:
           stability: development
         - id: retrieval
           value: "retrieval"
-          brief: 'Retrieval operation such as [OpenAI Search Vector Store API](https://platform.openai.com/docs/api-reference/vector-stores/search)'
+          brief: 'Retrieval operation such as a query to a LangChain, LlamaIndex, or Haystack retriever'
           stability: development
         - id: fetch_response
           value: "fetch_response"

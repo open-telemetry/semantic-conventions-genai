@@ -3,11 +3,12 @@
 import asyncio
 import json
 import os
+import time
 from typing import TypedDict
 
 from langchain_core.tools import tool
-from opentelemetry.trace import SpanKind
-from reference_shared import flush_and_shutdown, reference_tracer, setup_otel
+from opentelemetry.trace import StatusCode
+from reference_shared import flush_and_shutdown, reference_meter, reference_tracer, setup_otel
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"] + "/v1"
 
@@ -16,6 +17,28 @@ AGENT_NAME = "weather-agent"
 AGENT_SYSTEM_PROMPT = "You are a helpful weather assistant."
 
 _reference_tracer = reference_tracer()
+_reference_meter = reference_meter()
+_retrieval_duration = _reference_meter.create_histogram(
+    name="gen_ai.retrieval.duration",
+    unit="s",
+    description="The duration of a single retrieval operation.",
+    explicit_bucket_boundaries_advisory=[
+        0.01,
+        0.02,
+        0.04,
+        0.08,
+        0.16,
+        0.32,
+        0.64,
+        1.28,
+        2.56,
+        5.12,
+        10.24,
+        20.48,
+        40.96,
+        81.92,
+    ],
+)
 
 
 @tool
@@ -113,25 +136,35 @@ def run_retrieval_reference():
         top_k=top_k,
     )
 
-    with _reference_tracer.start_as_current_span("retrieval weather-knowledge-base", kind=SpanKind.CLIENT) as span:
-        span.set_attribute("gen_ai.operation.name", "retrieval")
-        span.set_attribute("gen_ai.data_source.id", data_source_id)
-        span.set_attribute("gen_ai.retrieval.top_k", top_k)
-        span.set_attribute("gen_ai.retrieval.query.text", query_text)
-        documents = retriever.invoke(query_text)
-        span.set_attribute(
-            "gen_ai.retrieval.documents",
-            json.dumps(
-                [
-                    {
-                        "content": document.page_content,
-                        "source_id": document.metadata.get("source_id"),
-                    }
-                    for document in documents
-                ]
-            ),
-        )
-        print(f"    -> {documents[0].page_content[:60]}")
+    metric_attributes = {"gen_ai.operation.name": "retrieval", "gen_ai.data_source.id": data_source_id}
+    start_time = time.perf_counter()
+    with _reference_tracer.start_as_current_span(
+        f"retrieval {data_source_id}", attributes=metric_attributes, record_exception=False
+    ) as span:
+        try:
+            span.set_attribute("gen_ai.retrieval.top_k", top_k)
+            span.set_attribute("gen_ai.retrieval.query.text", query_text)
+            documents = retriever.invoke(query_text)
+            span.set_attribute(
+                "gen_ai.retrieval.documents",
+                json.dumps(
+                    [
+                        {
+                            "content": document.page_content,
+                            "source_id": document.metadata.get("source_id"),
+                        }
+                        for document in documents
+                    ]
+                ),
+            )
+            print(f"    -> {documents[0].page_content[:60]}")
+        except Exception as e:
+            span.set_status(StatusCode.ERROR, str(e))
+            span.set_attribute("error.type", type(e).__qualname__)
+            metric_attributes = {**metric_attributes, "error.type": type(e).__qualname__}
+            raise
+        finally:
+            _retrieval_duration.record(time.perf_counter() - start_time, metric_attributes)
 
 
 def run_plan_and_execute_reference():

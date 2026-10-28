@@ -1,0 +1,1 @@
+Add the `gen_ai.retrieval` internal span and `gen_ai.retrieval.duration` metric for retrieval performed by GenAI frameworks and applications, documented in `retrieval.md`. ([#637](https://github.com/open-telemetry/semantic-conventions-genai/issues/637))
