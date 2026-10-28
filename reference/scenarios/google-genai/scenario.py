@@ -368,17 +368,14 @@ def run_interactions_continuation():
             "gen_ai.request.model": request_model,
             "gen_ai.request.previous_response.id": previous_interaction_id,
             "gen_ai.input.messages": [{"role": "user", "parts": [{"type": "text", "content": prompt_text}]}],
-            "gen_ai.output.messages": [
+        }
+        if interaction.output_text is not None:
+            event_attrs["gen_ai.output.messages"] = [
                 {
                     "role": "assistant",
-                    "parts": [
-                        {"type": "text", "content": output.text}
-                        for output in interaction.outputs or []
-                        if output.type == "text"
-                    ],
+                    "parts": [{"type": "text", "content": interaction.output_text}],
                 }
-            ],
-        }
+            ]
         if interaction.id:
             event_attrs["gen_ai.response.id"] = interaction.id
         if interaction.model:
