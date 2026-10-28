@@ -1,6 +1,5 @@
 """Reference implementation for OpenAI."""
 
-import json
 import os
 import time
 
@@ -241,9 +240,7 @@ def run_chat_reference(client):
         {"role": "user", "content": "Say hello."},
     ]
     host, port = mock_server_host_port(MOCK_BASE_URL)
-    input_messages = json.dumps(
-        [{"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]} for m in messages]
-    )
+    input_messages = [{"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]} for m in messages]
     span_attributes = {
         "gen_ai.operation.name": "chat",
         "gen_ai.provider.name": "openai",
@@ -290,7 +287,7 @@ def run_chat_reference(client):
             }
             for c in resp.choices
         ]
-        span.set_attribute("gen_ai.output.messages", json.dumps(output_messages))
+        span.set_attribute("gen_ai.output.messages", output_messages)
         # Build usage attributes once so the span, the event, and the metrics stay identical.
         usage = {}
         if resp.usage:
@@ -316,7 +313,7 @@ def run_chat_reference(client):
             "gen_ai.response.model": resp.model,
             "gen_ai.response.finish_reasons": finish_reasons,
             "gen_ai.input.messages": input_messages,
-            "gen_ai.output.messages": json.dumps(output_messages),
+            "gen_ai.output.messages": output_messages,
         }
         event_attrs.update(usage)
         if host:
@@ -360,7 +357,7 @@ def run_responses_compaction_reference(client):
     ) as span:
         span.set_attribute(
             "gen_ai.input.messages",
-            json.dumps([{"role": "user", "parts": [{"type": "text", "content": conversation[0]["content"]}]}]),
+            [{"role": "user", "parts": [{"type": "text", "content": conversation[0]["content"]}]}],
         )
         response = client.responses.create(
             model=request_model,
@@ -381,7 +378,7 @@ def run_responses_compaction_reference(client):
             span.set_attribute("gen_ai.response.finish_reasons", [finish_reason])
         output_messages = responses_output_messages(response)
         if output_messages:
-            span.set_attribute("gen_ai.output.messages", json.dumps(output_messages))
+            span.set_attribute("gen_ai.output.messages", output_messages)
         # Build usage attributes once so the span and the event stay identical.
         usage = {}
         if response.usage:
@@ -409,14 +406,14 @@ def run_responses_compaction_reference(client):
             "gen_ai.request.model": request_model,
             "gen_ai.response.id": response.id,
             "gen_ai.response.model": response.model,
-            "gen_ai.input.messages": json.dumps(
-                [{"role": "user", "parts": [{"type": "text", "content": conversation[0]["content"]}]}]
-            ),
+            "gen_ai.input.messages": [
+                {"role": "user", "parts": [{"type": "text", "content": conversation[0]["content"]}]}
+            ],
         }
         if finish_reason is not None:
             event_attrs["gen_ai.response.finish_reasons"] = [finish_reason]
         if output_messages:
-            event_attrs["gen_ai.output.messages"] = json.dumps(output_messages)
+            event_attrs["gen_ai.output.messages"] = output_messages
         event_attrs.update(usage)
         if host:
             event_attrs["server.address"] = host
@@ -472,9 +469,7 @@ def run_responses_continuation_reference(client):
     ) as span:
         span.set_attribute(
             "gen_ai.input.messages",
-            json.dumps(
-                [{"role": "user", "parts": [{"type": "text", "content": continuation_conversation[0]["content"]}]}]
-            ),
+            [{"role": "user", "parts": [{"type": "text", "content": continuation_conversation[0]["content"]}]}],
         )
         response = client.responses.create(
             model=request_model,
@@ -489,7 +484,7 @@ def run_responses_continuation_reference(client):
             span.set_attribute("gen_ai.response.finish_reasons", [finish_reason])
         output_messages = responses_output_messages(response)
         if output_messages:
-            span.set_attribute("gen_ai.output.messages", json.dumps(output_messages))
+            span.set_attribute("gen_ai.output.messages", output_messages)
         usage = {}
         if response.usage:
             usage["gen_ai.usage.input_tokens"] = response.usage.input_tokens
@@ -505,14 +500,14 @@ def run_responses_continuation_reference(client):
             "gen_ai.request.previous_response.id": previous_response_id,
             "gen_ai.response.id": response.id,
             "gen_ai.response.model": response.model,
-            "gen_ai.input.messages": json.dumps(
-                [{"role": "user", "parts": [{"type": "text", "content": continuation_conversation[0]["content"]}]}]
-            ),
+            "gen_ai.input.messages": [
+                {"role": "user", "parts": [{"type": "text", "content": continuation_conversation[0]["content"]}]}
+            ],
         }
         if finish_reason is not None:
             event_attrs["gen_ai.response.finish_reasons"] = [finish_reason]
         if output_messages:
-            event_attrs["gen_ai.output.messages"] = json.dumps(output_messages)
+            event_attrs["gen_ai.output.messages"] = output_messages
         event_attrs.update(usage)
         if host:
             event_attrs["server.address"] = host
@@ -547,9 +542,7 @@ def run_chat_streaming_reference(client):
     ) as span:
         span.set_attribute(
             "gen_ai.input.messages",
-            json.dumps(
-                [{"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]} for m in request_messages]
-            ),
+            [{"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]} for m in request_messages],
         )
         stream = client.chat.completions.create(
             model=request_model,
@@ -590,7 +583,7 @@ def run_chat_streaming_reference(client):
                 "role": "assistant",
                 "parts": [{"type": "text", "content": text}],
             }
-            span.set_attribute("gen_ai.output.messages", json.dumps([output_message]))
+            span.set_attribute("gen_ai.output.messages", [output_message])
         usage = {}
         if input_tokens is not None:
             usage["gen_ai.usage.input_tokens"] = input_tokens
@@ -638,7 +631,7 @@ def run_chat_tool_call_reference(client):
     with _reference_tracer.start_as_current_span(
         "chat gpt-4o-mini", kind=SpanKind.CLIENT, attributes=span_attributes_3
     ) as span:
-        span.set_attribute("gen_ai.tool.definitions", json.dumps([{"type": t["type"], **t["function"]} for t in tools]))
+        span.set_attribute("gen_ai.tool.definitions", [{"type": t["type"], **t["function"]} for t in tools])
         resp = client.chat.completions.create(
             model=request_model,
             messages=[{"role": "user", "content": "What's the weather in Seattle?"}],
@@ -711,7 +704,7 @@ def run_chat_with_document_input_reference(client):
             "content": pdf_b64,
         },
     ]
-    input_messages = json.dumps([{"role": "user", "parts": input_parts}])
+    input_messages = [{"role": "user", "parts": input_parts}]
 
     host, port = mock_server_host_port(MOCK_BASE_URL)
     span_attributes_doc = {
@@ -741,7 +734,7 @@ def run_chat_with_document_input_reference(client):
             }
             for c in resp.choices
         ]
-        span.set_attribute("gen_ai.output.messages", json.dumps(output_messages))
+        span.set_attribute("gen_ai.output.messages", output_messages)
         usage = {}
         if resp.usage:
             usage["gen_ai.usage.input_tokens"] = resp.usage.prompt_tokens
@@ -783,7 +776,7 @@ def run_chat_image_reference(client):
             "content": image_b64,
         },
     ]
-    input_messages = json.dumps([{"role": "user", "parts": input_parts}])
+    input_messages = [{"role": "user", "parts": input_parts}]
 
     host, port = mock_server_host_port(MOCK_BASE_URL)
     span_attributes_img = {
@@ -811,7 +804,7 @@ def run_chat_image_reference(client):
             }
             for c in resp.choices
         ]
-        span.set_attribute("gen_ai.output.messages", json.dumps(output_messages))
+        span.set_attribute("gen_ai.output.messages", output_messages)
         usage = {}
         if resp.usage:
             usage["gen_ai.usage.input_tokens"] = resp.usage.prompt_tokens
@@ -854,17 +847,15 @@ def run_chat_audio_reference(client):
         span_attributes["server.address"] = host
     if port is not None:
         span_attributes["server.port"] = port
-    input_messages = json.dumps(
-        [
-            {
-                "role": "user",
-                "parts": [
-                    {"type": "text", "content": "Respond to this audio clip."},
-                    {"type": "blob", "mime_type": "audio/wav", "modality": "audio", "content": audio_b64},
-                ],
-            }
-        ]
-    )
+    input_messages = [
+        {
+            "role": "user",
+            "parts": [
+                {"type": "text", "content": "Respond to this audio clip."},
+                {"type": "blob", "mime_type": "audio/wav", "modality": "audio", "content": audio_b64},
+            ],
+        }
+    ]
     with _reference_tracer.start_as_current_span("chat gpt-4o-audio-preview", attributes=span_attributes) as span:
         resp = client.chat.completions.create(
             model=request_model,
@@ -895,16 +886,14 @@ def run_chat_audio_reference(client):
             span.set_attribute(attr, value)
         record_inference_usage(usage, usage_metric_attributes(request_model, resp.model, host, port))
 
-        output_messages = json.dumps(
-            [
-                {
-                    "role": c.message.role,
-                    # Audio output puts the text in the transcript, not in content.
-                    "parts": [{"type": "text", "content": c.message.content or c.message.audio.transcript}],
-                }
-                for c in resp.choices
-            ]
-        )
+        output_messages = [
+            {
+                "role": c.message.role,
+                # Audio output puts the text in the transcript, not in content.
+                "parts": [{"type": "text", "content": c.message.content or c.message.audio.transcript}],
+            }
+            for c in resp.choices
+        ]
         event_attrs = {
             "gen_ai.operation.name": "chat",
             "gen_ai.provider.name": "openai",
@@ -1053,14 +1042,12 @@ def run_responses_with_prompt_template_reference(client):
         if output_text:
             span.set_attribute(
                 "gen_ai.output.messages",
-                json.dumps(
-                    [
-                        {
-                            "role": "assistant",
-                            "parts": [{"type": "text", "content": output_text}],
-                        }
-                    ]
-                ),
+                [
+                    {
+                        "role": "assistant",
+                        "parts": [{"type": "text", "content": output_text}],
+                    }
+                ],
             )
         usage = {}
         if resp.usage:
@@ -1087,9 +1074,9 @@ def run_responses_with_prompt_template_reference(client):
         for var_name, var_value in prompt_variables.items():
             event_attrs[f"gen_ai.prompt.variable.{var_name}"] = var_value
         if output_text:
-            event_attrs["gen_ai.output.messages"] = json.dumps(
-                [{"role": "assistant", "parts": [{"type": "text", "content": output_text}]}]
-            )
+            event_attrs["gen_ai.output.messages"] = [
+                {"role": "assistant", "parts": [{"type": "text", "content": output_text}]}
+            ]
         event_attrs.update(usage)
         if host:
             event_attrs["server.address"] = host
@@ -1174,11 +1161,11 @@ def _emit_fetch_response_span(client, response_id, starting_after=None):
         if instructions:
             span.set_attribute(
                 "gen_ai.system_instructions",
-                json.dumps([{"type": "text", "content": instructions}]),
+                [{"type": "text", "content": instructions}],
             )
         output_messages = responses_output_messages(fetched)
         if output_messages:
-            span.set_attribute("gen_ai.output.messages", json.dumps(output_messages))
+            span.set_attribute("gen_ai.output.messages", output_messages)
         # Token usage is intentionally NOT recorded on this span: no inference
         # happens on a fetch, and the fetched response's token counts belong to
         # the original generation (already accounted for on that operation).
