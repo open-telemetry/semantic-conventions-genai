@@ -18,6 +18,11 @@
 - [Content without a matching part type](#content-without-a-matching-part-type)
 - [Chat completion with multiple choices](#chat-completion-with-multiple-choices)
   - [GenAI client span when content capturing is enabled on span attributes](#genai-client-span-when-content-capturing-is-enabled-on-span-attributes-1)
+- [Realtime inference without tool calls](#realtime-inference-without-tool-calls)
+  - [Realtime inference span when content capturing is disabled](#realtime-inference-span-when-content-capturing-is-disabled)
+  - [Realtime inference span when content capturing is enabled on span attributes](#realtime-inference-span-when-content-capturing-is-enabled-on-span-attributes)
+- [Realtime inference with tool calls](#realtime-inference-with-tool-calls)
+  - [Tool execution across two generations](#tool-execution-across-two-generations)
 
 <!-- tocstop -->
 
@@ -733,7 +738,7 @@ a model provider executing a tool and returning response along with tool call de
 client-side function tool calls.
 
 ```py
-response = client.responses.create(   
+response = client.responses.create(
   model="gpt-4",
   input="Write Python code that generates a random number, executes it, and returns the result.",
   tools=[{"type": "code_interpreter"}],
@@ -965,6 +970,333 @@ sequenceDiagram
       {
         "type": "text",
         "content": " Why did OpenTelemetry get promoted? It had great span of control!"
+      }
+    ]
+  }
+]
+```
+
+## Realtime inference without tool calls
+
+This example shows one generation in a realtime session. The session lifecycle
+is recorded with events rather than a span. The optional `user_speech` span is
+recorded only when instrumentation can reliably determine its boundaries.
+
+```mermaid
+%%{init:
+{
+  "sequence": { "messageAlign": "left", "htmlLabels":true },
+  "themeVariables": { "noteBkgColor" : "green", "noteTextColor": "black", "activationBkgColor": "green", "htmlLabels":true }
+}
+}%%
+sequenceDiagram
+    participant A as Application
+    participant I as Instrumented realtime client
+    participant M as Model
+    A->>I: Open realtime connection
+    I->>M: Establish realtime connection
+    M-->>I: Connection established
+    I-->>A: Connection established
+    Note left of I: realtime_session.started event
+    M-->>I: User speech started
+    activate I
+    Note left of I: user_speech span
+    loop While user is speaking
+        A->>I: Stream user audio
+        I->>M: Stream user audio
+    end
+    M-->>I: User speech stopped
+    deactivate I
+    M-->>I: User input committed
+    activate I
+    Note left of I: realtime_inference span
+    M-->>I: Stream output audio
+    M-->>I: Generation completed
+    deactivate I
+    I-->>A: Play model output
+    A->>I: Close realtime connection
+    I->>M: Close realtime connection
+    M-->>I: Connection closed
+    Note left of I: realtime_session.ended event
+    I-->>A: Connection closed
+```
+
+The session lifecycle events, `user_speech` span, and `realtime_inference` span
+use the same `gen_ai.realtime_session.id` when it is available.
+
+### Realtime inference span when content capturing is disabled
+
+| Property                         | Value                               |
+| -------------------------------- | ----------------------------------- |
+| Span name                        | `"realtime_inference gpt-realtime"` |
+| `gen_ai.operation.name`          | `"realtime_inference"`              |
+| `gen_ai.realtime_session.id`     | `"sess_5j66UpCpwteGg4YSxUnt7lPY"`   |
+| `gen_ai.response.finish_reasons` | `["stop"]`                          |
+
+### Realtime inference span when content capturing is enabled on span attributes
+
+| Property                         | Value                                 |
+| -------------------------------- | ------------------------------------- |
+| Span name                        | `"realtime_inference gpt-realtime"`   |
+| `gen_ai.operation.name`          | `"realtime_inference"`                |
+| `gen_ai.realtime_session.id`     | `"sess_5j66UpCpwteGg4YSxUnt7lPY"`     |
+| `gen_ai.input.messages`          | [`gen_ai.input.messages`](#gen-ai-input-messages-realtime) |
+| `gen_ai.output.messages`         | [`gen_ai.output.messages`](#gen-ai-output-messages-realtime) |
+| `gen_ai.response.finish_reasons` | `["stop"]`                            |
+
+<span id="gen-ai-input-messages-realtime">`gen_ai.input.messages` value</span>
+
+```json
+[
+  {
+    "role": "user",
+    "parts": [
+      {
+        "type": "blob",
+        "modality": "audio",
+        "mime_type": "audio/pcm",
+        "content": "UklGRi4uLg=="
+      },
+      {
+        "type": "transcription",
+        "content": "What is the weather in Paris?"
+      }
+    ]
+  }
+]
+```
+
+<span id="gen-ai-output-messages-realtime">`gen_ai.output.messages` value</span>
+
+```json
+[
+  {
+    "role": "assistant",
+    "parts": [
+      {
+        "type": "blob",
+        "modality": "audio",
+        "mime_type": "audio/pcm",
+        "content": "UklGRi4uLg=="
+      },
+      {
+        "type": "transcription",
+        "content": "It is rainy and 57 degrees in Paris."
+      }
+    ]
+  }
+]
+```
+
+## Realtime inference with tool calls
+
+Realtime APIs expose different generation boundaries around tool calls.
+Recording tool calls when a single generation covers both the tool request and
+the final answer is TBD.
+
+The diagrams include the optional `user_speech` span. Instrumentation records
+this span only when it can reliably determine when the user starts and stops
+speaking. The session lifecycle events and spans use the same
+`gen_ai.realtime_session.id` when it is available. The application or agent
+owns tool execution, and the parent of an `execute_tool` span depends on the
+active context in that layer.
+
+### Tool execution across two generations
+
+OpenAI Realtime and Gemini Live 2.5 report the tool call as the end of a
+generation. The model output after the tool result belongs to a new generation:
+
+```mermaid
+%%{init:
+{
+  "sequence": { "messageAlign": "left", "htmlLabels":true },
+  "themeVariables": { "noteBkgColor" : "green", "noteTextColor": "black", "activationBkgColor": "green", "htmlLabels":true }
+}
+}%%
+sequenceDiagram
+    participant A as Application or agent
+    participant I as Instrumented realtime client
+    participant M as Model
+    participant T as Tool
+    A->>I: Open realtime connection
+    I->>M: Establish realtime connection
+    M-->>I: Connection established
+    I-->>A: Connection established
+    Note left of I: realtime_session.started event
+    M-->>I: User speech started
+    activate I
+    Note left of I: user_speech span
+    loop While user is speaking
+        A->>I: Stream user audio
+        I->>M: Stream user audio
+    end
+    M-->>I: User speech stopped
+    deactivate I
+    M-->>I: User input committed
+    activate I
+    Note left of I: realtime_inference span 1
+    M-->>I: Tool call
+    deactivate I
+    I-->>A: Tool call
+    A->>T: Execute tool
+    activate A
+    Note right of A: execute_tool span
+    T-->>A: Tool result
+    deactivate A
+    A->>I: Send tool result
+    I->>M: Request continuation
+    activate I
+    Note left of I: realtime_inference span 2
+    M-->>I: Final answer
+    deactivate I
+    I-->>A: Final answer
+    A->>I: Close realtime connection
+    I->>M: Close realtime connection
+    M-->>I: Connection closed
+    Note left of I: realtime_session.ended event
+    I-->>A: Connection closed
+```
+
+#### Spans across two generations when content capturing is disabled
+
+The first `realtime_inference` span ends when the model requests the tool:
+
+| Property                         | Value                                 |
+| -------------------------------- | ------------------------------------- |
+| Span name                        | `"realtime_inference gpt-realtime"`   |
+| `gen_ai.operation.name`          | `"realtime_inference"`                |
+| `gen_ai.realtime_session.id`     | `"sess_5j66UpCpwteGg4YSxUnt7lPY"`     |
+| `gen_ai.response.finish_reasons` | `["tool_call"]`                       |
+
+Application or agent instrumentation may record the tool execution:
+
+| Property                | Value                             |
+| ----------------------- | --------------------------------- |
+| Span name               | `"execute_tool get_weather"`      |
+| `gen_ai.operation.name` | `"execute_tool"`                  |
+| `gen_ai.tool.name`      | `"get_weather"`                   |
+
+The second `realtime_inference` span records the model's final answer:
+
+| Property                         | Value                                 |
+| -------------------------------- | ------------------------------------- |
+| Span name                        | `"realtime_inference gpt-realtime"`   |
+| `gen_ai.operation.name`          | `"realtime_inference"`                |
+| `gen_ai.realtime_session.id`     | `"sess_5j66UpCpwteGg4YSxUnt7lPY"`     |
+| `gen_ai.response.finish_reasons` | `["stop"]`                            |
+
+#### Spans across two generations when content capturing is enabled on span attributes
+
+The first `realtime_inference` span records the tool request:
+
+| Property                         | Value                                 |
+| -------------------------------- | ------------------------------------- |
+| Span name                        | `"realtime_inference gpt-realtime"` |
+| `gen_ai.operation.name`          | `"realtime_inference"`                |
+| `gen_ai.realtime_session.id`     | `"sess_5j66UpCpwteGg4YSxUnt7lPY"`     |
+| `gen_ai.response.finish_reasons` | `["tool_call"]`                       |
+| `gen_ai.input.messages`          | [`gen_ai.input.messages`](#gen-ai-input-messages-realtime-tool-call-1) |
+| `gen_ai.output.messages`         | [`gen_ai.output.messages`](#gen-ai-output-messages-realtime-tool-call-1) |
+
+<span id="gen-ai-input-messages-realtime-tool-call-1">`gen_ai.input.messages` value</span>
+
+```json
+[
+  {
+    "role": "user",
+    "parts": [
+      {
+        "type": "blob",
+        "modality": "audio",
+        "mime_type": "audio/pcm",
+        "content": "UklGRi4uLg=="
+      },
+      {
+        "type": "transcription",
+        "content": "What is the weather in Paris?"
+      }
+    ]
+  }
+]
+```
+
+<span id="gen-ai-output-messages-realtime-tool-call-1">`gen_ai.output.messages` value</span>
+
+```json
+[
+  {
+    "role": "assistant",
+    "parts": [
+      {
+        "type": "tool_call",
+        "id": "call_VSPygqKTWdrhaFErNvMV18Yl",
+        "name": "get_weather",
+        "arguments": {
+          "location": "Paris"
+        }
+      }
+    ]
+  }
+]
+```
+
+Application or agent instrumentation may record the tool execution:
+
+| Property                | Value                        |
+| ----------------------- | ---------------------------- |
+| Span name               | `"execute_tool get_weather"` |
+| `gen_ai.operation.name` | `"execute_tool"`             |
+| `gen_ai.tool.name`      | `"get_weather"`              |
+
+The second `realtime_inference` span records the tool result as input and the
+model's answer as output:
+
+| Property                         | Value                                 |
+| -------------------------------- | ------------------------------------- |
+| Span name                        | `"realtime_inference gpt-realtime"` |
+| `gen_ai.operation.name`          | `"realtime_inference"`                |
+| `gen_ai.realtime_session.id`     | `"sess_5j66UpCpwteGg4YSxUnt7lPY"`     |
+| `gen_ai.input.messages`          | [`gen_ai.input.messages`](#gen-ai-input-messages-realtime-tool-call-2) |
+| `gen_ai.output.messages`         | [`gen_ai.output.messages`](#gen-ai-output-messages-realtime-tool-call-2) |
+| `gen_ai.response.finish_reasons` | `["stop"]`                            |
+
+<span id="gen-ai-input-messages-realtime-tool-call-2">`gen_ai.input.messages` value</span>
+
+```json
+[
+  {
+    "role": "tool",
+    "parts": [
+      {
+        "type": "tool_call_response",
+        "id": "call_VSPygqKTWdrhaFErNvMV18Yl",
+        "response": {
+          "location": "Paris",
+          "temperature_f": 57,
+          "conditions": "rainy"
+        }
+      }
+    ]
+  }
+]
+```
+
+<span id="gen-ai-output-messages-realtime-tool-call-2">`gen_ai.output.messages` value</span>
+
+```json
+[
+  {
+    "role": "assistant",
+    "parts": [
+      {
+        "type": "blob",
+        "modality": "audio",
+        "mime_type": "audio/pcm",
+        "content": "UklGRi4uLg=="
+      },
+      {
+        "type": "transcription",
+        "content": "It is rainy and 57 degrees in Paris."
       }
     ]
   }
