@@ -206,7 +206,7 @@ def run_execute_tool_reference():
         tool_span.set_attribute("gen_ai.tool.call.id", tool_call["id"])
         tool_span.set_attribute("gen_ai.tool.call.arguments", tool_call["args"])
         tool_message = get_weather.invoke(tool_call)
-        # The tool returns plain text, but gen_ai.tool.call.result's schema requires an object.
+        # TODO: Determine how to represent this string result in the object-only schema.
         tool_span.set_attribute("gen_ai.tool.call.result", tool_message.content)
     print(f"    -> {tool_message.content[:60]}")
 
@@ -253,7 +253,7 @@ def run_command_execution_reference():
             exit_code = tool_message.artifact.get("exit_code")
             if exit_code is not None:
                 tool_span.set_attribute("process.exit.code", exit_code)
-            # The tool returns plain text, but gen_ai.tool.call.result's schema requires an object.
+            # TODO: Determine how to represent this string result in the object-only schema.
             tool_span.set_attribute("gen_ai.tool.call.result", tool_message.content)
             return tool_message
 

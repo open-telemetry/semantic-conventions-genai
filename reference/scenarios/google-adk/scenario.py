@@ -159,7 +159,7 @@ def run_agent_reference():
                 tool_span.set_attribute("gen_ai.tool.call.id", tool_context.function_call_id)
             tool_span.set_attribute("gen_ai.tool.call.arguments", {"location": location})
             result = f"Sunny in {location}"
-            # The tool returns plain text, but gen_ai.tool.call.result's schema requires an object.
+            # TODO: Determine how to represent this string result in the object-only schema.
             tool_span.set_attribute("gen_ai.tool.call.result", result)
         return result
 
@@ -441,7 +441,7 @@ def run_multi_agent_delegation_reference():
                     tool_span.set_attribute("gen_ai.tool.call.id", tool_context.function_call_id)
                 tool_span.set_attribute("gen_ai.tool.call.arguments", args)
                 result = await original_run_async(args=args, tool_context=tool_context)
-                # The tool returns plain text, but gen_ai.tool.call.result's schema requires an object.
+                # TODO: Determine how to represent this string result in the object-only schema.
                 tool_span.set_attribute("gen_ai.tool.call.result", result)
             return result
 
@@ -767,7 +767,7 @@ def run_skills_reference():
                     span.set_attribute("error.type", error_type)
                     span.set_status(StatusCode.ERROR, result.get("error", ""))
                 else:
-                    # The tool returns plain text, but gen_ai.tool.call.result's schema requires an object.
+                    # TODO: Determine how to represent this string result in the object-only schema.
                     span.set_attribute("gen_ai.tool.call.result", result)
                 self._record_skill_signals(span, args, result, error_type, tool_context)
                 return result

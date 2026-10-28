@@ -77,7 +77,7 @@ def _patch_automatic_function_calling():
                     tool_span.set_attribute("gen_ai.tool.call.id", raw_call["id"])
                 tool_span.set_attribute("gen_ai.tool.call.arguments", raw_call.get("args") or {})
                 result = function(**kwargs)
-                # The tool returns plain text, but gen_ai.tool.call.result's schema requires an object.
+                # TODO: Determine how to represent this string result in the object-only schema.
                 tool_span.set_attribute("gen_ai.tool.call.result", result)
                 return result
 

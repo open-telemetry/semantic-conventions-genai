@@ -55,7 +55,7 @@ def run_tool_call():
                 tool_span.set_attribute("gen_ai.tool.call.id", ctx.tool_call_id)
             tool_span.set_attribute("gen_ai.tool.call.arguments", {"location": location})
             result = "Sunny, 72°F"
-            # The tool returns plain text, but gen_ai.tool.call.result's schema requires an object.
+            # TODO: Determine how to represent this string result in the object-only schema.
             tool_span.set_attribute("gen_ai.tool.call.result", result)
             return result
 
