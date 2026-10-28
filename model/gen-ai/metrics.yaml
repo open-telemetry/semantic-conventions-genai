@@ -85,13 +85,11 @@ metrics:
     requirement_level: recommended
     instrument: histogram
     unit: "s"
-    brief: 'Time to receive the first chunk, measured from when the client issues the generation request to when the first chunk is received in the response stream.'
+    brief: 'Time from the start of a logical inference operation to the first chunk in its streaming response.'
     note: |
-      This metric SHOULD be reported for streaming calls and SHOULD NOT be reported otherwise.
+      Instrumentations SHOULD report this metric for streaming calls when the first chunk is received, SHOULD NOT report it for non-streaming calls, and MUST NOT report it if no chunk is received.
 
-      A chunk is a decoded provider stream event carrying new, non-empty text, refusals, reasoning (including opaque payloads), audio, images, or tool-call names or arguments. Ignore empty start events and events carrying only usage, roles, IDs, signatures, keep-alives, progress/status updates, or end markers. Chunk boundaries follow provider events, not TCP reads, HTTP frames, or extra SDK callbacks.
-
-      Request issuance is the start of the logical inference operation, before authentication and the first attempt. Measure until the first chunk is fully received by the client, before application processing. Include failed attempts and retry backoff. If no chunk is received, do not report this metric.
+      The chunk definition and measurement boundaries are the same as for [`gen_ai.response.time_to_first_chunk`](/docs/registry/attributes/gen-ai.md#gen-ai-response-time-to-first-chunk).
     stability: development
     annotations:
       code_generation:

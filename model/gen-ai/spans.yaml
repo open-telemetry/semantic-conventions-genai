@@ -91,6 +91,14 @@ attribute_groups:
         requirement_level: opt_in
       - ref: gen_ai.tool.definitions
         requirement_level: opt_in
+      - ref: gen_ai.system_instructions_ref
+        requirement_level: opt_in
+      - ref: gen_ai.input.messages_ref
+        requirement_level: opt_in
+      - ref: gen_ai.output.messages_ref
+        requirement_level: opt_in
+      - ref: gen_ai.tool.definitions_ref
+        requirement_level: opt_in
 
   - id: attributes.gen_ai.invoked_agent.internal.common
     visibility: internal
@@ -315,10 +323,6 @@ spans:
       - ref: gen_ai.response.time_to_first_chunk
         requirement_level:
           recommended: If the request was a streaming request.
-        note: |
-          A chunk is a decoded provider stream event carrying new, non-empty text, refusals, reasoning (including opaque payloads), audio, images, or tool-call names or arguments. Ignore empty start events and events carrying only usage, roles, IDs, signatures, keep-alives, progress/status updates, or end markers. Chunk boundaries follow provider events, not TCP reads, HTTP frames, or extra SDK callbacks.
-
-          Request issuance is the start of the logical inference operation, before authentication and the first attempt. Measure until the first chunk is fully received by the client, before application processing. Include failed attempts and retry backoff. If no chunk is received, do not set this attribute.
       - ref: gen_ai.usage.reasoning.output_tokens
         brief: >
           The number of output tokens used for reasoning (e.g. chain-of-thought, extended thinking),

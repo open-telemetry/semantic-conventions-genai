@@ -856,28 +856,31 @@ If an unrecognized or invalid value is provided, instrumentations SHOULD default
 #### Uploading content to external storage
 
 Instrumentations MAY support user-defined in-process hooks to handle content upload.
+Uploading content and emitting external references SHOULD be explicitly enabled
+independently of the opt-in flags that control recording
+`gen_ai.system_instructions`, `gen_ai.input.messages`, `gen_ai.output.messages`,
+and `gen_ai.tool.definitions` directly on telemetry signals.
 
-The hook SHOULD operate independently of the opt-in flags that control capturing of
-`gen_ai.system_instructions`, `gen_ai.input.messages`, and `gen_ai.output.messages`.
+If such a hook is supported and explicitly configured, instrumentations SHOULD
+invoke it regardless of the span sampling decision with:
 
-If such a hook is supported and configured, instrumentations SHOULD invoke it regardless
-of the span sampling decision with:
-
-- the instructions, [inputs](/model/gen-ai/gen-ai-input-messages.json), and
-  [outputs](/model/gen-ai/gen-ai-output-messages.json) object using formats defined in this convention
-  and before they are serialized to JSON string;
+- the [instructions](/model/gen-ai/gen-ai-system-instructions.json), [inputs](/model/gen-ai/gen-ai-input-messages.json),
+  [outputs](/model/gen-ai/gen-ai-output-messages.json), and
+  [tool definitions](/model/gen-ai/gen-ai-tool-definitions.json) objects using
+  formats defined in this convention and before they are serialized to JSON;
 - the span instance
 
-The hook SHOULD receive the same instructions, inputs, and outputs that the
+The hook SHOULD receive the same instructions, inputs, outputs, and tool definitions that the
 instrumentation would record in these attributes.
 
 The hook implementation SHOULD be able to enrich and modify provided span, instructions,
-and message objects.
+message, and tool definition objects.
 
 If instrumentation is configured to also record `gen_ai.system_instructions`,
-`gen_ai.input.messages`, and `gen_ai.output.messages` attributes, it SHOULD do it
-after calling the hook and SHOULD record values that were potentially modified within
-the hook implementation.
+`gen_ai.input.messages`, `gen_ai.output.messages`, and
+`gen_ai.tool.definitions` attributes, it SHOULD do it after calling the hook and
+SHOULD record values that were potentially modified within the hook
+implementation.
 
 The hook API SHOULD be generic. The application or distro is responsible for the hook
 implementation including
@@ -886,11 +889,21 @@ implementation including
 - recording references to the uploaded content on the span,
 - handling content in a different way.
 
+When a hook handles content externally, it SHOULD use
+`gen_ai.system_instructions_ref`, `gen_ai.input.messages_ref`,
+`gen_ai.output.messages_ref`, or `gen_ai.tool.definitions_ref`. This convention
+does not prescribe the URI scheme, object layout, serialization format,
+retention policy, or access mechanism.
+
+Implementations MAY use content-derived identifiers to deduplicate repeated
+content, such as system instructions or tool definitions.
+
 Application or OpenTelemetry distributions MAY also implement content uploading
 in the telemetry processing pipeline (in-process or via a collector), based on the
-`gen_ai.system_instructions`, `gen_ai.input.messages`, and `gen_ai.output.messages`
-attributes. Given the potential data volume, it is RECOMMENDED to tune batching
-and export settings accordingly in the OpenTelemetry SDK pipeline.
+`gen_ai.system_instructions`, `gen_ai.input.messages`, `gen_ai.output.messages`,
+and `gen_ai.tool.definitions` attributes. Given the potential data volume, it is
+RECOMMENDED to tune batching and export settings accordingly in the OpenTelemetry
+SDK pipeline.
 
 ##### Content upload configuration
 
@@ -909,8 +922,6 @@ standard configuration options:
 - **Upload maximum queue size**: Specifies the maximum number of concurrent uploads to queue in background
   upload processing before dropping or throttling. Defaults to `20`.
   - Environment variable: `OTEL_INSTRUMENTATION_GENAI_UPLOAD_MAX_QUEUE_SIZE`
-
-TODO: document a common approach to record references to externally stored content.
 
 Check out [LLM call examples](./non-normative/examples-llm-calls.md).
 
