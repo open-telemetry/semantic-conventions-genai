@@ -1570,7 +1570,7 @@ Measures the to complete an operation following the common [gen_ai.client.operat
 | -------- | --------------- | ----------- | -------------- | --------- | ------ |
 | `gen_ai.client.operation.duration` | Histogram | `s` | OpenAI-specific extension to `gen_ai.client.operation.duration`. Adds `openai.response.service_tier` and `openai.response.system_fingerprint` when the provider is `openai`. [1] | ![Development](https://img.shields.io/badge/-development-blue) | |
 
-**[1]:** This metric SHOULD NOT be reported for inference or embeddings operations; use `gen_ai.client.inference.duration` or `gen_ai.client.embeddings.duration` instead.
+**[1]:** This metric SHOULD NOT be reported for inference, embeddings, or execute tool operations; use `gen_ai.client.inference.duration`, `gen_ai.client.embeddings.duration`, or `gen_ai.execute_tool.duration` instead.
 
 **Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/signal-requirement-level.md).
 

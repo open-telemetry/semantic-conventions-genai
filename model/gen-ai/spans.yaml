@@ -668,7 +668,7 @@ spans:
       - ref: gen_ai.agent.name
         sampling_relevant: true
 
-  - type: gen_ai.execute_tool.internal
+  - type: gen_ai.execute_tool
     requirement_level: recommended
     kind: internal
     name:
@@ -690,10 +690,10 @@ spans:
 
       When the library API or state identifies a specialized tool call,
       instrumentation SHOULD apply the corresponding
-      [refinement](/docs/gen-ai/gen-ai-agent-spans.md#execute-tool-span) to the execute-tool
+      [refinement](/docs/gen-ai/execute-tool.md#specialized-tool-call-spans) to the execute-tool
       span. Available refinements include
-      [agents exposed as tools](/docs/gen-ai/gen-ai-agent-spans.md#agent-as-a-tool) and
-      [Agent Skills](/docs/gen-ai/gen-ai-agent-spans.md#agent-skills).
+      [agents exposed as tools](/docs/gen-ai/execute-tool.md#agent-as-a-tool) and
+      [Agent Skills](/docs/gen-ai/execute-tool.md#agent-skills).
     stability: development
     entity_associations:
       - "gen_ai.main_agent"
@@ -978,8 +978,8 @@ span_refinements:
       - ref: aws.bedrock.knowledge_base.id
         requirement_level: recommended
 
-  - id: gen_ai.execute_tool.transfer.internal
-    ref: gen_ai.execute_tool.internal
+  - id: gen_ai.execute_tool.transfer
+    ref: gen_ai.execute_tool
     name:
       note: |
         **Span name** SHOULD be `execute_tool {gen_ai.tool.name}`.
@@ -1009,8 +1009,8 @@ span_refinements:
         requirement_level:
           conditionally_required: When readily available from the instrumented library API or state, including when the transfer attempt fails.
         sampling_relevant: true
-  - id: gen_ai.execute_tool.load_skill.internal
-    ref: gen_ai.execute_tool.internal
+  - id: gen_ai.execute_tool.load_skill
+    ref: gen_ai.execute_tool
     brief: Describes a tool call that loads a skill into an agent's context.
     name:
       note: |
@@ -1041,8 +1041,8 @@ span_refinements:
         requirement_level:
           recommended: If the skill source URI is available.
 
-  - id: gen_ai.execute_tool.read_skill_resource.internal
-    ref: gen_ai.execute_tool.internal
+  - id: gen_ai.execute_tool.read_skill_resource
+    ref: gen_ai.execute_tool
     brief: Describes a tool call that reads a resource belonging to a skill.
     name:
       note: |
@@ -1080,8 +1080,8 @@ span_refinements:
         requirement_level:
           recommended: If the skill source URI is available.
 
-  - id: gen_ai.execute_tool.command.internal
-    ref: gen_ai.execute_tool.internal
+  - id: gen_ai.execute_tool.command
+    ref: gen_ai.execute_tool
     brief: Describes a tool call that executes one or more commands.
     name:
       note: |

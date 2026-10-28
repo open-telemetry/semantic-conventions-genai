@@ -21,3 +21,8 @@ scenarios:
           operation: retrieval
           missing_attribute: server.address
         reason: In-memory retriever has no server address.
+    spans:
+      - match:
+          attributes:
+            gen_ai.operation.name: execute_tool
+          type: gen_ai.execute_tool

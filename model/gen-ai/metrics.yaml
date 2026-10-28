@@ -24,8 +24,9 @@ metrics:
     unit: "s"
     brief: 'GenAI operation duration.'
     note: >
-      This metric SHOULD NOT be reported for inference or embeddings operations;
-      use `gen_ai.client.inference.duration` or `gen_ai.client.embeddings.duration` instead.
+      This metric SHOULD NOT be reported for inference, embeddings, or execute tool operations;
+      use `gen_ai.client.inference.duration`, `gen_ai.client.embeddings.duration`,
+      or `gen_ai.execute_tool.duration` instead.
     stability: development
     annotations:
       code_generation:

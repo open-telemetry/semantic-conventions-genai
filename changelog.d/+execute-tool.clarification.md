@@ -1,0 +1,1 @@
+Move execute tool span, specialized tool call spans, and `gen_ai.execute_tool.duration` metric to `execute-tool.md`, and clarify that execute tool operations are reported on `gen_ai.execute_tool.duration` rather than `gen_ai.client.operation.duration`.

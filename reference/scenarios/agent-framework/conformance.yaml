@@ -125,3 +125,7 @@ scenarios:
           attributes:
             gen_ai.operation.name: text_completion
           type: gen_ai.client.inference
+      - match:
+          attributes:
+            gen_ai.operation.name: execute_tool
+          type: gen_ai.execute_tool

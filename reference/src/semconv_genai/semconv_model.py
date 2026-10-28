@@ -38,7 +38,7 @@ _SPANS = {
     "retrieval": ("gen_ai.retrieval.client", "Retrieval"),
     "fetch_response": ("gen_ai.fetch_response.client", "Fetch Response"),
     "memory": ("gen_ai.memory.client", "Memory"),
-    "execute_tool": ("gen_ai.execute_tool.internal", "Execute Tool"),
+    "execute_tool": ("gen_ai.execute_tool", "Execute Tool"),
     "create_agent": ("gen_ai.create_agent.client", "Create Agent"),
     "invoke_agent_client": ("gen_ai.invoke_agent.client", "Invoke Agent Client"),
     "invoke_agent_internal": ("gen_ai.invoke_agent.internal", "Invoke Agent Internal"),

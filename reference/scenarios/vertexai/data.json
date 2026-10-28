@@ -20,7 +20,7 @@
       "gen_ai.usage.text.output_tokens",
       "server.address"
     ],
-    "gen_ai.execute_tool.internal": [
+    "gen_ai.execute_tool": [
       "gen_ai.operation.name",
       "gen_ai.tool.call.arguments",
       "gen_ai.tool.call.id",

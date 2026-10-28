@@ -90,7 +90,7 @@ SEMCONV_DOC_LINKS: dict[str, str] = {
     "retrieval": "../../docs/gen-ai/gen-ai-spans.md#retrievals",
     "fetch_response": "../../docs/gen-ai/gen-ai-spans.md#fetch-response",
     "memory": "../../docs/gen-ai/gen-ai-spans.md#memory",
-    "execute_tool": "../../docs/gen-ai/gen-ai-spans.md#execute-tool-span",
+    "execute_tool": "../../docs/gen-ai/execute-tool.md#span-gen_aiexecute_tool",
     "gen_ai.client.inference.operation.details": "../../docs/gen-ai/client-inference.md#event-gen_aiclientinferenceoperationdetails",
     "gen_ai.evaluation.result": "../../docs/gen-ai/gen-ai-events.md#event-gen_aievaluationresult",
     "gen_ai.main_agent": "../../docs/registry/entities/gen-ai.md#gen-ai-main-agent",

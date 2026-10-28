@@ -56,3 +56,8 @@ scenarios:
           expected: '{tool_call}'
           unit: '1'
         reason: OTel SDK emits unit '1' instead of '{inference_call}'/'{tool_call}'; fix histogram unit.
+    spans:
+      - match:
+          attributes:
+            gen_ai.operation.name: execute_tool
+          type: gen_ai.execute_tool

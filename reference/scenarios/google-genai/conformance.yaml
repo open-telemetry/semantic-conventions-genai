@@ -34,3 +34,7 @@ scenarios:
           attributes:
             gen_ai.operation.name: embeddings
           type: gen_ai.client.embeddings
+      - match:
+          attributes:
+            gen_ai.operation.name: execute_tool
+          type: gen_ai.execute_tool
