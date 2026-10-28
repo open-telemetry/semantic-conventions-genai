@@ -429,7 +429,7 @@ async def run_workflow():
                             "type": "tool_call",
                             "id": item.call_id,
                             "name": item.name,
-                            "arguments": json.loads(item.arguments),
+                            "arguments": json.loads(item.arguments or "{}"),
                         }
                     )
             if parts:

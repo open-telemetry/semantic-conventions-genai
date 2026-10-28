@@ -58,6 +58,8 @@ class NativeTransferTests(unittest.TestCase):
         self.assertEqual(transfer.attributes["gen_ai.agent.name"], "root_agent")
         self.assertEqual(transfer.attributes["gen_ai.transfer.target.name"], "weather_specialist")
         self.assertEqual(transfer.attributes["gen_ai.tool.call.id"], "transfer-call")
+        self.assertEqual(transfer.attributes["gen_ai.tool.call.arguments"], {"agent_name": "weather_specialist"})
+        self.assertNotIn("gen_ai.tool.call.result", transfer.attributes)
         agents = {
             span.attributes["gen_ai.agent.name"]: span
             for span in spans
