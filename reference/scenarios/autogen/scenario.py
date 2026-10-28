@@ -3,7 +3,6 @@
 import asyncio
 import contextlib
 import contextvars
-import json
 import os
 import time
 
@@ -53,9 +52,9 @@ def run_agent_reference():
             tool_span.set_attribute("gen_ai.tool.description", get_weather.__doc__ or "")
             if tool_call_id:
                 tool_span.set_attribute("gen_ai.tool.call.id", tool_call_id)
-            tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps({"location": location}))
+            tool_span.set_attribute("gen_ai.tool.call.arguments", {"location": location})
             result = f"Sunny in {location}"
-            tool_span.set_attribute("gen_ai.tool.call.result", result)
+            tool_span.set_attribute("gen_ai.tool.call.result", {"output": result})
             return result
 
     tool_defs = [
@@ -136,14 +135,12 @@ def run_agent_reference():
                 agent_span.set_attribute("gen_ai.request.stop_sequences", request_stop_sequences)
                 agent_span.set_attribute("gen_ai.request.frequency_penalty", request_frequency_penalty)
                 agent_span.set_attribute("gen_ai.request.presence_penalty", request_presence_penalty)
-                agent_span.set_attribute(
-                    "gen_ai.system_instructions", json.dumps([{"type": "text", "content": system_message}])
-                )
+                agent_span.set_attribute("gen_ai.system_instructions", [{"type": "text", "content": system_message}])
                 agent_span.set_attribute(
                     "gen_ai.input.messages",
-                    json.dumps([{"role": "user", "parts": [{"type": "text", "content": input_text}]}]),
+                    [{"role": "user", "parts": [{"type": "text", "content": input_text}]}],
                 )
-                agent_span.set_attribute("gen_ai.tool.definitions", json.dumps(tool_defs))
+                agent_span.set_attribute("gen_ai.tool.definitions", tool_defs)
                 # AutoGen delegates the LLM call to the underlying openai client,
                 # whose own instrumentation owns the inference span and the
                 # inference-operation-details event. This scenario emits only the
@@ -181,14 +178,12 @@ def run_agent_reference():
                     agent_span.set_attribute("gen_ai.usage.input_tokens", total_input_tokens)
                 if total_output_tokens:
                     agent_span.set_attribute("gen_ai.usage.output_tokens", total_output_tokens)
-                output_messages = json.dumps(
-                    [
-                        {
-                            "role": "assistant",
-                            "parts": [{"type": "text", "content": str(response.chat_message.content)}],
-                        }
-                    ]
-                )
+                output_messages = [
+                    {
+                        "role": "assistant",
+                        "parts": [{"type": "text", "content": str(response.chat_message.content)}],
+                    }
+                ]
                 agent_span.set_attribute(
                     "gen_ai.output.messages",
                     output_messages,

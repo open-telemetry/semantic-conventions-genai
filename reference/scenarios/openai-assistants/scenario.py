@@ -70,9 +70,7 @@ def run_invoke_agent(client):
         f"create_agent {assistant_name}", kind=SpanKind.CLIENT, attributes=span_attributes
     ) as span:
         span.set_attribute("gen_ai.agent.description", assistant_description)
-        span.set_attribute(
-            "gen_ai.system_instructions", json.dumps([{"type": "text", "content": assistant_instructions}])
-        )
+        span.set_attribute("gen_ai.system_instructions", [{"type": "text", "content": assistant_instructions}])
         assistant = client.beta.assistants.create(
             model=request_model,
             name=assistant_name,
@@ -114,15 +112,13 @@ def run_invoke_agent(client):
             span.set_attribute("gen_ai.agent.description", assistant.description)
         span.set_attribute(
             "gen_ai.input.messages",
-            json.dumps([{"role": "user", "parts": [{"type": "text", "content": user_message}]}]),
+            [{"role": "user", "parts": [{"type": "text", "content": user_message}]}],
         )
-        span.set_attribute(
-            "gen_ai.tool.definitions", json.dumps([{"type": t["type"], **t["function"]} for t in tool_defs])
-        )
+        span.set_attribute("gen_ai.tool.definitions", [{"type": t["type"], **t["function"]} for t in tool_defs])
         if getattr(assistant, "instructions", None):
             span.set_attribute(
                 "gen_ai.system_instructions",
-                json.dumps([{"type": "text", "content": assistant.instructions}]),
+                [{"type": "text", "content": assistant.instructions}],
             )
         try:
             run = client.beta.threads.runs.create(
@@ -169,9 +165,9 @@ def run_invoke_agent(client):
                         tool_span.set_attribute("gen_ai.tool.type", "function")
                         if tool_call_id:
                             tool_span.set_attribute("gen_ai.tool.call.id", tool_call_id)
-                        tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps(arguments))
+                        tool_span.set_attribute("gen_ai.tool.call.arguments", arguments)
                         result = get_weather(arguments["location"])
-                        tool_span.set_attribute("gen_ai.tool.call.result", result)
+                        tool_span.set_attribute("gen_ai.tool.call.result", {"output": result})
 
                     tool_outputs.append(
                         {
@@ -204,14 +200,12 @@ def run_invoke_agent(client):
                 text = assistant_messages[0].content[0].text.value
                 span.set_attribute(
                     "gen_ai.output.messages",
-                    json.dumps(
-                        [
-                            {
-                                "role": "assistant",
-                                "parts": [{"type": "text", "content": text}],
-                            }
-                        ]
-                    ),
+                    [
+                        {
+                            "role": "assistant",
+                            "parts": [{"type": "text", "content": text}],
+                        }
+                    ],
                 )
                 print(f"    -> {text[:60]}")
             else:

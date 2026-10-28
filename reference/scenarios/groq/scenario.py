@@ -1,6 +1,5 @@
 """Reference implementation for Groq."""
 
-import json
 import os
 import time
 
@@ -134,18 +133,16 @@ def run_chat_reference(client):
             "gen_ai.response.id": resp.id,
             "gen_ai.response.model": resp.model,
             "gen_ai.response.finish_reasons": [c.finish_reason for c in resp.choices],
-            "gen_ai.input.messages": json.dumps(
-                [{"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]} for m in messages]
-            ),
-            "gen_ai.output.messages": json.dumps(
-                [
-                    {
-                        "role": c.message.role,
-                        "parts": [{"type": "text", "content": c.message.content}],
-                    }
-                    for c in resp.choices
-                ]
-            ),
+            "gen_ai.input.messages": [
+                {"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]} for m in messages
+            ],
+            "gen_ai.output.messages": [
+                {
+                    "role": c.message.role,
+                    "parts": [{"type": "text", "content": c.message.content}],
+                }
+                for c in resp.choices
+            ],
         }
         if resp.usage:
             event_attrs["gen_ai.usage.input_tokens"] = resp.usage.prompt_tokens
@@ -175,9 +172,7 @@ def run_chat_streaming_reference(client):
     ) as span:
         span.set_attribute(
             "gen_ai.input.messages",
-            json.dumps(
-                [{"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]} for m in request_messages]
-            ),
+            [{"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]} for m in request_messages],
         )
         start_time = time.perf_counter()
         stream = client.chat.completions.create(
@@ -245,7 +240,7 @@ def run_chat_tool_call_reference(client):
     with _reference_tracer.start_as_current_span(
         "chat llama-3.1-8b-instant", kind=SpanKind.CLIENT, attributes=span_attributes_3
     ) as span:
-        span.set_attribute("gen_ai.tool.definitions", json.dumps([{"type": t["type"], **t["function"]} for t in tools]))
+        span.set_attribute("gen_ai.tool.definitions", [{"type": t["type"], **t["function"]} for t in tools])
         start_time = time.perf_counter()
         resp = client.chat.completions.create(
             model=request_model,

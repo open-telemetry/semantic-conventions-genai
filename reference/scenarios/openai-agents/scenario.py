@@ -43,9 +43,9 @@ def get_weather(ctx: ToolContext[None], location: str) -> str:
     ) as tool_span:
         tool_span.set_attribute("gen_ai.tool.description", get_weather.description)
         tool_span.set_attribute("gen_ai.tool.call.id", ctx.tool_call_id)
-        tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps({"location": location}))
+        tool_span.set_attribute("gen_ai.tool.call.arguments", {"location": location})
         result = "Sunny, 72°F"
-        tool_span.set_attribute("gen_ai.tool.call.result", result)
+        tool_span.set_attribute("gen_ai.tool.call.result", {"output": result})
         return result
 
 
@@ -74,26 +74,22 @@ async def run_agent():
     with _reference_tracer.start_as_current_span(
         "invoke_agent test-agent", attributes=agent_span_attributes
     ) as agent_span:
+        agent_span.set_attribute("gen_ai.system_instructions", [{"type": "text", "content": agent.instructions}])
         agent_span.set_attribute(
-            "gen_ai.system_instructions", json.dumps([{"type": "text", "content": agent.instructions}])
-        )
-        agent_span.set_attribute(
-            "gen_ai.input.messages", json.dumps([{"role": "user", "parts": [{"type": "text", "content": input_text}]}])
+            "gen_ai.input.messages", [{"role": "user", "parts": [{"type": "text", "content": input_text}]}]
         )
         agent_span.set_attribute(
             "gen_ai.tool.definitions",
-            json.dumps(
-                [
-                    {
-                        "type": "function",
-                        "name": t.name,
-                        "description": t.description,
-                        "parameters": t.params_json_schema,
-                    }
-                    for t in tools
-                    if isinstance(t, FunctionTool)
-                ]
-            ),
+            [
+                {
+                    "type": "function",
+                    "name": t.name,
+                    "description": t.description,
+                    "parameters": t.params_json_schema,
+                }
+                for t in tools
+                if isinstance(t, FunctionTool)
+            ],
         )
         original_create = client.chat.completions.create
 
@@ -122,14 +118,12 @@ async def run_agent():
         if result.final_output:
             agent_span.set_attribute(
                 "gen_ai.output.messages",
-                json.dumps(
-                    [
-                        {
-                            "role": "assistant",
-                            "parts": [{"type": "text", "content": str(result.final_output)}],
-                        }
-                    ]
-                ),
+                [
+                    {
+                        "role": "assistant",
+                        "parts": [{"type": "text", "content": str(result.final_output)}],
+                    }
+                ],
             )
         print(f"    -> {str(result.final_output)[:60]}")
 
@@ -179,9 +173,9 @@ async def run_agent_as_tool_delegation():
             f"execute_tool {weather_tool.name}", attributes=tool_span_attributes
         ) as tool_span:
             tool_span.set_attribute("gen_ai.tool.call.id", tool_context.tool_call_id)
-            tool_span.set_attribute("gen_ai.tool.call.arguments", input_json)
+            tool_span.set_attribute("gen_ai.tool.call.arguments", json.loads(input_json or "{}"))
             result = await original_on_invoke_tool(tool_context, input_json)
-            tool_span.set_attribute("gen_ai.tool.call.result", str(result))
+            tool_span.set_attribute("gen_ai.tool.call.result", {"output": result})
         return result
 
     model_responses = ContextVar("delegation_model_responses", default=None)
@@ -205,10 +199,10 @@ async def run_agent_as_tool_delegation():
             f"invoke_agent {starting_agent.name}", attributes=agent_span_attributes
         ) as agent_span:
             agent_span.set_attribute(
-                "gen_ai.system_instructions", json.dumps([{"type": "text", "content": starting_agent.instructions}])
+                "gen_ai.system_instructions", [{"type": "text", "content": starting_agent.instructions}]
             )
             agent_span.set_attribute(
-                "gen_ai.input.messages", json.dumps([{"role": "user", "parts": [{"type": "text", "content": input}]}])
+                "gen_ai.input.messages", [{"role": "user", "parts": [{"type": "text", "content": input}]}]
             )
             responses = []
             token = model_responses.set(responses)
@@ -238,7 +232,7 @@ async def run_agent_as_tool_delegation():
             }
             if len(finish_reasons) == 1:
                 output_message["finish_reason"] = finish_reasons[0]
-            agent_span.set_attribute("gen_ai.output.messages", json.dumps([output_message]))
+            agent_span.set_attribute("gen_ai.output.messages", [output_message])
         return result
 
     caller = Agent(
@@ -294,7 +288,7 @@ async def run_command_execution():
             with _reference_tracer.start_as_current_span(span_name, attributes=attributes) as span:
                 span.set_attribute("gen_ai.tool.description", self.description)
                 span.set_attribute("gen_ai.tool.call.id", ctx.tool_call_id)
-                span.set_attribute("gen_ai.tool.call.arguments", raw_input)
+                span.set_attribute("gen_ai.tool.call.arguments", json.loads(raw_input))
                 if executable_name and posixpath.isabs(executable):
                     span.set_attribute("process.executable.path", executable)
                 try:
@@ -303,7 +297,7 @@ async def run_command_execution():
                     span.set_attribute("error.type", type(exc).__qualname__)
                     span.set_status(StatusCode.ERROR, str(exc))
                     raise
-                span.set_attribute("gen_ai.tool.call.result", result)
+                span.set_attribute("gen_ai.tool.call.result", {"output": result})
                 return result
 
     sandbox_client = UnixLocalSandboxClient()
@@ -400,11 +394,11 @@ async def run_workflow():
                 f"execute_tool {selected.tool_call.name}", attributes=attributes
             ) as span:
                 span.set_attribute("gen_ai.tool.call.id", selected.tool_call.call_id)
-                span.set_attribute("gen_ai.tool.call.arguments", arguments)
+                span.set_attribute("gen_ai.tool.call.arguments", json.loads(arguments or "{}"))
                 target = await original_invoke(context, arguments)
                 span.set_attribute("gen_ai.transfer.mode", "pass_control")
                 span.set_attribute("gen_ai.transfer.target.name", target.name)
-                span.set_attribute("gen_ai.tool.call.result", selected.handoff.get_transfer_message(target))
+                span.set_attribute("gen_ai.tool.call.result", json.loads(selected.handoff.get_transfer_message(target)))
                 return target
 
         with patch.object(selected.handoff, "on_invoke_handoff", traced_invoke):
@@ -439,7 +433,7 @@ async def run_workflow():
                         }
                     )
             if parts:
-                span.set_attribute("gen_ai.output.messages", json.dumps([{"role": "assistant", "parts": parts}]))
+                span.set_attribute("gen_ai.output.messages", [{"role": "assistant", "parts": parts}])
             return result
 
     async def capture_create(*args, **kwargs):
@@ -459,7 +453,7 @@ async def run_workflow():
     ) as workflow_span:
         workflow_span.set_attribute("gen_ai.workflow.name", workflow_name)
         workflow_span.set_attribute(
-            "gen_ai.input.messages", json.dumps([{"role": "user", "parts": [{"type": "text", "content": input_text}]}])
+            "gen_ai.input.messages", [{"role": "user", "parts": [{"type": "text", "content": input_text}]}]
         )
 
         with (
@@ -470,14 +464,12 @@ async def run_workflow():
             result = await Runner.run(agent_a, input_text, run_config=RunConfig(workflow_name=workflow_name))
 
         if result.final_output:
-            output_messages = json.dumps(
-                [
-                    {
-                        "role": "assistant",
-                        "parts": [{"type": "text", "content": str(result.final_output)}],
-                    }
-                ]
-            )
+            output_messages = [
+                {
+                    "role": "assistant",
+                    "parts": [{"type": "text", "content": str(result.final_output)}],
+                }
+            ]
             workflow_span.set_attribute("gen_ai.output.messages", output_messages)
         print(f"    -> {str(result.final_output)[:60]}")
 

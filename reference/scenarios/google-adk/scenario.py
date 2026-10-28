@@ -2,7 +2,6 @@
 
 import asyncio
 import contextlib
-import json
 import os
 import pathlib
 import shutil
@@ -158,9 +157,9 @@ def run_agent_reference():
             tool_span.set_attribute("gen_ai.tool.description", "Get the current weather.")
             if tool_context.function_call_id:
                 tool_span.set_attribute("gen_ai.tool.call.id", tool_context.function_call_id)
-            tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps({"location": location}))
+            tool_span.set_attribute("gen_ai.tool.call.arguments", {"location": location})
             result = f"Sunny in {location}"
-            tool_span.set_attribute("gen_ai.tool.call.result", result)
+            tool_span.set_attribute("gen_ai.tool.call.result", {"output": result})
         return result
 
     tool_defs = [
@@ -214,7 +213,7 @@ def run_agent_reference():
                 workflow_span.set_attribute("gen_ai.conversation.id", session.id)
                 workflow_span.set_attribute(
                     "gen_ai.input.messages",
-                    json.dumps([{"role": "user", "parts": [{"type": "text", "content": input_text}]}]),
+                    [{"role": "user", "parts": [{"type": "text", "content": input_text}]}],
                 )
                 agent_span_attributes = {
                     "gen_ai.operation.name": "invoke_agent",
@@ -235,13 +234,13 @@ def run_agent_reference():
                     agent_span.set_attribute("gen_ai.conversation.id", session.id)
                     agent_span.set_attribute(
                         "gen_ai.system_instructions",
-                        json.dumps([{"type": "text", "content": agent.instruction}]),
+                        [{"type": "text", "content": agent.instruction}],
                     )
                     agent_span.set_attribute(
                         "gen_ai.input.messages",
-                        json.dumps([{"role": "user", "parts": [{"type": "text", "content": input_text}]}]),
+                        [{"role": "user", "parts": [{"type": "text", "content": input_text}]}],
                     )
-                    agent_span.set_attribute("gen_ai.tool.definitions", json.dumps(tool_defs))
+                    agent_span.set_attribute("gen_ai.tool.definitions", tool_defs)
                     usage_metadata = None
                     finish_reason = None
                     last_text = ""
@@ -284,14 +283,12 @@ def run_agent_reference():
                             [str(finish_reason).lower()],
                         )
                     if last_text:
-                        output_messages = json.dumps(
-                            [
-                                {
-                                    "role": "assistant",
-                                    "parts": [{"type": "text", "content": last_text}],
-                                }
-                            ]
-                        )
+                        output_messages = [
+                            {
+                                "role": "assistant",
+                                "parts": [{"type": "text", "content": last_text}],
+                            }
+                        ]
                         agent_span.set_attribute("gen_ai.output.messages", output_messages)
                         workflow_span.set_attribute("gen_ai.output.messages", output_messages)
 
@@ -341,15 +338,13 @@ def run_memory_reference():
             user_id=user_id,
             events=[event],
         )
-        memory_records = json.dumps(
-            [
-                {
-                    "content": memory_text,
-                    "id": event.id,
-                    "metadata": {"author": event.author, "session_id": session.id},
-                }
-            ]
-        )
+        memory_records = [
+            {
+                "content": memory_text,
+                "id": event.id,
+                "metadata": {"author": event.author, "session_id": session.id},
+            }
+        ]
 
         upsert_span_attributes = {
             "gen_ai.operation.name": "upsert_memory",
@@ -382,7 +377,7 @@ def run_memory_reference():
                     search_record["id"] = memory.id
                 search_records.append(search_record)
             search_span.set_attribute("gen_ai.memory.record.count", len(search_records))
-            search_span.set_attribute("gen_ai.memory.records", json.dumps(search_records))
+            search_span.set_attribute("gen_ai.memory.records", search_records)
 
     asyncio.run(_run())
 
@@ -443,9 +438,11 @@ def run_multi_agent_delegation_reference():
             ) as tool_span:
                 if tool_context.function_call_id:
                     tool_span.set_attribute("gen_ai.tool.call.id", tool_context.function_call_id)
-                tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps(args))
+                tool_span.set_attribute("gen_ai.tool.call.arguments", args)
                 result = await original_run_async(args=args, tool_context=tool_context)
-                tool_span.set_attribute("gen_ai.tool.call.result", str(result))
+                tool_span.set_attribute(
+                    "gen_ai.tool.call.result", result if isinstance(result, dict) else {"output": result}
+                )
             return result
 
         async def _traced_specialist_run_async(active_runner, *, session_id, **kwargs):
@@ -490,7 +487,7 @@ def run_multi_agent_delegation_reference():
                 if last_text:
                     sub_agent_span.set_attribute(
                         "gen_ai.output.messages",
-                        json.dumps([{"role": "assistant", "parts": [{"type": "text", "content": last_text}]}]),
+                        [{"role": "assistant", "parts": [{"type": "text", "content": last_text}]}],
                     )
 
         root_agent = Agent(
@@ -517,7 +514,7 @@ def run_multi_agent_delegation_reference():
                 agent_span.set_attribute("gen_ai.conversation.id", session.id)
                 agent_span.set_attribute(
                     "gen_ai.input.messages",
-                    json.dumps([{"role": "user", "parts": [{"type": "text", "content": input_text}]}]),
+                    [{"role": "user", "parts": [{"type": "text", "content": input_text}]}],
                 )
                 last_text = ""
                 finish_reason = None
@@ -550,7 +547,7 @@ def run_multi_agent_delegation_reference():
                 if last_text:
                     agent_span.set_attribute(
                         "gen_ai.output.messages",
-                        json.dumps([{"role": "assistant", "parts": [{"type": "text", "content": last_text}]}]),
+                        [{"role": "assistant", "parts": [{"type": "text", "content": last_text}]}],
                     )
                     print(f"    -> {last_text[:60]}")
 
@@ -603,13 +600,14 @@ def run_multi_agent_handoff_reference():
         with _reference_tracer.start_as_current_span(f"execute_tool {tool.name}", attributes=attributes) as span:
             if tool_context.function_call_id:
                 span.set_attribute("gen_ai.tool.call.id", tool_context.function_call_id)
-            span.set_attribute("gen_ai.tool.call.arguments", json.dumps(args))
+            span.set_attribute("gen_ai.tool.call.arguments", args)
             result = await original_tool_run(tool, args=args, tool_context=tool_context)
             target_name = tool_context.actions.transfer_to_agent
             if target_name:
                 span.set_attribute("gen_ai.transfer.mode", "pass_control")
                 span.set_attribute("gen_ai.transfer.target.name", target_name)
-            span.set_attribute("gen_ai.tool.call.result", json.dumps(result))
+            if result is not None:
+                span.set_attribute("gen_ai.tool.call.result", result)
             return result
 
     async def traced_agent_run(agent, parent_context):
@@ -644,7 +642,7 @@ def run_multi_agent_handoff_reference():
                             if text:
                                 span.set_attribute(
                                     "gen_ai.output.messages",
-                                    json.dumps([{"role": "assistant", "parts": [{"type": "text", "content": text}]}]),
+                                    [{"role": "assistant", "parts": [{"type": "text", "content": text}]}],
                                 )
                     yield event
         finally:
@@ -753,7 +751,7 @@ def run_skills_reference():
                 span.set_attribute("gen_ai.agent.name", tool_context.agent_name)
                 if tool_context.function_call_id:
                     span.set_attribute("gen_ai.tool.call.id", tool_context.function_call_id)
-                span.set_attribute("gen_ai.tool.call.arguments", json.dumps(args))
+                span.set_attribute("gen_ai.tool.call.arguments", args)
                 # `direct`: the toolset holds the `Skill` the call names, so its
                 # frontmatter and the location ADK loaded it from are in hand.
                 skill = skills_by_name.get(skill_name)
@@ -769,7 +767,9 @@ def run_skills_reference():
                     span.set_attribute("error.type", error_type)
                     span.set_status(StatusCode.ERROR, result.get("error", ""))
                 else:
-                    span.set_attribute("gen_ai.tool.call.result", json.dumps(result, default=str))
+                    span.set_attribute(
+                        "gen_ai.tool.call.result", result if isinstance(result, dict) else {"output": result}
+                    )
                 self._record_skill_signals(span, args, result, error_type, tool_context)
                 return result
 
@@ -920,11 +920,11 @@ def run_skills_reference():
                 agent_span.set_attribute("gen_ai.conversation.id", session_id)
                 agent_span.set_attribute(
                     "gen_ai.system_instructions",
-                    json.dumps([{"type": "text", "content": agent.instruction}]),
+                    [{"type": "text", "content": agent.instruction}],
                 )
                 agent_span.set_attribute(
                     "gen_ai.input.messages",
-                    json.dumps([{"role": "user", "parts": [{"type": "text", "content": prompt}]}]),
+                    [{"role": "user", "parts": [{"type": "text", "content": prompt}]}],
                 )
                 usage_metadata = None
                 finish_reason = None
@@ -950,15 +950,13 @@ def run_skills_reference():
                 if last_text:
                     agent_span.set_attribute(
                         "gen_ai.output.messages",
-                        json.dumps(
-                            [
-                                {
-                                    "role": "assistant",
-                                    "parts": [{"type": "text", "content": last_text}],
-                                    "finish_reason": str(finish_reason or "stop").lower(),
-                                }
-                            ]
-                        ),
+                        [
+                            {
+                                "role": "assistant",
+                                "parts": [{"type": "text", "content": last_text}],
+                                "finish_reason": str(finish_reason or "stop").lower(),
+                            }
+                        ],
                     )
 
         async def _phases():

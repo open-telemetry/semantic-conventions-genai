@@ -4,7 +4,6 @@ Exercises: agent run with tool calling
 against a mock OpenAI server, with manual OTel spans (no logfire/Agent.instrument_all).
 """
 
-import json
 import os
 
 from reference_shared import (
@@ -54,9 +53,9 @@ def run_tool_call():
             tool_span.set_attribute("gen_ai.tool.description", get_weather.__doc__ or "")
             if ctx.tool_call_id:
                 tool_span.set_attribute("gen_ai.tool.call.id", ctx.tool_call_id)
-            tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps({"location": location}))
+            tool_span.set_attribute("gen_ai.tool.call.arguments", {"location": location})
             result = "Sunny, 72°F"
-            tool_span.set_attribute("gen_ai.tool.call.result", result)
+            tool_span.set_attribute("gen_ai.tool.call.result", {"output": result})
             return result
 
     tools = [Tool(get_weather)]
@@ -71,7 +70,7 @@ def run_tool_call():
         "frequency_penalty": request_frequency_penalty,
         "presence_penalty": request_presence_penalty,
     }
-    system_instructions = json.dumps([{"type": "text", "content": system_prompt}])
+    system_instructions = [{"type": "text", "content": system_prompt}]
 
     agent_span_attributes = {
         "gen_ai.operation.name": "invoke_agent",
@@ -90,21 +89,19 @@ def run_tool_call():
         agent_span.set_attribute("gen_ai.request.presence_penalty", request_presence_penalty)
         agent_span.set_attribute("gen_ai.system_instructions", system_instructions)
         agent_span.set_attribute(
-            "gen_ai.input.messages", json.dumps([{"role": "user", "parts": [{"type": "text", "content": prompt_text}]}])
+            "gen_ai.input.messages", [{"role": "user", "parts": [{"type": "text", "content": prompt_text}]}]
         )
         agent_span.set_attribute(
             "gen_ai.tool.definitions",
-            json.dumps(
-                [
-                    {
-                        "type": "function",
-                        "name": t.name,
-                        "description": t.description,
-                        "parameters": t.function_schema.json_schema,
-                    }
-                    for t in tools
-                ]
-            ),
+            [
+                {
+                    "type": "function",
+                    "name": t.name,
+                    "description": t.description,
+                    "parameters": t.function_schema.json_schema,
+                }
+                for t in tools
+            ],
         )
         result = agent.run_sync(prompt_text, model_settings=model_settings)
         if result.response.finish_reason is not None:
@@ -118,14 +115,12 @@ def run_tool_call():
             if isinstance(part, TextPart) and part.content
         ]
         if output_parts:
-            output_messages = json.dumps(
-                [
-                    {
-                        "role": "assistant",
-                        "parts": output_parts,
-                    }
-                ]
-            )
+            output_messages = [
+                {
+                    "role": "assistant",
+                    "parts": output_parts,
+                }
+            ]
             agent_span.set_attribute("gen_ai.output.messages", output_messages)
         usage = result.usage
         if usage.total_tokens:

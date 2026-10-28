@@ -4,7 +4,6 @@ Exercises: chat, chat_streaming
 against a mock Vertex AI server, with manual OTel spans.
 """
 
-import json
 import os
 import warnings
 from contextlib import contextmanager
@@ -76,10 +75,10 @@ def _patch_automatic_function_calling():
             ) as tool_span:
                 if raw_call.get("id"):
                     tool_span.set_attribute("gen_ai.tool.call.id", raw_call["id"])
-                tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps(raw_call.get("args") or {}))
+                tool_span.set_attribute("gen_ai.tool.call.arguments", raw_call.get("args") or {})
                 result = function(**kwargs)
                 tool_span.set_attribute(
-                    "gen_ai.tool.call.result", result if isinstance(result, str) else json.dumps(result)
+                    "gen_ai.tool.call.result", result if isinstance(result, dict) else {"output": result}
                 )
                 return result
 
@@ -165,8 +164,8 @@ def _emit_inference_event(
         "gen_ai.operation.name": "chat",
         "gen_ai.provider.name": "gcp.vertex_ai",
         "gen_ai.request.model": request_model,
-        "gen_ai.input.messages": json.dumps(input_messages),
-        "gen_ai.output.messages": json.dumps(output_messages),
+        "gen_ai.input.messages": input_messages,
+        "gen_ai.output.messages": output_messages,
     }
     if response_model:
         event_attrs["gen_ai.response.model"] = response_model
@@ -291,20 +290,18 @@ def run_chat_tool_call():
     ):
         span.set_attribute(
             "gen_ai.tool.definitions",
-            json.dumps(
-                [
-                    {
-                        "type": "function",
-                        "name": "get_weather",
-                        "description": "Get the current weather",
-                        "parameters": {
-                            "type": "object",
-                            "properties": {"location": {"type": "string", "description": "City name"}},
-                            "required": ["location"],
-                        },
-                    }
-                ]
-            ),
+            [
+                {
+                    "type": "function",
+                    "name": "get_weather",
+                    "description": "Get the current weather",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {"location": {"type": "string", "description": "City name"}},
+                        "required": ["location"],
+                    },
+                }
+            ],
         )
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", DeprecationWarning)
