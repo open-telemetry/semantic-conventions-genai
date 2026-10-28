@@ -5,6 +5,7 @@ document: [
   {
     "role": "assistant",
     "name": null,
+    "finish_reason": null,
     "parts": [
       {
         "type": "text",
