@@ -14,6 +14,10 @@
       "gen_ai.usage.output_tokens",
       "server.address",
       "server.port"
+    ],
+    "gen_ai.user_speech.internal": [
+      "gen_ai.operation.name",
+      "gen_ai.provider.name"
     ]
   },
   "events": {

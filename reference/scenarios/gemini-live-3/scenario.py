@@ -9,8 +9,9 @@ The session is represented by ``gen_ai.client.realtime_session.started`` and
 ``setupComplete`` message contains no server session identifier, so
 ``gen_ai.realtime_session.id`` is unset.
 
-The Gemini Developer API also exposes no user voice-activity events, so this
-scenario does not emit a ``user_speech`` span. The user's audio is recorded in
+The Gemini Developer API exposes ``voice_activity`` events, so the
+``user_speech`` span is bounded by the provider's ``ACTIVITY_START`` and
+``ACTIVITY_END`` signals. The user's audio is also recorded in
 ``gen_ai.input.messages`` on the generation span.
 """
 
@@ -72,8 +73,6 @@ def _user_audio_message():
 
 async def _run_generation(session, request_model, host, port):
     """Drive one voice generation."""
-    from google.genai import types
-
     span_attributes = {
         "gen_ai.operation.name": "realtime_inference",
         "gen_ai.provider.name": "gcp.gemini",
@@ -84,10 +83,6 @@ async def _run_generation(session, request_model, host, port):
         span_attributes["server.address"] = host
     if port is not None:
         span_attributes["server.port"] = port
-
-    # The user speaks: stream their audio, then signal the end of the utterance.
-    await session.send_realtime_input(audio=types.Blob(data=base64.b64decode(INPUT_AUDIO_B64), mime_type="audio/pcm"))
-    await session.send_realtime_input(audio_stream_end=True)
 
     with _reference_tracer.start_as_current_span(
         f"realtime_inference {request_model}", kind=SpanKind.CLIENT, attributes=span_attributes
@@ -145,6 +140,40 @@ async def _run_generation(session, request_model, host, port):
         print(f"    -> {transcript[:60]}")
 
 
+async def _send_user_audio(session):
+    """Stream the user's audio and signal the end of the utterance."""
+    from google.genai import types
+
+    await session.send_realtime_input(audio=types.Blob(data=base64.b64decode(INPUT_AUDIO_B64), mime_type="audio/pcm"))
+    await session.send_realtime_input(audio_stream_end=True)
+
+
+async def _record_user_speech(session):
+    """Record user speech from Gemini Live voice-activity events."""
+    from google.genai import types
+
+    speech_span = None
+    async for message in session.receive():
+        voice_activity = message.voice_activity
+        if voice_activity is None:
+            continue
+        if voice_activity.voice_activity_type == types.VoiceActivityType.ACTIVITY_START:
+            speech_span = _reference_tracer.start_span(
+                "user_speech",
+                attributes={
+                    "gen_ai.operation.name": "user_speech",
+                    "gen_ai.provider.name": "gcp.gemini",
+                },
+            )
+        elif voice_activity.voice_activity_type == types.VoiceActivityType.ACTIVITY_END:
+            if speech_span is None:
+                raise RuntimeError("Received ACTIVITY_END without ACTIVITY_START")
+            speech_span.end()
+            return
+
+    raise RuntimeError("Gemini Live stream ended before ACTIVITY_END")
+
+
 async def run_gemini_live_3_reference():
     """Run a Gemini Live 3.x voice generation."""
     from google import genai
@@ -188,6 +217,8 @@ async def run_gemini_live_3_reference():
             attributes=session_attributes,
         )
         try:
+            await _send_user_audio(session)
+            await _record_user_speech(session)
             await _run_generation(session, request_model, host, live_port)
         finally:
             reference_event_logger().emit(

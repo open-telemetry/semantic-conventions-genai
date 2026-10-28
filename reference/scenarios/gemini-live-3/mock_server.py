@@ -26,12 +26,14 @@ hostname are irrelevant, and nothing needs to be checked into the repository.
 
 Server -> client sequence for one voice response:
 
-1. ``{"serverContent": {"outputTranscription": {"text": ...}}}`` deltas -- the
+1. ``voiceActivity`` signals report ``ACTIVITY_START`` and ``ACTIVITY_END`` for
+   the user's speech.
+2. ``{"serverContent": {"outputTranscription": {"text": ...}}}`` deltas -- the
    spoken audio transcript, streamed incrementally.
-2. ``{"serverContent": {"modelTurn": {"parts": [{"inlineData": ...}]}}}`` -- the
+3. ``{"serverContent": {"modelTurn": {"parts": [{"inlineData": ...}]}}}`` -- the
    generated audio (PCM) for the turn.
-3. ``{"serverContent": {"generationComplete": true}}``.
-4. ``{"serverContent": {"turnComplete": true}, "usageMetadata": {...}}`` -- ends
+4. ``{"serverContent": {"generationComplete": true}}``.
+5. ``{"serverContent": {"turnComplete": true}, "usageMetadata": {...}}`` -- ends
    the turn and reports token usage with an ``AUDIO`` / ``TEXT`` modality
    breakdown for both prompt and response.
 
@@ -98,6 +100,7 @@ async def _run_turn(ws):
 
 
 async def _handler(ws):
+    voice_activity_active = False
     async for raw in ws:
         message = json.loads(raw)
         if "setup" in message:
@@ -107,7 +110,29 @@ async def _handler(ws):
             # The client signals the end of the user's utterance; the model then
             # generates its spoken response for the accumulated audio.
             if realtime_input.get("audioStreamEnd"):
+                if voice_activity_active:
+                    await _send(
+                        ws,
+                        {
+                            "voiceActivity": {
+                                "type": "ACTIVITY_END",
+                                "audioOffset": "1s",
+                            }
+                        },
+                    )
+                    voice_activity_active = False
                 await _run_turn(ws)
+            elif not voice_activity_active:
+                await _send(
+                    ws,
+                    {
+                        "voiceActivity": {
+                            "type": "ACTIVITY_START",
+                            "audioOffset": "0s",
+                        }
+                    },
+                )
+                voice_activity_active = True
 
 
 class _HealthHandler(BaseHTTPRequestHandler):

@@ -33,3 +33,8 @@ scenarios:
             gen_ai.operation.name: realtime_inference
           kind: client
           type: gen_ai.realtime_inference.client
+      - match:
+          attributes:
+            gen_ai.operation.name: user_speech
+          kind: internal
+          type: gen_ai.user_speech.internal

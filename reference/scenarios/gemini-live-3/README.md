@@ -10,5 +10,5 @@ server-side generations. This scenario records one spoken response as a
 | Operation | Should be instrumented here | Status |
 | --- | --- | --- |
 | realtime_inference | Yes — calls the Live API directly | ✅ Implemented |
-| user_speech | No — the Gemini Developer API exposes no user voice-activity (VAD) events | ➖ Not instrumentable |
+| user_speech | Yes — bounded by server voice-activity events (`voice_activity` `ACTIVITY_START` / `ACTIVITY_END`) | ✅ Implemented |
 | execute_tool | No — the application executes the tool outside the client library | ➖ Not instrumentable |
