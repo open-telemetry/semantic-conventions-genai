@@ -454,13 +454,8 @@ spans:
         **Span name** SHOULD be `{gen_ai.operation.name} {gen_ai.data_source.id}`
         when `gen_ai.data_source.id` is available and `{gen_ai.operation.name}` otherwise.
     brief: >
-      Describes a retrieval operation performed by a GenAI framework or application -
-      a retriever call that returns documents relevant to a query.
-    note: |
-      Examples include LangChain retrievers, LlamaIndex retrievers, and Haystack
-      retriever components. A retriever usually wraps other operations such as
-      embeddings, database queries, web search, or reranking. These operations
-      SHOULD be reported as separate spans following their own conventions.
+      Describes a retrieval operation - an execution of a framework retrieval pipeline
+      that returns documents relevant to a query.
     stability: development
     attributes:
       - ref_group: attributes.gen_ai.error
