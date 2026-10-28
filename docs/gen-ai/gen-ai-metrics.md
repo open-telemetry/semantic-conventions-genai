@@ -36,6 +36,9 @@ see [Client Inference](client-inference.md#metrics).
 For embeddings metrics (duration, input tokens),
 see [Client Embeddings](client-embeddings.md#metrics).
 
+For client invoke agent metrics (duration),
+see [Client Agent](client-agent.md#metrics).
+
 **Disclaimer:** These are initial Generative AI client metric instruments
 and attributes but more may be added in the future.
 
@@ -63,7 +66,7 @@ This metric SHOULD be specified with [ExplicitBucketBoundaries] of [0.01, 0.02, 
 | -------- | --------------- | ----------- | -------------- | --------- | ------ |
 | `gen_ai.client.operation.duration` | Histogram | `s` | GenAI operation duration. [1] | ![Development](https://img.shields.io/badge/-development-blue) | |
 
-**[1]:** This metric SHOULD NOT be reported for inference or embeddings operations; use `gen_ai.client.inference.duration` or `gen_ai.client.embeddings.duration` instead.
+**[1]:** This metric SHOULD NOT be reported for inference, embeddings, or invoke agent client operations; use `gen_ai.client.inference.duration`, `gen_ai.client.embeddings.duration`, or `gen_ai.client.invoke_agent.duration` instead.
 
 **Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/signal-requirement-level.md).
 

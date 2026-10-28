@@ -61,6 +61,14 @@ def test_embeddings_scenarios_report_embeddings_metrics():
         assert "gen_ai.client.embeddings.operation.input_tokens" in entries[library].metrics, library
 
 
+def test_invoke_agent_client_scenarios_report_invoke_agent_duration():
+    entries = {entry.library: entry for entry in load_scenario_data_files()}
+    for library in ("aws-bedrock-agent", "azure-ai-foundry", "google-genai", "openai-assistants"):
+        metrics = entries[library].metrics
+        assert "gen_ai.client.invoke_agent.duration" in metrics, library
+        assert metrics["gen_ai.client.invoke_agent.duration"]["gen_ai.operation.name"] == "present", library
+
+
 def test_entity_specs_expose_required_id():
     specs = entity_specs()
     assert "gen_ai.main_agent" in specs
@@ -128,6 +136,7 @@ if __name__ == "__main__":
     test_committed_google_adk_metrics_round_trip()
     test_inference_scenarios_report_inference_duration()
     test_embeddings_scenarios_report_embeddings_metrics()
+    test_invoke_agent_client_scenarios_report_invoke_agent_duration()
     test_entity_specs_expose_required_id()
     test_entities_keep_their_registry_names()
     test_entities_with_sections_round_trip()

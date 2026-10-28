@@ -598,7 +598,7 @@ spans:
         note: ""  # note is not needed here
 
 
-  - type: gen_ai.invoke_agent.client
+  - type: gen_ai.client.invoke_agent
     requirement_level: recommended
     kind: client
     name:

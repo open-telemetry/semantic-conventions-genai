@@ -1,5 +1,25 @@
 {
   "spans": {
+    "gen_ai.client.invoke_agent": [
+      "gen_ai.agent.description",
+      "gen_ai.agent.id",
+      "gen_ai.agent.name",
+      "gen_ai.conversation.id",
+      "gen_ai.input.messages",
+      "gen_ai.operation.name",
+      "gen_ai.output.messages",
+      "gen_ai.provider.name",
+      "gen_ai.request.max_tokens",
+      "gen_ai.request.model",
+      "gen_ai.request.temperature",
+      "gen_ai.request.top_p",
+      "gen_ai.system_instructions",
+      "gen_ai.tool.definitions",
+      "gen_ai.usage.input_tokens",
+      "gen_ai.usage.output_tokens",
+      "server.address",
+      "server.port"
+    ],
     "gen_ai.create_agent.client": [
       "gen_ai.agent.description",
       "gen_ai.agent.id",
@@ -20,39 +40,19 @@
       "gen_ai.tool.description",
       "gen_ai.tool.name",
       "gen_ai.tool.type"
-    ],
-    "gen_ai.invoke_agent.client": [
-      "gen_ai.agent.description",
-      "gen_ai.agent.id",
+    ]
+  },
+  "events": {},
+  "metrics": {
+    "gen_ai.client.invoke_agent.duration": [
       "gen_ai.agent.name",
-      "gen_ai.conversation.id",
-      "gen_ai.input.messages",
       "gen_ai.operation.name",
-      "gen_ai.output.messages",
       "gen_ai.provider.name",
-      "gen_ai.request.max_tokens",
       "gen_ai.request.model",
-      "gen_ai.request.temperature",
-      "gen_ai.request.top_p",
-      "gen_ai.system_instructions",
-      "gen_ai.tool.definitions",
-      "gen_ai.usage.input_tokens",
-      "gen_ai.usage.output_tokens",
       "server.address",
       "server.port"
     ]
   },
-  "events": {},
-  "metrics": {},
-  "findings": [
-    {
-      "id": "genai_expected_attribute_missing",
-      "message": "Span 'invoke_agent refimpl-test-assistant' (operation 'invoke_agent') is missing expected attribute 'gen_ai.response.finish_reasons'",
-      "context": {
-        "missing_attribute": "gen_ai.response.finish_reasons",
-        "operation": "invoke_agent"
-      }
-    }
-  ],
+  "findings": [],
   "entities": {}
 }

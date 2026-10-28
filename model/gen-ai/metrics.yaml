@@ -24,8 +24,9 @@ metrics:
     unit: "s"
     brief: 'GenAI operation duration.'
     note: >
-      This metric SHOULD NOT be reported for inference or embeddings operations;
-      use `gen_ai.client.inference.duration` or `gen_ai.client.embeddings.duration` instead.
+      This metric SHOULD NOT be reported for inference, embeddings, or invoke agent client
+      operations; use `gen_ai.client.inference.duration`, `gen_ai.client.embeddings.duration`,
+      or `gen_ai.client.invoke_agent.duration` instead.
     stability: development
     annotations:
       code_generation:
@@ -81,6 +82,32 @@ metrics:
         examples: ["text-embedding-3-small", "gemini-embedding-001"]
       - ref: gen_ai.response.model
         examples: ["text-embedding-3-small"]
+  - name: gen_ai.client.invoke_agent.duration
+    requirement_level: recommended
+    instrument: histogram
+    unit: "s"
+    brief: 'GenAI client invoke agent operation duration.'
+    note: >
+      Represents the end-to-end duration of a remote agent invocation,
+      measured from when the client issues the invocation request to when the
+      final response is fully received or the operation ends with an error or cancellation.
+
+      When this metric is reported alongside a `gen_ai.client.invoke_agent`
+      span, the metric value SHOULD be the same as the span duration.
+    stability: development
+    annotations:
+      code_generation:
+        metric_value_type: double
+    attributes:
+      - ref_group: attributes.gen_ai.address_and_port
+      - ref_group: attributes.gen_ai.error
+      - ref_group: attributes.gen_ai.invoked_agent.internal.common
+      - ref: gen_ai.provider.name
+        requirement_level: required
+      - ref: gen_ai.operation.name
+        requirement_level: required
+        examples: ["invoke_agent"]
+        note: SHOULD be `invoke_agent`.
   - name: gen_ai.client.inference.time_to_first_chunk
     requirement_level: recommended
     instrument: histogram

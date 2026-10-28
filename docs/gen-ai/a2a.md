@@ -844,13 +844,13 @@ and SHOULD be provided **at span creation time** (if provided at all):
 
 The examples below show the spans that can be captured when instrumentation is
 enabled at the agent, A2A, and transport layers. An A2A instrumentation reports
-only the A2A spans; an agent framework reports `gen_ai.invoke_agent.client`
+only the A2A spans; an agent framework reports `gen_ai.client.invoke_agent`
 when applicable.
 
 ### Agent invocation
 
 When an agent framework invokes a remote agent and its context remains active,
-the A2A span can be a child of `gen_ai.invoke_agent.client`:
+the A2A span can be a child of `gen_ai.client.invoke_agent`:
 
 ```text
 invoke_agent weather-agent         (GenAI agent)

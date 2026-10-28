@@ -11,6 +11,7 @@
       "gen_ai.operation.name",
       "gen_ai.provider.name",
       "gen_ai.request.model",
+      "gen_ai.request.previous_response.id",
       "gen_ai.response.finish_reasons",
       "gen_ai.response.id",
       "gen_ai.response.model",
@@ -28,7 +29,17 @@
       "gen_ai.usage.text.cache_read.input_tokens",
       "gen_ai.usage.text.input_tokens",
       "gen_ai.usage.text.output_tokens",
-      "server.address"
+      "server.address",
+      "server.port"
+    ],
+    "gen_ai.client.invoke_agent": [
+      "gen_ai.agent.name",
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "gen_ai.usage.input_tokens",
+      "gen_ai.usage.output_tokens",
+      "server.address",
+      "server.port"
     ],
     "gen_ai.create_agent.client": [
       "gen_ai.agent.description",
@@ -48,16 +59,6 @@
       "gen_ai.tool.description",
       "gen_ai.tool.name",
       "gen_ai.tool.type"
-    ],
-    "gen_ai.invoke_agent.client": [
-      "gen_ai.agent.name",
-      "gen_ai.operation.name",
-      "gen_ai.provider.name",
-      "gen_ai.request.model",
-      "gen_ai.request.previous_response.id",
-      "gen_ai.usage.input_tokens",
-      "gen_ai.usage.output_tokens",
-      "server.address"
     ]
   },
   "events": {
@@ -132,17 +133,15 @@
       "gen_ai.request.model",
       "gen_ai.response.model",
       "gen_ai.token.modality"
+    ],
+    "gen_ai.client.invoke_agent.duration": [
+      "gen_ai.agent.name",
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "server.address",
+      "server.port"
     ]
   },
-  "findings": [
-    {
-      "id": "genai_expected_attribute_missing",
-      "message": "Span 'invoke_agent interactions_agent' (operation 'invoke_agent') is missing expected attribute 'gen_ai.response.finish_reasons'",
-      "context": {
-        "missing_attribute": "gen_ai.response.finish_reasons",
-        "operation": "invoke_agent"
-      }
-    }
-  ],
+  "findings": [],
   "entities": {}
 }
