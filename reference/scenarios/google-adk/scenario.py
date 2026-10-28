@@ -159,7 +159,8 @@ def run_agent_reference():
                 tool_span.set_attribute("gen_ai.tool.call.id", tool_context.function_call_id)
             tool_span.set_attribute("gen_ai.tool.call.arguments", {"location": location})
             result = f"Sunny in {location}"
-            tool_span.set_attribute("gen_ai.tool.call.result", {"output": result})
+            # The tool returns plain text, but gen_ai.tool.call.result's schema requires an object.
+            tool_span.set_attribute("gen_ai.tool.call.result", result)
         return result
 
     tool_defs = [
@@ -440,9 +441,8 @@ def run_multi_agent_delegation_reference():
                     tool_span.set_attribute("gen_ai.tool.call.id", tool_context.function_call_id)
                 tool_span.set_attribute("gen_ai.tool.call.arguments", args)
                 result = await original_run_async(args=args, tool_context=tool_context)
-                tool_span.set_attribute(
-                    "gen_ai.tool.call.result", result if isinstance(result, dict) else {"output": result}
-                )
+                # The tool returns plain text, but gen_ai.tool.call.result's schema requires an object.
+                tool_span.set_attribute("gen_ai.tool.call.result", result)
             return result
 
         async def _traced_specialist_run_async(active_runner, *, session_id, **kwargs):
@@ -767,9 +767,8 @@ def run_skills_reference():
                     span.set_attribute("error.type", error_type)
                     span.set_status(StatusCode.ERROR, result.get("error", ""))
                 else:
-                    span.set_attribute(
-                        "gen_ai.tool.call.result", result if isinstance(result, dict) else {"output": result}
-                    )
+                    # The tool returns plain text, but gen_ai.tool.call.result's schema requires an object.
+                    span.set_attribute("gen_ai.tool.call.result", result)
                 self._record_skill_signals(span, args, result, error_type, tool_context)
                 return result
 

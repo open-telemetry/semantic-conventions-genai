@@ -54,7 +54,8 @@ def run_agent_reference():
                 tool_span.set_attribute("gen_ai.tool.call.id", tool_call_id)
             tool_span.set_attribute("gen_ai.tool.call.arguments", {"location": location})
             result = f"Sunny in {location}"
-            tool_span.set_attribute("gen_ai.tool.call.result", {"output": result})
+            # The tool returns plain text, but gen_ai.tool.call.result's schema requires an object.
+            tool_span.set_attribute("gen_ai.tool.call.result", result)
             return result
 
     tool_defs = [

@@ -45,7 +45,8 @@ def get_weather(ctx: ToolContext[None], location: str) -> str:
         tool_span.set_attribute("gen_ai.tool.call.id", ctx.tool_call_id)
         tool_span.set_attribute("gen_ai.tool.call.arguments", {"location": location})
         result = "Sunny, 72°F"
-        tool_span.set_attribute("gen_ai.tool.call.result", {"output": result})
+        # The tool returns plain text, but gen_ai.tool.call.result's schema requires an object.
+        tool_span.set_attribute("gen_ai.tool.call.result", result)
         return result
 
 
@@ -175,7 +176,8 @@ async def run_agent_as_tool_delegation():
             tool_span.set_attribute("gen_ai.tool.call.id", tool_context.tool_call_id)
             tool_span.set_attribute("gen_ai.tool.call.arguments", json.loads(input_json or "{}"))
             result = await original_on_invoke_tool(tool_context, input_json)
-            tool_span.set_attribute("gen_ai.tool.call.result", {"output": result})
+            # The tool returns plain text, but gen_ai.tool.call.result's schema requires an object.
+            tool_span.set_attribute("gen_ai.tool.call.result", result)
         return result
 
     model_responses = ContextVar("delegation_model_responses", default=None)
@@ -297,7 +299,8 @@ async def run_command_execution():
                     span.set_attribute("error.type", type(exc).__qualname__)
                     span.set_status(StatusCode.ERROR, str(exc))
                     raise
-                span.set_attribute("gen_ai.tool.call.result", {"output": result})
+                # The tool returns plain text, but gen_ai.tool.call.result's schema requires an object.
+                span.set_attribute("gen_ai.tool.call.result", result)
                 return result
 
     sandbox_client = UnixLocalSandboxClient()

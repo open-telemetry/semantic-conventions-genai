@@ -64,7 +64,8 @@ def run_crew():
             tool_span.set_attribute("gen_ai.tool.type", "function")
             tool_span.set_attribute("gen_ai.tool.call.arguments", {"location": location})
             result = "Sunny, 72°F"
-            tool_span.set_attribute("gen_ai.tool.call.result", {"output": result})
+            # The tool returns plain text, but gen_ai.tool.call.result's schema requires an object.
+            tool_span.set_attribute("gen_ai.tool.call.result", result)
             return result
 
     tools = [get_weather]
@@ -169,7 +170,8 @@ def run_agent():
             tool_span.set_attribute("gen_ai.tool.type", "function")
             tool_span.set_attribute("gen_ai.tool.call.arguments", {"location": location})
             result = "Sunny, 72°F"
-            tool_span.set_attribute("gen_ai.tool.call.result", {"output": result})
+            # The tool returns plain text, but gen_ai.tool.call.result's schema requires an object.
+            tool_span.set_attribute("gen_ai.tool.call.result", result)
             return result
 
     tools = [get_weather]
