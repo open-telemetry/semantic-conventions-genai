@@ -193,7 +193,6 @@ async def _run_generation(session, request_model, host, port, input_messages, br
                             "arguments": function_call["args"],
                         }
                     ],
-                    "finish_reason": "tool_call",
                 }
             ]
             span.set_attribute("gen_ai.response.finish_reasons", ["tool_call"])
@@ -215,7 +214,6 @@ async def _run_generation(session, request_model, host, port, input_messages, br
                             "content": transcript,
                         },
                     ],
-                    "finish_reason": "stop",
                 }
             ]
             span.set_attribute("gen_ai.response.finish_reasons", ["stop"])

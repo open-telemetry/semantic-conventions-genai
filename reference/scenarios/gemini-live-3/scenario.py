@@ -127,7 +127,6 @@ async def _run_generation(session, request_model, host, port):
                         "content": transcript,
                     },
                 ],
-                "finish_reason": "stop",
             }
         ]
         span.set_attribute("gen_ai.response.finish_reasons", ["stop"])

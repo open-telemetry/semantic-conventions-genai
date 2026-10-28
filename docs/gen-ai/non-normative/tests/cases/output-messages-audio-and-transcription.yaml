@@ -15,8 +15,7 @@ document: [
         "type": "transcription",
         "content": "It is rainy and 57 degrees in Paris."
       }
-    ],
-    "finish_reason": "stop"
+    ]
   }
 ]
 # Regenerate with `uv run pytest --update-snapshots`, do not edit by hand.

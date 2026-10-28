@@ -262,7 +262,6 @@ class _RealtimeDriver:
                         "arguments": json.loads(function_call["arguments"]),
                     }
                 ],
-                "finish_reason": "tool_call",
             }
         ]
         span.set_attribute("gen_ai.response.finish_reasons", ["tool_call"])
@@ -301,7 +300,6 @@ class _RealtimeDriver:
                     {"type": "blob", "modality": "audio", "mime_type": "audio/pcm", "content": output_audio},
                     {"type": "transcription", "content": transcript},
                 ],
-                "finish_reason": finish_reason,
             }
         ]
         span.set_attribute("gen_ai.response.finish_reasons", [finish_reason])

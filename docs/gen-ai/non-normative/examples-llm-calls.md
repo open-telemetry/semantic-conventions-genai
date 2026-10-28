@@ -998,16 +998,16 @@ sequenceDiagram
     M-->>I: Connection established
     I-->>A: Connection established
     Note left of I: realtime_session.started event
-    A->>I: User speech starts
+    M-->>I: User speech started
     activate I
     Note left of I: user_speech span
     loop While user is speaking
         A->>I: Stream user audio
         I->>M: Stream user audio
     end
-    A->>I: User speech ends
+    M-->>I: User speech stopped
     deactivate I
-    I->>M: Commit user input
+    M-->>I: User input committed
     activate I
     Note left of I: realtime_inference span
     M-->>I: Stream output audio
@@ -1083,8 +1083,7 @@ use the same `gen_ai.realtime_session.id` when it is available.
         "type": "transcription",
         "content": "It is rainy and 57 degrees in Paris."
       }
-    ],
-    "finish_reason": "stop"
+    ]
   }
 ]
 ```
@@ -1124,16 +1123,16 @@ sequenceDiagram
     M-->>I: Connection established
     I-->>A: Connection established
     Note left of I: realtime_session.started event
-    A->>I: User speech starts
+    M-->>I: User speech started
     activate I
     Note left of I: user_speech span
     loop While user is speaking
         A->>I: Stream user audio
         I->>M: Stream user audio
     end
-    A->>I: User speech ends
+    M-->>I: User speech stopped
     deactivate I
-    I->>M: Commit user input
+    M-->>I: User input committed
     activate I
     Note left of I: realtime_inference span 1
     M-->>I: Tool call
@@ -1236,8 +1235,7 @@ The first `realtime_inference` span records the tool request:
           "location": "Paris"
         }
       }
-    ],
-    "finish_reason": "tool_call"
+    ]
   }
 ]
 ```
@@ -1300,8 +1298,7 @@ model's answer as output:
         "type": "transcription",
         "content": "It is rainy and 57 degrees in Paris."
       }
-    ],
-    "finish_reason": "stop"
+    ]
   }
 ]
 ```
