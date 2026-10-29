@@ -14,4 +14,8 @@ execution.
 | retrieval | Yes — retriever runs the retrieval | ✅ Implemented |
 | plan | Yes — Plan-and-Execute planning phase | ✅ Implemented |
 | execute_tool | Yes — `BaseTool.invoke()` runs the tool | ✅ Implemented |
+
+`gen_ai.retrieval.top_k` is read from `VectorStoreRetriever.search_kwargs["k"]`.
+Other retrievers have no common limit setting, and LangChain tracing metadata
+doesn't include it, so callback-based instrumentation can't capture it.
 | execute_tool (command) | Yes — `ShellToolMiddleware`'s `shell` tool runs a general command | ✅ Implemented |

@@ -119,6 +119,8 @@ def build_index():
 
     documents = [
         Document(text="Seattle weather is rainy and cool."),
+        Document(text="Paris weather is mild and breezy."),
+        Document(text="London weather is cloudy and damp."),
     ]
     embed_model = OpenAIEmbedding(
         model_name=EMBEDDING_MODEL,
@@ -131,7 +133,7 @@ def build_index():
 def run_retrieval_reference(index):
     """Scenario: vector retrieval via LlamaIndex retriever with reference implementation."""
     print("  [retrieval] vector retrieval (reference implementation)")
-    nodes = retrieve_reference(index.as_retriever(similarity_top_k=1), "Seattle weather")
+    nodes = retrieve_reference(index.as_retriever(similarity_top_k=2), "Seattle weather")
     print(f"    -> {nodes[0].text[:60]}")
 
 

@@ -123,6 +123,7 @@ def run_retrieval_reference():
         [
             Document(page_content="Seattle weather is rainy and cool."),
             Document(page_content="Paris weather is mild and breezy."),
+            Document(page_content="London weather is cloudy and damp."),
         ]
     )
     retriever = vector_store.as_retriever(search_kwargs={"k": 2})

@@ -132,10 +132,10 @@ This metric SHOULD be specified with [ExplicitBucketBoundaries] of [0.01, 0.02, 
 
 | Name | Instrument Type | Unit (UCUM) | Description | Stability | Entity Associations |
 | -------- | --------------- | ----------- | -------------- | --------- | ------ |
-| `gen_ai.retrieval.duration` | Histogram | `s` | The duration of a single retrieval operation. [1] | ![Development](https://img.shields.io/badge/-development-blue) | |
+| `gen_ai.retrieval.duration` | Histogram | `s` | The duration of a retrieval operation - an execution of a framework retrieval pipeline that returns documents relevant to a query. [1] | ![Development](https://img.shields.io/badge/-development-blue) | |
 
-**[1]:** Represents the end-to-end duration of a retrieval pipeline execution, measured from when
-the retriever receives the query to when it returns documents or ends with an error.
+**[1]:** Measured from when the retriever receives the query to when it returns
+documents or ends with an error.
 
 When this metric is reported alongside a `gen_ai.retrieval` span,
 the metric value SHOULD be the same as the span duration.

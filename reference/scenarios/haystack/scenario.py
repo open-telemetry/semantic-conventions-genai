@@ -44,9 +44,12 @@ def run_retrieval():
         [
             Document(content="Seattle weather is rainy and cool."),
             Document(content="Paris weather is mild and breezy."),
+            Document(content="London weather is cloudy and damp."),
         ]
     )
     retriever = InMemoryBM25Retriever(document_store=document_store, top_k=2)
+    # run() accepts a per-call top_k that overrides the component setting.
+    top_k = 1
 
     metric_attributes = {"gen_ai.operation.name": "retrieval"}
     start_time = time.perf_counter()
@@ -54,9 +57,9 @@ def run_retrieval():
         "retrieval", attributes=metric_attributes, record_exception=False
     ) as span:
         try:
-            span.set_attribute("gen_ai.retrieval.top_k", retriever.top_k)
+            span.set_attribute("gen_ai.retrieval.top_k", top_k)
             span.set_attribute("gen_ai.retrieval.query.text", query_text)
-            result = retriever.run(query=query_text)
+            result = retriever.run(query=query_text, top_k=top_k)
             documents = result["documents"]
             span.set_attribute(
                 "gen_ai.retrieval.documents",
