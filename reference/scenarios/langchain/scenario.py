@@ -114,48 +114,31 @@ def run_retrieval_reference():
     """Scenario: in-memory retrieval via LangChain retriever with reference implementation."""
     print("  [retrieval] in-memory retrieval (reference implementation)")
     from langchain_core.documents import Document
-    from langchain_core.retrievers import BaseRetriever
+    from langchain_core.embeddings import DeterministicFakeEmbedding
+    from langchain_core.vectorstores import InMemoryVectorStore
 
-    class WeatherRetriever(BaseRetriever):
-        docs: list[Document]
-        top_k: int = 2
-
-        def _get_relevant_documents(self, query: str):
-            query_lower = query.lower()
-            matches = [doc for doc in self.docs if query_lower.split()[0] in doc.page_content.lower()]
-            return matches[: self.top_k]
-
-    data_source_id = "weather-knowledge-base"
     query_text = "Seattle weather"
-    top_k = 2
-    retriever = WeatherRetriever(
-        docs=[
-            Document(page_content="Seattle weather is rainy and cool.", metadata={"source_id": data_source_id}),
-            Document(page_content="Paris weather is mild and breezy.", metadata={"source_id": data_source_id}),
-        ],
-        top_k=top_k,
+    vector_store = InMemoryVectorStore(embedding=DeterministicFakeEmbedding(size=16))
+    vector_store.add_documents(
+        [
+            Document(page_content="Seattle weather is rainy and cool."),
+            Document(page_content="Paris weather is mild and breezy."),
+        ]
     )
+    retriever = vector_store.as_retriever(search_kwargs={"k": 2})
 
-    metric_attributes = {"gen_ai.operation.name": "retrieval", "gen_ai.data_source.id": data_source_id}
+    metric_attributes = {"gen_ai.operation.name": "retrieval"}
     start_time = time.perf_counter()
     with _reference_tracer.start_as_current_span(
-        f"retrieval {data_source_id}", attributes=metric_attributes, record_exception=False
+        "retrieval", attributes=metric_attributes, record_exception=False
     ) as span:
         try:
-            span.set_attribute("gen_ai.retrieval.top_k", top_k)
+            span.set_attribute("gen_ai.retrieval.top_k", retriever.search_kwargs["k"])
             span.set_attribute("gen_ai.retrieval.query.text", query_text)
             documents = retriever.invoke(query_text)
             span.set_attribute(
                 "gen_ai.retrieval.documents",
-                json.dumps(
-                    [
-                        {
-                            "content": document.page_content,
-                            "source_id": document.metadata.get("source_id"),
-                        }
-                        for document in documents
-                    ]
-                ),
+                json.dumps([{"id": document.id} for document in documents]),
             )
             print(f"    -> {documents[0].page_content[:60]}")
         except Exception as e:

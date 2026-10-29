@@ -67,7 +67,7 @@ def test_retrieval_scenarios_report_retrieval_metrics():
         metrics = entries[library].metrics
         assert "gen_ai.client.operation.duration" not in metrics, library
         assert metrics["gen_ai.retrieval.duration"]["gen_ai.operation.name"] == "present", library
-        assert metrics["gen_ai.retrieval.duration"]["gen_ai.data_source.id"] == "present", library
+    assert entries["llamaindex"].metrics["gen_ai.retrieval.duration"]["error.type"] == "present"
 
 
 def test_entity_specs_expose_required_id():

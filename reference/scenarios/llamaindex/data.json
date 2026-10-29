@@ -10,7 +10,7 @@
       "gen_ai.tool.type"
     ],
     "gen_ai.retrieval": [
-      "gen_ai.data_source.id",
+      "error.type",
       "gen_ai.operation.name",
       "gen_ai.retrieval.documents",
       "gen_ai.retrieval.query.text",
@@ -20,7 +20,7 @@
   "events": {},
   "metrics": {
     "gen_ai.retrieval.duration": [
-      "gen_ai.data_source.id",
+      "error.type",
       "gen_ai.operation.name"
     ]
   },

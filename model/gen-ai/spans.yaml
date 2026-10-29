@@ -182,9 +182,6 @@ attribute_groups:
         requirement_level: required
         examples: ["retrieval"]
         note: SHOULD be `retrieval`.
-      - ref: gen_ai.data_source.id
-        requirement_level:
-          conditionally_required: If available.
 
 spans:
   - type: gen_ai.client.inference
@@ -451,8 +448,7 @@ spans:
     kind: internal
     name:
       note: |
-        **Span name** SHOULD be `{gen_ai.operation.name} {gen_ai.data_source.id}`
-        when `gen_ai.data_source.id` is available and `{gen_ai.operation.name}` otherwise.
+        **Span name** SHOULD be `{gen_ai.operation.name}`.
     brief: >
       Describes a retrieval operation - an execution of a framework retrieval pipeline
       that returns documents relevant to a query.
@@ -461,8 +457,6 @@ spans:
       - ref_group: attributes.gen_ai.error
       - ref_group: attributes.gen_ai.retrieval.common
       - ref: gen_ai.operation.name
-        sampling_relevant: true
-      - ref: gen_ai.data_source.id
         sampling_relevant: true
       - ref: gen_ai.retrieval.query.text
         requirement_level: opt_in

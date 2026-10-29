@@ -38,47 +38,29 @@ def run_retrieval():
     from haystack.components.retrievers.in_memory import InMemoryBM25Retriever
     from haystack.document_stores.in_memory import InMemoryDocumentStore
 
-    data_source_id = "weather-knowledge-base"
     query_text = "Seattle weather"
-    top_k = 2
     document_store = InMemoryDocumentStore()
     document_store.write_documents(
         [
-            Document(
-                content="Seattle weather is rainy and cool.",
-                meta={"source_id": data_source_id, "title": "Seattle Weather"},
-            ),
-            Document(
-                content="Paris weather is mild and breezy.",
-                meta={"source_id": data_source_id, "title": "Paris Weather"},
-            ),
+            Document(content="Seattle weather is rainy and cool."),
+            Document(content="Paris weather is mild and breezy."),
         ]
     )
-    retriever = InMemoryBM25Retriever(document_store=document_store, top_k=top_k)
+    retriever = InMemoryBM25Retriever(document_store=document_store, top_k=2)
 
-    metric_attributes = {"gen_ai.operation.name": "retrieval", "gen_ai.data_source.id": data_source_id}
+    metric_attributes = {"gen_ai.operation.name": "retrieval"}
     start_time = time.perf_counter()
     with _reference_tracer.start_as_current_span(
-        f"retrieval {data_source_id}", attributes=metric_attributes, record_exception=False
+        "retrieval", attributes=metric_attributes, record_exception=False
     ) as span:
         try:
-            span.set_attribute("gen_ai.retrieval.top_k", top_k)
+            span.set_attribute("gen_ai.retrieval.top_k", retriever.top_k)
             span.set_attribute("gen_ai.retrieval.query.text", query_text)
             result = retriever.run(query=query_text)
             documents = result["documents"]
             span.set_attribute(
                 "gen_ai.retrieval.documents",
-                json.dumps(
-                    [
-                        {
-                            "id": getattr(document, "id", None),
-                            "content": document.content,
-                            "title": document.meta.get("title"),
-                            "source_id": document.meta.get("source_id"),
-                        }
-                        for document in documents
-                    ]
-                ),
+                json.dumps([{"id": document.id, "score": document.score} for document in documents]),
             )
             print(f"    -> {documents[0].content[:60]}")
         except Exception as e:

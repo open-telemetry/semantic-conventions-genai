@@ -8,12 +8,6 @@
 | --- | --- |
 | gen_ai.operation.name | [haystack], [langchain], [llamaindex] |
 
-## Conditionally Required
-
-| Attribute | Supporting Libraries |
-| --- | --- |
-| gen_ai.data_source.id | [haystack], [langchain], [llamaindex] |
-
 ## Recommended
 
 | Attribute | Supporting Libraries |
