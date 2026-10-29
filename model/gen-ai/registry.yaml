@@ -605,9 +605,13 @@ attributes:
       > [!WARNING]
       > This attribute may contain sensitive information.
 
-      It's expected to be an object - in case a serialized string is available
-      to the instrumentation, the instrumentation SHOULD do the best effort to
-      deserialize it to an object.
+      It can be any JSON value, for example an object, an array, or a string.
+      In case a serialized JSON string is available to the instrumentation, the
+      instrumentation SHOULD do the best effort to deserialize it.
+
+      A result that is a single text block is recorded here as a string, or as
+      the deserialized value if it holds serialized JSON. Other results made of
+      content blocks go in `gen_ai.tool.call.result_parts`.
     examples:
       - |
         {
@@ -617,6 +621,40 @@ attributes:
           },
           "conditions": "sunny"
         }
+
+    stability: development
+  - key: gen_ai.tool.call.result_parts
+    type: any
+    brief: The result returned by the tool call (if any and if execution was successful), as ordered message parts.
+    annotations:
+      type:
+        json_schema: model/gen-ai/gen-ai-tool-call-result-parts.json
+    note: |
+      > [!WARNING]
+      > This attribute may contain sensitive information.
+
+      Instrumentations SHOULD use this attribute for content blocks that
+      `gen_ai.tool.call.result` cannot represent, such as images, files, or
+      several ordered blocks, recording them as message parts rather than in a
+      provider-specific format.
+
+      Instrumentations SHOULD NOT record this attribute when the parts are
+      equivalent to `gen_ai.tool.call.result`, for example when the only part
+      is text. Both attributes are recorded when the result has structured data
+      and the parts carry other content, such as an image.
+    examples:
+      - |
+        [
+          {
+            "type": "text",
+            "content": "Weather map for Seattle"
+          },
+          {
+            "type": "uri",
+            "modality": "image",
+            "uri": "https://example.com/weather-map.png"
+          }
+        ]
 
     stability: development
   - key: gen_ai.tool.definitions

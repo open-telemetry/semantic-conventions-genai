@@ -33,6 +33,8 @@ from semconv_genai.conformance import coverage_model
 _SPANS = {
     "a2a_client": ("a2a.client", "A2A Client"),
     "a2a_server": ("a2a.server", "A2A Server"),
+    "mcp_client": ("mcp.client", "MCP Client"),
+    "mcp_server": ("mcp.server", "MCP Server"),
     "inference": ("gen_ai.client.inference", "Inference"),
     "embeddings": ("gen_ai.client.embeddings", "Embeddings"),
     "retrieval": ("gen_ai.retrieval.client", "Retrieval"),

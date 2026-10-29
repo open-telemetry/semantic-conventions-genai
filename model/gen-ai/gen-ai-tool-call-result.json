@@ -1,6 +1,4 @@
 {
-    "additionalProperties": true,
-    "description": "Represents object-like results returned by a tool call.",
-    "title": "ToolCallResult",
-    "type": "object"
+    "description": "Represents the result returned by a tool call, which can be any JSON value.",
+    "title": "ToolCallResult"
 }

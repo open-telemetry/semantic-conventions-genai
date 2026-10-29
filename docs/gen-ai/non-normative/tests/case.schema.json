@@ -19,6 +19,7 @@
                 "gen-ai-retrieval-documents.json",
                 "gen-ai-system-instructions.json",
                 "gen-ai-tool-call-arguments.json",
+                "gen-ai-tool-call-result-parts.json",
                 "gen-ai-tool-call-result.json",
                 "gen-ai-tool-definitions.json"
             ]
@@ -56,6 +57,10 @@
         {
             "if": { "properties": { "schema": { "const": "gen-ai-tool-call-arguments.json" } } },
             "then": { "properties": { "document": { "$ref": "../../../../model/gen-ai/gen-ai-tool-call-arguments.json" } } }
+        },
+        {
+            "if": { "properties": { "schema": { "const": "gen-ai-tool-call-result-parts.json" } } },
+            "then": { "properties": { "document": { "$ref": "../../../../model/gen-ai/gen-ai-tool-call-result-parts.json" } } }
         },
         {
             "if": { "properties": { "schema": { "const": "gen-ai-tool-call-result.json" } } },

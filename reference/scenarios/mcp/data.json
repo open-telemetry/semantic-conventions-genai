@@ -1,0 +1,110 @@
+{
+  "spans": {
+    "mcp.client": [
+      "error.type",
+      "gen_ai.operation.name",
+      "gen_ai.tool.call.arguments",
+      "gen_ai.tool.call.result",
+      "gen_ai.tool.call.result_parts",
+      "gen_ai.tool.name",
+      "jsonrpc.request.id",
+      "mcp.method.name",
+      "mcp.protocol.version",
+      "mcp.session.id",
+      "network.protocol.name",
+      "network.transport",
+      "rpc.response.status_code",
+      "server.address",
+      "server.port"
+    ],
+    "mcp.server": [
+      "client.address",
+      "client.port",
+      "error.type",
+      "gen_ai.operation.name",
+      "gen_ai.tool.call.arguments",
+      "gen_ai.tool.call.result",
+      "gen_ai.tool.call.result_parts",
+      "gen_ai.tool.name",
+      "jsonrpc.request.id",
+      "mcp.method.name",
+      "mcp.protocol.version",
+      "mcp.session.id",
+      "network.protocol.name",
+      "network.protocol.version",
+      "network.transport",
+      "rpc.response.status_code"
+    ]
+  },
+  "events": {},
+  "metrics": {},
+  "entities": {},
+  "findings": [
+    {
+      "id": "genai_span_name_format",
+      "message": "execute_tool span name should be 'execute_tool get_tides', got 'tools/call get_tides'",
+      "signal_type": "span",
+      "signal_name": "tools/call get_tides",
+      "context": {
+        "expected_form": "execute_tool get_tides",
+        "keyed_attr": "gen_ai.tool.name",
+        "operation": "execute_tool"
+      }
+    },
+    {
+      "id": "genai_span_name_format",
+      "message": "execute_tool span name should be 'execute_tool get_weather', got 'tools/call get_weather'",
+      "signal_type": "span",
+      "signal_name": "tools/call get_weather",
+      "context": {
+        "expected_form": "execute_tool get_weather",
+        "keyed_attr": "gen_ai.tool.name",
+        "operation": "execute_tool"
+      }
+    },
+    {
+      "id": "deprecated",
+      "message": "Attribute 'rpc.response.status_code' is deprecated; reason = 'renamed', note = 'Replaced by `rpc.status_code`.'.",
+      "signal_type": "span",
+      "signal_name": "tools/call get_weather_alerts",
+      "context": {
+        "attribute_key": "rpc.response.status_code",
+        "deprecation_note": "Replaced by `rpc.status_code`.",
+        "deprecation_reason": "renamed"
+      }
+    },
+    {
+      "id": "genai_span_name_format",
+      "message": "execute_tool span name should be 'execute_tool get_weather_alerts', got 'tools/call get_weather_alerts'",
+      "signal_type": "span",
+      "signal_name": "tools/call get_weather_alerts",
+      "context": {
+        "expected_form": "execute_tool get_weather_alerts",
+        "keyed_attr": "gen_ai.tool.name",
+        "operation": "execute_tool"
+      }
+    },
+    {
+      "id": "genai_span_name_format",
+      "message": "execute_tool span name should be 'execute_tool get_weather_map', got 'tools/call get_weather_map'",
+      "signal_type": "span",
+      "signal_name": "tools/call get_weather_map",
+      "context": {
+        "expected_form": "execute_tool get_weather_map",
+        "keyed_attr": "gen_ai.tool.name",
+        "operation": "execute_tool"
+      }
+    },
+    {
+      "id": "genai_span_name_format",
+      "message": "execute_tool span name should be 'execute_tool get_weather_summary', got 'tools/call get_weather_summary'",
+      "signal_type": "span",
+      "signal_name": "tools/call get_weather_summary",
+      "context": {
+        "expected_form": "execute_tool get_weather_summary",
+        "keyed_attr": "gen_ai.tool.name",
+        "operation": "execute_tool"
+      }
+    }
+  ]
+}
