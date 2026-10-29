@@ -118,6 +118,15 @@ attribute_groups:
             library allows to set only a single model per agent. It SHOULD NOT
             be populated for agents that support multiple models or dynamic selection.
 
+  - id: attributes.gen_ai.trigger
+    visibility: internal
+    attributes:
+      - ref: gen_ai.trigger.type
+        requirement_level: recommended
+      - ref: gen_ai.trigger.event
+        requirement_level:
+          conditionally_required: When `gen_ai.trigger.type` is `autonomous` and the triggering event is known.
+
   - id: attributes.gen_ai.invoke_agent.common
     visibility: internal
     attributes:
@@ -125,6 +134,7 @@ attribute_groups:
       - ref_group: attributes.gen_ai.content
       - ref_group: attributes.gen_ai.error
       - ref_group: attributes.gen_ai.invoked_agent.internal.common
+      - ref_group: attributes.gen_ai.trigger
       - ref: gen_ai.operation.name
         requirement_level: required
       - ref: gen_ai.request.max_tokens
@@ -761,6 +771,7 @@ spans:
       - "gen_ai.main_agent"
     attributes:
       - ref_group: attributes.gen_ai.error
+      - ref_group: attributes.gen_ai.trigger
       - ref: gen_ai.operation.name
         requirement_level: required
         sampling_relevant: true

@@ -500,6 +500,33 @@ attributes:
     brief: The human-readable name of the agent targeted by the transfer.
     examples: ["weather_agent"]
     stability: development
+  - key: gen_ai.trigger.type
+    type:
+      members:
+        - id: user_initiated
+          value: "user_initiated"
+          brief: The operation was initiated by a user request.
+          stability: development
+        - id: autonomous
+          value: "autonomous"
+          brief: The operation was initiated without a user request, for example by an event, a schedule, or another system.
+          stability: development
+    brief: How the GenAI operation was initiated.
+    note: |
+      `gen_ai.trigger.type` records who or what started the operation, not the
+      channel the request arrived on: an operation started by an inbound email
+      that no user acted on is `autonomous`, even if the same channel also
+      carries user-initiated operations.
+    stability: development
+  - key: gen_ai.trigger.event
+    type: string
+    brief: The event that triggered an autonomous GenAI operation.
+    note: |
+      The value identifies the kind or source of the triggering event, for
+      example an inbound email, a chat message, a webhook delivery, or a
+      schedule. It SHOULD NOT include the content of the triggering event.
+    examples: ["inbound email", "webhook", "schedule"]
+    stability: development
   - key: gen_ai.main_agent.id
     type: string
     brief: The unique and stable identifier of the top-level Generative AI agent in the process
