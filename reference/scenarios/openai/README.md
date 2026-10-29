@@ -1,10 +1,8 @@
 # openai
 
 The `openai` client is a **model-call boundary**: it calls the model directly,
-so it owns inference and embeddings. It also owns retrieval
-(the Vector Stores API — `client.vector_stores.search` — and the `file_search`
-tool) and memory (the Conversations API and stored responses via `store` /
-`previous_response_id`). It has no agent, workflow, or plan concepts (the
+so it owns inference and embeddings. It also owns memory (the Conversations
+API and stored responses via `store` / `previous_response_id`). It has no agent, workflow, or plan concepts (the
 Assistants API is covered by the `openai-assistants` scenario).
 
 | Operation | Should be instrumented here | Status |
@@ -12,7 +10,7 @@ Assistants API is covered by the `openai-assistants` scenario).
 | inference (`chat`) | Yes — calls the model directly | ✅ Implemented |
 | embeddings | Yes — calls the model directly | ✅ Implemented |
 | execute_tool | No — the base client returns tool calls but doesn't execute them; the tool runs in app code | ➖ Not instrumentable |
-| retrieval | Yes — Vector Stores search / `file_search` tool | ❌ Not implemented |
+| retrieval | No - Vector Stores search is a search service call, not GenAI retrieval; `file_search` runs server-side | ✅ Correctly not emitted |
 | memory | Yes — Conversations API / stored responses | ❌ Not implemented |
 
 Embeddings covers successful requests and an SDK error from a mock HTTP response.

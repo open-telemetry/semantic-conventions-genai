@@ -423,6 +423,15 @@ spans:
     note: |
       The `gen_ai.operation.name` SHOULD be `retrieval`.
     stability: development
+    # Hosted retrieval and search APIs are not GenAI-specific, see
+    # https://github.com/open-telemetry/semantic-conventions-genai/issues/637 and
+    # https://github.com/open-telemetry/semantic-conventions/issues/1869
+    deprecated:
+      reason: obsoleted
+      note: >
+        Calls to retrieval or search services SHOULD be instrumented following
+        database or other applicable client semantic conventions. Retrieval performed
+        by GenAI frameworks and applications SHOULD be reported with the `gen_ai.retrieval` span.
     attributes:
       - ref_group: attributes.gen_ai.common
       - ref_group: attributes.gen_ai.address_and_port
