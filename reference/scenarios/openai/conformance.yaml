@@ -28,3 +28,7 @@ scenarios:
           attributes:
             gen_ai.operation.name: embeddings
           type: gen_ai.client.embeddings
+      - match:
+          attributes:
+            gen_ai.operation.name: fetch_response
+          type: gen_ai.client.fetch_response

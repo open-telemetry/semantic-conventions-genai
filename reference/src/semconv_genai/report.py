@@ -88,7 +88,7 @@ SEMCONV_DOC_LINKS: dict[str, str] = {
     "inference": "../../docs/gen-ai/client-inference.md#span-gen_aiclientinference",
     "embeddings": "../../docs/gen-ai/client-embeddings.md#span-gen_aiclientembeddings",
     "retrieval": "../../docs/gen-ai/gen-ai-spans.md#retrievals",
-    "fetch_response": "../../docs/gen-ai/gen-ai-spans.md#fetch-response",
+    "fetch_response": "../../docs/gen-ai/client-fetch-response.md#span-gen_aiclientfetch_response",
     "memory": "../../docs/gen-ai/gen-ai-spans.md#memory",
     "execute_tool": "../../docs/gen-ai/gen-ai-spans.md#execute-tool-span",
     "gen_ai.client.inference.operation.details": "../../docs/gen-ai/client-inference.md#event-gen_aiclientinferenceoperationdetails",
@@ -105,6 +105,7 @@ SEMCONV_DOC_LINKS: dict[str, str] = {
     "gen_ai.client.inference.duration": "../../docs/gen-ai/client-inference.md#metric-gen_aiclientinferenceduration",
     "gen_ai.client.embeddings.duration": "../../docs/gen-ai/client-embeddings.md#metric-gen_aiclientembeddingsduration",
     "gen_ai.client.embeddings.operation.input_tokens": "../../docs/gen-ai/client-embeddings.md#metric-gen_aiclientembeddingsoperationinput_tokens",
+    "gen_ai.client.fetch_response.duration": "../../docs/gen-ai/client-fetch-response.md#metric-gen_aiclientfetch_responseduration",
     "gen_ai.invoke_agent.inference_calls": "../../docs/gen-ai/gen-ai-metrics.md#metric-gen_aiinvoke_agentinference_calls",
     "gen_ai.invoke_agent.tool_calls": "../../docs/gen-ai/gen-ai-metrics.md#metric-gen_aiinvoke_agenttool_calls",
 }

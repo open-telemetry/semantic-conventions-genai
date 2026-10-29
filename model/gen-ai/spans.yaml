@@ -432,7 +432,7 @@ spans:
         requirement_level:
           conditionally_required: When applicable.
 
-  - type: gen_ai.fetch_response.client
+  - type: gen_ai.client.fetch_response
     kind: client
     name:
       note: |
@@ -442,9 +442,6 @@ spans:
     brief: >
       Describes a request to a Generative AI provider that fetches a
       previously generated model response by its identifier.
-    note: |
-      The `gen_ai.operation.name` SHOULD be `fetch_response`.
-
     stability: development
     attributes:
       - ref_group: attributes.gen_ai.address_and_port
@@ -455,6 +452,8 @@ spans:
       - ref: gen_ai.operation.name
         requirement_level: required
         sampling_relevant: true
+        examples: ["fetch_response"]
+        note: SHOULD be `fetch_response`.
       - ref: server.address
         sampling_relevant: true
       - ref: server.port
@@ -862,8 +861,8 @@ span_refinements:
       - ref: openai.api.type
         requirement_level: recommended
 
-  - id: openai.fetch_response.client
-    ref: gen_ai.fetch_response.client
+  - id: openai.gen_ai.client.fetch_response
+    ref: gen_ai.client.fetch_response
     brief: >
       Semantic Conventions for the [OpenAI](https://openai.com/) [Get a model response](https://platform.openai.com/docs/api-reference/responses/get)
       operation extend and override the semantic conventions for [Gen AI Spans](gen-ai-spans.md).

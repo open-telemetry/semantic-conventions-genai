@@ -61,6 +61,13 @@ def test_embeddings_scenarios_report_embeddings_metrics():
         assert "gen_ai.client.embeddings.operation.input_tokens" in entries[library].metrics, library
 
 
+def test_fetch_response_scenarios_report_fetch_response_duration():
+    entries = {entry.library: entry for entry in load_scenario_data_files()}
+    metrics = entries["openai"].metrics
+    assert "gen_ai.client.fetch_response.duration" in metrics
+    assert metrics["gen_ai.client.fetch_response.duration"]["gen_ai.operation.name"] == "present"
+
+
 def test_entity_specs_expose_required_id():
     specs = entity_specs()
     assert "gen_ai.main_agent" in specs
@@ -128,6 +135,7 @@ if __name__ == "__main__":
     test_committed_google_adk_metrics_round_trip()
     test_inference_scenarios_report_inference_duration()
     test_embeddings_scenarios_report_embeddings_metrics()
+    test_fetch_response_scenarios_report_fetch_response_duration()
     test_entity_specs_expose_required_id()
     test_entities_keep_their_registry_names()
     test_entities_with_sections_round_trip()

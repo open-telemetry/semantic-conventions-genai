@@ -12,6 +12,19 @@
       "server.address",
       "server.port"
     ],
+    "gen_ai.client.fetch_response": [
+      "gen_ai.operation.name",
+      "gen_ai.output.messages",
+      "gen_ai.provider.name",
+      "gen_ai.request.stream_cursor",
+      "gen_ai.response.finish_reasons",
+      "gen_ai.response.id",
+      "gen_ai.response.model",
+      "gen_ai.response.status",
+      "gen_ai.system_instructions",
+      "server.address",
+      "server.port"
+    ],
     "gen_ai.client.inference": [
       "gen_ai.conversation.compacted",
       "gen_ai.input.messages",
@@ -43,19 +56,6 @@
       "gen_ai.usage.input_tokens",
       "gen_ai.usage.output_tokens",
       "gen_ai.usage.reasoning.output_tokens",
-      "server.address",
-      "server.port"
-    ],
-    "gen_ai.fetch_response.client": [
-      "gen_ai.operation.name",
-      "gen_ai.output.messages",
-      "gen_ai.provider.name",
-      "gen_ai.request.stream_cursor",
-      "gen_ai.response.finish_reasons",
-      "gen_ai.response.id",
-      "gen_ai.response.model",
-      "gen_ai.response.status",
-      "gen_ai.system_instructions",
       "server.address",
       "server.port"
     ]
@@ -101,6 +101,14 @@
       "gen_ai.provider.name",
       "gen_ai.request.model",
       "gen_ai.response.model",
+      "server.address",
+      "server.port"
+    ],
+    "gen_ai.client.fetch_response.duration": [
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "gen_ai.response.model",
+      "gen_ai.response.status",
       "server.address",
       "server.port"
     ],

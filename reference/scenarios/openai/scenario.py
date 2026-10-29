@@ -62,6 +62,28 @@ _embeddings_input_tokens = _reference_meter.create_histogram(
     ],
 )
 
+_fetch_response_duration = _reference_meter.create_histogram(
+    "gen_ai.client.fetch_response.duration",
+    unit="s",
+    description="GenAI client fetch response operation duration.",
+    explicit_bucket_boundaries_advisory=[
+        0.01,
+        0.02,
+        0.04,
+        0.08,
+        0.16,
+        0.32,
+        0.64,
+        1.28,
+        2.56,
+        5.12,
+        10.24,
+        20.48,
+        40.96,
+        81.92,
+    ],
+)
+
 _operation_input_tokens = _reference_meter.create_histogram(
     "gen_ai.client.inference.operation.input_tokens",
     unit="{token}",
@@ -1105,7 +1127,7 @@ def run_responses_with_prompt_template_reference(client):
 
 
 def _emit_fetch_response_span(client, response_id, starting_after=None):
-    """Fetch a response by id and emit the `gen_ai.fetch_response.client` span.
+    """Fetch a response by id and emit the `gen_ai.client.fetch_response` span.
 
     Owns its own span boundary, so all attributes are set inline here. Every
     value is derived from the retrieve-call boundary:
@@ -1145,22 +1167,40 @@ def _emit_fetch_response_span(client, response_id, starting_after=None):
         span_attributes["server.address"] = host
     if port is not None:
         span_attributes["server.port"] = port
-    with _reference_tracer.start_as_current_span("fetch_response", attributes=span_attributes) as span:
-        if starting_after is not None:
-            # Resume the streamed response from the cursor. The terminal
-            # `response.completed` event carries the full response object.
-            fetched = None
-            for event in client.responses.retrieve(response_id, stream=True, starting_after=starting_after):
-                candidate = getattr(event, "response", None)
-                if candidate is not None:
-                    fetched = candidate
-        else:
-            fetched = client.responses.retrieve(response_id)
+    metric_attributes = {
+        key: value
+        for key, value in span_attributes.items()
+        if key in ("gen_ai.operation.name", "gen_ai.provider.name", "server.address", "server.port")
+    }
+    start_time = time.perf_counter()
+    with _reference_tracer.start_as_current_span(
+        "fetch_response", kind=SpanKind.CLIENT, attributes=span_attributes, record_exception=False
+    ) as span:
+        try:
+            if starting_after is not None:
+                # Resume the streamed response from the cursor. The terminal
+                # `response.completed` event carries the full response object.
+                fetched = None
+                for event in client.responses.retrieve(response_id, stream=True, starting_after=starting_after):
+                    candidate = getattr(event, "response", None)
+                    if candidate is not None:
+                        fetched = candidate
+            else:
+                fetched = client.responses.retrieve(response_id)
+        except Exception as e:
+            span.set_status(StatusCode.ERROR, str(e))
+            span.set_attribute("error.type", type(e).__qualname__)
+            metric_attributes["error.type"] = type(e).__qualname__
+            _fetch_response_duration.record(time.perf_counter() - start_time, metric_attributes)
+            raise
         span.set_attribute("gen_ai.response.id", fetched.id)
         span.set_attribute("gen_ai.response.model", fetched.model)
+        metric_attributes["gen_ai.response.model"] = fetched.model
         status = getattr(fetched, "status", None)
         if status is not None:
             span.set_attribute("gen_ai.response.status", status)
+            metric_attributes["gen_ai.response.status"] = status
+        _fetch_response_duration.record(time.perf_counter() - start_time, metric_attributes)
         finish_reason = responses_finish_reason(fetched)
         if finish_reason is not None:
             span.set_attribute("gen_ai.response.finish_reasons", [finish_reason])
@@ -1188,7 +1228,7 @@ def _emit_fetch_response_span(client, response_id, starting_after=None):
 def run_fetch_response_reference(client):
     """Scenario: fetch a previously generated Responses API result by its id.
 
-    Emits the `gen_ai.fetch_response.client` span (OpenAI `openai.fetch_response.client`
+    Emits the `gen_ai.client.fetch_response` span (OpenAI `openai.gen_ai.client.fetch_response`
     refinement) around `client.responses.retrieve(...)`. This operation performs
     no inference: a response is first created with `store=True`, then fetched by
     id. A background streaming response is then created, consumed until the
