@@ -24,6 +24,8 @@ from semconv_genai.semconv_model import (
 SPAN_TYPE_ORDER = [
     "a2a_client",
     "a2a_server",
+    "mcp_client",
+    "mcp_server",
     "create_agent",
     "invoke_agent_client",
     "invoke_agent_internal",

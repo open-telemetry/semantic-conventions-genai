@@ -80,6 +80,8 @@ def _metrics_of(entry: ScenarioDataEntry) -> dict[str, dict[str, str]]:
 SEMCONV_DOC_LINKS: dict[str, str] = {
     "a2a_client": "../../docs/gen-ai/a2a.md#client",
     "a2a_server": "../../docs/gen-ai/a2a.md#server",
+    "mcp_client": "../../docs/gen-ai/mcp.md#client",
+    "mcp_server": "../../docs/gen-ai/mcp.md#server",
     "create_agent": "../../docs/gen-ai/gen-ai-agent-spans.md#create-agent-span",
     "invoke_agent_client": "../../docs/gen-ai/gen-ai-agent-spans.md#invoke-agent-client-span",
     "invoke_agent_internal": "../../docs/gen-ai/gen-ai-agent-spans.md#invoke-agent-internal-span",

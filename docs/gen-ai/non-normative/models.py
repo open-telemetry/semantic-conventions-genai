@@ -597,9 +597,9 @@ class ToolCallArguments(RootModel[dict[str, Any]]):
     pass
 
 
-class ToolCallResult(RootModel[dict[str, Any]]):
+class ToolCallResult(RootModel[Any]):
     """
-    Represents object-like results returned by a tool call.
+    Represents the result returned by a tool call, which can be any JSON value.
     """
 
     pass

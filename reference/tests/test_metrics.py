@@ -119,7 +119,7 @@ def test_span_types_absent_from_a_data_file_are_not_reported():
 
 def test_span_specs_are_named_in_recognized_registry_namespaces():
     for key, spec in span_specs().items():
-        assert spec.registry_id.startswith(("a2a.", "gen_ai.")), key
+        assert spec.registry_id.startswith(("a2a.", "gen_ai.", "mcp.")), key
 
 
 if __name__ == "__main__":
