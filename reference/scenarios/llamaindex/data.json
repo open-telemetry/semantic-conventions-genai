@@ -9,20 +9,21 @@
       "gen_ai.tool.name",
       "gen_ai.tool.type"
     ],
-    "gen_ai.retrieval.client": [
-      "gen_ai.data_source.id",
+    "gen_ai.retrieval": [
+      "error.type",
       "gen_ai.operation.name",
-      "gen_ai.provider.name",
-      "gen_ai.request.model",
       "gen_ai.retrieval.documents",
       "gen_ai.retrieval.query.text",
-      "gen_ai.retrieval.top_k",
-      "server.address",
-      "server.port"
+      "gen_ai.retrieval.top_k"
     ]
   },
   "events": {},
-  "metrics": {},
+  "metrics": {
+    "gen_ai.retrieval.duration": [
+      "error.type",
+      "gen_ai.operation.name"
+    ]
+  },
   "findings": [],
   "entities": {}
 }

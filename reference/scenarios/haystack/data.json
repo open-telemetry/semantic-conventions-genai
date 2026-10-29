@@ -1,7 +1,6 @@
 {
   "spans": {
-    "gen_ai.retrieval.client": [
-      "gen_ai.data_source.id",
+    "gen_ai.retrieval": [
       "gen_ai.operation.name",
       "gen_ai.retrieval.documents",
       "gen_ai.retrieval.query.text",
@@ -9,16 +8,11 @@
     ]
   },
   "events": {},
-  "metrics": {},
-  "findings": [
-    {
-      "id": "genai_expected_attribute_missing",
-      "message": "Span 'retrieval weather-knowledge-base' (operation 'retrieval') is missing expected attribute 'server.address'",
-      "context": {
-        "missing_attribute": "server.address",
-        "operation": "retrieval"
-      }
-    }
-  ],
+  "metrics": {
+    "gen_ai.retrieval.duration": [
+      "gen_ai.operation.name"
+    ]
+  },
+  "findings": [],
   "entities": {}
 }

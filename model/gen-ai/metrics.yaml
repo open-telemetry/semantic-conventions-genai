@@ -273,6 +273,26 @@ metrics:
     attributes:
       - ref_group: attributes.gen_ai.error
       - ref_group: attributes.gen_ai.execute_tool.common
+  - name: gen_ai.retrieval.duration
+    requirement_level: recommended
+    annotations:
+      code_generation:
+        metric_value_type: double
+    brief: >
+      The duration of a retrieval operation - an execution of a framework retrieval
+      pipeline that returns documents relevant to a query.
+    note: |
+      Measured from when the retriever receives the query to when it returns
+      documents or ends with an error.
+
+      When this metric is reported alongside a `gen_ai.retrieval` span,
+      the metric value SHOULD be the same as the span duration.
+    instrument: histogram
+    unit: "s"
+    stability: development
+    attributes:
+      - ref_group: attributes.gen_ai.error
+      - ref_group: attributes.gen_ai.retrieval.common
 
 metric_refinements:
   - id: openai.client.operation.duration

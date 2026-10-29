@@ -2,18 +2,42 @@
 
 import json
 import os
+import time
 
-from opentelemetry.trace import SpanKind
+from opentelemetry.trace import StatusCode
 from reference_shared import (
     flush_and_shutdown,
-    mock_server_host_port,
+    reference_meter,
     reference_tracer,
     setup_otel,
 )
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"] + "/v1"
+EMBEDDING_MODEL = "text-embedding-3-small"
 
 _reference_tracer = reference_tracer()
+_reference_meter = reference_meter()
+_retrieval_duration = _reference_meter.create_histogram(
+    name="gen_ai.retrieval.duration",
+    unit="s",
+    description="The duration of a single retrieval operation.",
+    explicit_bucket_boundaries_advisory=[
+        0.01,
+        0.02,
+        0.04,
+        0.08,
+        0.16,
+        0.32,
+        0.64,
+        1.28,
+        2.56,
+        5.12,
+        10.24,
+        20.48,
+        40.96,
+        81.92,
+    ],
+)
 
 
 def run_agent_reference(llm):
@@ -62,53 +86,84 @@ def run_agent_reference(llm):
     print(f"    -> {str(response)[:60]}")
 
 
-def run_retrieval_reference():
-    """Scenario: vector retrieval via LlamaIndex retriever with reference implementation."""
-    print("  [retrieval] vector retrieval (reference implementation)")
+def retrieve_reference(retriever, query_text):
+    """Wrap a LlamaIndex retriever call in a retrieval span and duration metric."""
+    # The query embeddings call inside retrieve() belongs to the embeddings
+    # instrumentation, so the retrieval span carries no provider, model, or server.
+    metric_attributes = {"gen_ai.operation.name": "retrieval"}
+    start_time = time.perf_counter()
+    with _reference_tracer.start_as_current_span(
+        "retrieval", attributes=metric_attributes, record_exception=False
+    ) as span:
+        try:
+            span.set_attribute("gen_ai.retrieval.top_k", retriever.similarity_top_k)
+            span.set_attribute("gen_ai.retrieval.query.text", query_text)
+            nodes = retriever.retrieve(query_text)
+            span.set_attribute(
+                "gen_ai.retrieval.documents",
+                json.dumps([{"id": node.node_id, "score": node.score} for node in nodes]),
+            )
+            return nodes
+        except Exception as e:
+            span.set_status(StatusCode.ERROR, str(e))
+            span.set_attribute("error.type", type(e).__qualname__)
+            metric_attributes = {**metric_attributes, "error.type": type(e).__qualname__}
+            raise
+        finally:
+            _retrieval_duration.record(time.perf_counter() - start_time, metric_attributes)
+
+
+def build_index():
     from llama_index.core import Document, VectorStoreIndex
     from llama_index.embeddings.openai import OpenAIEmbedding
 
-    request_model = "text-embedding-3-small"
-    data_source_id = "weather-knowledge-base"
-    host, port = mock_server_host_port(MOCK_BASE_URL)
     documents = [
-        Document(text="Seattle weather is rainy and cool.", metadata={"source_id": data_source_id}),
+        Document(text="Seattle weather is rainy and cool."),
+        Document(text="Paris weather is mild and breezy."),
+        Document(text="London weather is cloudy and damp."),
     ]
     embed_model = OpenAIEmbedding(
-        model_name=request_model,
+        model_name=EMBEDDING_MODEL,
         api_base=MOCK_BASE_URL,
         api_key="mock-key",
     )
-    index = VectorStoreIndex.from_documents(documents, embed_model=embed_model)
-    top_k = 1
-    retriever = index.as_retriever(similarity_top_k=top_k)
-    query_text = "Seattle weather"
+    return VectorStoreIndex.from_documents(documents, embed_model=embed_model)
 
-    with _reference_tracer.start_as_current_span("retrieval weather-knowledge-base", kind=SpanKind.CLIENT) as span:
-        span.set_attribute("gen_ai.operation.name", "retrieval")
-        span.set_attribute("gen_ai.data_source.id", data_source_id)
-        span.set_attribute("gen_ai.provider.name", "openai")
-        span.set_attribute("gen_ai.request.model", request_model)
-        span.set_attribute("gen_ai.retrieval.top_k", top_k)
-        span.set_attribute("gen_ai.retrieval.query.text", query_text)
-        if host:
-            span.set_attribute("server.address", host)
-        if port is not None:
-            span.set_attribute("server.port", port)
-        nodes = retriever.retrieve(query_text)
-        span.set_attribute(
-            "gen_ai.retrieval.documents",
-            json.dumps(
-                [
-                    {
-                        "content": node.text,
-                        "source_id": node.metadata.get("source_id"),
-                    }
-                    for node in nodes
-                ]
-            ),
+
+def run_retrieval_reference(index):
+    """Scenario: vector retrieval via LlamaIndex retriever with reference implementation."""
+    print("  [retrieval] vector retrieval (reference implementation)")
+    nodes = retrieve_reference(index.as_retriever(similarity_top_k=2), "Seattle weather")
+    print(f"    -> {nodes[0].text[:60]}")
+
+
+def run_retrieval_error_reference(index):
+    """Scenario: retrieval fails when the query embeddings call is rejected."""
+    print("  [retrieval] query embeddings error (reference implementation)")
+    import httpx
+    import openai
+    from llama_index.embeddings.openai import OpenAIEmbedding
+
+    transport = httpx.MockTransport(
+        lambda request: httpx.Response(
+            400,
+            json={"error": {"message": "Invalid input", "type": "invalid_request_error", "code": "invalid_input"}},
         )
-        print(f"    -> {nodes[0].text[:60]}")
+    )
+    failing_embed_model = OpenAIEmbedding(
+        model_name=EMBEDDING_MODEL,
+        api_base=MOCK_BASE_URL,
+        api_key="mock-key",
+        max_retries=0,
+        http_client=httpx.Client(transport=transport),
+    )
+    retriever = index.as_retriever(similarity_top_k=1, embed_model=failing_embed_model)
+    try:
+        retrieve_reference(retriever, "Seattle weather")
+    except openai.BadRequestError:
+        print("    -> retrieval failed as expected")
+    else:
+        raise AssertionError("Expected the query embeddings request to be rejected")
 
 
 def main():
@@ -128,7 +183,9 @@ def main():
     )
 
     run_agent_reference(llm)
-    run_retrieval_reference()
+    index = build_index()
+    run_retrieval_reference(index)
+    run_retrieval_error_reference(index)
 
     flush_and_shutdown(tp, lp, mp)
 

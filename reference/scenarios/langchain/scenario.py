@@ -3,11 +3,12 @@
 import asyncio
 import json
 import os
+import time
 from typing import TypedDict
 
 from langchain_core.tools import tool
-from opentelemetry.trace import SpanKind
-from reference_shared import flush_and_shutdown, reference_tracer, setup_otel
+from opentelemetry.trace import StatusCode
+from reference_shared import flush_and_shutdown, reference_meter, reference_tracer, setup_otel
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"] + "/v1"
 
@@ -16,6 +17,28 @@ AGENT_NAME = "weather-agent"
 AGENT_SYSTEM_PROMPT = "You are a helpful weather assistant."
 
 _reference_tracer = reference_tracer()
+_reference_meter = reference_meter()
+_retrieval_duration = _reference_meter.create_histogram(
+    name="gen_ai.retrieval.duration",
+    unit="s",
+    description="The duration of a single retrieval operation.",
+    explicit_bucket_boundaries_advisory=[
+        0.01,
+        0.02,
+        0.04,
+        0.08,
+        0.16,
+        0.32,
+        0.64,
+        1.28,
+        2.56,
+        5.12,
+        10.24,
+        20.48,
+        40.96,
+        81.92,
+    ],
+)
 
 
 @tool
@@ -91,47 +114,41 @@ def run_retrieval_reference():
     """Scenario: in-memory retrieval via LangChain retriever with reference implementation."""
     print("  [retrieval] in-memory retrieval (reference implementation)")
     from langchain_core.documents import Document
-    from langchain_core.retrievers import BaseRetriever
+    from langchain_core.embeddings import DeterministicFakeEmbedding
+    from langchain_core.vectorstores import InMemoryVectorStore
 
-    class WeatherRetriever(BaseRetriever):
-        docs: list[Document]
-        top_k: int = 2
-
-        def _get_relevant_documents(self, query: str):
-            query_lower = query.lower()
-            matches = [doc for doc in self.docs if query_lower.split()[0] in doc.page_content.lower()]
-            return matches[: self.top_k]
-
-    data_source_id = "weather-knowledge-base"
     query_text = "Seattle weather"
-    top_k = 2
-    retriever = WeatherRetriever(
-        docs=[
-            Document(page_content="Seattle weather is rainy and cool.", metadata={"source_id": data_source_id}),
-            Document(page_content="Paris weather is mild and breezy.", metadata={"source_id": data_source_id}),
-        ],
-        top_k=top_k,
+    vector_store = InMemoryVectorStore(embedding=DeterministicFakeEmbedding(size=16))
+    vector_store.add_documents(
+        [
+            Document(page_content="Seattle weather is rainy and cool."),
+            Document(page_content="Paris weather is mild and breezy."),
+            Document(page_content="London weather is cloudy and damp."),
+        ]
     )
+    retriever = vector_store.as_retriever(search_kwargs={"k": 2})
 
-    with _reference_tracer.start_as_current_span("retrieval weather-knowledge-base", kind=SpanKind.CLIENT) as span:
-        span.set_attribute("gen_ai.operation.name", "retrieval")
-        span.set_attribute("gen_ai.data_source.id", data_source_id)
-        span.set_attribute("gen_ai.retrieval.top_k", top_k)
-        span.set_attribute("gen_ai.retrieval.query.text", query_text)
-        documents = retriever.invoke(query_text)
-        span.set_attribute(
-            "gen_ai.retrieval.documents",
-            json.dumps(
-                [
-                    {
-                        "content": document.page_content,
-                        "source_id": document.metadata.get("source_id"),
-                    }
-                    for document in documents
-                ]
-            ),
-        )
-        print(f"    -> {documents[0].page_content[:60]}")
+    metric_attributes = {"gen_ai.operation.name": "retrieval"}
+    start_time = time.perf_counter()
+    with _reference_tracer.start_as_current_span(
+        "retrieval", attributes=metric_attributes, record_exception=False
+    ) as span:
+        try:
+            span.set_attribute("gen_ai.retrieval.top_k", retriever.search_kwargs["k"])
+            span.set_attribute("gen_ai.retrieval.query.text", query_text)
+            documents = retriever.invoke(query_text)
+            span.set_attribute(
+                "gen_ai.retrieval.documents",
+                json.dumps([{"id": document.id} for document in documents]),
+            )
+            print(f"    -> {documents[0].page_content[:60]}")
+        except Exception as e:
+            span.set_status(StatusCode.ERROR, str(e))
+            span.set_attribute("error.type", type(e).__qualname__)
+            metric_attributes = {**metric_attributes, "error.type": type(e).__qualname__}
+            raise
+        finally:
+            _retrieval_duration.record(time.perf_counter() - start_time, metric_attributes)
 
 
 def run_plan_and_execute_reference():

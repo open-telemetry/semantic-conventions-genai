@@ -684,7 +684,12 @@ attributes:
           stability: development
         - id: retrieval
           value: "retrieval"
-          brief: 'Retrieval operation such as [OpenAI Search Vector Store API](https://platform.openai.com/docs/api-reference/vector-stores/search)'
+          brief: 'Execution of a retrieval pipeline that returns documents relevant to a query'
+          note: |
+            Examples include LangChain, LlamaIndex, and Haystack retrievers.
+            A retrieval pipeline usually combines other operations such as embeddings,
+            database queries, web search, or reranking. These operations SHOULD be
+            reported following their own conventions.
           stability: development
         - id: fetch_response
           value: "fetch_response"

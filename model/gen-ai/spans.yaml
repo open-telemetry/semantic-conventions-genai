@@ -175,6 +175,14 @@ attribute_groups:
         requirement_level:
           conditionally_required: When applicable.
 
+  - id: attributes.gen_ai.retrieval.common
+    visibility: internal
+    attributes:
+      - ref: gen_ai.operation.name
+        requirement_level: required
+        examples: ["retrieval"]
+        note: SHOULD be `retrieval`.
+
 spans:
   - type: gen_ai.client.inference
     requirement_level: recommended
@@ -431,6 +439,28 @@ spans:
       - ref: gen_ai.data_source.id
         requirement_level:
           conditionally_required: When applicable.
+
+  - type: gen_ai.retrieval
+    requirement_level: recommended
+    kind: internal
+    name:
+      note: |
+        **Span name** SHOULD be `{gen_ai.operation.name}`.
+    brief: >
+      Describes a retrieval operation - an execution of a framework retrieval pipeline
+      that returns documents relevant to a query.
+    stability: development
+    attributes:
+      - ref_group: attributes.gen_ai.error
+      - ref_group: attributes.gen_ai.retrieval.common
+      - ref: gen_ai.operation.name
+        sampling_relevant: true
+      - ref: gen_ai.retrieval.query.text
+        requirement_level: opt_in
+      - ref: gen_ai.retrieval.top_k
+        requirement_level: recommended
+      - ref: gen_ai.retrieval.documents
+        requirement_level: opt_in
 
   - type: gen_ai.fetch_response.client
     kind: client
