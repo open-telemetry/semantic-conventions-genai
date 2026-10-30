@@ -1,4 +1,16 @@
 file_format: definition/2
+attribute_groups:
+  - id: attributes.gen_ai.exception
+    visibility: internal
+    attributes:
+      - ref: exception.type
+        requirement_level:
+          conditionally_required: Required if `exception.message` is not set, recommended otherwise.
+      - ref: exception.message
+        requirement_level:
+          conditionally_required: Required if `exception.type` is not set, recommended otherwise.
+      - ref: exception.stacktrace
+
 events:
   - name: gen_ai.client.inference.operation.details
     requirement_level: recommended
@@ -56,13 +68,7 @@ events:
       with attributes captured on the corresponding inference span.
     stability: development
     attributes:
-      - ref: exception.type
-        requirement_level:
-          conditionally_required: Required if `exception.message` is not set, recommended otherwise.
-      - ref: exception.message
-        requirement_level:
-          conditionally_required: Required if `exception.type` is not set, recommended otherwise.
-      - ref: exception.stacktrace
+      - ref_group: attributes.gen_ai.exception
 
   - name: gen_ai.client.operation.exception
     requirement_level: recommended
@@ -82,10 +88,4 @@ events:
       with the attributes captured on the corresponding Generative AI client span.
     stability: development
     attributes:
-      - ref: exception.type
-        requirement_level:
-          conditionally_required: Required if `exception.message` is not set, recommended otherwise.
-      - ref: exception.message
-        requirement_level:
-          conditionally_required: Required if `exception.type` is not set, recommended otherwise.
-      - ref: exception.stacktrace
+      - ref_group: attributes.gen_ai.exception
