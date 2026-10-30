@@ -22,28 +22,6 @@ MOCK_BASE_URL = os.environ["MOCK_LLM_URL"] + "/v1"
 _reference_tracer = reference_tracer()
 _reference_meter = reference_meter()
 
-_inference_duration = _reference_meter.create_histogram(
-    "gen_ai.client.inference.duration",
-    unit="s",
-    description="GenAI client inference operation duration.",
-    explicit_bucket_boundaries_advisory=[
-        0.01,
-        0.02,
-        0.04,
-        0.08,
-        0.16,
-        0.32,
-        0.64,
-        1.28,
-        2.56,
-        5.12,
-        10.24,
-        20.48,
-        40.96,
-        81.92,
-    ],
-)
-
 _embeddings_duration = _reference_meter.create_histogram(
     "gen_ai.client.embeddings.duration",
     unit="s",
@@ -295,8 +273,6 @@ def run_chat_reference(client):
         span.set_attribute("gen_ai.request.top_p", request_top_p)
         span.set_attribute("gen_ai.request.reasoning.level", request_reasoning_level)
         span.set_attribute("gen_ai.input.messages", input_messages)
-        metric_attributes = dict(span_attributes)
-        start_time = time.perf_counter()
         try:
             resp = client.chat.completions.create(
                 model=request_model,
@@ -315,7 +291,6 @@ def run_chat_reference(client):
             error_type = f"{type(error).__module__}.{type(error).__qualname__}"
             span.set_status(StatusCode.ERROR, str(error))
             span.set_attribute("error.type", error_type)
-            metric_attributes["error.type"] = error_type
             reference_event_logger().emit(
                 event_name="gen_ai.client.inference.exception",
                 severity_number=SeverityNumber.WARN,
@@ -327,10 +302,6 @@ def run_chat_reference(client):
                 },
             )
             raise
-        else:
-            metric_attributes["gen_ai.response.model"] = resp.model
-        finally:
-            _inference_duration.record(time.perf_counter() - start_time, metric_attributes)
         span.set_attribute("gen_ai.response.model", resp.model)
         span.set_attribute("gen_ai.response.id", resp.id)
         finish_reasons = chat_finish_reasons(resp.choices, expected_count=request_choice_count)

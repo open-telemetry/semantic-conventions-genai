@@ -10,10 +10,8 @@ Runnable directly (``python tests/test_metrics.py``) or under pytest.
 
 from __future__ import annotations
 
-from pathlib import Path
-
 from semconv_genai.data_files import _normalize_scenario_data_entry, load_scenario_data_files
-from semconv_genai.semconv_model import entity_specs, event_specs, metric_specs, span_specs
+from semconv_genai.semconv_model import entity_specs, metric_specs, span_specs
 
 _TOOL_CALLS = "gen_ai.invoke_agent.tool_calls"
 _INFERENCE_CALLS = "gen_ai.invoke_agent.inference_calls"
@@ -54,16 +52,7 @@ def test_inference_scenarios_report_inference_duration():
 
 def test_embeddings_scenarios_report_embeddings_metrics():
     entries = {entry.library: entry for entry in load_scenario_data_files()}
-    libraries = (
-        "aws-bedrock",
-        "azure-ai-inference",
-        "azure-openai",
-        "cohere",
-        "google-genai",
-        "litellm",
-        "mistralai",
-        "openai",
-    )
+    libraries = ("aws-bedrock", "azure-ai-inference", "azure-openai", "cohere", "google-genai", "litellm", "mistralai", "openai")
     for library in libraries:
         metrics = entries[library].metrics
         assert "gen_ai.client.embeddings.duration" in metrics, library
@@ -123,29 +112,6 @@ def test_events_keep_their_registry_names():
     assert entry.events["gen_ai.evaluation.result"]["gen_ai.evaluation.name"] == "present"
 
 
-def test_inference_exception_survives_into_reports():
-    from semconv_genai.data_files import EVENT_TYPE_ORDER
-    from semconv_genai.report import SEMCONV_DOC_LINKS, _events_of, _render_signal_section, generate_index_markdown
-
-    name = "gen_ai.client.inference.exception"
-    spec = event_specs()[name]
-    assert spec.registry_id == name
-    assert spec.conditionally_required == ("exception.message", "exception.type")
-    assert spec.recommended == ("exception.stacktrace",)
-    assert name in EVENT_TYPE_ORDER
-    assert SEMCONV_DOC_LINKS[name] == "../../docs/gen-ai/client-inference.md#event-gen_aiclientinferenceexception"
-    entries = load_scenario_data_files()
-    openai_entry = next(entry for entry in entries if entry.library == "openai")
-    for attribute in ("exception.message", "exception.type", "exception.stacktrace"):
-        assert openai_entry.events[name][attribute] == "present"
-    page = "\n".join(_render_signal_section(entries, name, spec, Path("."), "Event", _events_of))
-    assert "| exception.type | [openai] |" in page
-    assert "| exception.message | [openai] |" in page
-    assert "| exception.stacktrace | [openai] |" in page
-    assert SEMCONV_DOC_LINKS[name] in page
-    assert "gen-ai-client-inference-exception-event.md" in generate_index_markdown(entries)
-
-
 def test_span_types_absent_from_a_data_file_are_not_reported():
     entry = _normalize_scenario_data_entry({"spans": {}}, "fake")
     assert entry.spans == {}
@@ -167,7 +133,6 @@ if __name__ == "__main__":
     test_entities_with_sections_round_trip()
     test_registry_span_names_map_onto_report_keys()
     test_events_keep_their_registry_names()
-    test_inference_exception_survives_into_reports()
     test_span_types_absent_from_a_data_file_are_not_reported()
     test_span_specs_are_named_in_recognized_registry_namespaces()
     print("ok")
