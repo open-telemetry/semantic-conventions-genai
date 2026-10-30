@@ -1,0 +1,8 @@
+{
+  "name": "deploy-tools",
+  "version": "1.2.0",
+  "description": "Release helpers for the reference scenario",
+  "author": {
+    "name": "Example Team"
+  }
+}

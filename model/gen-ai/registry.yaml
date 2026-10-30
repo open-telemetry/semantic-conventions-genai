@@ -1213,3 +1213,38 @@ attributes:
     brief: The skill-relative name of the resource (script, reference, or asset) being accessed or executed.
     examples: ["references/review_policy.md", "assets/report_template.html"]
     stability: development
+  - key: gen_ai.plugin.name
+    type: string
+    brief: The name of the plugin that provides the tool, MCP server, or skill.
+    note: |
+      A plugin is a package that an agent runtime installs as a unit. It bundles
+      components such as tools, MCP servers, skills, and hooks. The same MCP server
+      or skill can ship in more than one plugin.
+
+      Examples include [Agent Plugins](https://agent-plugins.org),
+      [Claude Code plugins](https://code.claude.com/docs/en/plugins-reference),
+      [ChatGPT and Codex plugins](https://developers.openai.com/plugins/build/plugins),
+      [GitHub Copilot CLI plugins](https://docs.github.com/copilot/how-tos/copilot-cli/customize-copilot/plugins-creating),
+      and [Microsoft 365 app packages](https://learn.microsoft.com/microsoft-365/extensibility/schema/root).
+
+      Runtimes that namespace components by plugin, such as `deploy-tools:release-notes`,
+      use this name as the namespace.
+    examples: ["deploy-tools", "github"]
+    stability: development
+  - key: gen_ai.plugin.id
+    type: string
+    brief: The identifier of the plugin that provides the tool, MCP server, or skill.
+    note: |
+      This SHOULD be the identifier the plugin source or runtime assigns, such as a
+      marketplace-qualified name or a package manifest ID. It SHOULD NOT be set
+      when the only value available is `gen_ai.plugin.name`.
+    examples: ["deploy-tools@acme-marketplace", "3260f06f-5275-4794-b367-3e7af29acbda"]
+    stability: development
+  - key: gen_ai.plugin.version
+    type: string
+    brief: The version of the plugin that provides the tool, MCP server, or skill.
+    note: |
+      This SHOULD be the version declared by the plugin manifest or resolved by the
+      runtime. Unresolved aliases such as `latest` SHOULD NOT be recorded.
+    examples: ["1.2.0"]
+    stability: development
