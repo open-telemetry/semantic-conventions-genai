@@ -3,7 +3,10 @@
 import json
 import os
 import time
+import traceback
 
+from openai import OpenAIError
+from opentelemetry._logs import SeverityNumber
 from opentelemetry.trace import SpanKind, StatusCode
 from reference_shared import (
     flush_and_shutdown,
@@ -18,6 +21,28 @@ MOCK_BASE_URL = os.environ["MOCK_LLM_URL"] + "/v1"
 
 _reference_tracer = reference_tracer()
 _reference_meter = reference_meter()
+
+_inference_duration = _reference_meter.create_histogram(
+    "gen_ai.client.inference.duration",
+    unit="s",
+    description="GenAI client inference operation duration.",
+    explicit_bucket_boundaries_advisory=[
+        0.01,
+        0.02,
+        0.04,
+        0.08,
+        0.16,
+        0.32,
+        0.64,
+        1.28,
+        2.56,
+        5.12,
+        10.24,
+        20.48,
+        40.96,
+        81.92,
+    ],
+)
 
 _embeddings_duration = _reference_meter.create_histogram(
     "gen_ai.client.embeddings.duration",
@@ -254,7 +279,11 @@ def run_chat_reference(client):
     if port is not None:
         span_attributes["server.port"] = port
     with _reference_tracer.start_as_current_span(
-        "chat gpt-4o-mini", kind=SpanKind.CLIENT, attributes=span_attributes
+        "chat gpt-4o-mini",
+        kind=SpanKind.CLIENT,
+        attributes=span_attributes,
+        record_exception=False,
+        set_status_on_exception=False,
     ) as span:
         span.set_attribute("gen_ai.request.choice.count", request_choice_count)
         span.set_attribute("gen_ai.request.max_tokens", request_max_tokens)
@@ -266,19 +295,42 @@ def run_chat_reference(client):
         span.set_attribute("gen_ai.request.top_p", request_top_p)
         span.set_attribute("gen_ai.request.reasoning.level", request_reasoning_level)
         span.set_attribute("gen_ai.input.messages", input_messages)
-        resp = client.chat.completions.create(
-            model=request_model,
-            messages=messages,
-            n=request_choice_count,
-            max_tokens=request_max_tokens,
-            temperature=request_temperature,
-            seed=request_seed,
-            stop=request_stop_sequences,
-            frequency_penalty=request_frequency_penalty,
-            presence_penalty=request_presence_penalty,
-            top_p=request_top_p,
-            reasoning_effort=request_reasoning_level,
-        )
+        metric_attributes = dict(span_attributes)
+        start_time = time.perf_counter()
+        try:
+            resp = client.chat.completions.create(
+                model=request_model,
+                messages=messages,
+                n=request_choice_count,
+                max_tokens=request_max_tokens,
+                temperature=request_temperature,
+                seed=request_seed,
+                stop=request_stop_sequences,
+                frequency_penalty=request_frequency_penalty,
+                presence_penalty=request_presence_penalty,
+                top_p=request_top_p,
+                reasoning_effort=request_reasoning_level,
+            )
+        except OpenAIError as error:
+            error_type = f"{type(error).__module__}.{type(error).__qualname__}"
+            span.set_status(StatusCode.ERROR, str(error))
+            span.set_attribute("error.type", error_type)
+            metric_attributes["error.type"] = error_type
+            reference_event_logger().emit(
+                event_name="gen_ai.client.inference.exception",
+                severity_number=SeverityNumber.WARN,
+                body="Inference operation failed",
+                attributes={
+                    "exception.type": error_type,
+                    "exception.message": str(error),
+                    "exception.stacktrace": "".join(traceback.format_exception(error)),
+                },
+            )
+            raise
+        else:
+            metric_attributes["gen_ai.response.model"] = resp.model
+        finally:
+            _inference_duration.record(time.perf_counter() - start_time, metric_attributes)
         span.set_attribute("gen_ai.response.model", resp.model)
         span.set_attribute("gen_ai.response.id", resp.id)
         finish_reasons = chat_finish_reasons(resp.choices, expected_count=request_choice_count)
@@ -330,6 +382,33 @@ def run_chat_reference(client):
         )
 
         print(f"    -> {resp.choices[0].message.content[:60]}")
+
+
+def run_chat_error_reference():
+    """Exercise an inference exception raised by the SDK for a rate-limit response."""
+    import httpx2
+    import openai
+
+    transport = httpx2.MockTransport(
+        lambda request: httpx2.Response(
+            429,
+            json={
+                "error": {"message": "Rate limit exceeded", "type": "rate_limit_error", "code": "rate_limit_exceeded"}
+            },
+        )
+    )
+    with openai.OpenAI(
+        base_url=MOCK_BASE_URL,
+        api_key="mock-key",
+        max_retries=0,
+        http_client=httpx2.Client(transport=transport),
+    ) as client:
+        try:
+            run_chat_reference(client)
+        except openai.RateLimitError:
+            pass
+        else:
+            raise AssertionError("Expected the SDK to reject the inference request")
 
 
 def run_responses_compaction_reference(client):
@@ -1251,6 +1330,7 @@ def main():
     client = openai.OpenAI(base_url=MOCK_BASE_URL, api_key="mock-key")
 
     run_chat_reference(client)
+    run_chat_error_reference()
     run_responses_compaction_reference(client)
     run_responses_continuation_reference(client)
     run_chat_streaming_reference(client)
