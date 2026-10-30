@@ -1028,10 +1028,19 @@ def run_embeddings_reference(client):
                 span.set_attribute("gen_ai.usage.input_tokens", resp.usage.prompt_tokens)
                 input_token_count = resp.usage.prompt_tokens
             print(f"    -> embedding dim: {len(resp.data[0].embedding)}")
-        except Exception as e:
-            span.set_status(StatusCode.ERROR, str(e))
-            span.set_attribute("error.type", type(e).__qualname__)
-            metric_attributes["error.type"] = type(e).__qualname__
+        except Exception as error:
+            span.set_status(StatusCode.ERROR, str(error))
+            span.set_attribute("error.type", type(error).__qualname__)
+            metric_attributes["error.type"] = type(error).__qualname__
+            reference_event_logger().emit(
+                event_name="gen_ai.client.embeddings.exception",
+                severity_number=SeverityNumber.WARN,
+                attributes={
+                    "exception.type": f"{type(error).__module__}.{type(error).__qualname__}",
+                    "exception.message": str(error),
+                    "exception.stacktrace": "".join(traceback.format_exception(error)),
+                },
+            )
             raise
         finally:
             _embeddings_duration.record(time.perf_counter() - start_time, metric_attributes)
