@@ -6,21 +6,24 @@
 
 | Attribute | Supporting Libraries |
 | --- | --- |
-| gen_ai.operation.name | [agent-framework], [autogen], [crewai], [google-adk], [google-genai], [langchain], [llamaindex], [openai-agents], [openai-assistants], [pydantic-ai], [vertexai] |
-| gen_ai.tool.name | [agent-framework], [autogen], [crewai], [google-adk], [google-genai], [langchain], [llamaindex], [openai-agents], [openai-assistants], [pydantic-ai], [vertexai] |
+| gen_ai.operation.name | [agent-framework], [autogen], [claude-agent-sdk], [crewai], [google-adk], [google-genai], [langchain], [llamaindex], [openai-agents], [openai-assistants], [pydantic-ai], [vertexai] |
+| gen_ai.tool.name | [agent-framework], [autogen], [claude-agent-sdk], [crewai], [google-adk], [google-genai], [langchain], [llamaindex], [openai-agents], [openai-assistants], [pydantic-ai], [vertexai] |
 
 ## Conditionally Required
 
 | Attribute | Supporting Libraries |
 | --- | --- |
 | gen_ai.agent.name | [google-adk], [openai-agents], [pydantic-ai] |
-| gen_ai.conversation.id | [google-adk], [openai-assistants] |
-| gen_ai.tool.call.id | [agent-framework], [autogen], [google-adk], [google-genai], [langchain], [llamaindex], [openai-agents], [openai-assistants], [pydantic-ai], [vertexai] |
+| gen_ai.conversation.id | [claude-agent-sdk], [google-adk], [openai-assistants] |
+| gen_ai.plugin.name | [claude-agent-sdk] |
+| gen_ai.tool.call.id | [agent-framework], [autogen], [claude-agent-sdk], [google-adk], [google-genai], [langchain], [llamaindex], [openai-agents], [openai-assistants], [pydantic-ai], [vertexai] |
 
 ## Recommended
 
 | Attribute | Supporting Libraries |
 | --- | --- |
+| gen_ai.plugin.id | (none) |
+| gen_ai.plugin.version | [claude-agent-sdk] |
 | gen_ai.tool.description | [agent-framework], [autogen], [crewai], [google-adk], [google-genai], [langchain], [llamaindex], [openai-agents], [openai-assistants], [pydantic-ai], [vertexai] |
 | gen_ai.tool.type | [agent-framework], [autogen], [crewai], [google-adk], [google-genai], [langchain], [llamaindex], [openai-agents], [openai-assistants], [pydantic-ai], [vertexai] |
 
@@ -33,6 +36,7 @@
 
 [agent-framework]: ../scenarios/agent-framework/scenario.py
 [autogen]: ../scenarios/autogen/scenario.py
+[claude-agent-sdk]: ../scenarios/claude-agent-sdk/scenario.py
 [crewai]: ../scenarios/crewai/scenario.py
 [google-adk]: ../scenarios/google-adk/scenario.py
 [google-genai]: ../scenarios/google-genai/scenario.py

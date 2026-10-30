@@ -1226,13 +1226,16 @@ Semantic conventions for individual frameworks MAY specify different span name f
 | [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/error.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If the operation ended in an error. | string | Describes a class of error the operation ended with. [2] | `timeout`; `java.net.UnknownHostException`; `server_certificate_invalid`; `500` |
 | [`gen_ai.agent.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When applicable. | string | The human-readable name of the agent executing the tool. | `Math Tutor`; `Fiction Writer` |
 | [`gen_ai.conversation.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If available. | string | The unique identifier for a conversation (session, thread), used to store and correlate messages within this conversation. [3] | `conv_5j66UpCpwteGg4YSxUnt7lPY` |
-| [`gen_ai.tool.call.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [4] | string | The tool call identifier supplied by the model or provider. [5] | `call_mszuSIzqtI65i1wAUOE8w5H4` |
-| [`gen_ai.transfer.mode`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [6] | string | Describes how control passes to the transfer target. | `return_to_caller`; `pass_control` |
-| [`gen_ai.transfer.target.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [7] | string | The human-readable name of the agent targeted by the transfer. | `weather_agent` |
-| [`gen_ai.tool.description`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If available. | string | The tool description. [8] | `Multiply two numbers` |
-| [`gen_ai.tool.type`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If available. | string | Type of the tool utilized by the agent [9] | `function`; `extension`; `datastore` |
-| [`gen_ai.tool.call.arguments`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | Parameters passed to the tool call. [10] | {<br>&nbsp;&nbsp;&nbsp;&nbsp;"location": "San Francisco?",<br>&nbsp;&nbsp;&nbsp;&nbsp;"date": "2025-10-01"<br>} |
-| [`gen_ai.tool.call.result`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | The result returned by the tool call (if any and if execution was successful). [11] | {<br>&nbsp;&nbsp;"temperature_range": {<br>&nbsp;&nbsp;&nbsp;&nbsp;"high": 75,<br>&nbsp;&nbsp;&nbsp;&nbsp;"low": 60<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;"conditions": "sunny"<br>} |
+| [`gen_ai.plugin.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [4] | string | The name of the plugin that provides the tool, MCP server, or skill. [5] | `deploy-tools`; `github` |
+| [`gen_ai.tool.call.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [6] | string | The tool call identifier supplied by the model or provider. [7] | `call_mszuSIzqtI65i1wAUOE8w5H4` |
+| [`gen_ai.transfer.mode`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [8] | string | Describes how control passes to the transfer target. | `return_to_caller`; `pass_control` |
+| [`gen_ai.transfer.target.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [9] | string | The human-readable name of the agent targeted by the transfer. | `weather_agent` |
+| [`gen_ai.plugin.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` [10] | string | The identifier of the plugin that provides the tool, MCP server, or skill. [11] | `deploy-tools@acme-marketplace`; `3260f06f-5275-4794-b367-3e7af29acbda` |
+| [`gen_ai.plugin.version`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` [12] | string | The version of the plugin that provides the tool, MCP server, or skill. [13] | `1.2.0` |
+| [`gen_ai.tool.description`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If available. | string | The tool description. [14] | `Multiply two numbers` |
+| [`gen_ai.tool.type`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If available. | string | Type of the tool utilized by the agent [15] | `function`; `extension`; `datastore` |
+| [`gen_ai.tool.call.arguments`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | Parameters passed to the tool call. [16] | {<br>&nbsp;&nbsp;&nbsp;&nbsp;"location": "San Francisco?",<br>&nbsp;&nbsp;&nbsp;&nbsp;"date": "2025-10-01"<br>} |
+| [`gen_ai.tool.call.result`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | The result returned by the tool call (if any and if execution was successful). [17] | {<br>&nbsp;&nbsp;"temperature_range": {<br>&nbsp;&nbsp;&nbsp;&nbsp;"high": 75,<br>&nbsp;&nbsp;&nbsp;&nbsp;"low": 60<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;"conditions": "sunny"<br>} |
 
 **[1] `gen_ai.operation.name`:** If one of the predefined values applies, but specific system uses a different name it's RECOMMENDED to document it in the semantic conventions for specific GenAI system and use system-specific name in the instrumentation. If a different name is not documented, instrumentation libraries SHOULD use applicable predefined value.
 
@@ -1259,27 +1262,53 @@ Application developers that manage conversation history MAY add conversation id 
 spans or logs using custom span or log record processors or hooks provided by instrumentation
 libraries.
 
-**[4] `gen_ai.tool.call.id`:** If and only if the model or provider supplied a tool call identifier.
+**[4] `gen_ai.plugin.name`:** If the tool, its MCP server, or its skill is provided by a plugin and the plugin name is available.
 
-**[5] `gen_ai.tool.call.id`:** This attribute SHOULD be set to the identifier received from the model or provider
+**[5] `gen_ai.plugin.name`:** A plugin is a package that an agent runtime installs as a unit. It bundles
+components such as tools, MCP servers, skills, and hooks. The same MCP server
+or skill can ship in more than one plugin.
+
+Examples include [Agent Plugins](https://agent-plugins.org),
+[Claude Code plugins](https://code.claude.com/docs/en/plugins-reference),
+[ChatGPT and Codex plugins](https://developers.openai.com/plugins/build/plugins),
+[GitHub Copilot CLI plugins](https://docs.github.com/copilot/how-tos/copilot-cli/customize-copilot/plugins-creating),
+and [Microsoft 365 app packages](https://learn.microsoft.com/microsoft-365/extensibility/schema/root).
+
+Runtimes that namespace components by plugin, such as `deploy-tools:release-notes`,
+use this name as the namespace.
+
+**[6] `gen_ai.tool.call.id`:** If and only if the model or provider supplied a tool call identifier.
+
+**[7] `gen_ai.tool.call.id`:** This attribute SHOULD be set to the identifier received from the model or provider
 if and only if one was supplied.
 
-**[6] `gen_ai.transfer.mode`:** When readily available from the instrumented library API or state, including when the transfer attempt fails.
+**[8] `gen_ai.transfer.mode`:** When readily available from the instrumented library API or state, including when the transfer attempt fails.
 
-**[7] `gen_ai.transfer.target.name`:** When readily available from the instrumented library API or state, including when the transfer attempt fails.
+**[9] `gen_ai.transfer.target.name`:** When readily available from the instrumented library API or state, including when the transfer attempt fails.
 
-**[8] `gen_ai.tool.description`:**
+**[10] `gen_ai.plugin.id`:** If the tool, its MCP server, or its skill is provided by a plugin and the plugin identifier is available.
+
+**[11] `gen_ai.plugin.id`:** This SHOULD be the identifier the plugin source or runtime assigns, such as a
+marketplace-qualified name or a package manifest ID. It SHOULD NOT be set
+when the only value available is `gen_ai.plugin.name`.
+
+**[12] `gen_ai.plugin.version`:** If the tool, its MCP server, or its skill is provided by a plugin and the plugin version is available.
+
+**[13] `gen_ai.plugin.version`:** This SHOULD be the version declared by the plugin manifest or resolved by the
+runtime. Unresolved aliases such as `latest` SHOULD NOT be recorded.
+
+**[14] `gen_ai.tool.description`:**
 
 > [!WARNING]
 > This attribute may contain sensitive information.
 
-**[9] `gen_ai.tool.type`:** Extension: A tool executed on the agent-side to directly call external APIs, bridging the gap between the agent and real-world systems.
+**[15] `gen_ai.tool.type`:** Extension: A tool executed on the agent-side to directly call external APIs, bridging the gap between the agent and real-world systems.
   Agent-side operations involve actions that are performed by the agent on the server or within the agent's controlled environment.
 Function: A tool executed on the client-side, where the agent generates parameters for a predefined function, and the client executes the logic.
   Client-side operations are actions taken on the user's end or within the client application.
 Datastore: A tool used by the agent to access and query structured or unstructured external data for retrieval-augmented tasks or knowledge updates.
 
-**[10] `gen_ai.tool.call.arguments`:**
+**[16] `gen_ai.tool.call.arguments`:**
 
 > [!WARNING]
 > This attribute may contain sensitive information.
@@ -1292,7 +1321,7 @@ Instrumentations MUST follow [JSON schema](/model/gen-ai/gen-ai-tool-call-argume
 
 When the attribute is recorded on events, it MUST be recorded in structured form. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
 
-**[11] `gen_ai.tool.call.result`:**
+**[17] `gen_ai.tool.call.result`:**
 
 > [!WARNING]
 > This attribute may contain sensitive information.
@@ -1310,6 +1339,7 @@ and SHOULD be provided **at span creation time** (if provided at all):
 
 * [`gen_ai.agent.name`](/docs/registry/attributes/gen-ai.md)
 * [`gen_ai.operation.name`](/docs/registry/attributes/gen-ai.md)
+* [`gen_ai.plugin.name`](/docs/registry/attributes/gen-ai.md)
 * [`gen_ai.tool.name`](/docs/registry/attributes/gen-ai.md)
 * [`gen_ai.tool.type`](/docs/registry/attributes/gen-ai.md)
 * [`gen_ai.transfer.target.name`](/docs/registry/attributes/gen-ai.md)
@@ -1336,7 +1366,7 @@ and SHOULD be provided **at span creation time** (if provided at all):
 | `delete_memory_store` | Delete or deprovision a memory store | ![Development](https://img.shields.io/badge/-development-blue) |
 | `embeddings` | Embeddings operation such as [OpenAI Create embeddings API](https://platform.openai.com/docs/api-reference/embeddings/create) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `execute_tool` | Execute a tool | ![Development](https://img.shields.io/badge/-development-blue) |
-| `fetch_response` | Fetch a previously generated model response by its identifier, without performing inference, such as [OpenAI Get a model response](https://platform.openai.com/docs/api-reference/responses/get) [12] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `fetch_response` | Fetch a previously generated model response by its identifier, without performing inference, such as [OpenAI Get a model response](https://platform.openai.com/docs/api-reference/responses/get) [18] | ![Development](https://img.shields.io/badge/-development-blue) |
 | `generate_content` | Multimodal content generation operation such as [Gemini Generate Content](https://ai.google.dev/api/generate-content) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `invoke_agent` | Invoke GenAI agent | ![Development](https://img.shields.io/badge/-development-blue) |
 | `invoke_workflow` | Invoke GenAI workflow | ![Development](https://img.shields.io/badge/-development-blue) |
@@ -1347,7 +1377,7 @@ and SHOULD be provided **at span creation time** (if provided at all):
 | `update_memory` | Update existing memory records | ![Development](https://img.shields.io/badge/-development-blue) |
 | `upsert_memory` | Create or update memory records without the caller choosing which | ![Development](https://img.shields.io/badge/-development-blue) |
 
-**[12]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
+**[18]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
 
 ---
 
@@ -1412,14 +1442,17 @@ otherwise.
 | [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/error.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If the operation ended in an error. | string | Describes a class of error the operation ended with. [2] | `timeout`; `java.net.UnknownHostException`; `server_certificate_invalid`; `500` |
 | [`gen_ai.agent.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When applicable. | string | The human-readable name of the agent executing the tool. | `Math Tutor`; `Fiction Writer` |
 | [`gen_ai.conversation.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If available. | string | The unique identifier for a conversation (session, thread), used to store and correlate messages within this conversation. [3] | `conv_5j66UpCpwteGg4YSxUnt7lPY` |
+| [`gen_ai.plugin.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [4] | string | The name of the plugin that provides the tool, MCP server, or skill. [5] | `deploy-tools`; `github` |
 | [`gen_ai.skill.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If the skill name is available. | string | The name of the [Agent Skill](https://agentskills.io/specification#skill-md-format). | `code-review`; `pdf-processing` |
-| [`gen_ai.tool.call.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [4] | string | The tool call identifier supplied by the model or provider. [5] | `call_mszuSIzqtI65i1wAUOE8w5H4` |
-| [`gen_ai.skill.description`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If the skill description is available. | string | The [description of the Agent Skill](https://agentskills.io/specification#skill-md-format). [6] | `Review a changelist against the team's review policy.` |
-| [`gen_ai.skill.source.uri`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If the skill source URI is available. | string | The source URI for loading the skill. [7] | `https://skills.example.com/code-review`; `gs://example-skills/code-review`; `file:///opt/skills/code-review` |
-| [`gen_ai.tool.description`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If available. | string | The tool description. [8] | `Multiply two numbers` |
-| [`gen_ai.tool.type`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If available. | string | Type of the tool utilized by the agent [9] | `function`; `extension`; `datastore` |
-| [`gen_ai.tool.call.arguments`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | Parameters passed to the tool call. [10] | {<br>&nbsp;&nbsp;&nbsp;&nbsp;"location": "San Francisco?",<br>&nbsp;&nbsp;&nbsp;&nbsp;"date": "2025-10-01"<br>} |
-| [`gen_ai.tool.call.result`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | The result returned by the tool call (if any and if execution was successful). [11] | {<br>&nbsp;&nbsp;"temperature_range": {<br>&nbsp;&nbsp;&nbsp;&nbsp;"high": 75,<br>&nbsp;&nbsp;&nbsp;&nbsp;"low": 60<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;"conditions": "sunny"<br>} |
+| [`gen_ai.tool.call.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [6] | string | The tool call identifier supplied by the model or provider. [7] | `call_mszuSIzqtI65i1wAUOE8w5H4` |
+| [`gen_ai.plugin.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` [8] | string | The identifier of the plugin that provides the tool, MCP server, or skill. [9] | `deploy-tools@acme-marketplace`; `3260f06f-5275-4794-b367-3e7af29acbda` |
+| [`gen_ai.plugin.version`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` [10] | string | The version of the plugin that provides the tool, MCP server, or skill. [11] | `1.2.0` |
+| [`gen_ai.skill.description`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If the skill description is available. | string | The [description of the Agent Skill](https://agentskills.io/specification#skill-md-format). [12] | `Review a changelist against the team's review policy.` |
+| [`gen_ai.skill.source.uri`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If the skill source URI is available. | string | The source URI for loading the skill. [13] | `https://skills.example.com/code-review`; `gs://example-skills/code-review`; `file:///opt/skills/code-review` |
+| [`gen_ai.tool.description`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If available. | string | The tool description. [14] | `Multiply two numbers` |
+| [`gen_ai.tool.type`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If available. | string | Type of the tool utilized by the agent [15] | `function`; `extension`; `datastore` |
+| [`gen_ai.tool.call.arguments`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | Parameters passed to the tool call. [16] | {<br>&nbsp;&nbsp;&nbsp;&nbsp;"location": "San Francisco?",<br>&nbsp;&nbsp;&nbsp;&nbsp;"date": "2025-10-01"<br>} |
+| [`gen_ai.tool.call.result`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | The result returned by the tool call (if any and if execution was successful). [17] | {<br>&nbsp;&nbsp;"temperature_range": {<br>&nbsp;&nbsp;&nbsp;&nbsp;"high": 75,<br>&nbsp;&nbsp;&nbsp;&nbsp;"low": 60<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;"conditions": "sunny"<br>} |
 
 **[1] `gen_ai.operation.name`:** If one of the predefined values applies, but specific system uses a different name it's RECOMMENDED to document it in the semantic conventions for specific GenAI system and use system-specific name in the instrumentation. If a different name is not documented, instrumentation libraries SHOULD use applicable predefined value.
 
@@ -1446,17 +1479,43 @@ Application developers that manage conversation history MAY add conversation id 
 spans or logs using custom span or log record processors or hooks provided by instrumentation
 libraries.
 
-**[4] `gen_ai.tool.call.id`:** If and only if the model or provider supplied a tool call identifier.
+**[4] `gen_ai.plugin.name`:** If the tool, its MCP server, or its skill is provided by a plugin and the plugin name is available.
 
-**[5] `gen_ai.tool.call.id`:** This attribute SHOULD be set to the identifier received from the model or provider
+**[5] `gen_ai.plugin.name`:** A plugin is a package that an agent runtime installs as a unit. It bundles
+components such as tools, MCP servers, skills, and hooks. The same MCP server
+or skill can ship in more than one plugin.
+
+Examples include [Agent Plugins](https://agent-plugins.org),
+[Claude Code plugins](https://code.claude.com/docs/en/plugins-reference),
+[ChatGPT and Codex plugins](https://developers.openai.com/plugins/build/plugins),
+[GitHub Copilot CLI plugins](https://docs.github.com/copilot/how-tos/copilot-cli/customize-copilot/plugins-creating),
+and [Microsoft 365 app packages](https://learn.microsoft.com/microsoft-365/extensibility/schema/root).
+
+Runtimes that namespace components by plugin, such as `deploy-tools:release-notes`,
+use this name as the namespace.
+
+**[6] `gen_ai.tool.call.id`:** If and only if the model or provider supplied a tool call identifier.
+
+**[7] `gen_ai.tool.call.id`:** This attribute SHOULD be set to the identifier received from the model or provider
 if and only if one was supplied.
 
-**[6] `gen_ai.skill.description`:**
+**[8] `gen_ai.plugin.id`:** If the tool, its MCP server, or its skill is provided by a plugin and the plugin identifier is available.
+
+**[9] `gen_ai.plugin.id`:** This SHOULD be the identifier the plugin source or runtime assigns, such as a
+marketplace-qualified name or a package manifest ID. It SHOULD NOT be set
+when the only value available is `gen_ai.plugin.name`.
+
+**[10] `gen_ai.plugin.version`:** If the tool, its MCP server, or its skill is provided by a plugin and the plugin version is available.
+
+**[11] `gen_ai.plugin.version`:** This SHOULD be the version declared by the plugin manifest or resolved by the
+runtime. Unresolved aliases such as `latest` SHOULD NOT be recorded.
+
+**[12] `gen_ai.skill.description`:**
 
 > [!WARNING]
 > This attribute may contain sensitive information.
 
-**[7] `gen_ai.skill.source.uri`:** This SHOULD identify the skill source, not a temporary location where the
+**[13] `gen_ai.skill.source.uri`:** This SHOULD identify the skill source, not a temporary location where the
 skill was materialized for execution.
 
 > [!WARNING]
@@ -1465,18 +1524,18 @@ skill was materialized for execution.
 Sensitive URI components, such as user information and access tokens in query
 parameters, SHOULD be scrubbed when instrumentations can identify them.
 
-**[8] `gen_ai.tool.description`:**
+**[14] `gen_ai.tool.description`:**
 
 > [!WARNING]
 > This attribute may contain sensitive information.
 
-**[9] `gen_ai.tool.type`:** Extension: A tool executed on the agent-side to directly call external APIs, bridging the gap between the agent and real-world systems.
+**[15] `gen_ai.tool.type`:** Extension: A tool executed on the agent-side to directly call external APIs, bridging the gap between the agent and real-world systems.
   Agent-side operations involve actions that are performed by the agent on the server or within the agent's controlled environment.
 Function: A tool executed on the client-side, where the agent generates parameters for a predefined function, and the client executes the logic.
   Client-side operations are actions taken on the user's end or within the client application.
 Datastore: A tool used by the agent to access and query structured or unstructured external data for retrieval-augmented tasks or knowledge updates.
 
-**[10] `gen_ai.tool.call.arguments`:**
+**[16] `gen_ai.tool.call.arguments`:**
 
 > [!WARNING]
 > This attribute may contain sensitive information.
@@ -1489,7 +1548,7 @@ Instrumentations MUST follow [JSON schema](/model/gen-ai/gen-ai-tool-call-argume
 
 When the attribute is recorded on events, it MUST be recorded in structured form. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
 
-**[11] `gen_ai.tool.call.result`:**
+**[17] `gen_ai.tool.call.result`:**
 
 > [!WARNING]
 > This attribute may contain sensitive information.
@@ -1507,6 +1566,7 @@ and SHOULD be provided **at span creation time** (if provided at all):
 
 * [`gen_ai.agent.name`](/docs/registry/attributes/gen-ai.md)
 * [`gen_ai.operation.name`](/docs/registry/attributes/gen-ai.md)
+* [`gen_ai.plugin.name`](/docs/registry/attributes/gen-ai.md)
 * [`gen_ai.skill.name`](/docs/registry/attributes/gen-ai.md)
 * [`gen_ai.tool.name`](/docs/registry/attributes/gen-ai.md)
 * [`gen_ai.tool.type`](/docs/registry/attributes/gen-ai.md)
@@ -1533,7 +1593,7 @@ and SHOULD be provided **at span creation time** (if provided at all):
 | `delete_memory_store` | Delete or deprovision a memory store | ![Development](https://img.shields.io/badge/-development-blue) |
 | `embeddings` | Embeddings operation such as [OpenAI Create embeddings API](https://platform.openai.com/docs/api-reference/embeddings/create) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `execute_tool` | Execute a tool | ![Development](https://img.shields.io/badge/-development-blue) |
-| `fetch_response` | Fetch a previously generated model response by its identifier, without performing inference, such as [OpenAI Get a model response](https://platform.openai.com/docs/api-reference/responses/get) [12] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `fetch_response` | Fetch a previously generated model response by its identifier, without performing inference, such as [OpenAI Get a model response](https://platform.openai.com/docs/api-reference/responses/get) [18] | ![Development](https://img.shields.io/badge/-development-blue) |
 | `generate_content` | Multimodal content generation operation such as [Gemini Generate Content](https://ai.google.dev/api/generate-content) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `invoke_agent` | Invoke GenAI agent | ![Development](https://img.shields.io/badge/-development-blue) |
 | `invoke_workflow` | Invoke GenAI workflow | ![Development](https://img.shields.io/badge/-development-blue) |
@@ -1544,7 +1604,7 @@ and SHOULD be provided **at span creation time** (if provided at all):
 | `update_memory` | Update existing memory records | ![Development](https://img.shields.io/badge/-development-blue) |
 | `upsert_memory` | Create or update memory records without the caller choosing which | ![Development](https://img.shields.io/badge/-development-blue) |
 
-**[12]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
+**[18]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
 
 <!-- prettier-ignore-end -->
 <!-- END AUTOGENERATED TEXT -->
@@ -1594,15 +1654,18 @@ The skill name SHOULD NOT be appended by itself.
 | [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/error.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If the operation ended in an error. | string | Describes a class of error the operation ended with. [2] | `timeout`; `java.net.UnknownHostException`; `server_certificate_invalid`; `500` |
 | [`gen_ai.agent.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When applicable. | string | The human-readable name of the agent executing the tool. | `Math Tutor`; `Fiction Writer` |
 | [`gen_ai.conversation.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If available. | string | The unique identifier for a conversation (session, thread), used to store and correlate messages within this conversation. [3] | `conv_5j66UpCpwteGg4YSxUnt7lPY` |
+| [`gen_ai.plugin.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [4] | string | The name of the plugin that provides the tool, MCP server, or skill. [5] | `deploy-tools`; `github` |
 | [`gen_ai.skill.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If the skill name is available. | string | The name of the [Agent Skill](https://agentskills.io/specification#skill-md-format). | `code-review`; `pdf-processing` |
 | [`gen_ai.skill.resource.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If the skill resource name is available. | string | The skill-relative name of the resource (script, reference, or asset) being accessed or executed. | `references/review_policy.md`; `assets/report_template.html` |
-| [`gen_ai.tool.call.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [4] | string | The tool call identifier supplied by the model or provider. [5] | `call_mszuSIzqtI65i1wAUOE8w5H4` |
-| [`gen_ai.skill.description`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If the skill description is available. | string | The [description of the Agent Skill](https://agentskills.io/specification#skill-md-format). [6] | `Review a changelist against the team's review policy.` |
-| [`gen_ai.skill.source.uri`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If the skill source URI is available. | string | The source URI for loading the skill. [7] | `https://skills.example.com/code-review`; `gs://example-skills/code-review`; `file:///opt/skills/code-review` |
-| [`gen_ai.tool.description`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If available. | string | The tool description. [8] | `Multiply two numbers` |
-| [`gen_ai.tool.type`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If available. | string | Type of the tool utilized by the agent [9] | `function`; `extension`; `datastore` |
-| [`gen_ai.tool.call.arguments`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | Parameters passed to the tool call. [10] | {<br>&nbsp;&nbsp;&nbsp;&nbsp;"location": "San Francisco?",<br>&nbsp;&nbsp;&nbsp;&nbsp;"date": "2025-10-01"<br>} |
-| [`gen_ai.tool.call.result`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | The result returned by the tool call (if any and if execution was successful). [11] | {<br>&nbsp;&nbsp;"temperature_range": {<br>&nbsp;&nbsp;&nbsp;&nbsp;"high": 75,<br>&nbsp;&nbsp;&nbsp;&nbsp;"low": 60<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;"conditions": "sunny"<br>} |
+| [`gen_ai.tool.call.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [6] | string | The tool call identifier supplied by the model or provider. [7] | `call_mszuSIzqtI65i1wAUOE8w5H4` |
+| [`gen_ai.plugin.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` [8] | string | The identifier of the plugin that provides the tool, MCP server, or skill. [9] | `deploy-tools@acme-marketplace`; `3260f06f-5275-4794-b367-3e7af29acbda` |
+| [`gen_ai.plugin.version`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` [10] | string | The version of the plugin that provides the tool, MCP server, or skill. [11] | `1.2.0` |
+| [`gen_ai.skill.description`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If the skill description is available. | string | The [description of the Agent Skill](https://agentskills.io/specification#skill-md-format). [12] | `Review a changelist against the team's review policy.` |
+| [`gen_ai.skill.source.uri`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If the skill source URI is available. | string | The source URI for loading the skill. [13] | `https://skills.example.com/code-review`; `gs://example-skills/code-review`; `file:///opt/skills/code-review` |
+| [`gen_ai.tool.description`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If available. | string | The tool description. [14] | `Multiply two numbers` |
+| [`gen_ai.tool.type`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If available. | string | Type of the tool utilized by the agent [15] | `function`; `extension`; `datastore` |
+| [`gen_ai.tool.call.arguments`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | Parameters passed to the tool call. [16] | {<br>&nbsp;&nbsp;&nbsp;&nbsp;"location": "San Francisco?",<br>&nbsp;&nbsp;&nbsp;&nbsp;"date": "2025-10-01"<br>} |
+| [`gen_ai.tool.call.result`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | The result returned by the tool call (if any and if execution was successful). [17] | {<br>&nbsp;&nbsp;"temperature_range": {<br>&nbsp;&nbsp;&nbsp;&nbsp;"high": 75,<br>&nbsp;&nbsp;&nbsp;&nbsp;"low": 60<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;"conditions": "sunny"<br>} |
 
 **[1] `gen_ai.operation.name`:** If one of the predefined values applies, but specific system uses a different name it's RECOMMENDED to document it in the semantic conventions for specific GenAI system and use system-specific name in the instrumentation. If a different name is not documented, instrumentation libraries SHOULD use applicable predefined value.
 
@@ -1629,17 +1692,43 @@ Application developers that manage conversation history MAY add conversation id 
 spans or logs using custom span or log record processors or hooks provided by instrumentation
 libraries.
 
-**[4] `gen_ai.tool.call.id`:** If and only if the model or provider supplied a tool call identifier.
+**[4] `gen_ai.plugin.name`:** If the tool, its MCP server, or its skill is provided by a plugin and the plugin name is available.
 
-**[5] `gen_ai.tool.call.id`:** This attribute SHOULD be set to the identifier received from the model or provider
+**[5] `gen_ai.plugin.name`:** A plugin is a package that an agent runtime installs as a unit. It bundles
+components such as tools, MCP servers, skills, and hooks. The same MCP server
+or skill can ship in more than one plugin.
+
+Examples include [Agent Plugins](https://agent-plugins.org),
+[Claude Code plugins](https://code.claude.com/docs/en/plugins-reference),
+[ChatGPT and Codex plugins](https://developers.openai.com/plugins/build/plugins),
+[GitHub Copilot CLI plugins](https://docs.github.com/copilot/how-tos/copilot-cli/customize-copilot/plugins-creating),
+and [Microsoft 365 app packages](https://learn.microsoft.com/microsoft-365/extensibility/schema/root).
+
+Runtimes that namespace components by plugin, such as `deploy-tools:release-notes`,
+use this name as the namespace.
+
+**[6] `gen_ai.tool.call.id`:** If and only if the model or provider supplied a tool call identifier.
+
+**[7] `gen_ai.tool.call.id`:** This attribute SHOULD be set to the identifier received from the model or provider
 if and only if one was supplied.
 
-**[6] `gen_ai.skill.description`:**
+**[8] `gen_ai.plugin.id`:** If the tool, its MCP server, or its skill is provided by a plugin and the plugin identifier is available.
+
+**[9] `gen_ai.plugin.id`:** This SHOULD be the identifier the plugin source or runtime assigns, such as a
+marketplace-qualified name or a package manifest ID. It SHOULD NOT be set
+when the only value available is `gen_ai.plugin.name`.
+
+**[10] `gen_ai.plugin.version`:** If the tool, its MCP server, or its skill is provided by a plugin and the plugin version is available.
+
+**[11] `gen_ai.plugin.version`:** This SHOULD be the version declared by the plugin manifest or resolved by the
+runtime. Unresolved aliases such as `latest` SHOULD NOT be recorded.
+
+**[12] `gen_ai.skill.description`:**
 
 > [!WARNING]
 > This attribute may contain sensitive information.
 
-**[7] `gen_ai.skill.source.uri`:** This SHOULD identify the skill source, not a temporary location where the
+**[13] `gen_ai.skill.source.uri`:** This SHOULD identify the skill source, not a temporary location where the
 skill was materialized for execution.
 
 > [!WARNING]
@@ -1648,18 +1737,18 @@ skill was materialized for execution.
 Sensitive URI components, such as user information and access tokens in query
 parameters, SHOULD be scrubbed when instrumentations can identify them.
 
-**[8] `gen_ai.tool.description`:**
+**[14] `gen_ai.tool.description`:**
 
 > [!WARNING]
 > This attribute may contain sensitive information.
 
-**[9] `gen_ai.tool.type`:** Extension: A tool executed on the agent-side to directly call external APIs, bridging the gap between the agent and real-world systems.
+**[15] `gen_ai.tool.type`:** Extension: A tool executed on the agent-side to directly call external APIs, bridging the gap between the agent and real-world systems.
   Agent-side operations involve actions that are performed by the agent on the server or within the agent's controlled environment.
 Function: A tool executed on the client-side, where the agent generates parameters for a predefined function, and the client executes the logic.
   Client-side operations are actions taken on the user's end or within the client application.
 Datastore: A tool used by the agent to access and query structured or unstructured external data for retrieval-augmented tasks or knowledge updates.
 
-**[10] `gen_ai.tool.call.arguments`:**
+**[16] `gen_ai.tool.call.arguments`:**
 
 > [!WARNING]
 > This attribute may contain sensitive information.
@@ -1672,7 +1761,7 @@ Instrumentations MUST follow [JSON schema](/model/gen-ai/gen-ai-tool-call-argume
 
 When the attribute is recorded on events, it MUST be recorded in structured form. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
 
-**[11] `gen_ai.tool.call.result`:**
+**[17] `gen_ai.tool.call.result`:**
 
 > [!WARNING]
 > This attribute may contain sensitive information.
@@ -1690,6 +1779,7 @@ and SHOULD be provided **at span creation time** (if provided at all):
 
 * [`gen_ai.agent.name`](/docs/registry/attributes/gen-ai.md)
 * [`gen_ai.operation.name`](/docs/registry/attributes/gen-ai.md)
+* [`gen_ai.plugin.name`](/docs/registry/attributes/gen-ai.md)
 * [`gen_ai.skill.name`](/docs/registry/attributes/gen-ai.md)
 * [`gen_ai.skill.resource.name`](/docs/registry/attributes/gen-ai.md)
 * [`gen_ai.tool.name`](/docs/registry/attributes/gen-ai.md)
@@ -1717,7 +1807,7 @@ and SHOULD be provided **at span creation time** (if provided at all):
 | `delete_memory_store` | Delete or deprovision a memory store | ![Development](https://img.shields.io/badge/-development-blue) |
 | `embeddings` | Embeddings operation such as [OpenAI Create embeddings API](https://platform.openai.com/docs/api-reference/embeddings/create) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `execute_tool` | Execute a tool | ![Development](https://img.shields.io/badge/-development-blue) |
-| `fetch_response` | Fetch a previously generated model response by its identifier, without performing inference, such as [OpenAI Get a model response](https://platform.openai.com/docs/api-reference/responses/get) [12] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `fetch_response` | Fetch a previously generated model response by its identifier, without performing inference, such as [OpenAI Get a model response](https://platform.openai.com/docs/api-reference/responses/get) [18] | ![Development](https://img.shields.io/badge/-development-blue) |
 | `generate_content` | Multimodal content generation operation such as [Gemini Generate Content](https://ai.google.dev/api/generate-content) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `invoke_agent` | Invoke GenAI agent | ![Development](https://img.shields.io/badge/-development-blue) |
 | `invoke_workflow` | Invoke GenAI workflow | ![Development](https://img.shields.io/badge/-development-blue) |
@@ -1728,7 +1818,7 @@ and SHOULD be provided **at span creation time** (if provided at all):
 | `update_memory` | Update existing memory records | ![Development](https://img.shields.io/badge/-development-blue) |
 | `upsert_memory` | Create or update memory records without the caller choosing which | ![Development](https://img.shields.io/badge/-development-blue) |
 
-**[12]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
+**[18]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
 
 <!-- prettier-ignore-end -->
 <!-- END AUTOGENERATED TEXT -->
@@ -1796,18 +1886,21 @@ The skill name SHOULD NOT be appended without the resource name.
 | [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/error.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If the operation ended in an error. | string | Describes a class of error the operation ended with. [2] | `timeout`; `java.net.UnknownHostException`; `server_certificate_invalid`; `500` |
 | [`gen_ai.agent.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When applicable. | string | The human-readable name of the agent executing the tool. | `Math Tutor`; `Fiction Writer` |
 | [`gen_ai.conversation.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If available. | string | The unique identifier for a conversation (session, thread), used to store and correlate messages within this conversation. [3] | `conv_5j66UpCpwteGg4YSxUnt7lPY` |
-| [`gen_ai.skill.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [4] | string | The name of the [Agent Skill](https://agentskills.io/specification#skill-md-format). | `code-review`; `pdf-processing` |
-| [`gen_ai.skill.resource.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [5] | string | The skill-relative name of the resource (script, reference, or asset) being accessed or executed. | `references/review_policy.md`; `assets/report_template.html` |
-| [`gen_ai.tool.call.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [6] | string | The tool call identifier supplied by the model or provider. [7] | `call_mszuSIzqtI65i1wAUOE8w5H4` |
-| [`process.executable.name`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/process.md) | ![Release Candidate](https://img.shields.io/badge/-rc-mediumorchid) | `Conditionally Required` [8] | string | The name of the process executable. On Linux based systems, this SHOULD be set to the base name of the target of `/proc/[pid]/exe`. On Windows, this SHOULD be set to the base name of `GetProcessImageFileNameW`. | `otelcol` |
-| [`process.exit.code`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/process.md) | ![Release Candidate](https://img.shields.io/badge/-rc-mediumorchid) | `Conditionally Required` [9] | int | The exit code of the process. | `127` |
-| [`gen_ai.skill.description`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` [10] | string | The [description of the Agent Skill](https://agentskills.io/specification#skill-md-format). [11] | `Review a changelist against the team's review policy.` |
-| [`gen_ai.skill.source.uri`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` [12] | string | The source URI for loading the skill. [13] | `https://skills.example.com/code-review`; `gs://example-skills/code-review`; `file:///opt/skills/code-review` |
-| [`gen_ai.tool.description`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If available. | string | The tool description. [14] | `Multiply two numbers` |
-| [`gen_ai.tool.type`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If available. | string | Type of the tool utilized by the agent [15] | `function`; `extension`; `datastore` |
-| [`process.executable.path`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/process.md) | ![Release Candidate](https://img.shields.io/badge/-rc-mediumorchid) | `Recommended` [16] | string | The full path to the process executable. On Linux based systems, can be set to the target of `proc/[pid]/exe`. On Windows, can be set to the result of `GetProcessImageFileNameW`. | `/usr/bin/cmd/otelcol` |
-| [`gen_ai.tool.call.arguments`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | Parameters passed to the tool call. [17] | {<br>&nbsp;&nbsp;&nbsp;&nbsp;"location": "San Francisco?",<br>&nbsp;&nbsp;&nbsp;&nbsp;"date": "2025-10-01"<br>} |
-| [`gen_ai.tool.call.result`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | The result returned by the tool call (if any and if execution was successful). [18] | {<br>&nbsp;&nbsp;"temperature_range": {<br>&nbsp;&nbsp;&nbsp;&nbsp;"high": 75,<br>&nbsp;&nbsp;&nbsp;&nbsp;"low": 60<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;"conditions": "sunny"<br>} |
+| [`gen_ai.plugin.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [4] | string | The name of the plugin that provides the tool, MCP server, or skill. [5] | `deploy-tools`; `github` |
+| [`gen_ai.skill.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [6] | string | The name of the [Agent Skill](https://agentskills.io/specification#skill-md-format). | `code-review`; `pdf-processing` |
+| [`gen_ai.skill.resource.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [7] | string | The skill-relative name of the resource (script, reference, or asset) being accessed or executed. | `references/review_policy.md`; `assets/report_template.html` |
+| [`gen_ai.tool.call.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [8] | string | The tool call identifier supplied by the model or provider. [9] | `call_mszuSIzqtI65i1wAUOE8w5H4` |
+| [`process.executable.name`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/process.md) | ![Release Candidate](https://img.shields.io/badge/-rc-mediumorchid) | `Conditionally Required` [10] | string | The name of the process executable. On Linux based systems, this SHOULD be set to the base name of the target of `/proc/[pid]/exe`. On Windows, this SHOULD be set to the base name of `GetProcessImageFileNameW`. | `otelcol` |
+| [`process.exit.code`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/process.md) | ![Release Candidate](https://img.shields.io/badge/-rc-mediumorchid) | `Conditionally Required` [11] | int | The exit code of the process. | `127` |
+| [`gen_ai.plugin.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` [12] | string | The identifier of the plugin that provides the tool, MCP server, or skill. [13] | `deploy-tools@acme-marketplace`; `3260f06f-5275-4794-b367-3e7af29acbda` |
+| [`gen_ai.plugin.version`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` [14] | string | The version of the plugin that provides the tool, MCP server, or skill. [15] | `1.2.0` |
+| [`gen_ai.skill.description`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` [16] | string | The [description of the Agent Skill](https://agentskills.io/specification#skill-md-format). [17] | `Review a changelist against the team's review policy.` |
+| [`gen_ai.skill.source.uri`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` [18] | string | The source URI for loading the skill. [19] | `https://skills.example.com/code-review`; `gs://example-skills/code-review`; `file:///opt/skills/code-review` |
+| [`gen_ai.tool.description`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If available. | string | The tool description. [20] | `Multiply two numbers` |
+| [`gen_ai.tool.type`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If available. | string | Type of the tool utilized by the agent [21] | `function`; `extension`; `datastore` |
+| [`process.executable.path`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/process.md) | ![Release Candidate](https://img.shields.io/badge/-rc-mediumorchid) | `Recommended` [22] | string | The full path to the process executable. On Linux based systems, can be set to the target of `proc/[pid]/exe`. On Windows, can be set to the result of `GetProcessImageFileNameW`. | `/usr/bin/cmd/otelcol` |
+| [`gen_ai.tool.call.arguments`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | Parameters passed to the tool call. [23] | {<br>&nbsp;&nbsp;&nbsp;&nbsp;"location": "San Francisco?",<br>&nbsp;&nbsp;&nbsp;&nbsp;"date": "2025-10-01"<br>} |
+| [`gen_ai.tool.call.result`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | The result returned by the tool call (if any and if execution was successful). [24] | {<br>&nbsp;&nbsp;"temperature_range": {<br>&nbsp;&nbsp;&nbsp;&nbsp;"high": 75,<br>&nbsp;&nbsp;&nbsp;&nbsp;"low": 60<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;"conditions": "sunny"<br>} |
 
 **[1] `gen_ai.operation.name`:** If one of the predefined values applies, but specific system uses a different name it's RECOMMENDED to document it in the semantic conventions for specific GenAI system and use system-specific name in the instrumentation. If a different name is not documented, instrumentation libraries SHOULD use applicable predefined value.
 
@@ -1834,29 +1927,55 @@ Application developers that manage conversation history MAY add conversation id 
 spans or logs using custom span or log record processors or hooks provided by instrumentation
 libraries.
 
-**[4] `gen_ai.skill.name`:** If the command is associated with a skill and its name is available.
+**[4] `gen_ai.plugin.name`:** If the tool, its MCP server, or its skill is provided by a plugin and the plugin name is available.
 
-**[5] `gen_ai.skill.resource.name`:** If the command executes a named skill resource and the name is available.
+**[5] `gen_ai.plugin.name`:** A plugin is a package that an agent runtime installs as a unit. It bundles
+components such as tools, MCP servers, skills, and hooks. The same MCP server
+or skill can ship in more than one plugin.
 
-**[6] `gen_ai.tool.call.id`:** If and only if the model or provider supplied a tool call identifier.
+Examples include [Agent Plugins](https://agent-plugins.org),
+[Claude Code plugins](https://code.claude.com/docs/en/plugins-reference),
+[ChatGPT and Codex plugins](https://developers.openai.com/plugins/build/plugins),
+[GitHub Copilot CLI plugins](https://docs.github.com/copilot/how-tos/copilot-cli/customize-copilot/plugins-creating),
+and [Microsoft 365 app packages](https://learn.microsoft.com/microsoft-365/extensibility/schema/root).
 
-**[7] `gen_ai.tool.call.id`:** This attribute SHOULD be set to the identifier received from the model or provider
+Runtimes that namespace components by plugin, such as `deploy-tools:release-notes`,
+use this name as the namespace.
+
+**[6] `gen_ai.skill.name`:** If the command is associated with a skill and its name is available.
+
+**[7] `gen_ai.skill.resource.name`:** If the command executes a named skill resource and the name is available.
+
+**[8] `gen_ai.tool.call.id`:** If and only if the model or provider supplied a tool call identifier.
+
+**[9] `gen_ai.tool.call.id`:** This attribute SHOULD be set to the identifier received from the model or provider
 if and only if one was supplied.
 
-**[8] `process.executable.name`:** If the tool directly executes a single process and the executable name is available.
+**[10] `process.executable.name`:** If the tool directly executes a single process and the executable name is available.
 
-**[9] `process.exit.code`:** If the tool reports a single command or process exit code.
+**[11] `process.exit.code`:** If the tool reports a single command or process exit code.
 
-**[10] `gen_ai.skill.description`:** If the command is associated with a skill and its description is available.
+**[12] `gen_ai.plugin.id`:** If the tool, its MCP server, or its skill is provided by a plugin and the plugin identifier is available.
 
-**[11] `gen_ai.skill.description`:**
+**[13] `gen_ai.plugin.id`:** This SHOULD be the identifier the plugin source or runtime assigns, such as a
+marketplace-qualified name or a package manifest ID. It SHOULD NOT be set
+when the only value available is `gen_ai.plugin.name`.
+
+**[14] `gen_ai.plugin.version`:** If the tool, its MCP server, or its skill is provided by a plugin and the plugin version is available.
+
+**[15] `gen_ai.plugin.version`:** This SHOULD be the version declared by the plugin manifest or resolved by the
+runtime. Unresolved aliases such as `latest` SHOULD NOT be recorded.
+
+**[16] `gen_ai.skill.description`:** If the command is associated with a skill and its description is available.
+
+**[17] `gen_ai.skill.description`:**
 
 > [!WARNING]
 > This attribute may contain sensitive information.
 
-**[12] `gen_ai.skill.source.uri`:** If the command is associated with a skill and its source URI is available.
+**[18] `gen_ai.skill.source.uri`:** If the command is associated with a skill and its source URI is available.
 
-**[13] `gen_ai.skill.source.uri`:** This SHOULD identify the skill source, not a temporary location where the
+**[19] `gen_ai.skill.source.uri`:** This SHOULD identify the skill source, not a temporary location where the
 skill was materialized for execution.
 
 > [!WARNING]
@@ -1865,20 +1984,20 @@ skill was materialized for execution.
 Sensitive URI components, such as user information and access tokens in query
 parameters, SHOULD be scrubbed when instrumentations can identify them.
 
-**[14] `gen_ai.tool.description`:**
+**[20] `gen_ai.tool.description`:**
 
 > [!WARNING]
 > This attribute may contain sensitive information.
 
-**[15] `gen_ai.tool.type`:** Extension: A tool executed on the agent-side to directly call external APIs, bridging the gap between the agent and real-world systems.
+**[21] `gen_ai.tool.type`:** Extension: A tool executed on the agent-side to directly call external APIs, bridging the gap between the agent and real-world systems.
   Agent-side operations involve actions that are performed by the agent on the server or within the agent's controlled environment.
 Function: A tool executed on the client-side, where the agent generates parameters for a predefined function, and the client executes the logic.
   Client-side operations are actions taken on the user's end or within the client application.
 Datastore: A tool used by the agent to access and query structured or unstructured external data for retrieval-augmented tasks or knowledge updates.
 
-**[16] `process.executable.path`:** If the tool directly executes a single process and the executable path is available.
+**[22] `process.executable.path`:** If the tool directly executes a single process and the executable path is available.
 
-**[17] `gen_ai.tool.call.arguments`:**
+**[23] `gen_ai.tool.call.arguments`:**
 
 > [!WARNING]
 > This attribute may contain sensitive information.
@@ -1891,7 +2010,7 @@ Instrumentations MUST follow [JSON schema](/model/gen-ai/gen-ai-tool-call-argume
 
 When the attribute is recorded on events, it MUST be recorded in structured form. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
 
-**[18] `gen_ai.tool.call.result`:**
+**[24] `gen_ai.tool.call.result`:**
 
 > [!WARNING]
 > This attribute may contain sensitive information.
@@ -1909,6 +2028,7 @@ and SHOULD be provided **at span creation time** (if provided at all):
 
 * [`gen_ai.agent.name`](/docs/registry/attributes/gen-ai.md)
 * [`gen_ai.operation.name`](/docs/registry/attributes/gen-ai.md)
+* [`gen_ai.plugin.name`](/docs/registry/attributes/gen-ai.md)
 * [`gen_ai.skill.name`](/docs/registry/attributes/gen-ai.md)
 * [`gen_ai.skill.resource.name`](/docs/registry/attributes/gen-ai.md)
 * [`gen_ai.tool.name`](/docs/registry/attributes/gen-ai.md)
@@ -1936,7 +2056,7 @@ and SHOULD be provided **at span creation time** (if provided at all):
 | `delete_memory_store` | Delete or deprovision a memory store | ![Development](https://img.shields.io/badge/-development-blue) |
 | `embeddings` | Embeddings operation such as [OpenAI Create embeddings API](https://platform.openai.com/docs/api-reference/embeddings/create) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `execute_tool` | Execute a tool | ![Development](https://img.shields.io/badge/-development-blue) |
-| `fetch_response` | Fetch a previously generated model response by its identifier, without performing inference, such as [OpenAI Get a model response](https://platform.openai.com/docs/api-reference/responses/get) [19] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `fetch_response` | Fetch a previously generated model response by its identifier, without performing inference, such as [OpenAI Get a model response](https://platform.openai.com/docs/api-reference/responses/get) [25] | ![Development](https://img.shields.io/badge/-development-blue) |
 | `generate_content` | Multimodal content generation operation such as [Gemini Generate Content](https://ai.google.dev/api/generate-content) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `invoke_agent` | Invoke GenAI agent | ![Development](https://img.shields.io/badge/-development-blue) |
 | `invoke_workflow` | Invoke GenAI workflow | ![Development](https://img.shields.io/badge/-development-blue) |
@@ -1947,7 +2067,7 @@ and SHOULD be provided **at span creation time** (if provided at all):
 | `update_memory` | Update existing memory records | ![Development](https://img.shields.io/badge/-development-blue) |
 | `upsert_memory` | Create or update memory records without the caller choosing which | ![Development](https://img.shields.io/badge/-development-blue) |
 
-**[19]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
+**[25]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
 
 <!-- prettier-ignore-end -->
 <!-- END AUTOGENERATED TEXT -->

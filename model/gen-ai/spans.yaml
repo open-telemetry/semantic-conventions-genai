@@ -694,6 +694,10 @@ spans:
       span. Available refinements include
       [agents exposed as tools](/docs/gen-ai/gen-ai-agent-spans.md#agent-as-a-tool) and
       [Agent Skills](/docs/gen-ai/gen-ai-agent-spans.md#agent-skills).
+
+      When the tool, the MCP server that exposes it, or the skill it operates on
+      was installed as part of a plugin, instrumentation SHOULD record the
+      `gen_ai.plugin.*` attributes of that plugin.
     stability: development
     entity_associations:
       - "gen_ai.main_agent"
@@ -718,6 +722,16 @@ spans:
       - ref: gen_ai.conversation.id
         requirement_level:
           conditionally_required: If available.
+      - ref: gen_ai.plugin.name
+        requirement_level:
+          conditionally_required: If the tool, its MCP server, or its skill is provided by a plugin and the plugin name is available.
+        sampling_relevant: true
+      - ref: gen_ai.plugin.id
+        requirement_level:
+          recommended: If the tool, its MCP server, or its skill is provided by a plugin and the plugin identifier is available.
+      - ref: gen_ai.plugin.version
+        requirement_level:
+          recommended: If the tool, its MCP server, or its skill is provided by a plugin and the plugin version is available.
       - ref: gen_ai.tool.call.arguments
         requirement_level: opt_in
       - ref: gen_ai.tool.call.result
