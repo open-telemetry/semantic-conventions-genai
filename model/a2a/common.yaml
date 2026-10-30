@@ -37,6 +37,10 @@ attribute_groups:
     visibility: internal
     attributes:
       - ref_group: a2a.protocol.attributes
+      - ref_group: a2a.error.attributes
+  - id: a2a.error.attributes
+    visibility: internal
+    attributes:
       - ref: error.type
         requirement_level:
           conditionally_required: If and only if the operation fails.
