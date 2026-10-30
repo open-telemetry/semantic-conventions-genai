@@ -125,6 +125,7 @@ async def run_plugin_skill_reference():
             "gen_ai.operation.name": "execute_tool",
             "gen_ai.tool.name": hook_input["tool_name"],
             "gen_ai.tool.call.id": tool_use_id,
+            "gen_ai.conversation.id": hook_input["session_id"],
         }
         span_name = f"execute_tool {hook_input['tool_name']}"
         if hook_input["tool_name"] == "Skill":

@@ -14,7 +14,7 @@
 | Attribute | Supporting Libraries |
 | --- | --- |
 | gen_ai.agent.name | [google-adk], [openai-agents], [pydantic-ai] |
-| gen_ai.conversation.id | [google-adk], [openai-assistants] |
+| gen_ai.conversation.id | [claude-agent-sdk], [google-adk], [openai-assistants] |
 | gen_ai.plugin.name | [claude-agent-sdk] |
 | gen_ai.tool.call.id | [agent-framework], [autogen], [claude-agent-sdk], [google-adk], [google-genai], [langchain], [llamaindex], [openai-agents], [openai-assistants], [pydantic-ai], [vertexai] |
 
