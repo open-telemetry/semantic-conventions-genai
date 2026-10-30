@@ -35,6 +35,10 @@ validation squiggles that match what the test reports. If you want completion
 while drafting, block-style YAML gets better results than JSON; either is
 accepted.
 
+Write `"format": "binary"` values as bytes with YAML's `!!binary` tag (for
+example `"content": !!binary "iVBORw0KGgo="`). The runner validates the
+document's JSON form, where bytes become base64 strings.
+
 Then run `uv run pytest --update-snapshots`. The runner appends an `errors:`
 block with what the schema reports and leaves the rest of the file untouched.
 Review it: an empty list means the document is valid.

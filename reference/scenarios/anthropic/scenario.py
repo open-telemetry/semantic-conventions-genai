@@ -4,7 +4,6 @@
 """
 
 import base64
-import json
 import os
 from tempfile import mkdtemp
 
@@ -583,7 +582,7 @@ def run_create_agent():
         f"create_agent {agent_name}", kind=SpanKind.CLIENT, attributes=span_attributes
     ) as span:
         span.set_attribute("gen_ai.agent.description", agent_description)
-        span.set_attribute("gen_ai.system_instructions", json.dumps([{"type": "text", "content": agent_system}]))
+        span.set_attribute("gen_ai.system_instructions", [{"type": "text", "content": agent_system}])
         try:
             agent = client.beta.agents.create(
                 model=request_model,

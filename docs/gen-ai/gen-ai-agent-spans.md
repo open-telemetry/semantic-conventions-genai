@@ -107,9 +107,7 @@ It's NOT RECOMMENDED to record in-memory agent instance ids on this attribute du
 
 **[7] `server.address`:** When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent the server address behind any intermediaries, for example proxies, if it's available.
 
-**[8] `gen_ai.system_instructions`:** Instrumentations MUST follow [JSON schema](/model/gen-ai/gen-ai-system-instructions.json).
-
-When the attribute is recorded on events, it MUST be recorded in structured form. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
+**[8] `gen_ai.system_instructions`:** This attribute MUST be recorded as an [AnyValue](https://opentelemetry.io/docs/specs/otel/common/#anyvalue) conforming to its [JSON schema](/model/gen-ai/gen-ai-system-instructions.json).
 
 The following attributes can be important for making sampling decisions
 and SHOULD be provided **at span creation time** (if provided at all):
@@ -371,9 +369,7 @@ input messages.
 See [Recording content on attributes](/docs/gen-ai/gen-ai-spans.md#recording-content-on-attributes)
 section for more details.
 
-Instrumentations MUST follow [JSON schema](/model/gen-ai/gen-ai-input-messages.json).
-
-When the attribute is recorded on events, it MUST be recorded in structured form. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
+This attribute MUST be recorded as an [AnyValue](https://opentelemetry.io/docs/specs/otel/common/#anyvalue) conforming to its [JSON schema](/model/gen-ai/gen-ai-input-messages.json).
 
 **[30] `gen_ai.input.messages_ref`:** The presence of this attribute does not indicate whether storing the
 content succeeded or whether the content remains available.
@@ -407,9 +403,7 @@ operation.
 See [Recording content on attributes](/docs/gen-ai/gen-ai-spans.md#recording-content-on-attributes)
 section for more details.
 
-Instrumentations MUST follow [JSON schema](/model/gen-ai/gen-ai-output-messages.json).
-
-When the attribute is recorded on events, it MUST be recorded in structured form. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
+This attribute MUST be recorded as an [AnyValue](https://opentelemetry.io/docs/specs/otel/common/#anyvalue) conforming to its [JSON schema](/model/gen-ai/gen-ai-output-messages.json).
 
 **[32] `gen_ai.output.messages_ref`:** The presence of this attribute does not indicate whether storing the
 content succeeded or whether the content remains available.
@@ -438,9 +432,7 @@ system instructions.
 See [Recording content on attributes](/docs/gen-ai/gen-ai-spans.md#recording-content-on-attributes)
 section for more details.
 
-Instrumentations MUST follow [JSON schema](/model/gen-ai/gen-ai-system-instructions.json).
-
-When the attribute is recorded on events, it MUST be recorded in structured form. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
+This attribute MUST be recorded as an [AnyValue](https://opentelemetry.io/docs/specs/otel/common/#anyvalue) conforming to its [JSON schema](/model/gen-ai/gen-ai-system-instructions.json).
 
 **[34] `gen_ai.system_instructions_ref`:** The presence of this attribute does not indicate whether storing the
 content succeeded or whether the content remains available.
@@ -462,9 +454,7 @@ Since this attribute could be large, it's NOT RECOMMENDED to populate
 non-required properties by default. Instrumentations MAY provide a way
 to enable populating optional properties.
 
-Instrumentations MUST follow [JSON schema](/model/gen-ai/gen-ai-tool-definitions.json).
-
-When the attribute is recorded on events, it MUST be recorded in structured form. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
+This attribute MUST be recorded as an [AnyValue](https://opentelemetry.io/docs/specs/otel/common/#anyvalue) conforming to its [JSON schema](/model/gen-ai/gen-ai-tool-definitions.json).
 
 **[36] `gen_ai.tool.definitions_ref`:** The presence of this attribute does not indicate whether storing the
 content succeeded or whether the content remains available.
@@ -682,9 +672,7 @@ input messages.
 See [Recording content on attributes](/docs/gen-ai/gen-ai-spans.md#recording-content-on-attributes)
 section for more details.
 
-Instrumentations MUST follow [JSON schema](/model/gen-ai/gen-ai-input-messages.json).
-
-When the attribute is recorded on events, it MUST be recorded in structured form. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
+This attribute MUST be recorded as an [AnyValue](https://opentelemetry.io/docs/specs/otel/common/#anyvalue) conforming to its [JSON schema](/model/gen-ai/gen-ai-input-messages.json).
 
 **[13] `gen_ai.input.messages_ref`:** The presence of this attribute does not indicate whether storing the
 content succeeded or whether the content remains available.
@@ -718,9 +706,7 @@ operation.
 See [Recording content on attributes](/docs/gen-ai/gen-ai-spans.md#recording-content-on-attributes)
 section for more details.
 
-Instrumentations MUST follow [JSON schema](/model/gen-ai/gen-ai-output-messages.json).
-
-When the attribute is recorded on events, it MUST be recorded in structured form. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
+This attribute MUST be recorded as an [AnyValue](https://opentelemetry.io/docs/specs/otel/common/#anyvalue) conforming to its [JSON schema](/model/gen-ai/gen-ai-output-messages.json).
 
 **[15] `gen_ai.output.messages_ref`:** The presence of this attribute does not indicate whether storing the
 content succeeded or whether the content remains available.
@@ -749,9 +735,7 @@ system instructions.
 See [Recording content on attributes](/docs/gen-ai/gen-ai-spans.md#recording-content-on-attributes)
 section for more details.
 
-Instrumentations MUST follow [JSON schema](/model/gen-ai/gen-ai-system-instructions.json).
-
-When the attribute is recorded on events, it MUST be recorded in structured form. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
+This attribute MUST be recorded as an [AnyValue](https://opentelemetry.io/docs/specs/otel/common/#anyvalue) conforming to its [JSON schema](/model/gen-ai/gen-ai-system-instructions.json).
 
 **[17] `gen_ai.system_instructions_ref`:** The presence of this attribute does not indicate whether storing the
 content succeeded or whether the content remains available.
@@ -773,9 +757,7 @@ Since this attribute could be large, it's NOT RECOMMENDED to populate
 non-required properties by default. Instrumentations MAY provide a way
 to enable populating optional properties.
 
-Instrumentations MUST follow [JSON schema](/model/gen-ai/gen-ai-tool-definitions.json).
-
-When the attribute is recorded on events, it MUST be recorded in structured form. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
+This attribute MUST be recorded as an [AnyValue](https://opentelemetry.io/docs/specs/otel/common/#anyvalue) conforming to its [JSON schema](/model/gen-ai/gen-ai-tool-definitions.json).
 
 **[19] `gen_ai.tool.definitions_ref`:** The presence of this attribute does not indicate whether storing the
 content succeeded or whether the content remains available.
@@ -928,9 +910,7 @@ input messages.
 See [Recording content on attributes](/docs/gen-ai/gen-ai-spans.md#recording-content-on-attributes)
 section for more details.
 
-Instrumentations MUST follow [JSON schema](/model/gen-ai/gen-ai-input-messages.json).
-
-When the attribute is recorded on events, it MUST be recorded in structured form. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
+This attribute MUST be recorded as an [AnyValue](https://opentelemetry.io/docs/specs/otel/common/#anyvalue) conforming to its [JSON schema](/model/gen-ai/gen-ai-input-messages.json).
 
 **[7] `gen_ai.output.messages`:** Each message represents a single output choice/candidate generated by
 the model. Each message corresponds to exactly one generation
@@ -953,9 +933,7 @@ operation.
 See [Recording content on attributes](/docs/gen-ai/gen-ai-spans.md#recording-content-on-attributes)
 section for more details.
 
-Instrumentations MUST follow [JSON schema](/model/gen-ai/gen-ai-output-messages.json).
-
-When the attribute is recorded on events, it MUST be recorded in structured form. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
+This attribute MUST be recorded as an [AnyValue](https://opentelemetry.io/docs/specs/otel/common/#anyvalue) conforming to its [JSON schema](/model/gen-ai/gen-ai-output-messages.json).
 
 The following attributes can be important for making sampling decisions
 and SHOULD be provided **at span creation time** (if provided at all):
@@ -1153,9 +1131,7 @@ It's expected to be an object - in case a serialized string is available
 to the instrumentation, the instrumentation SHOULD do the best effort to
 deserialize it to an object.
 
-Instrumentations MUST follow [JSON schema](/model/gen-ai/gen-ai-tool-call-arguments.json).
-
-When the attribute is recorded on events, it MUST be recorded in structured form. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
+This attribute MUST be recorded as an [AnyValue](https://opentelemetry.io/docs/specs/otel/common/#anyvalue) conforming to its [JSON schema](/model/gen-ai/gen-ai-tool-call-arguments.json).
 
 **[11] `gen_ai.tool.call.result`:**
 
@@ -1166,9 +1142,7 @@ It's expected to be an object - in case a serialized string is available
 to the instrumentation, the instrumentation SHOULD do the best effort to
 deserialize it to an object.
 
-Instrumentations MUST follow [JSON schema](/model/gen-ai/gen-ai-tool-call-result.json).
-
-When the attribute is recorded on events, it MUST be recorded in structured form. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
+This attribute MUST be recorded as an [AnyValue](https://opentelemetry.io/docs/specs/otel/common/#anyvalue) conforming to its [JSON schema](/model/gen-ai/gen-ai-tool-call-result.json).
 
 The following attributes can be important for making sampling decisions
 and SHOULD be provided **at span creation time** (if provided at all):
@@ -1323,9 +1297,7 @@ It's expected to be an object - in case a serialized string is available
 to the instrumentation, the instrumentation SHOULD do the best effort to
 deserialize it to an object.
 
-Instrumentations MUST follow [JSON schema](/model/gen-ai/gen-ai-tool-call-arguments.json).
-
-When the attribute is recorded on events, it MUST be recorded in structured form. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
+This attribute MUST be recorded as an [AnyValue](https://opentelemetry.io/docs/specs/otel/common/#anyvalue) conforming to its [JSON schema](/model/gen-ai/gen-ai-tool-call-arguments.json).
 
 **[11] `gen_ai.tool.call.result`:**
 
@@ -1336,9 +1308,7 @@ It's expected to be an object - in case a serialized string is available
 to the instrumentation, the instrumentation SHOULD do the best effort to
 deserialize it to an object.
 
-Instrumentations MUST follow [JSON schema](/model/gen-ai/gen-ai-tool-call-result.json).
-
-When the attribute is recorded on events, it MUST be recorded in structured form. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
+This attribute MUST be recorded as an [AnyValue](https://opentelemetry.io/docs/specs/otel/common/#anyvalue) conforming to its [JSON schema](/model/gen-ai/gen-ai-tool-call-result.json).
 
 The following attributes can be important for making sampling decisions
 and SHOULD be provided **at span creation time** (if provided at all):
@@ -1479,9 +1449,7 @@ It's expected to be an object - in case a serialized string is available
 to the instrumentation, the instrumentation SHOULD do the best effort to
 deserialize it to an object.
 
-Instrumentations MUST follow [JSON schema](/model/gen-ai/gen-ai-tool-call-arguments.json).
-
-When the attribute is recorded on events, it MUST be recorded in structured form. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
+This attribute MUST be recorded as an [AnyValue](https://opentelemetry.io/docs/specs/otel/common/#anyvalue) conforming to its [JSON schema](/model/gen-ai/gen-ai-tool-call-arguments.json).
 
 **[11] `gen_ai.tool.call.result`:**
 
@@ -1492,9 +1460,7 @@ It's expected to be an object - in case a serialized string is available
 to the instrumentation, the instrumentation SHOULD do the best effort to
 deserialize it to an object.
 
-Instrumentations MUST follow [JSON schema](/model/gen-ai/gen-ai-tool-call-result.json).
-
-When the attribute is recorded on events, it MUST be recorded in structured form. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
+This attribute MUST be recorded as an [AnyValue](https://opentelemetry.io/docs/specs/otel/common/#anyvalue) conforming to its [JSON schema](/model/gen-ai/gen-ai-tool-call-result.json).
 
 The following attributes can be important for making sampling decisions
 and SHOULD be provided **at span creation time** (if provided at all):
@@ -1671,9 +1637,7 @@ It's expected to be an object - in case a serialized string is available
 to the instrumentation, the instrumentation SHOULD do the best effort to
 deserialize it to an object.
 
-Instrumentations MUST follow [JSON schema](/model/gen-ai/gen-ai-tool-call-arguments.json).
-
-When the attribute is recorded on events, it MUST be recorded in structured form. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
+This attribute MUST be recorded as an [AnyValue](https://opentelemetry.io/docs/specs/otel/common/#anyvalue) conforming to its [JSON schema](/model/gen-ai/gen-ai-tool-call-arguments.json).
 
 **[18] `gen_ai.tool.call.result`:**
 
@@ -1684,9 +1648,7 @@ It's expected to be an object - in case a serialized string is available
 to the instrumentation, the instrumentation SHOULD do the best effort to
 deserialize it to an object.
 
-Instrumentations MUST follow [JSON schema](/model/gen-ai/gen-ai-tool-call-result.json).
-
-When the attribute is recorded on events, it MUST be recorded in structured form. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
+This attribute MUST be recorded as an [AnyValue](https://opentelemetry.io/docs/specs/otel/common/#anyvalue) conforming to its [JSON schema](/model/gen-ai/gen-ai-tool-call-result.json).
 
 The following attributes can be important for making sampling decisions
 and SHOULD be provided **at span creation time** (if provided at all):

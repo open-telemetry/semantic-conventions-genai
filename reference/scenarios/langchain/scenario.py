@@ -1,7 +1,6 @@
 """Reference implementation for LangChain retrieval, planning, tool and workflow (LangGraph) runs."""
 
 import asyncio
-import json
 import os
 from typing import TypedDict
 
@@ -49,15 +48,13 @@ async def agent_node(state: GraphState) -> GraphState:
     with _reference_tracer.start_as_current_span(
         f"invoke_agent {AGENT_NAME}", attributes=agent_span_attributes
     ) as agent_span:
+        agent_span.set_attribute("gen_ai.system_instructions", [{"type": "text", "content": AGENT_SYSTEM_PROMPT}])
         agent_span.set_attribute(
-            "gen_ai.system_instructions", json.dumps([{"type": "text", "content": AGENT_SYSTEM_PROMPT}])
-        )
-        agent_span.set_attribute(
-            "gen_ai.input.messages", json.dumps([{"role": "user", "parts": [{"type": "text", "content": input_text}]}])
+            "gen_ai.input.messages", [{"role": "user", "parts": [{"type": "text", "content": input_text}]}]
         )
         agent_span.set_attribute(
             "gen_ai.tool.definitions",
-            json.dumps([{"type": "function", "name": get_weather.name, "description": get_weather.description}]),
+            [{"type": "function", "name": get_weather.name, "description": get_weather.description}],
         )
 
         # LangChain delegates the model call to the underlying LLM client (openai),
@@ -76,7 +73,7 @@ async def agent_node(state: GraphState) -> GraphState:
             agent_span.set_attribute("gen_ai.usage.output_tokens", usage["output_tokens"])
         agent_span.set_attribute(
             "gen_ai.output.messages",
-            json.dumps([{"role": "assistant", "parts": [{"type": "text", "content": final_message.text()}]}]),
+            [{"role": "assistant", "parts": [{"type": "text", "content": final_message.text()}]}],
         )
         return {"messages": state["messages"] + [final_message.text()]}
 
@@ -121,15 +118,13 @@ def run_retrieval_reference():
         documents = retriever.invoke(query_text)
         span.set_attribute(
             "gen_ai.retrieval.documents",
-            json.dumps(
-                [
-                    {
-                        "content": document.page_content,
-                        "source_id": document.metadata.get("source_id"),
-                    }
-                    for document in documents
-                ]
-            ),
+            [
+                {
+                    "content": document.page_content,
+                    "source_id": document.metadata.get("source_id"),
+                }
+                for document in documents
+            ],
         )
         print(f"    -> {documents[0].page_content[:60]}")
 
@@ -209,8 +204,9 @@ def run_execute_tool_reference():
         f"execute_tool {get_weather.name}", attributes=tool_span_attributes
     ) as tool_span:
         tool_span.set_attribute("gen_ai.tool.call.id", tool_call["id"])
-        tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps(tool_call["args"]))
+        tool_span.set_attribute("gen_ai.tool.call.arguments", tool_call["args"])
         tool_message = get_weather.invoke(tool_call)
+        # TODO: Determine how to represent this string result in the object-only schema.
         tool_span.set_attribute("gen_ai.tool.call.result", tool_message.content)
     print(f"    -> {tool_message.content[:60]}")
 
@@ -249,7 +245,7 @@ def run_command_execution_reference():
         ) as tool_span:
             tool_span.set_attribute("gen_ai.tool.description", shell_tool.description)
             tool_span.set_attribute("gen_ai.tool.call.id", runtime.tool_call_id)
-            tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps({"command": command}))
+            tool_span.set_attribute("gen_ai.tool.call.arguments", {"command": command})
             tool_message = run_shell(runtime=runtime, command=command, restart=restart)
             # `direct`: the middleware reports the status the command exited
             # with on the artifact of the tool message it builds. It is None
@@ -257,6 +253,7 @@ def run_command_execution_reference():
             exit_code = tool_message.artifact.get("exit_code")
             if exit_code is not None:
                 tool_span.set_attribute("process.exit.code", exit_code)
+            # TODO: Determine how to represent this string result in the object-only schema.
             tool_span.set_attribute("gen_ai.tool.call.result", tool_message.content)
             return tool_message
 
@@ -296,7 +293,7 @@ async def run_workflow_reference():
     ) as workflow_span:
         workflow_span.set_attribute("gen_ai.workflow.name", workflow_name)
         workflow_span.set_attribute(
-            "gen_ai.input.messages", json.dumps([{"role": "user", "parts": [{"type": "text", "content": input_text}]}])
+            "gen_ai.input.messages", [{"role": "user", "parts": [{"type": "text", "content": input_text}]}]
         )
 
         # The graph coordinates an agent node and a formatting node; the agent
@@ -309,14 +306,12 @@ async def run_workflow_reference():
         state = await graph.ainvoke({"messages": [input_text]}, config={"run_name": workflow_name})
 
         final_output = state["messages"][-1]
-        output_messages = json.dumps(
-            [
-                {
-                    "role": "assistant",
-                    "parts": [{"type": "text", "content": str(final_output)}],
-                }
-            ]
-        )
+        output_messages = [
+            {
+                "role": "assistant",
+                "parts": [{"type": "text", "content": str(final_output)}],
+            }
+        ]
         workflow_span.set_attribute("gen_ai.output.messages", output_messages)
         print(f"    -> {final_output[:60]}")
 

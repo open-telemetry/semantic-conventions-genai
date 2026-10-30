@@ -1,6 +1,5 @@
 """Reference implementation for Azure AI Inference."""
 
-import json
 import os
 import time
 
@@ -102,18 +101,14 @@ def run_chat_reference(client):
             "gen_ai.request.model": request_model,
             "gen_ai.response.id": resp.id,
             "gen_ai.response.model": resp.model,
-            "gen_ai.input.messages": json.dumps(
-                [{"role": "user", "parts": [{"type": "text", "content": user_content}]}]
-            ),
-            "gen_ai.output.messages": json.dumps(
-                [
-                    {
-                        "role": "assistant",
-                        "parts": [{"type": "text", "content": c.message.content}],
-                    }
-                    for c in resp.choices
-                ]
-            ),
+            "gen_ai.input.messages": [{"role": "user", "parts": [{"type": "text", "content": user_content}]}],
+            "gen_ai.output.messages": [
+                {
+                    "role": "assistant",
+                    "parts": [{"type": "text", "content": c.message.content}],
+                }
+                for c in resp.choices
+            ],
         }
         event_attrs["gen_ai.response.finish_reasons"] = finish_reasons
         if resp.usage:
@@ -171,16 +166,14 @@ def run_chat_tool_call_reference(client):
     ) as span:
         span.set_attribute(
             "gen_ai.tool.definitions",
-            json.dumps(
-                [
-                    {
-                        "type": "function",
-                        "name": tool.function.name,
-                        "description": tool.function.description,
-                        "parameters": tool.function.parameters,
-                    }
-                ]
-            ),
+            [
+                {
+                    "type": "function",
+                    "name": tool.function.name,
+                    "description": tool.function.description,
+                    "parameters": tool.function.parameters,
+                }
+            ],
         )
         resp = client.complete(
             model=request_model,

@@ -1,7 +1,5 @@
 """Reference implementation for Haystack retrieval."""
 
-import json
-
 from opentelemetry.trace import SpanKind
 from reference_shared import flush_and_shutdown, reference_tracer, setup_otel
 
@@ -42,17 +40,15 @@ def run_retrieval():
         documents = result["documents"]
         span.set_attribute(
             "gen_ai.retrieval.documents",
-            json.dumps(
-                [
-                    {
-                        "id": getattr(document, "id", None),
-                        "content": document.content,
-                        "title": document.meta.get("title"),
-                        "source_id": document.meta.get("source_id"),
-                    }
-                    for document in documents
-                ]
-            ),
+            [
+                {
+                    "id": getattr(document, "id", None),
+                    "content": document.content,
+                    "title": document.meta.get("title"),
+                    "source_id": document.meta.get("source_id"),
+                }
+                for document in documents
+            ],
         )
         print(f"    -> {documents[0].content[:60]}")
 
