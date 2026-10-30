@@ -122,7 +122,10 @@ events:
       `gen_ai.agent.execution.id` as the suspended segment. When resumption
       continues within the same still-open span, instrumentations SHOULD NOT
       record the `resumed_from` pair. The two attributes MUST be recorded
-      together or not at all.
+      together or not at all. When the segment continues from a checkpoint
+      taken at a pause boundary, recording the pause id lets a consumer
+      identify the pause without retrieving the `gen_ai.agent.checkpointed`
+      record.
     stability: development
     attributes:
       - ref: gen_ai.agent.execution.id
@@ -133,6 +136,9 @@ events:
       - ref: gen_ai.agent.resumed_from.id
         requirement_level:
           conditionally_required: When the resumed work begins a new active execution segment.
+      - ref: gen_ai.agent.pause.id
+        requirement_level:
+          recommended: When `gen_ai.agent.resumed_from.type` is `checkpoint` and that checkpoint was taken at a pause boundary.
       - ref: gen_ai.agent.id
         requirement_level: recommended
       - ref: gen_ai.agent.name
