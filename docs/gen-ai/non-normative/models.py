@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import argparse
 import json
+from base64 import b64decode, b64encode
 from enum import StrEnum
 from pathlib import Path
 from typing import Annotated, Any, List, Literal, Optional, Union, get_args
@@ -33,6 +34,10 @@ from pydantic import (
     GetCoreSchemaHandler,
     GetJsonSchemaHandler,
     RootModel,
+    ValidationInfo,
+    WithJsonSchema,
+    field_serializer,
+    field_validator,
 )
 from pydantic_core import core_schema
 
@@ -204,9 +209,22 @@ class BlobPart(BaseModel):
     modality: Union[Modality, str] = Field(
         description="The general modality of the data if it is known. Instrumentations SHOULD also set the mimeType field if the specific type is known."
     )
-    content: bytes = Field(
+    content: Annotated[
+        bytes, WithJsonSchema({"type": "string", "contentEncoding": "base64"})
+    ] = Field(
         description="Raw bytes of the attached data. This field SHOULD be encoded as a base64 string when serialized to JSON."
     )
+
+    @field_validator("content")
+    @classmethod
+    def decode_json_content(cls, content: bytes, info: ValidationInfo) -> bytes:
+        if info.mode == "json":
+            return b64decode(content, validate=True)
+        return content
+
+    @field_serializer("content", when_used="json")
+    def encode_json_content(self, content: bytes) -> str:
+        return b64encode(content).decode("ascii")
 
 
 class FilePart(BaseModel):
