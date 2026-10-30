@@ -78,6 +78,44 @@ attributes:
       [versioning](https://a2a-protocol.org/latest/specification/#36-versioning).
     examples: ["1.0"]
     stability: development
+  - key: a2a.protocol.binding
+    type:
+      members:
+        - id: jsonrpc
+          value: JSONRPC
+          brief: JSON-RPC 2.0 over HTTP.
+          stability: development
+        - id: grpc
+          value: GRPC
+          brief: gRPC.
+          stability: development
+        - id: http_json
+          value: HTTP+JSON
+          brief: HTTP+JSON/REST.
+          stability: development
+    brief: The A2A protocol binding used.
+    note: >
+      Corresponds to the `protocolBinding` of the selected Agent Card interface.
+      See the A2A specification for
+      [AgentInterface](https://a2a-protocol.org/latest/specification/#446-agentinterface)
+      and
+      [protocol bindings](https://a2a-protocol.org/latest/specification/#5-protocol-binding-requirements-and-interoperability).
+    stability: development
+  - key: a2a.operation.return_immediately
+    type: boolean
+    brief: >
+      Whether the client requested the `SendMessage` operation to return
+      immediately instead of waiting for the task to reach a terminal or
+      interrupted state.
+    note: >
+      Corresponds to the `returnImmediately` field of the A2A request
+      `SendMessageConfiguration`. Instrumentation SHOULD record the effective
+      value: when the request does not set the field, record the protocol
+      default, `false`.
+      See the A2A specification for
+      [SendMessageConfiguration](https://a2a-protocol.org/latest/specification/#322-sendmessageconfiguration).
+    examples: [true, false]
+    stability: development
   - key: a2a.tenant
     type: string
     brief: The opaque routing identifier of the target [A2A tenant](https://github.com/a2aproject/A2A/blob/main/docs/topics/multi-tenancy.md).

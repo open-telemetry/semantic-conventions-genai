@@ -8,6 +8,7 @@
       "a2a.task.id",
       "a2a.task.state",
       "a2a.tenant",
+      "error.type",
       "gen_ai.agent.description",
       "gen_ai.agent.name",
       "gen_ai.agent.version",
@@ -35,7 +36,36 @@
     ]
   },
   "events": {},
-  "metrics": {},
+  "metrics": {
+    "a2a.client.active_operations": [
+      "a2a.method.name",
+      "a2a.protocol.binding",
+      "a2a.protocol.version",
+      "server.address",
+      "server.port"
+    ],
+    "a2a.client.operation.duration": [
+      "a2a.method.name",
+      "a2a.operation.return_immediately",
+      "a2a.protocol.binding",
+      "a2a.protocol.version",
+      "error.type",
+      "server.address",
+      "server.port"
+    ],
+    "a2a.server.active_operations": [
+      "a2a.method.name",
+      "a2a.protocol.binding",
+      "a2a.protocol.version"
+    ],
+    "a2a.server.operation.duration": [
+      "a2a.method.name",
+      "a2a.operation.return_immediately",
+      "a2a.protocol.binding",
+      "a2a.protocol.version",
+      "error.type"
+    ]
+  },
   "findings": [],
   "entities": {}
 }
