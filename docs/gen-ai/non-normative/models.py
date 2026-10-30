@@ -204,9 +204,7 @@ class BlobPart(BaseModel):
     modality: Union[Modality, str] = Field(
         description="The general modality of the data if it is known. Instrumentations SHOULD also set the mimeType field if the specific type is known."
     )
-    content: bytes = Field(
-        description="Raw bytes of the attached data. This field SHOULD be encoded as a base64 string when serialized to JSON."
-    )
+    content: bytes = Field(description="Raw bytes of the attached data.")
 
 
 class FilePart(BaseModel):

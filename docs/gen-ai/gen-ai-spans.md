@@ -788,6 +788,12 @@ These attributes MUST be recorded as
 [AnyValue](https://opentelemetry.io/docs/specs/otel/common/#anyvalue) values
 conforming to their JSON schemas.
 
+The JSON schemas describe these attributes when serialized to JSON. Producers
+SHOULD use them as a reference for modeling values with language-specific
+types. For example, a property with `"format": "binary"` SHOULD be recorded as
+a byte array, not a string; it may be encoded during export per the
+[AnyValue](https://opentelemetry.io/docs/specs/otel/common/#anyvalue) mapping.
+
 Instrumentation MAY provide a configuration option allowing to truncate properties
 such as individual message contents, preserving JSON structure.
 
