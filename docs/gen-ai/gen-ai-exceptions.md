@@ -10,9 +10,38 @@ This document defines semantic conventions for recording exceptions on Generativ
 
 <!-- toc -->
 
+- [Recording exceptions](#recording-exceptions)
+- [Generative AI client inference exception](#generative-ai-client-inference-exception)
 - [Generative AI client operation exception](#generative-ai-client-operation-exception)
 
 <!-- tocstop -->
+
+## Recording exceptions
+
+GenAI operations follow the general [recording errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/recording-errors.md)
+guidance. When an operation fails due to an exception, instrumentation SHOULD
+record the exception as a log event correlated with the operation span using
+the span's trace and span identifiers.
+
+The failed operation span SHOULD have status `Error`.
+Its `error.type` and the `error.type` on corresponding metrics SHOULD be consistent
+when both signals are emitted, as defined by the general recording errors guidance.
+
+Instrumentation SHOULD NOT fabricate an exception event for an operation that
+returns an error code without an exception. The failure SHOULD still be recorded
+on the span and metrics according to their conventions.
+
+Exceptions handled internally by the library, including failures recovered by
+successful retries, SHOULD NOT be recorded as operation exception events.
+It is NOT RECOMMENDED to record the same exception more than once.
+Use the operation-specific exception event when one is defined, rather than also
+recording the broad client operation exception event.
+
+## Generative AI client inference exception
+
+The [`gen_ai.client.inference.exception`](client-inference.md#event-gen_aiclientinferenceexception)
+event describes exceptions from client inference operations, including `chat`,
+`generate_content`, and `text_completion`.
 
 ## Generative AI client operation exception
 
@@ -25,11 +54,12 @@ This document defines semantic conventions for recording exceptions on Generativ
 
 The event name MUST be `gen_ai.client.operation.exception`.
 
-This event represents an exception that occurred during a Generative AI client operation, such as API errors, rate limiting, model errors, timeouts, or other errors that prevent the operation from completing successfully.
+This event represents an exception that caused a Generative AI client operation other than inference to fail, such as API errors, rate limiting, model errors, timeouts, or other errors that prevent the operation from completing successfully.
 
-This event SHOULD be recorded when an exception occurs during Generative AI client operations.
+This event SHOULD follow the [exception recording guidance](/docs/gen-ai/gen-ai-exceptions.md#recording-exceptions).
+For inference operations, instrumentations SHOULD record `gen_ai.client.inference.exception` instead of this event.
 Instrumentations SHOULD set the severity to WARN (severity number 13) when recording this event.
-Instrumentations MAY provide a configuration option to populate exception events with the attributes captured on the corresponding Generative AI client span.
+Instrumentations MAY provide a configuration option to populate exception events with the attributes captured on the corresponding Generative AI client span. Copying content attributes MUST respect the [content capture configuration](/docs/gen-ai/gen-ai-spans.md#content-capture-configuration) for the destination event.
 
 **Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/signal-requirement-level.md).
 
