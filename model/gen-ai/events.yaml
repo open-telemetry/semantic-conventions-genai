@@ -70,11 +70,11 @@ events:
   - name: gen_ai.client.operation.exception
     requirement_level: recommended
     brief: >
-      This event represents an exception that caused a Generative AI client operation other than inference to fail,
+      This event represents an exception that occurred during a Generative AI client operation other than inference,
       such as API errors, rate limiting, model errors, timeouts, or other errors that prevent
       the operation from completing successfully.
     note: >
-      This event SHOULD follow the [exception recording guidance](/docs/gen-ai/gen-ai-exceptions.md#recording-exceptions).
+      This event SHOULD be recorded when an exception occurs during Generative AI client operations other than inference.
 
       For inference operations, instrumentations SHOULD record `gen_ai.client.inference.exception`
       instead of this event.
@@ -83,9 +83,6 @@ events:
 
       Instrumentations MAY provide a configuration option to populate exception events
       with the attributes captured on the corresponding Generative AI client span.
-      Copying content attributes MUST respect the
-      [content capture configuration](/docs/gen-ai/gen-ai-spans.md#content-capture-configuration)
-      for the destination event.
     stability: development
     attributes:
       - ref: exception.type

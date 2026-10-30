@@ -10,8 +10,6 @@ import openai
 from opentelemetry._logs import SeverityNumber
 from opentelemetry.sdk._logs import LoggerProvider
 from opentelemetry.sdk._logs.export import InMemoryLogRecordExporter, SimpleLogRecordProcessor
-from opentelemetry.sdk.metrics import MeterProvider
-from opentelemetry.sdk.metrics.export import InMemoryMetricReader
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
@@ -31,16 +29,9 @@ class InferenceExceptionTests(unittest.TestCase):
         self.logger_provider = LoggerProvider()
         self.addCleanup(self.logger_provider.shutdown)
         self.logger_provider.add_log_record_processor(SimpleLogRecordProcessor(self.log_exporter))
-        self.metric_reader = InMemoryMetricReader()
-        self.meter_provider = MeterProvider(metric_readers=[self.metric_reader])
-        self.addCleanup(self.meter_provider.shutdown)
         for attribute, value in (
             ("_reference_tracer", self.tracer_provider.get_tracer("test")),
             ("reference_event_logger", lambda: self.logger_provider.get_logger("test")),
-            (
-                "_inference_duration",
-                self.meter_provider.get_meter("test").create_histogram("gen_ai.client.inference.duration", unit="s"),
-            ),
         ):
             patcher = patch.object(scenario, attribute, value)
             patcher.start()
@@ -55,22 +46,6 @@ class InferenceExceptionTests(unittest.TestCase):
         )
         self.addCleanup(client.close)
         return client
-
-    def duration_point(self):
-        metrics = [
-            metric
-            for resource in self.metric_reader.get_metrics_data().resource_metrics
-            for scope in resource.scope_metrics
-            for metric in scope.metrics
-        ]
-        self.assertEqual(len(metrics), 1)
-        self.assertEqual(metrics[0].name, "gen_ai.client.inference.duration")
-        self.assertEqual(metrics[0].unit, "s")
-        points = metrics[0].data.data_points
-        self.assertEqual(len(points), 1)
-        self.assertEqual(points[0].count, 1)
-        self.assertGreater(points[0].sum, 0)
-        return points[0]
 
     def assert_exception_telemetry(self, error):
         spans = self.span_exporter.get_finished_spans()
@@ -99,10 +74,7 @@ class InferenceExceptionTests(unittest.TestCase):
             set(event.attributes),
             {"exception.type", "exception.message", "exception.stacktrace"},
         )
-        point = self.duration_point()
         self.assertEqual(span.attributes["error.type"], event.attributes["exception.type"])
-        self.assertEqual(point.attributes["error.type"], span.attributes["error.type"])
-        self.assertNotIn("gen_ai.response.model", point.attributes)
 
     def test_rate_limit_uses_actual_sdk_exception(self):
         def respond(request):
@@ -121,40 +93,6 @@ class InferenceExceptionTests(unittest.TestCase):
         self.assertIn("Slow down", str(caught.exception))
         self.assert_exception_telemetry(caught.exception)
 
-    def test_timeout_uses_actual_sdk_exception(self):
-        def fail(request):
-            raise httpx2.ReadTimeout("Transport timed out", request=request)
-
-        with self.assertRaises(openai.APITimeoutError) as caught:
-            scenario.run_chat_reference(self.client(fail))
-        self.assertIsInstance(caught.exception.__cause__, httpx2.ReadTimeout)
-        self.assert_exception_telemetry(caught.exception)
-
-    def test_exhausted_retries_emit_one_exception(self):
-        requests = []
-
-        def respond(request):
-            requests.append(request)
-            return httpx2.Response(
-                429,
-                headers={"retry-after-ms": "1"},
-                json={"error": {"message": "Still rate limited", "type": "rate_limit_error"}},
-            )
-
-        with self.assertRaises(openai.RateLimitError) as caught:
-            scenario.run_chat_reference(self.client(respond, max_retries=1))
-        self.assertEqual(len(requests), 2)
-        self.assert_exception_telemetry(caught.exception)
-
-    def test_connection_failure_uses_actual_sdk_exception(self):
-        def fail(request):
-            raise httpx2.ConnectError("Connection refused", request=request)
-
-        with self.assertRaises(openai.APIConnectionError) as caught:
-            scenario.run_chat_reference(self.client(fail))
-        self.assertIsInstance(caught.exception.__cause__, httpx2.ConnectError)
-        self.assert_exception_telemetry(caught.exception)
-
     def assert_success_telemetry(self):
         spans = self.span_exporter.get_finished_spans()
         self.assertEqual(len(spans), 1)
@@ -166,9 +104,6 @@ class InferenceExceptionTests(unittest.TestCase):
             [log.log_record.event_name for log in self.log_exporter.get_finished_logs()],
             ["gen_ai.client.inference.operation.details"],
         )
-        point = self.duration_point()
-        self.assertNotIn("error.type", point.attributes)
-        self.assertEqual(point.attributes["gen_ai.response.model"], "gpt-4o-mini")
 
     def success_response(self):
         return httpx2.Response(

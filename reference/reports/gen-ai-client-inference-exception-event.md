@@ -1,6 +1,6 @@
 # Client Inference Exception Event
 
-> **[Semantic Convention](../../docs/gen-ai/client-inference.md#event-gen_aiclientinferenceexception)**
+> **[Semantic Convention](../../docs/gen-ai/gen-ai-exceptions.md#generative-ai-client-inference-exception)**
 
 ## Conditionally Required
 
