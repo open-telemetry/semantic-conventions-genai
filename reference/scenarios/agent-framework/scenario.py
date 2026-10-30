@@ -5,10 +5,11 @@ import os
 import pathlib
 import subprocess
 import sys
+import time
 from typing import Annotated
 
 from opentelemetry import trace
-from reference_shared import flush_and_shutdown, inference_duration_view, setup_otel
+from reference_shared import flush_and_shutdown, inference_duration_view, reference_meter, setup_otel
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"] + "/v1"
 SKILLS_DIR = pathlib.Path(__file__).parent / "skills"
@@ -24,6 +25,24 @@ SKILL_TOOL_ENUMS = {
         "script_name": ["scripts/run_checks.py"],
     },
 }
+
+_reference_meter = reference_meter()
+
+_execute_tool_duration = _reference_meter.create_histogram(
+    "gen_ai.execute_tool.duration",
+    unit="s",
+    description="The duration of a single tool execution.",
+)
+_invoke_agent_tool_calls = _reference_meter.create_histogram(
+    "gen_ai.invoke_agent.tool_calls",
+    unit="{tool_call}",
+    description="The number of tool calls a GenAI agent makes during a single invocation.",
+)
+_invoke_agent_skill_loads = _reference_meter.create_histogram(
+    "gen_ai.invoke_agent.skill_loads",
+    unit="{tool_call}",
+    description="The number of skill-loading tool calls a GenAI agent makes during a single invocation.",
+)
 
 
 async def run_agent_tool_call():
@@ -201,16 +220,18 @@ async def run_skills():
     the model as three tools — `load_skill`, `read_skill_resource` and
     `run_skill_script` — so the framework's own tool loop runs each stage and
     its native `execute_tool` span is where the skill attributes belong. The
-    reference stamps them onto that span from inside the tool call, the same way
-    a framework's own instrumentation would.
+    reference stamps them onto that span from inside the tool call and times the
+    call for `gen_ai.execute_tool.duration`, as a framework's own instrumentation
+    would.
     """
     from agent_framework import Agent, SkillsProvider
     from agent_framework.observability import enable_sensitive_telemetry
-    from agent_framework.openai import OpenAIChatClient
+    from agent_framework.openai import OpenAIChatCompletionClient
 
     print("  [skills] SkillsProvider skill lifecycle (reference implementation)")
 
     enable_sensitive_telemetry(force=True)
+    tool_calls = {"count": 0, "skill_loads": 0}
 
     def run_script(skill, script, args=None):
         """Application-supplied runner for file-based skill scripts.
@@ -230,7 +251,7 @@ async def run_skills():
         return completed.stdout.strip()
 
     class _InstrumentedSkillsProvider(SkillsProvider):
-        """Adds `gen_ai.skill.*` to the framework's own `execute_tool` span.
+        """Adds `gen_ai.skill.*` to the framework's tool-execution telemetry.
 
         Overriding `_create_tools` is the provider's own extension point for the
         tool set it hands the model. `stage_tool` narrows that set to one tool
@@ -239,39 +260,69 @@ async def run_skills():
         """
 
         stage_tool: str | None = None
+        agent_name: str | None = None
+
+        async def before_run(self, *, agent, session, context, state):
+            # `direct`: the framework hands the provider the agent it runs for.
+            self.agent_name = agent.name
+            await super().before_run(agent=agent, session=session, context=context, state=state)
 
         def _create_tools(self, skills):
             def instrument(tool_name, func):
                 async def wrapper(**kwargs):
-                    span = trace.get_current_span()
-                    # `direct`: the model's call names the skill it operates on.
-                    skill_name = kwargs.get("skill_name")
-                    if skill_name:
-                        span.set_attribute("gen_ai.skill.name", skill_name)
-                    # `direct`: the provider resolved the skills for this run, so
-                    # each one's frontmatter and the folder it was read from are
-                    # in hand before the call runs.
-                    skill = self._find_skill(skills, skill_name) if isinstance(skill_name, str) else None
-                    if skill is not None:
-                        span.set_attribute("gen_ai.skill.description", skill.frontmatter.description)
-                        span.set_attribute("gen_ai.skill.source.uri", pathlib.Path(skill.path).as_uri())
-                    # `direct`: the resource the call names is a call argument,
-                    # and the provider names resources and scripts by their path
-                    # within the skill. `load_skill` names none.
-                    resource_name = kwargs.get("resource_name") or kwargs.get("script_name")
-                    if resource_name:
-                        span.set_attribute("gen_ai.skill.resource.name", resource_name)
-                    # The framework names the span `execute_tool {tool}`; the skill
-                    # refinements qualify it with what the call operates on. Only
-                    # `read_skill_resource` and `run_skill_script` name a resource,
-                    # and the skill name is never appended without one.
-                    if tool_name == SkillsProvider.LOAD_SKILL_TOOL_NAME:
+                    started = time.perf_counter()
+                    attributes = {"gen_ai.tool.name": tool_name, "gen_ai.tool.type": "function"}
+                    if self.agent_name:
+                        attributes["gen_ai.agent.name"] = self.agent_name
+                    try:
+                        span = trace.get_current_span()
+                        # `direct`: the model's call names the skill it operates on.
+                        skill_name = kwargs.get("skill_name")
                         if skill_name:
-                            span.update_name(f"execute_tool {tool_name} {skill_name}")
-                    elif resource_name:
-                        parts = ("execute_tool", tool_name, skill_name, resource_name)
-                        span.update_name(" ".join(p for p in parts if p))
-                    return await func(**kwargs)
+                            span.set_attribute("gen_ai.skill.name", skill_name)
+                        # `direct`: the provider resolved the skills for this run, so
+                        # each one's frontmatter and the folder it was read from are
+                        # in hand before the call runs.
+                        skill = self._find_skill(skills, skill_name) if isinstance(skill_name, str) else None
+                        if skill is not None:
+                            span.set_attribute("gen_ai.skill.description", skill.frontmatter.description)
+                            span.set_attribute("gen_ai.skill.source.uri", pathlib.Path(skill.path).as_uri())
+                        # `direct`: the resource the call names is a call argument,
+                        # and the provider names resources and scripts by their path
+                        # within the skill. `load_skill` names none.
+                        resource_name = kwargs.get("resource_name") or kwargs.get("script_name")
+                        if resource_name:
+                            span.set_attribute("gen_ai.skill.resource.name", resource_name)
+                        # The framework names the span `execute_tool {tool}`; the skill
+                        # refinements qualify it with what the call operates on. Only
+                        # `read_skill_resource` and `run_skill_script` name a resource,
+                        # and the skill name is never appended without one.
+                        if tool_name == SkillsProvider.LOAD_SKILL_TOOL_NAME:
+                            if skill_name:
+                                span.update_name(f"execute_tool {tool_name} {skill_name}")
+                        elif resource_name:
+                            parts = ("execute_tool", tool_name, skill_name, resource_name)
+                            span.update_name(" ".join(p for p in parts if p))
+                        if skill is not None:
+                            attributes["gen_ai.skill.name"] = skill_name
+                            # Set the resource name only if the skill has that resource or script.
+                            if tool_name == SkillsProvider.READ_SKILL_RESOURCE_TOOL_NAME:
+                                resolved = resource_name and await skill.get_resource(resource_name)
+                            elif tool_name == SkillsProvider.RUN_SKILL_SCRIPT_TOOL_NAME:
+                                resolved = resource_name and await skill.get_script(resource_name)
+                            else:
+                                resolved = None
+                            if resolved:
+                                attributes["gen_ai.skill.resource.name"] = resource_name
+                        return await func(**kwargs)
+                    except Exception as e:
+                        attributes["error.type"] = type(e).__qualname__
+                        raise
+                    finally:
+                        tool_calls["count"] += 1
+                        if tool_name == SkillsProvider.LOAD_SKILL_TOOL_NAME:
+                            tool_calls["skill_loads"] += 1
+                        _execute_tool_duration.record(time.perf_counter() - started, attributes)
 
                 return wrapper
 
@@ -307,8 +358,12 @@ async def run_skills():
     ]
     for prompt, stage_tool in stages:
         provider.stage_tool = stage_tool
+        tool_calls["count"] = 0
+        tool_calls["skill_loads"] = 0
+        # Chat completions client: the mock server never ends the Responses
+        # client's tool loop, which would repeat each stage's tool call.
         async with Agent(
-            client=OpenAIChatClient(model="gpt-4o-mini", base_url=MOCK_BASE_URL, api_key="mock-key"),
+            client=OpenAIChatCompletionClient(model="gpt-4o-mini", base_url=MOCK_BASE_URL, api_key="mock-key"),
             id="skill-agent",
             name="SkillAgent",
             description="Reviews code changes with Agent Skills.",
@@ -317,6 +372,8 @@ async def run_skills():
         ) as agent:
             result = await agent.run(prompt)
             print(f"    -> {result.text[:60]}")
+            _invoke_agent_tool_calls.record(tool_calls["count"], {"gen_ai.agent.name": agent.name})
+            _invoke_agent_skill_loads.record(tool_calls["skill_loads"], {"gen_ai.agent.name": agent.name})
 
 
 def main():

@@ -55,6 +55,17 @@
       "gen_ai.request.model",
       "gen_ai.response.model",
       "server.address"
+    ],
+    "gen_ai.execute_tool.duration": [
+      "gen_ai.agent.name",
+      "gen_ai.tool.name",
+      "gen_ai.tool.type"
+    ],
+    "gen_ai.invoke_agent.skill_loads": [
+      "gen_ai.agent.name"
+    ],
+    "gen_ai.invoke_agent.tool_calls": [
+      "gen_ai.agent.name"
     ]
   },
   "findings": [

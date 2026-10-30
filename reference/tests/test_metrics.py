@@ -15,6 +15,7 @@ from semconv_genai.semconv_model import entity_specs, metric_specs, span_specs
 
 _TOOL_CALLS = "gen_ai.invoke_agent.tool_calls"
 _INFERENCE_CALLS = "gen_ai.invoke_agent.inference_calls"
+_SKILL_LOADS = "gen_ai.invoke_agent.skill_loads"
 
 
 def test_metric_specs_expose_recommended_agent_name():
@@ -24,7 +25,7 @@ def test_metric_specs_expose_recommended_agent_name():
     # metrics (token usage, operation duration) are not dimensioned by
     # gen_ai.agent.name, so this checks the invoke_agent metrics specifically
     # rather than every tracked metric.
-    for name in (_INFERENCE_CALLS, _TOOL_CALLS):
+    for name in (_INFERENCE_CALLS, _TOOL_CALLS, _SKILL_LOADS):
         assert "gen_ai.agent.name" in specs[name].recommended, name
 
 
@@ -36,7 +37,7 @@ def test_metric_specs_are_named_as_the_registry_names_them():
 def test_committed_google_adk_metrics_round_trip():
     entries = {e.library: e for e in load_scenario_data_files()}
     adk = entries["google-adk"]
-    for name in (_INFERENCE_CALLS, _TOOL_CALLS):
+    for name in (_INFERENCE_CALLS, _TOOL_CALLS, _SKILL_LOADS):
         assert adk.metrics[name]["gen_ai.agent.name"] == "present", name
 
 

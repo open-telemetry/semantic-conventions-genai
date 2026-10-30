@@ -107,6 +107,8 @@ SEMCONV_DOC_LINKS: dict[str, str] = {
     "gen_ai.client.embeddings.operation.input_tokens": "../../docs/gen-ai/client-embeddings.md#metric-gen_aiclientembeddingsoperationinput_tokens",
     "gen_ai.invoke_agent.inference_calls": "../../docs/gen-ai/gen-ai-metrics.md#metric-gen_aiinvoke_agentinference_calls",
     "gen_ai.invoke_agent.tool_calls": "../../docs/gen-ai/gen-ai-metrics.md#metric-gen_aiinvoke_agenttool_calls",
+    "gen_ai.execute_tool.duration": "../../docs/gen-ai/gen-ai-metrics.md#metric-gen_aiexecute_toolduration",
+    "gen_ai.invoke_agent.skill_loads": "../../docs/gen-ai/gen-ai-metrics.md#metric-gen_aiinvoke_agentskill_loads",
 }
 
 

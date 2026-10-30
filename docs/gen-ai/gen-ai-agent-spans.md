@@ -1595,9 +1595,18 @@ The skill name SHOULD NOT be appended without the resource name.
 
 **[1] `gen_ai.operation.name`:** If one of the predefined values applies, but specific system uses a different name it's RECOMMENDED to document it in the semantic conventions for specific GenAI system and use system-specific name in the instrumentation. If a different name is not documented, instrumentation libraries SHOULD use applicable predefined value.
 
-**[2] `error.type`:** The `error.type` SHOULD match the error code returned by the Generative AI provider or the client library,
-the canonical name of exception that occurred, or another low-cardinality error identifier.
-Instrumentations SHOULD document the list of errors they report.
+**[2] `error.type`:** When the tool reports a single non-zero exit code and no other error,
+`error.type` SHOULD be set to the string representation of that exit
+code. Otherwise, it SHOULD be the canonical name of the exception that
+occurred or another low-cardinality error identifier.
+
+Some commands exit with a non-zero code for outcomes that are not
+errors. For example, `grep` exits with `1` when no lines match and with
+`2` when an error occurs. Instrumentations MAY use additional context,
+such as the known exit codes of common commands, to decide which exit
+codes are errors.
+
+Instrumentations SHOULD document how they populate `error.type`.
 
 **[3] `gen_ai.conversation.id`:** Instrumentations SHOULD populate conversation id when they have an identifier
 for the conversation readily available for a given operation, for example:
