@@ -1,0 +1,78 @@
+file_format: definition/2
+attribute_groups:
+  - id: a2a.operation.metrics.attributes
+    visibility: internal
+    attributes:
+      - ref: a2a.method.name
+        requirement_level: required
+      - ref: a2a.protocol.binding
+        requirement_level:
+          conditionally_required: If available.
+      - ref: a2a.protocol.version
+
+  - id: a2a.operation.duration.metrics.attributes
+    visibility: internal
+    attributes:
+      - ref_group: a2a.operation.metrics.attributes
+      - ref_group: a2a.error.attributes
+      - ref: a2a.operation.return_immediately
+        requirement_level:
+          conditionally_required: If `a2a.method.name` is `SendMessage`.
+
+metrics:
+  - name: a2a.client.operation.duration
+    requirement_level: recommended
+    instrument: histogram
+    unit: s
+    brief: Duration of an A2A operation as observed by the client.
+    note: |
+      Measured from when the client sends the request until the response is
+      received for non-streaming calls, or until the last event of the response
+      stream is consumed for streaming calls.
+
+      When this metric is reported alongside an `a2a.client` span, the metric
+      value SHOULD be the same as the span duration.
+    stability: development
+    attributes:
+      - ref_group: a2a.operation.duration.metrics.attributes
+      - ref_group: a2a.client.address_and_port.attributes
+
+  - name: a2a.server.operation.duration
+    requirement_level: recommended
+    instrument: histogram
+    unit: s
+    brief: Duration of an A2A operation as observed by the server.
+    note: |
+      Measured from when the server starts handling the request until the
+      response is produced for non-streaming calls, or until the last event of
+      the response stream is sent for streaming calls.
+    stability: development
+    attributes:
+      - ref_group: a2a.operation.duration.metrics.attributes
+
+  - name: a2a.client.active_operations
+    requirement_level: recommended
+    instrument: updowncounter
+    unit: "{operation}"
+    brief: Number of A2A operations in progress on the client.
+    note: |
+      Incremented when the client sends the request and decremented when the
+      operation ends, following the same boundaries as
+      `a2a.client.operation.duration`.
+    stability: development
+    attributes:
+      - ref_group: a2a.operation.metrics.attributes
+      - ref_group: a2a.client.address_and_port.attributes
+
+  - name: a2a.server.active_operations
+    requirement_level: recommended
+    instrument: updowncounter
+    unit: "{operation}"
+    brief: Number of A2A operations being processed by the server.
+    note: |
+      Incremented when the server starts handling the request and decremented
+      when the operation ends, following the same boundaries as
+      `a2a.server.operation.duration`.
+    stability: development
+    attributes:
+      - ref_group: a2a.operation.metrics.attributes

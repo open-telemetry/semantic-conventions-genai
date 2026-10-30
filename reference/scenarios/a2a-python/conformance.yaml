@@ -33,6 +33,12 @@ scenarios:
           type: a2a.client
       - match:
           attributes:
+            a2a.method.name: GetTask
+            error.type: TASK_NOT_FOUND
+          kind: client
+          type: a2a.client
+      - match:
+          attributes:
             a2a.method.name: SendMessage
             a2a.tenant: billing
           kind: server

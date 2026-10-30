@@ -69,6 +69,10 @@ _METRICS = {
     "gen_ai.client.embeddings.operation.input_tokens": "Client Embeddings Operation Input Tokens",
     "gen_ai.invoke_agent.inference_calls": "Invoke Agent Inference Calls",
     "gen_ai.invoke_agent.tool_calls": "Invoke Agent Tool Calls",
+    "a2a.client.operation.duration": "A2A Client Operation Duration",
+    "a2a.server.operation.duration": "A2A Server Operation Duration",
+    "a2a.client.active_operations": "A2A Client Active Operations",
+    "a2a.server.active_operations": "A2A Server Active Operations",
 }
 
 _ENTITIES = {

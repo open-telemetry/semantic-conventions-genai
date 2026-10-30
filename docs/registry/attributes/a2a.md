@@ -10,9 +10,11 @@
 | <a id="a2a-message-id" href="#a2a-message-id">`a2a.message.id`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The unique identifier of the A2A message. [1] | `msg-user-1234` |
 | <a id="a2a-message-reference-task-ids" href="#a2a-message-reference-task-ids">`a2a.message.reference_task_ids`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string[] | Task IDs referenced by the A2A request message. [2] | `["task-abc-5678"]` |
 | <a id="a2a-method-name" href="#a2a-method-name">`a2a.method.name`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The name of the A2A request method. [3] | `SendMessage`; `SendStreamingMessage`; `GetTask` |
-| <a id="a2a-protocol-version" href="#a2a-protocol-version">`a2a.protocol.version`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The version of the A2A protocol used. [4] | `1.0` |
-| <a id="a2a-task-id" href="#a2a-task-id">`a2a.task.id`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The unique identifier of an A2A task. [5] | `task-5f2a7c7d9f8e4d2a` |
-| <a id="a2a-task-state" href="#a2a-task-state">`a2a.task.state`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The state of an A2A task. [6] | `TASK_STATE_SUBMITTED`; `TASK_STATE_WORKING`; `TASK_STATE_INPUT_REQUIRED` |
+| <a id="a2a-operation-return-immediately" href="#a2a-operation-return-immediately">`a2a.operation.return_immediately`</a> | ![Development](https://img.shields.io/badge/-development-blue) | boolean | Whether the client requested the `SendMessage` operation to return immediately instead of waiting for the task to reach a terminal or interrupted state. [4] | `true`; `false` |
+| <a id="a2a-protocol-binding" href="#a2a-protocol-binding">`a2a.protocol.binding`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The A2A protocol binding used. [5] | `JSONRPC`; `GRPC`; `HTTP+JSON` |
+| <a id="a2a-protocol-version" href="#a2a-protocol-version">`a2a.protocol.version`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The version of the A2A protocol used. [6] | `1.0` |
+| <a id="a2a-task-id" href="#a2a-task-id">`a2a.task.id`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The unique identifier of an A2A task. [7] | `task-5f2a7c7d9f8e4d2a` |
+| <a id="a2a-task-state" href="#a2a-task-state">`a2a.task.state`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The state of an A2A task. [8] | `TASK_STATE_SUBMITTED`; `TASK_STATE_WORKING`; `TASK_STATE_INPUT_REQUIRED` |
 | <a id="a2a-tenant" href="#a2a-tenant">`a2a.tenant`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The opaque routing identifier of the target [A2A tenant](https://github.com/a2aproject/A2A/blob/main/docs/topics/multi-tenancy.md). | `billing` |
 
 
@@ -22,11 +24,15 @@
 
 **[3] `a2a.method.name`:** This attribute records the logical A2A operation name defined by the protocol. For example, `SendMessage` is the A2A operation name, while HTTP+JSON maps it to `POST /message:send`. See the A2A specification for [core operations](https://a2a-protocol.org/latest/specification/#31-core-operations) and [method mappings](https://a2a-protocol.org/latest/specification/#53-method-mapping-reference).
 
-**[4] `a2a.protocol.version`:** See the A2A specification for [versioning](https://a2a-protocol.org/latest/specification/#36-versioning).
+**[4] `a2a.operation.return_immediately`:** Corresponds to the `returnImmediately` field of the A2A request `SendMessageConfiguration`. Instrumentation SHOULD record the effective value: when the request does not set the field, record the protocol default, `false`. See the A2A specification for [SendMessageConfiguration](https://a2a-protocol.org/latest/specification/#322-sendmessageconfiguration).
 
-**[5] `a2a.task.id`:** See the A2A specification for the [Task](https://a2a-protocol.org/latest/specification/#411-task) object and [task identifier semantics](https://a2a-protocol.org/latest/specification/#342-task-identifier-semantics).
+**[5] `a2a.protocol.binding`:** Corresponds to the `protocolBinding` of the selected Agent Card interface. See the A2A specification for [AgentInterface](https://a2a-protocol.org/latest/specification/#446-agentinterface) and [protocol bindings](https://a2a-protocol.org/latest/specification/#5-protocol-binding-requirements-and-interoperability).
 
-**[6] `a2a.task.state`:** See the A2A specification for [TaskState](https://a2a-protocol.org/latest/specification/#413-taskstate).
+**[6] `a2a.protocol.version`:** See the A2A specification for [versioning](https://a2a-protocol.org/latest/specification/#36-versioning).
+
+**[7] `a2a.task.id`:** See the A2A specification for the [Task](https://a2a-protocol.org/latest/specification/#411-task) object and [task identifier semantics](https://a2a-protocol.org/latest/specification/#342-task-identifier-semantics).
+
+**[8] `a2a.task.state`:** See the A2A specification for [TaskState](https://a2a-protocol.org/latest/specification/#413-taskstate).
 
 ---
 
@@ -45,6 +51,16 @@
 | `SendMessage` | Request to send a message to an agent and receive a non-streaming response. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `SendStreamingMessage` | Request to send a message to an agent and receive a streaming response. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `SubscribeToTask` | Request to subscribe to task updates. | ![Development](https://img.shields.io/badge/-development-blue) |
+
+---
+
+`a2a.protocol.binding` has the following list of well-known values. If one of them applies, then the respective value MUST be used; otherwise, a custom value MAY be used.
+
+| Value | Description | Stability |
+| --- | --- | --- |
+| `GRPC` | gRPC. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `HTTP+JSON` | HTTP+JSON/REST. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `JSONRPC` | JSON-RPC 2.0 over HTTP. | ![Development](https://img.shields.io/badge/-development-blue) |
 
 ---
 
