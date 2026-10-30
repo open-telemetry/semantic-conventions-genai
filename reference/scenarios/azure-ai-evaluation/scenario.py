@@ -43,6 +43,9 @@ def run_evaluation():
                     "gen_ai.evaluation.name": evaluation_name,
                     "gen_ai.evaluation.score.label": score_label,
                     "gen_ai.evaluation.score.value": score,
+                    # Azure AI Evaluation evaluators declare whether a higher score is better
+                    # and use it to compute the pass / fail result against the threshold.
+                    "gen_ai.evaluation.score.direction": "maximize" if evaluator._higher_is_better else "minimize",
                 },
             )
 
