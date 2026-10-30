@@ -239,8 +239,6 @@ def run_converse_with_document_input_reference(client):
       {"document": {"format": "pdf", "name": "...",
                     "source": {"bytes": <raw bytes>}}}
     """
-    import base64
-
     print("  [converse_document] Bedrock Converse with PDF document block (reference implementation)")
     request_model = "anthropic.claude-3-haiku-20240307-v1:0"
     instruction = "Summarize the attached document in one sentence."
@@ -268,9 +266,8 @@ def run_converse_with_document_input_reference(client):
     # Canonical OTel parts: TextPart + BlobPart(modality="document"). Each
     # BlobPart field is derivable from the DocumentBlock above:
     #   - mime_type: classification of `format` "pdf" -> "application/pdf"
-    #   - content:   base64-encoded `source.bytes`
+    #   - content:   raw `source.bytes`
     #   - modality:  classification of mime "application/pdf" -> "document"
-    pdf_b64 = base64.b64encode(pdf_bytes).decode("ascii")
     mime_type = "application/pdf"
     input_parts = [
         {"type": "text", "content": instruction},
@@ -278,7 +275,7 @@ def run_converse_with_document_input_reference(client):
             "type": "blob",
             "modality": "document",
             "mime_type": mime_type,
-            "content": pdf_b64,
+            "content": pdf_bytes,
         },
     ]
     input_messages = [{"role": "user", "parts": input_parts}]
