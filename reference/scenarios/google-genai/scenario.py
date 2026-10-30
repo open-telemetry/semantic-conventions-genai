@@ -145,7 +145,7 @@ def _patch_automatic_function_calling():
                     for result_part in result_parts:
                         tool_span.set_attribute(
                             "gen_ai.tool.call.result",
-                            {"output": result_part.function_response.response},
+                            {"value": result_part.function_response.response},
                         )
                     parts.extend(result_parts)
                 except Exception as e:

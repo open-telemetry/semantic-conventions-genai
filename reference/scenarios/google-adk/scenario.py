@@ -189,8 +189,7 @@ def run_agent_reference():
                     tool_span.set_attribute("gen_ai.tool.call.id", tool_context.function_call_id)
                 tool_span.set_attribute("gen_ai.tool.call.arguments", {"location": location})
                 result = f"Sunny in {location}"
-                # TODO: Determine how to represent this string result in the object-only schema.
-                tool_span.set_attribute("gen_ai.tool.call.result", result)
+                tool_span.set_attribute("gen_ai.tool.call.result", {"value": result})
             except Exception as e:
                 tool_span.set_status(StatusCode.ERROR, str(e))
                 tool_span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
@@ -496,8 +495,7 @@ def run_multi_agent_delegation_reference():
                         tool_span.set_attribute("gen_ai.tool.call.id", tool_context.function_call_id)
                     tool_span.set_attribute("gen_ai.tool.call.arguments", args)
                     result = await original_run_async(args=args, tool_context=tool_context)
-                    # TODO: Determine how to represent this string result in the object-only schema.
-                    tool_span.set_attribute("gen_ai.tool.call.result", result)
+                    tool_span.set_attribute("gen_ai.tool.call.result", {"value": result})
                 except Exception as e:
                     tool_span.set_status(StatusCode.ERROR, str(e))
                     tool_span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
@@ -696,7 +694,7 @@ def run_multi_agent_handoff_reference():
                     span.set_attribute("gen_ai.transfer.mode", "pass_control")
                     span.set_attribute("gen_ai.transfer.target.name", target_name)
                 if result is not None:
-                    span.set_attribute("gen_ai.tool.call.result", result)
+                    span.set_attribute("gen_ai.tool.call.result", {"value": result})
                 return result
             except Exception as e:
                 span.set_status(StatusCode.ERROR, str(e))
@@ -881,8 +879,7 @@ def run_skills_reference():
                         span.set_attribute("error.type", error_type)
                         span.set_status(StatusCode.ERROR, result.get("error", ""))
                     else:
-                        # TODO: Determine how to represent this string result in the object-only schema.
-                        span.set_attribute("gen_ai.tool.call.result", result)
+                        span.set_attribute("gen_ai.tool.call.result", {"value": result})
                     self._record_skill_signals(span, args, result, error_type, tool_context)
                     return result
                 except Exception as e:

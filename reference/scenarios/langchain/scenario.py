@@ -238,8 +238,7 @@ def run_execute_tool_reference():
             tool_span.set_attribute("gen_ai.tool.call.id", tool_call["id"])
             tool_span.set_attribute("gen_ai.tool.call.arguments", tool_call["args"])
             tool_message = get_weather.invoke(tool_call)
-            # TODO: Determine how to represent this string result in the object-only schema.
-            tool_span.set_attribute("gen_ai.tool.call.result", tool_message.content)
+            tool_span.set_attribute("gen_ai.tool.call.result", {"value": tool_message.content})
         except Exception as e:
             tool_span.set_status(StatusCode.ERROR, str(e))
             tool_span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
@@ -295,8 +294,7 @@ def run_command_execution_reference():
                 exit_code = tool_message.artifact.get("exit_code")
                 if exit_code is not None:
                     tool_span.set_attribute("process.exit.code", exit_code)
-                # TODO: Determine how to represent this string result in the object-only schema.
-                tool_span.set_attribute("gen_ai.tool.call.result", tool_message.content)
+                tool_span.set_attribute("gen_ai.tool.call.result", {"value": tool_message.content})
                 return tool_message
             except Exception as e:
                 tool_span.set_status(StatusCode.ERROR, str(e))

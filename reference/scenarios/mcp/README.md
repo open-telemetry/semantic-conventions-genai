@@ -11,3 +11,12 @@ and resource reads (`resources/read`).
 | --- | --- | --- |
 | `mcp.client` (`mcp.client.operation.duration`) | Yes — MCP client per-request boundary (`ClientSession.send_request`) | ✅ Implemented |
 | `mcp.server` (`mcp.server.operation.duration`) | Yes — MCP server request boundary (`ServerMiddleware`) | ✅ Implemented |
+
+The `tools/call` spans cover these tool results:
+
+| Tool | `CallToolResult` | Recorded in `gen_ai.tool.call.result` |
+| --- | --- | --- |
+| `get_weather` | `structuredContent` and a text block that repeats it | `value` |
+| `get_weather_map` | `structuredContent`, a text block that repeats it, and an image block | `value` and `parts` (image) |
+| `get_weather_summary` | One text block | `value` as a string |
+| `missing_tool` (not on the server) | `isError` | Nothing; `error.type` = `tool_error` |

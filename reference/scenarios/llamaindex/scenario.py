@@ -65,8 +65,7 @@ def run_agent_reference(llm):
                     tool_span.set_attribute("gen_ai.tool.call.id", current_tool_call_id)
                 tool_span.set_attribute("gen_ai.tool.call.arguments", {"location": location})
                 result = "Sunny, 72°F"
-                # TODO: Determine how to represent this string result in the object-only schema.
-                tool_span.set_attribute("gen_ai.tool.call.result", result)
+                tool_span.set_attribute("gen_ai.tool.call.result", {"value": result})
                 return result
             except Exception as e:
                 tool_span.set_status(StatusCode.ERROR, str(e))

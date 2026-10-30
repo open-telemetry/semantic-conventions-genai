@@ -199,8 +199,7 @@ def run_invoke_agent(client):
                             tool_span.set_attribute("gen_ai.tool.call.id", tool_call_id)
                         tool_span.set_attribute("gen_ai.tool.call.arguments", arguments)
                         result = get_weather(arguments["location"])
-                        # TODO: Determine how to represent this string result in the object-only schema.
-                        tool_span.set_attribute("gen_ai.tool.call.result", result)
+                        tool_span.set_attribute("gen_ai.tool.call.result", {"value": result})
 
                     tool_outputs.append(
                         {

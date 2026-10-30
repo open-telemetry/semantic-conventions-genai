@@ -50,8 +50,7 @@ def instrument_function_tool(tool: FunctionTool) -> FunctionTool:
                     tool_span.set_attribute("gen_ai.tool.call.id", ctx.tool_call_id)
                 tool_span.set_attribute("gen_ai.tool.call.arguments", json.loads(input_json or "{}"))
                 result = await original_on_invoke_tool(ctx, input_json)
-                # TODO: Determine how to represent this string result in the object-only schema.
-                tool_span.set_attribute("gen_ai.tool.call.result", result)
+                tool_span.set_attribute("gen_ai.tool.call.result", {"value": result})
                 return result
             except Exception as e:
                 tool_span.set_status(StatusCode.ERROR, str(e))
@@ -261,8 +260,7 @@ async def run_agent_as_tool_delegation():
                 tool_span.set_attribute("gen_ai.tool.call.id", tool_context.tool_call_id)
                 tool_span.set_attribute("gen_ai.tool.call.arguments", json.loads(input_json or "{}"))
                 result = await original_on_invoke_tool(tool_context, input_json)
-                # TODO: Determine how to represent this string result in the object-only schema.
-                tool_span.set_attribute("gen_ai.tool.call.result", result)
+                tool_span.set_attribute("gen_ai.tool.call.result", {"value": result})
             except Exception as e:
                 tool_span.set_status(StatusCode.ERROR, str(e))
                 tool_span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
@@ -404,8 +402,7 @@ async def run_command_execution():
                     if executable_name and posixpath.isabs(executable):
                         span.set_attribute("process.executable.path", executable)
                     result = await self.run(args)
-                    # TODO: Determine how to represent this string result in the object-only schema.
-                    span.set_attribute("gen_ai.tool.call.result", result)
+                    span.set_attribute("gen_ai.tool.call.result", {"value": result})
                     return result
                 except Exception as exc:
                     span.set_attribute("error.type", f"{type(exc).__module__}.{type(exc).__qualname__}")
@@ -517,7 +514,8 @@ async def run_runner():
                     span.set_attribute("gen_ai.transfer.mode", "pass_control")
                     span.set_attribute("gen_ai.transfer.target.name", target.name)
                     span.set_attribute(
-                        "gen_ai.tool.call.result", json.loads(selected.handoff.get_transfer_message(target))
+                        "gen_ai.tool.call.result",
+                        {"value": json.loads(selected.handoff.get_transfer_message(target))},
                     )
                     return target
                 except Exception as e:
