@@ -605,17 +605,46 @@ attributes:
       > [!WARNING]
       > This attribute may contain sensitive information.
 
-      It's expected to be an object - in case a serialized string is available
-      to the instrumentation, the instrumentation SHOULD do the best effort to
-      deserialize it to an object.
+      It's an object with the following fields, at least one of which MUST be
+      set:
+
+      - `value`: the result as any JSON value, for example an object, an array,
+        or a string. In case a serialized JSON string is available to the
+        instrumentation, the instrumentation SHOULD do the best effort to
+        deserialize it. A result that is a single text block is recorded here as
+        a string, or as the deserialized value if it holds serialized JSON.
+      - `parts`: content blocks that `value` cannot represent, such as images,
+        files, or several ordered blocks, recorded as message parts rather than
+        in a provider-specific format.
+
+      Instrumentations SHOULD NOT record `parts` when they are equivalent to
+      `value`, for example when the only part is text. Both fields are recorded
+      when the result has structured data and the parts carry other content,
+      such as an image.
     examples:
       - |
         {
-          "temperature_range": {
-            "high": 75,
-            "low": 60
-          },
-          "conditions": "sunny"
+          "value": {
+            "temperature_range": {
+              "high": 75,
+              "low": 60
+            },
+            "conditions": "sunny"
+          }
+        }
+      - |
+        {
+          "parts": [
+            {
+              "type": "text",
+              "content": "Weather map for Seattle"
+            },
+            {
+              "type": "uri",
+              "modality": "image",
+              "uri": "https://example.com/weather-map.png"
+            }
+          ]
         }
 
     stability: development

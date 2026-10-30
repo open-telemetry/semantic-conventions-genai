@@ -170,7 +170,7 @@ def run_invoke_agent(client):
                             tool_span.set_attribute("gen_ai.tool.call.id", tool_call_id)
                         tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps(arguments))
                         result = get_weather(arguments["location"])
-                        tool_span.set_attribute("gen_ai.tool.call.result", result)
+                        tool_span.set_attribute("gen_ai.tool.call.result", json.dumps({"value": result}))
 
                     tool_outputs.append(
                         {
