@@ -5,7 +5,6 @@ import os
 import time
 import traceback
 
-from openai import OpenAIError
 from opentelemetry._logs import SeverityNumber
 from opentelemetry.trace import SpanKind, StatusCode
 from reference_shared import (
@@ -257,11 +256,7 @@ def run_chat_reference(client):
     if port is not None:
         span_attributes["server.port"] = port
     with _reference_tracer.start_as_current_span(
-        "chat gpt-4o-mini",
-        kind=SpanKind.CLIENT,
-        attributes=span_attributes,
-        record_exception=False,
-        set_status_on_exception=False,
+        "chat gpt-4o-mini", kind=SpanKind.CLIENT, attributes=span_attributes
     ) as span:
         span.set_attribute("gen_ai.request.choice.count", request_choice_count)
         span.set_attribute("gen_ai.request.max_tokens", request_max_tokens)
@@ -273,35 +268,19 @@ def run_chat_reference(client):
         span.set_attribute("gen_ai.request.top_p", request_top_p)
         span.set_attribute("gen_ai.request.reasoning.level", request_reasoning_level)
         span.set_attribute("gen_ai.input.messages", input_messages)
-        try:
-            resp = client.chat.completions.create(
-                model=request_model,
-                messages=messages,
-                n=request_choice_count,
-                max_tokens=request_max_tokens,
-                temperature=request_temperature,
-                seed=request_seed,
-                stop=request_stop_sequences,
-                frequency_penalty=request_frequency_penalty,
-                presence_penalty=request_presence_penalty,
-                top_p=request_top_p,
-                reasoning_effort=request_reasoning_level,
-            )
-        except OpenAIError as error:
-            error_type = f"{type(error).__module__}.{type(error).__qualname__}"
-            span.set_status(StatusCode.ERROR, str(error))
-            span.set_attribute("error.type", error_type)
-            reference_event_logger().emit(
-                event_name="gen_ai.client.inference.exception",
-                severity_number=SeverityNumber.WARN,
-                body="Inference operation failed",
-                attributes={
-                    "exception.type": error_type,
-                    "exception.message": str(error),
-                    "exception.stacktrace": "".join(traceback.format_exception(error)),
-                },
-            )
-            raise
+        resp = client.chat.completions.create(
+            model=request_model,
+            messages=messages,
+            n=request_choice_count,
+            max_tokens=request_max_tokens,
+            temperature=request_temperature,
+            seed=request_seed,
+            stop=request_stop_sequences,
+            frequency_penalty=request_frequency_penalty,
+            presence_penalty=request_presence_penalty,
+            top_p=request_top_p,
+            reasoning_effort=request_reasoning_level,
+        )
         span.set_attribute("gen_ai.response.model", resp.model)
         span.set_attribute("gen_ai.response.id", resp.id)
         finish_reasons = chat_finish_reasons(resp.choices, expected_count=request_choice_count)
@@ -360,6 +339,7 @@ def run_chat_error_reference():
     import httpx2
     import openai
 
+    request_model = "gpt-4o-mini"
     transport = httpx2.MockTransport(
         lambda request: httpx2.Response(
             429,
@@ -368,16 +348,43 @@ def run_chat_error_reference():
             },
         )
     )
-    with openai.OpenAI(
-        base_url=MOCK_BASE_URL,
-        api_key="mock-key",
-        max_retries=0,
-        http_client=httpx2.Client(transport=transport),
-    ) as client:
+    with (
+        openai.OpenAI(
+            base_url=MOCK_BASE_URL,
+            api_key="mock-key",
+            max_retries=0,
+            http_client=httpx2.Client(transport=transport),
+        ) as client,
+        _reference_tracer.start_as_current_span(
+            f"chat {request_model}",
+            kind=SpanKind.CLIENT,
+            attributes={
+                "gen_ai.operation.name": "chat",
+                "gen_ai.provider.name": "openai",
+                "gen_ai.request.model": request_model,
+                "server.address": client.base_url.host,
+                "server.port": client.base_url.port,
+            },
+        ) as span,
+    ):
         try:
-            run_chat_reference(client)
-        except openai.RateLimitError:
-            pass
+            client.chat.completions.create(
+                model=request_model,
+                messages=[{"role": "user", "content": "Say hello."}],
+            )
+        except openai.RateLimitError as error:
+            error_type = f"{type(error).__module__}.{type(error).__qualname__}"
+            span.set_status(StatusCode.ERROR, str(error))
+            span.set_attribute("error.type", error_type)
+            reference_event_logger().emit(
+                event_name="gen_ai.client.inference.exception",
+                severity_number=SeverityNumber.WARN,
+                attributes={
+                    "exception.type": error_type,
+                    "exception.message": str(error),
+                    "exception.stacktrace": "".join(traceback.format_exception(error)),
+                },
+            )
         else:
             raise AssertionError("Expected the SDK to reject the inference request")
 

@@ -47,7 +47,6 @@ _SPANS = {
 }
 
 _EVENTS = {
-    "gen_ai.client.inference.exception": "Client Inference Exception",
     "gen_ai.client.inference.operation.details": "Inference Operation Details",
     "gen_ai.evaluation.result": "Evaluation Result",
 }
