@@ -63,6 +63,11 @@
     ]
   },
   "events": {
+    "gen_ai.client.embeddings.exception": [
+      "exception.message",
+      "exception.stacktrace",
+      "exception.type"
+    ],
     "gen_ai.client.inference.exception": [
       "exception.message",
       "exception.stacktrace",
