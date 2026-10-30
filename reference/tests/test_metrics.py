@@ -11,7 +11,7 @@ Runnable directly (``python tests/test_metrics.py``) or under pytest.
 from __future__ import annotations
 
 from semconv_genai.data_files import _normalize_scenario_data_entry, load_scenario_data_files
-from semconv_genai.semconv_model import entity_specs, metric_specs, span_specs
+from semconv_genai.semconv_model import entity_specs, event_specs, metric_specs, span_specs
 
 _TOOL_CALLS = "gen_ai.invoke_agent.tool_calls"
 _INFERENCE_CALLS = "gen_ai.invoke_agent.inference_calls"
@@ -52,7 +52,16 @@ def test_inference_scenarios_report_inference_duration():
 
 def test_embeddings_scenarios_report_embeddings_metrics():
     entries = {entry.library: entry for entry in load_scenario_data_files()}
-    libraries = ("aws-bedrock", "azure-ai-inference", "azure-openai", "cohere", "google-genai", "litellm", "mistralai", "openai")
+    libraries = (
+        "aws-bedrock",
+        "azure-ai-inference",
+        "azure-openai",
+        "cohere",
+        "google-genai",
+        "litellm",
+        "mistralai",
+        "openai",
+    )
     for library in libraries:
         metrics = entries[library].metrics
         assert "gen_ai.client.embeddings.duration" in metrics, library
@@ -112,6 +121,19 @@ def test_events_keep_their_registry_names():
     assert entry.events["gen_ai.evaluation.result"]["gen_ai.evaluation.name"] == "present"
 
 
+def test_embeddings_exception_requirements_and_coverage():
+    name = "gen_ai.client.embeddings.exception"
+    spec = event_specs()[name]
+    assert set(spec.conditionally_required) == {"exception.type", "exception.message"}
+    assert spec.recommended == ("exception.stacktrace",)
+    entries = {entry.library: entry for entry in load_scenario_data_files()}
+    assert entries["openai"].events[name] == {
+        "exception.message": "present",
+        "exception.type": "present",
+        "exception.stacktrace": "present",
+    }
+
+
 def test_span_types_absent_from_a_data_file_are_not_reported():
     entry = _normalize_scenario_data_entry({"spans": {}}, "fake")
     assert entry.spans == {}
@@ -133,6 +155,7 @@ if __name__ == "__main__":
     test_entities_with_sections_round_trip()
     test_registry_span_names_map_onto_report_keys()
     test_events_keep_their_registry_names()
+    test_embeddings_exception_requirements_and_coverage()
     test_span_types_absent_from_a_data_file_are_not_reported()
     test_span_specs_are_named_in_recognized_registry_namespaces()
     print("ok")

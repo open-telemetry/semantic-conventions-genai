@@ -47,7 +47,9 @@ events:
       such as API errors, rate limiting, model errors, timeouts, or other errors that prevent
       the operation from completing successfully.
     note: >
-      This event SHOULD be recorded when an exception occurs during Generative AI client operations.
+      This event SHOULD be recorded when an exception occurs during Generative AI client operations,
+      except for embeddings operations. For embeddings, use `gen_ai.client.embeddings.exception`
+      instead of this event.
 
       Instrumentations SHOULD set the severity to WARN (severity number 13) when recording this event.
 
@@ -62,3 +64,36 @@ events:
         requirement_level:
           conditionally_required: Required if `exception.type` is not set, recommended otherwise.
       - ref: exception.stacktrace
+
+  - name: gen_ai.client.embeddings.exception
+    requirement_level: recommended
+    brief: >
+      This event represents an exception that caused a Generative AI client embeddings operation to fail.
+    note: >
+      This event SHOULD be recorded as a log record correlated with the corresponding
+      `gen_ai.client.embeddings` span.
+
+      Instrumentations SHOULD follow the
+      [Recording errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/recording-errors.md)
+      guidance. Instrumentations SHOULD NOT record this event for exceptions handled internally,
+      including successful retries, or fabricate an exception from an error code.
+
+      Instrumentations SHOULD set the severity to WARN (severity number 13) when recording this event.
+
+      Instrumentations MAY provide a configuration option to populate this event
+      with attributes captured on the corresponding embeddings span.
+      Copying input or output content MUST respect the
+      [content capture configuration](/docs/gen-ai/gen-ai-spans.md#content-capture-configuration).
+
+      Instrumentations SHOULD NOT also record `gen_ai.client.operation.exception`
+      for the same exception.
+    stability: development
+    attributes:
+      - ref: exception.type
+        requirement_level:
+          conditionally_required: Required if `exception.message` is not set, recommended otherwise.
+      - ref: exception.message
+        requirement_level:
+          conditionally_required: Required if `exception.type` is not set, recommended otherwise.
+      - ref: exception.stacktrace
+        requirement_level: recommended

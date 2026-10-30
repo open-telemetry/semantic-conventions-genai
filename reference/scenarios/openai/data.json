@@ -61,6 +61,11 @@
     ]
   },
   "events": {
+    "gen_ai.client.embeddings.exception": [
+      "exception.message",
+      "exception.stacktrace",
+      "exception.type"
+    ],
     "gen_ai.client.inference.operation.details": [
       "gen_ai.conversation.compacted",
       "gen_ai.input.messages",
