@@ -9,6 +9,7 @@ linkTitle: Generative AI
 Semantic conventions for Generative AI operations are defined for the following signals:
 
 * [Client Inference](client-inference.md): Semantic Conventions for Generative AI inference operations - *spans, events, and metrics*.
+* [Client Embeddings](client-embeddings.md): Semantic Conventions for Generative AI embeddings operations - *spans and metrics*.
 * [Events](gen-ai-events.md): Semantic Conventions for Generative AI inputs and outputs - *events*.
 * [Exceptions](gen-ai-exceptions.md): Semantic Conventions for Generative AI *exceptions*.
 * [Metrics](gen-ai-metrics.md): Semantic Conventions for Generative AI operations - *metrics*.
@@ -25,6 +26,7 @@ Technology specific semantic conventions are defined for the following GenAI sys
 
 See also:
 
+* [Agent2Agent Protocol](./a2a.md): Semantic Conventions for [A2A](https://a2a-protocol.org)
 * [Model Context Protocol](./mcp.md): Semantic Conventions for [MCP](https://modelcontextprotocol.io)
 
 [DocumentStatus]: https://opentelemetry.io/docs/specs/otel/document-status

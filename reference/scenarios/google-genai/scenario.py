@@ -6,6 +6,7 @@ against a mock Google GenAI server, with manual OTel spans.
 
 import json
 import os
+import time
 from contextlib import contextmanager
 from urllib.parse import urlparse
 
@@ -23,6 +24,28 @@ _SERVER_ADDRESS = urlparse(MOCK_BASE_URL).hostname
 
 _reference_tracer = reference_tracer()
 _reference_meter = reference_meter()
+
+_embeddings_duration = _reference_meter.create_histogram(
+    "gen_ai.client.embeddings.duration",
+    unit="s",
+    description="GenAI client embeddings operation duration.",
+    explicit_bucket_boundaries_advisory=[
+        0.01,
+        0.02,
+        0.04,
+        0.08,
+        0.16,
+        0.32,
+        0.64,
+        1.28,
+        2.56,
+        5.12,
+        10.24,
+        20.48,
+        40.96,
+        81.92,
+    ],
+)
 
 _operation_input_tokens = _reference_meter.create_histogram(
     "gen_ai.client.inference.operation.input_tokens",
@@ -191,7 +214,7 @@ def _add_by_modality(counter, total, suffix, usage, metric_attributes):
     remainder = total
     for modality in _MODALITY_MAP.values():
         count = usage.get(f"gen_ai.usage.{modality}.{suffix}")
-        if count:
+        if count is not None and count > 0:
             counter.add(count, {**metric_attributes, "gen_ai.token.modality": modality})
             remainder -= count
     if remainder > 0:
@@ -209,12 +232,12 @@ def _record_inference_usage(usage, metric_attributes):
         _operation_output_tokens.record(output_tokens, metric_attributes)
         _add_by_modality(_output_tokens, output_tokens, "output_tokens", usage, metric_attributes)
     cache_read_tokens = usage.get("gen_ai.usage.cache_read.input_tokens")
-    if cache_read_tokens:
+    if cache_read_tokens is not None and cache_read_tokens > 0:
         _add_by_modality(
             _cache_read_input_tokens, cache_read_tokens, "cache_read.input_tokens", usage, metric_attributes
         )
     reasoning_tokens = usage.get("gen_ai.usage.reasoning.output_tokens")
-    if reasoning_tokens:
+    if reasoning_tokens is not None and reasoning_tokens > 0:
         # Google reports no modality for thoughts tokens.
         _reasoning_output_tokens.add(reasoning_tokens, {**metric_attributes, "gen_ai.token.modality": "unknown"})
 
@@ -528,6 +551,8 @@ def run_chat_multimodal():
 
 def run_generate_media():
     """Scenario: image + audio output generation, emitting per-modality output usage."""
+    import base64
+
     from google import genai
     from google.genai import types
 
@@ -567,7 +592,16 @@ def run_generate_media():
                 if getattr(part, "text", None):
                     output_parts.append({"type": "text", "content": part.text})
                 elif getattr(part, "inline_data", None):
-                    output_parts.append({"type": "blob", "mime_type": part.inline_data.mime_type})
+                    mime_type = part.inline_data.mime_type
+                    output_parts.append(
+                        {
+                            "type": "blob",
+                            "mime_type": mime_type,
+                            # e.g. "image/png" -> "image", "audio/wav" -> "audio"
+                            "modality": mime_type.split("/", 1)[0],
+                            "content": base64.b64encode(part.inline_data.data).decode("ascii"),
+                        }
+                    )
             output_messages = [
                 {
                     "role": "assistant",
@@ -651,16 +685,30 @@ def run_embeddings():
         "gen_ai.request.model": request_model,
         "server.address": _SERVER_ADDRESS,
     }
+    start_time = time.perf_counter()
+    metric_attributes = dict(span_attributes_4)
     with _reference_tracer.start_as_current_span(
-        "embeddings text-embedding-004", kind=SpanKind.CLIENT, attributes=span_attributes_4
+        "embeddings text-embedding-004",
+        kind=SpanKind.CLIENT,
+        attributes=span_attributes_4,
+        record_exception=False,
     ) as span:
-        response = client.models.embed_content(
-            model=request_model,
-            contents="Hello, world!",
-        )
-        if response.embeddings and response.embeddings[0].values is not None:
-            span.set_attribute("gen_ai.embeddings.dimension.count", len(response.embeddings[0].values))
-        print(f"    -> embedding dim: {len(response.embeddings[0].values)}")
+        try:
+            # The SDK exposes no input-token usage for this response.
+            response = client.models.embed_content(
+                model=request_model,
+                contents="Hello, world!",
+            )
+            if response.embeddings and response.embeddings[0].values is not None:
+                span.set_attribute("gen_ai.embeddings.dimension.count", len(response.embeddings[0].values))
+            print(f"    -> embedding dim: {len(response.embeddings[0].values)}")
+        except Exception as e:
+            span.set_status(StatusCode.ERROR, str(e))
+            span.set_attribute("error.type", type(e).__qualname__)
+            metric_attributes["error.type"] = type(e).__qualname__
+            raise
+        finally:
+            _embeddings_duration.record(time.perf_counter() - start_time, metric_attributes)
 
 
 def run_create_agent():

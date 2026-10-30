@@ -2,8 +2,9 @@
 
 import json
 import os
+import time
 
-from opentelemetry.trace import SpanKind
+from opentelemetry.trace import SpanKind, StatusCode
 from reference_shared import (
     flush_and_shutdown,
     mock_server_host_port,
@@ -17,6 +18,49 @@ MOCK_BASE_URL = os.environ["MOCK_LLM_URL"] + "/v1"
 
 _reference_tracer = reference_tracer()
 _reference_meter = reference_meter()
+
+_embeddings_duration = _reference_meter.create_histogram(
+    "gen_ai.client.embeddings.duration",
+    unit="s",
+    description="GenAI client embeddings operation duration.",
+    explicit_bucket_boundaries_advisory=[
+        0.01,
+        0.02,
+        0.04,
+        0.08,
+        0.16,
+        0.32,
+        0.64,
+        1.28,
+        2.56,
+        5.12,
+        10.24,
+        20.48,
+        40.96,
+        81.92,
+    ],
+)
+_embeddings_input_tokens = _reference_meter.create_histogram(
+    "gen_ai.client.embeddings.operation.input_tokens",
+    unit="{token}",
+    description="The number of input tokens used per embeddings operation.",
+    explicit_bucket_boundaries_advisory=[
+        1,
+        4,
+        16,
+        64,
+        256,
+        1024,
+        4096,
+        16384,
+        65536,
+        262144,
+        1048576,
+        4194304,
+        16777216,
+        67108864,
+    ],
+)
 
 _operation_input_tokens = _reference_meter.create_histogram(
     "gen_ai.client.inference.operation.input_tokens",
@@ -73,10 +117,10 @@ def usage_metric_attributes(request_model, response_model, host, port):
 
 def _add_by_modality(counter, total, audio_tokens, metric_attributes):
     """Split `total` into its audio and unknown parts and add each to `counter`."""
-    if audio_tokens:
+    if audio_tokens is not None and audio_tokens > 0:
         counter.add(audio_tokens, {**metric_attributes, "gen_ai.token.modality": "audio"})
     remainder = total - (audio_tokens or 0)
-    if remainder:
+    if remainder > 0:
         counter.add(remainder, {**metric_attributes, "gen_ai.token.modality": "unknown"})
 
 
@@ -103,7 +147,7 @@ def record_inference_usage(usage, metric_attributes):
         ("gen_ai.usage.reasoning.output_tokens", _reasoning_output_tokens),
     ):
         value = usage.get(attribute)
-        if value is not None:
+        if value is not None and value > 0:
             counter.add(value, {**metric_attributes, "gen_ai.token.modality": "unknown"})
 
 
@@ -816,7 +860,7 @@ def run_chat_audio_reference(client):
                 "role": "user",
                 "parts": [
                     {"type": "text", "content": "Respond to this audio clip."},
-                    {"type": "blob", "mime_type": "audio/wav", "content": audio_b64},
+                    {"type": "blob", "mime_type": "audio/wav", "modality": "audio", "content": audio_b64},
                 ],
             }
         ]
@@ -899,21 +943,63 @@ def run_embeddings_reference(client):
         span_attributes_4["server.address"] = host
     if port is not None:
         span_attributes_4["server.port"] = port
+    start_time = time.perf_counter()
+    metric_attributes = dict(span_attributes_4)
+    input_token_count = 0
     with _reference_tracer.start_as_current_span(
-        "embeddings text-embedding-3-small", kind=SpanKind.CLIENT, attributes=span_attributes_4
+        "embeddings text-embedding-3-small",
+        kind=SpanKind.CLIENT,
+        attributes=span_attributes_4,
+        record_exception=False,
     ) as span:
-        span.set_attribute("gen_ai.request.encoding_formats", [request_encoding_format])
-        resp = client.embeddings.create(
-            model=request_model,
-            input="Hello, world!",
-            encoding_format=request_encoding_format,
+        try:
+            span.set_attribute("gen_ai.request.encoding_formats", [request_encoding_format])
+            resp = client.embeddings.create(
+                model=request_model,
+                input="Hello, world!",
+                encoding_format=request_encoding_format,
+            )
+            span.set_attribute("gen_ai.response.model", resp.model)
+            metric_attributes["gen_ai.response.model"] = resp.model
+            if resp.data and resp.data[0].embedding is not None:
+                span.set_attribute("gen_ai.embeddings.dimension.count", len(resp.data[0].embedding))
+            if resp.usage:
+                span.set_attribute("gen_ai.usage.input_tokens", resp.usage.prompt_tokens)
+                input_token_count = resp.usage.prompt_tokens
+            print(f"    -> embedding dim: {len(resp.data[0].embedding)}")
+        except Exception as e:
+            span.set_status(StatusCode.ERROR, str(e))
+            span.set_attribute("error.type", type(e).__qualname__)
+            metric_attributes["error.type"] = type(e).__qualname__
+            raise
+        finally:
+            _embeddings_duration.record(time.perf_counter() - start_time, metric_attributes)
+            _embeddings_input_tokens.record(input_token_count, metric_attributes)
+
+
+def run_embeddings_error_reference():
+    """Exercise an embeddings error returned through the SDK's HTTP transport."""
+    import httpx2
+    import openai
+
+    transport = httpx2.MockTransport(
+        lambda request: httpx2.Response(
+            400,
+            json={"error": {"message": "Invalid input", "type": "invalid_request_error", "code": "invalid_input"}},
         )
-        span.set_attribute("gen_ai.response.model", resp.model)
-        if resp.data and resp.data[0].embedding is not None:
-            span.set_attribute("gen_ai.embeddings.dimension.count", len(resp.data[0].embedding))
-        if resp.usage:
-            span.set_attribute("gen_ai.usage.input_tokens", resp.usage.prompt_tokens)
-        print(f"    -> embedding dim: {len(resp.data[0].embedding)}")
+    )
+    with openai.OpenAI(
+        base_url=MOCK_BASE_URL,
+        api_key="mock-key",
+        max_retries=0,
+        http_client=httpx2.Client(transport=transport),
+    ) as client:
+        try:
+            run_embeddings_reference(client)
+        except openai.BadRequestError:
+            pass
+        else:
+            raise AssertionError("Expected the SDK to reject the embeddings request")
 
 
 def run_responses_with_prompt_template_reference(client):
@@ -1175,6 +1261,7 @@ def main():
     run_responses_with_prompt_template_reference(client)
     run_fetch_response_reference(client)
     run_embeddings_reference(client)
+    run_embeddings_error_reference()
 
     flush_and_shutdown(tp, lp, mp)
 

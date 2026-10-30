@@ -482,6 +482,24 @@ attributes:
     brief: The version of the GenAI agent.
     examples: ["1.0.0", "2025-05-01"]
     stability: development
+  - key: gen_ai.transfer.mode
+    type:
+      members:
+        - id: return_to_caller
+          value: "return_to_caller"
+          brief: The initiator waits for the target to finish and then resumes execution.
+          stability: development
+        - id: pass_control
+          value: "pass_control"
+          brief: The initiator does not wait for the target to finish. The target takes control of the remaining work.
+          stability: development
+    brief: Describes how control passes to the transfer target.
+    stability: development
+  - key: gen_ai.transfer.target.name
+    type: string
+    brief: The human-readable name of the agent targeted by the transfer.
+    examples: ["weather_agent"]
+    stability: development
   - key: gen_ai.main_agent.id
     type: string
     brief: The unique and stable identifier of the top-level Generative AI agent in the process
@@ -595,6 +613,8 @@ attributes:
     annotations:
       type:
         json_schema: model/gen-ai/gen-ai-tool-definitions.json
+      value:
+        unbounded_size: true
     note: |
       > [!WARNING]
       > This attribute may contain sensitive information.
@@ -836,7 +856,7 @@ attributes:
     brief: The search query used to retrieve memories.
     note: |
       Instrumentations SHOULD NOT capture this attribute by default. Capture SHOULD be gated
-      by an explicit user opt-in, for example `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT`.
+      by an explicit user opt-in via [content capture configuration](/docs/gen-ai/gen-ai-spans.md#content-capture-configuration).
 
       > [!Warning]
       > This attribute may contain sensitive information.
@@ -850,7 +870,7 @@ attributes:
         json_schema: model/gen-ai/gen-ai-memory-records.json
     note: |
       Instrumentations SHOULD NOT capture this attribute by default. Capture SHOULD be gated
-      by an explicit user opt-in, for example `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT`.
+      by an explicit user opt-in via [content capture configuration](/docs/gen-ai/gen-ai-spans.md#content-capture-configuration).
 
       > [!Warning]
       > This attribute may contain sensitive information including user/PII data.
@@ -879,6 +899,8 @@ attributes:
     annotations:
       type:
         json_schema: model/gen-ai/gen-ai-system-instructions.json
+      value:
+        unbounded_size: true
     note: |
       This attribute SHOULD be used when the corresponding provider or API
       allows to provide system instructions or messages separately from the
@@ -915,6 +937,22 @@ attributes:
           }
         ]
     stability: development
+  - key: gen_ai.system_instructions_ref
+    type: string
+    brief: An absolute URI identifying the system instructions in external storage.
+    note: |
+      The presence of this attribute does not indicate whether storing the
+      content succeeded or whether the content remains available.
+
+      It is NOT RECOMMENDED to embed credentials, such as signed URL
+      query parameters, in the URI. Access to the stored content SHOULD be
+      secured by other means, for example by storage-level access control.
+
+      > [!Warning]
+      > The URI may expose sensitive storage metadata, such as storage provider,
+      > bucket or container names, tenant or object identifiers.
+    examples: ["s3://example-bucket/gen-ai/e68562472088cf0fec6124d5268608b01b1e248afb408e748738d39c6352d169_system_instruction.json"]
+    stability: development
   - key: gen_ai.input.messages
     type: any
     brief: >
@@ -922,6 +960,8 @@ attributes:
     annotations:
       type:
         json_schema: model/gen-ai/gen-ai-input-messages.json
+      value:
+        unbounded_size: true
     note: |
       Messages MUST be provided in the order they were sent to the model.
       Instrumentations MAY provide a way for users to filter or truncate
@@ -969,12 +1009,30 @@ attributes:
           }
         ]
     stability: development
+  - key: gen_ai.input.messages_ref
+    type: string
+    brief: An absolute URI identifying the input messages in external storage.
+    note: |
+      The presence of this attribute does not indicate whether storing the
+      content succeeded or whether the content remains available.
+
+      It is NOT RECOMMENDED to embed credentials, such as signed URL
+      query parameters, in the URI. Access to the stored content SHOULD be
+      secured by other means, for example by storage-level access control.
+
+      > [!Warning]
+      > The URI may expose sensitive storage metadata, such as storage provider,
+      > bucket or container names, tenant or object identifiers.
+    examples: ["s3://example-bucket/gen-ai/674f35f4-e3f6-41f5-b104-864b3964f6d3_inputs.json"]
+    stability: development
   - key: gen_ai.output.messages
     type: any
     brief: Messages returned by the model where each message represents a specific model response (choice, candidate).
     annotations:
       type:
         json_schema: model/gen-ai/gen-ai-output-messages.json
+      value:
+        unbounded_size: true
     note: |
       Each message represents a single output choice/candidate generated by
       the model. Each message corresponds to exactly one generation
@@ -1009,6 +1067,38 @@ attributes:
             ]
           }
         ]
+    stability: development
+  - key: gen_ai.output.messages_ref
+    type: string
+    brief: An absolute URI identifying the output messages in external storage.
+    note: |
+      The presence of this attribute does not indicate whether storing the
+      content succeeded or whether the content remains available.
+
+      It is NOT RECOMMENDED to embed credentials, such as signed URL
+      query parameters, in the URI. Access to the stored content SHOULD be
+      secured by other means, for example by storage-level access control.
+
+      > [!Warning]
+      > The URI may expose sensitive storage metadata, such as storage provider,
+      > bucket or container names, tenant or object identifiers.
+    examples: ["s3://example-bucket/gen-ai/674f35f4-e3f6-41f5-b104-864b3964f6d3_outputs.json"]
+    stability: development
+  - key: gen_ai.tool.definitions_ref
+    type: string
+    brief: An absolute URI identifying the tool definitions in external storage.
+    note: |
+      The presence of this attribute does not indicate whether storing the
+      content succeeded or whether the content remains available.
+
+      It is NOT RECOMMENDED to embed credentials, such as signed URL
+      query parameters, in the URI. Access to the stored content SHOULD be
+      secured by other means, for example by storage-level access control.
+
+      > [!Warning]
+      > The URI may expose sensitive storage metadata, such as storage provider,
+      > bucket or container names, tenant or object identifiers.
+    examples: ["s3://example-bucket/gen-ai/b61c3b21581c79d687c07f31970d1a9482dca47756ccf014d408fd6cd091ef66_tool.definitions.json"]
     stability: development
   - key: gen_ai.evaluation.name
     type: string
