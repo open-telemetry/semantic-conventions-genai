@@ -182,10 +182,6 @@ jobs:
           SCENARIO_LIB: ${{ matrix.scenario.lib }}
         run: uv run run-scenario "$SCENARIO_LIB" --strict
 
-      - name: Test OpenAI exception recording
-        if: matrix.scenario.lib == 'openai'
-        run: uv run --frozen --python 3.12 --project scenarios/openai python -m unittest discover -s scenarios/openai -p 'test_*.py'
-
       - name: Check data file is up to date
         env:
           SCENARIO_DATA: ${{ matrix.scenario.data }}

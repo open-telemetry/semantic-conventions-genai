@@ -10,17 +10,10 @@ This document defines semantic conventions for recording exceptions on Generativ
 
 <!-- toc -->
 
-- [Recording exceptions](#recording-exceptions)
 - [Generative AI client inference exception](#generative-ai-client-inference-exception)
 - [Generative AI client operation exception](#generative-ai-client-operation-exception)
 
 <!-- tocstop -->
-
-## Recording exceptions
-
-GenAI exception recording SHOULD follow the general [recording errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/recording-errors.md)
-guidance. Exception log events SHOULD be correlated with the operation span using
-the span's trace and span identifiers.
 
 ## Generative AI client inference exception
 
@@ -35,10 +28,9 @@ The event name MUST be `gen_ai.client.inference.exception`.
 
 This event represents an exception that caused a Generative AI client inference operation to fail, including `chat`, `generate_content`, and `text_completion`.
 
-This event SHOULD follow the [exception recording guidance](/docs/gen-ai/gen-ai-exceptions.md#recording-exceptions).
+Exception recording SHOULD follow the general [recording errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/recording-errors.md) guidance. This log event SHOULD be correlated with the inference span using its trace and span identifiers.
 Instrumentations SHOULD set the severity to WARN (severity number 13) when recording this event.
-Instrumentations MAY provide a configuration option to populate this event with attributes captured on the corresponding inference span. Copying content attributes MUST respect the [content capture configuration](/docs/gen-ai/gen-ai-spans.md#content-capture-configuration) for the destination event.
-Instrumentations SHOULD NOT also record `gen_ai.client.operation.exception` for the same exception.
+Instrumentations MAY provide a configuration option to populate this event with attributes captured on the corresponding inference span.
 
 **Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/signal-requirement-level.md).
 
