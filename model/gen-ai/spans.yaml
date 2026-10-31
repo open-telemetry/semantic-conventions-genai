@@ -180,8 +180,10 @@ spans:
     requirement_level: recommended
     kind: client
     name:
+      templates:
+        - "{gen_ai.operation.name} {gen_ai.request.model}"
+        - "{gen_ai.operation.name}"
       note: |
-        **Span name** SHOULD be `{gen_ai.operation.name} {gen_ai.request.model}`.
         Semantic conventions for individual GenAI systems and frameworks MAY specify different span name format
         and MUST follow the overall [guidelines for span names](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.56.0/specification/trace/api.md#span).
     brief: >
@@ -362,8 +364,9 @@ spans:
     requirement_level: recommended
     kind: client
     name:
-      note: >
-        **Span name** SHOULD be `{gen_ai.operation.name} {gen_ai.request.model}`.
+      templates:
+        - "{gen_ai.operation.name} {gen_ai.request.model}"
+        - "{gen_ai.operation.name}"
     brief: >
       Describes a GenAI embeddings operation - a client call to a model or service
       that returns embeddings for one or more inputs.
@@ -409,9 +412,11 @@ spans:
     requirement_level: recommended
     kind: client
     name:
+      templates:
+        - "{gen_ai.operation.name} {gen_ai.data_source.id}"
+        - "{gen_ai.operation.name}"
       note: |
-        **Span name** SHOULD be `{gen_ai.operation.name} {gen_ai.data_source.id}`. Semantic conventions
-        for individual GenAI providers and retrievers MAY specify different span name format.
+        Semantic conventions for individual GenAI providers and retrievers MAY specify different span name format.
     brief: >
       Describes GenAI retrieval span - a request to a Generative AI service or framework
       that retrieves relevant information or context from a vector database or search system.
@@ -438,10 +443,10 @@ spans:
   - type: gen_ai.fetch_response.client
     kind: client
     name:
+      templates:
+        - "{gen_ai.operation.name}"
       note: |
-        **Span name** SHOULD be `{gen_ai.operation.name}`. The response identifier is high
-        cardinality, so it is not included in the span name. Semantic conventions for individual
-        GenAI providers MAY specify a different span name format.
+        Semantic conventions for individual GenAI providers MAY specify a different span name format.
     brief: >
       Describes a request to a Generative AI provider that fetches a
       previously generated model response by its identifier.
@@ -507,8 +512,8 @@ spans:
     requirement_level: recommended
     kind: client
     name:
-      note: |
-        **Span name** SHOULD be `{gen_ai.operation.name}`.
+      templates:
+        - "{gen_ai.operation.name}"
     brief: >
       Describes a memory operation, including memory store lifecycle operations and memory record operations.
     note: |
@@ -558,8 +563,10 @@ spans:
     requirement_level: recommended
     kind: client
     name:
+      templates:
+        - "create_agent {gen_ai.agent.name}"
+        - "create_agent"
       note: |
-        **Span name** SHOULD be `create_agent {gen_ai.agent.name}`.
         Semantic conventions for individual GenAI systems and frameworks MAY specify different span name format.
     brief: >
       Describes GenAI agent creation and is usually applicable when working
@@ -611,9 +618,10 @@ spans:
     requirement_level: recommended
     kind: client
     name:
+      templates:
+        - "invoke_agent {gen_ai.agent.name}"
+        - "invoke_agent"
       note: |
-        **Span name** SHOULD be `invoke_agent {gen_ai.agent.name}` if `gen_ai.agent.name` is readily available.
-        When `gen_ai.agent.name` is not available, it SHOULD be `invoke_agent`.
         Semantic conventions for individual GenAI systems and frameworks MAY specify different span name format.
     brief: >
       Describes GenAI agent invocation over a remote service.
@@ -658,9 +666,10 @@ spans:
     requirement_level: recommended
     kind: internal
     name:
+      templates:
+        - "invoke_agent {gen_ai.agent.name}"
+        - "invoke_agent"
       note: |
-        **Span name** SHOULD be `invoke_agent {gen_ai.agent.name}` if `gen_ai.agent.name` is readily available.
-        When `gen_ai.agent.name` is not available, it SHOULD be `invoke_agent`.
         Semantic conventions for individual GenAI systems and frameworks MAY specify different span name format.
     brief: >
       Describes GenAI agent invocation within the same process.
@@ -687,8 +696,8 @@ spans:
     requirement_level: recommended
     kind: internal
     name:
-      note: >
-        **Span name** SHOULD be `execute_tool {gen_ai.tool.name}`.
+      templates:
+        - "execute_tool {gen_ai.tool.name}"
     brief: Describes tool execution span.
     note: |
       `gen_ai.operation.name` SHOULD be `execute_tool`.
@@ -745,8 +754,9 @@ spans:
     requirement_level: recommended
     kind: internal
     name:
-      note: >
-        **Span name** SHOULD be `invoke_workflow {gen_ai.workflow.name}`.
+      templates:
+        - "invoke_workflow {gen_ai.workflow.name}"
+        - "invoke_workflow"
     brief: >
       Represents an operation that executes a coordinated process composed of multiple agents
       or other operations involving generative AI.
@@ -800,9 +810,9 @@ spans:
     requirement_level: recommended
     kind: internal
     name:
-      note: >
-        **Span name** SHOULD be `plan {gen_ai.agent.name}` if `gen_ai.agent.name` is readily available.
-        When `gen_ai.agent.name` is not available, it SHOULD be `plan`.
+      templates:
+        - "plan {gen_ai.agent.name}"
+        - "plan"
     brief: >
       Represents an agent planning or task decomposition phase.
     note: |
@@ -1007,10 +1017,6 @@ span_refinements:
 
   - id: gen_ai.execute_tool.transfer.internal
     ref: gen_ai.execute_tool.internal
-    name:
-      note: |
-        **Span name** SHOULD be `execute_tool {gen_ai.tool.name}`.
-        Semantic conventions for individual frameworks MAY specify different span name format.
     brief: >
       Describes a tool call that transfers work or control to another agent.
     note: |
@@ -1040,10 +1046,9 @@ span_refinements:
     ref: gen_ai.execute_tool.internal
     brief: Describes a tool call that loads a skill into an agent's context.
     name:
-      note: |
-        **Span name** SHOULD be `execute_tool {gen_ai.tool.name} {gen_ai.skill.name}`
-        when `gen_ai.skill.name` is available and `execute_tool {gen_ai.tool.name}`
-        otherwise.
+      templates:
+        - "execute_tool {gen_ai.tool.name} {gen_ai.skill.name}"
+        - "execute_tool {gen_ai.tool.name}"
     note: |
       This refinement applies when a dedicated tool loads a skill.
       Examples include:
@@ -1072,13 +1077,11 @@ span_refinements:
     ref: gen_ai.execute_tool.internal
     brief: Describes a tool call that reads a resource belonging to a skill.
     name:
+      templates:
+        - "execute_tool {gen_ai.tool.name} {gen_ai.skill.name} {gen_ai.skill.resource.name}"
+        - "execute_tool {gen_ai.tool.name} {gen_ai.skill.resource.name}"
+        - "execute_tool {gen_ai.tool.name}"
       note: |
-        **Span name** SHOULD be
-        `execute_tool {gen_ai.tool.name} {gen_ai.skill.name} {gen_ai.skill.resource.name}`
-        when the skill and resource names are available,
-        `execute_tool {gen_ai.tool.name} {gen_ai.skill.resource.name}` when only the
-        resource name is available, and `execute_tool {gen_ai.tool.name}` otherwise.
-
         The skill name SHOULD NOT be appended by itself.
     note: |
       This refinement applies when a dedicated tool reads a skill resource.
@@ -1111,17 +1114,12 @@ span_refinements:
     ref: gen_ai.execute_tool.internal
     brief: Describes a tool call that executes one or more commands.
     name:
+      templates:
+        - "execute_tool {gen_ai.tool.name} {gen_ai.skill.name} {gen_ai.skill.resource.name}"
+        - "execute_tool {gen_ai.tool.name} {gen_ai.skill.resource.name}"
+        - "execute_tool {gen_ai.tool.name} {process.executable.name}"
+        - "execute_tool {gen_ai.tool.name}"
       note: |
-        **Span name** SHOULD be:
-
-        - `execute_tool {gen_ai.tool.name} {gen_ai.skill.name} {gen_ai.skill.resource.name}`
-          when the skill and resource names are both available;
-        - `execute_tool {gen_ai.tool.name} {gen_ai.skill.resource.name}` when only the
-          skill resource name is available;
-        - `execute_tool {gen_ai.tool.name} {process.executable.name}` when only the
-          executable name is available;
-        - `execute_tool {gen_ai.tool.name}` otherwise.
-
         The skill name SHOULD NOT be appended without the resource name.
     note: |
       This refinement applies when a tool represents command execution,

@@ -55,8 +55,12 @@ Describes GenAI retrieval span - a request to a Generative AI service or framewo
 
 The `gen_ai.operation.name` SHOULD be `retrieval`.
 
-**Span name** SHOULD be `{gen_ai.operation.name} {gen_ai.data_source.id}`. Semantic conventions
-for individual GenAI providers and retrievers MAY specify different span name format.
+**Span name** SHOULD be the first of the following formats for which all attributes are available.
+
+1. `{gen_ai.operation.name} {gen_ai.data_source.id}`
+2. `{gen_ai.operation.name}`
+
+Semantic conventions for individual GenAI providers and retrievers MAY specify different span name format.
 
 **Span kind** SHOULD be `CLIENT`.
 
@@ -204,9 +208,9 @@ Describes a request to a Generative AI provider that fetches a previously genera
 
 The `gen_ai.operation.name` SHOULD be `fetch_response`.
 
-**Span name** SHOULD be `{gen_ai.operation.name}`. The response identifier is high
-cardinality, so it is not included in the span name. Semantic conventions for individual
-GenAI providers MAY specify a different span name format.
+**Span name** SHOULD be `{gen_ai.operation.name}`.
+
+Semantic conventions for individual GenAI providers MAY specify a different span name format.
 
 **Span kind** SHOULD be `CLIENT`.
 

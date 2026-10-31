@@ -49,7 +49,11 @@ Describes GenAI agent creation and is usually applicable when working with remot
 
 The `gen_ai.operation.name` SHOULD be `create_agent`.
 
-**Span name** SHOULD be `create_agent {gen_ai.agent.name}`.
+**Span name** SHOULD be the first of the following formats for which all attributes are available.
+
+1. `create_agent {gen_ai.agent.name}`
+2. `create_agent`
+
 Semantic conventions for individual GenAI systems and frameworks MAY specify different span name format.
 
 **Span kind** SHOULD be `CLIENT`.
@@ -177,8 +181,11 @@ The `gen_ai.operation.name` SHOULD be `invoke_agent`.
 
 Examples: OpenAI Assistants API, AWS Bedrock Agents.
 
-**Span name** SHOULD be `invoke_agent {gen_ai.agent.name}` if `gen_ai.agent.name` is readily available.
-When `gen_ai.agent.name` is not available, it SHOULD be `invoke_agent`.
+**Span name** SHOULD be the first of the following formats for which all attributes are available.
+
+1. `invoke_agent {gen_ai.agent.name}`
+2. `invoke_agent`
+
 Semantic conventions for individual GenAI systems and frameworks MAY specify different span name format.
 
 **Span kind** SHOULD be `CLIENT`.
@@ -554,8 +561,11 @@ The `gen_ai.operation.name` SHOULD be `invoke_agent`.
 
 Examples: LangChain agents, CrewAI agents.
 
-**Span name** SHOULD be `invoke_agent {gen_ai.agent.name}` if `gen_ai.agent.name` is readily available.
-When `gen_ai.agent.name` is not available, it SHOULD be `invoke_agent`.
+**Span name** SHOULD be the first of the following formats for which all attributes are available.
+
+1. `invoke_agent {gen_ai.agent.name}`
+2. `invoke_agent`
+
 Semantic conventions for individual GenAI systems and frameworks MAY specify different span name format.
 
 **Span kind** SHOULD be `INTERNAL`.
@@ -853,7 +863,10 @@ Examples of workflow invocations in different frameworks include:
 - **Microsoft Agent Framework**: [`Workflow*.run(...)`](https://learn.microsoft.com/agent-framework/workflows/)
 - **OpenAI Agents**: [`Runner.run(starting_agent=...)`](https://openai.github.io/openai-agents-python/ref/run/#agents.run.Runner.run) with handoffs, sub-agents, or agents-as-tools.
 
-**Span name** SHOULD be `invoke_workflow {gen_ai.workflow.name}`.
+**Span name** SHOULD be the first of the following formats for which all attributes are available.
+
+1. `invoke_workflow {gen_ai.workflow.name}`
+2. `invoke_workflow`
 
 **Span kind** SHOULD be `INTERNAL`.
 
@@ -998,7 +1011,10 @@ that the operation being instrumented is planning or task decomposition, and SHO
 NOT be reported when the instrumentation cannot distinguish planning from generic
 reasoning or normal inference.
 
-**Span name** SHOULD be `plan {gen_ai.agent.name}` if `gen_ai.agent.name` is readily available. When `gen_ai.agent.name` is not available, it SHOULD be `plan`.
+**Span name** SHOULD be the first of the following formats for which all attributes are available.
+
+1. `plan {gen_ai.agent.name}`
+2. `plan`
 
 **Span kind** SHOULD be `INTERNAL`.
 
@@ -1074,7 +1090,6 @@ Examples include:
   created from another agent.
 
 **Span name** SHOULD be `execute_tool {gen_ai.tool.name}`.
-Semantic conventions for individual frameworks MAY specify different span name format.
 
 **Span kind** SHOULD be `INTERNAL`.
 
@@ -1231,9 +1246,10 @@ Examples include:
 - [Agno](https://docs.agno.com/skills/overview)
   `get_skill_instructions`.
 
-**Span name** SHOULD be `execute_tool {gen_ai.tool.name} {gen_ai.skill.name}`
-when `gen_ai.skill.name` is available and `execute_tool {gen_ai.tool.name}`
-otherwise.
+**Span name** SHOULD be the first of the following formats for which all attributes are available.
+
+1. `execute_tool {gen_ai.tool.name} {gen_ai.skill.name}`
+2. `execute_tool {gen_ai.tool.name}`
 
 **Span kind** SHOULD be `INTERNAL`.
 
@@ -1382,11 +1398,11 @@ Examples include:
   `get_skill_reference` and `get_skill_script` when called with
   `execute=false`.
 
-**Span name** SHOULD be
-`execute_tool {gen_ai.tool.name} {gen_ai.skill.name} {gen_ai.skill.resource.name}`
-when the skill and resource names are available,
-`execute_tool {gen_ai.tool.name} {gen_ai.skill.resource.name}` when only the
-resource name is available, and `execute_tool {gen_ai.tool.name}` otherwise.
+**Span name** SHOULD be the first of the following formats for which all attributes are available.
+
+1. `execute_tool {gen_ai.tool.name} {gen_ai.skill.name} {gen_ai.skill.resource.name}`
+2. `execute_tool {gen_ai.tool.name} {gen_ai.skill.resource.name}`
+3. `execute_tool {gen_ai.tool.name}`
 
 The skill name SHOULD NOT be appended by itself.
 
@@ -1553,15 +1569,12 @@ Instrumentations MAY also emit additional spans following the
 [CLI client span conventions](https://opentelemetry.io/docs/specs/semconv/cli/cli-spans/)
 for each observed command, script, or process execution.
 
-**Span name** SHOULD be:
+**Span name** SHOULD be the first of the following formats for which all attributes are available.
 
-- `execute_tool {gen_ai.tool.name} {gen_ai.skill.name} {gen_ai.skill.resource.name}`
-  when the skill and resource names are both available;
-- `execute_tool {gen_ai.tool.name} {gen_ai.skill.resource.name}` when only the
-  skill resource name is available;
-- `execute_tool {gen_ai.tool.name} {process.executable.name}` when only the
-  executable name is available;
-- `execute_tool {gen_ai.tool.name}` otherwise.
+1. `execute_tool {gen_ai.tool.name} {gen_ai.skill.name} {gen_ai.skill.resource.name}`
+2. `execute_tool {gen_ai.tool.name} {gen_ai.skill.resource.name}`
+3. `execute_tool {gen_ai.tool.name} {process.executable.name}`
+4. `execute_tool {gen_ai.tool.name}`
 
 The skill name SHOULD NOT be appended without the resource name.
 

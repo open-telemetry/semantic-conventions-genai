@@ -1,0 +1,1 @@
+Define span names as ordered weaver name templates and add fallbacks for spans whose name attribute is not always available: `{gen_ai.operation.name}` for inference, embeddings, and retrieval spans; `create_agent` and `invoke_workflow` for create agent and invoke workflow spans.

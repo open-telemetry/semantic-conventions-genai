@@ -19,14 +19,13 @@ spans:
     requirement_level: recommended
     kind: client
     name:
+      templates:
+        - "{mcp.method.name} {gen_ai.tool.name}"
+        - "{mcp.method.name} {gen_ai.prompt.name}"
+        - "{mcp.method.name}"
       note: |
-        **Span name** SHOULD follow the format `{mcp.method.name} {target}`
-        where target SHOULD match `{gen_ai.tool.name}` or `{gen_ai.prompt.name}` when
-        applicable.
-        If there is no low-cardinality `target` available, the Span name SHOULD be `{mcp.method.name}`.
-
-        Instrumentation MAY allow users to opt into including `{mcp.resource.uri}`
-        as `target` in the span name when it is available but SHOULD NOT include it by default
+        Instrumentation MAY allow users to opt into using `{mcp.method.name} {mcp.resource.uri}`
+        as the span name when `mcp.resource.uri` is available but SHOULD NOT use it by default
         to avoid high cardinality span names.
     brief: This span describes the MCP call from the client side.
     note: |
@@ -82,14 +81,13 @@ spans:
     requirement_level: recommended
     kind: server
     name:
+      templates:
+        - "{mcp.method.name} {gen_ai.tool.name}"
+        - "{mcp.method.name} {gen_ai.prompt.name}"
+        - "{mcp.method.name}"
       note: |
-        **Span name** SHOULD follow the format `{mcp.method.name} {target}`
-        where target SHOULD match `{gen_ai.tool.name}` or `{gen_ai.prompt.name}` when
-        applicable.
-        If there is no low-cardinality `target` available, the Span name SHOULD be `{mcp.method.name}`.
-
-        Instrumentation MAY allow users to opt into including `{mcp.resource.uri}`
-        as `target` in the span name when it is available but SHOULD NOT include it by default
+        Instrumentation MAY allow users to opt into using `{mcp.method.name} {mcp.resource.uri}`
+        as the span name when `mcp.resource.uri` is available but SHOULD NOT use it by default
         to avoid high cardinality span names.
     brief: This span describes the processing of the MCP request or notification initiated by the peer.
     note: |
