@@ -376,6 +376,12 @@ def run_chat_error_reference():
             error_type = f"{type(error).__module__}.{type(error).__qualname__}"
             span.set_status(StatusCode.ERROR, str(error))
             span.set_attribute("error.type", error_type)
+            metric_attributes = usage_metric_attributes(
+                request_model, None, client.base_url.host, client.base_url.port
+            )
+            metric_attributes["error.type"] = error_type
+            _operation_input_tokens.record(0, metric_attributes)
+            _operation_output_tokens.record(0, metric_attributes)
             reference_event_logger().emit(
                 event_name="gen_ai.client.inference.exception",
                 severity_number=SeverityNumber.WARN,
