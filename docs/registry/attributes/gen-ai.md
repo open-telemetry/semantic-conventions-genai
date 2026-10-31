@@ -82,16 +82,24 @@
 | <a id="gen-ai-usage-audio-output-tokens" href="#gen-ai-usage-audio-output-tokens">`gen_ai.usage.audio.output_tokens`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The number of audio output tokens. [45] | `240` |
 | <a id="gen-ai-usage-cache-read-input-tokens" href="#gen-ai-usage-cache-read-input-tokens">`gen_ai.usage.cache_read.input_tokens`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The number of input tokens served from a provider-managed cache. [46] | `50` |
 | <a id="gen-ai-usage-cache-write-input-tokens" href="#gen-ai-usage-cache-write-input-tokens">`gen_ai.usage.cache_write.input_tokens`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The number of input tokens written to a provider-managed cache. [47] | `25` |
-| <a id="gen-ai-usage-image-cache-read-input-tokens" href="#gen-ai-usage-image-cache-read-input-tokens">`gen_ai.usage.image.cache_read.input_tokens`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The number of image input tokens served from a provider-managed cache. [48] | `128` |
-| <a id="gen-ai-usage-image-input-tokens" href="#gen-ai-usage-image-input-tokens">`gen_ai.usage.image.input_tokens`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The number of image input tokens. [49] | `258` |
-| <a id="gen-ai-usage-image-output-tokens" href="#gen-ai-usage-image-output-tokens">`gen_ai.usage.image.output_tokens`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The number of image output tokens. [50] | `1290` |
-| <a id="gen-ai-usage-input-tokens" href="#gen-ai-usage-input-tokens">`gen_ai.usage.input_tokens`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The number of tokens used in the GenAI input (prompt). [51] | `100` |
-| <a id="gen-ai-usage-output-tokens" href="#gen-ai-usage-output-tokens">`gen_ai.usage.output_tokens`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The number of tokens used in the GenAI response (completion). [52] | `180` |
-| <a id="gen-ai-usage-reasoning-output-tokens" href="#gen-ai-usage-reasoning-output-tokens">`gen_ai.usage.reasoning.output_tokens`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The number of output tokens used for reasoning (e.g. chain-of-thought, extended thinking). [53] | `50` |
-| <a id="gen-ai-usage-text-cache-read-input-tokens" href="#gen-ai-usage-text-cache-read-input-tokens">`gen_ai.usage.text.cache_read.input_tokens`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The number of text input tokens served from a provider-managed cache. [54] | `40` |
-| <a id="gen-ai-usage-text-input-tokens" href="#gen-ai-usage-text-input-tokens">`gen_ai.usage.text.input_tokens`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The number of text input tokens. [55] | `100` |
-| <a id="gen-ai-usage-text-output-tokens" href="#gen-ai-usage-text-output-tokens">`gen_ai.usage.text.output_tokens`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The number of text output tokens. [56] | `180` |
-| <a id="gen-ai-workflow-name" href="#gen-ai-workflow-name">`gen_ai.workflow.name`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | Human-readable name of the GenAI workflow provided by the application. [57] | `multi_agent_rag`; `customer_support_pipeline` |
+| <a id="gen-ai-usage-cost-amount" href="#gen-ai-usage-cost-amount">`gen_ai.usage.cost.amount`</a> | ![Development](https://img.shields.io/badge/-development-blue) | double | The monetary cost of a single GenAI operation. [48] | `0.0023`; `0.015`; `0.42` |
+| <a id="gen-ai-usage-cost-cache-read" href="#gen-ai-usage-cost-cache-read">`gen_ai.usage.cost.cache_read`</a> | ![Development](https://img.shields.io/badge/-development-blue) | double | The cost of input tokens served from a provider-managed cache. [49] | `0.00045` |
+| <a id="gen-ai-usage-cost-cache-write" href="#gen-ai-usage-cost-cache-write">`gen_ai.usage.cost.cache_write`</a> | ![Development](https://img.shields.io/badge/-development-blue) | double | The cost of input tokens written to a provider-managed cache. [50] | `0.01125` |
+| <a id="gen-ai-usage-cost-currency" href="#gen-ai-usage-cost-currency">`gen_ai.usage.cost.currency`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | ISO 4217 currency code for the cost value. [51] | `USD`; `EUR`; `GBP` |
+| <a id="gen-ai-usage-cost-input" href="#gen-ai-usage-cost-input">`gen_ai.usage.cost.input`</a> | ![Development](https://img.shields.io/badge/-development-blue) | double | The cost of input tokens other than cache reads and cache writes. [52] | `0.0006` |
+| <a id="gen-ai-usage-cost-output" href="#gen-ai-usage-cost-output">`gen_ai.usage.cost.output`</a> | ![Development](https://img.shields.io/badge/-development-blue) | double | The cost of output tokens other than reasoning tokens. [53] | `0.0003` |
+| <a id="gen-ai-usage-cost-reasoning" href="#gen-ai-usage-cost-reasoning">`gen_ai.usage.cost.reasoning`</a> | ![Development](https://img.shields.io/badge/-development-blue) | double | The cost of output tokens used for reasoning. [54] | `0.0009` |
+| <a id="gen-ai-usage-cost-source" href="#gen-ai-usage-cost-source">`gen_ai.usage.cost.source`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The source of the cost value. [55] | `provider`; `local` |
+| <a id="gen-ai-usage-image-cache-read-input-tokens" href="#gen-ai-usage-image-cache-read-input-tokens">`gen_ai.usage.image.cache_read.input_tokens`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The number of image input tokens served from a provider-managed cache. [56] | `128` |
+| <a id="gen-ai-usage-image-input-tokens" href="#gen-ai-usage-image-input-tokens">`gen_ai.usage.image.input_tokens`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The number of image input tokens. [57] | `258` |
+| <a id="gen-ai-usage-image-output-tokens" href="#gen-ai-usage-image-output-tokens">`gen_ai.usage.image.output_tokens`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The number of image output tokens. [58] | `1290` |
+| <a id="gen-ai-usage-input-tokens" href="#gen-ai-usage-input-tokens">`gen_ai.usage.input_tokens`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The number of tokens used in the GenAI input (prompt). [59] | `100` |
+| <a id="gen-ai-usage-output-tokens" href="#gen-ai-usage-output-tokens">`gen_ai.usage.output_tokens`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The number of tokens used in the GenAI response (completion). [60] | `180` |
+| <a id="gen-ai-usage-reasoning-output-tokens" href="#gen-ai-usage-reasoning-output-tokens">`gen_ai.usage.reasoning.output_tokens`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The number of output tokens used for reasoning (e.g. chain-of-thought, extended thinking). [61] | `50` |
+| <a id="gen-ai-usage-text-cache-read-input-tokens" href="#gen-ai-usage-text-cache-read-input-tokens">`gen_ai.usage.text.cache_read.input_tokens`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The number of text input tokens served from a provider-managed cache. [62] | `40` |
+| <a id="gen-ai-usage-text-input-tokens" href="#gen-ai-usage-text-input-tokens">`gen_ai.usage.text.input_tokens`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The number of text input tokens. [63] | `100` |
+| <a id="gen-ai-usage-text-output-tokens" href="#gen-ai-usage-text-output-tokens">`gen_ai.usage.text.output_tokens`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The number of text output tokens. [64] | `180` |
+| <a id="gen-ai-workflow-name" href="#gen-ai-workflow-name">`gen_ai.workflow.name`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | Human-readable name of the GenAI workflow provided by the application. [65] | `multi_agent_rag`; `customer_support_pipeline` |
 
 
 **[1] `gen_ai.agent.id`:** For hosted agents, this SHOULD be the provider-assigned stable identifier of the agent resource such as [AWS Bedrock agent ARN](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_Agent.html) or [GCP Agent Registry identifier](https://docs.cloud.google.com/agent-registry/concepts#agent-identifier).
@@ -420,13 +428,96 @@ Datastore: A tool used by the agent to access and query structured or unstructur
 
 **[47] `gen_ai.usage.cache_write.input_tokens`:** The value SHOULD be included in `gen_ai.usage.input_tokens`.
 
-**[48] `gen_ai.usage.image.cache_read.input_tokens`:** The value SHOULD be included in `gen_ai.usage.cache_read.input_tokens` and in `gen_ai.usage.image.input_tokens`.
+**[48] `gen_ai.usage.cost.amount`:** The cost in the currency specified by `gen_ai.usage.cost.currency`.
+When the cost is not present in the response, a component that owns
+pricing data computes it at recording time; see
+`gen_ai.usage.cost.source` for the two cases.
 
-**[49] `gen_ai.usage.image.input_tokens`:** The value SHOULD be included in `gen_ai.usage.input_tokens`.
+Cost is therefore recorded by whichever component can determine it. Any
+instrumentation of the client can record it when the value is present in
+the response, since doing so copies a field the client already received.
+When it is absent, only a component configured with pricing data can
+record it. A component with neither is **not expected to acquire pricing
+data in order to record cost**. Whether to maintain pricing data at all is
+the component's choice.
 
-**[50] `gen_ai.usage.image.output_tokens`:** The value SHOULD be included in `gen_ai.usage.output_tokens`.
+The recorded amount reflects the pricing data in force at recording
+time and MUST NOT be recomputed against later pricing data. Backend
+or collector-side enrichment that reconstructs cost after the fact is
+out of scope for `gen_ai.usage.cost.*`.
 
-**[51] `gen_ai.usage.input_tokens`:** This value SHOULD include all types of input tokens, including cached tokens.
+Floating-point representation is acceptable for observability purposes.
+This attribute is not intended for financial accounting.
+
+For systems that distinguish multiple cost perspectives (list price,
+contracted price, effective price after discounts), this attribute
+SHOULD record the effective cost, the amount actually charged after
+any applicable discounts or commitments.
+
+This attribute records only the cost of the operation being recorded and
+MUST NOT include cost attributable to nested operations. Note that this
+alone does not make cost summable across a trace: if two layers of
+instrumentation both record the same operation, a consumer summing every
+value will double-count, and de-duplicating overlapping records is the
+consumer's responsibility.
+
+Different spans in the same trace MAY have different `cost.source`
+values. Consumers summing cost across a trace should expect a mix of
+provider-reported and locally-computed values.
+
+The amount MAY be broken down into `gen_ai.usage.cost.input`,
+`gen_ai.usage.cost.cache_read`, `gen_ai.usage.cost.cache_write`,
+`gen_ai.usage.cost.output`, and `gen_ai.usage.cost.reasoning`. Each class
+is a portion of the amount, priced the same way and in the same currency,
+so a class MUST NOT be set without the amount. The classes are disjoint
+even though the token counts they price are nested (for example,
+`gen_ai.usage.cache_read.input_tokens` is included in
+`gen_ai.usage.input_tokens`): the cost of a token MUST be included in at
+most one class. The sum of the classes that are set therefore does not
+exceed the amount; the difference is cost not attributed to a set class,
+such as an unpriced class or a charge that is not per token. When the
+cost of a class cannot be separated from the amount, instrumentations
+MUST NOT set it.
+
+Consumers MUST NOT derive a class that is not set, and MUST NOT
+recompute a set class from token counts and pricing data.
+
+**[49] `gen_ai.usage.cost.cache_read`:** Prices `gen_ai.usage.cache_read.input_tokens`.
+See `gen_ai.usage.cost.amount` for the rules shared by all cost classes.
+
+**[50] `gen_ai.usage.cost.cache_write`:** Prices `gen_ai.usage.cache_write.input_tokens`.
+See `gen_ai.usage.cost.amount` for the rules shared by all cost classes.
+
+**[51] `gen_ai.usage.cost.currency`:** MUST be a three-letter ISO 4217 alphabetic code (e.g. "USD", "EUR").
+When the cost source does not specify a currency, instrumentations
+MUST obtain the currency from explicit user configuration. If no
+currency can be determined, `gen_ai.usage.cost.amount` MUST NOT
+be set.
+
+**[52] `gen_ai.usage.cost.input`:** Excludes cache reads and cache writes even when
+`gen_ai.usage.cache_read.input_tokens` and
+`gen_ai.usage.cache_write.input_tokens` are not recorded.
+See `gen_ai.usage.cost.amount` for the rules shared by all cost classes.
+
+**[53] `gen_ai.usage.cost.output`:** Excludes reasoning tokens even when
+`gen_ai.usage.reasoning.output_tokens` is not recorded.
+See `gen_ai.usage.cost.amount` for the rules shared by all cost classes.
+
+**[54] `gen_ai.usage.cost.reasoning`:** Prices `gen_ai.usage.reasoning.output_tokens`, even when the provider
+bills them at the output rate.
+See `gen_ai.usage.cost.amount` for the rules shared by all cost classes.
+
+**[55] `gen_ai.usage.cost.source`:** Distinguishes cost values received in the response from cost values
+computed at recording time by the emitting component. See the enum
+member notes for the receive-vs-derive test.
+
+**[56] `gen_ai.usage.image.cache_read.input_tokens`:** The value SHOULD be included in `gen_ai.usage.cache_read.input_tokens` and in `gen_ai.usage.image.input_tokens`.
+
+**[57] `gen_ai.usage.image.input_tokens`:** The value SHOULD be included in `gen_ai.usage.input_tokens`.
+
+**[58] `gen_ai.usage.image.output_tokens`:** The value SHOULD be included in `gen_ai.usage.output_tokens`.
+
+**[59] `gen_ai.usage.input_tokens`:** This value SHOULD include all types of input tokens, including cached tokens.
 Instrumentations SHOULD make a best effort to populate this value, using a total
 provided by the provider when available or, depending on the provider API,
 by summing different token types parsed from the provider output.
@@ -444,20 +535,20 @@ if a request has 100 text tokens (40 cached) and 200 image tokens:
 - `gen_ai.usage.text.cache_read.input_tokens`: 40
 - `gen_ai.usage.image.input_tokens`: 200
 
-**[52] `gen_ai.usage.output_tokens`:** When the provider reports both billed token counts and model-consumed
+**[60] `gen_ai.usage.output_tokens`:** When the provider reports both billed token counts and model-consumed
 token counts (for example, Cohere exposes both `usage.billed_units` and
 `usage.tokens`), instrumentations SHOULD report the billed count so the
 value matches the units the customer is charged for.
 
-**[53] `gen_ai.usage.reasoning.output_tokens`:** The value SHOULD be included in `gen_ai.usage.output_tokens`.
+**[61] `gen_ai.usage.reasoning.output_tokens`:** The value SHOULD be included in `gen_ai.usage.output_tokens`.
 
-**[54] `gen_ai.usage.text.cache_read.input_tokens`:** The value SHOULD be included in `gen_ai.usage.cache_read.input_tokens` and in `gen_ai.usage.text.input_tokens`.
+**[62] `gen_ai.usage.text.cache_read.input_tokens`:** The value SHOULD be included in `gen_ai.usage.cache_read.input_tokens` and in `gen_ai.usage.text.input_tokens`.
 
-**[55] `gen_ai.usage.text.input_tokens`:** The value SHOULD be included in `gen_ai.usage.input_tokens`.
+**[63] `gen_ai.usage.text.input_tokens`:** The value SHOULD be included in `gen_ai.usage.input_tokens`.
 
-**[56] `gen_ai.usage.text.output_tokens`:** The value SHOULD be included in `gen_ai.usage.output_tokens`.
+**[64] `gen_ai.usage.text.output_tokens`:** The value SHOULD be included in `gen_ai.usage.output_tokens`.
 
-**[57] `gen_ai.workflow.name`:** The workflow name is usually a static, application-unique identifier defined
+**[65] `gen_ai.workflow.name`:** The workflow name is usually a static, application-unique identifier defined
 in a framework-specific way.
 
 For example, it can be the name of the first chain in LangChain,
@@ -486,7 +577,7 @@ what `gen_ai.workflow.name` means in the context of that framework.
 | `delete_memory_store` | Delete or deprovision a memory store | ![Development](https://img.shields.io/badge/-development-blue) |
 | `embeddings` | Embeddings operation such as [OpenAI Create embeddings API](https://platform.openai.com/docs/api-reference/embeddings/create) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `execute_tool` | Execute a tool | ![Development](https://img.shields.io/badge/-development-blue) |
-| `fetch_response` | Fetch a previously generated model response by its identifier, without performing inference, such as [OpenAI Get a model response](https://platform.openai.com/docs/api-reference/responses/get) [58] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `fetch_response` | Fetch a previously generated model response by its identifier, without performing inference, such as [OpenAI Get a model response](https://platform.openai.com/docs/api-reference/responses/get) [66] | ![Development](https://img.shields.io/badge/-development-blue) |
 | `generate_content` | Multimodal content generation operation such as [Gemini Generate Content](https://ai.google.dev/api/generate-content) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `invoke_agent` | Invoke GenAI agent | ![Development](https://img.shields.io/badge/-development-blue) |
 | `invoke_workflow` | Invoke GenAI workflow | ![Development](https://img.shields.io/badge/-development-blue) |
@@ -497,7 +588,7 @@ what `gen_ai.workflow.name` means in the context of that framework.
 | `update_memory` | Update existing memory records | ![Development](https://img.shields.io/badge/-development-blue) |
 | `upsert_memory` | Create or update memory records without the caller choosing which | ![Development](https://img.shields.io/badge/-development-blue) |
 
-**[58]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
+**[66]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
 
 ---
 
@@ -522,9 +613,9 @@ what `gen_ai.workflow.name` means in the context of that framework.
 | `azure.ai.openai` | [Azure OpenAI](https://learn.microsoft.com/en-us/azure/ai-services/openai/overview) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `cohere` | [Cohere](https://cohere.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `deepseek` | [DeepSeek](https://www.deepseek.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
-| `gcp.gemini` | [Gemini](https://cloud.google.com/products/gemini) [59] | ![Development](https://img.shields.io/badge/-development-blue) |
-| `gcp.gen_ai` | Any Google generative AI endpoint [60] | ![Development](https://img.shields.io/badge/-development-blue) |
-| `gcp.vertex_ai` | [Vertex AI](https://cloud.google.com/vertex-ai) [61] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `gcp.gemini` | [Gemini](https://cloud.google.com/products/gemini) [67] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `gcp.gen_ai` | Any Google generative AI endpoint [68] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `gcp.vertex_ai` | [Vertex AI](https://cloud.google.com/vertex-ai) [69] | ![Development](https://img.shields.io/badge/-development-blue) |
 | `groq` | [Groq](https://groq.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `ibm.watsonx.ai` | [IBM Watsonx AI](https://www.ibm.com/products/watsonx-ai) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `mistral` | [Mistral](https://mistral.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
@@ -533,11 +624,11 @@ what `gen_ai.workflow.name` means in the context of that framework.
 | `perplexity` | [Perplexity](https://www.perplexity.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `x_ai` | [xAI](https://x.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 
-**[59]:** Used when accessing the 'generativelanguage.googleapis.com' endpoint. Also known as the AI Studio API.
+**[67]:** Used when accessing the 'generativelanguage.googleapis.com' endpoint. Also known as the AI Studio API.
 
-**[60]:** May be used when specific backend is unknown.
+**[68]:** May be used when specific backend is unknown.
 
-**[61]:** Used when accessing the 'aiplatform.googleapis.com' endpoint.
+**[69]:** Used when accessing the 'aiplatform.googleapis.com' endpoint.
 
 ---
 
@@ -571,3 +662,24 @@ what `gen_ai.workflow.name` means in the context of that framework.
 | --- | --- | --- |
 | `pass_control` | The initiator does not wait for the target to finish. The target takes control of the remaining work. | ![Development](https://img.shields.io/badge/-development-blue) |
 | `return_to_caller` | The initiator waits for the target to finish and then resumes execution. | ![Development](https://img.shields.io/badge/-development-blue) |
+
+---
+
+`gen_ai.usage.cost.source` has the following list of well-known values. If one of them applies, then the respective value MUST be used; otherwise, a custom value MAY be used.
+
+| Value | Description | Stability |
+| --- | --- | --- |
+| `local` | The emitting component computed the value itself. [70] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `provider` | The cost value was present in the response the client received. [71] | ![Development](https://img.shields.io/badge/-development-blue) |
+
+**[70]:** No cost was present in the response; the emitting component
+computed the value at recording time from token counts and
+pricing data it owns, such as a configured pricing table or
+maintained pricing data bundled as a versioned dependency
+(e.g. `genai-prices`).
+
+**[71]:** The cost value was present in the response the instrumented
+client received, whether from the model provider directly or
+from an intermediary (gateway, proxy, router) that priced the
+request. From the client's perspective these are
+indistinguishable; the value is passed through unmodified.

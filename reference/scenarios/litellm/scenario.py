@@ -1,10 +1,11 @@
 """Reference implementation for LiteLLM.
 
-Exercises: chat, chat_streaming, chat_tool_call, embeddings
+Exercises: chat, responses, chat_streaming, chat_tool_call, embeddings
 against a mock OpenAI server, with manual OTel spans.
 """
 
 import json
+import math
 import os
 import time
 from urllib.parse import urlparse
@@ -18,6 +19,12 @@ _SERVER_PORT = urlparse(os.environ["MOCK_LLM_URL"]).port
 
 _reference_tracer = reference_tracer()
 _reference_meter = reference_meter()
+
+_cost_histogram = _reference_meter.create_histogram(
+    name="gen_ai.client.operation.cost",
+    unit="{cost}",
+    description="Monetary cost of a single GenAI inference operation.",
+)
 
 _embeddings_duration = _reference_meter.create_histogram(
     "gen_ai.client.embeddings.duration",
@@ -123,6 +130,26 @@ def run_chat():
             span.set_attribute("gen_ai.usage.input_tokens", resp.usage.prompt_tokens)
             span.set_attribute("gen_ai.usage.output_tokens", resp.usage.completion_tokens)
 
+        # Cost: LiteLLM computes per-request cost from its internal pricing table
+        response_cost = resp._hidden_params.get("response_cost")
+        if response_cost is not None:
+            span.set_attribute("gen_ai.usage.cost.amount", response_cost)
+            span.set_attribute("gen_ai.usage.cost.currency", "USD")
+            span.set_attribute("gen_ai.usage.cost.source", "local")
+            _cost_histogram.record(
+                response_cost,
+                attributes={
+                    "gen_ai.operation.name": "chat",
+                    "gen_ai.provider.name": provider_name,
+                    "gen_ai.request.model": request_model,
+                    "gen_ai.response.model": resp.model,
+                    "server.address": _SERVER_ADDRESS,
+                    "server.port": _SERVER_PORT,
+                    "gen_ai.usage.cost.currency": "USD",
+                    "gen_ai.usage.cost.source": "local",
+                },
+            )
+
         # Emit inference operation details event
         event_attrs = {
             "gen_ai.operation.name": "chat",
@@ -155,6 +182,115 @@ def run_chat():
         )
 
         print(f"    -> {resp.choices[0].message.content[:60]}")
+
+
+def run_responses_cost_breakdown():
+    """Scenario: Responses API call whose usage includes cache and reasoning tokens."""
+    import litellm
+    from litellm.litellm_core_utils.llm_cost_calc.utils import get_token_type_cost_breakdown
+    from litellm.responses.utils import ResponseAPILoggingUtils
+
+    print("  [responses] Responses API call via LiteLLM with per-class cost (reference implementation)")
+    request_model = "gpt-4o-mini"
+    litellm_model = f"openai/{request_model}"
+    provider_name = _provider_name(litellm_model)
+    request_messages = [{"role": "user", "content": "Say hello."}]
+    span_attributes = {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": provider_name,
+        "gen_ai.request.model": request_model,
+        "server.address": _SERVER_ADDRESS,
+        "server.port": _SERVER_PORT,
+    }
+    with _reference_tracer.start_as_current_span(
+        "chat gpt-4o-mini", kind=SpanKind.CLIENT, attributes=span_attributes
+    ) as span:
+        resp = litellm.responses(
+            model=litellm_model,
+            input=request_messages,
+            api_base=MOCK_BASE_URL,
+            api_key="mock-key",
+        )
+        # Every value set on the span is also kept for the details event so the two stay
+        # identical. The span is written at each step, so a later failure keeps earlier values.
+        response_attrs = {"gen_ai.response.model": resp.model, "gen_ai.response.id": resp.id}
+        finish_reason = {"completed": "stop", "failed": "error", "cancelled": "error"}.get(resp.status)
+        if resp.status == "incomplete":
+            reason = resp.incomplete_details.reason if resp.incomplete_details else None
+            finish_reason = {"max_output_tokens": "length", "content_filter": "content_filter"}.get(
+                reason, "incomplete"
+            )
+        if finish_reason:
+            response_attrs["gen_ai.response.finish_reasons"] = [finish_reason]
+        span.set_attributes(response_attrs)
+        usage = ResponseAPILoggingUtils._transform_response_api_usage_to_chat_usage(resp.usage)
+        usage_attrs = {
+            "gen_ai.usage.input_tokens": usage.prompt_tokens,
+            "gen_ai.usage.output_tokens": usage.completion_tokens,
+        }
+        for key, value in (
+            ("gen_ai.usage.cache_read.input_tokens", usage.prompt_tokens_details.cached_tokens),
+            ("gen_ai.usage.cache_write.input_tokens", usage.prompt_tokens_details.cache_creation_tokens),
+            ("gen_ai.usage.reasoning.output_tokens", usage.completion_tokens_details.reasoning_tokens),
+        ):
+            if value:
+                usage_attrs[key] = value
+        span.set_attributes(usage_attrs)
+        response_attrs.update(usage_attrs)
+
+        # LiteLLM computes the total from its pricing table. Its prompt cost includes cache
+        # reads and writes and its completion cost includes reasoning, so subtract those to
+        # keep the classes disjoint.
+        response_cost = resp._hidden_params.get("response_cost")
+        if response_cost is not None:
+            cost_attrs = {
+                "gen_ai.usage.cost.amount": response_cost,
+                "gen_ai.usage.cost.currency": "USD",
+                "gen_ai.usage.cost.source": "local",
+            }
+            span.set_attributes(cost_attrs)
+            response_attrs.update(cost_attrs)
+            _cost_histogram.record(
+                response_cost,
+                attributes={
+                    "gen_ai.operation.name": "chat",
+                    "gen_ai.provider.name": provider_name,
+                    "gen_ai.request.model": request_model,
+                    "gen_ai.response.model": resp.model,
+                    "server.address": _SERVER_ADDRESS,
+                    "server.port": _SERVER_PORT,
+                    "gen_ai.usage.cost.currency": "USD",
+                    "gen_ai.usage.cost.source": "local",
+                },
+            )
+            prompt_cost, completion_cost = litellm.cost_per_token(
+                model=request_model, custom_llm_provider=provider_name, usage_object=usage
+            )
+            # The classes are only a breakdown of the amount if LiteLLM applied no discount
+            # or margin on top of its token costs.
+            if math.isclose(prompt_cost + completion_cost, response_cost):
+                token_classes = get_token_type_cost_breakdown(
+                    model=request_model, custom_llm_provider=provider_name, usage=usage
+                )
+                cost_classes = {
+                    "gen_ai.usage.cost.input": prompt_cost
+                    - token_classes.cache_read_cost
+                    - token_classes.cache_creation_cost,
+                    "gen_ai.usage.cost.cache_read": token_classes.cache_read_cost,
+                    "gen_ai.usage.cost.cache_write": token_classes.cache_creation_cost,
+                    "gen_ai.usage.cost.output": completion_cost - token_classes.reasoning_cost,
+                    "gen_ai.usage.cost.reasoning": token_classes.reasoning_cost,
+                }
+                class_attrs = {key: value for key, value in cost_classes.items() if value > 0}
+                span.set_attributes(class_attrs)
+                response_attrs.update(class_attrs)
+
+        reference_event_logger().emit(
+            event_name="gen_ai.client.inference.operation.details",
+            body="Inference operation details",
+            attributes={**span_attributes, **response_attrs},
+        )
+        print(f"    -> cost: {response_cost}")
 
 
 def run_chat_streaming():
@@ -200,7 +336,9 @@ def run_chat_streaming():
         response_id = None
         response_model = None
         usage = None
+        chunks = []
         for chunk in resp:
+            chunks.append(chunk)
             response_id = response_id or chunk.id
             response_model = response_model or chunk.model
             usage = getattr(chunk, "usage", None) or usage
@@ -222,6 +360,26 @@ def run_chat_streaming():
         if usage:
             span.set_attribute("gen_ai.usage.input_tokens", usage.prompt_tokens)
             span.set_attribute("gen_ai.usage.output_tokens", usage.completion_tokens)
+
+        # Stream chunks carry no cost; LiteLLM prices the response it rebuilds from them.
+        response_cost = litellm.stream_chunk_builder(chunks)._hidden_params.get("response_cost") if chunks else None
+        if response_cost is not None:
+            span.set_attribute("gen_ai.usage.cost.amount", response_cost)
+            span.set_attribute("gen_ai.usage.cost.currency", "USD")
+            span.set_attribute("gen_ai.usage.cost.source", "local")
+            _cost_histogram.record(
+                response_cost,
+                attributes={
+                    "gen_ai.operation.name": "chat",
+                    "gen_ai.provider.name": provider_name,
+                    "gen_ai.request.model": request_model,
+                    "gen_ai.response.model": response_model,
+                    "server.address": _SERVER_ADDRESS,
+                    "server.port": _SERVER_PORT,
+                    "gen_ai.usage.cost.currency": "USD",
+                    "gen_ai.usage.cost.source": "local",
+                },
+            )
         span.set_attribute(
             "gen_ai.output.messages",
             json.dumps(
@@ -298,6 +456,24 @@ def run_chat_tool_call():
         if resp.usage:
             span.set_attribute("gen_ai.usage.input_tokens", resp.usage.prompt_tokens)
             span.set_attribute("gen_ai.usage.output_tokens", resp.usage.completion_tokens)
+        response_cost = resp._hidden_params.get("response_cost")
+        if response_cost is not None:
+            span.set_attribute("gen_ai.usage.cost.amount", response_cost)
+            span.set_attribute("gen_ai.usage.cost.currency", "USD")
+            span.set_attribute("gen_ai.usage.cost.source", "local")
+            _cost_histogram.record(
+                response_cost,
+                attributes={
+                    "gen_ai.operation.name": "chat",
+                    "gen_ai.provider.name": provider_name,
+                    "gen_ai.request.model": request_model,
+                    "gen_ai.response.model": resp.model,
+                    "server.address": _SERVER_ADDRESS,
+                    "server.port": _SERVER_PORT,
+                    "gen_ai.usage.cost.currency": "USD",
+                    "gen_ai.usage.cost.source": "local",
+                },
+            )
         tool_calls = getattr(resp.choices[0].message, "tool_calls", None)
         if tool_calls:
             # LiteLLM returns the tool call; running it is app code LiteLLM never
@@ -367,6 +543,7 @@ def main():
     # NO instrument() call - reference implementation only
 
     run_chat()
+    run_responses_cost_breakdown()
     run_chat_streaming()
     run_chat_tool_call()
     run_embeddings()
