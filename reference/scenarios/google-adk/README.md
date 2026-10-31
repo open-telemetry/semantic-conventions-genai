@@ -8,9 +8,6 @@ The retry test runs the basic agent scenario with a real `google-genai` client
 and a mocked HTTP transport returning 503 then 200. For the two HTTP attempts,
 the scenario records one inference call in `gen_ai.invoke_agent.inference_calls`.
 
-ADK records agent invocation durations natively. The scenario configures
-`gen_ai.invoke_agent.duration` with the recommended decimal histogram buckets.
-
 The agent-as-tool scenario records the caller's session ID on the tool span.
 The specialist span wraps ADK's actual agent execution, after tool argument
 validation. Both agents record finish reasons and accumulated token usage from
@@ -27,7 +24,6 @@ tool executes. The transfer records `pass_control`; the target's separate
 | inference (`chat`) | No — delegates to the model client (`google-genai`) | ✅ Correctly not emitted |
 | invoke_agent (internal) | Yes — each agent that `Runner.run` executes | ✅ Implemented |
 | invoke_runner | Yes — `Runner.run` is the SDK entrypoint | ✅ Implemented |
-| invoke_agent duration | Yes - ADK times agent runs | Implemented natively with decimal buckets |
 | execute_tool | Yes — ADK runs the tool | ✅ Implemented |
 | memory | Yes — memory service upsert / search | ✅ Implemented |
 | skills | Yes — `SkillToolset` runs the skill tools | ✅ Implemented |
