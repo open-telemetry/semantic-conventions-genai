@@ -43,7 +43,6 @@ _embeddings_duration = _reference_meter.create_histogram(
         10,
         30,
         60,
-        120,
     ],
 )
 _invoke_agent_duration = _reference_meter.create_histogram(
