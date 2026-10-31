@@ -40,7 +40,7 @@ _embeddings_duration = _reference_meter.create_histogram(
         10,
         30,
         60,
-        150,
+        120,
     ],
 )
 _embeddings_input_tokens = _reference_meter.create_histogram(
