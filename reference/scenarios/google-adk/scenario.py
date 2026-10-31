@@ -16,6 +16,7 @@ from opentelemetry.trace import StatusCode
 from reference_shared import (
     flush_and_shutdown,
     reference_event_logger,
+    invoke_agent_duration_view,
     reference_meter,
     reference_tracer,
     setup_otel,
@@ -1140,7 +1141,7 @@ def run_skills_reference():
 def main():
     print("=== Reference Implementation: Google ADK Reference Implementation ===")
 
-    tp, lp, mp = setup_otel()
+    tp, lp, mp = setup_otel(metric_views=(invoke_agent_duration_view(),))
 
     span_counter = SpanCounter()
     tp.add_span_processor(span_counter)
