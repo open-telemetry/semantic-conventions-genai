@@ -7,7 +7,6 @@ against a mock OpenAI server, with manual OTel spans.
 import json
 import os
 import time
-import traceback
 from urllib.parse import urlparse
 
 from opentelemetry._logs import SeverityNumber
@@ -359,11 +358,7 @@ def run_embeddings():
             reference_event_logger().emit(
                 event_name="gen_ai.client.embeddings.exception",
                 severity_number=SeverityNumber.WARN,
-                attributes={
-                    "exception.type": f"{type(error).__module__}.{type(error).__qualname__}",
-                    "exception.message": str(error),
-                    "exception.stacktrace": "".join(traceback.format_exception(error)),
-                },
+                exception=error,
             )
             raise
         finally:
