@@ -35,6 +35,7 @@
       "gen_ai.response.finish_reasons",
       "gen_ai.response.id",
       "gen_ai.response.model",
+      "gen_ai.response.time_to_first_chunk",
       "gen_ai.tool.definitions",
       "gen_ai.usage.audio.input_tokens",
       "gen_ai.usage.audio.output_tokens",
@@ -113,6 +114,14 @@
       "server.port"
     ],
     "gen_ai.client.inference.operation.output_tokens": [
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "gen_ai.request.model",
+      "gen_ai.response.model",
+      "server.address",
+      "server.port"
+    ],
+    "gen_ai.client.inference.time_to_first_chunk": [
       "gen_ai.operation.name",
       "gen_ai.provider.name",
       "gen_ai.request.model",
