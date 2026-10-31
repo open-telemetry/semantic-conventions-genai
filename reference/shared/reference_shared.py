@@ -12,7 +12,7 @@ from opentelemetry.sdk._logs import LoggerProvider
 from opentelemetry.sdk._logs.export import BatchLogRecordProcessor
 from opentelemetry.sdk.metrics import MeterProvider
 from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
-from opentelemetry.sdk.metrics.view import DropAggregation, ExplicitBucketHistogramAggregation, View
+from opentelemetry.sdk.metrics.view import DropAggregation, View
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
@@ -43,29 +43,6 @@ def inference_duration_view() -> View:
     return View(
         instrument_name="gen_ai.client.operation.duration",
         name="gen_ai.client.inference.duration",
-    )
-
-
-def invoke_agent_duration_view() -> View:
-    """Use the recommended buckets for native agent invocation durations."""
-    return View(
-        instrument_name="gen_ai.invoke_agent.duration",
-        aggregation=ExplicitBucketHistogramAggregation(
-            boundaries=(
-                0.1,
-                0.2,
-                0.5,
-                1,
-                2,
-                5,
-                10,
-                20,
-                50,
-                100,
-                200,
-                500,
-            ),
-        ),
     )
 
 

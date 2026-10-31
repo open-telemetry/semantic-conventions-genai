@@ -18,7 +18,7 @@ from google.adk.agents import Agent
 from google.adk.models.google_llm import Gemini
 from google.protobuf.json_format import MessageToDict
 from opentelemetry.sdk.resources import Resource
-from reference_shared import flush_and_shutdown, invoke_agent_duration_view, setup_otel
+from reference_shared import flush_and_shutdown, setup_otel
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"]
 
@@ -56,7 +56,7 @@ async def run():
             "gen_ai.main_agent.description": card.description or "",
         }
     )
-    tp, lp, mp = setup_otel(resource=resource, metric_views=(invoke_agent_duration_view(),))
+    tp, lp, mp = setup_otel(resource=resource)
 
     # Serve the real ADK agent over A2A and invoke it
     app = to_a2a(agent, agent_card=card, host=AGENT_HOST, port=80, protocol="http")
