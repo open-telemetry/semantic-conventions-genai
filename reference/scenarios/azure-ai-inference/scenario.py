@@ -3,7 +3,6 @@
 import json
 import os
 import time
-import traceback
 
 from opentelemetry._logs import SeverityNumber
 from opentelemetry.trace import SpanKind, StatusCode
@@ -306,11 +305,7 @@ def run_embeddings_reference(client):
             reference_event_logger().emit(
                 event_name="gen_ai.client.embeddings.exception",
                 severity_number=SeverityNumber.WARN,
-                attributes={
-                    "exception.type": f"{type(error).__module__}.{type(error).__qualname__}",
-                    "exception.message": str(error),
-                    "exception.stacktrace": "".join(traceback.format_exception(error)),
-                },
+                exception=error,
             )
             raise
         finally:
