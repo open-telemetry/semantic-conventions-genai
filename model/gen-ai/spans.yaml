@@ -47,7 +47,8 @@ attribute_groups:
     visibility: internal
     attributes:
       - ref: gen_ai.usage.cost.amount
-        requirement_level: recommended
+        requirement_level:
+          recommended: When priced.
       - ref: gen_ai.usage.cost.currency
         requirement_level:
           conditionally_required: If `gen_ai.usage.cost.amount` is set.
