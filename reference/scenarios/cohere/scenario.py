@@ -7,7 +7,9 @@ against a mock Cohere server, with manual OTel spans.
 import json
 import os
 import time
+import traceback
 
+from opentelemetry._logs import SeverityNumber
 from opentelemetry.trace import SpanKind, StatusCode
 from reference_shared import (
     flush_and_shutdown,
@@ -230,10 +232,19 @@ def run_embeddings(client):
             if resp.embeddings and resp.embeddings.float_ and resp.embeddings.float_[0]:
                 span.set_attribute("gen_ai.embeddings.dimension.count", len(resp.embeddings.float_[0]))
             print(f"    -> embedding dim: {len(resp.embeddings.float_[0])}")
-        except Exception as e:
-            span.set_status(StatusCode.ERROR, str(e))
-            span.set_attribute("error.type", type(e).__qualname__)
-            metric_attributes["error.type"] = type(e).__qualname__
+        except Exception as error:
+            span.set_status(StatusCode.ERROR, str(error))
+            span.set_attribute("error.type", type(error).__qualname__)
+            metric_attributes["error.type"] = type(error).__qualname__
+            reference_event_logger().emit(
+                event_name="gen_ai.client.embeddings.exception",
+                severity_number=SeverityNumber.WARN,
+                attributes={
+                    "exception.type": f"{type(error).__module__}.{type(error).__qualname__}",
+                    "exception.message": str(error),
+                    "exception.stacktrace": "".join(traceback.format_exception(error)),
+                },
+            )
             raise
         finally:
             _embeddings_duration.record(time.perf_counter() - start_time, metric_attributes)

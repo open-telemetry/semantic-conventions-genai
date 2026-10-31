@@ -9,3 +9,6 @@ the client returns tool calls without executing them.
 | inference (`chat`) | Yes — calls the model directly | ✅ Implemented |
 | embeddings | Yes — calls the model directly | ✅ Implemented |
 | execute_tool | No — the client doesn't execute tools; the tool runs in app code | ➖ Not instrumentable |
+
+The embeddings error handler records a correlated
+`gen_ai.client.embeddings.exception` WARN log. This scenario does not exercise that path.
