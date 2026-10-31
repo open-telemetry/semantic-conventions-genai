@@ -134,15 +134,67 @@
       "gen_ai.token.modality"
     ]
   },
+  "entities": {},
   "findings": [
     {
       "id": "genai_expected_attribute_missing",
+      "message": "Span 'chat gemini-2.0-flash' (operation 'chat') is missing expected attribute 'gen_ai.response.id'",
+      "signal_type": "span",
+      "signal_name": "chat gemini-2.0-flash",
+      "context": {
+        "missing_attribute": "gen_ai.response.id",
+        "operation": "chat"
+      }
+    },
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'chat gemini-2.0-flash' (operation 'chat') is missing expected attribute 'gen_ai.response.model'",
+      "signal_type": "span",
+      "signal_name": "chat gemini-2.0-flash",
+      "context": {
+        "missing_attribute": "gen_ai.response.model",
+        "operation": "chat"
+      }
+    },
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'embeddings text-embedding-004' (operation 'embeddings') is missing expected attribute 'gen_ai.request.encoding_formats'",
+      "signal_type": "span",
+      "signal_name": "embeddings text-embedding-004",
+      "context": {
+        "missing_attribute": "gen_ai.request.encoding_formats",
+        "operation": "embeddings"
+      }
+    },
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'embeddings text-embedding-004' (operation 'embeddings') is missing expected attribute 'gen_ai.response.model'",
+      "signal_type": "span",
+      "signal_name": "embeddings text-embedding-004",
+      "context": {
+        "missing_attribute": "gen_ai.response.model",
+        "operation": "embeddings"
+      }
+    },
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'embeddings text-embedding-004' (operation 'embeddings') is missing expected attribute 'gen_ai.usage.input_tokens'",
+      "signal_type": "span",
+      "signal_name": "embeddings text-embedding-004",
+      "context": {
+        "missing_attribute": "gen_ai.usage.input_tokens",
+        "operation": "embeddings"
+      }
+    },
+    {
+      "id": "genai_expected_attribute_missing",
       "message": "Span 'invoke_agent interactions_agent' (operation 'invoke_agent') is missing expected attribute 'gen_ai.response.finish_reasons'",
+      "signal_type": "span",
+      "signal_name": "invoke_agent interactions_agent",
       "context": {
         "missing_attribute": "gen_ai.response.finish_reasons",
         "operation": "invoke_agent"
       }
     }
-  ],
-  "entities": {}
+  ]
 }

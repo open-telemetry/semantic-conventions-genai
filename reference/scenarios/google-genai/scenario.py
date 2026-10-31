@@ -508,8 +508,11 @@ def run_chat_multimodal():
         "gen_ai.operation.name": "chat",
         "gen_ai.provider.name": "gcp.gemini",
         "gen_ai.request.model": request_model,
+        "server.address": _SERVER_ADDRESS,
     }
-    with _reference_tracer.start_as_current_span("chat gemini-2.0-flash", attributes=span_attributes) as span:
+    with _reference_tracer.start_as_current_span(
+        "chat gemini-2.0-flash", kind=SpanKind.CLIENT, attributes=span_attributes
+    ) as span:
         response = client.models.generate_content(
             model=request_model,
             contents=[
@@ -518,6 +521,8 @@ def run_chat_multimodal():
                 types.Part.from_bytes(data=blob, mime_type="audio/wav"),
             ],
         )
+        if response.response_id:
+            span.set_attribute("gen_ai.response.id", response.response_id)
         if response.model_version:
             span.set_attribute("gen_ai.response.model", response.model_version)
         if response.candidates and response.candidates[0].finish_reason:
@@ -568,13 +573,18 @@ def run_generate_media():
             "gen_ai.operation.name": "chat",
             "gen_ai.provider.name": "gcp.gemini",
             "gen_ai.request.model": request_model,
+            "server.address": _SERVER_ADDRESS,
         }
-        with _reference_tracer.start_as_current_span("chat gemini-2.0-flash", attributes=span_attributes) as span:
+        with _reference_tracer.start_as_current_span(
+            "chat gemini-2.0-flash", kind=SpanKind.CLIENT, attributes=span_attributes
+        ) as span:
             response = client.models.generate_content(
                 model=request_model,
                 contents=f"Generate {label} output.",
                 config=types.GenerateContentConfig(response_modalities=modalities),
             )
+            if response.response_id:
+                span.set_attribute("gen_ai.response.id", response.response_id)
             if response.model_version:
                 span.set_attribute("gen_ai.response.model", response.model_version)
             if response.candidates and response.candidates[0].finish_reason:
@@ -637,6 +647,7 @@ def run_chat_streaming():
     ) as span:
         text = ""
         model_version = None
+        response_id = None
         last_chunk = None
         for chunk in client.models.generate_content_stream(
             model=request_model,
@@ -646,7 +657,10 @@ def run_chat_streaming():
                 text += chunk.text
             if chunk.model_version:
                 model_version = chunk.model_version
+            response_id = response_id or chunk.response_id
             last_chunk = chunk
+        if response_id:
+            span.set_attribute("gen_ai.response.id", response_id)
         if model_version:
             span.set_attribute("gen_ai.response.model", model_version)
         if last_chunk and last_chunk.candidates and last_chunk.candidates[0].finish_reason:

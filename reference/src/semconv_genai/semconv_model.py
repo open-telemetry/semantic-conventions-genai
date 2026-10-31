@@ -200,6 +200,9 @@ def _entity_spec(model: dict[str, dict], registry_id: str, label: str) -> Attrib
         for section in declared.values():
             if isinstance(section, dict):
                 for name, level in sorted(section.items()):
+                    # Weaver >= 0.28 omits the level on identity attributes; they are always required.
+                    if level is None:
+                        level = "required"
                     buckets[level.removesuffix("_conditional")].append(name)
     return AttributeSpec(
         label=label,

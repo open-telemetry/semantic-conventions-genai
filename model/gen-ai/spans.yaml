@@ -376,6 +376,9 @@ spans:
         requirement_level: required
         sampling_relevant: true
       - ref: gen_ai.operation.name
+        annotations:
+          markdown:
+            omit_enum_table: true
         sampling_relevant: true
         examples: ["embeddings"]
         note: SHOULD be `embeddings`.
@@ -453,6 +456,9 @@ spans:
         requirement_level: required
         sampling_relevant: true
       - ref: gen_ai.operation.name
+        annotations:
+          markdown:
+            omit_enum_table: true
         requirement_level: required
         sampling_relevant: true
       - ref: server.address
@@ -569,6 +575,9 @@ spans:
         requirement_level: required
         sampling_relevant: true
       - ref: gen_ai.operation.name
+        annotations:
+          markdown:
+            omit_enum_table: true
         sampling_relevant: true
       - ref: server.address
         sampling_relevant: true
@@ -621,6 +630,9 @@ spans:
         requirement_level: required
         sampling_relevant: true
       - ref: gen_ai.operation.name
+        annotations:
+          markdown:
+            omit_enum_table: true
         sampling_relevant: true
       - ref: gen_ai.request.model
         sampling_relevant: true
@@ -662,6 +674,9 @@ spans:
     attributes:
       - ref_group: attributes.gen_ai.invoke_agent.common
       - ref: gen_ai.operation.name
+        annotations:
+          markdown:
+            omit_enum_table: true
         sampling_relevant: true
       - ref: gen_ai.request.model
         sampling_relevant: true
@@ -701,6 +716,9 @@ spans:
       - ref_group: attributes.gen_ai.error
       - ref_group: attributes.gen_ai.execute_tool.common
       - ref: gen_ai.operation.name
+        annotations:
+          markdown:
+            omit_enum_table: true
         requirement_level: required
         sampling_relevant: true
       - ref: gen_ai.tool.name
@@ -762,6 +780,9 @@ spans:
     attributes:
       - ref_group: attributes.gen_ai.error
       - ref: gen_ai.operation.name
+        annotations:
+          markdown:
+            omit_enum_table: true
         requirement_level: required
         sampling_relevant: true
       - ref: gen_ai.workflow.name
@@ -803,6 +824,9 @@ spans:
     attributes:
       - ref_group: attributes.gen_ai.error
       - ref: gen_ai.operation.name
+        annotations:
+          markdown:
+            omit_enum_table: true
         requirement_level: required
         sampling_relevant: true
       - ref: gen_ai.agent.name
@@ -876,6 +900,9 @@ span_refinements:
     stability: development
     attributes:
       - ref: openai.api.type
+        annotations:
+          markdown:
+            omit_enum_table: true
         requirement_level: recommended
         note: >
           For this operation `openai.api.type` SHOULD be set to `responses`.
