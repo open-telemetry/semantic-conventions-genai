@@ -4,6 +4,7 @@ import json
 import os
 import time
 
+from opentelemetry._logs import SeverityNumber
 from opentelemetry.trace import SpanKind, StatusCode
 from reference_shared import (
     flush_and_shutdown,
@@ -330,6 +331,61 @@ def run_chat_reference(client):
         )
 
         print(f"    -> {resp.choices[0].message.content[:60]}")
+
+
+def run_chat_error_reference():
+    """Exercise an inference exception raised by the SDK for a rate-limit response."""
+    import httpx2
+    import openai
+
+    request_model = "gpt-4o-mini"
+    transport = httpx2.MockTransport(
+        lambda request: httpx2.Response(
+            429,
+            json={
+                "error": {"message": "Rate limit exceeded", "type": "rate_limit_error", "code": "rate_limit_exceeded"}
+            },
+        )
+    )
+    with (
+        openai.OpenAI(
+            base_url=MOCK_BASE_URL,
+            api_key="mock-key",
+            max_retries=0,
+            http_client=httpx2.Client(transport=transport),
+        ) as client,
+        _reference_tracer.start_as_current_span(
+            f"chat {request_model}",
+            kind=SpanKind.CLIENT,
+            attributes={
+                "gen_ai.operation.name": "chat",
+                "gen_ai.provider.name": "openai",
+                "gen_ai.request.model": request_model,
+                "server.address": client.base_url.host,
+                "server.port": client.base_url.port,
+            },
+        ) as span,
+    ):
+        try:
+            client.chat.completions.create(
+                model=request_model,
+                messages=[{"role": "user", "content": "Say hello."}],
+            )
+        except openai.RateLimitError as error:
+            error_type = f"{type(error).__module__}.{type(error).__qualname__}"
+            span.set_status(StatusCode.ERROR, str(error))
+            span.set_attribute("error.type", error_type)
+            metric_attributes = usage_metric_attributes(request_model, None, client.base_url.host, client.base_url.port)
+            metric_attributes["error.type"] = error_type
+            _operation_input_tokens.record(0, metric_attributes)
+            _operation_output_tokens.record(0, metric_attributes)
+            reference_event_logger().emit(
+                event_name="gen_ai.client.inference.exception",
+                severity_number=SeverityNumber.WARN,
+                exception=error,
+            )
+        else:
+            raise AssertionError("Expected the SDK to reject the inference request")
 
 
 def run_responses_compaction_reference(client):
@@ -1251,6 +1307,7 @@ def main():
     client = openai.OpenAI(base_url=MOCK_BASE_URL, api_key="mock-key")
 
     run_chat_reference(client)
+    run_chat_error_reference()
     run_responses_compaction_reference(client)
     run_responses_continuation_reference(client)
     run_chat_streaming_reference(client)

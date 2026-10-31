@@ -17,3 +17,6 @@ Assistants API is covered by the `openai-assistants` scenario).
 
 Embeddings covers successful requests and an SDK error from a mock HTTP response.
 Failed requests record duration and zero input tokens with `error.type`.
+
+Inference also covers an SDK `RateLimitError` from a mock HTTP response, recorded
+as a correlated `gen_ai.client.inference.exception` WARN log with SDK exception details.
