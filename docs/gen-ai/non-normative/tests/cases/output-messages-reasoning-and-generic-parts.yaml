@@ -8,7 +8,7 @@ document: [
     "role": "assistant",
     "parts": [
       { "type": "reasoning", "content": "The user wants a short answer." },
-      { "type": "redacted_thinking", "data": "EmwKAhgBEgy3va3pzix/LafPsn4aDFIT2Xlxh0L5L8rLt..." }
+      { "type": "anthropic.redacted_thinking", "data": "EmwKAhgBEgy3va3pzix/LafPsn4aDFIT2Xlxh0L5L8rLt..." }
     ],
     "finish_reason": "stop"
   }

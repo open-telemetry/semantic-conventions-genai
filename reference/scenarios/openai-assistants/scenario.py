@@ -9,16 +9,15 @@ import os
 from urllib.parse import urlparse
 
 from openai import OpenAI
-from opentelemetry import trace
 from opentelemetry.trace import SpanKind, StatusCode
-from reference_shared import flush_and_shutdown, setup_otel
+from reference_shared import flush_and_shutdown, reference_tracer, setup_otel
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"]
 _parsed = urlparse(MOCK_BASE_URL)
 _SERVER_ADDRESS = _parsed.hostname or "localhost"
 _SERVER_PORT = _parsed.port or 443
 
-tracer = trace.get_tracer("gen_ai.client.openai")
+tracer = reference_tracer("gen_ai.client.openai")
 
 
 def run_invoke_agent(client):

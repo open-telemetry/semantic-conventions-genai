@@ -98,6 +98,9 @@ metrics:
       - ref_group: metric_attributes.gen_ai
       - ref_group: attributes.gen_ai.error
       - ref: gen_ai.operation.name
+        annotations:
+          markdown:
+            omit_enum_table: true
         examples: ["embeddings"]
         note: SHOULD be `embeddings`.
       - ref: gen_ai.request.model

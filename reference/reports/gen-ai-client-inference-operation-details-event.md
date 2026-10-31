@@ -24,7 +24,7 @@
 | gen_ai.request.top_k | (none) |
 | gen_ai.usage.cost.currency | [litellm] |
 | gen_ai.usage.cost.source | [litellm] |
-| server.port | [anthropic], [azure-ai-inference], [openai] |
+| server.port | [anthropic], [azure-ai-inference], [litellm], [openai] |
 
 ## Recommended
 
@@ -41,7 +41,7 @@
 | gen_ai.request.top_p | (none) |
 | gen_ai.response.finish_reasons | [anthropic], [aws-bedrock], [azure-ai-inference], [cohere], [google-genai], [groq], [litellm], [mistralai], [openai], [vertexai] |
 | gen_ai.response.id | [anthropic], [azure-ai-inference], [cohere], [google-genai], [groq], [litellm], [mistralai], [openai], [vertexai] |
-| gen_ai.response.model | [anthropic], [azure-ai-inference], [google-genai], [groq], [litellm], [mistralai], [openai] |
+| gen_ai.response.model | [anthropic], [azure-ai-inference], [google-genai], [groq], [litellm], [mistralai], [openai], [vertexai] |
 | gen_ai.response.time_to_first_chunk | (none) |
 | gen_ai.usage.audio.cache_read.input_tokens | [google-genai], [vertexai] |
 | gen_ai.usage.audio.input_tokens | [google-genai], [openai], [vertexai] |
@@ -70,10 +70,14 @@
 | Attribute | Supporting Libraries |
 | --- | --- |
 | gen_ai.input.messages | [anthropic], [aws-bedrock], [azure-ai-inference], [cohere], [google-genai], [groq], [litellm], [mistralai], [openai], [vertexai] |
+| gen_ai.input.messages_ref | [anthropic] |
 | gen_ai.output.messages | [anthropic], [aws-bedrock], [azure-ai-inference], [cohere], [google-genai], [groq], [litellm], [mistralai], [openai], [vertexai] |
+| gen_ai.output.messages_ref | [anthropic] |
 | gen_ai.prompt.variable | (none) |
-| gen_ai.system_instructions | (none) |
-| gen_ai.tool.definitions | (none) |
+| gen_ai.system_instructions | [anthropic] |
+| gen_ai.system_instructions_ref | [anthropic] |
+| gen_ai.tool.definitions | [anthropic] |
+| gen_ai.tool.definitions_ref | [anthropic] |
 
 [anthropic]: ../scenarios/anthropic/scenario.py
 [aws-bedrock]: ../scenarios/aws-bedrock/scenario.py

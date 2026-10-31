@@ -1,0 +1,167 @@
+file_format: definition/2
+attributes:
+  - key: a2a.method.name
+    type:
+      members:
+        - id: send_message
+          value: SendMessage
+          brief: >
+            Request to send a message to an agent and receive a non-streaming
+            response.
+          stability: development
+        - id: send_streaming_message
+          value: SendStreamingMessage
+          brief: >
+            Request to send a message to an agent and receive a streaming
+            response.
+          stability: development
+        - id: get_task
+          value: GetTask
+          brief: >
+            Request to get the current state of a task.
+          stability: development
+        - id: cancel_task
+          value: CancelTask
+          brief: >
+            Request to cancel a task.
+          stability: development
+        - id: subscribe_to_task
+          value: SubscribeToTask
+          brief: >
+            Request to subscribe to task updates.
+          stability: development
+        - id: list_tasks
+          value: ListTasks
+          brief: >
+            Request to list tasks.
+          stability: development
+        - id: create_task_push_notification_config
+          value: CreateTaskPushNotificationConfig
+          brief: >
+            Request to create or update a task push notification configuration.
+          stability: development
+        - id: get_task_push_notification_config
+          value: GetTaskPushNotificationConfig
+          brief: >
+            Request to get a task push notification configuration.
+          stability: development
+        - id: list_task_push_notification_configs
+          value: ListTaskPushNotificationConfigs
+          brief: >
+            Request to list task push notification configurations.
+          stability: development
+        - id: delete_task_push_notification_config
+          value: DeleteTaskPushNotificationConfig
+          brief: >
+            Request to delete a task push notification configuration.
+          stability: development
+        - id: get_extended_agent_card
+          value: GetExtendedAgentCard
+          brief: >
+            Request to get the extended agent card.
+          stability: development
+    brief: The name of the A2A request method.
+    note: >
+      This attribute records the logical A2A operation name defined by the
+      protocol. For example, `SendMessage` is the A2A operation name, while
+      HTTP+JSON maps it to `POST /message:send`.
+      See the A2A specification for
+      [core operations](https://a2a-protocol.org/latest/specification/#31-core-operations)
+      and
+      [method mappings](https://a2a-protocol.org/latest/specification/#53-method-mapping-reference).
+    stability: development
+  - key: a2a.protocol.version
+    type: string
+    brief: The version of the A2A protocol used.
+    note: >
+      See the A2A specification for
+      [versioning](https://a2a-protocol.org/latest/specification/#36-versioning).
+    examples: ["1.0"]
+    stability: development
+  - key: a2a.tenant
+    type: string
+    brief: The opaque routing identifier of the target [A2A tenant](https://github.com/a2aproject/A2A/blob/main/docs/topics/multi-tenancy.md).
+    examples: ["billing"]
+    stability: development
+  - key: a2a.message.id
+    type: string
+    brief: The unique identifier of the A2A message.
+    note: >
+      See the A2A specification for the
+      [Message](https://a2a-protocol.org/latest/specification/#414-message)
+      object.
+    examples: ["msg-user-1234"]
+    stability: development
+  - key: a2a.message.reference_task_ids
+    type: string[]
+    brief: Task IDs referenced by the A2A request message.
+    note: >
+      See the A2A specification for the
+      [Message](https://a2a-protocol.org/latest/specification/#414-message)
+      object.
+    examples:
+      - [task-abc-5678]
+    stability: development
+  - key: a2a.task.id
+    type: string
+    brief: The unique identifier of an A2A task.
+    note: >
+      See the A2A specification for the
+      [Task](https://a2a-protocol.org/latest/specification/#411-task)
+      object and
+      [task identifier semantics](https://a2a-protocol.org/latest/specification/#342-task-identifier-semantics).
+    examples: ["task-5f2a7c7d9f8e4d2a"]
+    stability: development
+  - key: a2a.task.state
+    type:
+      members:
+        - id: task_state_submitted
+          value: TASK_STATE_SUBMITTED
+          brief: >
+            The task has been submitted.
+          stability: development
+        - id: task_state_working
+          value: TASK_STATE_WORKING
+          brief: >
+            The task is being processed.
+          stability: development
+        - id: task_state_input_required
+          value: TASK_STATE_INPUT_REQUIRED
+          brief: >
+            The task requires additional input.
+          stability: development
+        - id: task_state_completed
+          value: TASK_STATE_COMPLETED
+          brief: >
+            The task completed successfully.
+          stability: development
+        - id: task_state_canceled
+          value: TASK_STATE_CANCELED
+          brief: >
+            The task was canceled.
+          stability: development
+        - id: task_state_failed
+          value: TASK_STATE_FAILED
+          brief: >
+            The task failed.
+          stability: development
+        - id: task_state_rejected
+          value: TASK_STATE_REJECTED
+          brief: >
+            The task was rejected.
+          stability: development
+        - id: task_state_auth_required
+          value: TASK_STATE_AUTH_REQUIRED
+          brief: >
+            The task requires authentication.
+          stability: development
+        - id: task_state_unspecified
+          value: TASK_STATE_UNSPECIFIED
+          brief: >
+            The task state is unspecified.
+          stability: development
+    brief: The state of an A2A task.
+    note: >
+      See the A2A specification for
+      [TaskState](https://a2a-protocol.org/latest/specification/#413-taskstate).
+    stability: development

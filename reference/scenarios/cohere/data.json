@@ -52,6 +52,27 @@
       "server.port"
     ]
   },
-  "findings": [],
-  "entities": {}
+  "entities": {},
+  "findings": [
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'chat command-r-plus' (operation 'chat') is missing expected attribute 'gen_ai.response.model'",
+      "signal_type": "span",
+      "signal_name": "chat command-r-plus",
+      "context": {
+        "missing_attribute": "gen_ai.response.model",
+        "operation": "chat"
+      }
+    },
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'embeddings embed-v4.0' (operation 'embeddings') is missing expected attribute 'gen_ai.response.model'",
+      "signal_type": "span",
+      "signal_name": "embeddings embed-v4.0",
+      "context": {
+        "missing_attribute": "gen_ai.response.model",
+        "operation": "embeddings"
+      }
+    }
+  ]
 }

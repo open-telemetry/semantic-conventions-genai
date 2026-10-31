@@ -90,6 +90,7 @@ def run_chat():
         "gen_ai.provider.name": provider_name,
         "gen_ai.request.model": request_model,
         "server.address": _SERVER_ADDRESS,
+        "server.port": _SERVER_PORT,
     }
     with _reference_tracer.start_as_current_span(
         "chat gpt-4o-mini", kind=SpanKind.CLIENT, attributes=span_attributes
@@ -199,6 +200,7 @@ def run_responses_cost_breakdown():
         "gen_ai.provider.name": provider_name,
         "gen_ai.request.model": request_model,
         "server.address": _SERVER_ADDRESS,
+        "server.port": _SERVER_PORT,
     }
     with _reference_tracer.start_as_current_span(
         "chat gpt-4o-mini", kind=SpanKind.CLIENT, attributes=span_attributes
@@ -212,6 +214,14 @@ def run_responses_cost_breakdown():
         # Every value set on the span is also kept for the details event so the two stay
         # identical. The span is written at each step, so a later failure keeps earlier values.
         response_attrs = {"gen_ai.response.model": resp.model, "gen_ai.response.id": resp.id}
+        finish_reason = {"completed": "stop", "failed": "error", "cancelled": "error"}.get(resp.status)
+        if resp.status == "incomplete":
+            reason = resp.incomplete_details.reason if resp.incomplete_details else None
+            finish_reason = {"max_output_tokens": "length", "content_filter": "content_filter"}.get(
+                reason, "incomplete"
+            )
+        if finish_reason:
+            response_attrs["gen_ai.response.finish_reasons"] = [finish_reason]
         span.set_attributes(response_attrs)
         usage = ResponseAPILoggingUtils._transform_response_api_usage_to_chat_usage(resp.usage)
         usage_attrs = {
@@ -298,6 +308,7 @@ def run_chat_streaming():
         "gen_ai.provider.name": provider_name,
         "gen_ai.request.model": request_model,
         "server.address": _SERVER_ADDRESS,
+        "server.port": _SERVER_PORT,
     }
     with _reference_tracer.start_as_current_span(
         "chat gpt-4o-mini", kind=SpanKind.CLIENT, attributes=span_attributes_2
@@ -317,15 +328,20 @@ def run_chat_streaming():
             api_base=MOCK_BASE_URL,
             api_key="mock-key",
             stream=True,
+            stream_options={"include_usage": True},
         )
         text = ""
         seen_choice_indexes = set()
         finish_reasons_by_index = {}
         response_id = None
         response_model = None
+        usage = None
+        chunks = []
         for chunk in resp:
+            chunks.append(chunk)
             response_id = response_id or chunk.id
             response_model = response_model or chunk.model
+            usage = getattr(chunk, "usage", None) or usage
             for choice in chunk.choices:
                 seen_choice_indexes.add(choice.index)
                 if choice.index == 0 and choice.delta.content:
@@ -341,6 +357,29 @@ def run_chat_streaming():
             span.set_attribute("gen_ai.response.id", response_id)
         if response_model:
             span.set_attribute("gen_ai.response.model", response_model)
+        if usage:
+            span.set_attribute("gen_ai.usage.input_tokens", usage.prompt_tokens)
+            span.set_attribute("gen_ai.usage.output_tokens", usage.completion_tokens)
+
+        # Stream chunks carry no cost; LiteLLM prices the response it rebuilds from them.
+        response_cost = litellm.stream_chunk_builder(chunks)._hidden_params.get("response_cost") if chunks else None
+        if response_cost is not None:
+            span.set_attribute("gen_ai.usage.cost.amount", response_cost)
+            span.set_attribute("gen_ai.usage.cost.currency", "USD")
+            span.set_attribute("gen_ai.usage.cost.source", "local")
+            _cost_histogram.record(
+                response_cost,
+                attributes={
+                    "gen_ai.operation.name": "chat",
+                    "gen_ai.provider.name": provider_name,
+                    "gen_ai.request.model": request_model,
+                    "gen_ai.response.model": response_model,
+                    "server.address": _SERVER_ADDRESS,
+                    "server.port": _SERVER_PORT,
+                    "gen_ai.usage.cost.currency": "USD",
+                    "gen_ai.usage.cost.source": "local",
+                },
+            )
         span.set_attribute(
             "gen_ai.output.messages",
             json.dumps(
@@ -387,6 +426,7 @@ def run_chat_tool_call():
         "gen_ai.provider.name": provider_name,
         "gen_ai.request.model": request_model,
         "server.address": _SERVER_ADDRESS,
+        "server.port": _SERVER_PORT,
     }
     with _reference_tracer.start_as_current_span(
         "chat gpt-4o-mini", kind=SpanKind.CLIENT, attributes=span_attributes_3
@@ -416,6 +456,24 @@ def run_chat_tool_call():
         if resp.usage:
             span.set_attribute("gen_ai.usage.input_tokens", resp.usage.prompt_tokens)
             span.set_attribute("gen_ai.usage.output_tokens", resp.usage.completion_tokens)
+        response_cost = resp._hidden_params.get("response_cost")
+        if response_cost is not None:
+            span.set_attribute("gen_ai.usage.cost.amount", response_cost)
+            span.set_attribute("gen_ai.usage.cost.currency", "USD")
+            span.set_attribute("gen_ai.usage.cost.source", "local")
+            _cost_histogram.record(
+                response_cost,
+                attributes={
+                    "gen_ai.operation.name": "chat",
+                    "gen_ai.provider.name": provider_name,
+                    "gen_ai.request.model": request_model,
+                    "gen_ai.response.model": resp.model,
+                    "server.address": _SERVER_ADDRESS,
+                    "server.port": _SERVER_PORT,
+                    "gen_ai.usage.cost.currency": "USD",
+                    "gen_ai.usage.cost.source": "local",
+                },
+            )
         tool_calls = getattr(resp.choices[0].message, "tool_calls", None)
         if tool_calls:
             # LiteLLM returns the tool call; running it is app code LiteLLM never
@@ -439,6 +497,7 @@ def run_embeddings():
         "gen_ai.provider.name": provider_name,
         "gen_ai.request.model": request_model,
         "server.address": _SERVER_ADDRESS,
+        "server.port": _SERVER_PORT,
     }
     start_time = time.perf_counter()
     metric_attributes = dict(span_attributes_4)
