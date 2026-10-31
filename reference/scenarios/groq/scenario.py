@@ -57,7 +57,7 @@ _inference_duration = _meter.create_histogram(
         10,
         30,
         60,
-        150,
+        120,
     ],
 )
 _SERVER_ADDRESS, _SERVER_PORT = mock_server_host_port(MOCK_BASE_URL)
