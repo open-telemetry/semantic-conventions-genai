@@ -3,7 +3,6 @@
 import json
 import os
 import time
-import traceback
 
 from opentelemetry._logs import SeverityNumber
 from opentelemetry.trace import SpanKind, StatusCode
@@ -383,11 +382,7 @@ def run_chat_error_reference():
             reference_event_logger().emit(
                 event_name="gen_ai.client.inference.exception",
                 severity_number=SeverityNumber.WARN,
-                attributes={
-                    "exception.type": error_type,
-                    "exception.message": str(error),
-                    "exception.stacktrace": "".join(traceback.format_exception(error)),
-                },
+                exception=error,
             )
         else:
             raise AssertionError("Expected the SDK to reject the inference request")
