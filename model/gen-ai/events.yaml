@@ -73,19 +73,39 @@ events:
   - name: gen_ai.client.operation.exception
     requirement_level: recommended
     brief: >
-      This event represents an exception that occurred during a Generative AI client operation other than inference,
+      This event represents an exception that occurred during a Generative AI client operation other than inference or embeddings,
       such as API errors, rate limiting, model errors, timeouts, or other errors that prevent
       the operation from completing successfully.
     note: >
-      This event SHOULD be recorded when an exception occurs during Generative AI client operations other than inference.
+      This event SHOULD be recorded when an exception occurs during Generative AI client operations other than inference or embeddings.
 
       For inference operations, instrumentations SHOULD record `gen_ai.client.inference.exception`
+      instead of this event.
+
+      For embeddings operations, instrumentations SHOULD record `gen_ai.client.embeddings.exception`
       instead of this event.
 
       Instrumentations SHOULD set the severity to WARN (severity number 13) when recording this event.
 
       Instrumentations MAY provide a configuration option to populate exception events
       with the attributes captured on the corresponding Generative AI client span.
+    stability: development
+    attributes:
+      - ref_group: attributes.gen_ai.exception
+
+  - name: gen_ai.client.embeddings.exception
+    requirement_level: recommended
+    brief: >
+      This event represents an exception that caused a Generative AI client embeddings operation to fail.
+    note: >
+      Exception recording SHOULD follow the general
+      [recording errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/recording-errors.md)
+      guidance. This log event SHOULD be correlated with the embeddings span using its trace and span identifiers.
+
+      Instrumentations SHOULD set the severity to WARN (severity number 13) when recording this event.
+
+      Instrumentations MAY provide a configuration option to populate this event
+      with attributes captured on the corresponding embeddings span.
     stability: development
     attributes:
       - ref_group: attributes.gen_ai.exception
