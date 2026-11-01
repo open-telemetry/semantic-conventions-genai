@@ -4,7 +4,6 @@ Exercises: agent task execution, agent planning (CrewPlanner)
 against a mock OpenAI server, with manual OTel spans.
 """
 
-import json
 import os
 
 from reference_shared import flush_and_shutdown, reference_tracer, setup_otel
@@ -63,8 +62,9 @@ def run_crew():
             tool_span.set_attribute("gen_ai.tool.name", "get_weather")
             tool_span.set_attribute("gen_ai.tool.description", get_weather.func.__doc__ or "")
             tool_span.set_attribute("gen_ai.tool.type", "function")
-            tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps({"location": location}))
+            tool_span.set_attribute("gen_ai.tool.call.arguments", {"location": location})
             result = "Sunny, 72°F"
+            # TODO: Determine how to represent this string result in the object-only schema.
             tool_span.set_attribute("gen_ai.tool.call.result", result)
             return result
 
@@ -100,7 +100,7 @@ def run_crew():
             workflow_span.set_attribute("gen_ai.workflow.name", workflow_name)
         workflow_span.set_attribute(
             "gen_ai.input.messages",
-            json.dumps([{"role": "user", "parts": [{"type": "text", "content": task.description}]}]),
+            [{"role": "user", "parts": [{"type": "text", "content": task.description}]}],
         )
         # CrewAI delegates the LLM call to the underlying LLM client, whose
         # own instrumentation owns the inference span. This scenario emits only
@@ -108,14 +108,12 @@ def run_crew():
         result = crew.kickoff()
         workflow_span.set_attribute(
             "gen_ai.output.messages",
-            json.dumps(
-                [
-                    {
-                        "role": "assistant",
-                        "parts": [{"type": "text", "content": str(result)}],
-                    }
-                ]
-            ),
+            [
+                {
+                    "role": "assistant",
+                    "parts": [{"type": "text", "content": str(result)}],
+                }
+            ],
         )
         print(f"    -> {str(result)[:60]}")
 
@@ -170,8 +168,9 @@ def run_agent():
             tool_span.set_attribute("gen_ai.tool.name", "get_weather")
             tool_span.set_attribute("gen_ai.tool.description", get_weather.func.__doc__ or "")
             tool_span.set_attribute("gen_ai.tool.type", "function")
-            tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps({"location": location}))
+            tool_span.set_attribute("gen_ai.tool.call.arguments", {"location": location})
             result = "Sunny, 72°F"
+            # TODO: Determine how to represent this string result in the object-only schema.
             tool_span.set_attribute("gen_ai.tool.call.result", result)
             return result
 
@@ -207,24 +206,22 @@ def run_agent():
         agent_span.set_attribute("gen_ai.request.frequency_penalty", request_frequency_penalty)
         agent_span.set_attribute("gen_ai.request.presence_penalty", request_presence_penalty)
         agent_span.set_attribute("gen_ai.request.top_p", request_top_p)
-        agent_span.set_attribute("gen_ai.system_instructions", json.dumps([{"type": "text", "content": system_prompt}]))
+        agent_span.set_attribute("gen_ai.system_instructions", [{"type": "text", "content": system_prompt}])
         agent_span.set_attribute(
             "gen_ai.input.messages",
-            json.dumps([{"role": "user", "parts": [{"type": "text", "content": task_description}]}]),
+            [{"role": "user", "parts": [{"type": "text", "content": task_description}]}],
         )
         agent_span.set_attribute(
             "gen_ai.tool.definitions",
-            json.dumps(
-                [
-                    {
-                        "type": "function",
-                        "name": t.name,
-                        "description": t.func.__doc__,
-                        "parameters": t.args_schema.model_json_schema(),
-                    }
-                    for t in researcher.tools
-                ]
-            ),
+            [
+                {
+                    "type": "function",
+                    "name": t.name,
+                    "description": t.func.__doc__,
+                    "parameters": t.args_schema.model_json_schema(),
+                }
+                for t in researcher.tools
+            ],
         )
         original_create = researcher.llm._client.chat.completions.create
 
@@ -255,14 +252,12 @@ def run_agent():
 
         agent_span.set_attribute(
             "gen_ai.output.messages",
-            json.dumps(
-                [
-                    {
-                        "role": "assistant",
-                        "parts": [{"type": "text", "content": str(result)}],
-                    }
-                ]
-            ),
+            [
+                {
+                    "role": "assistant",
+                    "parts": [{"type": "text", "content": str(result)}],
+                }
+            ],
         )
         print(f"    -> {str(result)[:60]}")
 

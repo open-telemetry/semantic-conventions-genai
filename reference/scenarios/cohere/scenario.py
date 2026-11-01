@@ -4,7 +4,6 @@ Exercises: chat, embeddings
 against a mock Cohere server, with manual OTel spans.
 """
 
-import json
 import os
 import time
 
@@ -105,17 +104,15 @@ def run_chat(client):
             "gen_ai.operation.name": "chat",
             "gen_ai.provider.name": "cohere",
             "gen_ai.request.model": request_model,
-            "gen_ai.input.messages": json.dumps(
-                [{"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]} for m in messages]
-            ),
-            "gen_ai.output.messages": json.dumps(
-                [
-                    {
-                        "role": "assistant",
-                        "parts": [{"type": "text", "content": content}],
-                    }
-                ]
-            ),
+            "gen_ai.input.messages": [
+                {"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]} for m in messages
+            ],
+            "gen_ai.output.messages": [
+                {
+                    "role": "assistant",
+                    "parts": [{"type": "text", "content": content}],
+                }
+            ],
         }
         if hasattr(resp, "id") and resp.id:
             event_attrs["gen_ai.response.id"] = resp.id
@@ -167,7 +164,7 @@ def run_chat_tool_call(client):
     with _reference_tracer.start_as_current_span(
         "chat command-r-plus", kind=SpanKind.CLIENT, attributes=span_attributes_2
     ) as span:
-        span.set_attribute("gen_ai.tool.definitions", json.dumps([{"type": t["type"], **t["function"]} for t in tools]))
+        span.set_attribute("gen_ai.tool.definitions", [{"type": t["type"], **t["function"]} for t in tools])
         resp = client.chat(
             model=request_model,
             messages=[{"role": "user", "content": "What's the weather in Seattle?"}],

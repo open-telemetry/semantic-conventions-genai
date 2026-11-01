@@ -1,6 +1,5 @@
 """Reference implementation for LlamaIndex."""
 
-import json
 import os
 
 from opentelemetry.trace import SpanKind
@@ -37,8 +36,9 @@ def run_agent_reference(llm):
             tool_span.set_attribute("gen_ai.tool.type", "function")
             if current_tool_call_id:
                 tool_span.set_attribute("gen_ai.tool.call.id", current_tool_call_id)
-            tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps({"location": location}))
+            tool_span.set_attribute("gen_ai.tool.call.arguments", {"location": location})
             result = "Sunny, 72°F"
+            # TODO: Determine how to represent this string result in the object-only schema.
             tool_span.set_attribute("gen_ai.tool.call.result", result)
             return result
 
@@ -98,15 +98,13 @@ def run_retrieval_reference():
         nodes = retriever.retrieve(query_text)
         span.set_attribute(
             "gen_ai.retrieval.documents",
-            json.dumps(
-                [
-                    {
-                        "content": node.text,
-                        "source_id": node.metadata.get("source_id"),
-                    }
-                    for node in nodes
-                ]
-            ),
+            [
+                {
+                    "content": node.text,
+                    "source_id": node.metadata.get("source_id"),
+                }
+                for node in nodes
+            ],
         )
         print(f"    -> {nodes[0].text[:60]}")
 

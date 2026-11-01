@@ -5,7 +5,6 @@ Exercises: create_agent (Bedrock Agent CreateAgent API) and invoke_agent
 manual span instrumentation.
 """
 
-import json
 import os
 from urllib.parse import urlparse
 
@@ -49,7 +48,7 @@ def run_create_agent(client):
         f"create_agent {agent_name}", kind=SpanKind.CLIENT, attributes=span_attributes
     ) as span:
         span.set_attribute("gen_ai.agent.description", agent_description)
-        span.set_attribute("gen_ai.system_instructions", json.dumps([{"type": "text", "content": agent_instruction}]))
+        span.set_attribute("gen_ai.system_instructions", [{"type": "text", "content": agent_instruction}])
         try:
             agent = client.create_agent(
                 agentName=agent_name,
@@ -83,7 +82,7 @@ def run_invoke_agent(client, agent_id):
         span.set_attribute("gen_ai.agent.id", agent_id)
         span.set_attribute("gen_ai.conversation.id", SESSION_ID)
         span.set_attribute(
-            "gen_ai.input.messages", json.dumps([{"role": "user", "parts": [{"type": "text", "content": USER_INPUT}]}])
+            "gen_ai.input.messages", [{"role": "user", "parts": [{"type": "text", "content": USER_INPUT}]}]
         )
         try:
             response = client.invoke_agent(
@@ -119,14 +118,12 @@ def run_invoke_agent(client, agent_id):
             if text:
                 span.set_attribute(
                     "gen_ai.output.messages",
-                    json.dumps(
-                        [
-                            {
-                                "role": "assistant",
-                                "parts": [{"type": "text", "content": text}],
-                            }
-                        ]
-                    ),
+                    [
+                        {
+                            "role": "assistant",
+                            "parts": [{"type": "text", "content": text}],
+                        }
+                    ],
                 )
             print(f"    -> {text[:60]}")
         except Exception as e:
