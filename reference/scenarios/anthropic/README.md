@@ -20,7 +20,7 @@ observe.
 | Operation | Should be instrumented here | Status |
 | --- | --- | --- |
 | inference (`chat`) | Yes — Messages API, calls the model directly | ✅ Implemented |
-| execute_tool | No — the Messages API returns tool-use requests but doesn't execute tools; the tool runs in app code | ➖ Not instrumentable |
+| execute_tool | Yes — the SDK tool runner (`beta.messages.tool_runner`) executes tools | ✅ Implemented |
 | create_agent | Yes — Managed Agents `beta.agents.create` | ✅ Implemented |
 | invoke_agent (client) | Yes — a Managed Agents session runs the remote agent | ❌ Not implemented |
 | memory | Yes — Managed Agents memory stores | ❌ Not implemented |

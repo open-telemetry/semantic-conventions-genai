@@ -1166,9 +1166,16 @@ When the attribute is recorded on events, it MUST be recorded in structured form
 > [!WARNING]
 > This attribute may contain sensitive information.
 
-It's expected to be an object - in case a serialized string is available
-to the instrumentation, the instrumentation SHOULD do the best effort to
-deserialize it to an object.
+It can be any JSON value, for example an object, an array, or a string.
+In case a serialized JSON string is available to the instrumentation, the
+instrumentation SHOULD do the best effort to deserialize it.
+
+When the result is an array of content blocks, the instrumentation SHOULD
+record it as an array of message parts as defined by the
+[`gen_ai.input.messages` JSON schema](/model/gen-ai/gen-ai-input-messages.json),
+not in a provider-specific format. Deserialization takes precedence: a
+single text block holding serialized JSON is recorded as the deserialized
+value.
 
 Instrumentations MUST follow [JSON schema](/model/gen-ai/gen-ai-tool-call-result.json).
 
@@ -1336,9 +1343,16 @@ When the attribute is recorded on events, it MUST be recorded in structured form
 > [!WARNING]
 > This attribute may contain sensitive information.
 
-It's expected to be an object - in case a serialized string is available
-to the instrumentation, the instrumentation SHOULD do the best effort to
-deserialize it to an object.
+It can be any JSON value, for example an object, an array, or a string.
+In case a serialized JSON string is available to the instrumentation, the
+instrumentation SHOULD do the best effort to deserialize it.
+
+When the result is an array of content blocks, the instrumentation SHOULD
+record it as an array of message parts as defined by the
+[`gen_ai.input.messages` JSON schema](/model/gen-ai/gen-ai-input-messages.json),
+not in a provider-specific format. Deserialization takes precedence: a
+single text block holding serialized JSON is recorded as the deserialized
+value.
 
 Instrumentations MUST follow [JSON schema](/model/gen-ai/gen-ai-tool-call-result.json).
 
@@ -1492,9 +1506,16 @@ When the attribute is recorded on events, it MUST be recorded in structured form
 > [!WARNING]
 > This attribute may contain sensitive information.
 
-It's expected to be an object - in case a serialized string is available
-to the instrumentation, the instrumentation SHOULD do the best effort to
-deserialize it to an object.
+It can be any JSON value, for example an object, an array, or a string.
+In case a serialized JSON string is available to the instrumentation, the
+instrumentation SHOULD do the best effort to deserialize it.
+
+When the result is an array of content blocks, the instrumentation SHOULD
+record it as an array of message parts as defined by the
+[`gen_ai.input.messages` JSON schema](/model/gen-ai/gen-ai-input-messages.json),
+not in a provider-specific format. Deserialization takes precedence: a
+single text block holding serialized JSON is recorded as the deserialized
+value.
 
 Instrumentations MUST follow [JSON schema](/model/gen-ai/gen-ai-tool-call-result.json).
 
@@ -1684,9 +1705,16 @@ When the attribute is recorded on events, it MUST be recorded in structured form
 > [!WARNING]
 > This attribute may contain sensitive information.
 
-It's expected to be an object - in case a serialized string is available
-to the instrumentation, the instrumentation SHOULD do the best effort to
-deserialize it to an object.
+It can be any JSON value, for example an object, an array, or a string.
+In case a serialized JSON string is available to the instrumentation, the
+instrumentation SHOULD do the best effort to deserialize it.
+
+When the result is an array of content blocks, the instrumentation SHOULD
+record it as an array of message parts as defined by the
+[`gen_ai.input.messages` JSON schema](/model/gen-ai/gen-ai-input-messages.json),
+not in a provider-specific format. Deserialization takes precedence: a
+single text block holding serialized JSON is recorded as the deserialized
+value.
 
 Instrumentations MUST follow [JSON schema](/model/gen-ai/gen-ai-tool-call-result.json).
 

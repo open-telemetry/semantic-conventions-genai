@@ -556,6 +556,50 @@ def run_chat_with_search_result_input(handler):
     print(f"    -> {resp.content[0].type}")
 
 
+def run_tool_runner():
+    """Scenario: the SDK tool runner executes a tool that returns text and image content blocks."""
+    print("  [execute_tool] Anthropic tool runner: tool returning content blocks")
+    image_url = "https://example.com/weather-map.png"
+
+    @anthropic.beta_tool
+    def get_weather_map(location: str):
+        """Get a weather summary and map for a location."""
+        with reference_tracer().start_as_current_span(
+            "execute_tool get_weather_map",
+            attributes={
+                "gen_ai.operation.name": "execute_tool",
+                "gen_ai.provider.name": "anthropic",
+                "gen_ai.tool.name": "get_weather_map",
+                "gen_ai.tool.type": "function",
+            },
+        ) as tool_span:
+            tool_span.set_attribute("gen_ai.tool.description", get_weather_map.description)
+            tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps({"location": location}))
+            summary = "Weather map for " + location
+            tool_span.set_attribute(
+                "gen_ai.tool.call.result",
+                json.dumps(
+                    [
+                        {"type": "text", "content": summary},
+                        {"type": "uri", "modality": "image", "uri": image_url},
+                    ]
+                ),
+            )
+            return [
+                {"type": "text", "text": summary},
+                {"type": "image", "source": {"type": "url", "url": image_url}},
+            ]
+
+    client = anthropic.Anthropic(base_url=MOCK_BASE_URL, api_key="mock-key")
+    runner = client.beta.messages.tool_runner(
+        model="claude-sonnet-5",
+        max_tokens=100,
+        tools=[get_weather_map],
+        messages=[{"role": "user", "content": "Show me the weather map for Seattle."}],
+    )
+    print(f"    -> {runner.until_done().content[0].text[:60]}")
+
+
 def run_create_agent():
     """Scenario: create a remote agent via the Managed Agents API (`beta.agents.create`).
 
@@ -621,6 +665,7 @@ def main():
     run_chat_with_document_input(handler)
     run_chat_with_image_input(handler)
     run_chat_with_search_result_input(handler)
+    run_tool_runner()
     run_create_agent()
 
     flush_and_shutdown(tp, lp, mp)
