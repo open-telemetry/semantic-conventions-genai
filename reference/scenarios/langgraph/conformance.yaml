@@ -1,0 +1,10 @@
+runner: genai-conformance
+instrumented_library: langgraph
+instrumentation_library: reference
+
+server:
+  run: genai-mock-server --host 127.0.0.1 --port ${PORT}
+
+scenarios:
+  reference:
+    run: uv run --frozen --python 3.12 --project . python scenario.py
