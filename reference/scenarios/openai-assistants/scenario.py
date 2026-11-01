@@ -9,16 +9,15 @@ import os
 from urllib.parse import urlparse
 
 from openai import OpenAI
-from opentelemetry import trace
 from opentelemetry.trace import SpanKind, StatusCode
-from reference_shared import flush_and_shutdown, setup_otel
+from reference_shared import flush_and_shutdown, reference_tracer, setup_otel
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"]
 _parsed = urlparse(MOCK_BASE_URL)
 _SERVER_ADDRESS = _parsed.hostname or "localhost"
 _SERVER_PORT = _parsed.port or 443
 
-tracer = trace.get_tracer("gen_ai.client.openai")
+tracer = reference_tracer("gen_ai.client.openai")
 
 
 def run_invoke_agent(client):
@@ -116,7 +115,9 @@ def run_invoke_agent(client):
             "gen_ai.input.messages",
             json.dumps([{"role": "user", "parts": [{"type": "text", "content": user_message}]}]),
         )
-        span.set_attribute("gen_ai.tool.definitions", json.dumps(tool_defs))
+        span.set_attribute(
+            "gen_ai.tool.definitions", json.dumps([{"type": t["type"], **t["function"]} for t in tool_defs])
+        )
         if getattr(assistant, "instructions", None):
             span.set_attribute(
                 "gen_ai.system_instructions",
@@ -142,14 +143,6 @@ def run_invoke_agent(client):
                     function_call = getattr(tool_call, "function", None)
                     tool_call_id = getattr(tool_call, "id", None)
                     tool_name = getattr(function_call, "name", "get_weather")
-                    tool_definition = next(
-                        (
-                            definition
-                            for definition in tool_defs
-                            if definition.get("function", {}).get("name") == tool_name
-                        ),
-                        None,
-                    )
                     arguments_json = getattr(function_call, "arguments", "{}") or "{}"
                     arguments = json.loads(arguments_json)
 
@@ -157,13 +150,20 @@ def run_invoke_agent(client):
                         "gen_ai.operation.name": "execute_tool",
                     }
                     with tracer.start_as_current_span(
-                        "execute_tool", kind=SpanKind.CLIENT, attributes=tool_span_attributes
+                        f"execute_tool {tool_name}", kind=SpanKind.INTERNAL, attributes=tool_span_attributes
                     ) as tool_span:
                         tool_span.set_attribute("gen_ai.conversation.id", thread.id)
                         tool_span.set_attribute("gen_ai.tool.name", tool_name)
                         tool_span.set_attribute(
                             "gen_ai.tool.description",
-                            (tool_definition or {}).get("function", {}).get("description", ""),
+                            next(
+                                (
+                                    d["function"].get("description", "")
+                                    for d in tool_defs
+                                    if d["function"]["name"] == tool_name
+                                ),
+                                "",
+                            ),
                         )
                         tool_span.set_attribute("gen_ai.tool.type", "function")
                         if tool_call_id:

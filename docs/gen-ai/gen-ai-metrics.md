@@ -33,6 +33,9 @@ applications.
 For inference metrics (duration, time-to-first-chunk, time-per-output-chunk),
 see [Client Inference](client-inference.md#metrics).
 
+For embeddings metrics (duration, input tokens),
+see [Client Embeddings](client-embeddings.md#metrics).
+
 **Disclaimer:** These are initial Generative AI client metric instruments
 and attributes but more may be added in the future.
 
@@ -60,7 +63,7 @@ This metric SHOULD be specified with [ExplicitBucketBoundaries] of [0.01, 0.02, 
 | -------- | --------------- | ----------- | -------------- | --------- | ------ |
 | `gen_ai.client.operation.duration` | Histogram | `s` | GenAI operation duration. [1] | ![Development](https://img.shields.io/badge/-development-blue) | |
 
-**[1]:** This metric SHOULD NOT be reported for inference operations; use `gen_ai.client.inference.duration` instead.
+**[1]:** This metric SHOULD NOT be reported for inference or embeddings operations; use `gen_ai.client.inference.duration` or `gen_ai.client.embeddings.duration` instead.
 
 **Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/signal-requirement-level.md).
 
@@ -160,7 +163,7 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 | `gcp.vertex_ai` | [Vertex AI](https://cloud.google.com/vertex-ai) [11] | ![Development](https://img.shields.io/badge/-development-blue) |
 | `groq` | [Groq](https://groq.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `ibm.watsonx.ai` | [IBM Watsonx AI](https://www.ibm.com/products/watsonx-ai) | ![Development](https://img.shields.io/badge/-development-blue) |
-| `mistral_ai` | [Mistral AI](https://mistral.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `mistral` | [Mistral](https://mistral.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `moonshot_ai` | [Moonshot AI](https://www.moonshot.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `openai` | [OpenAI](https://openai.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `perplexity` | [Perplexity](https://www.perplexity.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
@@ -294,7 +297,7 @@ Instrumentations SHOULD document the list of errors they report.
 | `gcp.vertex_ai` | [Vertex AI](https://cloud.google.com/vertex-ai) [10] | ![Development](https://img.shields.io/badge/-development-blue) |
 | `groq` | [Groq](https://groq.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `ibm.watsonx.ai` | [IBM Watsonx AI](https://www.ibm.com/products/watsonx-ai) | ![Development](https://img.shields.io/badge/-development-blue) |
-| `mistral_ai` | [Mistral AI](https://mistral.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `mistral` | [Mistral](https://mistral.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `moonshot_ai` | [Moonshot AI](https://www.moonshot.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `openai` | [OpenAI](https://openai.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `perplexity` | [Perplexity](https://www.perplexity.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
@@ -415,7 +418,7 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 | `gcp.vertex_ai` | [Vertex AI](https://cloud.google.com/vertex-ai) [9] | ![Development](https://img.shields.io/badge/-development-blue) |
 | `groq` | [Groq](https://groq.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `ibm.watsonx.ai` | [IBM Watsonx AI](https://www.ibm.com/products/watsonx-ai) | ![Development](https://img.shields.io/badge/-development-blue) |
-| `mistral_ai` | [Mistral AI](https://mistral.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `mistral` | [Mistral](https://mistral.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `moonshot_ai` | [Moonshot AI](https://www.moonshot.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `openai` | [OpenAI](https://openai.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `perplexity` | [Perplexity](https://www.perplexity.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
@@ -535,7 +538,7 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 | `gcp.vertex_ai` | [Vertex AI](https://cloud.google.com/vertex-ai) [9] | ![Development](https://img.shields.io/badge/-development-blue) |
 | `groq` | [Groq](https://groq.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `ibm.watsonx.ai` | [IBM Watsonx AI](https://www.ibm.com/products/watsonx-ai) | ![Development](https://img.shields.io/badge/-development-blue) |
-| `mistral_ai` | [Mistral AI](https://mistral.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `mistral` | [Mistral](https://mistral.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `moonshot_ai` | [Moonshot AI](https://www.moonshot.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `openai` | [OpenAI](https://openai.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `perplexity` | [Perplexity](https://www.perplexity.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |

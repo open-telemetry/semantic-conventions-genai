@@ -78,13 +78,15 @@ def _metrics_of(entry: ScenarioDataEntry) -> dict[str, dict[str, str]]:
 
 # Relative paths from reports/ to the semantic convention doc page + anchor.
 SEMCONV_DOC_LINKS: dict[str, str] = {
+    "a2a_client": "../../docs/gen-ai/a2a.md#client",
+    "a2a_server": "../../docs/gen-ai/a2a.md#server",
     "create_agent": "../../docs/gen-ai/gen-ai-agent-spans.md#create-agent-span",
     "invoke_agent_client": "../../docs/gen-ai/gen-ai-agent-spans.md#invoke-agent-client-span",
     "invoke_agent_internal": "../../docs/gen-ai/gen-ai-agent-spans.md#invoke-agent-internal-span",
     "invoke_workflow": "../../docs/gen-ai/gen-ai-agent-spans.md#invoke-workflow-span",
     "plan": "../../docs/gen-ai/gen-ai-agent-spans.md#plan-span",
     "inference": "../../docs/gen-ai/client-inference.md#span-gen_aiclientinference",
-    "embeddings": "../../docs/gen-ai/gen-ai-spans.md#embeddings",
+    "embeddings": "../../docs/gen-ai/client-embeddings.md#span-gen_aiclientembeddings",
     "retrieval": "../../docs/gen-ai/gen-ai-spans.md#retrievals",
     "fetch_response": "../../docs/gen-ai/gen-ai-spans.md#fetch-response",
     "memory": "../../docs/gen-ai/gen-ai-spans.md#memory",
@@ -101,6 +103,8 @@ SEMCONV_DOC_LINKS: dict[str, str] = {
     "gen_ai.client.inference.operation.output_tokens": "../../docs/gen-ai/gen-ai-token-metrics.md#metric-gen_aiclientinferenceoperationoutput_tokens",
     "gen_ai.client.operation.duration": "../../docs/gen-ai/gen-ai-metrics.md#metric-gen_aiclientoperationduration",
     "gen_ai.client.inference.duration": "../../docs/gen-ai/client-inference.md#metric-gen_aiclientinferenceduration",
+    "gen_ai.client.embeddings.duration": "../../docs/gen-ai/client-embeddings.md#metric-gen_aiclientembeddingsduration",
+    "gen_ai.client.embeddings.operation.input_tokens": "../../docs/gen-ai/client-embeddings.md#metric-gen_aiclientembeddingsoperationinput_tokens",
     "gen_ai.invoke_agent.inference_calls": "../../docs/gen-ai/gen-ai-metrics.md#metric-gen_aiinvoke_agentinference_calls",
     "gen_ai.invoke_agent.tool_calls": "../../docs/gen-ai/gen-ai-metrics.md#metric-gen_aiinvoke_agenttool_calls",
 }

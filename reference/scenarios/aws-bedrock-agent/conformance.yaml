@@ -11,3 +11,19 @@ env:
 scenarios:
   reference:
     run: uv run --frozen --python 3.12 --project . python scenario.py
+    expected_violations:
+      - id: genai_expected_attribute_missing
+        context:
+          missing_attribute: gen_ai.response.finish_reasons
+          operation: invoke_agent
+        reason: The agent response exposes no per-generation finish reason; completion status alone does not supply one.
+      - id: genai_expected_attribute_missing
+        context:
+          missing_attribute: gen_ai.usage.input_tokens
+          operation: invoke_agent
+        reason: The pinned mock omits model-invocation trace usage; record tokens when the service returns it.
+      - id: genai_expected_attribute_missing
+        context:
+          missing_attribute: gen_ai.usage.output_tokens
+          operation: invoke_agent
+        reason: The pinned mock omits model-invocation trace usage; record tokens when the service returns it.

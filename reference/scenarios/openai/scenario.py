@@ -2,7 +2,10 @@
 
 import json
 import os
+import time
+from time import perf_counter
 
+from opentelemetry.trace import SpanKind, StatusCode
 from reference_shared import (
     flush_and_shutdown,
     mock_server_host_port,
@@ -16,6 +19,55 @@ MOCK_BASE_URL = os.environ["MOCK_LLM_URL"] + "/v1"
 
 _reference_tracer = reference_tracer()
 _reference_meter = reference_meter()
+
+_time_to_first_chunk = _reference_meter.create_histogram(
+    "gen_ai.client.inference.time_to_first_chunk",
+    unit="s",
+    description="Time to receive the first output chunk of a streaming inference operation.",
+)
+
+_embeddings_duration = _reference_meter.create_histogram(
+    "gen_ai.client.embeddings.duration",
+    unit="s",
+    description="GenAI client embeddings operation duration.",
+    explicit_bucket_boundaries_advisory=[
+        0.01,
+        0.02,
+        0.04,
+        0.08,
+        0.16,
+        0.32,
+        0.64,
+        1.28,
+        2.56,
+        5.12,
+        10.24,
+        20.48,
+        40.96,
+        81.92,
+    ],
+)
+_embeddings_input_tokens = _reference_meter.create_histogram(
+    "gen_ai.client.embeddings.operation.input_tokens",
+    unit="{token}",
+    description="The number of input tokens used per embeddings operation.",
+    explicit_bucket_boundaries_advisory=[
+        1,
+        4,
+        16,
+        64,
+        256,
+        1024,
+        4096,
+        16384,
+        65536,
+        262144,
+        1048576,
+        4194304,
+        16777216,
+        67108864,
+    ],
+)
 
 _operation_input_tokens = _reference_meter.create_histogram(
     "gen_ai.client.inference.operation.input_tokens",
@@ -72,10 +124,10 @@ def usage_metric_attributes(request_model, response_model, host, port):
 
 def _add_by_modality(counter, total, audio_tokens, metric_attributes):
     """Split `total` into its audio and unknown parts and add each to `counter`."""
-    if audio_tokens:
+    if audio_tokens is not None and audio_tokens > 0:
         counter.add(audio_tokens, {**metric_attributes, "gen_ai.token.modality": "audio"})
     remainder = total - (audio_tokens or 0)
-    if remainder:
+    if remainder > 0:
         counter.add(remainder, {**metric_attributes, "gen_ai.token.modality": "unknown"})
 
 
@@ -102,7 +154,7 @@ def record_inference_usage(usage, metric_attributes):
         ("gen_ai.usage.reasoning.output_tokens", _reasoning_output_tokens),
     ):
         value = usage.get(attribute)
-        if value is not None:
+        if value is not None and value > 0:
             counter.add(value, {**metric_attributes, "gen_ai.token.modality": "unknown"})
 
 
@@ -208,7 +260,9 @@ def run_chat_reference(client):
         span_attributes["server.address"] = host
     if port is not None:
         span_attributes["server.port"] = port
-    with _reference_tracer.start_as_current_span("chat gpt-4o-mini", attributes=span_attributes) as span:
+    with _reference_tracer.start_as_current_span(
+        "chat gpt-4o-mini", kind=SpanKind.CLIENT, attributes=span_attributes
+    ) as span:
         span.set_attribute("gen_ai.request.choice.count", request_choice_count)
         span.set_attribute("gen_ai.request.max_tokens", request_max_tokens)
         span.set_attribute("gen_ai.request.temperature", request_temperature)
@@ -254,7 +308,7 @@ def run_chat_reference(client):
                 "cached_tokens",
                 None,
             )
-            if cached_tokens is not None:
+            if cached_tokens:
                 usage["gen_ai.usage.cache_read.input_tokens"] = cached_tokens
         for attr, value in usage.items():
             span.set_attribute(attr, value)
@@ -308,7 +362,9 @@ def run_responses_compaction_reference(client):
     if port is not None:
         span_attributes["server.port"] = port
 
-    with _reference_tracer.start_as_current_span("chat gpt-4o-mini", attributes=span_attributes) as span:
+    with _reference_tracer.start_as_current_span(
+        "chat gpt-4o-mini", kind=SpanKind.CLIENT, attributes=span_attributes
+    ) as span:
         span.set_attribute(
             "gen_ai.input.messages",
             json.dumps([{"role": "user", "parts": [{"type": "text", "content": conversation[0]["content"]}]}]),
@@ -418,7 +474,9 @@ def run_responses_continuation_reference(client):
     if port is not None:
         span_attributes["server.port"] = port
 
-    with _reference_tracer.start_as_current_span("chat gpt-4o-mini", attributes=span_attributes) as span:
+    with _reference_tracer.start_as_current_span(
+        "chat gpt-4o-mini", kind=SpanKind.CLIENT, attributes=span_attributes
+    ) as span:
         span.set_attribute(
             "gen_ai.input.messages",
             json.dumps(
@@ -491,7 +549,10 @@ def run_chat_streaming_reference(client):
         span_attributes_2["server.address"] = host
     if port is not None:
         span_attributes_2["server.port"] = port
-    with _reference_tracer.start_as_current_span("chat gpt-4o-mini", attributes=span_attributes_2) as span:
+    with _reference_tracer.start_as_current_span(
+        "chat gpt-4o-mini", kind=SpanKind.CLIENT, attributes=span_attributes_2
+    ) as span:
+        request_started_at = perf_counter()
         span.set_attribute(
             "gen_ai.input.messages",
             json.dumps(
@@ -511,9 +572,29 @@ def run_chat_streaming_reference(client):
         finish_reasons_by_index = {}
         input_tokens = None
         output_tokens = None
+        first_chunk_received = False
         for chunk in stream:
+            received_at = perf_counter()
             model = model or getattr(chunk, "model", None)
             response_id = response_id or getattr(chunk, "id", None)
+            if not first_chunk_received and any(
+                choice.delta.content
+                or choice.delta.refusal
+                or (choice.delta.audio and (choice.delta.audio.data or choice.delta.audio.transcript))
+                or (
+                    choice.delta.function_call
+                    and (choice.delta.function_call.name or choice.delta.function_call.arguments)
+                )
+                or any(
+                    call.function and (call.function.name or call.function.arguments)
+                    for call in choice.delta.tool_calls or []
+                )
+                for choice in chunk.choices
+            ):
+                ttfc = received_at - request_started_at
+                span.set_attribute("gen_ai.response.time_to_first_chunk", ttfc)
+                _time_to_first_chunk.record(ttfc, usage_metric_attributes(request_model, model, host, port))
+                first_chunk_received = True
             for choice in chunk.choices:
                 seen_choice_indexes.add(choice.index)
                 if choice.index == 0 and choice.delta.content:
@@ -549,6 +630,139 @@ def run_chat_streaming_reference(client):
         print(f"    -> {text[:60]}")
 
 
+def run_chat_streaming_ttfc_checks():
+    """Check streaming boundaries through the SDK with a controlled clock."""
+    from math import isclose
+    from unittest.mock import patch
+
+    import httpx2
+    import openai
+    from opentelemetry.sdk.metrics import MeterProvider
+    from opentelemetry.sdk.metrics.export import InMemoryMetricReader
+    from opentelemetry.sdk.trace import TracerProvider
+    from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+    from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
+
+    def chunk(delta=None, finish_reason=None):
+        return {
+            "id": "chatcmpl-ttfc",
+            "object": "chat.completion.chunk",
+            "created": 0,
+            "model": "gpt-4o-mini",
+            "choices": [] if delta is None else [{"index": 0, "delta": delta, "finish_reason": finish_reason}],
+            "usage": {"prompt_tokens": 1, "completion_tokens": 0, "total_tokens": 1} if delta is None else None,
+        }
+
+    def check_stream(output_deltas, expected_ttfc, *, retry=False):
+        now = 0.0
+        attempts = 0
+
+        def advance(seconds):
+            nonlocal now
+            now += seconds
+
+        def authenticate():
+            advance(0.1)
+            return "mock-key"
+
+        def events():
+            # None produces a usage-only event; the other deltas contain only metadata.
+            for delta in (
+                {"role": "assistant", "content": ""},
+                {"tool_calls": [{"index": 0, "id": "call-1", "type": "function"}]},
+                {"audio": {"id": "audio-1"}},
+                {"audio": {"expires_at": 1}},
+                None,
+            ):
+                advance(0.01)
+                yield f"data: {json.dumps(chunk(delta))}\n\n".encode()
+            for delta in output_deltas:
+                advance(0.3)
+                yield f"data: {json.dumps(chunk(delta))}\n\n".encode()
+            advance(0.4)
+            yield f"data: {json.dumps(chunk({}, 'stop'))}\n\ndata: [DONE]\n\n".encode()
+
+        def respond(request):
+            nonlocal attempts
+            attempts += 1
+            assert request.url.path == "/v1/chat/completions"
+            assert json.loads(request.content)["stream"]
+            advance(0.05)
+            if retry and attempts == 1:
+                return httpx2.Response(500, headers={"retry-after-ms": "200"}, json={"error": "retry"})
+            return httpx2.Response(200, headers={"content-type": "text/event-stream"}, content=events())
+
+        exporter = InMemorySpanExporter()
+        tracer_provider = TracerProvider()
+        tracer_provider.add_span_processor(SimpleSpanProcessor(exporter))
+        reader = InMemoryMetricReader()
+        meter_provider = MeterProvider(metric_readers=[reader])
+        histogram = meter_provider.get_meter("gen_ai.reference").create_histogram(
+            "gen_ai.client.inference.time_to_first_chunk", unit="s"
+        )
+        try:
+            with (
+                patch(f"{__name__}._reference_tracer", tracer_provider.get_tracer("gen_ai.reference")),
+                patch(f"{__name__}._time_to_first_chunk", histogram),
+                patch(f"{__name__}.perf_counter", side_effect=lambda: now),
+                patch("openai._base_client.time.sleep", side_effect=advance) as sleep,
+                openai.OpenAI(
+                    base_url="http://localhost/v1",
+                    api_key=authenticate,
+                    max_retries=1,
+                    http_client=httpx2.Client(transport=httpx2.MockTransport(respond)),
+                ) as client,
+            ):
+                run_chat_streaming_reference(client)
+            assert attempts == (2 if retry else 1)
+            if retry:
+                sleep.assert_called_once_with(0.2)
+            else:
+                sleep.assert_not_called()
+            spans = exporter.get_finished_spans()
+            assert len(spans) == 1
+            data = reader.get_metrics_data()
+            points = (
+                []
+                if data is None
+                else [
+                    point
+                    for resource in data.resource_metrics
+                    for scope in resource.scope_metrics
+                    for metric in scope.metrics
+                    for point in metric.data.data_points
+                ]
+            )
+            if expected_ttfc is None:
+                assert "gen_ai.response.time_to_first_chunk" not in spans[0].attributes
+                assert points == []
+            else:
+                ttfc = spans[0].attributes["gen_ai.response.time_to_first_chunk"]
+                assert isclose(ttfc, expected_ttfc, abs_tol=1e-9), (ttfc, expected_ttfc, output_deltas)
+                assert len(points) == 1
+                assert points[0].count == 1
+                assert points[0].sum == ttfc
+                assert points[0].attributes["gen_ai.response.model"] == "gpt-4o-mini"
+        finally:
+            tracer_provider.shutdown()
+            meter_provider.shutdown()
+
+    check_stream([{"content": "Hello"}, {"content": " world"}], 0.5)
+    for delta in (
+        {"refusal": "I cannot help with that."},
+        {"audio": {"data": "YQ=="}},
+        {"audio": {"transcript": "Hello"}},
+        {"tool_calls": [{"index": 0, "function": {"name": "lookup"}}]},
+        {"tool_calls": [{"index": 0, "function": {"arguments": "{}"}}]},
+        {"function_call": {"name": "lookup"}},
+    ):
+        check_stream([delta], 0.5)
+    # Failed attempt: 0.1 s auth + 0.05 s request + 0.2 s SDK backoff.
+    check_stream([{"content": "Hello"}], 0.85, retry=True)
+    check_stream([], None)
+    print("    -> TTFC boundary checks passed")
+
+
 def run_chat_tool_call_reference(client):
     """Scenario: chat with tool calling with reference implementation."""
     print("  [chat_tool_call] chat with tool calling (reference implementation)")
@@ -582,8 +796,10 @@ def run_chat_tool_call_reference(client):
         span_attributes_3["server.address"] = host
     if port is not None:
         span_attributes_3["server.port"] = port
-    with _reference_tracer.start_as_current_span("chat gpt-4o-mini", attributes=span_attributes_3) as span:
-        span.set_attribute("gen_ai.tool.definitions", json.dumps(tools))
+    with _reference_tracer.start_as_current_span(
+        "chat gpt-4o-mini", kind=SpanKind.CLIENT, attributes=span_attributes_3
+    ) as span:
+        span.set_attribute("gen_ai.tool.definitions", json.dumps([{"type": t["type"], **t["function"]} for t in tools]))
         resp = client.chat.completions.create(
             model=request_model,
             messages=[{"role": "user", "content": "What's the weather in Seattle?"}],
@@ -668,7 +884,9 @@ def run_chat_with_document_input_reference(client):
         span_attributes_doc["server.address"] = host
     if port is not None:
         span_attributes_doc["server.port"] = port
-    with _reference_tracer.start_as_current_span("chat gpt-4o-mini", attributes=span_attributes_doc) as span:
+    with _reference_tracer.start_as_current_span(
+        "chat gpt-4o-mini", kind=SpanKind.CLIENT, attributes=span_attributes_doc
+    ) as span:
         span.set_attribute("gen_ai.input.messages", input_messages)
         resp = client.chat.completions.create(
             model=request_model,
@@ -803,7 +1021,7 @@ def run_chat_audio_reference(client):
                 "role": "user",
                 "parts": [
                     {"type": "text", "content": "Respond to this audio clip."},
-                    {"type": "blob", "mime_type": "audio/wav", "content": audio_b64},
+                    {"type": "blob", "mime_type": "audio/wav", "modality": "audio", "content": audio_b64},
                 ],
             }
         ]
@@ -886,21 +1104,63 @@ def run_embeddings_reference(client):
         span_attributes_4["server.address"] = host
     if port is not None:
         span_attributes_4["server.port"] = port
+    start_time = time.perf_counter()
+    metric_attributes = dict(span_attributes_4)
+    input_token_count = 0
     with _reference_tracer.start_as_current_span(
-        "embeddings text-embedding-3-small", attributes=span_attributes_4
+        "embeddings text-embedding-3-small",
+        kind=SpanKind.CLIENT,
+        attributes=span_attributes_4,
+        record_exception=False,
     ) as span:
-        span.set_attribute("gen_ai.request.encoding_formats", [request_encoding_format])
-        resp = client.embeddings.create(
-            model=request_model,
-            input="Hello, world!",
-            encoding_format=request_encoding_format,
+        try:
+            span.set_attribute("gen_ai.request.encoding_formats", [request_encoding_format])
+            resp = client.embeddings.create(
+                model=request_model,
+                input="Hello, world!",
+                encoding_format=request_encoding_format,
+            )
+            span.set_attribute("gen_ai.response.model", resp.model)
+            metric_attributes["gen_ai.response.model"] = resp.model
+            if resp.data and resp.data[0].embedding is not None:
+                span.set_attribute("gen_ai.embeddings.dimension.count", len(resp.data[0].embedding))
+            if resp.usage:
+                span.set_attribute("gen_ai.usage.input_tokens", resp.usage.prompt_tokens)
+                input_token_count = resp.usage.prompt_tokens
+            print(f"    -> embedding dim: {len(resp.data[0].embedding)}")
+        except Exception as e:
+            span.set_status(StatusCode.ERROR, str(e))
+            span.set_attribute("error.type", type(e).__qualname__)
+            metric_attributes["error.type"] = type(e).__qualname__
+            raise
+        finally:
+            _embeddings_duration.record(time.perf_counter() - start_time, metric_attributes)
+            _embeddings_input_tokens.record(input_token_count, metric_attributes)
+
+
+def run_embeddings_error_reference():
+    """Exercise an embeddings error returned through the SDK's HTTP transport."""
+    import httpx2
+    import openai
+
+    transport = httpx2.MockTransport(
+        lambda request: httpx2.Response(
+            400,
+            json={"error": {"message": "Invalid input", "type": "invalid_request_error", "code": "invalid_input"}},
         )
-        span.set_attribute("gen_ai.response.model", resp.model)
-        if resp.data and resp.data[0].embedding is not None:
-            span.set_attribute("gen_ai.embeddings.dimension.count", len(resp.data[0].embedding))
-        if resp.usage:
-            span.set_attribute("gen_ai.usage.input_tokens", resp.usage.prompt_tokens)
-        print(f"    -> embedding dim: {len(resp.data[0].embedding)}")
+    )
+    with openai.OpenAI(
+        base_url=MOCK_BASE_URL,
+        api_key="mock-key",
+        max_retries=0,
+        http_client=httpx2.Client(transport=transport),
+    ) as client:
+        try:
+            run_embeddings_reference(client)
+        except openai.BadRequestError:
+            pass
+        else:
+            raise AssertionError("Expected the SDK to reject the embeddings request")
 
 
 def run_responses_with_prompt_template_reference(client):
@@ -928,7 +1188,9 @@ def run_responses_with_prompt_template_reference(client):
         span_attributes["server.address"] = host
     if port is not None:
         span_attributes["server.port"] = port
-    with _reference_tracer.start_as_current_span("chat gpt-4o-mini", attributes=span_attributes) as span:
+    with _reference_tracer.start_as_current_span(
+        "chat gpt-4o-mini", kind=SpanKind.CLIENT, attributes=span_attributes
+    ) as span:
         for var_name, var_value in prompt_variables.items():
             span.set_attribute(f"gen_ai.prompt.variable.{var_name}", var_value)
         resp = client.responses.create(
@@ -1143,6 +1405,9 @@ def run_fetch_response_reference(client):
 def main():
     print("=== Reference Implementation: OpenAI Reference Implementation ===")
 
+    # Keep controlled-clock checks separate from the OTLP-exported reference run.
+    run_chat_streaming_ttfc_checks()
+
     tp, lp, mp = setup_otel()
 
     import openai
@@ -1160,6 +1425,7 @@ def main():
     run_responses_with_prompt_template_reference(client)
     run_fetch_response_reference(client)
     run_embeddings_reference(client)
+    run_embeddings_error_reference()
 
     flush_and_shutdown(tp, lp, mp)
 

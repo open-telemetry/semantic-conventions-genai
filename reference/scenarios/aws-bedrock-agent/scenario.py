@@ -10,16 +10,15 @@ import os
 from urllib.parse import urlparse
 
 import boto3
-from opentelemetry import trace
 from opentelemetry.trace import SpanKind, StatusCode
-from reference_shared import flush_and_shutdown, setup_otel
+from reference_shared import flush_and_shutdown, reference_tracer, setup_otel
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"]
 _parsed = urlparse(MOCK_BASE_URL)
 _SERVER_ADDRESS = _parsed.hostname or "localhost"
 _SERVER_PORT = _parsed.port or 443
 
-tracer = trace.get_tracer("gen_ai.client.aws_bedrock")
+tracer = reference_tracer("gen_ai.client.aws_bedrock")
 
 AGENT_ALIAS_ID = "MOCK_ALIAS_ID"
 SESSION_ID = "mock-session-001"
@@ -96,13 +95,27 @@ def run_invoke_agent(client, agent_id):
             )
             # Consume the event stream
             text = ""
+            input_tokens = []
+            output_tokens = []
             for event in response["completion"]:
                 if "chunk" in event:
                     text += event["chunk"].get("bytes", b"").decode("utf-8")
                 elif "trace" in event:
+                    trace = event["trace"].get("trace", {})
+                    for trace_type in ("preProcessingTrace", "orchestrationTrace", "postProcessingTrace"):
+                        model_output = trace.get(trace_type, {}).get("modelInvocationOutput", {})
+                        usage = model_output.get("metadata", {}).get("usage", {})
+                        if usage.get("inputTokens") is not None:
+                            input_tokens.append(usage["inputTokens"])
+                        if usage.get("outputTokens") is not None:
+                            output_tokens.append(usage["outputTokens"])
                     agent_version = event["trace"].get("agentVersion")
                     if agent_version:
                         span.set_attribute("gen_ai.agent.version", agent_version)
+            if input_tokens:
+                span.set_attribute("gen_ai.usage.input_tokens", sum(input_tokens))
+            if output_tokens:
+                span.set_attribute("gen_ai.usage.output_tokens", sum(output_tokens))
             if text:
                 span.set_attribute(
                     "gen_ai.output.messages",

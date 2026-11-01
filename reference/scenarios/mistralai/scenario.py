@@ -1,4 +1,4 @@
-"""Reference implementation for Mistral AI.
+"""Reference implementation for Mistral.
 
 Exercises: chat, chat_streaming, embeddings, create_agent
 against a mock server, with manual OTel spans.
@@ -6,12 +6,14 @@ against a mock server, with manual OTel spans.
 
 import json
 import os
+import time
 
 from opentelemetry.trace import SpanKind, StatusCode
 from reference_shared import (
     flush_and_shutdown,
     mock_server_host_port,
     reference_event_logger,
+    reference_meter,
     reference_tracer,
     setup_otel,
 )
@@ -21,6 +23,50 @@ MOCK_BASE_URL = os.environ["MOCK_LLM_URL"]
 MOCK_AGENTS_BASE_URL = MOCK_BASE_URL + "/mistral"
 
 _reference_tracer = reference_tracer()
+_reference_meter = reference_meter()
+
+_embeddings_duration = _reference_meter.create_histogram(
+    "gen_ai.client.embeddings.duration",
+    unit="s",
+    description="GenAI client embeddings operation duration.",
+    explicit_bucket_boundaries_advisory=[
+        0.01,
+        0.02,
+        0.04,
+        0.08,
+        0.16,
+        0.32,
+        0.64,
+        1.28,
+        2.56,
+        5.12,
+        10.24,
+        20.48,
+        40.96,
+        81.92,
+    ],
+)
+_embeddings_input_tokens = _reference_meter.create_histogram(
+    "gen_ai.client.embeddings.operation.input_tokens",
+    unit="{token}",
+    description="The number of input tokens used per embeddings operation.",
+    explicit_bucket_boundaries_advisory=[
+        1,
+        4,
+        16,
+        64,
+        256,
+        1024,
+        4096,
+        16384,
+        65536,
+        262144,
+        1048576,
+        4194304,
+        16777216,
+        67108864,
+    ],
+)
 
 
 def _disable_sdk_tracing(client) -> None:
@@ -41,14 +87,16 @@ def run_chat(client):
     messages = [{"role": "user", "content": "Say hello."}]
     span_attributes = {
         "gen_ai.operation.name": "chat",
-        "gen_ai.provider.name": "mistral_ai",
+        "gen_ai.provider.name": "mistral",
         "gen_ai.request.model": request_model,
     }
     if host:
         span_attributes["server.address"] = host
     if port is not None:
         span_attributes["server.port"] = port
-    with _reference_tracer.start_as_current_span("chat mistral-large-latest", attributes=span_attributes) as span:
+    with _reference_tracer.start_as_current_span(
+        "chat mistral-large-latest", kind=SpanKind.CLIENT, attributes=span_attributes
+    ) as span:
         span.set_attribute(
             "gen_ai.input.messages",
             json.dumps([{"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]} for m in messages]),
@@ -70,6 +118,7 @@ def run_chat(client):
         # Emit inference operation details event
         event_attrs = {
             "gen_ai.operation.name": "chat",
+            "gen_ai.provider.name": "mistral",
             "gen_ai.request.model": request_model,
             "gen_ai.input.messages": json.dumps(
                 [{"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]} for m in messages]
@@ -125,15 +174,17 @@ def run_chat_tool_call(client):
     messages = [{"role": "user", "content": "What's the weather in Seattle?"}]
     span_attributes_2 = {
         "gen_ai.operation.name": "chat",
-        "gen_ai.provider.name": "mistral_ai",
+        "gen_ai.provider.name": "mistral",
         "gen_ai.request.model": request_model,
     }
     if host:
         span_attributes_2["server.address"] = host
     if port is not None:
         span_attributes_2["server.port"] = port
-    with _reference_tracer.start_as_current_span("chat mistral-large-latest", attributes=span_attributes_2) as span:
-        span.set_attribute("gen_ai.tool.definitions", json.dumps(tools))
+    with _reference_tracer.start_as_current_span(
+        "chat mistral-large-latest", kind=SpanKind.CLIENT, attributes=span_attributes_2
+    ) as span:
+        span.set_attribute("gen_ai.tool.definitions", json.dumps([{"type": t["type"], **t["function"]} for t in tools]))
         span.set_attribute(
             "gen_ai.input.messages",
             json.dumps([{"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]} for m in messages]),
@@ -169,14 +220,16 @@ def run_chat_streaming(client):
     messages = [{"role": "user", "content": "Tell me a joke."}]
     span_attributes_3 = {
         "gen_ai.operation.name": "chat",
-        "gen_ai.provider.name": "mistral_ai",
+        "gen_ai.provider.name": "mistral",
         "gen_ai.request.model": request_model,
     }
     if host:
         span_attributes_3["server.address"] = host
     if port is not None:
         span_attributes_3["server.port"] = port
-    with _reference_tracer.start_as_current_span("chat mistral-large-latest", attributes=span_attributes_3) as span:
+    with _reference_tracer.start_as_current_span(
+        "chat mistral-large-latest", kind=SpanKind.CLIENT, attributes=span_attributes_3
+    ) as span:
         span.set_attribute(
             "gen_ai.input.messages",
             json.dumps([{"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]} for m in messages]),
@@ -241,25 +294,49 @@ def run_embeddings(client):
     print("  [embeddings] embedding generation (reference implementation)")
     request_model = "mistral-embed"
     host, port = mock_server_host_port(MOCK_BASE_URL)
+    encoding_format = "float"
     span_attributes_4 = {
         "gen_ai.operation.name": "embeddings",
-        "gen_ai.provider.name": "mistral_ai",
+        "gen_ai.provider.name": "mistral",
         "gen_ai.request.model": request_model,
     }
     if host:
         span_attributes_4["server.address"] = host
     if port is not None:
         span_attributes_4["server.port"] = port
-    with _reference_tracer.start_as_current_span("embeddings mistral-embed", attributes=span_attributes_4) as span:
-        resp = client.embeddings.create(
-            model=request_model,
-            inputs=["Hello, world!"],
-        )
-        if getattr(resp, "model", None):
-            span.set_attribute("gen_ai.response.model", resp.model)
-        if resp.usage:
-            span.set_attribute("gen_ai.usage.input_tokens", resp.usage.prompt_tokens)
-        print(f"    -> embedding dim: {len(resp.data[0].embedding)}")
+    start_time = time.perf_counter()
+    metric_attributes = dict(span_attributes_4)
+    input_token_count = 0
+    with _reference_tracer.start_as_current_span(
+        "embeddings mistral-embed",
+        kind=SpanKind.CLIENT,
+        attributes=span_attributes_4,
+        record_exception=False,
+    ) as span:
+        try:
+            span.set_attribute("gen_ai.request.encoding_formats", [encoding_format])
+            resp = client.embeddings.create(
+                model=request_model,
+                inputs=["Hello, world!"],
+                encoding_format=encoding_format,
+            )
+            if getattr(resp, "model", None):
+                span.set_attribute("gen_ai.response.model", resp.model)
+                metric_attributes["gen_ai.response.model"] = resp.model
+            if resp.data and resp.data[0].embedding:
+                span.set_attribute("gen_ai.embeddings.dimension.count", len(resp.data[0].embedding))
+            if resp.usage:
+                span.set_attribute("gen_ai.usage.input_tokens", resp.usage.prompt_tokens)
+                input_token_count = resp.usage.prompt_tokens
+            print(f"    -> embedding dim: {len(resp.data[0].embedding)}")
+        except Exception as e:
+            span.set_status(StatusCode.ERROR, str(e))
+            span.set_attribute("error.type", type(e).__qualname__)
+            metric_attributes["error.type"] = type(e).__qualname__
+            raise
+        finally:
+            _embeddings_duration.record(time.perf_counter() - start_time, metric_attributes)
+            _embeddings_input_tokens.record(input_token_count, metric_attributes)
 
 
 def run_create_agent(client):
@@ -276,7 +353,7 @@ def run_create_agent(client):
 
     span_attributes = {
         "gen_ai.operation.name": "create_agent",
-        "gen_ai.provider.name": "mistral_ai",
+        "gen_ai.provider.name": "mistral",
         "gen_ai.request.model": request_model,
         "gen_ai.agent.name": agent_name,
     }
@@ -305,7 +382,7 @@ def run_create_agent(client):
 
 
 def main():
-    print("=== Reference Implementation: Mistral AI ===")
+    print("=== Reference Implementation: Mistral ===")
 
     tp, lp, mp = setup_otel()
     # NO instrument() call - reference implementation only
