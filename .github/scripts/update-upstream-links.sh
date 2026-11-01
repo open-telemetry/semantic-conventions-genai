@@ -30,3 +30,15 @@ find model docs AGENTS.md -type f \( -name '*.yaml' -o -name '*.md' \) -print0 |
   while IFS= read -r -d '' file; do
     perl -pi -e "s,\Q${URL_PREFIX}\Ev\d+\.\d+\.\d+,${URL_PREFIX}${VERSION},g" "$file"
   done
+
+# Generated snippets inherit `brief` and `note` text from upstream groups, and
+# those links are root-relative to the upstream repo (`/docs/http/http-spans.md`).
+# Point them at the pinned upstream docs. A `/docs/<dir>/` that exists here is
+# this repo's own page and is left alone.
+UPSTREAM_BASE="${URL_PREFIX}${VERSION}" \
+  find docs -type f -name '*.md' -print0 |
+  while IFS= read -r -d '' file; do
+    UPSTREAM_BASE="${URL_PREFIX}${VERSION}" perl -pi -e \
+      's{\]\(/docs/([^/)]+)/}{ -d "docs/$1" ? "](/docs/$1/" : "](" . $ENV{UPSTREAM_BASE} . "/docs/$1/" }ge' \
+      "$file"
+  done

@@ -44,15 +44,17 @@
   },
   "events": {},
   "metrics": {},
+  "entities": {},
   "findings": [
     {
       "id": "genai_expected_attribute_missing",
       "message": "Span 'invoke_agent refimpl-test-assistant' (operation 'invoke_agent') is missing expected attribute 'gen_ai.response.finish_reasons'",
+      "signal_type": "span",
+      "signal_name": "invoke_agent refimpl-test-assistant",
       "context": {
         "missing_attribute": "gen_ai.response.finish_reasons",
         "operation": "invoke_agent"
       }
     }
-  ],
-  "entities": {}
+  ]
 }

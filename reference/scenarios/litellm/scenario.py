@@ -14,6 +14,7 @@ from reference_shared import flush_and_shutdown, reference_event_logger, referen
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"] + "/v1"
 _SERVER_ADDRESS = urlparse(os.environ["MOCK_LLM_URL"]).hostname
+_SERVER_PORT = urlparse(os.environ["MOCK_LLM_URL"]).port
 
 _reference_tracer = reference_tracer()
 _reference_meter = reference_meter()
@@ -82,6 +83,7 @@ def run_chat():
         "gen_ai.provider.name": provider_name,
         "gen_ai.request.model": request_model,
         "server.address": _SERVER_ADDRESS,
+        "server.port": _SERVER_PORT,
     }
     with _reference_tracer.start_as_current_span(
         "chat gpt-4o-mini", kind=SpanKind.CLIENT, attributes=span_attributes
@@ -170,6 +172,7 @@ def run_chat_streaming():
         "gen_ai.provider.name": provider_name,
         "gen_ai.request.model": request_model,
         "server.address": _SERVER_ADDRESS,
+        "server.port": _SERVER_PORT,
     }
     with _reference_tracer.start_as_current_span(
         "chat gpt-4o-mini", kind=SpanKind.CLIENT, attributes=span_attributes_2
@@ -189,15 +192,18 @@ def run_chat_streaming():
             api_base=MOCK_BASE_URL,
             api_key="mock-key",
             stream=True,
+            stream_options={"include_usage": True},
         )
         text = ""
         seen_choice_indexes = set()
         finish_reasons_by_index = {}
         response_id = None
         response_model = None
+        usage = None
         for chunk in resp:
             response_id = response_id or chunk.id
             response_model = response_model or chunk.model
+            usage = getattr(chunk, "usage", None) or usage
             for choice in chunk.choices:
                 seen_choice_indexes.add(choice.index)
                 if choice.index == 0 and choice.delta.content:
@@ -213,6 +219,9 @@ def run_chat_streaming():
             span.set_attribute("gen_ai.response.id", response_id)
         if response_model:
             span.set_attribute("gen_ai.response.model", response_model)
+        if usage:
+            span.set_attribute("gen_ai.usage.input_tokens", usage.prompt_tokens)
+            span.set_attribute("gen_ai.usage.output_tokens", usage.completion_tokens)
         span.set_attribute(
             "gen_ai.output.messages",
             json.dumps(
@@ -259,6 +268,7 @@ def run_chat_tool_call():
         "gen_ai.provider.name": provider_name,
         "gen_ai.request.model": request_model,
         "server.address": _SERVER_ADDRESS,
+        "server.port": _SERVER_PORT,
     }
     with _reference_tracer.start_as_current_span(
         "chat gpt-4o-mini", kind=SpanKind.CLIENT, attributes=span_attributes_3
@@ -311,6 +321,7 @@ def run_embeddings():
         "gen_ai.provider.name": provider_name,
         "gen_ai.request.model": request_model,
         "server.address": _SERVER_ADDRESS,
+        "server.port": _SERVER_PORT,
     }
     start_time = time.perf_counter()
     metric_attributes = dict(span_attributes_4)
