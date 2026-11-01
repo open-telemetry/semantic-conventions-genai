@@ -584,7 +584,9 @@ span. Available refinements include
 [agents exposed as tools](/docs/gen-ai/gen-ai-agent-spans.md#agent-as-a-tool) and
 [Agent Skills](/docs/gen-ai/gen-ai-agent-spans.md#agent-skills).
 
-**Span name** SHOULD be `execute_tool {gen_ai.tool.name}`.
+**Span name** SHOULD be `{gen_ai.operation.name} {gen_ai.tool.name}`.
+
+Semantic conventions for individual frameworks MAY specify different span name format.
 
 **Span kind** SHOULD be `INTERNAL`.
 

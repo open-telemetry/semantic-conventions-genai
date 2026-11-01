@@ -51,8 +51,8 @@ The `gen_ai.operation.name` SHOULD be `create_agent`.
 
 **Span name** SHOULD be the first of the following formats for which all attributes are available.
 
-1. `create_agent {gen_ai.agent.name}`
-2. `create_agent`
+1. `{gen_ai.operation.name} {gen_ai.agent.name}`
+2. `{gen_ai.operation.name}`
 
 Semantic conventions for individual GenAI systems and frameworks MAY specify different span name format.
 
@@ -183,8 +183,8 @@ Examples: OpenAI Assistants API, AWS Bedrock Agents.
 
 **Span name** SHOULD be the first of the following formats for which all attributes are available.
 
-1. `invoke_agent {gen_ai.agent.name}`
-2. `invoke_agent`
+1. `{gen_ai.operation.name} {gen_ai.agent.name}`
+2. `{gen_ai.operation.name}`
 
 Semantic conventions for individual GenAI systems and frameworks MAY specify different span name format.
 
@@ -563,8 +563,8 @@ Examples: LangChain agents, CrewAI agents.
 
 **Span name** SHOULD be the first of the following formats for which all attributes are available.
 
-1. `invoke_agent {gen_ai.agent.name}`
-2. `invoke_agent`
+1. `{gen_ai.operation.name} {gen_ai.agent.name}`
+2. `{gen_ai.operation.name}`
 
 Semantic conventions for individual GenAI systems and frameworks MAY specify different span name format.
 
@@ -865,8 +865,8 @@ Examples of workflow invocations in different frameworks include:
 
 **Span name** SHOULD be the first of the following formats for which all attributes are available.
 
-1. `invoke_workflow {gen_ai.workflow.name}`
-2. `invoke_workflow`
+1. `{gen_ai.operation.name} {gen_ai.workflow.name}`
+2. `{gen_ai.operation.name}`
 
 **Span kind** SHOULD be `INTERNAL`.
 
@@ -1013,8 +1013,8 @@ reasoning or normal inference.
 
 **Span name** SHOULD be the first of the following formats for which all attributes are available.
 
-1. `plan {gen_ai.agent.name}`
-2. `plan`
+1. `{gen_ai.operation.name} {gen_ai.agent.name}`
+2. `{gen_ai.operation.name}`
 
 **Span kind** SHOULD be `INTERNAL`.
 
@@ -1089,7 +1089,9 @@ Examples include:
 - [OpenAI Agents tools](https://openai.github.io/openai-agents-python/tools/#agents-as-tools)
   created from another agent.
 
-**Span name** SHOULD be `execute_tool {gen_ai.tool.name}`.
+**Span name** SHOULD be `{gen_ai.operation.name} {gen_ai.tool.name}`.
+
+Semantic conventions for individual frameworks MAY specify different span name format.
 
 **Span kind** SHOULD be `INTERNAL`.
 
@@ -1248,8 +1250,8 @@ Examples include:
 
 **Span name** SHOULD be the first of the following formats for which all attributes are available.
 
-1. `execute_tool {gen_ai.tool.name} {gen_ai.skill.name}`
-2. `execute_tool {gen_ai.tool.name}`
+1. `{gen_ai.operation.name} {gen_ai.tool.name} {gen_ai.skill.name}`
+2. `{gen_ai.operation.name} {gen_ai.tool.name}`
 
 **Span kind** SHOULD be `INTERNAL`.
 
@@ -1400,9 +1402,9 @@ Examples include:
 
 **Span name** SHOULD be the first of the following formats for which all attributes are available.
 
-1. `execute_tool {gen_ai.tool.name} {gen_ai.skill.name} {gen_ai.skill.resource.name}`
-2. `execute_tool {gen_ai.tool.name} {gen_ai.skill.resource.name}`
-3. `execute_tool {gen_ai.tool.name}`
+1. `{gen_ai.operation.name} {gen_ai.tool.name} {gen_ai.skill.name} {gen_ai.skill.resource.name}`
+2. `{gen_ai.operation.name} {gen_ai.tool.name} {gen_ai.skill.resource.name}`
+3. `{gen_ai.operation.name} {gen_ai.tool.name}`
 
 The skill name SHOULD NOT be appended by itself.
 
@@ -1571,10 +1573,10 @@ for each observed command, script, or process execution.
 
 **Span name** SHOULD be the first of the following formats for which all attributes are available.
 
-1. `execute_tool {gen_ai.tool.name} {gen_ai.skill.name} {gen_ai.skill.resource.name}`
-2. `execute_tool {gen_ai.tool.name} {gen_ai.skill.resource.name}`
-3. `execute_tool {gen_ai.tool.name} {process.executable.name}`
-4. `execute_tool {gen_ai.tool.name}`
+1. `{gen_ai.operation.name} {gen_ai.tool.name} {gen_ai.skill.name} {gen_ai.skill.resource.name}`
+2. `{gen_ai.operation.name} {gen_ai.tool.name} {gen_ai.skill.resource.name}`
+3. `{gen_ai.operation.name} {gen_ai.tool.name} {process.executable.name}`
+4. `{gen_ai.operation.name} {gen_ai.tool.name}`
 
 The skill name SHOULD NOT be appended without the resource name.
 

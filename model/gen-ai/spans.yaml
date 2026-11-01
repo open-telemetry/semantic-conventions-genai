@@ -564,8 +564,8 @@ spans:
     kind: client
     name:
       templates:
-        - "create_agent {gen_ai.agent.name}"
-        - "create_agent"
+        - "{gen_ai.operation.name} {gen_ai.agent.name}"
+        - "{gen_ai.operation.name}"
       note: |
         Semantic conventions for individual GenAI systems and frameworks MAY specify different span name format.
     brief: >
@@ -619,8 +619,8 @@ spans:
     kind: client
     name:
       templates:
-        - "invoke_agent {gen_ai.agent.name}"
-        - "invoke_agent"
+        - "{gen_ai.operation.name} {gen_ai.agent.name}"
+        - "{gen_ai.operation.name}"
       note: |
         Semantic conventions for individual GenAI systems and frameworks MAY specify different span name format.
     brief: >
@@ -667,8 +667,8 @@ spans:
     kind: internal
     name:
       templates:
-        - "invoke_agent {gen_ai.agent.name}"
-        - "invoke_agent"
+        - "{gen_ai.operation.name} {gen_ai.agent.name}"
+        - "{gen_ai.operation.name}"
       note: |
         Semantic conventions for individual GenAI systems and frameworks MAY specify different span name format.
     brief: >
@@ -697,7 +697,9 @@ spans:
     kind: internal
     name:
       templates:
-        - "execute_tool {gen_ai.tool.name}"
+        - "{gen_ai.operation.name} {gen_ai.tool.name}"
+      note: |
+        Semantic conventions for individual frameworks MAY specify different span name format.
     brief: Describes tool execution span.
     note: |
       `gen_ai.operation.name` SHOULD be `execute_tool`.
@@ -755,8 +757,8 @@ spans:
     kind: internal
     name:
       templates:
-        - "invoke_workflow {gen_ai.workflow.name}"
-        - "invoke_workflow"
+        - "{gen_ai.operation.name} {gen_ai.workflow.name}"
+        - "{gen_ai.operation.name}"
     brief: >
       Represents an operation that executes a coordinated process composed of multiple agents
       or other operations involving generative AI.
@@ -811,8 +813,8 @@ spans:
     kind: internal
     name:
       templates:
-        - "plan {gen_ai.agent.name}"
-        - "plan"
+        - "{gen_ai.operation.name} {gen_ai.agent.name}"
+        - "{gen_ai.operation.name}"
     brief: >
       Represents an agent planning or task decomposition phase.
     note: |
@@ -1047,8 +1049,8 @@ span_refinements:
     brief: Describes a tool call that loads a skill into an agent's context.
     name:
       templates:
-        - "execute_tool {gen_ai.tool.name} {gen_ai.skill.name}"
-        - "execute_tool {gen_ai.tool.name}"
+        - "{gen_ai.operation.name} {gen_ai.tool.name} {gen_ai.skill.name}"
+        - "{gen_ai.operation.name} {gen_ai.tool.name}"
     note: |
       This refinement applies when a dedicated tool loads a skill.
       Examples include:
@@ -1078,9 +1080,9 @@ span_refinements:
     brief: Describes a tool call that reads a resource belonging to a skill.
     name:
       templates:
-        - "execute_tool {gen_ai.tool.name} {gen_ai.skill.name} {gen_ai.skill.resource.name}"
-        - "execute_tool {gen_ai.tool.name} {gen_ai.skill.resource.name}"
-        - "execute_tool {gen_ai.tool.name}"
+        - "{gen_ai.operation.name} {gen_ai.tool.name} {gen_ai.skill.name} {gen_ai.skill.resource.name}"
+        - "{gen_ai.operation.name} {gen_ai.tool.name} {gen_ai.skill.resource.name}"
+        - "{gen_ai.operation.name} {gen_ai.tool.name}"
       note: |
         The skill name SHOULD NOT be appended by itself.
     note: |
@@ -1115,10 +1117,10 @@ span_refinements:
     brief: Describes a tool call that executes one or more commands.
     name:
       templates:
-        - "execute_tool {gen_ai.tool.name} {gen_ai.skill.name} {gen_ai.skill.resource.name}"
-        - "execute_tool {gen_ai.tool.name} {gen_ai.skill.resource.name}"
-        - "execute_tool {gen_ai.tool.name} {process.executable.name}"
-        - "execute_tool {gen_ai.tool.name}"
+        - "{gen_ai.operation.name} {gen_ai.tool.name} {gen_ai.skill.name} {gen_ai.skill.resource.name}"
+        - "{gen_ai.operation.name} {gen_ai.tool.name} {gen_ai.skill.resource.name}"
+        - "{gen_ai.operation.name} {gen_ai.tool.name} {process.executable.name}"
+        - "{gen_ai.operation.name} {gen_ai.tool.name}"
       note: |
         The skill name SHOULD NOT be appended without the resource name.
     note: |
