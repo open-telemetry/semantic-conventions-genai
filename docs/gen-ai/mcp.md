@@ -179,10 +179,11 @@ to avoid high cardinality span names.
 
 **[1] `error.type`:** When the response carries a JSON-RPC error code that classifies as an error,
 `error.type` SHOULD be set to the string representation of that code. See
-`rpc.response.status_code` for which codes classify as errors. Otherwise
-(for example on timeouts or transport errors) it SHOULD be set following the
-[`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/error.md)
-guidance.
+`rpc.response.status_code` for which codes classify as errors. When an HTTP
+response ends the operation in error without a JSON-RPC error code,
+`error.type` SHOULD be set to the string representation of the HTTP status
+code. Otherwise (for example on timeouts or other transport errors), it SHOULD be
+set to the canonical name of the exception or error that occurred.
 
 When JSON-RPC call is successful, but an error is returned within the
 result payload, this attribute SHOULD be set to the low-cardinality
@@ -190,6 +191,10 @@ string representation of the error. When
 [CallToolResult](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/9c8a44e47e16b789a1f9d47c89ea23ed13a37cf9/schema/2025-06-18/schema.ts#L715)
 is returned with `isError` set to `true`, this attribute SHOULD be set to
 `tool_error`.
+
+`rpc.response.status_code` carries the same string representation of
+the JSON-RPC error code. Unlike `rpc.response.status_code`,
+`error.type` is also set when no JSON-RPC error response is available.
 
 **[2] `jsonrpc.request.id`:** Under the [JSON-RPC specification](https://www.jsonrpc.org/specification), the `id` property may be a string, number, null, or omitted entirely. When omitted, the request is treated as a notification. Using `null` is not equivalent to omitting the `id`, but it is discouraged.
 Instrumentations SHOULD NOT capture this attribute when the `id` is `null` or omitted.
@@ -405,10 +410,11 @@ to avoid high cardinality span names.
 
 **[1] `error.type`:** When the response carries a JSON-RPC error code that classifies as an error,
 `error.type` SHOULD be set to the string representation of that code. See
-`rpc.response.status_code` for which codes classify as errors. Otherwise
-(for example on timeouts or transport errors) it SHOULD be set following the
-[`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/error.md)
-guidance.
+`rpc.response.status_code` for which codes classify as errors. When an HTTP
+response ends the operation in error without a JSON-RPC error code,
+`error.type` SHOULD be set to the string representation of the HTTP status
+code. Otherwise (for example on timeouts or other transport errors), it SHOULD be
+set to the canonical name of the exception or error that occurred.
 
 When JSON-RPC call is successful, but an error is returned within the
 result payload, this attribute SHOULD be set to the low-cardinality
@@ -416,6 +422,10 @@ string representation of the error. When
 [CallToolResult](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/9c8a44e47e16b789a1f9d47c89ea23ed13a37cf9/schema/2025-06-18/schema.ts#L715)
 is returned with `isError` set to `true`, this attribute SHOULD be set to
 `tool_error`.
+
+`rpc.response.status_code` carries the same string representation of
+the JSON-RPC error code. Unlike `rpc.response.status_code`,
+`error.type` is also set when no JSON-RPC error response is available.
 
 **[2] `jsonrpc.request.id`:** Under the [JSON-RPC specification](https://www.jsonrpc.org/specification), the `id` property may be a string, number, null, or omitted entirely. When omitted, the request is treated as a notification. Using `null` is not equivalent to omitting the `id`, but it is discouraged.
 Instrumentations SHOULD NOT capture this attribute when the `id` is `null` or omitted.
@@ -623,10 +633,11 @@ of `[ 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30, 60, 120, 300 ]`.
 
 **[1] `error.type`:** When the response carries a JSON-RPC error code that classifies as an error,
 `error.type` SHOULD be set to the string representation of that code. See
-`rpc.response.status_code` for which codes classify as errors. Otherwise
-(for example on timeouts or transport errors) it SHOULD be set following the
-[`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/error.md)
-guidance.
+`rpc.response.status_code` for which codes classify as errors. When an HTTP
+response ends the operation in error without a JSON-RPC error code,
+`error.type` SHOULD be set to the string representation of the HTTP status
+code. Otherwise (for example on timeouts or other transport errors), it SHOULD be
+set to the canonical name of the exception or error that occurred.
 
 When JSON-RPC call is successful, but an error is returned within the
 result payload, this attribute SHOULD be set to the low-cardinality
@@ -634,6 +645,10 @@ string representation of the error. When
 [CallToolResult](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/9c8a44e47e16b789a1f9d47c89ea23ed13a37cf9/schema/2025-06-18/schema.ts#L715)
 is returned with `isError` set to `true`, this attribute SHOULD be set to
 `tool_error`.
+
+`rpc.response.status_code` carries the same string representation of
+the JSON-RPC error code. Unlike `rpc.response.status_code`,
+`error.type` is also set when no JSON-RPC error response is available.
 
 **[2] `rpc.response.status_code`:** This attribute records the [JSON-RPC error code](https://www.jsonrpc.org/specification#error_object)
 returned in the error response.
@@ -790,10 +805,11 @@ of `[ 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30, 60, 120, 300 ]`.
 
 **[1] `error.type`:** When the response carries a JSON-RPC error code that classifies as an error,
 `error.type` SHOULD be set to the string representation of that code. See
-`rpc.response.status_code` for which codes classify as errors. Otherwise
-(for example on timeouts or transport errors) it SHOULD be set following the
-[`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/error.md)
-guidance.
+`rpc.response.status_code` for which codes classify as errors. When an HTTP
+response ends the operation in error without a JSON-RPC error code,
+`error.type` SHOULD be set to the string representation of the HTTP status
+code. Otherwise (for example on timeouts or other transport errors), it SHOULD be
+set to the canonical name of the exception or error that occurred.
 
 When JSON-RPC call is successful, but an error is returned within the
 result payload, this attribute SHOULD be set to the low-cardinality
@@ -801,6 +817,10 @@ string representation of the error. When
 [CallToolResult](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/9c8a44e47e16b789a1f9d47c89ea23ed13a37cf9/schema/2025-06-18/schema.ts#L715)
 is returned with `isError` set to `true`, this attribute SHOULD be set to
 `tool_error`.
+
+`rpc.response.status_code` carries the same string representation of
+the JSON-RPC error code. Unlike `rpc.response.status_code`,
+`error.type` is also set when no JSON-RPC error response is available.
 
 **[2] `rpc.response.status_code`:** This attribute records the [JSON-RPC error code](https://www.jsonrpc.org/specification#error_object)
 returned in the error response.

@@ -10,6 +10,17 @@
   },
   "events": {},
   "metrics": {},
-  "findings": [],
-  "entities": {}
+  "entities": {},
+  "findings": [
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'retrieval weather-knowledge-base' (operation 'retrieval') is missing expected attribute 'server.address'",
+      "signal_type": "span",
+      "signal_name": "retrieval weather-knowledge-base",
+      "context": {
+        "missing_attribute": "server.address",
+        "operation": "retrieval"
+      }
+    }
+  ]
 }

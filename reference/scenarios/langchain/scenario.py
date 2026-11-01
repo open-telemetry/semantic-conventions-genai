@@ -6,6 +6,7 @@ import os
 from typing import TypedDict
 
 from langchain_core.tools import tool
+from opentelemetry.trace import SpanKind
 from reference_shared import flush_and_shutdown, reference_tracer, setup_otel
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"] + "/v1"
@@ -65,6 +66,9 @@ async def agent_node(state: GraphState) -> GraphState:
         result = await agent.ainvoke({"messages": [{"role": "user", "content": input_text}]})
 
         final_message = result["messages"][-1]
+        finish_reason = final_message.response_metadata.get("finish_reason")
+        if finish_reason is not None:
+            agent_span.set_attribute("gen_ai.response.finish_reasons", [finish_reason])
         usage = getattr(final_message, "usage_metadata", None) or {}
         if usage.get("input_tokens"):
             agent_span.set_attribute("gen_ai.usage.input_tokens", usage["input_tokens"])
@@ -109,7 +113,7 @@ def run_retrieval_reference():
         top_k=top_k,
     )
 
-    with _reference_tracer.start_as_current_span("retrieval weather-knowledge-base") as span:
+    with _reference_tracer.start_as_current_span("retrieval weather-knowledge-base", kind=SpanKind.CLIENT) as span:
         span.set_attribute("gen_ai.operation.name", "retrieval")
         span.set_attribute("gen_ai.data_source.id", data_source_id)
         span.set_attribute("gen_ai.retrieval.top_k", top_k)

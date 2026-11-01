@@ -11,6 +11,22 @@ env:
 scenarios:
   reference:
     run: uv run --frozen --python 3.12 --project . python scenario.py
+    expected_violations:
+      - id: genai_expected_attribute_missing
+        context:
+          missing_attribute: gen_ai.embeddings.dimension.count
+          operation: embeddings
+        reason: Error span has no response; the conformance policy does not skip response attributes on error spans.
+      - id: genai_expected_attribute_missing
+        context:
+          missing_attribute: gen_ai.response.model
+          operation: embeddings
+        reason: Error span has no response; the conformance policy does not skip response attributes on error spans.
+      - id: genai_expected_attribute_missing
+        context:
+          missing_attribute: gen_ai.usage.input_tokens
+          operation: embeddings
+        reason: Error span has no response; the conformance policy does not skip response attributes on error spans.
     spans:
       - match:
           attributes:
@@ -24,3 +40,7 @@ scenarios:
           attributes:
             gen_ai.operation.name: text_completion
           type: gen_ai.client.inference
+      - match:
+          attributes:
+            gen_ai.operation.name: embeddings
+          type: gen_ai.client.embeddings

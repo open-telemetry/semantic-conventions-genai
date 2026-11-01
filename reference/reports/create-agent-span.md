@@ -24,7 +24,7 @@
 
 | Attribute | Supporting Libraries |
 | --- | --- |
-| server.address | [anthropic], [aws-bedrock-agent], [azure-ai-foundry], [mistralai], [openai-assistants] |
+| server.address | [anthropic], [aws-bedrock-agent], [azure-ai-foundry], [google-genai], [mistralai], [openai-assistants] |
 
 ## Opt-In
 
