@@ -11,6 +11,11 @@ uv run pytest                          # from docs/gen-ai/non-normative
 uv run pytest --update-snapshots       # refresh the `errors:` blocks
 ```
 
+The same commands run [`test_blob_part.py`](test_blob_part.py), which checks
+that `models.py` writes and reads `BlobPart.content` as standard base64 in
+JSON. The schemas mark this with `contentEncoding`, which JSON Schema treats as
+an annotation, so the snapshot cases can't check it.
+
 ## Adding a case
 
 Create `cases/<case>.yaml` with a `description`, the `schema` file name under

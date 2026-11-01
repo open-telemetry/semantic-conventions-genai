@@ -35,8 +35,8 @@
                     "title": "Modality"
                 },
                 "content": {
+                    "contentEncoding": "base64",
                     "description": "Raw bytes of the attached data. This field SHOULD be encoded as a base64 string when serialized to JSON.",
-                    "format": "binary",
                     "title": "Content",
                     "type": "string"
                 }
