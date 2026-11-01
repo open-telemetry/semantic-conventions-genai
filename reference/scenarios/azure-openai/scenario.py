@@ -54,6 +54,20 @@ _embeddings_input_tokens = _reference_meter.create_histogram(
     ],
 )
 
+_TOKEN_BUCKET_BOUNDARIES = (1, 4, 16, 64, 256, 1024, 4096, 16384, 65536, 262144, 1048576, 4194304, 16777216, 67108864)
+_operation_input_tokens = _reference_meter.create_histogram(
+    "gen_ai.client.inference.operation.input_tokens",
+    unit="{token}",
+    description="The number of input (prompt) tokens used per inference operation.",
+    explicit_bucket_boundaries_advisory=_TOKEN_BUCKET_BOUNDARIES,
+)
+_operation_output_tokens = _reference_meter.create_histogram(
+    "gen_ai.client.inference.operation.output_tokens",
+    unit="{token}",
+    description="The number of output (completion) tokens used per inference operation.",
+    explicit_bucket_boundaries_advisory=_TOKEN_BUCKET_BOUNDARIES,
+)
+
 
 def run_chat_reference(client):
     """Scenario: basic chat completion with reference implementation."""
@@ -83,6 +97,20 @@ def run_chat_reference(client):
         if resp.usage:
             span.set_attribute("gen_ai.usage.input_tokens", resp.usage.prompt_tokens)
             span.set_attribute("gen_ai.usage.output_tokens", resp.usage.completion_tokens)
+            metric_attributes = {
+                "gen_ai.operation.name": "chat",
+                "gen_ai.provider.name": "azure.ai.openai",
+                "gen_ai.request.model": request_model,
+                "gen_ai.response.model": resp.model,
+            }
+            if host:
+                metric_attributes["server.address"] = host
+            if port is not None:
+                metric_attributes["server.port"] = port
+            if resp.usage.prompt_tokens is not None:
+                _operation_input_tokens.record(resp.usage.prompt_tokens, metric_attributes)
+            if resp.usage.completion_tokens is not None:
+                _operation_output_tokens.record(resp.usage.completion_tokens, metric_attributes)
         print(f"    -> {resp.choices[0].message.content[:60]}")
 
 
