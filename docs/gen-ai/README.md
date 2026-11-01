@@ -26,6 +26,7 @@ Technology specific semantic conventions are defined for the following GenAI sys
 
 See also:
 
+* [GenAI glossary](./non-normative/glossary.md): Non-normative explanations of the terms used in these conventions.
 * [Agent2Agent Protocol](./a2a.md): Semantic Conventions for [A2A](https://a2a-protocol.org)
 * [Model Context Protocol](./mcp.md): Semantic Conventions for [MCP](https://modelcontextprotocol.io)
 
