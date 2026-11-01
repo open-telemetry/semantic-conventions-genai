@@ -19,7 +19,7 @@ metrics:
       When systems report both used tokens and billable tokens, instrumentation
       MUST report billable tokens.
 
-      See `gen_ai.token.modality` for how to split tokens by modality.
+      See `gen_ai.token.modality` attribute for how to split tokens by modality.
 
       Instrumentations SHOULD record this metric for each inference operation,
       including failed ones. The recorded value SHOULD match the token count
