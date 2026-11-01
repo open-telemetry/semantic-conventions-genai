@@ -29,3 +29,10 @@ For contribution guidance specific to that project, see
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+### Emeritus
+
+- [Mike Goldsmith](https://github.com/MikeGoldsmith), Approver
+
+For more information about the emeritus role, see the
+[community repository](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#emeritus-maintainerapprovertriager).
