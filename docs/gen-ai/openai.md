@@ -600,7 +600,7 @@ Reports the usage of input tokens following the common [gen_ai.client.inference.
 
 **[1]:** This metric SHOULD be reported when an operation involves the usage of tokens and the count is readily available.
 When systems report both used tokens and billable tokens, instrumentation MUST report billable tokens.
-See `gen_ai.token.modality` for how to split tokens by modality.
+See `gen_ai.token.modality` attribute for how to split tokens by modality.
 Instrumentations SHOULD record this metric for each inference operation, including failed ones. The recorded value SHOULD match the token count returned by the provider, or `0` if the response was not received or did not contain token usage. When no usage is received, the `0` is recorded with `gen_ai.token.modality` set to `unknown`.
 
 **Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/signal-requirement-level.md).
@@ -644,8 +644,8 @@ SHOULD add up to the corresponding total, such as the `gen_ai.usage.input_tokens
 attribute or a measurement on the `gen_ai.client.inference.operation.input_tokens`
 histogram.
 
-Instrumentations SHOULD record tokens as `unknown` when the provider does
-not report their modality or reports one not listed here. For example, if a
+Instrumentations SHOULD record tokens as `unknown` when their modality
+cannot reliably be determined. For example, if a
 provider reports 300 input tokens and 100 of them are audio, record 100 as
 `audio` and 200 as `unknown`.
 
@@ -741,7 +741,7 @@ Reports the usage of output tokens following the common [gen_ai.client.inference
 
 **[1]:** This metric SHOULD be reported when an operation involves the usage of tokens and the count is readily available.
 When systems report both used tokens and billable tokens, instrumentation MUST report billable tokens.
-See `gen_ai.token.modality` for how to split tokens by modality.
+See `gen_ai.token.modality` attribute for how to split tokens by modality.
 Instrumentations SHOULD record this metric for each inference operation, including failed ones. The recorded value SHOULD match the token count returned by the provider, or `0` if the response was not received or did not contain token usage. When no usage is received, the `0` is recorded with `gen_ai.token.modality` set to `unknown`.
 
 **Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/signal-requirement-level.md).
@@ -785,8 +785,8 @@ SHOULD add up to the corresponding total, such as the `gen_ai.usage.input_tokens
 attribute or a measurement on the `gen_ai.client.inference.operation.input_tokens`
 histogram.
 
-Instrumentations SHOULD record tokens as `unknown` when the provider does
-not report their modality or reports one not listed here. For example, if a
+Instrumentations SHOULD record tokens as `unknown` when their modality
+cannot reliably be determined. For example, if a
 provider reports 300 input tokens and 100 of them are audio, record 100 as
 `audio` and 200 as `unknown`.
 
@@ -924,8 +924,8 @@ SHOULD add up to the corresponding total, such as the `gen_ai.usage.input_tokens
 attribute or a measurement on the `gen_ai.client.inference.operation.input_tokens`
 histogram.
 
-Instrumentations SHOULD record tokens as `unknown` when the provider does
-not report their modality or reports one not listed here. For example, if a
+Instrumentations SHOULD record tokens as `unknown` when their modality
+cannot reliably be determined. For example, if a
 provider reports 300 input tokens and 100 of them are audio, record 100 as
 `audio` and 200 as `unknown`.
 
@@ -1063,8 +1063,8 @@ SHOULD add up to the corresponding total, such as the `gen_ai.usage.input_tokens
 attribute or a measurement on the `gen_ai.client.inference.operation.input_tokens`
 histogram.
 
-Instrumentations SHOULD record tokens as `unknown` when the provider does
-not report their modality or reports one not listed here. For example, if a
+Instrumentations SHOULD record tokens as `unknown` when their modality
+cannot reliably be determined. For example, if a
 provider reports 300 input tokens and 100 of them are audio, record 100 as
 `audio` and 200 as `unknown`.
 
@@ -1202,8 +1202,8 @@ SHOULD add up to the corresponding total, such as the `gen_ai.usage.input_tokens
 attribute or a measurement on the `gen_ai.client.inference.operation.input_tokens`
 histogram.
 
-Instrumentations SHOULD record tokens as `unknown` when the provider does
-not report their modality or reports one not listed here. For example, if a
+Instrumentations SHOULD record tokens as `unknown` when their modality
+cannot reliably be determined. For example, if a
 provider reports 300 input tokens and 100 of them are audio, record 100 as
 `audio` and 200 as `unknown`.
 

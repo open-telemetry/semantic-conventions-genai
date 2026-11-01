@@ -423,8 +423,8 @@ attributes:
       attribute or a measurement on the `gen_ai.client.inference.operation.input_tokens`
       histogram.
 
-      Instrumentations SHOULD record tokens as `unknown` when the provider does
-      not report their modality or reports one not listed here. For example, if a
+      Instrumentations SHOULD record tokens as `unknown` when their modality
+      cannot reliably be determined. For example, if a
       provider reports 300 input tokens and 100 of them are audio, record 100 as
       `audio` and 200 as `unknown`.
     examples: ['text', 'image', 'audio']
