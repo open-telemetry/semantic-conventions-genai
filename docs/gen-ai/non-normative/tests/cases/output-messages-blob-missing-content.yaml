@@ -1,0 +1,19 @@
+# yaml-language-server: $schema=../case.schema.json
+description: >
+  Unlike `gen_ai.input.messages`, a blob part on `gen_ai.output.messages` still
+  requires `content`.
+schema: gen-ai-output-messages.json
+document: [
+  {
+    "role": "assistant",
+    "parts": [
+      { "type": "blob", "modality": "image", "mime_type": "image/png" }
+    ],
+    "finish_reason": "stop"
+  }
+]
+# Regenerate with `uv run pytest --update-snapshots`, do not edit by hand.
+errors:
+  - path: $[0].parts[0]
+    keyword: required
+    message: "'content' is a required property"

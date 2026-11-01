@@ -361,7 +361,50 @@ class ChatMessage(BaseModel):
 # --------------------------------------------------------------------------
 
 
-class InputMessages(RootModel[List[ChatMessage]]):
+_SharedBlobPart = BlobPart
+
+
+def _swap_union_member(union: Any, old: Any, new: Any) -> Any:
+    """Return `union` with the member `old` replaced by `new`."""
+    return Union[tuple(new if member is old else member for member in get_args(union))]
+
+
+class _GenAiInputMessageModels:
+    """
+    Namespace for the input-messages variants of the shared message models.
+    On the `gen_ai.input.messages` schema only, `BlobPart.content` is optional.
+    The variants deliberately reuse the shared class names so the generated
+    `$defs` keys (and the serialized wire format) stay identical across the
+    message schemas.
+    """
+
+    class BlobPart(_SharedBlobPart):
+        """Represents blob binary data sent inline to the model"""
+
+        content: Optional[bytes] = Field(
+            default=None,
+            description=(
+                "Raw bytes of the attached data. This field SHOULD be encoded as a "
+                "base64 string when serialized to JSON. MAY be omitted when the "
+                "instrumentation does not capture the payload inline, for example "
+                "when it is stored externally or capture is limited by configuration."
+            ),
+        )
+
+    # The shared `KnownMessagePart` members with `BlobPart` swapped for the
+    # variant above, so part types added to the shared union are picked up here.
+    InputMessagePart = Union[
+        _swap_union_member(KnownMessagePart, _SharedBlobPart, BlobPart),
+        GenericPart,  # Catch-all for any other type
+    ]
+
+    class ChatMessage(ChatMessage):
+        parts: List[InputMessagePart] = Field(
+            description="List of message parts that make up the message content."
+        )
+
+
+class InputMessages(RootModel[List[_GenAiInputMessageModels.ChatMessage]]):
     """
     Represents the list of input messages sent to the model.
     """
