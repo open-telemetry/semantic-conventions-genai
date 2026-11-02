@@ -389,25 +389,25 @@ async def run_message_send_reference(card: a2a_types.AgentCard) -> str:
         "server.address": host,
         "server.port": port,
     }
-    with _reference_tracer.start_as_current_span(method, kind=SpanKind.CLIENT, attributes=span_attrs) as span:
-        _client_active.add(1, metric_attrs)
-        start = time.perf_counter()
-        async with await _create_a2a_client(card, streaming=False) as client:
+    async with await _create_a2a_client(card, streaming=False) as client:
+        with _reference_tracer.start_as_current_span(method, kind=SpanKind.CLIENT, attributes=span_attrs) as span:
+            _client_active.add(1, metric_attrs)
+            start = time.perf_counter()
             response = await anext(client.send_message(request))
-        _client_duration.record(
-            time.perf_counter() - start,
-            {
-                **metric_attrs,
-                # Unset in the request, so this is the protocol default.
-                "a2a.operation.return_immediately": request.configuration.return_immediately,
-            },
-        )
-        _client_active.add(-1, metric_attrs)
-        task = response.task
-        task_state = _task_state_value(task.status.state)
-        span.set_attribute("a2a.task.id", task.id)
-        span.set_attribute("a2a.task.state", task_state)
-        span.set_attribute("gen_ai.conversation.id", task.context_id)
+            _client_duration.record(
+                time.perf_counter() - start,
+                {
+                    **metric_attrs,
+                    # Unset in the request, so this is the protocol default.
+                    "a2a.operation.return_immediately": request.configuration.return_immediately,
+                },
+            )
+            _client_active.add(-1, metric_attrs)
+            task = response.task
+            task_state = _task_state_value(task.status.state)
+            span.set_attribute("a2a.task.id", task.id)
+            span.set_attribute("a2a.task.state", task_state)
+            span.set_attribute("gen_ai.conversation.id", task.context_id)
     print(f"    -> {task.id} {task_state}")
     return task.id
 
@@ -447,10 +447,10 @@ async def run_message_stream_reference(card: a2a_types.AgentCard) -> None:
         "server.address": host,
         "server.port": port,
     }
-    with _reference_tracer.start_as_current_span(method, kind=SpanKind.CLIENT, attributes=span_attrs) as span:
-        _client_active.add(1, metric_attrs)
-        start = time.perf_counter()
-        async with await _create_a2a_client(card, streaming=True) as client:
+    async with await _create_a2a_client(card, streaming=True) as client:
+        with _reference_tracer.start_as_current_span(method, kind=SpanKind.CLIENT, attributes=span_attrs) as span:
+            _client_active.add(1, metric_attrs)
+            start = time.perf_counter()
             async for event in client.send_message(request):
                 event_count += 1
                 if event.HasField("task"):
@@ -464,19 +464,19 @@ async def run_message_stream_reference(card: a2a_types.AgentCard) -> None:
                 if event.HasField("artifact_update"):
                     task_ids.add(event.artifact_update.task_id)
                     context_ids.add(event.artifact_update.context_id)
-        # The stream is fully consumed.
-        _client_duration.record(time.perf_counter() - start, metric_attrs)
-        _client_active.add(-1, metric_attrs)
+            # The stream is fully consumed.
+            _client_duration.record(time.perf_counter() - start, metric_attrs)
+            _client_active.add(-1, metric_attrs)
 
-        assert task_ids
-        assert task_states
-        assert context_ids
-        if len(task_ids) == 1:
-            span.set_attribute("a2a.task.id", next(iter(task_ids)))
-        if len(task_states) == 1:
-            span.set_attribute("a2a.task.state", next(iter(task_states)))
-        if len(context_ids) == 1:
-            span.set_attribute("gen_ai.conversation.id", next(iter(context_ids)))
+            assert task_ids
+            assert task_states
+            assert context_ids
+            if len(task_ids) == 1:
+                span.set_attribute("a2a.task.id", next(iter(task_ids)))
+            if len(task_states) == 1:
+                span.set_attribute("a2a.task.state", next(iter(task_states)))
+            if len(context_ids) == 1:
+                span.set_attribute("gen_ai.conversation.id", next(iter(context_ids)))
     print(f"    -> {event_count} events")
 
 
@@ -508,16 +508,16 @@ async def run_tasks_get_reference(card: a2a_types.AgentCard, task_id: str) -> No
         "server.address": host,
         "server.port": port,
     }
-    with _reference_tracer.start_as_current_span(method, kind=SpanKind.CLIENT, attributes=span_attrs) as span:
-        _client_active.add(1, metric_attrs)
-        start = time.perf_counter()
-        async with await _create_a2a_client(card, streaming=False) as client:
+    async with await _create_a2a_client(card, streaming=False) as client:
+        with _reference_tracer.start_as_current_span(method, kind=SpanKind.CLIENT, attributes=span_attrs) as span:
+            _client_active.add(1, metric_attrs)
+            start = time.perf_counter()
             task = await client.get_task(request)
-        _client_duration.record(time.perf_counter() - start, metric_attrs)
-        _client_active.add(-1, metric_attrs)
-        task_state = _task_state_value(task.status.state)
-        span.set_attribute("a2a.task.state", task_state)
-        span.set_attribute("gen_ai.conversation.id", task.context_id)
+            _client_duration.record(time.perf_counter() - start, metric_attrs)
+            _client_active.add(-1, metric_attrs)
+            task_state = _task_state_value(task.status.state)
+            span.set_attribute("a2a.task.state", task_state)
+            span.set_attribute("gen_ai.conversation.id", task.context_id)
     print(f"    -> {request.id} {task_state}")
 
 
@@ -547,22 +547,22 @@ async def run_tasks_get_error_reference(card: a2a_types.AgentCard) -> None:
         "server.address": host,
         "server.port": port,
     }
-    with _reference_tracer.start_as_current_span(method, kind=SpanKind.CLIENT, attributes=span_attrs) as span:
-        _client_active.add(1, metric_attrs)
-        start = time.perf_counter()
-        try:
-            async with await _create_a2a_client(card, streaming=False) as client:
+    async with await _create_a2a_client(card, streaming=False) as client:
+        with _reference_tracer.start_as_current_span(method, kind=SpanKind.CLIENT, attributes=span_attrs) as span:
+            _client_active.add(1, metric_attrs)
+            start = time.perf_counter()
+            try:
                 await client.get_task(request)
-        except A2AError as exc:
-            # The SDK maps each A2A error class to its protocol reason.
-            error_type = A2A_ERROR_REASONS.get(type(exc)) or type(exc).__qualname__
-            span.set_status(StatusCode.ERROR)
-            span.set_attribute("error.type", error_type)
-            _client_duration.record(time.perf_counter() - start, {**metric_attrs, "error.type": error_type})
-        else:
-            raise AssertionError("GetTask for a missing task succeeded")
-        finally:
-            _client_active.add(-1, metric_attrs)
+            except A2AError as exc:
+                # The SDK maps each A2A error class to its protocol reason.
+                error_type = A2A_ERROR_REASONS.get(type(exc)) or type(exc).__qualname__
+                span.set_status(StatusCode.ERROR)
+                span.set_attribute("error.type", error_type)
+                _client_duration.record(time.perf_counter() - start, {**metric_attrs, "error.type": error_type})
+            else:
+                raise AssertionError("GetTask for a missing task succeeded")
+            finally:
+                _client_active.add(-1, metric_attrs)
     print(f"    -> {request.id} {error_type}")
 
 
