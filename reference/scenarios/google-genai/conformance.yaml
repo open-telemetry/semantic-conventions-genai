@@ -40,8 +40,8 @@ scenarios:
       - id: genai_expected_attribute_missing
         context:
           missing_attribute: gen_ai.response.finish_reasons
-          operation: invoke_agent
-        reason: The agent response exposes no per-generation finish reason; completion status alone does not supply one.
+          operation: chat
+        reason: The Interactions response exposes no per-generation finish reason; completion status alone does not supply one.
     spans:
       - match:
           attributes:
