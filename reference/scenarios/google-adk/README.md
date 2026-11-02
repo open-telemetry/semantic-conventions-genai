@@ -23,3 +23,8 @@ tool executes. The transfer records `pass_control`; the target's separate
 | execute_tool | Yes — ADK runs the tool | ✅ Implemented |
 | memory | Yes — memory service upsert / search | ✅ Implemented |
 | skills | Yes — `SkillToolset` runs the skill tools | ✅ Implemented |
+
+The tool execution error handlers, including transfer and skill tools, record a
+correlated `gen_ai.execute_tool.exception` WARN log and rethrow the exception.
+This scenario does not exercise those paths. Returned skill error codes do not
+produce exception logs.

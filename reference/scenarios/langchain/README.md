@@ -15,3 +15,7 @@ execution.
 | plan | Yes — Plan-and-Execute planning phase | ✅ Implemented |
 | execute_tool | Yes — `BaseTool.invoke()` runs the tool | ✅ Implemented |
 | execute_tool (command) | Yes — `ShellToolMiddleware`'s `shell` tool runs a general command | ✅ Implemented |
+
+The tool execution error handlers, including shell commands, record a correlated
+`gen_ai.execute_tool.exception` WARN log and rethrow the exception. This scenario
+does not exercise those paths.

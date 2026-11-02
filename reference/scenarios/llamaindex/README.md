@@ -10,3 +10,7 @@ workflow operations it runs directly.
 | retrieval | Yes — retriever / query engine | ✅ Implemented |
 | execute_tool | Yes — LlamaIndex runs the tool | ✅ Implemented |
 | invoke_workflow | Yes — `Workflow` / query pipeline execution | ❌ Not implemented |
+
+The tool execution error handler records a correlated
+`gen_ai.execute_tool.exception` WARN log and rethrows the exception. This scenario
+does not exercise that path.
