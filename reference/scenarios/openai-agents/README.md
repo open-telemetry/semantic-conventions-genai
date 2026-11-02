@@ -28,12 +28,10 @@ target's SDK turn begins. Each agent's turn has its own `invoke_agent` span.
 | execute_tool | Yes — the SDK runs the function tool | ✅ Implemented |
 | execute_tool (command) | Yes — the `Shell` sandbox capability runs a general command through `exec_command` | ✅ Implemented |
 
-Tool execution also covers an SDK `ModelBehaviorError` from invalid function-tool
-arguments, recorded as a correlated `gen_ai.execute_tool.exception` WARN log with
-SDK exception details. The tool disables error-to-string recovery so the SDK
-propagates the exception.
+Tool execution also covers an SDK `ModelBehaviorError` raised by
+`FunctionTool.on_invoke_tool` for invalid function-tool arguments. The error
+handler records a correlated `gen_ai.execute_tool.exception` WARN log with SDK
+exception details and re-raises the exception. Error-to-string recovery is disabled
+for this tool so the SDK propagates the exception.
 
-The ordinary tool, agent-as-tool, handoff, and command error handlers also record
-this log and rethrow the exception. All handlers cover the full tool span,
-including argument and result processing. This scenario does not exercise those
-other error paths.
+The other tool execution error paths are not exercised.

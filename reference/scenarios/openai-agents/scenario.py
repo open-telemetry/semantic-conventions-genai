@@ -30,35 +30,47 @@ SANDBOX_SHELL = "/bin/bash"
 _reference_tracer = reference_tracer()
 
 
+def instrument_function_tool(tool: FunctionTool) -> FunctionTool:
+    original_on_invoke_tool = tool.on_invoke_tool
+
+    async def traced_on_invoke_tool(ctx, input_json):
+        tool_span_attributes = {
+            "gen_ai.operation.name": "execute_tool",
+            "gen_ai.tool.name": tool.name,
+            "gen_ai.tool.type": "function",
+        }
+        if ctx.agent is not None and ctx.agent.name:
+            tool_span_attributes["gen_ai.agent.name"] = ctx.agent.name
+        with _reference_tracer.start_as_current_span(
+            f"execute_tool {tool.name}", attributes=tool_span_attributes, record_exception=False
+        ) as tool_span:
+            try:
+                tool_span.set_attribute("gen_ai.tool.description", tool.description)
+                if ctx.tool_call_id:
+                    tool_span.set_attribute("gen_ai.tool.call.id", ctx.tool_call_id)
+                tool_span.set_attribute("gen_ai.tool.call.arguments", input_json)
+                result = await original_on_invoke_tool(ctx, input_json)
+                tool_span.set_attribute("gen_ai.tool.call.result", str(result))
+                return result
+            except Exception as error:
+                tool_span.set_status(StatusCode.ERROR, str(error))
+                tool_span.set_attribute("error.type", f"{type(error).__module__}.{type(error).__qualname__}")
+                reference_event_logger().emit(
+                    event_name="gen_ai.execute_tool.exception",
+                    severity_number=SeverityNumber.WARN,
+                    exception=error,
+                )
+                raise
+
+    tool.on_invoke_tool = traced_on_invoke_tool
+    return tool
+
+
+@instrument_function_tool
 @function_tool
 def get_weather(ctx: ToolContext[None], location: str) -> str:
     """Get the current weather for a location."""
-    tool_span_attributes = {
-        "gen_ai.operation.name": "execute_tool",
-        "gen_ai.tool.name": "get_weather",
-        "gen_ai.tool.type": "function",
-    }
-    if ctx.agent is not None and ctx.agent.name:
-        tool_span_attributes["gen_ai.agent.name"] = ctx.agent.name
-    with _reference_tracer.start_as_current_span(
-        "execute_tool get_weather", attributes=tool_span_attributes, record_exception=False
-    ) as tool_span:
-        try:
-            tool_span.set_attribute("gen_ai.tool.description", get_weather.description)
-            tool_span.set_attribute("gen_ai.tool.call.id", ctx.tool_call_id)
-            tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps({"location": location}))
-            result = "Sunny, 72°F"
-            tool_span.set_attribute("gen_ai.tool.call.result", result)
-            return result
-        except Exception as error:
-            tool_span.set_status(StatusCode.ERROR, str(error))
-            tool_span.set_attribute("error.type", f"{type(error).__module__}.{type(error).__qualname__}")
-            reference_event_logger().emit(
-                event_name="gen_ai.execute_tool.exception",
-                severity_number=SeverityNumber.WARN,
-                exception=error,
-            )
-            raise
+    return "Sunny, 72°F"
 
 
 async def run_agent():
@@ -149,6 +161,7 @@ async def run_agent():
 async def run_tool_error_reference():
     """Exercise an SDK tool-argument validation exception."""
 
+    @instrument_function_tool
     @function_tool(failure_error_function=None)
     def get_weather(location: str) -> str:
         """Get the current weather for a location."""
@@ -163,28 +176,7 @@ async def run_tool_error_reference():
     )
     print("  [tool_error] SDK tool-argument validation (reference implementation)")
     try:
-        with _reference_tracer.start_as_current_span(
-            f"execute_tool {get_weather.name}",
-            attributes={
-                "gen_ai.operation.name": "execute_tool",
-                "gen_ai.tool.name": get_weather.name,
-                "gen_ai.tool.type": "function",
-            },
-            record_exception=False,
-        ) as span:
-            try:
-                span.set_attribute("gen_ai.tool.description", get_weather.description)
-                span.set_attribute("gen_ai.tool.call.arguments", input_json)
-                await get_weather.on_invoke_tool(tool_context, input_json)
-            except Exception as error:
-                span.set_status(StatusCode.ERROR, str(error))
-                span.set_attribute("error.type", f"{type(error).__module__}.{type(error).__qualname__}")
-                reference_event_logger().emit(
-                    event_name="gen_ai.execute_tool.exception",
-                    severity_number=SeverityNumber.WARN,
-                    exception=error,
-                )
-                raise
+        await get_weather.on_invoke_tool(tool_context, input_json)
     except ModelBehaviorError:
         pass
     else:
@@ -370,13 +362,13 @@ async def run_command_execution():
                     result = await self.run(args)
                     span.set_attribute("gen_ai.tool.call.result", result)
                     return result
-                except Exception as error:
-                    span.set_attribute("error.type", type(error).__qualname__)
-                    span.set_status(StatusCode.ERROR, str(error))
+                except Exception as exc:
+                    span.set_attribute("error.type", f"{type(exc).__module__}.{type(exc).__qualname__}")
+                    span.set_status(StatusCode.ERROR, str(exc))
                     reference_event_logger().emit(
                         event_name="gen_ai.execute_tool.exception",
                         severity_number=SeverityNumber.WARN,
-                        exception=error,
+                        exception=exc,
                     )
                     raise
 

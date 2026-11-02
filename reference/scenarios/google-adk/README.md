@@ -28,8 +28,7 @@ tool executes. The transfer records `pass_control`; the target's separate
 | memory | Yes — memory service upsert / search | ✅ Implemented |
 | skills | Yes — `SkillToolset` runs the skill tools | ✅ Implemented |
 
-The tool execution error handlers, including transfer and skill tools, record a
-correlated `gen_ai.execute_tool.exception` WARN log and rethrow the exception.
-They cover the full tool span, including argument and result processing. This
-scenario does not exercise those paths. Returned skill error codes do not produce
-exception logs.
+The tool execution error handlers record a correlated
+`gen_ai.execute_tool.exception` WARN log. This scenario does not exercise those paths.
+
+Returned skill error codes do not produce exception logs.

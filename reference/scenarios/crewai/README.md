@@ -14,5 +14,4 @@ and is captured as a child span.
 | execute_tool | Yes — CrewAI runs the tool | ✅ Implemented |
 
 The tool execution error handlers record a correlated
-`gen_ai.execute_tool.exception` WARN log and rethrow the exception. This scenario
-does not exercise those paths.
+`gen_ai.execute_tool.exception` WARN log. This scenario does not exercise those paths.
