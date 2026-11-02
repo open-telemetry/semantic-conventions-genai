@@ -47,6 +47,7 @@ EVENT_TYPE_ORDER = [
     "gen_ai.client.embeddings.exception",
     "gen_ai.client.inference.exception",
     "gen_ai.client.inference.operation.details",
+    "gen_ai.client.invoke_agent.exception",
     "gen_ai.evaluation.result",
 ]
 

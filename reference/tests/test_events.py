@@ -8,6 +8,7 @@ def test_committed_exception_events_round_trip():
     for library, event_name in (
         ("openai", "gen_ai.client.inference.exception"),
         ("openai", "gen_ai.client.embeddings.exception"),
+        ("aws-bedrock-agent", "gen_ai.client.invoke_agent.exception"),
     ):
         assert entries[library].events[event_name] == {
             "exception.message": "present",
