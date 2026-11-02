@@ -49,6 +49,7 @@ Run `uv run update-reports` to regenerate.
 | [Realtime Session Started](reports/gen-ai-client-realtime-session-started-event.md) | google-genai, openai |
 | [Realtime Session Ended](reports/gen-ai-client-realtime-session-ended-event.md) | google-genai, openai |
 | [Client Embeddings Exception](reports/gen-ai-client-embeddings-exception-event.md) | openai |
+| [Client Fetch Response Exception](reports/gen-ai-client-fetch-response-exception-event.md) | openai |
 | [Client Inference Exception](reports/gen-ai-client-inference-exception-event.md) | openai |
 | [Inference Operation Details](reports/gen-ai-client-inference-operation-details-event.md) | anthropic, aws-bedrock, azure-ai-inference, cohere, google-genai, groq, litellm, mistralai, openai, vertexai |
 | [Client Invoke Agent Exception](reports/gen-ai-client-invoke-agent-exception-event.md) | aws-bedrock-agent |
