@@ -48,31 +48,31 @@ attribute_groups:
     attributes:
       - ref: gen_ai.usage.text.input_tokens
         requirement_level:
-          recommended: When available and non-zero.
+          recommended: When reported by the provider and non-zero.
       - ref: gen_ai.usage.image.input_tokens
         requirement_level:
-          recommended: When available and non-zero.
+          recommended: When reported by the provider and non-zero.
       - ref: gen_ai.usage.audio.input_tokens
         requirement_level:
-          recommended: When available and non-zero.
+          recommended: When reported by the provider and non-zero.
       - ref: gen_ai.usage.text.cache_read.input_tokens
         requirement_level:
-          recommended: When available and non-zero.
+          recommended: When reported by the provider and non-zero.
       - ref: gen_ai.usage.image.cache_read.input_tokens
         requirement_level:
-          recommended: When available and non-zero.
+          recommended: When reported by the provider and non-zero.
       - ref: gen_ai.usage.audio.cache_read.input_tokens
         requirement_level:
-          recommended: When available and non-zero.
+          recommended: When reported by the provider and non-zero.
       - ref: gen_ai.usage.text.output_tokens
         requirement_level:
-          recommended: When available and non-zero.
+          recommended: When reported by the provider and non-zero.
       - ref: gen_ai.usage.image.output_tokens
         requirement_level:
-          recommended: When available and non-zero.
+          recommended: When reported by the provider and non-zero.
       - ref: gen_ai.usage.audio.output_tokens
         requirement_level:
-          recommended: When available and non-zero.
+          recommended: When reported by the provider and non-zero.
       - ref: gen_ai.usage.cache_read.input_tokens
         requirement_level:
           recommended: When available and non-zero.
@@ -185,7 +185,7 @@ spans:
         Semantic conventions for individual GenAI systems and frameworks MAY specify different span name format
         and MUST follow the overall [guidelines for span names](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.56.0/specification/trace/api.md#span).
     brief: >
-      This span represents a logical client call to Generative AI model or 
+      This span represents a logical client call to Generative AI model or
       service that generates a response or requests a tool call based on the input prompt.
     note: |
       **Span kind** SHOULD be `CLIENT` and MAY be set to `INTERNAL` on spans representing
@@ -376,6 +376,9 @@ spans:
         requirement_level: required
         sampling_relevant: true
       - ref: gen_ai.operation.name
+        annotations:
+          markdown:
+            omit_enum_table: true
         sampling_relevant: true
         examples: ["embeddings"]
         note: SHOULD be `embeddings`.
@@ -453,6 +456,9 @@ spans:
         requirement_level: required
         sampling_relevant: true
       - ref: gen_ai.operation.name
+        annotations:
+          markdown:
+            omit_enum_table: true
         requirement_level: required
         sampling_relevant: true
       - ref: server.address
@@ -569,6 +575,9 @@ spans:
         requirement_level: required
         sampling_relevant: true
       - ref: gen_ai.operation.name
+        annotations:
+          markdown:
+            omit_enum_table: true
         sampling_relevant: true
       - ref: server.address
         sampling_relevant: true
@@ -621,6 +630,9 @@ spans:
         requirement_level: required
         sampling_relevant: true
       - ref: gen_ai.operation.name
+        annotations:
+          markdown:
+            omit_enum_table: true
         sampling_relevant: true
       - ref: gen_ai.request.model
         sampling_relevant: true
@@ -662,6 +674,9 @@ spans:
     attributes:
       - ref_group: attributes.gen_ai.invoke_agent.common
       - ref: gen_ai.operation.name
+        annotations:
+          markdown:
+            omit_enum_table: true
         sampling_relevant: true
       - ref: gen_ai.request.model
         sampling_relevant: true
@@ -701,6 +716,9 @@ spans:
       - ref_group: attributes.gen_ai.error
       - ref_group: attributes.gen_ai.execute_tool.common
       - ref: gen_ai.operation.name
+        annotations:
+          markdown:
+            omit_enum_table: true
         requirement_level: required
         sampling_relevant: true
       - ref: gen_ai.tool.name
@@ -762,6 +780,9 @@ spans:
     attributes:
       - ref_group: attributes.gen_ai.error
       - ref: gen_ai.operation.name
+        annotations:
+          markdown:
+            omit_enum_table: true
         requirement_level: required
         sampling_relevant: true
       - ref: gen_ai.workflow.name
@@ -803,6 +824,9 @@ spans:
     attributes:
       - ref_group: attributes.gen_ai.error
       - ref: gen_ai.operation.name
+        annotations:
+          markdown:
+            omit_enum_table: true
         requirement_level: required
         sampling_relevant: true
       - ref: gen_ai.agent.name
@@ -876,6 +900,9 @@ span_refinements:
     stability: development
     attributes:
       - ref: openai.api.type
+        annotations:
+          markdown:
+            omit_enum_table: true
         requirement_level: recommended
         note: >
           For this operation `openai.api.type` SHOULD be set to `responses`.

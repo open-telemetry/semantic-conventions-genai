@@ -11,6 +11,12 @@ env:
 scenarios:
   reference:
     run: uv run --frozen --python 3.12 --project . python scenario.py
+    expected_violations:
+      - id: genai_expected_attribute_missing
+        context:
+          missing_attribute: server.address
+          operation: chat
+        reason: The SDK talks to a local CLI subprocess, so there is no server address.
     spans:
       - match:
           attributes:

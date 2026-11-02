@@ -10,16 +10,15 @@ import os
 from urllib.parse import urlparse
 
 import boto3
-from opentelemetry import trace
 from opentelemetry.trace import SpanKind, StatusCode
-from reference_shared import flush_and_shutdown, setup_otel
+from reference_shared import flush_and_shutdown, reference_tracer, setup_otel
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"]
 _parsed = urlparse(MOCK_BASE_URL)
 _SERVER_ADDRESS = _parsed.hostname or "localhost"
 _SERVER_PORT = _parsed.port or 443
 
-tracer = trace.get_tracer("gen_ai.client.aws_bedrock")
+tracer = reference_tracer("gen_ai.client.aws_bedrock")
 
 AGENT_ALIAS_ID = "MOCK_ALIAS_ID"
 SESSION_ID = "mock-session-001"

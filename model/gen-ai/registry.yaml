@@ -270,16 +270,20 @@ attributes:
   - key: gen_ai.response.time_to_first_chunk
     type: double
     brief: >
-      Time to first chunk in a streaming response, measured from request issuance, in seconds.
-      The value is measured from when the client issues the generation request to when the first
-      chunk is received in the response stream.
+      Time from the start of a logical inference operation to the first chunk in its streaming response, in seconds.
+    note: |
+      A chunk is a decoded provider stream event carrying new, non-empty output: text, refusals, reasoning (including opaque payloads), audio, images, or tool-call names or arguments. Instrumentations MUST NOT treat empty start events or events carrying only usage, roles, IDs, signatures, keep-alives, progress/status updates, or end markers as chunks. Chunk boundaries follow provider events, not TCP reads, HTTP frames, or extra SDK callbacks.
+
+      Instrumentations SHOULD measure the time from the start of the logical inference operation, before authentication and the first attempt, to when the first chunk is fully received by the client, before application processing. The measurement SHOULD include authentication, failed attempts, and retry backoff.
+
+      Instrumentations SHOULD set this attribute when the first chunk is received and MUST NOT set it if no chunk is received.
     examples: [0.5, 1.2]
     stability: development
   - key: gen_ai.usage.input_tokens
     type: int
-    brief: The number of tokens used in the GenAI input (prompt).
+    brief: The total number of input (prompt) tokens across all modalities.
     note: |
-      This value SHOULD include all types of input tokens, including cached tokens.
+      This value SHOULD include cached tokens and input tokens of all modalities.
       Instrumentations SHOULD make a best effort to populate this value, using a total
       provided by the provider when available or, depending on the provider API,
       by summing different token types parsed from the provider output.
@@ -335,8 +339,10 @@ attributes:
     stability: development
   - key: gen_ai.usage.output_tokens
     type: int
-    brief: The number of tokens used in the GenAI response (completion).
+    brief: The total number of output (completion) tokens across all modalities.
     note: |
+      This value SHOULD include reasoning tokens and tokens of all modalities.
+
       When the provider reports both billed token counts and model-consumed
       token counts (for example, Cohere exposes both `usage.billed_units` and
       `usage.tokens`), instrumentations SHOULD report the billed count so the
@@ -415,10 +421,16 @@ attributes:
           value: "unknown"
           brief: 'The modality is not known.'
     brief: The modality of the tokens being counted.
-    note: >
-      When the provider does not break usage down by modality and the modality
-      cannot be reliably determined, instrumentations SHOULD report the tokens
-      under the `unknown` modality.
+    note: |
+      For each operation, token usage counter measurements across all modalities
+      SHOULD add up to the corresponding total, such as the `gen_ai.usage.input_tokens`
+      attribute or a measurement on the `gen_ai.client.inference.operation.input_tokens`
+      histogram.
+
+      Instrumentations SHOULD record tokens as `unknown` when their modality
+      cannot reliably be determined. For example, if a
+      provider reports 300 input tokens and 100 of them are audio, record 100 as
+      `audio` and 200 as `unknown`.
     examples: ['text', 'image', 'audio']
     stability: development
   - key: gen_ai.conversation.id

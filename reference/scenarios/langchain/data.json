@@ -40,10 +40,13 @@
   },
   "events": {},
   "metrics": {},
+  "entities": {},
   "findings": [
     {
       "id": "missing_attribute",
       "message": "Attribute 'process.exit.code' does not exist in the registry.",
+      "signal_type": "span",
+      "signal_name": "execute_tool shell",
       "context": {
         "attribute_key": "process.exit.code"
       }
@@ -51,11 +54,12 @@
     {
       "id": "genai_expected_attribute_missing",
       "message": "Span 'retrieval weather-knowledge-base' (operation 'retrieval') is missing expected attribute 'server.address'",
+      "signal_type": "span",
+      "signal_name": "retrieval weather-knowledge-base",
       "context": {
         "missing_attribute": "server.address",
         "operation": "retrieval"
       }
     }
-  ],
-  "entities": {}
+  ]
 }
