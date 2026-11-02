@@ -1372,6 +1372,33 @@ def _emit_fetch_response_span(client, response_id, starting_after=None):
                         fetched = candidate
             else:
                 fetched = client.responses.retrieve(response_id)
+            span.set_attribute("gen_ai.response.id", fetched.id)
+            span.set_attribute("gen_ai.response.model", fetched.model)
+            status = getattr(fetched, "status", None)
+            if status is not None:
+                span.set_attribute("gen_ai.response.status", status)
+            finish_reason = responses_finish_reason(fetched)
+            if finish_reason is not None:
+                span.set_attribute("gen_ai.response.finish_reasons", [finish_reason])
+            service_tier = getattr(fetched, "service_tier", None)
+            if service_tier is not None:
+                span.set_attribute("openai.response.service_tier", service_tier)
+            # Content carried on the fetched response: system instructions and output
+            # messages. The original input messages are NOT part of the fetched
+            # response, so `gen_ai.input.messages` is not set here.
+            instructions = getattr(fetched, "instructions", None)
+            if instructions:
+                span.set_attribute(
+                    "gen_ai.system_instructions",
+                    json.dumps([{"type": "text", "content": instructions}]),
+                )
+            output_messages = responses_output_messages(fetched)
+            if output_messages:
+                span.set_attribute("gen_ai.output.messages", json.dumps(output_messages))
+            # Token usage is intentionally NOT recorded on this span: no inference
+            # happens on a fetch, and the fetched response's token counts belong to
+            # the original generation (already accounted for on that operation).
+            print(f"    -> fetched {fetched.id} (status={getattr(fetched, 'status', None)})")
         except Exception as error:
             span.set_status(StatusCode.ERROR, str(error))
             span.set_attribute("error.type", type(error).__qualname__)
@@ -1381,33 +1408,6 @@ def _emit_fetch_response_span(client, response_id, starting_after=None):
                 exception=error,
             )
             raise
-        span.set_attribute("gen_ai.response.id", fetched.id)
-        span.set_attribute("gen_ai.response.model", fetched.model)
-        status = getattr(fetched, "status", None)
-        if status is not None:
-            span.set_attribute("gen_ai.response.status", status)
-        finish_reason = responses_finish_reason(fetched)
-        if finish_reason is not None:
-            span.set_attribute("gen_ai.response.finish_reasons", [finish_reason])
-        service_tier = getattr(fetched, "service_tier", None)
-        if service_tier is not None:
-            span.set_attribute("openai.response.service_tier", service_tier)
-        # Content carried on the fetched response: system instructions and output
-        # messages. The original input messages are NOT part of the fetched
-        # response, so `gen_ai.input.messages` is not set here.
-        instructions = getattr(fetched, "instructions", None)
-        if instructions:
-            span.set_attribute(
-                "gen_ai.system_instructions",
-                json.dumps([{"type": "text", "content": instructions}]),
-            )
-        output_messages = responses_output_messages(fetched)
-        if output_messages:
-            span.set_attribute("gen_ai.output.messages", json.dumps(output_messages))
-        # Token usage is intentionally NOT recorded on this span: no inference
-        # happens on a fetch, and the fetched response's token counts belong to
-        # the original generation (already accounted for on that operation).
-        print(f"    -> fetched {fetched.id} (status={getattr(fetched, 'status', None)})")
 
 
 def run_fetch_response_reference(client):
