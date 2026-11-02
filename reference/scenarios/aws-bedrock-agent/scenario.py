@@ -161,8 +161,8 @@ def run_invoke_agent_error(client, agent_id):
     with patch.object(client._endpoint.http_session, "send", return_value=response):
         try:
             run_invoke_agent(client, agent_id)
-        except client.exceptions.ValidationException as error:
-            print(f"    -> expected SDK error: {error}")
+        except client.exceptions.ValidationException as e:
+            print(f"    -> expected SDK error: {e}")
         else:
             raise AssertionError("Expected the SDK to reject the agent invocation request")
 
