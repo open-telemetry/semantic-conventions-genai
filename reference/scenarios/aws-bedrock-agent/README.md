@@ -13,3 +13,6 @@ here. Everything else belongs to the remote agent service.
 | invoke_agent (client) | Yes — invokes the remote agent | ✅ Implemented |
 | inference (`chat`) | No — runs remotely inside the agent service | ✅ Correctly not emitted |
 | execute_tool | No — runs remotely inside the agent service | ✅ Correctly not emitted |
+
+Agent invocation also covers an SDK `ValidationException` from a mock HTTP response,
+recorded as a correlated `gen_ai.client.invoke_agent.exception` WARN log with SDK exception details.
