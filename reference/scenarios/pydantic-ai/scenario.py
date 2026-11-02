@@ -147,13 +147,13 @@ def run_tool_call():
                 agent_span.set_attribute("gen_ai.usage.input_tokens", usage.input_tokens)
                 agent_span.set_attribute("gen_ai.usage.output_tokens", usage.output_tokens)
             print(f"    -> {str(result.response)[:60]}")
-        except Exception as error:
-            agent_span.set_status(StatusCode.ERROR, str(error))
-            agent_span.set_attribute("error.type", f"{type(error).__module__}.{type(error).__qualname__}")
+        except Exception as e:
+            agent_span.set_status(StatusCode.ERROR, str(e))
+            agent_span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
             reference_event_logger().emit(
                 event_name="gen_ai.invoke_agent.exception",
                 severity_number=SeverityNumber.WARN,
-                exception=error,
+                exception=e,
             )
             raise
 

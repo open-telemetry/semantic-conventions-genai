@@ -158,13 +158,13 @@ async def run_agent():
                     ),
                 )
             print(f"    -> {str(result.final_output)[:60]}")
-        except Exception as error:
-            agent_span.set_status(StatusCode.ERROR, str(error))
-            agent_span.set_attribute("error.type", f"{type(error).__module__}.{type(error).__qualname__}")
+        except Exception as e:
+            agent_span.set_status(StatusCode.ERROR, str(e))
+            agent_span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
             reference_event_logger().emit(
                 event_name="gen_ai.invoke_agent.exception",
                 severity_number=SeverityNumber.WARN,
-                exception=error,
+                exception=e,
             )
             raise
 
@@ -213,13 +213,13 @@ async def run_agent_error_reference():
         ) as span:
             try:
                 await Runner.run(agent, "Hello", max_turns=0)
-            except Exception as error:
-                span.set_status(StatusCode.ERROR, str(error))
-                span.set_attribute("error.type", f"{type(error).__module__}.{type(error).__qualname__}")
+            except Exception as e:
+                span.set_status(StatusCode.ERROR, str(e))
+                span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
                 reference_event_logger().emit(
                     event_name="gen_ai.invoke_agent.exception",
                     severity_number=SeverityNumber.WARN,
-                    exception=error,
+                    exception=e,
                 )
                 raise
     except MaxTurnsExceeded:
@@ -346,13 +346,13 @@ async def run_agent_as_tool_delegation():
                 if len(finish_reasons) == 1:
                     output_message["finish_reason"] = finish_reasons[0]
                 agent_span.set_attribute("gen_ai.output.messages", json.dumps([output_message]))
-            except Exception as error:
-                agent_span.set_status(StatusCode.ERROR, str(error))
-                agent_span.set_attribute("error.type", f"{type(error).__module__}.{type(error).__qualname__}")
+            except Exception as e:
+                agent_span.set_status(StatusCode.ERROR, str(e))
+                agent_span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
                 reference_event_logger().emit(
                     event_name="gen_ai.invoke_agent.exception",
                     severity_number=SeverityNumber.WARN,
-                    exception=error,
+                    exception=e,
                 )
                 raise
         return result
@@ -577,13 +577,13 @@ async def run_workflow():
                 if parts:
                     span.set_attribute("gen_ai.output.messages", json.dumps([{"role": "assistant", "parts": parts}]))
                 return result
-            except Exception as error:
-                span.set_status(StatusCode.ERROR, str(error))
-                span.set_attribute("error.type", f"{type(error).__module__}.{type(error).__qualname__}")
+            except Exception as e:
+                span.set_status(StatusCode.ERROR, str(e))
+                span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
                 reference_event_logger().emit(
                     event_name="gen_ai.invoke_agent.exception",
                     severity_number=SeverityNumber.WARN,
-                    exception=error,
+                    exception=e,
                 )
                 raise
 
