@@ -195,7 +195,9 @@ Instrumentations SHOULD set this attribute when the first chunk is received and 
 
 **[27] `gen_ai.usage.input_tokens`:** Anthropic `input_tokens` excludes cached tokens. Compute: `gen_ai.usage.input_tokens = input_tokens + cache_read_input_tokens + cache_write_input_tokens`
 
-**[28] `gen_ai.usage.output_tokens`:** When the provider reports both billed token counts and model-consumed
+**[28] `gen_ai.usage.output_tokens`:** This value SHOULD include reasoning tokens and tokens of all modalities.
+
+When the provider reports both billed token counts and model-consumed
 token counts (for example, Cohere exposes both `usage.billed_units` and
 `usage.tokens`), instrumentations SHOULD report the billed count so the
 value matches the units the customer is charged for.
