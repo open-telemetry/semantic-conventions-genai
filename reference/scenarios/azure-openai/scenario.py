@@ -32,29 +32,15 @@ _embeddings_duration = _reference_meter.create_histogram(
         81.92,
     ],
 )
+
+_TOKEN_BUCKET_BOUNDARIES = (1, 4, 16, 64, 256, 1024, 4096, 16384, 65536, 262144, 1048576, 4194304, 16777216, 67108864)
 _embeddings_input_tokens = _reference_meter.create_histogram(
     "gen_ai.client.embeddings.operation.input_tokens",
     unit="{token}",
     description="The number of input tokens used per embeddings operation.",
-    explicit_bucket_boundaries_advisory=[
-        1,
-        4,
-        16,
-        64,
-        256,
-        1024,
-        4096,
-        16384,
-        65536,
-        262144,
-        1048576,
-        4194304,
-        16777216,
-        67108864,
-    ],
+    explicit_bucket_boundaries_advisory=_TOKEN_BUCKET_BOUNDARIES,
 )
 
-_TOKEN_BUCKET_BOUNDARIES = (1, 4, 16, 64, 256, 1024, 4096, 16384, 65536, 262144, 1048576, 4194304, 16777216, 67108864)
 _operation_input_tokens = _reference_meter.create_histogram(
     "gen_ai.client.inference.operation.input_tokens",
     unit="{token}",
