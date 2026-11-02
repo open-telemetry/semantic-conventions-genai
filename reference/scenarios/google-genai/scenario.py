@@ -112,14 +112,24 @@ def _patch_automatic_function_calling():
             if description:
                 tool_span_attributes["gen_ai.tool.description"] = description[0]
             with _reference_tracer.start_as_current_span(
-                f"execute_tool {call.name}", attributes=tool_span_attributes
+                f"execute_tool {call.name}", attributes=tool_span_attributes, record_exception=False
             ) as tool_span:
                 if call.id:
                     tool_span.set_attribute("gen_ai.tool.call.id", call.id)
                 tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps(dict(call.args or {})))
                 single = response.model_copy(deep=True)
                 single.candidates[0].content.parts = [part]
-                result_parts = original(single, function_map)
+                try:
+                    result_parts = original(single, function_map)
+                except Exception as error:
+                    tool_span.set_status(StatusCode.ERROR, str(error))
+                    tool_span.set_attribute("error.type", f"{type(error).__module__}.{type(error).__qualname__}")
+                    reference_event_logger().emit(
+                        event_name="gen_ai.execute_tool.exception",
+                        severity_number=SeverityNumber.WARN,
+                        exception=error,
+                    )
+                    raise
                 for result_part in result_parts:
                     tool_span.set_attribute(
                         "gen_ai.tool.call.result",
@@ -347,13 +357,23 @@ def run_interactions_continuation():
         "server.address": _SERVER_ADDRESS,
     }
     with _reference_tracer.start_as_current_span(
-        "invoke_agent interactions_agent", kind=SpanKind.CLIENT, attributes=span_attributes
+        "invoke_agent interactions_agent", kind=SpanKind.CLIENT, attributes=span_attributes, record_exception=False
     ) as span:
-        interaction = client.interactions.create(
-            model=request_model,
-            previous_interaction_id=previous_interaction_id,
-            input=prompt_text,
-        )
+        try:
+            interaction = client.interactions.create(
+                model=request_model,
+                previous_interaction_id=previous_interaction_id,
+                input=prompt_text,
+            )
+        except Exception as error:
+            span.set_status(StatusCode.ERROR, str(error))
+            span.set_attribute("error.type", f"{type(error).__module__}.{type(error).__qualname__}")
+            reference_event_logger().emit(
+                event_name="gen_ai.client.invoke_agent.exception",
+                severity_number=SeverityNumber.WARN,
+                exception=error,
+            )
+            raise
         if interaction.id:
             span.set_attribute("gen_ai.response.id", interaction.id)
         if interaction.model:

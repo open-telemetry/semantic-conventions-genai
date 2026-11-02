@@ -33,6 +33,9 @@ arguments, recorded as a correlated `gen_ai.execute_tool.exception` WARN log wit
 SDK exception details. The tool disables error-to-string recovery so the SDK
 propagates the exception.
 
+The ordinary tool, agent-as-tool, handoff, and command error handlers also record
+this log and rethrow the exception. This scenario does not exercise those paths.
+
 Internal agent invocation also covers the SDK's `MaxTurnsExceeded` exception from
 `Runner.run` with `max_turns=0`, recorded as a correlated
 `gen_ai.invoke_agent.exception` WARN log with SDK exception details.

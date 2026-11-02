@@ -9,3 +9,7 @@ drives directly.
 | inference (`chat`) | No — delegates to the model provider (e.g. `openai`) | ✅ Correctly not emitted |
 | invoke_agent (internal) | Yes — `Agent.run` | ✅ Implemented |
 | execute_tool | Yes — the agent runs the tool | ✅ Implemented |
+
+The tool execution error handler records a correlated
+`gen_ai.execute_tool.exception` WARN log and rethrows the exception. This scenario
+does not exercise that path.

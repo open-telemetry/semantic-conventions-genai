@@ -151,7 +151,10 @@ def run_invoke_agent(client):
                         "gen_ai.operation.name": "execute_tool",
                     }
                     with tracer.start_as_current_span(
-                        f"execute_tool {tool_name}", kind=SpanKind.INTERNAL, attributes=tool_span_attributes
+                        f"execute_tool {tool_name}",
+                        kind=SpanKind.INTERNAL,
+                        attributes=tool_span_attributes,
+                        record_exception=False,
                     ) as tool_span:
                         tool_span.set_attribute("gen_ai.conversation.id", thread.id)
                         tool_span.set_attribute("gen_ai.tool.name", tool_name)
@@ -170,7 +173,19 @@ def run_invoke_agent(client):
                         if tool_call_id:
                             tool_span.set_attribute("gen_ai.tool.call.id", tool_call_id)
                         tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps(arguments))
-                        result = get_weather(arguments["location"])
+                        try:
+                            result = get_weather(arguments["location"])
+                        except Exception as error:
+                            tool_span.set_status(StatusCode.ERROR, str(error))
+                            tool_span.set_attribute(
+                                "error.type", f"{type(error).__module__}.{type(error).__qualname__}"
+                            )
+                            reference_event_logger().emit(
+                                event_name="gen_ai.execute_tool.exception",
+                                severity_number=SeverityNumber.WARN,
+                                exception=error,
+                            )
+                            raise
                         tool_span.set_attribute("gen_ai.tool.call.result", result)
 
                     tool_outputs.append(
