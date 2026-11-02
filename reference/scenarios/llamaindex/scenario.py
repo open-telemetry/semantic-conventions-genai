@@ -3,10 +3,12 @@
 import json
 import os
 
-from opentelemetry.trace import SpanKind
+from opentelemetry._logs import SeverityNumber
+from opentelemetry.trace import SpanKind, StatusCode
 from reference_shared import (
     flush_and_shutdown,
     mock_server_host_port,
+    reference_event_logger,
     reference_tracer,
     setup_otel,
 )
@@ -30,17 +32,27 @@ def run_agent_reference(llm):
             "gen_ai.operation.name": "execute_tool",
         }
         with _reference_tracer.start_as_current_span(
-            "execute_tool get_weather", attributes=tool_span_attributes
+            "execute_tool get_weather", attributes=tool_span_attributes, record_exception=False
         ) as tool_span:
-            tool_span.set_attribute("gen_ai.tool.name", "get_weather")
-            tool_span.set_attribute("gen_ai.tool.description", get_weather.__doc__ or "")
-            tool_span.set_attribute("gen_ai.tool.type", "function")
-            if current_tool_call_id:
-                tool_span.set_attribute("gen_ai.tool.call.id", current_tool_call_id)
-            tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps({"location": location}))
-            result = "Sunny, 72°F"
-            tool_span.set_attribute("gen_ai.tool.call.result", result)
-            return result
+            try:
+                tool_span.set_attribute("gen_ai.tool.name", "get_weather")
+                tool_span.set_attribute("gen_ai.tool.description", get_weather.__doc__ or "")
+                tool_span.set_attribute("gen_ai.tool.type", "function")
+                if current_tool_call_id:
+                    tool_span.set_attribute("gen_ai.tool.call.id", current_tool_call_id)
+                tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps({"location": location}))
+                result = "Sunny, 72°F"
+                tool_span.set_attribute("gen_ai.tool.call.result", result)
+                return result
+            except Exception as error:
+                tool_span.set_status(StatusCode.ERROR, str(error))
+                tool_span.set_attribute("error.type", f"{type(error).__module__}.{type(error).__qualname__}")
+                reference_event_logger().emit(
+                    event_name="gen_ai.execute_tool.exception",
+                    severity_number=SeverityNumber.WARN,
+                    exception=error,
+                )
+                raise
 
     weather_tool = FunctionTool.from_defaults(fn=get_weather)
     original_call_tool_with_selection = tool_calling.call_tool_with_selection

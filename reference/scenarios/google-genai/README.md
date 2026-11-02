@@ -18,3 +18,7 @@ The embeddings error handler records a correlated
 
 The client agent invocation error handler records a correlated
 `gen_ai.client.invoke_agent.exception` WARN log. This scenario does not exercise that path.
+
+The automatic function calling error handler records a correlated
+`gen_ai.execute_tool.exception` WARN log and rethrows the exception. This scenario
+does not exercise that path.
