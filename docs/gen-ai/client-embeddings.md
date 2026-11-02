@@ -37,7 +37,10 @@ Examples of embeddings operations include:
 
 Describes a GenAI embeddings operation - a client call to a model or service that returns embeddings for one or more inputs.
 
-**Span name** SHOULD be `{gen_ai.operation.name} {gen_ai.request.model}`.
+**Span name** SHOULD be the first of the following formats for which all attributes are available.
+
+1. `{gen_ai.operation.name} {gen_ai.request.model}`
+2. `{gen_ai.operation.name}`
 
 **Span kind** SHOULD be `CLIENT`.
 

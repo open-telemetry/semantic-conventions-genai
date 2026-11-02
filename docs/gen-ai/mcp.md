@@ -140,13 +140,14 @@ Instead, it SHOULD add MCP-specific attributes to the existing tool execution sp
 Instrumentations that support this behavior MAY provide a configuration
 option to enable it.
 
-**Span name** SHOULD follow the format `{mcp.method.name} {target}`
-where target SHOULD match `{gen_ai.tool.name}` or `{gen_ai.prompt.name}` when
-applicable.
-If there is no low-cardinality `target` available, the Span name SHOULD be `{mcp.method.name}`.
+**Span name** SHOULD be the first of the following formats for which all attributes are available.
 
-Instrumentation MAY allow users to opt into including `{mcp.resource.uri}`
-as `target` in the span name when it is available but SHOULD NOT include it by default
+1. `{mcp.method.name} {gen_ai.tool.name}`
+2. `{mcp.method.name} {gen_ai.prompt.name}`
+3. `{mcp.method.name}`
+
+Instrumentation MAY allow users to opt into using `{mcp.method.name} {mcp.resource.uri}`
+as the span name when `mcp.resource.uri` is available but SHOULD NOT use it by default
 to avoid high cardinality span names.
 
 **Span kind** SHOULD be `CLIENT`.
@@ -371,13 +372,14 @@ for the details on which values classify as errors.
 
 If the span status is set to `ERROR`, the status description SHOULD match the `JSONRPCError.message` if the message is available.
 
-**Span name** SHOULD follow the format `{mcp.method.name} {target}`
-where target SHOULD match `{gen_ai.tool.name}` or `{gen_ai.prompt.name}` when
-applicable.
-If there is no low-cardinality `target` available, the Span name SHOULD be `{mcp.method.name}`.
+**Span name** SHOULD be the first of the following formats for which all attributes are available.
 
-Instrumentation MAY allow users to opt into including `{mcp.resource.uri}`
-as `target` in the span name when it is available but SHOULD NOT include it by default
+1. `{mcp.method.name} {gen_ai.tool.name}`
+2. `{mcp.method.name} {gen_ai.prompt.name}`
+3. `{mcp.method.name}`
+
+Instrumentation MAY allow users to opt into using `{mcp.method.name} {mcp.resource.uri}`
+as the span name when `mcp.resource.uri` is available but SHOULD NOT use it by default
 to avoid high cardinality span names.
 
 **Span kind** SHOULD be `SERVER`.
