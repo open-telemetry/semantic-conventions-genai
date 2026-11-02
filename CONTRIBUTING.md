@@ -122,7 +122,7 @@ For more information about the maintainer role, see the [community repository](h
 - [Aaron Abbott](https://github.com/aabmass), Google
 - [Alex Hall](https://github.com/alexmojaki), Pydantic
 - [Ankit Singhal](https://github.com/singankit), Microsoft
-- [Dylan Russell](https://github.com/DylanRussell)
+- [Dylan Russell](https://github.com/DylanRussell), Google
 - [Josh Winerman](https://github.com/JWinermaSplunk), Splunk
 - [Mike Goldsmith](https://github.com/MikeGoldsmith), Honeycomb
 - [Minghui Zhang](https://github.com/Cirilla-zmh), Alibaba
