@@ -1399,13 +1399,13 @@ def _emit_fetch_response_span(client, response_id, starting_after=None):
             # happens on a fetch, and the fetched response's token counts belong to
             # the original generation (already accounted for on that operation).
             print(f"    -> fetched {fetched.id} (status={getattr(fetched, 'status', None)})")
-        except Exception as error:
-            span.set_status(StatusCode.ERROR, str(error))
-            span.set_attribute("error.type", type(error).__qualname__)
+        except Exception as e:
+            span.set_status(StatusCode.ERROR, str(e))
+            span.set_attribute("error.type", type(e).__qualname__)
             reference_event_logger().emit(
                 event_name="gen_ai.client.fetch_response.exception",
                 severity_number=SeverityNumber.WARN,
-                exception=error,
+                exception=e,
             )
             raise
 
