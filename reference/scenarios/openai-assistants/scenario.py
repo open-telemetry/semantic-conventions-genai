@@ -125,14 +125,22 @@ def run_invoke_agent(client):
                 json.dumps([{"type": "text", "content": assistant.instructions}]),
             )
         try:
-            run = client.beta.threads.runs.create(
-                thread_id=thread.id,
-                assistant_id=assistant.id,
-                model=request_model,
-                max_completion_tokens=request_max_tokens,
-                temperature=request_temperature,
-                top_p=request_top_p,
-            )
+            try:
+                run = client.beta.threads.runs.create(
+                    thread_id=thread.id,
+                    assistant_id=assistant.id,
+                    model=request_model,
+                    max_completion_tokens=request_max_tokens,
+                    temperature=request_temperature,
+                    top_p=request_top_p,
+                )
+            except Exception as error:
+                reference_event_logger().emit(
+                    event_name="gen_ai.client.invoke_agent.exception",
+                    severity_number=SeverityNumber.WARN,
+                    exception=error,
+                )
+                raise
 
             if run.status == "requires_action":
                 tool_outputs = []
@@ -180,25 +188,49 @@ def run_invoke_agent(client):
                         }
                     )
 
-                run = client.beta.threads.runs.submit_tool_outputs(
-                    thread_id=thread.id,
-                    run_id=run.id,
-                    tool_outputs=tool_outputs,
-                )
+                try:
+                    run = client.beta.threads.runs.submit_tool_outputs(
+                        thread_id=thread.id,
+                        run_id=run.id,
+                        tool_outputs=tool_outputs,
+                    )
+                except Exception as error:
+                    reference_event_logger().emit(
+                        event_name="gen_ai.client.invoke_agent.exception",
+                        severity_number=SeverityNumber.WARN,
+                        exception=error,
+                    )
+                    raise
 
             # Poll for completion (mock returns completed immediately)
             if run.status != "completed":
-                run = client.beta.threads.runs.retrieve(
-                    thread_id=thread.id,
-                    run_id=run.id,
-                )
+                try:
+                    run = client.beta.threads.runs.retrieve(
+                        thread_id=thread.id,
+                        run_id=run.id,
+                    )
+                except Exception as error:
+                    reference_event_logger().emit(
+                        event_name="gen_ai.client.invoke_agent.exception",
+                        severity_number=SeverityNumber.WARN,
+                        exception=error,
+                    )
+                    raise
 
             if run.usage:
                 span.set_attribute("gen_ai.usage.input_tokens", run.usage.prompt_tokens)
                 span.set_attribute("gen_ai.usage.output_tokens", run.usage.completion_tokens)
 
             # Get messages
-            messages = client.beta.threads.messages.list(thread_id=thread.id)
+            try:
+                messages = client.beta.threads.messages.list(thread_id=thread.id)
+            except Exception as error:
+                reference_event_logger().emit(
+                    event_name="gen_ai.client.invoke_agent.exception",
+                    severity_number=SeverityNumber.WARN,
+                    exception=error,
+                )
+                raise
             assistant_messages = [m for m in messages.data if m.role == "assistant"]
             if assistant_messages:
                 text = assistant_messages[0].content[0].text.value
@@ -219,11 +251,6 @@ def run_invoke_agent(client):
         except Exception as error:
             span.set_status(StatusCode.ERROR, str(error))
             span.set_attribute("error.type", f"{type(error).__module__}.{type(error).__qualname__}")
-            reference_event_logger().emit(
-                event_name="gen_ai.client.invoke_agent.exception",
-                severity_number=SeverityNumber.WARN,
-                exception=error,
-            )
             raise
 
     # Clean up
