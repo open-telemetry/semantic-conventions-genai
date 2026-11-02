@@ -221,44 +221,75 @@ def run_agent():
     with _reference_tracer.start_as_current_span(
         f"invoke_agent {researcher_role}", attributes=agent_span_attributes, record_exception=False
     ) as agent_span:
-        agent_span.set_attribute("gen_ai.request.choice.count", request_choice_count)
-        agent_span.set_attribute("gen_ai.request.max_tokens", request_max_tokens)
-        agent_span.set_attribute("gen_ai.request.temperature", request_temperature)
-        agent_span.set_attribute("gen_ai.request.seed", request_seed)
-        agent_span.set_attribute("gen_ai.request.stop_sequences", request_stop_sequences)
-        agent_span.set_attribute("gen_ai.request.frequency_penalty", request_frequency_penalty)
-        agent_span.set_attribute("gen_ai.request.presence_penalty", request_presence_penalty)
-        agent_span.set_attribute("gen_ai.request.top_p", request_top_p)
-        agent_span.set_attribute("gen_ai.system_instructions", json.dumps([{"type": "text", "content": system_prompt}]))
-        agent_span.set_attribute(
-            "gen_ai.input.messages",
-            json.dumps([{"role": "user", "parts": [{"type": "text", "content": task_description}]}]),
-        )
-        agent_span.set_attribute(
-            "gen_ai.tool.definitions",
-            json.dumps(
-                [
-                    {
-                        "type": "function",
-                        "name": t.name,
-                        "description": t.func.__doc__,
-                        "parameters": t.args_schema.model_json_schema(),
-                    }
-                    for t in researcher.tools
-                ]
-            ),
-        )
-        original_create = researcher.llm._client.chat.completions.create
-
-        def _capture_completion(*args, **kwargs):
-            nonlocal captured_completion
-            response = original_create(*args, **kwargs)
-            captured_completion = response
-            return response
-
-        researcher.llm._client.chat.completions.create = _capture_completion
         try:
-            result = researcher.kickoff(task_description)
+            agent_span.set_attribute("gen_ai.request.choice.count", request_choice_count)
+            agent_span.set_attribute("gen_ai.request.max_tokens", request_max_tokens)
+            agent_span.set_attribute("gen_ai.request.temperature", request_temperature)
+            agent_span.set_attribute("gen_ai.request.seed", request_seed)
+            agent_span.set_attribute("gen_ai.request.stop_sequences", request_stop_sequences)
+            agent_span.set_attribute("gen_ai.request.frequency_penalty", request_frequency_penalty)
+            agent_span.set_attribute("gen_ai.request.presence_penalty", request_presence_penalty)
+            agent_span.set_attribute("gen_ai.request.top_p", request_top_p)
+            agent_span.set_attribute(
+                "gen_ai.system_instructions", json.dumps([{"type": "text", "content": system_prompt}])
+            )
+            agent_span.set_attribute(
+                "gen_ai.input.messages",
+                json.dumps([{"role": "user", "parts": [{"type": "text", "content": task_description}]}]),
+            )
+            agent_span.set_attribute(
+                "gen_ai.tool.definitions",
+                json.dumps(
+                    [
+                        {
+                            "type": "function",
+                            "name": t.name,
+                            "description": t.func.__doc__,
+                            "parameters": t.args_schema.model_json_schema(),
+                        }
+                        for t in researcher.tools
+                    ]
+                ),
+            )
+            original_create = researcher.llm._client.chat.completions.create
+
+            def _capture_completion(*args, **kwargs):
+                nonlocal captured_completion
+                response = original_create(*args, **kwargs)
+                captured_completion = response
+                return response
+
+            researcher.llm._client.chat.completions.create = _capture_completion
+            try:
+                result = researcher.kickoff(task_description)
+            finally:
+                researcher.llm._client.chat.completions.create = original_create
+
+            if captured_completion is not None:
+                if hasattr(captured_completion, "parse"):
+                    captured_completion = captured_completion.parse()
+                agent_span.set_attribute("gen_ai.response.model", captured_completion.model)
+                agent_span.set_attribute("gen_ai.response.id", captured_completion.id)
+                agent_span.set_attribute(
+                    "gen_ai.response.finish_reasons",
+                    [choice.finish_reason or "error" for choice in captured_completion.choices],
+                )
+                if captured_completion.usage:
+                    agent_span.set_attribute("gen_ai.usage.input_tokens", captured_completion.usage.prompt_tokens)
+                    agent_span.set_attribute("gen_ai.usage.output_tokens", captured_completion.usage.completion_tokens)
+
+            agent_span.set_attribute(
+                "gen_ai.output.messages",
+                json.dumps(
+                    [
+                        {
+                            "role": "assistant",
+                            "parts": [{"type": "text", "content": str(result)}],
+                        }
+                    ]
+                ),
+            )
+            print(f"    -> {str(result)[:60]}")
         except Exception as error:
             agent_span.set_status(StatusCode.ERROR, str(error))
             agent_span.set_attribute("error.type", f"{type(error).__module__}.{type(error).__qualname__}")
@@ -268,34 +299,6 @@ def run_agent():
                 exception=error,
             )
             raise
-        finally:
-            researcher.llm._client.chat.completions.create = original_create
-
-        if captured_completion is not None:
-            if hasattr(captured_completion, "parse"):
-                captured_completion = captured_completion.parse()
-            agent_span.set_attribute("gen_ai.response.model", captured_completion.model)
-            agent_span.set_attribute("gen_ai.response.id", captured_completion.id)
-            agent_span.set_attribute(
-                "gen_ai.response.finish_reasons",
-                [choice.finish_reason or "error" for choice in captured_completion.choices],
-            )
-            if captured_completion.usage:
-                agent_span.set_attribute("gen_ai.usage.input_tokens", captured_completion.usage.prompt_tokens)
-                agent_span.set_attribute("gen_ai.usage.output_tokens", captured_completion.usage.completion_tokens)
-
-        agent_span.set_attribute(
-            "gen_ai.output.messages",
-            json.dumps(
-                [
-                    {
-                        "role": "assistant",
-                        "parts": [{"type": "text", "content": str(result)}],
-                    }
-                ]
-            ),
-        )
-        print(f"    -> {str(result)[:60]}")
 
 
 def _run_crew_planning_scenario(*, header, task_description):

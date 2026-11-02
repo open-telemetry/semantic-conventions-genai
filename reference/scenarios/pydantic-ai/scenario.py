@@ -94,33 +94,59 @@ def run_tool_call():
     with _reference_tracer.start_as_current_span(
         "invoke_agent weather_agent", attributes=agent_span_attributes, record_exception=False
     ) as agent_span:
-        agent_span.set_attribute("gen_ai.request.temperature", request_temperature)
-        agent_span.set_attribute("gen_ai.request.top_p", request_top_p)
-        agent_span.set_attribute("gen_ai.request.max_tokens", request_max_tokens)
-        agent_span.set_attribute("gen_ai.request.seed", request_seed)
-        agent_span.set_attribute("gen_ai.request.stop_sequences", request_stop_sequences)
-        agent_span.set_attribute("gen_ai.request.frequency_penalty", request_frequency_penalty)
-        agent_span.set_attribute("gen_ai.request.presence_penalty", request_presence_penalty)
-        agent_span.set_attribute("gen_ai.system_instructions", system_instructions)
-        agent_span.set_attribute(
-            "gen_ai.input.messages", json.dumps([{"role": "user", "parts": [{"type": "text", "content": prompt_text}]}])
-        )
-        agent_span.set_attribute(
-            "gen_ai.tool.definitions",
-            json.dumps(
-                [
-                    {
-                        "type": "function",
-                        "name": t.name,
-                        "description": t.description,
-                        "parameters": t.function_schema.json_schema,
-                    }
-                    for t in tools
-                ]
-            ),
-        )
         try:
+            agent_span.set_attribute("gen_ai.request.temperature", request_temperature)
+            agent_span.set_attribute("gen_ai.request.top_p", request_top_p)
+            agent_span.set_attribute("gen_ai.request.max_tokens", request_max_tokens)
+            agent_span.set_attribute("gen_ai.request.seed", request_seed)
+            agent_span.set_attribute("gen_ai.request.stop_sequences", request_stop_sequences)
+            agent_span.set_attribute("gen_ai.request.frequency_penalty", request_frequency_penalty)
+            agent_span.set_attribute("gen_ai.request.presence_penalty", request_presence_penalty)
+            agent_span.set_attribute("gen_ai.system_instructions", system_instructions)
+            agent_span.set_attribute(
+                "gen_ai.input.messages",
+                json.dumps([{"role": "user", "parts": [{"type": "text", "content": prompt_text}]}]),
+            )
+            agent_span.set_attribute(
+                "gen_ai.tool.definitions",
+                json.dumps(
+                    [
+                        {
+                            "type": "function",
+                            "name": t.name,
+                            "description": t.description,
+                            "parameters": t.function_schema.json_schema,
+                        }
+                        for t in tools
+                    ]
+                ),
+            )
             result = agent.run_sync(prompt_text, model_settings=model_settings)
+            if result.response.finish_reason is not None:
+                agent_span.set_attribute(
+                    "gen_ai.response.finish_reasons",
+                    [result.response.finish_reason],
+                )
+            output_parts = [
+                {"type": "text", "content": part.content}
+                for part in result.response.parts
+                if isinstance(part, TextPart) and part.content
+            ]
+            if output_parts:
+                output_messages = json.dumps(
+                    [
+                        {
+                            "role": "assistant",
+                            "parts": output_parts,
+                        }
+                    ]
+                )
+                agent_span.set_attribute("gen_ai.output.messages", output_messages)
+            usage = result.usage
+            if usage.total_tokens:
+                agent_span.set_attribute("gen_ai.usage.input_tokens", usage.input_tokens)
+                agent_span.set_attribute("gen_ai.usage.output_tokens", usage.output_tokens)
+            print(f"    -> {str(result.response)[:60]}")
         except Exception as error:
             agent_span.set_status(StatusCode.ERROR, str(error))
             agent_span.set_attribute("error.type", f"{type(error).__module__}.{type(error).__qualname__}")
@@ -130,31 +156,6 @@ def run_tool_call():
                 exception=error,
             )
             raise
-        if result.response.finish_reason is not None:
-            agent_span.set_attribute(
-                "gen_ai.response.finish_reasons",
-                [result.response.finish_reason],
-            )
-        output_parts = [
-            {"type": "text", "content": part.content}
-            for part in result.response.parts
-            if isinstance(part, TextPart) and part.content
-        ]
-        if output_parts:
-            output_messages = json.dumps(
-                [
-                    {
-                        "role": "assistant",
-                        "parts": output_parts,
-                    }
-                ]
-            )
-            agent_span.set_attribute("gen_ai.output.messages", output_messages)
-        usage = result.usage
-        if usage.total_tokens:
-            agent_span.set_attribute("gen_ai.usage.input_tokens", usage.input_tokens)
-            agent_span.set_attribute("gen_ai.usage.output_tokens", usage.output_tokens)
-        print(f"    -> {str(result.response)[:60]}")
 
 
 def main():

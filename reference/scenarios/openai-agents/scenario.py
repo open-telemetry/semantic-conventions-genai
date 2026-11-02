@@ -98,37 +98,66 @@ async def run_agent():
     with _reference_tracer.start_as_current_span(
         "invoke_agent test-agent", attributes=agent_span_attributes, record_exception=False
     ) as agent_span:
-        agent_span.set_attribute(
-            "gen_ai.system_instructions", json.dumps([{"type": "text", "content": agent.instructions}])
-        )
-        agent_span.set_attribute(
-            "gen_ai.input.messages", json.dumps([{"role": "user", "parts": [{"type": "text", "content": input_text}]}])
-        )
-        agent_span.set_attribute(
-            "gen_ai.tool.definitions",
-            json.dumps(
-                [
-                    {
-                        "type": "function",
-                        "name": t.name,
-                        "description": t.description,
-                        "parameters": t.params_json_schema,
-                    }
-                    for t in tools
-                    if isinstance(t, FunctionTool)
-                ]
-            ),
-        )
-        original_create = client.chat.completions.create
-
-        async def _capture_create(*args, **kwargs):
-            response = await original_create(*args, **kwargs)
-            captured_responses.append(response)
-            return response
-
-        client.chat.completions.create = _capture_create
         try:
-            result = await Runner.run(agent, input_text)
+            agent_span.set_attribute(
+                "gen_ai.system_instructions", json.dumps([{"type": "text", "content": agent.instructions}])
+            )
+            agent_span.set_attribute(
+                "gen_ai.input.messages",
+                json.dumps([{"role": "user", "parts": [{"type": "text", "content": input_text}]}]),
+            )
+            agent_span.set_attribute(
+                "gen_ai.tool.definitions",
+                json.dumps(
+                    [
+                        {
+                            "type": "function",
+                            "name": t.name,
+                            "description": t.description,
+                            "parameters": t.params_json_schema,
+                        }
+                        for t in tools
+                        if isinstance(t, FunctionTool)
+                    ]
+                ),
+            )
+            original_create = client.chat.completions.create
+
+            async def _capture_create(*args, **kwargs):
+                response = await original_create(*args, **kwargs)
+                captured_responses.append(response)
+                return response
+
+            client.chat.completions.create = _capture_create
+            try:
+                result = await Runner.run(agent, input_text)
+            finally:
+                client.chat.completions.create = original_create
+            usage = result.context_wrapper.usage
+            if usage.total_tokens:
+                agent_span.set_attribute("gen_ai.usage.input_tokens", usage.input_tokens)
+                agent_span.set_attribute("gen_ai.usage.output_tokens", usage.output_tokens)
+            if captured_responses:
+                last_response = captured_responses[-1]
+                finish_reasons = [
+                    getattr(choice, "finish_reason", None) or "error"
+                    for choice in getattr(last_response, "choices", []) or []
+                ]
+                if finish_reasons:
+                    agent_span.set_attribute("gen_ai.response.finish_reasons", finish_reasons)
+            if result.final_output:
+                agent_span.set_attribute(
+                    "gen_ai.output.messages",
+                    json.dumps(
+                        [
+                            {
+                                "role": "assistant",
+                                "parts": [{"type": "text", "content": str(result.final_output)}],
+                            }
+                        ]
+                    ),
+                )
+            print(f"    -> {str(result.final_output)[:60]}")
         except Exception as error:
             agent_span.set_status(StatusCode.ERROR, str(error))
             agent_span.set_attribute("error.type", f"{type(error).__module__}.{type(error).__qualname__}")
@@ -138,33 +167,6 @@ async def run_agent():
                 exception=error,
             )
             raise
-        finally:
-            client.chat.completions.create = original_create
-        usage = result.context_wrapper.usage
-        if usage.total_tokens:
-            agent_span.set_attribute("gen_ai.usage.input_tokens", usage.input_tokens)
-            agent_span.set_attribute("gen_ai.usage.output_tokens", usage.output_tokens)
-        if captured_responses:
-            last_response = captured_responses[-1]
-            finish_reasons = [
-                getattr(choice, "finish_reason", None) or "error"
-                for choice in getattr(last_response, "choices", []) or []
-            ]
-            if finish_reasons:
-                agent_span.set_attribute("gen_ai.response.finish_reasons", finish_reasons)
-        if result.final_output:
-            agent_span.set_attribute(
-                "gen_ai.output.messages",
-                json.dumps(
-                    [
-                        {
-                            "role": "assistant",
-                            "parts": [{"type": "text", "content": str(result.final_output)}],
-                        }
-                    ]
-                ),
-            )
-        print(f"    -> {str(result.final_output)[:60]}")
 
 
 async def run_tool_error_reference():
@@ -199,27 +201,30 @@ async def run_agent_error_reference():
     agent = Agent(name="turn-limit-agent", model=model)
 
     print("  [agent_error] SDK agent turn limit (reference implementation)")
-    with _reference_tracer.start_as_current_span(
-        f"invoke_agent {agent.name}",
-        attributes={
-            "gen_ai.operation.name": "invoke_agent",
-            "gen_ai.agent.name": agent.name,
-            "gen_ai.request.model": model.model,
-        },
-        record_exception=False,
-    ) as span:
-        try:
-            await Runner.run(agent, "Hello", max_turns=0)
-        except MaxTurnsExceeded as error:
-            span.set_status(StatusCode.ERROR, str(error))
-            span.set_attribute("error.type", f"{type(error).__module__}.{type(error).__qualname__}")
-            reference_event_logger().emit(
-                event_name="gen_ai.invoke_agent.exception",
-                severity_number=SeverityNumber.WARN,
-                exception=error,
-            )
-        else:
-            raise AssertionError("Expected the SDK to enforce the agent turn limit")
+    try:
+        with _reference_tracer.start_as_current_span(
+            f"invoke_agent {agent.name}",
+            attributes={
+                "gen_ai.operation.name": "invoke_agent",
+                "gen_ai.agent.name": agent.name,
+                "gen_ai.request.model": model.model,
+            },
+            record_exception=False,
+        ) as span:
+            try:
+                await Runner.run(agent, "Hello", max_turns=0)
+            except Exception as error:
+                span.set_status(StatusCode.ERROR, str(error))
+                span.set_attribute("error.type", f"{type(error).__module__}.{type(error).__qualname__}")
+                reference_event_logger().emit(
+                    event_name="gen_ai.invoke_agent.exception",
+                    severity_number=SeverityNumber.WARN,
+                    exception=error,
+                )
+                raise
+    except MaxTurnsExceeded:
+        return
+    raise AssertionError("Expected the SDK to enforce the agent turn limit")
 
 
 async def run_agent_as_tool_delegation():
@@ -302,16 +307,45 @@ async def run_agent_as_tool_delegation():
         with _reference_tracer.start_as_current_span(
             f"invoke_agent {starting_agent.name}", attributes=agent_span_attributes, record_exception=False
         ) as agent_span:
-            agent_span.set_attribute(
-                "gen_ai.system_instructions", json.dumps([{"type": "text", "content": starting_agent.instructions}])
-            )
-            agent_span.set_attribute(
-                "gen_ai.input.messages", json.dumps([{"role": "user", "parts": [{"type": "text", "content": input}]}])
-            )
-            responses = []
-            token = model_responses.set(responses)
             try:
-                result = await original_agent_run(runner, starting_agent, input, **kwargs)
+                agent_span.set_attribute(
+                    "gen_ai.system_instructions", json.dumps([{"type": "text", "content": starting_agent.instructions}])
+                )
+                agent_span.set_attribute(
+                    "gen_ai.input.messages",
+                    json.dumps([{"role": "user", "parts": [{"type": "text", "content": input}]}]),
+                )
+                responses = []
+                token = model_responses.set(responses)
+                try:
+                    result = await original_agent_run(runner, starting_agent, input, **kwargs)
+                finally:
+                    model_responses.reset(token)
+                # Agent.as_tool shares context usage with its caller. Each run's raw
+                # responses identify its own model usage without counting the other agent.
+                if result.raw_responses:
+                    agent_span.set_attribute(
+                        "gen_ai.usage.input_tokens",
+                        sum(response.usage.input_tokens for response in result.raw_responses),
+                    )
+                    agent_span.set_attribute(
+                        "gen_ai.usage.output_tokens",
+                        sum(response.usage.output_tokens for response in result.raw_responses),
+                    )
+                finish_reasons = []
+                if responses:
+                    finish_reasons = [
+                        choice.finish_reason for choice in responses[-1].choices if choice.finish_reason is not None
+                    ]
+                    if finish_reasons:
+                        agent_span.set_attribute("gen_ai.response.finish_reasons", finish_reasons)
+                output_message = {
+                    "role": "assistant",
+                    "parts": [{"type": "text", "content": str(result.final_output)}],
+                }
+                if len(finish_reasons) == 1:
+                    output_message["finish_reason"] = finish_reasons[0]
+                agent_span.set_attribute("gen_ai.output.messages", json.dumps([output_message]))
             except Exception as error:
                 agent_span.set_status(StatusCode.ERROR, str(error))
                 agent_span.set_attribute("error.type", f"{type(error).__module__}.{type(error).__qualname__}")
@@ -321,31 +355,6 @@ async def run_agent_as_tool_delegation():
                     exception=error,
                 )
                 raise
-            finally:
-                model_responses.reset(token)
-            # Agent.as_tool shares context usage with its caller. Each run's raw
-            # responses identify its own model usage without counting the other agent.
-            if result.raw_responses:
-                agent_span.set_attribute(
-                    "gen_ai.usage.input_tokens", sum(response.usage.input_tokens for response in result.raw_responses)
-                )
-                agent_span.set_attribute(
-                    "gen_ai.usage.output_tokens", sum(response.usage.output_tokens for response in result.raw_responses)
-                )
-            finish_reasons = []
-            if responses:
-                finish_reasons = [
-                    choice.finish_reason for choice in responses[-1].choices if choice.finish_reason is not None
-                ]
-                if finish_reasons:
-                    agent_span.set_attribute("gen_ai.response.finish_reasons", finish_reasons)
-            output_message = {
-                "role": "assistant",
-                "parts": [{"type": "text", "content": str(result.final_output)}],
-            }
-            if len(finish_reasons) == 1:
-                output_message["finish_reason"] = finish_reasons[0]
-            agent_span.set_attribute("gen_ai.output.messages", json.dumps([output_message]))
         return result
 
     caller = Agent(
@@ -546,6 +555,28 @@ async def run_workflow():
         ) as span:
             try:
                 result = await original_run_single_turn(bindings=bindings, **kwargs)
+                span.set_attribute("gen_ai.usage.input_tokens", result.model_response.usage.input_tokens)
+                span.set_attribute("gen_ai.usage.output_tokens", result.model_response.usage.output_tokens)
+                parts = []
+                for item in result.model_response.output:
+                    if item.type == "message":
+                        parts.extend(
+                            {"type": "text", "content": content.text}
+                            for content in item.content
+                            if content.type == "output_text"
+                        )
+                    elif item.type == "function_call":
+                        parts.append(
+                            {
+                                "type": "tool_call",
+                                "id": item.call_id,
+                                "name": item.name,
+                                "arguments": json.loads(item.arguments),
+                            }
+                        )
+                if parts:
+                    span.set_attribute("gen_ai.output.messages", json.dumps([{"role": "assistant", "parts": parts}]))
+                return result
             except Exception as error:
                 span.set_status(StatusCode.ERROR, str(error))
                 span.set_attribute("error.type", f"{type(error).__module__}.{type(error).__qualname__}")
@@ -555,28 +586,6 @@ async def run_workflow():
                     exception=error,
                 )
                 raise
-            span.set_attribute("gen_ai.usage.input_tokens", result.model_response.usage.input_tokens)
-            span.set_attribute("gen_ai.usage.output_tokens", result.model_response.usage.output_tokens)
-            parts = []
-            for item in result.model_response.output:
-                if item.type == "message":
-                    parts.extend(
-                        {"type": "text", "content": content.text}
-                        for content in item.content
-                        if content.type == "output_text"
-                    )
-                elif item.type == "function_call":
-                    parts.append(
-                        {
-                            "type": "tool_call",
-                            "id": item.call_id,
-                            "name": item.name,
-                            "arguments": json.loads(item.arguments),
-                        }
-                    )
-            if parts:
-                span.set_attribute("gen_ai.output.messages", json.dumps([{"role": "assistant", "parts": parts}]))
-            return result
 
     async def capture_create(*args, **kwargs):
         response = await original_create(*args, **kwargs)

@@ -236,28 +236,28 @@ def run_agent_reference():
                 with _reference_tracer.start_as_current_span(
                     "invoke_agent test_agent", attributes=agent_span_attributes, record_exception=False
                 ) as agent_span:
-                    agent_span.set_attribute("gen_ai.request.choice.count", request_choice_count)
-                    agent_span.set_attribute("gen_ai.request.max_tokens", request_max_tokens)
-                    agent_span.set_attribute("gen_ai.request.temperature", request_temperature)
-                    agent_span.set_attribute("gen_ai.request.top_p", request_top_p)
-                    agent_span.set_attribute("gen_ai.request.top_k", request_top_k)
-                    agent_span.set_attribute("gen_ai.request.frequency_penalty", request_frequency_penalty)
-                    agent_span.set_attribute("gen_ai.request.presence_penalty", request_presence_penalty)
-                    agent_span.set_attribute("gen_ai.request.stop_sequences", request_stop_sequences)
-                    agent_span.set_attribute("gen_ai.conversation.id", session.id)
-                    agent_span.set_attribute(
-                        "gen_ai.system_instructions",
-                        json.dumps([{"type": "text", "content": agent.instruction}]),
-                    )
-                    agent_span.set_attribute(
-                        "gen_ai.input.messages",
-                        json.dumps([{"role": "user", "parts": [{"type": "text", "content": input_text}]}]),
-                    )
-                    agent_span.set_attribute("gen_ai.tool.definitions", json.dumps(tool_defs))
-                    usage_metadata = None
-                    finish_reason = None
-                    last_text = ""
                     try:
+                        agent_span.set_attribute("gen_ai.request.choice.count", request_choice_count)
+                        agent_span.set_attribute("gen_ai.request.max_tokens", request_max_tokens)
+                        agent_span.set_attribute("gen_ai.request.temperature", request_temperature)
+                        agent_span.set_attribute("gen_ai.request.top_p", request_top_p)
+                        agent_span.set_attribute("gen_ai.request.top_k", request_top_k)
+                        agent_span.set_attribute("gen_ai.request.frequency_penalty", request_frequency_penalty)
+                        agent_span.set_attribute("gen_ai.request.presence_penalty", request_presence_penalty)
+                        agent_span.set_attribute("gen_ai.request.stop_sequences", request_stop_sequences)
+                        agent_span.set_attribute("gen_ai.conversation.id", session.id)
+                        agent_span.set_attribute(
+                            "gen_ai.system_instructions",
+                            json.dumps([{"type": "text", "content": agent.instruction}]),
+                        )
+                        agent_span.set_attribute(
+                            "gen_ai.input.messages",
+                            json.dumps([{"role": "user", "parts": [{"type": "text", "content": input_text}]}]),
+                        )
+                        agent_span.set_attribute("gen_ai.tool.definitions", json.dumps(tool_defs))
+                        usage_metadata = None
+                        finish_reason = None
+                        last_text = ""
                         async for event in runner.run_async(
                             user_id="test_user",
                             session_id=session.id,
@@ -281,6 +281,32 @@ def run_agent_reference():
                                 if text:
                                     last_text = text
                                     print(f"    -> {text[:60]}")
+                        if usage_metadata is not None:
+                            prompt_token_count = getattr(usage_metadata, "prompt_token_count", None)
+                            candidate_token_count = getattr(usage_metadata, "candidates_token_count", None)
+                            if isinstance(usage_metadata, dict):
+                                prompt_token_count = usage_metadata.get("prompt_token_count")
+                                candidate_token_count = usage_metadata.get("candidates_token_count")
+                            if prompt_token_count is not None:
+                                agent_span.set_attribute("gen_ai.usage.input_tokens", prompt_token_count)
+                            if candidate_token_count is not None:
+                                agent_span.set_attribute("gen_ai.usage.output_tokens", candidate_token_count)
+                        if finish_reason is not None:
+                            agent_span.set_attribute(
+                                "gen_ai.response.finish_reasons",
+                                [str(finish_reason).lower()],
+                            )
+                        if last_text:
+                            output_messages = json.dumps(
+                                [
+                                    {
+                                        "role": "assistant",
+                                        "parts": [{"type": "text", "content": last_text}],
+                                    }
+                                ]
+                            )
+                            agent_span.set_attribute("gen_ai.output.messages", output_messages)
+                            workflow_span.set_attribute("gen_ai.output.messages", output_messages)
                     except Exception as error:
                         agent_span.set_status(StatusCode.ERROR, str(error))
                         agent_span.set_attribute("error.type", f"{type(error).__module__}.{type(error).__qualname__}")
@@ -290,32 +316,6 @@ def run_agent_reference():
                             exception=error,
                         )
                         raise
-                    if usage_metadata is not None:
-                        prompt_token_count = getattr(usage_metadata, "prompt_token_count", None)
-                        candidate_token_count = getattr(usage_metadata, "candidates_token_count", None)
-                        if isinstance(usage_metadata, dict):
-                            prompt_token_count = usage_metadata.get("prompt_token_count")
-                            candidate_token_count = usage_metadata.get("candidates_token_count")
-                        if prompt_token_count is not None:
-                            agent_span.set_attribute("gen_ai.usage.input_tokens", prompt_token_count)
-                        if candidate_token_count is not None:
-                            agent_span.set_attribute("gen_ai.usage.output_tokens", candidate_token_count)
-                    if finish_reason is not None:
-                        agent_span.set_attribute(
-                            "gen_ai.response.finish_reasons",
-                            [str(finish_reason).lower()],
-                        )
-                    if last_text:
-                        output_messages = json.dumps(
-                            [
-                                {
-                                    "role": "assistant",
-                                    "parts": [{"type": "text", "content": last_text}],
-                                }
-                            ]
-                        )
-                        agent_span.set_attribute("gen_ai.output.messages", output_messages)
-                        workflow_span.set_attribute("gen_ai.output.messages", output_messages)
 
         asyncio.run(_run())
 
@@ -496,10 +496,10 @@ def run_multi_agent_delegation_reference():
             with _reference_tracer.start_as_current_span(
                 f"invoke_agent {agent.name}", attributes=sub_agent_span_attributes, record_exception=False
             ) as sub_agent_span:
-                input_tokens = None
-                output_tokens = None
-                last_text = ""
                 try:
+                    input_tokens = None
+                    output_tokens = None
+                    last_text = ""
                     async for event in original_runner_run_async(active_runner, session_id=session_id, **kwargs):
                         if event.author == agent.name:
                             usage = event.usage_metadata
@@ -518,6 +518,15 @@ def run_multi_agent_delegation_reference():
                                     if part.text:
                                         last_text = part.text
                         yield event
+                    if input_tokens is not None:
+                        sub_agent_span.set_attribute("gen_ai.usage.input_tokens", input_tokens)
+                    if output_tokens is not None:
+                        sub_agent_span.set_attribute("gen_ai.usage.output_tokens", output_tokens)
+                    if last_text:
+                        sub_agent_span.set_attribute(
+                            "gen_ai.output.messages",
+                            json.dumps([{"role": "assistant", "parts": [{"type": "text", "content": last_text}]}]),
+                        )
                 except Exception as error:
                     sub_agent_span.set_status(StatusCode.ERROR, str(error))
                     sub_agent_span.set_attribute("error.type", f"{type(error).__module__}.{type(error).__qualname__}")
@@ -527,15 +536,6 @@ def run_multi_agent_delegation_reference():
                         exception=error,
                     )
                     raise
-                if input_tokens is not None:
-                    sub_agent_span.set_attribute("gen_ai.usage.input_tokens", input_tokens)
-                if output_tokens is not None:
-                    sub_agent_span.set_attribute("gen_ai.usage.output_tokens", output_tokens)
-                if last_text:
-                    sub_agent_span.set_attribute(
-                        "gen_ai.output.messages",
-                        json.dumps([{"role": "assistant", "parts": [{"type": "text", "content": last_text}]}]),
-                    )
 
         root_agent = Agent(
             name="root_agent",
@@ -558,16 +558,16 @@ def run_multi_agent_delegation_reference():
             with _reference_tracer.start_as_current_span(
                 "invoke_agent root_agent", attributes=agent_span_attributes, record_exception=False
             ) as agent_span:
-                agent_span.set_attribute("gen_ai.conversation.id", session.id)
-                agent_span.set_attribute(
-                    "gen_ai.input.messages",
-                    json.dumps([{"role": "user", "parts": [{"type": "text", "content": input_text}]}]),
-                )
-                last_text = ""
-                finish_reason = None
-                input_tokens = None
-                output_tokens = None
                 try:
+                    agent_span.set_attribute("gen_ai.conversation.id", session.id)
+                    agent_span.set_attribute(
+                        "gen_ai.input.messages",
+                        json.dumps([{"role": "user", "parts": [{"type": "text", "content": input_text}]}]),
+                    )
+                    last_text = ""
+                    finish_reason = None
+                    input_tokens = None
+                    output_tokens = None
                     async for event in runner.run_async(
                         user_id="test_user",
                         session_id=session.id,
@@ -586,6 +586,18 @@ def run_multi_agent_delegation_reference():
                                 for part in event.content.parts:
                                     if part.text:
                                         last_text = part.text
+                    if input_tokens is not None:
+                        agent_span.set_attribute("gen_ai.usage.input_tokens", input_tokens)
+                    if output_tokens is not None:
+                        agent_span.set_attribute("gen_ai.usage.output_tokens", output_tokens)
+                    if finish_reason is not None:
+                        agent_span.set_attribute("gen_ai.response.finish_reasons", [str(finish_reason).lower()])
+                    if last_text:
+                        agent_span.set_attribute(
+                            "gen_ai.output.messages",
+                            json.dumps([{"role": "assistant", "parts": [{"type": "text", "content": last_text}]}]),
+                        )
+                        print(f"    -> {last_text[:60]}")
                 except Exception as error:
                     agent_span.set_status(StatusCode.ERROR, str(error))
                     agent_span.set_attribute("error.type", f"{type(error).__module__}.{type(error).__qualname__}")
@@ -595,18 +607,6 @@ def run_multi_agent_delegation_reference():
                         exception=error,
                     )
                     raise
-                if input_tokens is not None:
-                    agent_span.set_attribute("gen_ai.usage.input_tokens", input_tokens)
-                if output_tokens is not None:
-                    agent_span.set_attribute("gen_ai.usage.output_tokens", output_tokens)
-                if finish_reason is not None:
-                    agent_span.set_attribute("gen_ai.response.finish_reasons", [str(finish_reason).lower()])
-                if last_text:
-                    agent_span.set_attribute(
-                        "gen_ai.output.messages",
-                        json.dumps([{"role": "assistant", "parts": [{"type": "text", "content": last_text}]}]),
-                    )
-                    print(f"    -> {last_text[:60]}")
 
         with (
             patch.object(agent_tool, "run_async", _traced_run_async),
@@ -689,30 +689,40 @@ def run_multi_agent_handoff_reference():
         input_tokens = None
         output_tokens = None
         try:
-            async with contextlib.aclosing(original_agent_run(agent, parent_context)) as events:
-                while True:
-                    # Restore agent context for each SDK step, not across a yield
-                    # where Runner restores the caller's context.
-                    with _trace.use_span(span, end_on_exit=False, record_exception=False):
-                        event = await anext(events, None)
-                    if event is None:
-                        break
-                    if event.author == agent.name:
-                        if event.usage_metadata is not None:
-                            if event.usage_metadata.prompt_token_count is not None:
-                                input_tokens = (input_tokens or 0) + event.usage_metadata.prompt_token_count
-                            if event.usage_metadata.candidates_token_count is not None:
-                                output_tokens = (output_tokens or 0) + event.usage_metadata.candidates_token_count
-                        if event.finish_reason is not None:
-                            span.set_attribute("gen_ai.response.finish_reasons", [event.finish_reason.value.lower()])
-                        if event.content and event.content.parts:
-                            text = "".join(part.text for part in event.content.parts if part.text)
-                            if text:
+            try:
+                async with contextlib.aclosing(original_agent_run(agent, parent_context)) as events:
+                    while True:
+                        # Restore agent context for each SDK step, not across a yield
+                        # where Runner restores the caller's context.
+                        with _trace.use_span(span, end_on_exit=False, record_exception=False):
+                            event = await anext(events, None)
+                        if event is None:
+                            break
+                        if event.author == agent.name:
+                            if event.usage_metadata is not None:
+                                if event.usage_metadata.prompt_token_count is not None:
+                                    input_tokens = (input_tokens or 0) + event.usage_metadata.prompt_token_count
+                                if event.usage_metadata.candidates_token_count is not None:
+                                    output_tokens = (output_tokens or 0) + event.usage_metadata.candidates_token_count
+                            if event.finish_reason is not None:
                                 span.set_attribute(
-                                    "gen_ai.output.messages",
-                                    json.dumps([{"role": "assistant", "parts": [{"type": "text", "content": text}]}]),
+                                    "gen_ai.response.finish_reasons", [event.finish_reason.value.lower()]
                                 )
-                    yield event
+                            if event.content and event.content.parts:
+                                text = "".join(part.text for part in event.content.parts if part.text)
+                                if text:
+                                    span.set_attribute(
+                                        "gen_ai.output.messages",
+                                        json.dumps(
+                                            [{"role": "assistant", "parts": [{"type": "text", "content": text}]}]
+                                        ),
+                                    )
+                        yield event
+            finally:
+                if input_tokens is not None:
+                    span.set_attribute("gen_ai.usage.input_tokens", input_tokens)
+                if output_tokens is not None:
+                    span.set_attribute("gen_ai.usage.output_tokens", output_tokens)
         except Exception as error:
             span.set_status(StatusCode.ERROR, str(error))
             span.set_attribute("error.type", f"{type(error).__module__}.{type(error).__qualname__}")
@@ -724,10 +734,6 @@ def run_multi_agent_handoff_reference():
                 )
             raise
         finally:
-            if input_tokens is not None:
-                span.set_attribute("gen_ai.usage.input_tokens", input_tokens)
-            if output_tokens is not None:
-                span.set_attribute("gen_ai.usage.output_tokens", output_tokens)
             span.end()
 
     async def run():
@@ -1004,19 +1010,19 @@ def run_skills_reference():
             with _reference_tracer.start_as_current_span(
                 f"invoke_agent {agent_name}", attributes=agent_span_attributes, record_exception=False
             ) as agent_span:
-                agent_span.set_attribute("gen_ai.conversation.id", session_id)
-                agent_span.set_attribute(
-                    "gen_ai.system_instructions",
-                    json.dumps([{"type": "text", "content": agent.instruction}]),
-                )
-                agent_span.set_attribute(
-                    "gen_ai.input.messages",
-                    json.dumps([{"role": "user", "parts": [{"type": "text", "content": prompt}]}]),
-                )
-                usage_metadata = None
-                finish_reason = None
-                last_text = ""
                 try:
+                    agent_span.set_attribute("gen_ai.conversation.id", session_id)
+                    agent_span.set_attribute(
+                        "gen_ai.system_instructions",
+                        json.dumps([{"type": "text", "content": agent.instruction}]),
+                    )
+                    agent_span.set_attribute(
+                        "gen_ai.input.messages",
+                        json.dumps([{"role": "user", "parts": [{"type": "text", "content": prompt}]}]),
+                    )
+                    usage_metadata = None
+                    finish_reason = None
+                    last_text = ""
                     async for event in runner.run_async(
                         user_id=user_id,
                         session_id=session_id,
@@ -1028,6 +1034,28 @@ def run_skills_reference():
                             finish_reason = getattr(event.finish_reason, "value", event.finish_reason)
                         if event.content and event.content.parts and event.content.parts[0].text:
                             last_text = event.content.parts[0].text
+                    if usage_metadata is not None:
+                        if getattr(usage_metadata, "prompt_token_count", None) is not None:
+                            agent_span.set_attribute("gen_ai.usage.input_tokens", usage_metadata.prompt_token_count)
+                        if getattr(usage_metadata, "candidates_token_count", None) is not None:
+                            agent_span.set_attribute(
+                                "gen_ai.usage.output_tokens", usage_metadata.candidates_token_count
+                            )
+                    if finish_reason is not None:
+                        agent_span.set_attribute("gen_ai.response.finish_reasons", [str(finish_reason).lower()])
+                    if last_text:
+                        agent_span.set_attribute(
+                            "gen_ai.output.messages",
+                            json.dumps(
+                                [
+                                    {
+                                        "role": "assistant",
+                                        "parts": [{"type": "text", "content": last_text}],
+                                        "finish_reason": str(finish_reason or "stop").lower(),
+                                    }
+                                ]
+                            ),
+                        )
                 except Exception as error:
                     agent_span.set_status(StatusCode.ERROR, str(error))
                     agent_span.set_attribute("error.type", f"{type(error).__module__}.{type(error).__qualname__}")
@@ -1037,26 +1065,6 @@ def run_skills_reference():
                         exception=error,
                     )
                     raise
-                if usage_metadata is not None:
-                    if getattr(usage_metadata, "prompt_token_count", None) is not None:
-                        agent_span.set_attribute("gen_ai.usage.input_tokens", usage_metadata.prompt_token_count)
-                    if getattr(usage_metadata, "candidates_token_count", None) is not None:
-                        agent_span.set_attribute("gen_ai.usage.output_tokens", usage_metadata.candidates_token_count)
-                if finish_reason is not None:
-                    agent_span.set_attribute("gen_ai.response.finish_reasons", [str(finish_reason).lower()])
-                if last_text:
-                    agent_span.set_attribute(
-                        "gen_ai.output.messages",
-                        json.dumps(
-                            [
-                                {
-                                    "role": "assistant",
-                                    "parts": [{"type": "text", "content": last_text}],
-                                    "finish_reason": str(finish_reason or "stop").lower(),
-                                }
-                            ]
-                        ),
-                    )
 
         async def _phases():
             # The skill lifecycle. Each stage is its own conversation, so each
