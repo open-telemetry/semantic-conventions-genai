@@ -114,13 +114,19 @@ def _patch_automatic_function_calling():
             with _reference_tracer.start_as_current_span(
                 f"execute_tool {call.name}", attributes=tool_span_attributes, record_exception=False
             ) as tool_span:
-                if call.id:
-                    tool_span.set_attribute("gen_ai.tool.call.id", call.id)
-                tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps(dict(call.args or {})))
-                single = response.model_copy(deep=True)
-                single.candidates[0].content.parts = [part]
                 try:
+                    if call.id:
+                        tool_span.set_attribute("gen_ai.tool.call.id", call.id)
+                    tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps(dict(call.args or {})))
+                    single = response.model_copy(deep=True)
+                    single.candidates[0].content.parts = [part]
                     result_parts = original(single, function_map)
+                    for result_part in result_parts:
+                        tool_span.set_attribute(
+                            "gen_ai.tool.call.result",
+                            json.dumps({"output": result_part.function_response.response}),
+                        )
+                    parts.extend(result_parts)
                 except Exception as error:
                     tool_span.set_status(StatusCode.ERROR, str(error))
                     tool_span.set_attribute("error.type", f"{type(error).__module__}.{type(error).__qualname__}")
@@ -130,12 +136,6 @@ def _patch_automatic_function_calling():
                         exception=error,
                     )
                     raise
-                for result_part in result_parts:
-                    tool_span.set_attribute(
-                        "gen_ai.tool.call.result",
-                        json.dumps({"output": result_part.function_response.response}),
-                    )
-                parts.extend(result_parts)
         return parts
 
     _extra_utils.get_function_response_parts = instrumented

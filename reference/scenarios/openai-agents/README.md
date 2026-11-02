@@ -34,4 +34,6 @@ SDK exception details. The tool disables error-to-string recovery so the SDK
 propagates the exception.
 
 The ordinary tool, agent-as-tool, handoff, and command error handlers also record
-this log and rethrow the exception. This scenario does not exercise those paths.
+this log and rethrow the exception. All handlers cover the full tool span,
+including argument and result processing. This scenario does not exercise those
+other error paths.

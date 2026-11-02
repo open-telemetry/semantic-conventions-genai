@@ -226,10 +226,11 @@ def run_execute_tool_reference():
     with _reference_tracer.start_as_current_span(
         f"execute_tool {get_weather.name}", attributes=tool_span_attributes, record_exception=False
     ) as tool_span:
-        tool_span.set_attribute("gen_ai.tool.call.id", tool_call["id"])
-        tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps(tool_call["args"]))
         try:
+            tool_span.set_attribute("gen_ai.tool.call.id", tool_call["id"])
+            tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps(tool_call["args"]))
             tool_message = get_weather.invoke(tool_call)
+            tool_span.set_attribute("gen_ai.tool.call.result", tool_message.content)
         except Exception as error:
             tool_span.set_status(StatusCode.ERROR, str(error))
             tool_span.set_attribute("error.type", f"{type(error).__module__}.{type(error).__qualname__}")
@@ -239,7 +240,6 @@ def run_execute_tool_reference():
                 exception=error,
             )
             raise
-        tool_span.set_attribute("gen_ai.tool.call.result", tool_message.content)
     print(f"    -> {tool_message.content[:60]}")
 
 
@@ -275,11 +275,19 @@ def run_command_execution_reference():
         with _reference_tracer.start_as_current_span(
             f"execute_tool {shell_tool.name}", attributes=tool_span_attributes, record_exception=False
         ) as tool_span:
-            tool_span.set_attribute("gen_ai.tool.description", shell_tool.description)
-            tool_span.set_attribute("gen_ai.tool.call.id", runtime.tool_call_id)
-            tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps({"command": command}))
             try:
+                tool_span.set_attribute("gen_ai.tool.description", shell_tool.description)
+                tool_span.set_attribute("gen_ai.tool.call.id", runtime.tool_call_id)
+                tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps({"command": command}))
                 tool_message = run_shell(runtime=runtime, command=command, restart=restart)
+                # `direct`: the middleware reports the status the command exited
+                # with on the artifact of the tool message it builds. It is None
+                # when the command timed out and was killed before exiting.
+                exit_code = tool_message.artifact.get("exit_code")
+                if exit_code is not None:
+                    tool_span.set_attribute("process.exit.code", exit_code)
+                tool_span.set_attribute("gen_ai.tool.call.result", tool_message.content)
+                return tool_message
             except Exception as error:
                 tool_span.set_status(StatusCode.ERROR, str(error))
                 tool_span.set_attribute("error.type", f"{type(error).__module__}.{type(error).__qualname__}")
@@ -289,14 +297,6 @@ def run_command_execution_reference():
                     exception=error,
                 )
                 raise
-            # `direct`: the middleware reports the status the command exited
-            # with on the artifact of the tool message it builds. It is None
-            # when the command timed out and was killed before exiting.
-            exit_code = tool_message.artifact.get("exit_code")
-            if exit_code is not None:
-                tool_span.set_attribute("process.exit.code", exit_code)
-            tool_span.set_attribute("gen_ai.tool.call.result", tool_message.content)
-            return tool_message
 
     shell_tool.func = traced_shell
 

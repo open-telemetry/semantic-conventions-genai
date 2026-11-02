@@ -21,5 +21,6 @@ Other retrievers have no common limit setting, and LangChain tracing metadata
 doesn't include it, so callback-based instrumentation can't capture it.
 
 The tool execution error handlers, including shell commands, record a correlated
-`gen_ai.execute_tool.exception` WARN log and rethrow the exception. This scenario
-does not exercise those paths.
+`gen_ai.execute_tool.exception` WARN log and rethrow the exception. They cover the
+full tool span, including argument and result processing. This scenario does not
+exercise those paths.

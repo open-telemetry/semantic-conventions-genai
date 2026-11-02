@@ -162,29 +162,33 @@ async def run_tool_error_reference():
         tool_arguments=input_json,
     )
     print("  [tool_error] SDK tool-argument validation (reference implementation)")
-    with _reference_tracer.start_as_current_span(
-        f"execute_tool {get_weather.name}",
-        attributes={
-            "gen_ai.operation.name": "execute_tool",
-            "gen_ai.tool.name": get_weather.name,
-            "gen_ai.tool.type": "function",
-        },
-        record_exception=False,
-    ) as span:
-        span.set_attribute("gen_ai.tool.description", get_weather.description)
-        span.set_attribute("gen_ai.tool.call.arguments", input_json)
-        try:
-            await get_weather.on_invoke_tool(tool_context, input_json)
-        except ModelBehaviorError as error:
-            span.set_status(StatusCode.ERROR, str(error))
-            span.set_attribute("error.type", f"{type(error).__module__}.{type(error).__qualname__}")
-            reference_event_logger().emit(
-                event_name="gen_ai.execute_tool.exception",
-                severity_number=SeverityNumber.WARN,
-                exception=error,
-            )
-        else:
-            raise AssertionError("Expected the SDK to reject the tool arguments")
+    try:
+        with _reference_tracer.start_as_current_span(
+            f"execute_tool {get_weather.name}",
+            attributes={
+                "gen_ai.operation.name": "execute_tool",
+                "gen_ai.tool.name": get_weather.name,
+                "gen_ai.tool.type": "function",
+            },
+            record_exception=False,
+        ) as span:
+            try:
+                span.set_attribute("gen_ai.tool.description", get_weather.description)
+                span.set_attribute("gen_ai.tool.call.arguments", input_json)
+                await get_weather.on_invoke_tool(tool_context, input_json)
+            except Exception as error:
+                span.set_status(StatusCode.ERROR, str(error))
+                span.set_attribute("error.type", f"{type(error).__module__}.{type(error).__qualname__}")
+                reference_event_logger().emit(
+                    event_name="gen_ai.execute_tool.exception",
+                    severity_number=SeverityNumber.WARN,
+                    exception=error,
+                )
+                raise
+    except ModelBehaviorError:
+        pass
+    else:
+        raise AssertionError("Expected the SDK to reject the tool arguments")
 
 
 async def run_agent_as_tool_delegation():
@@ -231,10 +235,11 @@ async def run_agent_as_tool_delegation():
         with _reference_tracer.start_as_current_span(
             f"execute_tool {weather_tool.name}", attributes=tool_span_attributes, record_exception=False
         ) as tool_span:
-            tool_span.set_attribute("gen_ai.tool.call.id", tool_context.tool_call_id)
-            tool_span.set_attribute("gen_ai.tool.call.arguments", input_json)
             try:
+                tool_span.set_attribute("gen_ai.tool.call.id", tool_context.tool_call_id)
+                tool_span.set_attribute("gen_ai.tool.call.arguments", input_json)
                 result = await original_on_invoke_tool(tool_context, input_json)
+                tool_span.set_attribute("gen_ai.tool.call.result", str(result))
             except Exception as error:
                 tool_span.set_status(StatusCode.ERROR, str(error))
                 tool_span.set_attribute("error.type", f"{type(error).__module__}.{type(error).__qualname__}")
@@ -244,7 +249,6 @@ async def run_agent_as_tool_delegation():
                     exception=error,
                 )
                 raise
-            tool_span.set_attribute("gen_ai.tool.call.result", str(result))
         return result
 
     model_responses = ContextVar("delegation_model_responses", default=None)
@@ -357,13 +361,15 @@ async def run_command_execution():
             with _reference_tracer.start_as_current_span(
                 span_name, attributes=attributes, record_exception=False
             ) as span:
-                span.set_attribute("gen_ai.tool.description", self.description)
-                span.set_attribute("gen_ai.tool.call.id", ctx.tool_call_id)
-                span.set_attribute("gen_ai.tool.call.arguments", raw_input)
-                if executable_name and posixpath.isabs(executable):
-                    span.set_attribute("process.executable.path", executable)
                 try:
+                    span.set_attribute("gen_ai.tool.description", self.description)
+                    span.set_attribute("gen_ai.tool.call.id", ctx.tool_call_id)
+                    span.set_attribute("gen_ai.tool.call.arguments", raw_input)
+                    if executable_name and posixpath.isabs(executable):
+                        span.set_attribute("process.executable.path", executable)
                     result = await self.run(args)
+                    span.set_attribute("gen_ai.tool.call.result", result)
+                    return result
                 except Exception as error:
                     span.set_attribute("error.type", type(error).__qualname__)
                     span.set_status(StatusCode.ERROR, str(error))
@@ -373,8 +379,6 @@ async def run_command_execution():
                         exception=error,
                     )
                     raise
-                span.set_attribute("gen_ai.tool.call.result", result)
-                return result
 
     sandbox_client = UnixLocalSandboxClient()
     session = await sandbox_client.create()
@@ -469,10 +473,14 @@ async def run_workflow():
             with _reference_tracer.start_as_current_span(
                 f"execute_tool {selected.tool_call.name}", attributes=attributes, record_exception=False
             ) as span:
-                span.set_attribute("gen_ai.tool.call.id", selected.tool_call.call_id)
-                span.set_attribute("gen_ai.tool.call.arguments", arguments)
                 try:
+                    span.set_attribute("gen_ai.tool.call.id", selected.tool_call.call_id)
+                    span.set_attribute("gen_ai.tool.call.arguments", arguments)
                     target = await original_invoke(context, arguments)
+                    span.set_attribute("gen_ai.transfer.mode", "pass_control")
+                    span.set_attribute("gen_ai.transfer.target.name", target.name)
+                    span.set_attribute("gen_ai.tool.call.result", selected.handoff.get_transfer_message(target))
+                    return target
                 except Exception as error:
                     span.set_status(StatusCode.ERROR, str(error))
                     span.set_attribute("error.type", f"{type(error).__module__}.{type(error).__qualname__}")
@@ -482,10 +490,6 @@ async def run_workflow():
                         exception=error,
                     )
                     raise
-                span.set_attribute("gen_ai.transfer.mode", "pass_control")
-                span.set_attribute("gen_ai.transfer.target.name", target.name)
-                span.set_attribute("gen_ai.tool.call.result", selected.handoff.get_transfer_message(target))
-                return target
 
         with patch.object(selected.handoff, "on_invoke_handoff", traced_invoke):
             return await original_execute_handoffs(public_agent=public_agent, run_handoffs=run_handoffs, **kwargs)

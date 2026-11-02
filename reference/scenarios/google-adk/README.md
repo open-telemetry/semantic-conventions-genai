@@ -30,5 +30,6 @@ tool executes. The transfer records `pass_control`; the target's separate
 
 The tool execution error handlers, including transfer and skill tools, record a
 correlated `gen_ai.execute_tool.exception` WARN log and rethrow the exception.
-This scenario does not exercise those paths. Returned skill error codes do not
-produce exception logs.
+They cover the full tool span, including argument and result processing. This
+scenario does not exercise those paths. Returned skill error codes do not produce
+exception logs.

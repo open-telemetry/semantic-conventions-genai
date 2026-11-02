@@ -27,5 +27,6 @@ execution is instrumentable here.
 | invoke_agent (client) | Yes — Agent Engine hosts agents remotely | ➖ Won't add — SDK deprecated |
 
 The automatic function calling error handler records a correlated
-`gen_ai.execute_tool.exception` WARN log and rethrows the exception. This scenario
-does not exercise that path.
+`gen_ai.execute_tool.exception` WARN log and rethrows the exception. It covers the
+full tool span, including argument and result processing. This scenario does not
+exercise that path.

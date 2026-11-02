@@ -75,11 +75,15 @@ def _patch_automatic_function_calling():
             with _reference_tracer.start_as_current_span(
                 f"execute_tool {raw_call['name']}", attributes=tool_span_attributes, record_exception=False
             ) as tool_span:
-                if raw_call.get("id"):
-                    tool_span.set_attribute("gen_ai.tool.call.id", raw_call["id"])
-                tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps(raw_call.get("args") or {}))
                 try:
+                    if raw_call.get("id"):
+                        tool_span.set_attribute("gen_ai.tool.call.id", raw_call["id"])
+                    tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps(raw_call.get("args") or {}))
                     result = function(**kwargs)
+                    tool_span.set_attribute(
+                        "gen_ai.tool.call.result", result if isinstance(result, str) else json.dumps(result)
+                    )
+                    return result
                 except Exception as error:
                     tool_span.set_status(StatusCode.ERROR, str(error))
                     tool_span.set_attribute("error.type", f"{type(error).__module__}.{type(error).__qualname__}")
@@ -89,10 +93,6 @@ def _patch_automatic_function_calling():
                         exception=error,
                     )
                     raise
-                tool_span.set_attribute(
-                    "gen_ai.tool.call.result", result if isinstance(result, str) else json.dumps(result)
-                )
-                return result
 
         return instrumented_function
 

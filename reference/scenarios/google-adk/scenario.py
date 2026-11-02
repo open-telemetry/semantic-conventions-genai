@@ -453,11 +453,12 @@ def run_multi_agent_delegation_reference():
             with _reference_tracer.start_as_current_span(
                 f"execute_tool {agent_tool.name}", attributes=tool_span_attributes, record_exception=False
             ) as tool_span:
-                if tool_context.function_call_id:
-                    tool_span.set_attribute("gen_ai.tool.call.id", tool_context.function_call_id)
-                tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps(args))
                 try:
+                    if tool_context.function_call_id:
+                        tool_span.set_attribute("gen_ai.tool.call.id", tool_context.function_call_id)
+                    tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps(args))
                     result = await original_run_async(args=args, tool_context=tool_context)
+                    tool_span.set_attribute("gen_ai.tool.call.result", str(result))
                 except Exception as error:
                     tool_span.set_status(StatusCode.ERROR, str(error))
                     tool_span.set_attribute("error.type", f"{type(error).__module__}.{type(error).__qualname__}")
@@ -467,7 +468,6 @@ def run_multi_agent_delegation_reference():
                         exception=error,
                     )
                     raise
-                tool_span.set_attribute("gen_ai.tool.call.result", str(result))
             return result
 
         async def _traced_specialist_run_async(active_runner, *, session_id, **kwargs):
@@ -625,11 +625,17 @@ def run_multi_agent_handoff_reference():
         with _reference_tracer.start_as_current_span(
             f"execute_tool {tool.name}", attributes=attributes, record_exception=False
         ) as span:
-            if tool_context.function_call_id:
-                span.set_attribute("gen_ai.tool.call.id", tool_context.function_call_id)
-            span.set_attribute("gen_ai.tool.call.arguments", json.dumps(args))
             try:
+                if tool_context.function_call_id:
+                    span.set_attribute("gen_ai.tool.call.id", tool_context.function_call_id)
+                span.set_attribute("gen_ai.tool.call.arguments", json.dumps(args))
                 result = await original_tool_run(tool, args=args, tool_context=tool_context)
+                target_name = tool_context.actions.transfer_to_agent
+                if target_name:
+                    span.set_attribute("gen_ai.transfer.mode", "pass_control")
+                    span.set_attribute("gen_ai.transfer.target.name", target_name)
+                span.set_attribute("gen_ai.tool.call.result", json.dumps(result))
+                return result
             except Exception as error:
                 span.set_status(StatusCode.ERROR, str(error))
                 span.set_attribute("error.type", f"{type(error).__module__}.{type(error).__qualname__}")
@@ -639,12 +645,6 @@ def run_multi_agent_handoff_reference():
                     exception=error,
                 )
                 raise
-            target_name = tool_context.actions.transfer_to_agent
-            if target_name:
-                span.set_attribute("gen_ai.transfer.mode", "pass_control")
-                span.set_attribute("gen_ai.transfer.target.name", target_name)
-            span.set_attribute("gen_ai.tool.call.result", json.dumps(result))
-            return result
 
     async def traced_agent_run(agent, parent_context):
         attributes = {
@@ -784,20 +784,30 @@ def run_skills_reference():
                 attributes=attributes,
                 record_exception=False,
             ) as span:
-                span.set_attribute("gen_ai.tool.description", self.description)
-                span.set_attribute("gen_ai.agent.name", tool_context.agent_name)
-                if tool_context.function_call_id:
-                    span.set_attribute("gen_ai.tool.call.id", tool_context.function_call_id)
-                span.set_attribute("gen_ai.tool.call.arguments", json.dumps(args))
-                # `direct`: the toolset holds the `Skill` the call names, so its
-                # frontmatter and the location ADK loaded it from are in hand.
-                skill = skills_by_name.get(skill_name)
-                if skill is not None:
-                    span.set_attribute("gen_ai.skill.description", skill.description)
-                    if skill._uri is not None:
-                        span.set_attribute("gen_ai.skill.source.uri", skill._uri)
                 try:
+                    span.set_attribute("gen_ai.tool.description", self.description)
+                    span.set_attribute("gen_ai.agent.name", tool_context.agent_name)
+                    if tool_context.function_call_id:
+                        span.set_attribute("gen_ai.tool.call.id", tool_context.function_call_id)
+                    span.set_attribute("gen_ai.tool.call.arguments", json.dumps(args))
+                    # `direct`: the toolset holds the `Skill` the call names, so its
+                    # frontmatter and the location ADK loaded it from are in hand.
+                    skill = skills_by_name.get(skill_name)
+                    if skill is not None:
+                        span.set_attribute("gen_ai.skill.description", skill.description)
+                        if skill._uri is not None:
+                            span.set_attribute("gen_ai.skill.source.uri", skill._uri)
                     result = await super().run_async(args=args, tool_context=tool_context)
+                    # `direct`: every skill tool reports a failure as an `error_code` on
+                    # its result, which is the value ADK's own telemetry hook reads too.
+                    error_type = result.get("error_code") if isinstance(result, dict) else None
+                    if error_type:
+                        span.set_attribute("error.type", error_type)
+                        span.set_status(StatusCode.ERROR, result.get("error", ""))
+                    else:
+                        span.set_attribute("gen_ai.tool.call.result", json.dumps(result, default=str))
+                    self._record_skill_signals(span, args, result, error_type, tool_context)
+                    return result
                 except Exception as error:
                     span.set_status(StatusCode.ERROR, str(error))
                     span.set_attribute("error.type", f"{type(error).__module__}.{type(error).__qualname__}")
@@ -807,16 +817,6 @@ def run_skills_reference():
                         exception=error,
                     )
                     raise
-                # `direct`: every skill tool reports a failure as an `error_code` on
-                # its result, which is the value ADK's own telemetry hook reads too.
-                error_type = result.get("error_code") if isinstance(result, dict) else None
-                if error_type:
-                    span.set_attribute("error.type", error_type)
-                    span.set_status(StatusCode.ERROR, result.get("error", ""))
-                else:
-                    span.set_attribute("gen_ai.tool.call.result", json.dumps(result, default=str))
-                self._record_skill_signals(span, args, result, error_type, tool_context)
-                return result
 
         def _record_skill_signals(self, span, args, result, error_type, tool_context):
             """Hook for the per-tool skill attributes."""
