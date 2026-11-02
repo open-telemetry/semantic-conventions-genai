@@ -122,7 +122,6 @@ For more information about the maintainer role, see the [community repository](h
 - [Aaron Abbott](https://github.com/aabmass), Google
 - [Ankit Singhal](https://github.com/singankit), Microsoft
 - [JWinermaSplunk](https://github.com/JWinermaSplunk), Splunk
-- [Mike Goldsmith](https://github.com/MikeGoldsmith), Honeycomb
 - [Minghui Zhang](https://github.com/Cirilla-zmh), Alibaba
 - [Alex Hall](https://github.com/alexmojaki), Pydantic
 
@@ -139,3 +138,10 @@ drive the review of at least 3 non-editorial PRs.
 merge or close: providing timely initial reviews and follow-up feedback,
 requesting changes, asking design questions, and re-reviewing revisions
 promptly until the PR lands or is rejected.
+
+### Emeritus
+
+- [Mike Goldsmith](https://github.com/MikeGoldsmith), Approver
+
+For more information about the emeritus role, see the
+[community repository](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#emeritus-maintainerapprovertriager).
