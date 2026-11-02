@@ -39,7 +39,7 @@
 | gen_ai.request.top_p | (none) |
 | gen_ai.response.finish_reasons | [anthropic], [aws-bedrock], [azure-ai-inference], [cohere], [google-genai], [groq], [litellm], [mistralai], [openai], [vertexai] |
 | gen_ai.response.id | [anthropic], [azure-ai-inference], [cohere], [google-genai], [groq], [litellm], [mistralai], [openai], [vertexai] |
-| gen_ai.response.model | [anthropic], [azure-ai-inference], [google-genai], [groq], [litellm], [mistralai], [openai] |
+| gen_ai.response.model | [anthropic], [azure-ai-inference], [google-genai], [groq], [litellm], [mistralai], [openai], [vertexai] |
 | gen_ai.response.time_to_first_chunk | (none) |
 | gen_ai.usage.audio.cache_read.input_tokens | [google-genai], [vertexai] |
 | gen_ai.usage.audio.input_tokens | [google-genai], [openai], [vertexai] |

@@ -11,6 +11,22 @@ env:
 scenarios:
   reference:
     run: uv run --frozen --python 3.12 --project . python scenario.py
+    expected_violations:
+      - id: genai_expected_attribute_missing
+        context:
+          missing_attribute: gen_ai.response.model
+          operation: embeddings
+        reason: The Titan embeddings response body does not include a model.
+      - id: genai_expected_attribute_missing
+        context:
+          missing_attribute: gen_ai.response.id
+          operation: chat
+        reason: The Bedrock Converse response does not include a response id.
+      - id: genai_expected_attribute_missing
+        context:
+          missing_attribute: gen_ai.response.model
+          operation: chat
+        reason: The Bedrock Converse response does not include a model.
     spans:
       - match:
           attributes:

@@ -22,16 +22,28 @@
   },
   "events": {},
   "metrics": {},
+  "entities": {},
   "findings": [
     {
-      "id": "genai_span_name_format",
-      "message": "execute_tool span name should be 'execute_tool' or 'execute_tool <value of gen_ai.tool.name>', got 'execute_tool Skill release-notes'",
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'chat' (operation 'chat') is missing expected attribute 'server.address'",
+      "signal_type": "span",
+      "signal_name": "chat",
       "context": {
-        "expected_form": "execute_tool or 'execute_tool <gen_ai.tool.name>'",
+        "missing_attribute": "server.address",
+        "operation": "chat"
+      }
+    },
+    {
+      "id": "genai_span_name_format",
+      "message": "execute_tool span name should be 'execute_tool Skill', got 'execute_tool Skill release-notes'",
+      "signal_type": "span",
+      "signal_name": "execute_tool Skill release-notes",
+      "context": {
+        "expected_form": "execute_tool Skill",
         "keyed_attr": "gen_ai.tool.name",
         "operation": "execute_tool"
       }
     }
-  ],
-  "entities": {}
+  ]
 }
