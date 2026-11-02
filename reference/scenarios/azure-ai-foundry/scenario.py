@@ -13,8 +13,9 @@ from azure.ai.projects import AIProjectClient
 from azure.ai.projects.models import PromptAgentDefinition
 from azure.core.credentials import AccessToken
 from azure.core.pipeline.policies import SansIOHTTPPolicy
+from opentelemetry._logs import SeverityNumber
 from opentelemetry.trace import SpanKind, StatusCode
-from reference_shared import flush_and_shutdown, reference_tracer, setup_otel
+from reference_shared import flush_and_shutdown, reference_event_logger, reference_tracer, setup_otel
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"]
 _parsed = urlparse(MOCK_BASE_URL)
@@ -105,7 +106,7 @@ def run_invoke_agent(client):
         "server.port": _SERVER_PORT,
     }
     with tracer.start_as_current_span(
-        f"invoke_agent {agent.name}", kind=SpanKind.CLIENT, attributes=span_attributes_2
+        f"invoke_agent {agent.name}", kind=SpanKind.CLIENT, attributes=span_attributes_2, record_exception=False
     ) as span:
         span.set_attribute("gen_ai.request.max_tokens", REQUEST_MAX_TOKENS)
         span.set_attribute("gen_ai.request.temperature", REQUEST_TEMPERATURE)
@@ -116,21 +117,29 @@ def run_invoke_agent(client):
         )
         span.set_attribute("gen_ai.tool.definitions", json.dumps(tool_defs))
         try:
-            response = openai_client.responses.create(
-                model=AGENT_MODEL,
-                instructions=AGENT_INSTRUCTIONS,
-                tools=tool_defs,
-                input=USER_INPUT,
-                max_output_tokens=REQUEST_MAX_TOKENS,
-                temperature=REQUEST_TEMPERATURE,
-                top_p=REQUEST_TOP_P,
-                extra_body={
-                    "agent_reference": {
-                        "name": agent.name,
-                        "type": "agent_reference",
-                    }
-                },
-            )
+            try:
+                response = openai_client.responses.create(
+                    model=AGENT_MODEL,
+                    instructions=AGENT_INSTRUCTIONS,
+                    tools=tool_defs,
+                    input=USER_INPUT,
+                    max_output_tokens=REQUEST_MAX_TOKENS,
+                    temperature=REQUEST_TEMPERATURE,
+                    top_p=REQUEST_TOP_P,
+                    extra_body={
+                        "agent_reference": {
+                            "name": agent.name,
+                            "type": "agent_reference",
+                        }
+                    },
+                )
+            except Exception as error:
+                reference_event_logger().emit(
+                    event_name="gen_ai.client.invoke_agent.exception",
+                    severity_number=SeverityNumber.WARN,
+                    exception=error,
+                )
+                raise
 
             if getattr(response, "assistant_id", None):
                 span.set_attribute("gen_ai.agent.id", response.assistant_id)
@@ -178,8 +187,9 @@ def run_invoke_agent(client):
                 span.set_attribute("gen_ai.usage.output_tokens", response.usage.output_tokens)
 
             print(f"    -> {response_text or response.id}")
-        except Exception as e:
-            span.set_status(StatusCode.ERROR, str(e))
+        except Exception as error:
+            span.set_status(StatusCode.ERROR, str(error))
+            span.set_attribute("error.type", f"{type(error).__module__}.{type(error).__qualname__}")
             raise
         finally:
             openai_client.close()

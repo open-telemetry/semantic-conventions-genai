@@ -11,3 +11,6 @@ server-side, across a process boundary the client cannot observe.
 | invoke_agent (client) | Yes — runs the remote agent | ✅ Implemented |
 | inference (`chat`) | No — runs remotely inside the agent service | ✅ Correctly not emitted |
 | execute_tool | No — runs remotely inside the agent service | ✅ Correctly not emitted |
+
+The agent invocation error handler records a correlated
+`gen_ai.client.invoke_agent.exception` WARN log. This scenario does not exercise that path.
