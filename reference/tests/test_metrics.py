@@ -50,6 +50,15 @@ def test_inference_scenarios_report_inference_duration():
         assert metrics["gen_ai.client.inference.duration"]["gen_ai.provider.name"] == "present", library
 
 
+def test_committed_pydantic_ai_streaming_metric_round_trip():
+    entries = {entry.library: entry for entry in load_scenario_data_files()}
+    metrics = entries["pydantic-ai"].metrics
+    name = "gen_ai.client.inference.time_to_first_chunk"
+    assert set(metrics) == {name}
+    for attribute in ("gen_ai.operation.name", "gen_ai.provider.name", "gen_ai.request.model", "gen_ai.response.model"):
+        assert metrics[name][attribute] == "present", attribute
+
+
 def test_embeddings_scenarios_report_embeddings_metrics():
     entries = {entry.library: entry for entry in load_scenario_data_files()}
     libraries = ("aws-bedrock", "azure-ai-inference", "azure-openai", "cohere", "google-genai", "litellm", "mistralai", "openai")
@@ -127,6 +136,7 @@ if __name__ == "__main__":
     test_metric_specs_are_named_as_the_registry_names_them()
     test_committed_google_adk_metrics_round_trip()
     test_inference_scenarios_report_inference_duration()
+    test_committed_pydantic_ai_streaming_metric_round_trip()
     test_embeddings_scenarios_report_embeddings_metrics()
     test_entity_specs_expose_required_id()
     test_entities_keep_their_registry_names()

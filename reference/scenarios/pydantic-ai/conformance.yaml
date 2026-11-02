@@ -11,3 +11,12 @@ env:
 scenarios:
   reference:
     run: uv run --frozen --python 3.12 --project . python scenario.py
+    metrics:
+      - gen_ai.client.inference.time_to_first_chunk
+    expected_violations:
+      - id: instrumentation_scope_schema_url_missing
+        context:
+          actual: null
+          expected:
+            present: true
+        reason: Pydantic AI native instrumentation scope pydantic-ai does not set schema_url.

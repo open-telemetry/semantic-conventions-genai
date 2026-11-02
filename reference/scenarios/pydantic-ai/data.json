@@ -31,7 +31,27 @@
     ]
   },
   "events": {},
-  "metrics": {},
+  "metrics": {
+    "gen_ai.client.inference.time_to_first_chunk": [
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "gen_ai.request.model",
+      "gen_ai.response.model"
+    ]
+  },
   "entities": {},
-  "findings": []
+  "findings": [
+    {
+      "id": "instrumentation_scope_schema_url_missing",
+      "message": "Instrumentation scope 'pydantic-ai' does not have schema_url.",
+      "signal_type": "instrumentation_scope",
+      "signal_name": "pydantic-ai",
+      "context": {
+        "actual": null,
+        "expected": {
+          "present": true
+        }
+      }
+    }
+  ]
 }

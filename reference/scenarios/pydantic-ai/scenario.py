@@ -1,12 +1,15 @@
 """Reference implementation for Pydantic AI.
 
-Exercises: agent run with tool calling
-against a mock OpenAI server, with manual OTel spans (no logfire/Agent.instrument_all).
+Exercises: agent run with tool calling and native streaming metrics
+against a mock OpenAI server, with manual OTel spans.
 """
 
+import asyncio
 import json
 import os
 
+from opentelemetry.sdk.metrics.view import DropAggregation, View
+from opentelemetry.trace import NoOpTracerProvider
 from reference_shared import (
     flush_and_shutdown,
     reference_tracer,
@@ -134,13 +137,50 @@ def run_tool_call():
         print(f"    -> {str(result.response)[:60]}")
 
 
+async def run_streaming(meter_provider):
+    """Capture the streaming latency measured by Pydantic AI itself."""
+    from pydantic_ai import Agent
+    from pydantic_ai.capabilities import Instrumentation
+    from pydantic_ai.models.instrumented import InstrumentationSettings
+    from pydantic_ai.models.openai import OpenAIChatModel
+    from pydantic_ai.providers.openai import OpenAIProvider
+
+    print("  [chat_streaming] native Pydantic AI streaming latency metric")
+    provider = OpenAIProvider(base_url=MOCK_BASE_URL, api_key="mock-key")
+    model = OpenAIChatModel("gpt-4o-mini", provider=provider)
+    # Keep the manual spans while using Pydantic AI's own metric measurements.
+    settings = InstrumentationSettings(tracer_provider=NoOpTracerProvider(), meter_provider=meter_provider)
+    agent = Agent(model, capabilities=[Instrumentation(settings=settings)])
+    async with agent.run_stream("Say hello.") as result:
+        async for _text in result.stream_text():
+            pass
+        print(f"    -> {await result.get_output()}")
+
+
 def main():
     print("=== Reference Implementation: Pydantic AI Reference Implementation ===")
 
-    tp, lp, mp = setup_otel()
-    # NO logfire.configure() or Agent.instrument_all() - reference implementation only
+    tp, lp, mp = setup_otel(
+        metric_views=(
+            # Pydantic AI still uses the previous streaming metric name.
+            View(
+                instrument_name="gen_ai.client.operation.time_to_first_chunk",
+                meter_name="pydantic-ai",
+                name="gen_ai.client.inference.time_to_first_chunk",
+                # Exclude the removed gen_ai.system attribute emitted alongside provider.name.
+                attribute_keys={
+                    "gen_ai.operation.name",
+                    "gen_ai.provider.name",
+                    "gen_ai.request.model",
+                    "gen_ai.response.model",
+                },
+            ),
+            View(instrument_name="operation.cost", meter_name="pydantic-ai", aggregation=DropAggregation()),
+        ),
+    )
 
     run_tool_call()
+    asyncio.run(run_streaming(mp))
 
     flush_and_shutdown(tp, lp, mp)
 
