@@ -58,6 +58,7 @@ _EVENTS = {
     "gen_ai.client.realtime_session.started": "Realtime Session Started",
     "gen_ai.client.realtime_session.ended": "Realtime Session Ended",
     "gen_ai.execute_tool.exception": "Execute Tool Exception",
+    "gen_ai.invoke_agent.exception": "Invoke Agent Exception",
 }
 
 # Client duration and token usage describe individual calls, unlike the
