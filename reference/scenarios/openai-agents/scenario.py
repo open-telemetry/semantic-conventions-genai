@@ -14,12 +14,14 @@ from unittest.mock import patch
 
 import openai
 from agents import Agent, RunConfig, Runner, function_tool
+from agents.exceptions import ModelBehaviorError
 from agents.models.openai_chatcompletions import OpenAIChatCompletionsModel
 from agents.run import AgentRunner
 from agents.tool import FunctionTool, ToolContext
 from opentelemetry import trace
+from opentelemetry._logs import SeverityNumber
 from opentelemetry.trace import StatusCode
-from reference_shared import flush_and_shutdown, reference_tracer, setup_otel
+from reference_shared import flush_and_shutdown, reference_event_logger, reference_tracer, setup_otel
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"] + "/v1"
 # The shell this deployment lets the sandboxed agent run commands with.
@@ -132,6 +134,47 @@ async def run_agent():
                 ),
             )
         print(f"    -> {str(result.final_output)[:60]}")
+
+
+async def run_tool_error_reference():
+    """Exercise an SDK tool-argument validation exception."""
+
+    @function_tool(failure_error_function=None)
+    def get_weather(location: str) -> str:
+        """Get the current weather for a location."""
+        return f"Sunny in {location}"
+
+    input_json = '{"location": 42}'
+    tool_context = ToolContext(
+        context=None,
+        tool_name=get_weather.name,
+        tool_call_id="",
+        tool_arguments=input_json,
+    )
+    print("  [tool_error] SDK tool-argument validation (reference implementation)")
+    with _reference_tracer.start_as_current_span(
+        f"execute_tool {get_weather.name}",
+        attributes={
+            "gen_ai.operation.name": "execute_tool",
+            "gen_ai.tool.name": get_weather.name,
+            "gen_ai.tool.type": "function",
+        },
+        record_exception=False,
+    ) as span:
+        span.set_attribute("gen_ai.tool.description", get_weather.description)
+        span.set_attribute("gen_ai.tool.call.arguments", input_json)
+        try:
+            await get_weather.on_invoke_tool(tool_context, input_json)
+        except ModelBehaviorError as error:
+            span.set_status(StatusCode.ERROR, str(error))
+            span.set_attribute("error.type", f"{type(error).__module__}.{type(error).__qualname__}")
+            reference_event_logger().emit(
+                event_name="gen_ai.execute_tool.exception",
+                severity_number=SeverityNumber.WARN,
+                exception=error,
+            )
+        else:
+            raise AssertionError("Expected the SDK to reject the tool arguments")
 
 
 async def run_agent_as_tool_delegation():
@@ -488,6 +531,7 @@ def main():
     tp, lp, mp = setup_otel()
 
     asyncio.run(run_agent())
+    asyncio.run(run_tool_error_reference())
     asyncio.run(run_agent_as_tool_delegation())
     asyncio.run(run_command_execution())
     asyncio.run(run_workflow())
