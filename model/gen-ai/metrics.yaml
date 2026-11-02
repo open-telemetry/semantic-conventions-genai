@@ -88,9 +88,11 @@ metrics:
     requirement_level: recommended
     instrument: histogram
     unit: "s"
-    brief: 'Time to receive the first chunk, measured from when the client issues the generation request to when the first chunk is received in the response stream.'
-    note: >
-      This metric SHOULD be reported for streaming calls and SHOULD NOT be reported otherwise.
+    brief: 'Time from the start of a logical inference operation to the first chunk in its streaming response.'
+    note: |
+      Instrumentations SHOULD report this metric for streaming calls when the first chunk is received, SHOULD NOT report it for non-streaming calls, and MUST NOT report it if no chunk is received.
+
+      The chunk definition and measurement boundaries are the same as for [`gen_ai.response.time_to_first_chunk`](/docs/registry/attributes/gen-ai.md#gen-ai-response-time-to-first-chunk).
     stability: development
     annotations:
       code_generation:
