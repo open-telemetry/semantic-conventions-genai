@@ -93,38 +93,18 @@ def run_invoke_agent(client, agent_id):
             "gen_ai.input.messages", json.dumps([{"role": "user", "parts": [{"type": "text", "content": USER_INPUT}]}])
         )
         try:
-            try:
-                response = client.invoke_agent(
-                    agentId=agent_id,
-                    agentAliasId=AGENT_ALIAS_ID,
-                    sessionId=SESSION_ID,
-                    inputText=USER_INPUT,
-                    enableTrace=True,
-                )
-            except Exception as error:
-                reference_event_logger().emit(
-                    event_name="gen_ai.client.invoke_agent.exception",
-                    severity_number=SeverityNumber.WARN,
-                    exception=error,
-                )
-                raise
+            response = client.invoke_agent(
+                agentId=agent_id,
+                agentAliasId=AGENT_ALIAS_ID,
+                sessionId=SESSION_ID,
+                inputText=USER_INPUT,
+                enableTrace=True,
+            )
             # Consume the event stream
             text = ""
             input_tokens = []
             output_tokens = []
-            completion = iter(response["completion"])
-            while True:
-                try:
-                    event = next(completion)
-                except StopIteration:
-                    break
-                except Exception as error:
-                    reference_event_logger().emit(
-                        event_name="gen_ai.client.invoke_agent.exception",
-                        severity_number=SeverityNumber.WARN,
-                        exception=error,
-                    )
-                    raise
+            for event in response["completion"]:
                 if "chunk" in event:
                     text += event["chunk"].get("bytes", b"").decode("utf-8")
                 elif "trace" in event:
@@ -159,6 +139,11 @@ def run_invoke_agent(client, agent_id):
         except Exception as error:
             span.set_status(StatusCode.ERROR, str(error))
             span.set_attribute("error.type", f"{type(error).__module__}.{type(error).__qualname__}")
+            reference_event_logger().emit(
+                event_name="gen_ai.client.invoke_agent.exception",
+                severity_number=SeverityNumber.WARN,
+                exception=error,
+            )
             raise
 
 

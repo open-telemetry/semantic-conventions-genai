@@ -16,3 +16,5 @@ here. Everything else belongs to the remote agent service.
 
 Agent invocation also covers an SDK `ValidationException` from a mock HTTP response,
 recorded as a correlated `gen_ai.client.invoke_agent.exception` WARN log with SDK exception details.
+The same span error handler covers stream consumption and response processing.
+Regression tests cover these failures and the success path.
