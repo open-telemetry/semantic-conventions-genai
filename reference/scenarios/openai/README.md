@@ -11,6 +11,7 @@ Assistants API is covered by the `openai-assistants` scenario).
 | --- | --- | --- |
 | inference (`chat`) | Yes — calls the model directly | ✅ Implemented, including streaming TTFC |
 | embeddings | Yes — calls the model directly | ✅ Implemented |
+| fetch_response | Yes — Responses API `client.responses.retrieve` | ✅ Implemented |
 | execute_tool | No — the base client returns tool calls but doesn't execute them; the tool runs in app code | ➖ Not instrumentable |
 | retrieval | Yes — Vector Stores search / `file_search` tool | ❌ Not implemented |
 | memory | Yes — Conversations API / stored responses | ❌ Not implemented |
@@ -26,3 +27,7 @@ The SDK `BadRequestError` also produces a correlated
 
 Inference also covers an SDK `RateLimitError` from a mock HTTP response, recorded
 as a correlated `gen_ai.client.inference.exception` WARN log with SDK exception details.
+
+Fetch response also covers an SDK `NotFoundError` from a mock HTTP response,
+recorded as a correlated `gen_ai.client.fetch_response.exception` WARN log with SDK exception details.
+A successfully fetched response whose original generation failed does not produce this event.

@@ -73,11 +73,11 @@ events:
   - name: gen_ai.client.operation.exception
     requirement_level: recommended
     brief: >
-      This event represents an exception that occurred during a Generative AI client operation other than inference, embeddings, or agent invocation,
+      This event represents an exception that occurred during a Generative AI client operation other than inference, embeddings, agent invocation, or response fetching,
       such as API errors, rate limiting, model errors, timeouts, or other errors that prevent
       the operation from completing successfully.
     note: >
-      This event SHOULD be recorded when an exception occurs during Generative AI client operations other than inference, embeddings, or agent invocation.
+      This event SHOULD be recorded when an exception occurs during Generative AI client operations other than inference, embeddings, agent invocation, or response fetching.
 
       For inference operations, instrumentations SHOULD record `gen_ai.client.inference.exception`
       instead of this event.
@@ -86,6 +86,9 @@ events:
       instead of this event.
 
       For client agent invocation operations, instrumentations SHOULD record `gen_ai.client.invoke_agent.exception`
+      instead of this event.
+
+      For fetch response operations, instrumentations SHOULD record `gen_ai.client.fetch_response.exception`
       instead of this event.
 
       Instrumentations SHOULD set the severity to WARN (severity number 13) when recording this event.
@@ -143,6 +146,23 @@ events:
 
       Instrumentations MAY provide a configuration option to populate this event
       with attributes captured on the corresponding execute tool span.
+    stability: development
+    attributes:
+      - ref_group: attributes.gen_ai.exception
+
+  - name: gen_ai.client.fetch_response.exception
+    requirement_level: recommended
+    brief: >
+      This event represents an exception that caused a Generative AI client fetch response operation to fail.
+    note: >
+      Exception recording SHOULD follow the general
+      [recording errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/recording-errors.md)
+      guidance. This log event SHOULD be correlated with the fetch response span using its trace and span identifiers.
+
+      Instrumentations SHOULD set the severity to WARN (severity number 13) when recording this event.
+
+      Instrumentations MAY provide a configuration option to populate this event
+      with attributes captured on the corresponding fetch response span.
     stability: development
     attributes:
       - ref_group: attributes.gen_ai.exception
