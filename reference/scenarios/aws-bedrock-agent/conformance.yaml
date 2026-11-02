@@ -11,6 +11,8 @@ env:
 scenarios:
   reference:
     run: uv run --frozen --python 3.12 --project . python scenario.py
+    events:
+      - gen_ai.client.invoke_agent.exception
     expected_violations:
       - id: genai_expected_attribute_missing
         context:

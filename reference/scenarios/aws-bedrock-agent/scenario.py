@@ -7,11 +7,16 @@ manual span instrumentation.
 
 import json
 import os
+from io import BytesIO
+from unittest.mock import patch
 from urllib.parse import urlparse
 
 import boto3
+from botocore.awsrequest import AWSResponse
+from opentelemetry._logs import SeverityNumber
 from opentelemetry.trace import SpanKind, StatusCode
-from reference_shared import flush_and_shutdown, reference_tracer, setup_otel
+from reference_shared import flush_and_shutdown, reference_event_logger, reference_tracer, setup_otel
+from urllib3.response import HTTPResponse
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"]
 _parsed = urlparse(MOCK_BASE_URL)
@@ -79,25 +84,47 @@ def run_invoke_agent(client, agent_id):
         "server.address": _SERVER_ADDRESS,
         "server.port": _SERVER_PORT,
     }
-    with tracer.start_as_current_span("invoke_agent", kind=SpanKind.CLIENT, attributes=span_attributes) as span:
+    with tracer.start_as_current_span(
+        "invoke_agent", kind=SpanKind.CLIENT, attributes=span_attributes, record_exception=False
+    ) as span:
         span.set_attribute("gen_ai.agent.id", agent_id)
         span.set_attribute("gen_ai.conversation.id", SESSION_ID)
         span.set_attribute(
             "gen_ai.input.messages", json.dumps([{"role": "user", "parts": [{"type": "text", "content": USER_INPUT}]}])
         )
         try:
-            response = client.invoke_agent(
-                agentId=agent_id,
-                agentAliasId=AGENT_ALIAS_ID,
-                sessionId=SESSION_ID,
-                inputText=USER_INPUT,
-                enableTrace=True,
-            )
+            try:
+                response = client.invoke_agent(
+                    agentId=agent_id,
+                    agentAliasId=AGENT_ALIAS_ID,
+                    sessionId=SESSION_ID,
+                    inputText=USER_INPUT,
+                    enableTrace=True,
+                )
+            except Exception as error:
+                reference_event_logger().emit(
+                    event_name="gen_ai.client.invoke_agent.exception",
+                    severity_number=SeverityNumber.WARN,
+                    exception=error,
+                )
+                raise
             # Consume the event stream
             text = ""
             input_tokens = []
             output_tokens = []
-            for event in response["completion"]:
+            completion = iter(response["completion"])
+            while True:
+                try:
+                    event = next(completion)
+                except StopIteration:
+                    break
+                except Exception as error:
+                    reference_event_logger().emit(
+                        event_name="gen_ai.client.invoke_agent.exception",
+                        severity_number=SeverityNumber.WARN,
+                        exception=error,
+                    )
+                    raise
                 if "chunk" in event:
                     text += event["chunk"].get("bytes", b"").decode("utf-8")
                 elif "trace" in event:
@@ -129,9 +156,30 @@ def run_invoke_agent(client, agent_id):
                     ),
                 )
             print(f"    -> {text[:60]}")
-        except Exception as e:
-            span.set_status(StatusCode.ERROR, str(e))
+        except Exception as error:
+            span.set_status(StatusCode.ERROR, str(error))
+            span.set_attribute("error.type", f"{type(error).__module__}.{type(error).__qualname__}")
             raise
+
+
+def run_invoke_agent_error(client, agent_id):
+    """Exercise an invoke-agent exception raised by the SDK for an invalid request."""
+    response = AWSResponse(
+        url=f"{MOCK_BASE_URL}/agents/{agent_id}/agentAliases/{AGENT_ALIAS_ID}/sessions/{SESSION_ID}/text",
+        status_code=400,
+        headers={"content-type": "application/json", "x-amzn-errortype": "ValidationException"},
+        raw=HTTPResponse(
+            body=BytesIO(json.dumps({"message": "Invalid agent alias"}).encode("utf-8")),
+            preload_content=False,
+        ),
+    )
+    with patch.object(client._endpoint.http_session, "send", return_value=response):
+        try:
+            run_invoke_agent(client, agent_id)
+        except client.exceptions.ValidationException as error:
+            print(f"    -> expected SDK error: {error}")
+        else:
+            raise AssertionError("Expected the SDK to reject the agent invocation request")
 
 
 if __name__ == "__main__":
@@ -155,5 +203,6 @@ if __name__ == "__main__":
 
     agent_id = run_create_agent(control_client)
     run_invoke_agent(runtime_client, agent_id)
+    run_invoke_agent_error(runtime_client, agent_id)
 
     flush_and_shutdown(tp, lp, mp)

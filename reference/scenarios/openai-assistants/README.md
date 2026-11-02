@@ -12,3 +12,6 @@ assistant run; the `file_search` tool also runs server-side.
 | execute_tool | Yes — client-side function-tool execution | ✅ Implemented |
 | inference (`chat`) | No — runs server-side inside the assistant run | ✅ Correctly not emitted |
 | retrieval | No — `file_search` runs server-side | ✅ Correctly not emitted |
+
+The SDK call error handlers record a correlated
+`gen_ai.client.invoke_agent.exception` WARN log. This scenario does not exercise that path.
