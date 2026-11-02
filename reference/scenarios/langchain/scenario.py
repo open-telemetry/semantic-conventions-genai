@@ -231,13 +231,13 @@ def run_execute_tool_reference():
             tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps(tool_call["args"]))
             tool_message = get_weather.invoke(tool_call)
             tool_span.set_attribute("gen_ai.tool.call.result", tool_message.content)
-        except Exception as error:
-            tool_span.set_status(StatusCode.ERROR, str(error))
-            tool_span.set_attribute("error.type", f"{type(error).__module__}.{type(error).__qualname__}")
+        except Exception as e:
+            tool_span.set_status(StatusCode.ERROR, str(e))
+            tool_span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
             reference_event_logger().emit(
                 event_name="gen_ai.execute_tool.exception",
                 severity_number=SeverityNumber.WARN,
-                exception=error,
+                exception=e,
             )
             raise
     print(f"    -> {tool_message.content[:60]}")
@@ -288,13 +288,13 @@ def run_command_execution_reference():
                     tool_span.set_attribute("process.exit.code", exit_code)
                 tool_span.set_attribute("gen_ai.tool.call.result", tool_message.content)
                 return tool_message
-            except Exception as error:
-                tool_span.set_status(StatusCode.ERROR, str(error))
-                tool_span.set_attribute("error.type", f"{type(error).__module__}.{type(error).__qualname__}")
+            except Exception as e:
+                tool_span.set_status(StatusCode.ERROR, str(e))
+                tool_span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
                 reference_event_logger().emit(
                     event_name="gen_ai.execute_tool.exception",
                     severity_number=SeverityNumber.WARN,
-                    exception=error,
+                    exception=e,
                 )
                 raise
 

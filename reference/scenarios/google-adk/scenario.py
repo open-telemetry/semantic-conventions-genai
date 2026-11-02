@@ -164,13 +164,13 @@ def run_agent_reference():
                 tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps({"location": location}))
                 result = f"Sunny in {location}"
                 tool_span.set_attribute("gen_ai.tool.call.result", result)
-            except Exception as error:
-                tool_span.set_status(StatusCode.ERROR, str(error))
-                tool_span.set_attribute("error.type", f"{type(error).__module__}.{type(error).__qualname__}")
+            except Exception as e:
+                tool_span.set_status(StatusCode.ERROR, str(e))
+                tool_span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
                 reference_event_logger().emit(
                     event_name="gen_ai.execute_tool.exception",
                     severity_number=SeverityNumber.WARN,
-                    exception=error,
+                    exception=e,
                 )
                 raise
         return result
@@ -459,13 +459,13 @@ def run_multi_agent_delegation_reference():
                     tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps(args))
                     result = await original_run_async(args=args, tool_context=tool_context)
                     tool_span.set_attribute("gen_ai.tool.call.result", str(result))
-                except Exception as error:
-                    tool_span.set_status(StatusCode.ERROR, str(error))
-                    tool_span.set_attribute("error.type", f"{type(error).__module__}.{type(error).__qualname__}")
+                except Exception as e:
+                    tool_span.set_status(StatusCode.ERROR, str(e))
+                    tool_span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
                     reference_event_logger().emit(
                         event_name="gen_ai.execute_tool.exception",
                         severity_number=SeverityNumber.WARN,
-                        exception=error,
+                        exception=e,
                     )
                     raise
             return result
@@ -636,13 +636,13 @@ def run_multi_agent_handoff_reference():
                     span.set_attribute("gen_ai.transfer.target.name", target_name)
                 span.set_attribute("gen_ai.tool.call.result", json.dumps(result))
                 return result
-            except Exception as error:
-                span.set_status(StatusCode.ERROR, str(error))
-                span.set_attribute("error.type", f"{type(error).__module__}.{type(error).__qualname__}")
+            except Exception as e:
+                span.set_status(StatusCode.ERROR, str(e))
+                span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
                 reference_event_logger().emit(
                     event_name="gen_ai.execute_tool.exception",
                     severity_number=SeverityNumber.WARN,
-                    exception=error,
+                    exception=e,
                 )
                 raise
 
@@ -808,13 +808,13 @@ def run_skills_reference():
                         span.set_attribute("gen_ai.tool.call.result", json.dumps(result, default=str))
                     self._record_skill_signals(span, args, result, error_type, tool_context)
                     return result
-                except Exception as error:
-                    span.set_status(StatusCode.ERROR, str(error))
-                    span.set_attribute("error.type", f"{type(error).__module__}.{type(error).__qualname__}")
+                except Exception as e:
+                    span.set_status(StatusCode.ERROR, str(e))
+                    span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
                     reference_event_logger().emit(
                         event_name="gen_ai.execute_tool.exception",
                         severity_number=SeverityNumber.WARN,
-                        exception=error,
+                        exception=e,
                     )
                     raise
 

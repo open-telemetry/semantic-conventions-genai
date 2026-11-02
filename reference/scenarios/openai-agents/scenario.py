@@ -52,13 +52,13 @@ def instrument_function_tool(tool: FunctionTool) -> FunctionTool:
                 result = await original_on_invoke_tool(ctx, input_json)
                 tool_span.set_attribute("gen_ai.tool.call.result", str(result))
                 return result
-            except Exception as error:
-                tool_span.set_status(StatusCode.ERROR, str(error))
-                tool_span.set_attribute("error.type", f"{type(error).__module__}.{type(error).__qualname__}")
+            except Exception as e:
+                tool_span.set_status(StatusCode.ERROR, str(e))
+                tool_span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
                 reference_event_logger().emit(
                     event_name="gen_ai.execute_tool.exception",
                     severity_number=SeverityNumber.WARN,
-                    exception=error,
+                    exception=e,
                 )
                 raise
 
@@ -232,13 +232,13 @@ async def run_agent_as_tool_delegation():
                 tool_span.set_attribute("gen_ai.tool.call.arguments", input_json)
                 result = await original_on_invoke_tool(tool_context, input_json)
                 tool_span.set_attribute("gen_ai.tool.call.result", str(result))
-            except Exception as error:
-                tool_span.set_status(StatusCode.ERROR, str(error))
-                tool_span.set_attribute("error.type", f"{type(error).__module__}.{type(error).__qualname__}")
+            except Exception as e:
+                tool_span.set_status(StatusCode.ERROR, str(e))
+                tool_span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
                 reference_event_logger().emit(
                     event_name="gen_ai.execute_tool.exception",
                     severity_number=SeverityNumber.WARN,
-                    exception=error,
+                    exception=e,
                 )
                 raise
         return result
@@ -473,13 +473,13 @@ async def run_workflow():
                     span.set_attribute("gen_ai.transfer.target.name", target.name)
                     span.set_attribute("gen_ai.tool.call.result", selected.handoff.get_transfer_message(target))
                     return target
-                except Exception as error:
-                    span.set_status(StatusCode.ERROR, str(error))
-                    span.set_attribute("error.type", f"{type(error).__module__}.{type(error).__qualname__}")
+                except Exception as e:
+                    span.set_status(StatusCode.ERROR, str(e))
+                    span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
                     reference_event_logger().emit(
                         event_name="gen_ai.execute_tool.exception",
                         severity_number=SeverityNumber.WARN,
-                        exception=error,
+                        exception=e,
                     )
                     raise
 
