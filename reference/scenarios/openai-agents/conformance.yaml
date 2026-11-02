@@ -47,6 +47,7 @@ scenarios:
         reason: The runner does not recognize the span-name refinements for skill and command tools.
     events:
       - gen_ai.execute_tool.exception
+      - gen_ai.invoke_agent.exception
     spans:
       - match:
           attributes:

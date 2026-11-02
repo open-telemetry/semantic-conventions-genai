@@ -23,6 +23,7 @@ This document defines semantic conventions for recording exceptions on Generativ
 | Client embeddings | [`gen_ai.client.embeddings.exception`](client-embeddings.md#event-gen_aiclientembeddingsexception) |
 | Client agent invocation | [`gen_ai.client.invoke_agent.exception`](gen-ai-agent-spans.md#event-gen_aiclientinvoke_agentexception) |
 | Client response fetching | [`gen_ai.client.fetch_response.exception`](gen-ai-spans.md#event-gen_aiclientfetch_responseexception) |
+| Internal agent invocation | [`gen_ai.invoke_agent.exception`](gen-ai-agent-spans.md#event-gen_aiinvoke_agentexception) |
 | Tool execution | [`gen_ai.execute_tool.exception`](gen-ai-spans.md#event-gen_aiexecute_toolexception) |
 
 ## Generative AI client operation exception

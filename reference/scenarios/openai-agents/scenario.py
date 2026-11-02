@@ -73,54 +73,41 @@ def get_weather(ctx: ToolContext[None], location: str) -> str:
     return "Sunny, 72°F"
 
 
-async def run_agent():
-    """Run a simple agent with the OpenAI Agents SDK, with manual spans."""
-    client = openai.AsyncOpenAI(base_url=MOCK_BASE_URL, api_key="mock-key")
-    request_model = "gpt-4o-mini"
-    model = OpenAIChatCompletionsModel(model=request_model, openai_client=client)
-
-    tools = [get_weather]
+async def _emit_agent_span(client, agent, input_text, **run_kwargs):
     captured_responses = []
-    agent = Agent(
-        name="test-agent",
-        instructions="You are a helpful assistant.",
-        model=model,
-        tools=tools,
-    )
-    input_text = "What's the weather in Seattle?"
-
-    print("  [agent_run] agent with tool calling (reference implementation)")
     agent_span_attributes = {
         "gen_ai.operation.name": "invoke_agent",
-        "gen_ai.request.model": request_model,
+        "gen_ai.request.model": agent.model.model,
         "gen_ai.agent.name": agent.name,
     }
     with _reference_tracer.start_as_current_span(
-        "invoke_agent test-agent", attributes=agent_span_attributes, record_exception=False
+        f"invoke_agent {agent.name}", attributes=agent_span_attributes, record_exception=False
     ) as agent_span:
         try:
-            agent_span.set_attribute(
-                "gen_ai.system_instructions", json.dumps([{"type": "text", "content": agent.instructions}])
-            )
+            if agent.instructions:
+                agent_span.set_attribute(
+                    "gen_ai.system_instructions", json.dumps([{"type": "text", "content": agent.instructions}])
+                )
             agent_span.set_attribute(
                 "gen_ai.input.messages",
                 json.dumps([{"role": "user", "parts": [{"type": "text", "content": input_text}]}]),
             )
-            agent_span.set_attribute(
-                "gen_ai.tool.definitions",
-                json.dumps(
-                    [
-                        {
-                            "type": "function",
-                            "name": t.name,
-                            "description": t.description,
-                            "parameters": t.params_json_schema,
-                        }
-                        for t in tools
-                        if isinstance(t, FunctionTool)
-                    ]
-                ),
-            )
+            if agent.tools:
+                agent_span.set_attribute(
+                    "gen_ai.tool.definitions",
+                    json.dumps(
+                        [
+                            {
+                                "type": "function",
+                                "name": t.name,
+                                "description": t.description,
+                                "parameters": t.params_json_schema,
+                            }
+                            for t in agent.tools
+                            if isinstance(t, FunctionTool)
+                        ]
+                    ),
+                )
             original_create = client.chat.completions.create
 
             async def _capture_create(*args, **kwargs):
@@ -130,7 +117,7 @@ async def run_agent():
 
             client.chat.completions.create = _capture_create
             try:
-                result = await Runner.run(agent, input_text)
+                result = await Runner.run(agent, input_text, **run_kwargs)
             finally:
                 client.chat.completions.create = original_create
             usage = result.context_wrapper.usage
@@ -167,6 +154,26 @@ async def run_agent():
                 exception=e,
             )
             raise
+    return result
+
+
+async def run_agent():
+    """Run a simple agent with the OpenAI Agents SDK, with manual spans."""
+    client = openai.AsyncOpenAI(base_url=MOCK_BASE_URL, api_key="mock-key")
+    request_model = "gpt-4o-mini"
+    model = OpenAIChatCompletionsModel(model=request_model, openai_client=client)
+
+    tools = [get_weather]
+    agent = Agent(
+        name="test-agent",
+        instructions="You are a helpful assistant.",
+        model=model,
+        tools=tools,
+    )
+    input_text = "What's the weather in Seattle?"
+
+    print("  [agent_run] agent with tool calling (reference implementation)")
+    await _emit_agent_span(client, agent, input_text)
 
 
 async def run_tool_error_reference():
@@ -202,29 +209,11 @@ async def run_agent_error_reference():
 
     print("  [agent_error] SDK agent turn limit (reference implementation)")
     try:
-        with _reference_tracer.start_as_current_span(
-            f"invoke_agent {agent.name}",
-            attributes={
-                "gen_ai.operation.name": "invoke_agent",
-                "gen_ai.agent.name": agent.name,
-                "gen_ai.request.model": model.model,
-            },
-            record_exception=False,
-        ) as span:
-            try:
-                await Runner.run(agent, "Hello", max_turns=0)
-            except Exception as e:
-                span.set_status(StatusCode.ERROR, str(e))
-                span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
-                reference_event_logger().emit(
-                    event_name="gen_ai.invoke_agent.exception",
-                    severity_number=SeverityNumber.WARN,
-                    exception=e,
-                )
-                raise
+        await _emit_agent_span(client, agent, "Hello", max_turns=0)
     except MaxTurnsExceeded:
-        return
-    raise AssertionError("Expected the SDK to enforce the agent turn limit")
+        pass
+    else:
+        raise AssertionError("Expected the SDK to enforce the agent turn limit")
 
 
 async def run_agent_as_tool_delegation():

@@ -14,5 +14,4 @@ The tool execution error handler records a correlated
 `gen_ai.execute_tool.exception` WARN log. This scenario does not exercise that path.
 
 The internal agent invocation error handler records a correlated
-`gen_ai.invoke_agent.exception` WARN log and rethrows the exception. This scenario
-does not exercise that path.
+`gen_ai.invoke_agent.exception` WARN log. This scenario does not exercise that path.

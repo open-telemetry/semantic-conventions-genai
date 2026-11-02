@@ -36,9 +36,8 @@ for this tool so the SDK propagates the exception.
 
 The other tool execution error paths are not exercised.
 
-Internal agent invocation also covers the SDK's `MaxTurnsExceeded` exception from
-`Runner.run` with `max_turns=0`, recorded as a correlated
-`gen_ai.invoke_agent.exception` WARN log with SDK exception details.
+Internal agent invocation exercises the SDK's `MaxTurnsExceeded` from
+`Runner.run` with `max_turns=0`. The error handler records a correlated
+`gen_ai.invoke_agent.exception` WARN log and re-raises the exception.
 
-The ordinary, agent-as-tool, and handoff invocation error handlers also record
-this log and rethrow the exception. This scenario does not exercise those paths.
+The other internal agent invocation error paths are not exercised.
