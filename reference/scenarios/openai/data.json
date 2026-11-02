@@ -48,6 +48,7 @@
       "server.port"
     ],
     "gen_ai.fetch_response.client": [
+      "error.type",
       "gen_ai.operation.name",
       "gen_ai.output.messages",
       "gen_ai.provider.name",
@@ -63,6 +64,11 @@
   },
   "events": {
     "gen_ai.client.embeddings.exception": [
+      "exception.message",
+      "exception.stacktrace",
+      "exception.type"
+    ],
+    "gen_ai.client.fetch_response.exception": [
       "exception.message",
       "exception.stacktrace",
       "exception.type"
