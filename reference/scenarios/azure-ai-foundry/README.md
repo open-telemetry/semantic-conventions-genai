@@ -13,5 +13,4 @@ server-side, across a process boundary the client cannot observe.
 | execute_tool | No — runs remotely inside the agent service | ✅ Correctly not emitted |
 
 The client agent invocation error handler records a correlated
-`gen_ai.client.invoke_agent.exception` WARN log for SDK calls and response
-processing. This scenario does not exercise that path.
+`gen_ai.client.invoke_agent.exception` WARN log. This scenario does not exercise that path.

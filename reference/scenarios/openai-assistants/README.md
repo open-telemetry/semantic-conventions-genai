@@ -14,5 +14,4 @@ assistant run; the `file_search` tool also runs server-side.
 | retrieval | No — `file_search` runs server-side | ✅ Correctly not emitted |
 
 The client agent invocation error handler records a correlated
-`gen_ai.client.invoke_agent.exception` WARN log for SDK calls, tool execution,
-and response processing. This scenario does not exercise that path.
+`gen_ai.client.invoke_agent.exception` WARN log. This scenario does not exercise that path.
