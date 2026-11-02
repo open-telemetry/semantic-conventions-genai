@@ -14,7 +14,7 @@ from unittest.mock import patch
 
 import openai
 from agents import Agent, RunConfig, Runner, function_tool
-from agents.exceptions import ModelBehaviorError
+from agents.exceptions import MaxTurnsExceeded, ModelBehaviorError
 from agents.models.openai_chatcompletions import OpenAIChatCompletionsModel
 from agents.run import AgentRunner
 from agents.tool import FunctionTool, ToolContext
@@ -175,6 +175,36 @@ async def run_tool_error_reference():
             )
         else:
             raise AssertionError("Expected the SDK to reject the tool arguments")
+
+
+async def run_agent_error_reference():
+    """Exercise the SDK's agent turn-limit exception."""
+    client = openai.AsyncOpenAI(base_url=MOCK_BASE_URL, api_key="mock-key")
+    model = OpenAIChatCompletionsModel(model="gpt-4o-mini", openai_client=client)
+    agent = Agent(name="turn-limit-agent", model=model)
+
+    print("  [agent_error] SDK agent turn limit (reference implementation)")
+    with _reference_tracer.start_as_current_span(
+        f"invoke_agent {agent.name}",
+        attributes={
+            "gen_ai.operation.name": "invoke_agent",
+            "gen_ai.agent.name": agent.name,
+            "gen_ai.request.model": model.model,
+        },
+        record_exception=False,
+    ) as span:
+        try:
+            await Runner.run(agent, "Hello", max_turns=0)
+        except MaxTurnsExceeded as error:
+            span.set_status(StatusCode.ERROR, str(error))
+            span.set_attribute("error.type", f"{type(error).__module__}.{type(error).__qualname__}")
+            reference_event_logger().emit(
+                event_name="gen_ai.invoke_agent.exception",
+                severity_number=SeverityNumber.WARN,
+                exception=error,
+            )
+        else:
+            raise AssertionError("Expected the SDK to enforce the agent turn limit")
 
 
 async def run_agent_as_tool_delegation():
@@ -532,6 +562,7 @@ def main():
 
     asyncio.run(run_agent())
     asyncio.run(run_tool_error_reference())
+    asyncio.run(run_agent_error_reference())
     asyncio.run(run_agent_as_tool_delegation())
     asyncio.run(run_command_execution())
     asyncio.run(run_workflow())
