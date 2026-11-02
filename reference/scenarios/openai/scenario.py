@@ -262,127 +262,91 @@ def run_chat_reference(client):
     if port is not None:
         span_attributes["server.port"] = port
     with _reference_tracer.start_as_current_span(
-        "chat gpt-4o-mini", kind=SpanKind.CLIENT, attributes=span_attributes
+        "chat gpt-4o-mini",
+        kind=SpanKind.CLIENT,
+        attributes=span_attributes,
+        record_exception=False,
     ) as span:
-        span.set_attribute("gen_ai.request.choice.count", request_choice_count)
-        span.set_attribute("gen_ai.request.max_tokens", request_max_tokens)
-        span.set_attribute("gen_ai.request.temperature", request_temperature)
-        span.set_attribute("gen_ai.request.seed", request_seed)
-        span.set_attribute("gen_ai.request.stop_sequences", request_stop_sequences)
-        span.set_attribute("gen_ai.request.frequency_penalty", request_frequency_penalty)
-        span.set_attribute("gen_ai.request.presence_penalty", request_presence_penalty)
-        span.set_attribute("gen_ai.request.top_p", request_top_p)
-        span.set_attribute("gen_ai.request.reasoning.level", request_reasoning_level)
-        span.set_attribute("gen_ai.input.messages", input_messages)
-        resp = client.chat.completions.create(
-            model=request_model,
-            messages=messages,
-            n=request_choice_count,
-            max_tokens=request_max_tokens,
-            temperature=request_temperature,
-            seed=request_seed,
-            stop=request_stop_sequences,
-            frequency_penalty=request_frequency_penalty,
-            presence_penalty=request_presence_penalty,
-            top_p=request_top_p,
-            reasoning_effort=request_reasoning_level,
-        )
-        span.set_attribute("gen_ai.response.model", resp.model)
-        span.set_attribute("gen_ai.response.id", resp.id)
-        finish_reasons = chat_finish_reasons(resp.choices, expected_count=request_choice_count)
-        span.set_attribute("gen_ai.response.finish_reasons", finish_reasons)
-        output_messages = [
-            {
-                "role": c.message.role,
-                "parts": [{"type": "text", "content": c.message.content}],
-            }
-            for c in resp.choices
-        ]
-        span.set_attribute("gen_ai.output.messages", json.dumps(output_messages))
-        # Build usage attributes once so the span, the event, and the metrics stay identical.
-        usage = {}
-        if resp.usage:
-            usage["gen_ai.usage.input_tokens"] = resp.usage.prompt_tokens
-            usage["gen_ai.usage.output_tokens"] = resp.usage.completion_tokens
-            cached_tokens = getattr(
-                getattr(resp.usage, "prompt_tokens_details", None),
-                "cached_tokens",
-                None,
+        try:
+            span.set_attribute("gen_ai.request.choice.count", request_choice_count)
+            span.set_attribute("gen_ai.request.max_tokens", request_max_tokens)
+            span.set_attribute("gen_ai.request.temperature", request_temperature)
+            span.set_attribute("gen_ai.request.seed", request_seed)
+            span.set_attribute("gen_ai.request.stop_sequences", request_stop_sequences)
+            span.set_attribute("gen_ai.request.frequency_penalty", request_frequency_penalty)
+            span.set_attribute("gen_ai.request.presence_penalty", request_presence_penalty)
+            span.set_attribute("gen_ai.request.top_p", request_top_p)
+            span.set_attribute("gen_ai.request.reasoning.level", request_reasoning_level)
+            span.set_attribute("gen_ai.input.messages", input_messages)
+            resp = client.chat.completions.create(
+                model=request_model,
+                messages=messages,
+                n=request_choice_count,
+                max_tokens=request_max_tokens,
+                temperature=request_temperature,
+                seed=request_seed,
+                stop=request_stop_sequences,
+                frequency_penalty=request_frequency_penalty,
+                presence_penalty=request_presence_penalty,
+                top_p=request_top_p,
+                reasoning_effort=request_reasoning_level,
             )
-            if cached_tokens:
-                usage["gen_ai.usage.cache_read.input_tokens"] = cached_tokens
-        for attr, value in usage.items():
-            span.set_attribute(attr, value)
-        record_inference_usage(usage, usage_metric_attributes(request_model, resp.model, host, port))
+            span.set_attribute("gen_ai.response.model", resp.model)
+            span.set_attribute("gen_ai.response.id", resp.id)
+            finish_reasons = chat_finish_reasons(resp.choices, expected_count=request_choice_count)
+            span.set_attribute("gen_ai.response.finish_reasons", finish_reasons)
+            output_messages = [
+                {
+                    "role": c.message.role,
+                    "parts": [{"type": "text", "content": c.message.content}],
+                }
+                for c in resp.choices
+            ]
+            span.set_attribute("gen_ai.output.messages", json.dumps(output_messages))
+            # Build usage attributes once so the span, the event, and the metrics stay identical.
+            usage = {}
+            if resp.usage:
+                usage["gen_ai.usage.input_tokens"] = resp.usage.prompt_tokens
+                usage["gen_ai.usage.output_tokens"] = resp.usage.completion_tokens
+                cached_tokens = getattr(
+                    getattr(resp.usage, "prompt_tokens_details", None),
+                    "cached_tokens",
+                    None,
+                )
+                if cached_tokens:
+                    usage["gen_ai.usage.cache_read.input_tokens"] = cached_tokens
+            for attr, value in usage.items():
+                span.set_attribute(attr, value)
+            record_inference_usage(usage, usage_metric_attributes(request_model, resp.model, host, port))
 
-        # Emit inference operation details event
-        event_attrs = {
-            "gen_ai.operation.name": "chat",
-            "gen_ai.provider.name": "openai",
-            "gen_ai.request.model": request_model,
-            "gen_ai.response.id": resp.id,
-            "gen_ai.response.model": resp.model,
-            "gen_ai.response.finish_reasons": finish_reasons,
-            "gen_ai.input.messages": input_messages,
-            "gen_ai.output.messages": json.dumps(output_messages),
-        }
-        event_attrs.update(usage)
-        if host:
-            event_attrs["server.address"] = host
-        if port is not None:
-            event_attrs["server.port"] = port
-        reference_event_logger().emit(
-            event_name="gen_ai.client.inference.operation.details",
-            body="Inference operation details",
-            attributes=event_attrs,
-        )
-
-        print(f"    -> {resp.choices[0].message.content[:60]}")
-
-
-def run_chat_error_reference():
-    """Exercise an inference exception raised by the SDK for a rate-limit response."""
-    import httpx2
-    import openai
-
-    request_model = "gpt-4o-mini"
-    transport = httpx2.MockTransport(
-        lambda request: httpx2.Response(
-            429,
-            json={
-                "error": {"message": "Rate limit exceeded", "type": "rate_limit_error", "code": "rate_limit_exceeded"}
-            },
-        )
-    )
-    with (
-        openai.OpenAI(
-            base_url=MOCK_BASE_URL,
-            api_key="mock-key",
-            max_retries=0,
-            http_client=httpx2.Client(transport=transport),
-        ) as client,
-        _reference_tracer.start_as_current_span(
-            f"chat {request_model}",
-            kind=SpanKind.CLIENT,
-            attributes={
+            # Emit inference operation details event
+            event_attrs = {
                 "gen_ai.operation.name": "chat",
                 "gen_ai.provider.name": "openai",
                 "gen_ai.request.model": request_model,
-                "server.address": client.base_url.host,
-                "server.port": client.base_url.port,
-            },
-        ) as span,
-    ):
-        try:
-            client.chat.completions.create(
-                model=request_model,
-                messages=[{"role": "user", "content": "Say hello."}],
+                "gen_ai.response.id": resp.id,
+                "gen_ai.response.model": resp.model,
+                "gen_ai.response.finish_reasons": finish_reasons,
+                "gen_ai.input.messages": input_messages,
+                "gen_ai.output.messages": json.dumps(output_messages),
+            }
+            event_attrs.update(usage)
+            if host:
+                event_attrs["server.address"] = host
+            if port is not None:
+                event_attrs["server.port"] = port
+            reference_event_logger().emit(
+                event_name="gen_ai.client.inference.operation.details",
+                body="Inference operation details",
+                attributes=event_attrs,
             )
-        except openai.RateLimitError as error:
+
+            print(f"    -> {resp.choices[0].message.content[:60]}")
+        except Exception as error:
             error_type = f"{type(error).__module__}.{type(error).__qualname__}"
             span.set_status(StatusCode.ERROR, str(error))
             span.set_attribute("error.type", error_type)
-            metric_attributes = usage_metric_attributes(request_model, None, client.base_url.host, client.base_url.port)
+            metric_attributes = usage_metric_attributes(request_model, None, host, port)
             metric_attributes["error.type"] = error_type
             _operation_input_tokens.record(0, metric_attributes)
             _operation_output_tokens.record(0, metric_attributes)
@@ -391,6 +355,32 @@ def run_chat_error_reference():
                 severity_number=SeverityNumber.WARN,
                 exception=error,
             )
+            raise
+
+
+def run_chat_error_reference():
+    """Exercise an inference exception raised by the SDK for a rate-limit response."""
+    import httpx2
+    import openai
+
+    transport = httpx2.MockTransport(
+        lambda request: httpx2.Response(
+            429,
+            json={
+                "error": {"message": "Rate limit exceeded", "type": "rate_limit_error", "code": "rate_limit_exceeded"}
+            },
+        )
+    )
+    with openai.OpenAI(
+        base_url=MOCK_BASE_URL,
+        api_key="mock-key",
+        max_retries=0,
+        http_client=httpx2.Client(transport=transport),
+    ) as client:
+        try:
+            run_chat_reference(client)
+        except openai.RateLimitError:
+            pass
         else:
             raise AssertionError("Expected the SDK to reject the inference request")
 

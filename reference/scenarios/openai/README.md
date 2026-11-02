@@ -20,5 +20,7 @@ The scenario also checks metadata filtering, non-text output, authentication, re
 Embeddings covers successful requests and an SDK error from a mock HTTP response.
 Failed requests record duration and zero input tokens with `error.type`.
 
-Inference also covers an SDK `RateLimitError` from a mock HTTP response, recorded
-as a correlated `gen_ai.client.inference.exception` WARN log with SDK exception details.
+Inference exercises the SDK's `RateLimitError` from
+`client.chat.completions.create` using a mock HTTP 429 response. The error handler
+records a correlated `gen_ai.client.inference.exception` WARN log and re-raises
+the exception.
