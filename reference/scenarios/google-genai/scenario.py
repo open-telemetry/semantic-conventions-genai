@@ -339,15 +339,14 @@ def run_interactions_continuation():
 
     prompt_text = "Follow up prompt."
     span_attributes = {
-        "gen_ai.operation.name": "invoke_agent",
+        "gen_ai.operation.name": "chat",
         "gen_ai.provider.name": "gcp.gemini",
         "gen_ai.request.model": request_model,
-        "gen_ai.agent.name": "interactions_agent",
         "gen_ai.request.previous_response.id": previous_interaction_id,
         "server.address": _SERVER_ADDRESS,
     }
     with _reference_tracer.start_as_current_span(
-        "invoke_agent interactions_agent", kind=SpanKind.CLIENT, attributes=span_attributes, record_exception=False
+        f"chat {request_model}", kind=SpanKind.CLIENT, attributes=span_attributes, record_exception=False
     ) as span:
         try:
             interaction = client.interactions.create(
@@ -359,7 +358,7 @@ def run_interactions_continuation():
             span.set_status(StatusCode.ERROR, str(error))
             span.set_attribute("error.type", f"{type(error).__module__}.{type(error).__qualname__}")
             reference_event_logger().emit(
-                event_name="gen_ai.client.invoke_agent.exception",
+                event_name="gen_ai.client.inference.exception",
                 severity_number=SeverityNumber.WARN,
                 exception=error,
             )
