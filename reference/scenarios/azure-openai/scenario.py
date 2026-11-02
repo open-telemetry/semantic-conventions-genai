@@ -83,35 +83,41 @@ def run_chat_reference(client):
         span_attributes["server.address"] = host
     if port is not None:
         span_attributes["server.port"] = port
+    metric_attributes = dict(span_attributes)
+    input_token_count = 0
+    output_token_count = 0
     with _reference_tracer.start_as_current_span(
-        "chat gpt-4o-mini", kind=SpanKind.CLIENT, attributes=span_attributes
+        "chat gpt-4o-mini",
+        kind=SpanKind.CLIENT,
+        attributes=span_attributes,
+        record_exception=False,
     ) as span:
-        messages = [{"role": "user", "content": "Say hello."}]
-        resp = client.chat.completions.create(
-            model=request_model,
-            messages=messages,
-        )
-        span.set_attribute("gen_ai.response.model", resp.model)
-        span.set_attribute("gen_ai.response.id", resp.id)
-        span.set_attribute("gen_ai.response.finish_reasons", [c.finish_reason for c in resp.choices])
-        if resp.usage:
-            span.set_attribute("gen_ai.usage.input_tokens", resp.usage.prompt_tokens)
-            span.set_attribute("gen_ai.usage.output_tokens", resp.usage.completion_tokens)
-            metric_attributes = {
-                "gen_ai.operation.name": "chat",
-                "gen_ai.provider.name": "azure.ai.openai",
-                "gen_ai.request.model": request_model,
-                "gen_ai.response.model": resp.model,
-            }
-            if host:
-                metric_attributes["server.address"] = host
-            if port is not None:
-                metric_attributes["server.port"] = port
-            if resp.usage.prompt_tokens is not None:
-                _operation_input_tokens.record(resp.usage.prompt_tokens, metric_attributes)
-            if resp.usage.completion_tokens is not None:
-                _operation_output_tokens.record(resp.usage.completion_tokens, metric_attributes)
-        print(f"    -> {resp.choices[0].message.content[:60]}")
+        try:
+            messages = [{"role": "user", "content": "Say hello."}]
+            resp = client.chat.completions.create(
+                model=request_model,
+                messages=messages,
+            )
+            span.set_attribute("gen_ai.response.model", resp.model)
+            metric_attributes["gen_ai.response.model"] = resp.model
+            span.set_attribute("gen_ai.response.id", resp.id)
+            span.set_attribute("gen_ai.response.finish_reasons", [c.finish_reason for c in resp.choices])
+            if resp.usage:
+                span.set_attribute("gen_ai.usage.input_tokens", resp.usage.prompt_tokens)
+                span.set_attribute("gen_ai.usage.output_tokens", resp.usage.completion_tokens)
+                if resp.usage.prompt_tokens is not None:
+                    input_token_count = resp.usage.prompt_tokens
+                if resp.usage.completion_tokens is not None:
+                    output_token_count = resp.usage.completion_tokens
+            print(f"    -> {resp.choices[0].message.content[:60]}")
+        except Exception as e:
+            span.set_status(StatusCode.ERROR, str(e))
+            span.set_attribute("error.type", type(e).__qualname__)
+            metric_attributes["error.type"] = type(e).__qualname__
+            raise
+        finally:
+            _operation_input_tokens.record(input_token_count, metric_attributes)
+            _operation_output_tokens.record(output_token_count, metric_attributes)
 
 
 def run_embeddings_reference(client):
