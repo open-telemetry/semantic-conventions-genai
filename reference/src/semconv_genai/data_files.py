@@ -49,6 +49,7 @@ EVENT_TYPE_ORDER = [
     "gen_ai.client.inference.operation.details",
     "gen_ai.client.invoke_agent.exception",
     "gen_ai.evaluation.result",
+    "gen_ai.execute_tool.exception",
 ]
 
 # Display order for entity types in reports.
