@@ -12,6 +12,21 @@ scenarios:
   reference:
     run: uv run --frozen --python 3.12 --project . python scenario.py
     expected_violations:
+      - id: genai_expected_attribute_missing
+        context:
+          missing_attribute: gen_ai.response.finish_reasons
+          operation: invoke_agent
+        reason: Error span has no response; the conformance policy does not skip response attributes on error spans.
+      - id: genai_expected_attribute_missing
+        context:
+          missing_attribute: gen_ai.usage.input_tokens
+          operation: invoke_agent
+        reason: Error span has no response; the conformance policy does not skip response attributes on error spans.
+      - id: genai_expected_attribute_missing
+        context:
+          missing_attribute: gen_ai.usage.output_tokens
+          operation: invoke_agent
+        reason: Error span has no response; the conformance policy does not skip response attributes on error spans.
       - id: missing_attribute
         context:
           attribute_key: process.executable.name
