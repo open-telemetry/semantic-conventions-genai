@@ -13,7 +13,7 @@ assistant run; the `file_search` tool also runs server-side.
 | inference (`chat`) | No — runs server-side inside the assistant run | ✅ Correctly not emitted |
 | retrieval | No — `file_search` runs server-side | ✅ Correctly not emitted |
 
-The agent invocation error handler records a correlated
+The SDK call error handlers record a correlated
 `gen_ai.client.invoke_agent.exception` WARN log. This scenario does not exercise that path.
 
 The tool execution error handler records a correlated
