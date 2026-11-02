@@ -347,13 +347,23 @@ def run_interactions_continuation():
         "server.address": _SERVER_ADDRESS,
     }
     with _reference_tracer.start_as_current_span(
-        "invoke_agent interactions_agent", kind=SpanKind.CLIENT, attributes=span_attributes
+        "invoke_agent interactions_agent", kind=SpanKind.CLIENT, attributes=span_attributes, record_exception=False
     ) as span:
-        interaction = client.interactions.create(
-            model=request_model,
-            previous_interaction_id=previous_interaction_id,
-            input=prompt_text,
-        )
+        try:
+            interaction = client.interactions.create(
+                model=request_model,
+                previous_interaction_id=previous_interaction_id,
+                input=prompt_text,
+            )
+        except Exception as error:
+            span.set_status(StatusCode.ERROR, str(error))
+            span.set_attribute("error.type", f"{type(error).__module__}.{type(error).__qualname__}")
+            reference_event_logger().emit(
+                event_name="gen_ai.client.invoke_agent.exception",
+                severity_number=SeverityNumber.WARN,
+                exception=error,
+            )
+            raise
         if interaction.id:
             span.set_attribute("gen_ai.response.id", interaction.id)
         if interaction.model:

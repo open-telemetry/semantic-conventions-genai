@@ -11,7 +11,10 @@ tool execution is instrumentable here.
 | embeddings | Yes — calls the model directly | ✅ Implemented |
 | execute_tool | Yes — automatic function calling executes the tool | ✅ Implemented |
 | create_agent | Yes — `google.genai.Client.agents` supports remote agent creation | ✅ Implemented |
-| invoke_agent (client) | Yes — `google.genai.Client.agents` supports remote agent invocation | ❌ Not implemented |
+| invoke_agent (client) | Yes — `interactions.create` continues an interaction | ✅ Implemented |
 
 The embeddings error handler records a correlated
 `gen_ai.client.embeddings.exception` WARN log. This scenario does not exercise that path.
+
+The client agent invocation error handler records a correlated
+`gen_ai.client.invoke_agent.exception` WARN log. This scenario does not exercise that path.
