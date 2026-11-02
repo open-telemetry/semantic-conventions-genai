@@ -29,7 +29,7 @@ Inference exercises the SDK's `RateLimitError` from
 records a correlated `gen_ai.client.inference.exception` WARN log and re-raises
 the exception.
 
-Fetch response records exceptions from retrieval, stream iteration, and response
-processing as correlated `gen_ai.client.fetch_response.exception` WARN logs.
-The scenario covers an SDK `NotFoundError` from a mock HTTP response.
-A successfully fetched response whose original generation failed does not produce this event.
+Fetch response exercises the SDK's `NotFoundError` from
+`client.responses.retrieve` using a mock HTTP 404 response. The error handler
+records a correlated `gen_ai.client.fetch_response.exception` WARN log and
+re-raises the exception.

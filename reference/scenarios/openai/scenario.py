@@ -1401,7 +1401,7 @@ def _emit_fetch_response_span(client, response_id, starting_after=None):
             print(f"    -> fetched {fetched.id} (status={getattr(fetched, 'status', None)})")
         except Exception as e:
             span.set_status(StatusCode.ERROR, str(e))
-            span.set_attribute("error.type", type(e).__qualname__)
+            span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
             reference_event_logger().emit(
                 event_name="gen_ai.client.fetch_response.exception",
                 severity_number=SeverityNumber.WARN,
