@@ -179,13 +179,13 @@ def run_invoke_agent(client):
                 span.set_attribute("gen_ai.usage.output_tokens", response.usage.output_tokens)
 
             print(f"    -> {response_text or response.id}")
-        except Exception as error:
-            span.set_status(StatusCode.ERROR, str(error))
-            span.set_attribute("error.type", f"{type(error).__module__}.{type(error).__qualname__}")
+        except Exception as e:
+            span.set_status(StatusCode.ERROR, str(e))
+            span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
             reference_event_logger().emit(
                 event_name="gen_ai.client.invoke_agent.exception",
                 severity_number=SeverityNumber.WARN,
-                exception=error,
+                exception=e,
             )
             raise
         finally:
