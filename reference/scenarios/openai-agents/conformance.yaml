@@ -30,3 +30,8 @@ scenarios:
           keyed_attr: gen_ai.tool.name
           operation: execute_tool
         reason: The runner does not recognize the span-name refinements for skill and command tools.
+    spans:
+      - match:
+          attributes:
+            gen_ai.operation.name: execute_tool
+          type: gen_ai.execute_tool.internal

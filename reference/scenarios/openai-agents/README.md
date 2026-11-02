@@ -27,3 +27,8 @@ target's SDK turn begins. Each agent's turn has its own `invoke_agent` span.
 | invoke_workflow | Yes — the SDK's tracing models a run as a workflow (`workflow_name`) | ✅ Implemented |
 | execute_tool | Yes — the SDK runs the function tool | ✅ Implemented |
 | execute_tool (command) | Yes — the `Shell` sandbox capability runs a general command through `exec_command` | ✅ Implemented |
+
+Tool execution also covers an SDK `ModelBehaviorError` from invalid function-tool
+arguments, recorded as a correlated `gen_ai.execute_tool.exception` WARN log with
+SDK exception details. The tool disables error-to-string recovery so the SDK
+propagates the exception.
