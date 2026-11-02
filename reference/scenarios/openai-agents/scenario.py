@@ -14,7 +14,7 @@ from unittest.mock import patch
 
 import openai
 from agents import Agent, RunConfig, Runner, function_tool
-from agents.exceptions import ModelBehaviorError
+from agents.exceptions import MaxTurnsExceeded, ModelBehaviorError
 from agents.models.openai_chatcompletions import OpenAIChatCompletionsModel
 from agents.run import AgentRunner
 from agents.tool import FunctionTool, ToolContext
@@ -84,7 +84,7 @@ async def run_agent():
         "gen_ai.agent.name": agent.name,
     }
     with _reference_tracer.start_as_current_span(
-        "invoke_agent test-agent", attributes=agent_span_attributes
+        "invoke_agent test-agent", attributes=agent_span_attributes, record_exception=False
     ) as agent_span:
         agent_span.set_attribute(
             "gen_ai.system_instructions", json.dumps([{"type": "text", "content": agent.instructions}])
@@ -117,6 +117,15 @@ async def run_agent():
         client.chat.completions.create = _capture_create
         try:
             result = await Runner.run(agent, input_text)
+        except Exception as error:
+            agent_span.set_status(StatusCode.ERROR, str(error))
+            agent_span.set_attribute("error.type", f"{type(error).__module__}.{type(error).__qualname__}")
+            reference_event_logger().emit(
+                event_name="gen_ai.invoke_agent.exception",
+                severity_number=SeverityNumber.WARN,
+                exception=error,
+            )
+            raise
         finally:
             client.chat.completions.create = original_create
         usage = result.context_wrapper.usage
@@ -185,6 +194,36 @@ async def run_tool_error_reference():
             )
         else:
             raise AssertionError("Expected the SDK to reject the tool arguments")
+
+
+async def run_agent_error_reference():
+    """Exercise the SDK's agent turn-limit exception."""
+    client = openai.AsyncOpenAI(base_url=MOCK_BASE_URL, api_key="mock-key")
+    model = OpenAIChatCompletionsModel(model="gpt-4o-mini", openai_client=client)
+    agent = Agent(name="turn-limit-agent", model=model)
+
+    print("  [agent_error] SDK agent turn limit (reference implementation)")
+    with _reference_tracer.start_as_current_span(
+        f"invoke_agent {agent.name}",
+        attributes={
+            "gen_ai.operation.name": "invoke_agent",
+            "gen_ai.agent.name": agent.name,
+            "gen_ai.request.model": model.model,
+        },
+        record_exception=False,
+    ) as span:
+        try:
+            await Runner.run(agent, "Hello", max_turns=0)
+        except MaxTurnsExceeded as error:
+            span.set_status(StatusCode.ERROR, str(error))
+            span.set_attribute("error.type", f"{type(error).__module__}.{type(error).__qualname__}")
+            reference_event_logger().emit(
+                event_name="gen_ai.invoke_agent.exception",
+                severity_number=SeverityNumber.WARN,
+                exception=error,
+            )
+        else:
+            raise AssertionError("Expected the SDK to enforce the agent turn limit")
 
 
 async def run_agent_as_tool_delegation():
@@ -265,7 +304,7 @@ async def run_agent_as_tool_delegation():
             "gen_ai.agent.name": starting_agent.name,
         }
         with _reference_tracer.start_as_current_span(
-            f"invoke_agent {starting_agent.name}", attributes=agent_span_attributes
+            f"invoke_agent {starting_agent.name}", attributes=agent_span_attributes, record_exception=False
         ) as agent_span:
             agent_span.set_attribute(
                 "gen_ai.system_instructions", json.dumps([{"type": "text", "content": starting_agent.instructions}])
@@ -277,6 +316,15 @@ async def run_agent_as_tool_delegation():
             token = model_responses.set(responses)
             try:
                 result = await original_agent_run(runner, starting_agent, input, **kwargs)
+            except Exception as error:
+                agent_span.set_status(StatusCode.ERROR, str(error))
+                agent_span.set_attribute("error.type", f"{type(error).__module__}.{type(error).__qualname__}")
+                reference_event_logger().emit(
+                    event_name="gen_ai.invoke_agent.exception",
+                    severity_number=SeverityNumber.WARN,
+                    exception=error,
+                )
+                raise
             finally:
                 model_responses.reset(token)
             # Agent.as_tool shares context usage with its caller. Each run's raw
@@ -497,8 +545,20 @@ async def run_workflow():
             "gen_ai.agent.name": agent.name,
             "gen_ai.request.model": agent.model.model,
         }
-        with _reference_tracer.start_as_current_span(f"invoke_agent {agent.name}", attributes=attributes) as span:
-            result = await original_run_single_turn(bindings=bindings, **kwargs)
+        with _reference_tracer.start_as_current_span(
+            f"invoke_agent {agent.name}", attributes=attributes, record_exception=False
+        ) as span:
+            try:
+                result = await original_run_single_turn(bindings=bindings, **kwargs)
+            except Exception as error:
+                span.set_status(StatusCode.ERROR, str(error))
+                span.set_attribute("error.type", f"{type(error).__module__}.{type(error).__qualname__}")
+                reference_event_logger().emit(
+                    event_name="gen_ai.invoke_agent.exception",
+                    severity_number=SeverityNumber.WARN,
+                    exception=error,
+                )
+                raise
             span.set_attribute("gen_ai.usage.input_tokens", result.model_response.usage.input_tokens)
             span.set_attribute("gen_ai.usage.output_tokens", result.model_response.usage.output_tokens)
             parts = []
@@ -569,6 +629,7 @@ def main():
 
     asyncio.run(run_agent())
     asyncio.run(run_tool_error_reference())
+    asyncio.run(run_agent_error_reference())
     asyncio.run(run_agent_as_tool_delegation())
     asyncio.run(run_command_execution())
     asyncio.run(run_workflow())

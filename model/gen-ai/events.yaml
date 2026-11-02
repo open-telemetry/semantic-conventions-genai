@@ -166,3 +166,20 @@ events:
     stability: development
     attributes:
       - ref_group: attributes.gen_ai.exception
+
+  - name: gen_ai.invoke_agent.exception
+    requirement_level: recommended
+    brief: >
+      This event represents an exception that caused a Generative AI internal agent invocation operation to fail.
+    note: >
+      Exception recording SHOULD follow the general
+      [recording errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/recording-errors.md)
+      guidance. This log event SHOULD be correlated with the invoke agent internal span using its trace and span identifiers.
+
+      Instrumentations SHOULD set the severity to WARN (severity number 13) when recording this event.
+
+      Instrumentations MAY provide a configuration option to populate this event
+      with attributes captured on the corresponding invoke agent internal span.
+    stability: development
+    attributes:
+      - ref_group: attributes.gen_ai.exception

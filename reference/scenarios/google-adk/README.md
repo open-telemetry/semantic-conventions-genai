@@ -28,3 +28,7 @@ The tool execution error handlers, including transfer and skill tools, record a
 correlated `gen_ai.execute_tool.exception` WARN log and rethrow the exception.
 This scenario does not exercise those paths. Returned skill error codes do not
 produce exception logs.
+
+The internal agent invocation error handlers, including delegation, handoff,
+and skill runs, record a correlated `gen_ai.invoke_agent.exception` WARN log and
+rethrow the exception. This scenario does not exercise those paths.
