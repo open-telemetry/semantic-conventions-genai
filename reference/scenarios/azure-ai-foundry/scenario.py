@@ -117,21 +117,29 @@ def run_invoke_agent(client):
         )
         span.set_attribute("gen_ai.tool.definitions", json.dumps(tool_defs))
         try:
-            response = openai_client.responses.create(
-                model=AGENT_MODEL,
-                instructions=AGENT_INSTRUCTIONS,
-                tools=tool_defs,
-                input=USER_INPUT,
-                max_output_tokens=REQUEST_MAX_TOKENS,
-                temperature=REQUEST_TEMPERATURE,
-                top_p=REQUEST_TOP_P,
-                extra_body={
-                    "agent_reference": {
-                        "name": agent.name,
-                        "type": "agent_reference",
-                    }
-                },
-            )
+            try:
+                response = openai_client.responses.create(
+                    model=AGENT_MODEL,
+                    instructions=AGENT_INSTRUCTIONS,
+                    tools=tool_defs,
+                    input=USER_INPUT,
+                    max_output_tokens=REQUEST_MAX_TOKENS,
+                    temperature=REQUEST_TEMPERATURE,
+                    top_p=REQUEST_TOP_P,
+                    extra_body={
+                        "agent_reference": {
+                            "name": agent.name,
+                            "type": "agent_reference",
+                        }
+                    },
+                )
+            except Exception as error:
+                reference_event_logger().emit(
+                    event_name="gen_ai.client.invoke_agent.exception",
+                    severity_number=SeverityNumber.WARN,
+                    exception=error,
+                )
+                raise
 
             if getattr(response, "assistant_id", None):
                 span.set_attribute("gen_ai.agent.id", response.assistant_id)
@@ -182,11 +190,6 @@ def run_invoke_agent(client):
         except Exception as error:
             span.set_status(StatusCode.ERROR, str(error))
             span.set_attribute("error.type", f"{type(error).__module__}.{type(error).__qualname__}")
-            reference_event_logger().emit(
-                event_name="gen_ai.client.invoke_agent.exception",
-                severity_number=SeverityNumber.WARN,
-                exception=error,
-            )
             raise
         finally:
             openai_client.close()
