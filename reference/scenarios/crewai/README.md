@@ -12,3 +12,7 @@ and is captured as a child span.
 | invoke_workflow | Yes — crew execution (`Crew.kickoff`) | ✅ Implemented |
 | plan | Yes — `CrewPlanner` planning phase | ✅ Implemented |
 | execute_tool | Yes — CrewAI runs the tool | ✅ Implemented |
+
+The tool execution error handlers record a correlated
+`gen_ai.execute_tool.exception` WARN log and rethrow the exception. This scenario
+does not exercise those paths.

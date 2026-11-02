@@ -15,3 +15,7 @@ tool execution is instrumentable here.
 
 The embeddings error handler records a correlated
 `gen_ai.client.embeddings.exception` WARN log. This scenario does not exercise that path.
+
+The automatic function calling error handler records a correlated
+`gen_ai.execute_tool.exception` WARN log and rethrows the exception. This scenario
+does not exercise that path.

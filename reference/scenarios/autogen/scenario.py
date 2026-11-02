@@ -7,8 +7,11 @@ import json
 import os
 import time
 
+from opentelemetry._logs import SeverityNumber
+from opentelemetry.trace import StatusCode
 from reference_shared import (
     flush_and_shutdown,
+    reference_event_logger,
     reference_tracer,
     setup_otel,
 )
@@ -48,15 +51,25 @@ def run_agent_reference():
             "gen_ai.tool.type": "function",
         }
         with _reference_tracer.start_as_current_span(
-            "execute_tool get_weather", attributes=tool_span_attributes
+            "execute_tool get_weather", attributes=tool_span_attributes, record_exception=False
         ) as tool_span:
-            tool_span.set_attribute("gen_ai.tool.description", get_weather.__doc__ or "")
-            if tool_call_id:
-                tool_span.set_attribute("gen_ai.tool.call.id", tool_call_id)
-            tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps({"location": location}))
-            result = f"Sunny in {location}"
-            tool_span.set_attribute("gen_ai.tool.call.result", result)
-            return result
+            try:
+                tool_span.set_attribute("gen_ai.tool.description", get_weather.__doc__ or "")
+                if tool_call_id:
+                    tool_span.set_attribute("gen_ai.tool.call.id", tool_call_id)
+                tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps({"location": location}))
+                result = f"Sunny in {location}"
+                tool_span.set_attribute("gen_ai.tool.call.result", result)
+                return result
+            except Exception as error:
+                tool_span.set_status(StatusCode.ERROR, str(error))
+                tool_span.set_attribute("error.type", f"{type(error).__module__}.{type(error).__qualname__}")
+                reference_event_logger().emit(
+                    event_name="gen_ai.execute_tool.exception",
+                    severity_number=SeverityNumber.WARN,
+                    exception=error,
+                )
+                raise
 
     tool_defs = [
         {

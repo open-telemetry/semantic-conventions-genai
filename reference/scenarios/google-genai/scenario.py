@@ -112,14 +112,24 @@ def _patch_automatic_function_calling():
             if description:
                 tool_span_attributes["gen_ai.tool.description"] = description[0]
             with _reference_tracer.start_as_current_span(
-                f"execute_tool {call.name}", attributes=tool_span_attributes
+                f"execute_tool {call.name}", attributes=tool_span_attributes, record_exception=False
             ) as tool_span:
                 if call.id:
                     tool_span.set_attribute("gen_ai.tool.call.id", call.id)
                 tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps(dict(call.args or {})))
                 single = response.model_copy(deep=True)
                 single.candidates[0].content.parts = [part]
-                result_parts = original(single, function_map)
+                try:
+                    result_parts = original(single, function_map)
+                except Exception as error:
+                    tool_span.set_status(StatusCode.ERROR, str(error))
+                    tool_span.set_attribute("error.type", f"{type(error).__module__}.{type(error).__qualname__}")
+                    reference_event_logger().emit(
+                        event_name="gen_ai.execute_tool.exception",
+                        severity_number=SeverityNumber.WARN,
+                        exception=error,
+                    )
+                    raise
                 for result_part in result_parts:
                     tool_span.set_attribute(
                         "gen_ai.tool.call.result",

@@ -7,7 +7,9 @@ against a mock OpenAI server, with manual OTel spans.
 import json
 import os
 
-from reference_shared import flush_and_shutdown, reference_tracer, setup_otel
+from opentelemetry._logs import SeverityNumber
+from opentelemetry.trace import StatusCode
+from reference_shared import flush_and_shutdown, reference_event_logger, reference_tracer, setup_otel
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"] + "/v1"
 
@@ -58,15 +60,25 @@ def run_crew():
             "gen_ai.operation.name": "execute_tool",
         }
         with _reference_tracer.start_as_current_span(
-            "execute_tool get_weather", attributes=tool_span_attributes
+            "execute_tool get_weather", attributes=tool_span_attributes, record_exception=False
         ) as tool_span:
-            tool_span.set_attribute("gen_ai.tool.name", "get_weather")
-            tool_span.set_attribute("gen_ai.tool.description", get_weather.func.__doc__ or "")
-            tool_span.set_attribute("gen_ai.tool.type", "function")
-            tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps({"location": location}))
-            result = "Sunny, 72°F"
-            tool_span.set_attribute("gen_ai.tool.call.result", result)
-            return result
+            try:
+                tool_span.set_attribute("gen_ai.tool.name", "get_weather")
+                tool_span.set_attribute("gen_ai.tool.description", get_weather.func.__doc__ or "")
+                tool_span.set_attribute("gen_ai.tool.type", "function")
+                tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps({"location": location}))
+                result = "Sunny, 72°F"
+                tool_span.set_attribute("gen_ai.tool.call.result", result)
+                return result
+            except Exception as error:
+                tool_span.set_status(StatusCode.ERROR, str(error))
+                tool_span.set_attribute("error.type", f"{type(error).__module__}.{type(error).__qualname__}")
+                reference_event_logger().emit(
+                    event_name="gen_ai.execute_tool.exception",
+                    severity_number=SeverityNumber.WARN,
+                    exception=error,
+                )
+                raise
 
     tools = [get_weather]
 
@@ -165,15 +177,25 @@ def run_agent():
             "gen_ai.operation.name": "execute_tool",
         }
         with _reference_tracer.start_as_current_span(
-            "execute_tool get_weather", attributes=tool_span_attributes
+            "execute_tool get_weather", attributes=tool_span_attributes, record_exception=False
         ) as tool_span:
-            tool_span.set_attribute("gen_ai.tool.name", "get_weather")
-            tool_span.set_attribute("gen_ai.tool.description", get_weather.func.__doc__ or "")
-            tool_span.set_attribute("gen_ai.tool.type", "function")
-            tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps({"location": location}))
-            result = "Sunny, 72°F"
-            tool_span.set_attribute("gen_ai.tool.call.result", result)
-            return result
+            try:
+                tool_span.set_attribute("gen_ai.tool.name", "get_weather")
+                tool_span.set_attribute("gen_ai.tool.description", get_weather.func.__doc__ or "")
+                tool_span.set_attribute("gen_ai.tool.type", "function")
+                tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps({"location": location}))
+                result = "Sunny, 72°F"
+                tool_span.set_attribute("gen_ai.tool.call.result", result)
+                return result
+            except Exception as error:
+                tool_span.set_status(StatusCode.ERROR, str(error))
+                tool_span.set_attribute("error.type", f"{type(error).__module__}.{type(error).__qualname__}")
+                reference_event_logger().emit(
+                    event_name="gen_ai.execute_tool.exception",
+                    severity_number=SeverityNumber.WARN,
+                    exception=error,
+                )
+                raise
 
     tools = [get_weather]
 
