@@ -342,9 +342,9 @@ def run_chat_reference(client):
             )
 
             print(f"    -> {resp.choices[0].message.content[:60]}")
-        except Exception as error:
-            error_type = f"{type(error).__module__}.{type(error).__qualname__}"
-            span.set_status(StatusCode.ERROR, str(error))
+        except Exception as e:
+            error_type = f"{type(e).__module__}.{type(e).__qualname__}"
+            span.set_status(StatusCode.ERROR, str(e))
             span.set_attribute("error.type", error_type)
             metric_attributes = usage_metric_attributes(request_model, None, host, port)
             metric_attributes["error.type"] = error_type
@@ -353,7 +353,7 @@ def run_chat_reference(client):
             reference_event_logger().emit(
                 event_name="gen_ai.client.inference.exception",
                 severity_number=SeverityNumber.WARN,
-                exception=error,
+                exception=e,
             )
             raise
 
