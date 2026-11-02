@@ -139,7 +139,7 @@ def run_agent_reference():
                 "gen_ai.agent.name": agent.name,
             }
             with _reference_tracer.start_as_current_span(
-                "invoke_agent test_agent", attributes=agent_span_attributes
+                "invoke_agent test_agent", attributes=agent_span_attributes, record_exception=False
             ) as agent_span:
                 agent_span.set_attribute("gen_ai.agent.description", agent.description)
                 agent_span.set_attribute("gen_ai.request.seed", request_seed)
@@ -175,6 +175,15 @@ def run_agent_reference():
                         [TextMessage(content=input_text, source="user")],
                         cancellation_token=CancellationToken(),
                     )
+                except Exception as error:
+                    agent_span.set_status(StatusCode.ERROR, str(error))
+                    agent_span.set_attribute("error.type", f"{type(error).__module__}.{type(error).__qualname__}")
+                    reference_event_logger().emit(
+                        event_name="gen_ai.invoke_agent.exception",
+                        severity_number=SeverityNumber.WARN,
+                        exception=error,
+                    )
+                    raise
                 finally:
                     model_client.create = original_create
                 if captured_results:

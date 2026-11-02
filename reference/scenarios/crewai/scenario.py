@@ -219,7 +219,7 @@ def run_agent():
     }
 
     with _reference_tracer.start_as_current_span(
-        f"invoke_agent {researcher_role}", attributes=agent_span_attributes
+        f"invoke_agent {researcher_role}", attributes=agent_span_attributes, record_exception=False
     ) as agent_span:
         agent_span.set_attribute("gen_ai.request.choice.count", request_choice_count)
         agent_span.set_attribute("gen_ai.request.max_tokens", request_max_tokens)
@@ -259,6 +259,15 @@ def run_agent():
         researcher.llm._client.chat.completions.create = _capture_completion
         try:
             result = researcher.kickoff(task_description)
+        except Exception as error:
+            agent_span.set_status(StatusCode.ERROR, str(error))
+            agent_span.set_attribute("error.type", f"{type(error).__module__}.{type(error).__qualname__}")
+            reference_event_logger().emit(
+                event_name="gen_ai.invoke_agent.exception",
+                severity_number=SeverityNumber.WARN,
+                exception=error,
+            )
+            raise
         finally:
             researcher.llm._client.chat.completions.create = original_create
 

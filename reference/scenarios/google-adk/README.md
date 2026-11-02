@@ -30,3 +30,7 @@ tool executes. The transfer records `pass_control`; the target's separate
 
 The tool execution error handlers record a correlated
 `gen_ai.execute_tool.exception` WARN log. This scenario does not exercise those paths.
+
+The internal agent invocation error handlers, including delegation, handoff,
+and skill runs, record a correlated `gen_ai.invoke_agent.exception` WARN log and
+rethrow the exception. This scenario does not exercise those paths.
