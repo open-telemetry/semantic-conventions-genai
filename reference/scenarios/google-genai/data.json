@@ -11,7 +11,6 @@
       "gen_ai.operation.name",
       "gen_ai.provider.name",
       "gen_ai.request.model",
-      "gen_ai.request.previous_response.id",
       "gen_ai.response.finish_reasons",
       "gen_ai.response.id",
       "gen_ai.response.model",
@@ -49,6 +48,16 @@
       "gen_ai.tool.description",
       "gen_ai.tool.name",
       "gen_ai.tool.type"
+    ],
+    "gen_ai.invoke_agent.client": [
+      "gen_ai.agent.name",
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "gen_ai.request.model",
+      "gen_ai.request.previous_response.id",
+      "gen_ai.usage.input_tokens",
+      "gen_ai.usage.output_tokens",
+      "server.address"
     ]
   },
   "events": {
@@ -129,16 +138,6 @@
   "findings": [
     {
       "id": "genai_expected_attribute_missing",
-      "message": "Span 'chat gemini-2.0-flash' (operation 'chat') is missing expected attribute 'gen_ai.response.finish_reasons'",
-      "signal_type": "span",
-      "signal_name": "chat gemini-2.0-flash",
-      "context": {
-        "missing_attribute": "gen_ai.response.finish_reasons",
-        "operation": "chat"
-      }
-    },
-    {
-      "id": "genai_expected_attribute_missing",
       "message": "Span 'chat gemini-2.0-flash' (operation 'chat') is missing expected attribute 'gen_ai.response.id'",
       "signal_type": "span",
       "signal_name": "chat gemini-2.0-flash",
@@ -185,6 +184,16 @@
       "context": {
         "missing_attribute": "gen_ai.usage.input_tokens",
         "operation": "embeddings"
+      }
+    },
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'invoke_agent interactions_agent' (operation 'invoke_agent') is missing expected attribute 'gen_ai.response.finish_reasons'",
+      "signal_type": "span",
+      "signal_name": "invoke_agent interactions_agent",
+      "context": {
+        "missing_attribute": "gen_ai.response.finish_reasons",
+        "operation": "invoke_agent"
       }
     }
   ]
