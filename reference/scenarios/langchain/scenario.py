@@ -48,7 +48,7 @@ async def agent_node(state: GraphState) -> GraphState:
         "gen_ai.request.model": AGENT_MODEL,
     }
     with _reference_tracer.start_as_current_span(
-        f"invoke_agent {AGENT_NAME}", attributes=agent_span_attributes
+        f"invoke_agent {AGENT_NAME}", attributes=agent_span_attributes, record_exception=False
     ) as agent_span:
         agent_span.set_attribute(
             "gen_ai.system_instructions", json.dumps([{"type": "text", "content": AGENT_SYSTEM_PROMPT}])
@@ -64,7 +64,17 @@ async def agent_node(state: GraphState) -> GraphState:
         # LangChain delegates the model call to the underlying LLM client (openai),
         # whose own instrumentation owns the inference span. The agent runs the tool
         # itself, so the execute_tool span belongs to LangChain instrumentation.
-        result = await agent.ainvoke({"messages": [{"role": "user", "content": input_text}]})
+        try:
+            result = await agent.ainvoke({"messages": [{"role": "user", "content": input_text}]})
+        except Exception as error:
+            agent_span.set_status(StatusCode.ERROR, str(error))
+            agent_span.set_attribute("error.type", f"{type(error).__module__}.{type(error).__qualname__}")
+            reference_event_logger().emit(
+                event_name="gen_ai.invoke_agent.exception",
+                severity_number=SeverityNumber.WARN,
+                exception=error,
+            )
+            raise
 
         final_message = result["messages"][-1]
         finish_reason = final_message.response_metadata.get("finish_reason")

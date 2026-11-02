@@ -92,7 +92,7 @@ def run_tool_call():
         "gen_ai.agent.name": agent_name,
     }
     with _reference_tracer.start_as_current_span(
-        "invoke_agent weather_agent", attributes=agent_span_attributes
+        "invoke_agent weather_agent", attributes=agent_span_attributes, record_exception=False
     ) as agent_span:
         agent_span.set_attribute("gen_ai.request.temperature", request_temperature)
         agent_span.set_attribute("gen_ai.request.top_p", request_top_p)
@@ -119,7 +119,17 @@ def run_tool_call():
                 ]
             ),
         )
-        result = agent.run_sync(prompt_text, model_settings=model_settings)
+        try:
+            result = agent.run_sync(prompt_text, model_settings=model_settings)
+        except Exception as error:
+            agent_span.set_status(StatusCode.ERROR, str(error))
+            agent_span.set_attribute("error.type", f"{type(error).__module__}.{type(error).__qualname__}")
+            reference_event_logger().emit(
+                event_name="gen_ai.invoke_agent.exception",
+                severity_number=SeverityNumber.WARN,
+                exception=error,
+            )
+            raise
         if result.response.finish_reason is not None:
             agent_span.set_attribute(
                 "gen_ai.response.finish_reasons",

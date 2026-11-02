@@ -19,3 +19,7 @@ execution.
 The tool execution error handlers, including shell commands, record a correlated
 `gen_ai.execute_tool.exception` WARN log and rethrow the exception. This scenario
 does not exercise those paths.
+
+The internal agent invocation error handler records a correlated
+`gen_ai.invoke_agent.exception` WARN log and rethrows the exception. This scenario
+does not exercise that path.
