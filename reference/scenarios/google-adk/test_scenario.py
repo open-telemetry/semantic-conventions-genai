@@ -1,18 +1,85 @@
-"""Check native ADK transfers through the real agent and tool runners."""
+"""Check ADK retries and native transfers through the real agent and tool runners."""
 
 import os
 import unittest
 from unittest.mock import patch
 
+import httpx
 from google.adk.models.google_llm import Gemini
 from google.adk.models.llm_response import LlmResponse
 from google.genai import types
+from opentelemetry.sdk.metrics import MeterProvider
+from opentelemetry.sdk.metrics.export import InMemoryMetricReader
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 
 with patch.dict(os.environ, {"MOCK_LLM_URL": "http://127.0.0.1:9999"}):
     import scenario
+
+
+class InferenceRetryTests(unittest.TestCase):
+    def test_sdk_retry_counts_one_inference_call(self):
+        attempts = 0
+        reader = InMemoryMetricReader()
+        provider = MeterProvider(metric_readers=[reader])
+        histogram = provider.get_meter("test").create_histogram(
+            "gen_ai.invoke_agent.inference_calls", unit="{inference_call}"
+        )
+        self.addCleanup(provider.shutdown)
+
+        def respond(request):
+            nonlocal attempts
+            self.assertEqual(request.method, "POST")
+            self.assertTrue(request.url.path.endswith("/models/gemini-2.0-flash:generateContent"))
+            attempts += 1
+            if attempts == 1:
+                return httpx.Response(503, json={"error": {"code": 503, "message": "Unavailable"}})
+            return httpx.Response(
+                200,
+                json={
+                    "candidates": [
+                        {"content": {"role": "model", "parts": [{"text": "Hello."}]}, "finishReason": "STOP"}
+                    ],
+                    "usageMetadata": {"promptTokenCount": 12, "candidatesTokenCount": 4, "totalTokenCount": 16},
+                },
+            )
+
+        class RetryingGemini(Gemini):
+            def __init__(self, **kwargs):
+                super().__init__(
+                    **kwargs,
+                    client_kwargs={
+                        "api_key": "mock-key",
+                        "vertexai": False,
+                        "http_options": types.HttpOptions(
+                            base_url=kwargs["base_url"],
+                            retry_options=types.HttpRetryOptions(attempts=2, initial_delay=0.001, jitter=0.001),
+                            async_client_args={"transport": httpx.MockTransport(respond)},
+                        ),
+                    },
+                )
+
+        with (
+            patch("google.adk.models.google_llm.Gemini", RetryingGemini),
+            patch.object(scenario, "_inference_calls", histogram),
+        ):
+            scenario.run_agent_reference()
+
+        self.assertEqual(attempts, 2)
+        metrics = [
+            metric
+            for resource in reader.get_metrics_data().resource_metrics
+            for scope in resource.scope_metrics
+            for metric in scope.metrics
+            if metric.name == "gen_ai.invoke_agent.inference_calls"
+        ]
+        self.assertEqual(len(metrics), 1)
+        points = metrics[0].data.data_points
+        self.assertEqual(len(points), 1)
+        self.assertEqual(points[0].attributes, {"gen_ai.agent.name": "test_agent"})
+        self.assertEqual(points[0].count, 1)
+        self.assertEqual(points[0].sum, 1)
 
 
 class NativeTransferTests(unittest.TestCase):

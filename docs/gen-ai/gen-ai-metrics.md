@@ -702,6 +702,10 @@ calls made by sub-agents or transferred-to agents are recorded against
 those agents' own invocations so that each inference call is counted
 exactly once across the call tree.
 
+Each logical inference operation, which corresponds to one
+`gen_ai.client.inference` span, counts once, no matter how many attempts
+or provider requests it took.
+
 This metric SHOULD be emitted together with the
 `gen_ai.invoke_agent.internal` span for the same invocation.
 
