@@ -331,9 +331,10 @@ def run_embeddings(client):
                 input_token_count = resp.usage.prompt_tokens
             print(f"    -> embedding dim: {len(resp.data[0].embedding)}")
         except Exception as error:
+            error_type = f"{type(error).__module__}.{type(error).__qualname__}"
             span.set_status(StatusCode.ERROR, str(error))
-            span.set_attribute("error.type", type(error).__qualname__)
-            metric_attributes["error.type"] = type(error).__qualname__
+            span.set_attribute("error.type", error_type)
+            metric_attributes["error.type"] = error_type
             reference_event_logger().emit(
                 event_name="gen_ai.client.embeddings.exception",
                 severity_number=SeverityNumber.WARN,

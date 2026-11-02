@@ -20,6 +20,7 @@ This document defines semantic conventions for recording exceptions on Generativ
 | Operation | Exception event |
 | --- | --- |
 | Client inference | [`gen_ai.client.inference.exception`](client-inference.md#event-gen_aiclientinferenceexception) |
+| Client embeddings | [`gen_ai.client.embeddings.exception`](client-embeddings.md#event-gen_aiclientembeddingsexception) |
 
 ## Generative AI client operation exception
 

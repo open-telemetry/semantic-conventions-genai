@@ -718,9 +718,10 @@ def run_embeddings():
                 span.set_attribute("gen_ai.embeddings.dimension.count", len(response.embeddings[0].values))
             print(f"    -> embedding dim: {len(response.embeddings[0].values)}")
         except Exception as error:
+            error_type = f"{type(error).__module__}.{type(error).__qualname__}"
             span.set_status(StatusCode.ERROR, str(error))
-            span.set_attribute("error.type", type(error).__qualname__)
-            metric_attributes["error.type"] = type(error).__qualname__
+            span.set_attribute("error.type", error_type)
+            metric_attributes["error.type"] = error_type
             reference_event_logger().emit(
                 event_name="gen_ai.client.embeddings.exception",
                 severity_number=SeverityNumber.WARN,
