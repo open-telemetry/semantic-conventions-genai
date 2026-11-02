@@ -17,6 +17,12 @@ scenarios:
           missing_attribute: server.address
           operation: chat
         reason: The SDK talks to a local CLI subprocess, so there is no server address.
+      - id: genai_span_name_format
+        context:
+          expected_form: execute_tool Skill
+          keyed_attr: gen_ai.tool.name
+          operation: execute_tool
+        reason: The runner does not recognize the span-name refinements for skill and command tools.
     spans:
       - match:
           attributes:

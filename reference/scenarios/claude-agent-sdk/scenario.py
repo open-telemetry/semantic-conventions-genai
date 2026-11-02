@@ -3,7 +3,7 @@
 import json
 import os
 
-from opentelemetry.trace import SpanKind
+from opentelemetry.trace import SpanKind, StatusCode
 from reference_shared import flush_and_shutdown, reference_tracer, setup_otel
 
 _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -11,6 +11,7 @@ MOCK_CLI_PATH = os.path.join(
     _SCRIPT_DIR,
     "mock_cli.cmd" if os.name == "nt" else "mock_cli.py",
 )
+PLUGIN_PATH = os.path.join(_SCRIPT_DIR, "plugins", "deploy-tools")
 
 _reference_tracer = reference_tracer()
 
@@ -96,6 +97,84 @@ async def run_agent_query_reference():
             )
 
 
+async def run_plugin_skill_reference():
+    """Scenario: a plugin-provided skill loaded through the `Skill` tool.
+
+    Claude Code runs tools inside the CLI subprocess, but it calls the SDK's
+    `PreToolUse` and `PostToolUse` hook callbacks in-process around each tool
+    execution. The `execute_tool` span opens and closes in those callbacks.
+
+    The `init` system message lists the plugins the CLI loaded from
+    `ClaudeAgentOptions.plugins`, and Claude Code addresses plugin skills as
+    `<plugin>:<skill>`, so the `Skill` tool input names the plugin that
+    provides the skill.
+    """
+    from claude_agent_sdk import ClaudeAgentOptions, HookMatcher, SystemMessage, query
+
+    print("  [plugin_skill] plugin skill via mock CLI (reference implementation)")
+
+    if os.name != "nt":
+        os.chmod(MOCK_CLI_PATH, os.stat(MOCK_CLI_PATH).st_mode | 0o111)
+    os.environ["CLAUDE_AGENT_SDK_SKIP_VERSION_CHECK"] = "1"
+
+    loaded_plugins_by_name = {}
+    tool_spans_by_tool_use_id = {}
+
+    async def on_pre_tool_use(hook_input, tool_use_id, context):
+        attributes = {
+            "gen_ai.operation.name": "execute_tool",
+            "gen_ai.tool.name": hook_input["tool_name"],
+            "gen_ai.tool.call.id": tool_use_id,
+            "gen_ai.conversation.id": hook_input["session_id"],
+        }
+        span_name = f"execute_tool {hook_input['tool_name']}"
+        if hook_input["tool_name"] == "Skill":
+            plugin_name, separator, skill_name = hook_input["tool_input"]["skill"].partition(":")
+            if separator:
+                attributes["gen_ai.skill.name"] = skill_name
+                plugin = loaded_plugins_by_name.get(plugin_name)
+                if plugin is not None:
+                    attributes["gen_ai.plugin.name"] = plugin["name"]
+                    if "version" in plugin:
+                        attributes["gen_ai.plugin.version"] = plugin["version"]
+            else:
+                attributes["gen_ai.skill.name"] = plugin_name
+            span_name = f"execute_tool {hook_input['tool_name']} {attributes['gen_ai.skill.name']}"
+        tool_spans_by_tool_use_id[tool_use_id] = _reference_tracer.start_span(
+            span_name, kind=SpanKind.INTERNAL, attributes=attributes
+        )
+        return {}
+
+    async def on_post_tool_use(hook_input, tool_use_id, context):
+        span = tool_spans_by_tool_use_id.pop(tool_use_id)
+        span.end()
+        return {}
+
+    async def on_post_tool_use_failure(hook_input, tool_use_id, context):
+        span = tool_spans_by_tool_use_id.pop(tool_use_id)
+        span.set_attribute("error.type", "tool_error")
+        span.set_status(StatusCode.ERROR, hook_input["error"])
+        span.end()
+        return {}
+
+    options = ClaudeAgentOptions(
+        cli_path=MOCK_CLI_PATH,
+        max_turns=2,
+        permission_mode="bypassPermissions",
+        plugins=[{"type": "local", "path": PLUGIN_PATH}],
+        hooks={
+            "PreToolUse": [HookMatcher(hooks=[on_pre_tool_use])],
+            "PostToolUse": [HookMatcher(hooks=[on_post_tool_use])],
+            "PostToolUseFailure": [HookMatcher(hooks=[on_post_tool_use_failure])],
+        },
+    )
+
+    async for message in query(prompt="Draft the release notes.", options=options):
+        if isinstance(message, SystemMessage) and message.subtype == "init":
+            for plugin in message.data["plugins"]:
+                loaded_plugins_by_name[plugin["name"]] = plugin
+
+
 def main():
     import anyio
 
@@ -104,6 +183,7 @@ def main():
     tp, lp, mp = setup_otel()
 
     anyio.run(run_agent_query_reference)
+    anyio.run(run_plugin_skill_reference)
 
     flush_and_shutdown(tp, lp, mp)
 
