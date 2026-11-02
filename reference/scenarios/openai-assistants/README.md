@@ -15,3 +15,7 @@ assistant run; the `file_search` tool also runs server-side.
 
 The agent invocation error handler records a correlated
 `gen_ai.client.invoke_agent.exception` WARN log. This scenario does not exercise that path.
+
+The tool execution error handler records a correlated
+`gen_ai.execute_tool.exception` WARN log and rethrows the exception. This scenario
+does not exercise that path.

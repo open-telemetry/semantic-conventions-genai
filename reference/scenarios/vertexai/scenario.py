@@ -10,7 +10,8 @@ import warnings
 from contextlib import contextmanager
 from urllib.parse import urlparse
 
-from opentelemetry.trace import SpanKind
+from opentelemetry._logs import SeverityNumber
+from opentelemetry.trace import SpanKind, StatusCode
 from reference_shared import flush_and_shutdown, reference_event_logger, reference_tracer, setup_otel
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"]
@@ -72,12 +73,22 @@ def _patch_automatic_function_calling():
             if description:
                 tool_span_attributes["gen_ai.tool.description"] = description
             with _reference_tracer.start_as_current_span(
-                f"execute_tool {raw_call['name']}", attributes=tool_span_attributes
+                f"execute_tool {raw_call['name']}", attributes=tool_span_attributes, record_exception=False
             ) as tool_span:
                 if raw_call.get("id"):
                     tool_span.set_attribute("gen_ai.tool.call.id", raw_call["id"])
                 tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps(raw_call.get("args") or {}))
-                result = function(**kwargs)
+                try:
+                    result = function(**kwargs)
+                except Exception as error:
+                    tool_span.set_status(StatusCode.ERROR, str(error))
+                    tool_span.set_attribute("error.type", f"{type(error).__module__}.{type(error).__qualname__}")
+                    reference_event_logger().emit(
+                        event_name="gen_ai.execute_tool.exception",
+                        severity_number=SeverityNumber.WARN,
+                        exception=error,
+                    )
+                    raise
                 tool_span.set_attribute(
                     "gen_ai.tool.call.result", result if isinstance(result, str) else json.dumps(result)
                 )

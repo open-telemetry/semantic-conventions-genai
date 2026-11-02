@@ -32,3 +32,6 @@ Tool execution also covers an SDK `ModelBehaviorError` from invalid function-too
 arguments, recorded as a correlated `gen_ai.execute_tool.exception` WARN log with
 SDK exception details. The tool disables error-to-string recovery so the SDK
 propagates the exception.
+
+The ordinary tool, agent-as-tool, handoff, and command error handlers also record
+this log and rethrow the exception. This scenario does not exercise those paths.
