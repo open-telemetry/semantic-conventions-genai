@@ -35,3 +35,7 @@ exception details and re-raises the exception. Error-to-string recovery is disab
 for this tool so the SDK propagates the exception.
 
 The other tool execution error paths are not exercised.
+
+Internal agent invocation also covers the SDK's `MaxTurnsExceeded` exception from
+`Runner.run` with `max_turns=0`, recorded as a correlated
+`gen_ai.invoke_agent.exception` WARN log with SDK exception details.
