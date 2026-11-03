@@ -209,7 +209,7 @@ Semantic conventions for individual providers SHOULD document which input parame
 choices/candidates.
 
 For interrupted generations, instrumentations SHOULD report the
-provider-reported interruption reason when available.
+provider-reported interruption reason when available and `interrupted` otherwise.
 
 Each position SHOULD contain the finish reason for the corresponding
 choice/candidate. If a finish reason was expected but not received, for
@@ -1053,7 +1053,7 @@ Semantic conventions for individual providers SHOULD document which input parame
 choices/candidates.
 
 For interrupted generations, instrumentations SHOULD report the
-provider-reported interruption reason when available.
+provider-reported interruption reason when available and `interrupted` otherwise.
 
 Each position SHOULD contain the finish reason for the corresponding
 choice/candidate. If a finish reason was expected but not received, for

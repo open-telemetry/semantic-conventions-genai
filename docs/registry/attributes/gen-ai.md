@@ -293,7 +293,7 @@ or `last_event_id` in the [Google GenAI Interactions API](https://ai.google.dev/
 choices/candidates.
 
 For interrupted generations, instrumentations SHOULD report the
-provider-reported interruption reason when available.
+provider-reported interruption reason when available and `interrupted` otherwise.
 
 Each position SHOULD contain the finish reason for the corresponding
 choice/candidate. If a finish reason was expected but not received, for
