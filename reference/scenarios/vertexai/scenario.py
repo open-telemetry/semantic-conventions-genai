@@ -355,9 +355,6 @@ def run_chat_multimodal():
     request_model = "gemini-2.0-flash"
     # Payload bytes are ignored by the mock, which only inspects the MIME type.
     blob = b"\x00" * 16
-    import base64
-
-    blob_b64 = base64.b64encode(blob).decode("ascii")
     span_attributes = {
         "gen_ai.operation.name": "chat",
         "gen_ai.provider.name": "gcp.vertex_ai",
@@ -396,8 +393,8 @@ def run_chat_multimodal():
                 "role": "user",
                 "parts": [
                     {"type": "text", "content": "Summarize the attached media."},
-                    {"type": "blob", "mime_type": "image/png", "modality": "image", "content": blob_b64},
-                    {"type": "blob", "mime_type": "audio/wav", "modality": "audio", "content": blob_b64},
+                    {"type": "blob", "mime_type": "image/png", "modality": "image", "content": blob},
+                    {"type": "blob", "mime_type": "audio/wav", "modality": "audio", "content": blob},
                 ],
             }
         ]
