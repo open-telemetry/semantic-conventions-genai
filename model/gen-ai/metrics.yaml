@@ -26,6 +26,8 @@ metrics:
     note: >
       This metric SHOULD NOT be reported for inference or embeddings operations;
       use `gen_ai.client.inference.duration` or `gen_ai.client.embeddings.duration` instead.
+
+      This metric SHOULD NOT be reported for retrieval operations.
     stability: development
     annotations:
       code_generation:
