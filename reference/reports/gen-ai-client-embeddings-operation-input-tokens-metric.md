@@ -14,7 +14,7 @@
 | Attribute | Supporting Libraries |
 | --- | --- |
 | gen_ai.request.model | [aws-bedrock], [azure-ai-inference], [azure-openai], [cohere], [litellm], [mistralai], [openai] |
-| server.port | [aws-bedrock], [azure-ai-inference], [azure-openai], [cohere], [mistralai], [openai] |
+| server.port | [aws-bedrock], [azure-ai-inference], [azure-openai], [cohere], [litellm], [mistralai], [openai] |
 
 ## Recommended
 

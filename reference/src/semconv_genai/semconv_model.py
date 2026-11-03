@@ -31,6 +31,8 @@ from semconv_genai.conformance import coverage_model
 # registry signal absent from these is still resolved into the coverage model
 # and recorded in data.json; it just has no report page.
 _SPANS = {
+    "a2a_client": ("a2a.client", "A2A Client"),
+    "a2a_server": ("a2a.server", "A2A Server"),
     "inference": ("gen_ai.client.inference", "Inference"),
     "embeddings": ("gen_ai.client.embeddings", "Embeddings"),
     "retrieval": ("gen_ai.retrieval.client", "Retrieval"),
@@ -198,6 +200,9 @@ def _entity_spec(model: dict[str, dict], registry_id: str, label: str) -> Attrib
         for section in declared.values():
             if isinstance(section, dict):
                 for name, level in sorted(section.items()):
+                    # Weaver >= 0.28 omits the level on identity attributes; they are always required.
+                    if level is None:
+                        level = "required"
                     buckets[level.removesuffix("_conditional")].append(name)
     return AttributeSpec(
         label=label,

@@ -26,7 +26,7 @@ scenarios:
         reason: Registry validation does not recognize this process attribute referenced by the command-tool refinement.
       - id: genai_span_name_format
         context:
-          expected_form: execute_tool or 'execute_tool <gen_ai.tool.name>'
+          expected_form: execute_tool exec_command
           keyed_attr: gen_ai.tool.name
           operation: execute_tool
         reason: The runner does not recognize the span-name refinements for skill and command tools.

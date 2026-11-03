@@ -6,11 +6,21 @@
 import base64
 import json
 import os
+from tempfile import mkdtemp
 
 import anthropic
 from opentelemetry.trace import SpanKind, StatusCode
+from opentelemetry.util.genai.completion_hook import load_completion_hook
 from opentelemetry.util.genai.handler import get_telemetry_handler
-from opentelemetry.util.genai.types import Blob, InputMessage, OutputMessage, Text
+from opentelemetry.util.genai.types import (
+    Blob,
+    FunctionToolDefinition,
+    GenericToolDefinition,
+    InputMessage,
+    OutputMessage,
+    Text,
+    ToolCallRequest,
+)
 from reference_shared import (
     flush_and_shutdown,
     inference_duration_view,
@@ -107,7 +117,17 @@ def run_chat(handler):
     request_model = "claude-sonnet-4-20250514"
     request_max_tokens = 100
     request_reasoning_level = "medium"
+    system_instruction = "Answer briefly."
     messages = [{"role": "user", "content": "Say hello."}]
+    tool = {
+        "name": "get_weather",
+        "description": "Get the current weather for a location.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"location": {"type": "string"}},
+            "required": ["location"],
+        },
+    }
     client = anthropic.Anthropic(base_url=MOCK_BASE_URL, api_key="mock-key")
 
     host, port = mock_server_host_port(MOCK_BASE_URL)
@@ -119,6 +139,14 @@ def run_chat(handler):
     ) as inv:
         inv.max_tokens = request_max_tokens  # -> gen_ai.request.max_tokens
         inv.attributes["gen_ai.request.reasoning.level"] = request_reasoning_level  # -> gen_ai.request.reasoning.level
+        inv.system_instruction = [Text(content=system_instruction)]  # -> gen_ai.system_instructions
+        inv.tool_definitions = [  # -> gen_ai.tool.definitions
+            FunctionToolDefinition(
+                name=tool["name"],
+                description=tool["description"],
+                parameters=tool["input_schema"],
+            )
+        ]
         (user_message,) = messages
         inv.input_messages = [  # -> gen_ai.input.messages
             InputMessage(role=user_message["role"], parts=[Text(content=user_message["content"])])
@@ -129,6 +157,8 @@ def run_chat(handler):
             max_tokens=request_max_tokens,
             messages=messages,
             output_config={"effort": request_reasoning_level},
+            system=system_instruction,
+            tools=[tool],
         )
 
         inv.response_model_name = resp.model  # -> gen_ai.response.model
@@ -147,14 +177,31 @@ def run_chat(handler):
             if cache_read:
                 inv.cache_read_input_tokens = cache_read  # -> gen_ai.usage.cache_read.input_tokens
 
-        output_parts = [Text(content=block.text) for block in resp.content if hasattr(block, "text")]
+        output_parts = []
+        for block in resp.content:
+            if hasattr(block, "text"):
+                output_parts.append(Text(content=block.text))
+            elif block.type == "tool_use":
+                output_parts.append(
+                    ToolCallRequest(
+                        id=block.id,
+                        name=block.name,
+                        arguments=block.input,
+                    )
+                )
         if output_parts:
             inv.output_messages = [  # -> gen_ai.output.messages
                 OutputMessage(role="assistant", parts=output_parts)
             ]
         record_inference_usage(inv, request_model, host, port)
 
-    print(f"    -> {resp.content[0].text[:60]}")
+    first_block = resp.content[0]
+    if hasattr(first_block, "text"):
+        print(f"    -> {first_block.text[:60]}")
+    elif first_block.type == "tool_use":
+        print(f"    -> tool_call: {first_block.name}")
+    else:
+        print(f"    -> {first_block.type}")
 
 
 def _has_compaction_block_in_input(messages):
@@ -436,6 +483,79 @@ def run_chat_with_image_input(handler):
     print(f"    -> {resp.content[0].text[:60]}")
 
 
+def run_chat_with_search_result_input(handler):
+    """Scenario: chat with a search result block and a built-in web search tool.
+
+    Search result blocks and built-in tools have no defined semconv type, so
+    both are recorded with `type` prefixed by `gen_ai.provider.name` (`anthropic.`).
+    """
+    print("  [chat_search_result] chat with search result block (util-genai handler)")
+    request_model = "claude-sonnet-4-20250514"
+    request_max_tokens = 100
+    instruction = "Answer using the attached search result."
+    search_result = {
+        "type": "search_result",
+        "source": "https://example.com/docs/otel",
+        "title": "OpenTelemetry overview",
+        "content": [{"type": "text", "text": "OpenTelemetry is an observability framework."}],
+        "citations": {"enabled": True},
+    }
+    tools = [{"type": "web_search_20250305", "name": "web_search"}]
+    messages = [
+        {
+            "role": "user",
+            "content": [{"type": "text", "text": instruction}, search_result],
+        }
+    ]
+    client = anthropic.Anthropic(base_url=MOCK_BASE_URL, api_key="mock-key")
+
+    host, port = mock_server_host_port(MOCK_BASE_URL)
+    with handler.inference(
+        provider="anthropic",
+        request_model=request_model,
+        server_address=host,
+        server_port=port,
+    ) as inv:
+        inv.max_tokens = request_max_tokens  # -> gen_ai.request.max_tokens
+        # util-genai has no type for provider-specific parts, so pass a plain dict.
+        inv.input_messages = [  # -> gen_ai.input.messages
+            InputMessage(
+                role="user",
+                parts=[
+                    Text(content=instruction),
+                    {**search_result, "type": f"anthropic.{search_result['type']}"},
+                ],
+            )
+        ]
+        inv.tool_definitions = [  # -> gen_ai.tool.definitions
+            GenericToolDefinition(name=t["name"], type=f"anthropic.{t['type']}") for t in tools
+        ]
+
+        resp = client.messages.create(
+            model=request_model,
+            max_tokens=request_max_tokens,
+            messages=messages,
+            tools=tools,
+        )
+
+        inv.response_model_name = resp.model  # -> gen_ai.response.model
+        inv.response_id = resp.id  # -> gen_ai.response.id
+        inv.finish_reasons = [resp.stop_reason]  # -> gen_ai.response.finish_reasons
+
+        if resp.usage:
+            inv.input_tokens = resp.usage.input_tokens  # -> gen_ai.usage.input_tokens
+            inv.output_tokens = resp.usage.output_tokens  # -> gen_ai.usage.output_tokens
+
+        output_parts = [Text(content=block.text) for block in resp.content if hasattr(block, "text")]
+        if output_parts:
+            inv.output_messages = [  # -> gen_ai.output.messages
+                OutputMessage(role="assistant", parts=output_parts)
+            ]
+        record_inference_usage(inv, request_model, host, port)
+
+    print(f"    -> {resp.content[0].type}")
+
+
 def run_create_agent():
     """Scenario: create a remote agent via the Managed Agents API (`beta.agents.create`).
 
@@ -487,16 +607,20 @@ def main():
     os.environ["OTEL_INSTRUMENTATION_GENAI_EMIT_EVENT"] = "true"
 
     tp, lp, mp = setup_otel(metric_views=(inference_duration_view(),))
+    os.environ["OTEL_INSTRUMENTATION_GENAI_COMPLETION_HOOK"] = "upload"
+    os.environ["OTEL_INSTRUMENTATION_GENAI_UPLOAD_BASE_PATH"] = mkdtemp()
     handler = get_telemetry_handler(
         tracer_provider=tp,
         meter_provider=mp,
         logger_provider=lp,
+        completion_hook=load_completion_hook(),
     )
 
     run_chat(handler)
     run_compaction(handler)
     run_chat_with_document_input(handler)
     run_chat_with_image_input(handler)
+    run_chat_with_search_result_input(handler)
     run_create_agent()
 
     flush_and_shutdown(tp, lp, mp)

@@ -13,6 +13,32 @@ scenarios:
   reference:
     run: uv run --frozen --python 3.12 --project . python scenario.py
     expected_violations:
+      - id: genai_expected_attribute_missing
+        context:
+          missing_attribute: gen_ai.provider.name
+          operation: generate_content
+        reason: ADK native instrumentation does not record this attribute on its generate_content span.
+      - id: genai_expected_attribute_missing
+        context:
+          missing_attribute: gen_ai.response.id
+          operation: generate_content
+        reason: ADK native instrumentation does not record this attribute on its generate_content span.
+      - id: genai_expected_attribute_missing
+        context:
+          missing_attribute: gen_ai.response.model
+          operation: generate_content
+        reason: ADK native instrumentation does not record this attribute on its generate_content span.
+      - id: genai_expected_attribute_missing
+        context:
+          missing_attribute: server.address
+          operation: generate_content
+        reason: ADK native instrumentation does not record this attribute on its generate_content span.
+      - id: instrumentation_scope_schema_url_missing
+        context:
+          actual: null
+          expected:
+            present: true
+        reason: ADK native instrumentation scope gcp.vertex.agent does not set schema_url.
       - id: missing_attribute
         context:
           attribute_key: gcp.vertex.agent.event_id
