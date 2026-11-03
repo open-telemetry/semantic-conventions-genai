@@ -26,9 +26,9 @@ The scenario selects the per-turn behavior by setting
 - ``function_call`` -> the generation emits a function-call output item and ends
   (``response.done`` completed); the scenario then runs the tool and asks for a
   second ``complete`` response.
-- ``interrupted``   -> the user barges in mid-response; the server emits
-  ``input_audio_buffer.speech_started`` and a cancelled ``response.done`` with
-  ``status_details.reason == "turn_detected"``.
+- ``interrupted``   -> the client sends another audio append mid-response; the
+  server emits ``input_audio_buffer.speech_started`` and a cancelled
+  ``response.done`` with ``status_details.reason == "turn_detected"``.
 
 When the client streams input audio (``input_audio_buffer.append``), server-side
 voice-activity detection brackets the user's utterance and the server emits
@@ -68,7 +68,7 @@ def _usage():
     }
 
 
-async def _run_response(ws, behavior):
+async def _run_response(ws, behavior, barge_in_received=None):
     response_id = "resp_mock_realtime_001"
     item_id = "item_mock_assistant_001"
 
@@ -153,10 +153,10 @@ async def _run_response(ws, behavior):
 
     if behavior == "interrupted":
         # Barge-in: new user speech is detected while the response is in flight,
-        # so the server cancels the response. The transcript survives only as the
-        # accumulated deltas above (no *.done transcript event fires). The server
-        # then finishes bracketing the barge-in utterance (speech_stopped +
-        # committed) so the client can answer it with a follow-up response.
+        # so wait for the client to send that audio before cancelling the
+        # response. The transcript survives only as the accumulated deltas above
+        # (no *.done transcript event fires).
+        await barge_in_received.wait()
         await _send(
             ws,
             {
@@ -271,14 +271,28 @@ async def _handler(ws):
             },
         },
     )
-    async for raw in ws:
-        message = json.loads(raw)
-        message_type = message.get("type")
-        if message_type == "input_audio_buffer.append":
-            await _emit_user_vad(ws)
-        elif message_type == "response.create":
-            behavior = ((message.get("response") or {}).get("metadata") or {}).get("mock_behavior", "complete")
-            await _run_response(ws, behavior)
+    barge_in_received = None
+    previous_audio = None
+    async with asyncio.TaskGroup() as response_tasks:
+        async for raw in ws:
+            message = json.loads(raw)
+            message_type = message.get("type")
+            if message_type == "input_audio_buffer.append":
+                audio = message.get("audio")
+                if barge_in_received is not None and not barge_in_received.is_set():
+                    if audio == previous_audio:
+                        raise RuntimeError("Barge-in audio must differ from the preceding utterance")
+                    barge_in_received.set()
+                else:
+                    await _emit_user_vad(ws)
+                previous_audio = audio
+            elif message_type == "response.create":
+                behavior = ((message.get("response") or {}).get("metadata") or {}).get(
+                    "mock_behavior", "complete"
+                )
+                if behavior == "interrupted":
+                    barge_in_received = asyncio.Event()
+                response_tasks.create_task(_run_response(ws, behavior, barge_in_received))
 
 
 class _HealthHandler(BaseHTTPRequestHandler):

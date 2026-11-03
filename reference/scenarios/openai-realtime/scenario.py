@@ -57,6 +57,7 @@ _reference_tracer = reference_tracer()
 # Tiny base64 stand-in for the PCM16 audio the user "speaks". The mock does not
 # decode it; it only needs to be a valid base64 audio payload.
 INPUT_AUDIO_B64 = "bW9jay11c2VyLWF1ZGlv"
+BARGE_IN_AUDIO_B64 = "bW9jay1iYXJnZS1pbi1hdWRpbw=="
 
 
 def _realtime_ws_url(http_base_url):
@@ -70,7 +71,7 @@ def _realtime_ws_url(http_base_url):
     return f"ws://{host}:{port + 1}/v1"
 
 
-def _user_audio_message():
+def _user_audio_message(audio):
     """The user's spoken input as an audio-modality input message."""
     return json.dumps(
         [
@@ -81,7 +82,7 @@ def _user_audio_message():
                         "type": "blob",
                         "modality": "audio",
                         "mime_type": "audio/pcm",
-                        "content": INPUT_AUDIO_B64,
+                        "content": audio,
                     }
                 ],
             }
@@ -139,21 +140,23 @@ class _RealtimeDriver:
         self._speech_span = None
         self._gen = None
         self._function_call = None
+        self._pending_user_inputs = deque()
         self._done = False
 
     def run(self):
         # The user speaks first; every span boundary after this is driven by the
         # received events.
-        self._send_user_audio()
+        self._send_user_audio(INPUT_AUDIO_B64)
         for event in self.conn:
             self._dispatch(event)
             if self._done:
                 break
 
-    def _send_user_audio(self):
+    def _send_user_audio(self, audio):
         # Streaming audio makes the server emit its own voice-activity events;
         # there is no manual commit in server-VAD mode.
-        self.conn.send({"type": "input_audio_buffer.append", "audio": INPUT_AUDIO_B64})
+        self._pending_user_inputs.append(_user_audio_message(audio))
+        self.conn.send({"type": "input_audio_buffer.append", "audio": audio})
 
     def _dispatch(self, event):
         handler = {
@@ -188,7 +191,7 @@ class _RealtimeDriver:
 
     def _on_committed(self, event):
         # The user finished an utterance; ask the model to respond to it.
-        self._start_generation(self._behaviors.popleft(), _user_audio_message())
+        self._start_generation(self._behaviors.popleft(), self._pending_user_inputs.popleft())
 
     def _start_generation(self, behavior, input_messages):
         output_type = None if behavior == "function_call" else "speech"
@@ -207,6 +210,8 @@ class _RealtimeDriver:
         span.set_attribute("gen_ai.input.messages", input_messages)
         self._gen = {
             "span": span,
+            "behavior": behavior,
+            "barge_in_sent": False,
             "response_id": None,
             "transcript_deltas": [],
             "audio_deltas": [],
@@ -219,6 +224,9 @@ class _RealtimeDriver:
 
     def _on_transcript_delta(self, event):
         self._gen["transcript_deltas"].append(event.delta)
+        if self._gen["behavior"] == "interrupted" and not self._gen["barge_in_sent"]:
+            self._gen["barge_in_sent"] = True
+            self._send_user_audio(BARGE_IN_AUDIO_B64)
 
     def _on_audio_delta(self, event):
         self._gen["audio_deltas"].append(event.delta)
@@ -315,7 +323,7 @@ class _RealtimeDriver:
         if status == "completed":
             if self._turns_remaining > 0:
                 self._turns_remaining -= 1
-                self._send_user_audio()
+                self._send_user_audio(INPUT_AUDIO_B64)
             else:
                 self._done = True
 
