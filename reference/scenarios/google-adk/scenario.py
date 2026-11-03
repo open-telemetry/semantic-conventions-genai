@@ -611,7 +611,9 @@ def run_multi_agent_handoff_reference():
             if target_name:
                 span.set_attribute("gen_ai.transfer.mode", "pass_control")
                 span.set_attribute("gen_ai.transfer.target.name", target_name)
-            span.set_attribute("gen_ai.tool.call.result", json.dumps({"type": "value", "content": result}))
+            # transfer_to_agent returns None, so a successful transfer records no result.
+            if result is not None:
+                span.set_attribute("gen_ai.tool.call.result", json.dumps({"type": "value", "content": result}))
             return result
 
     async def traced_agent_run(agent, parent_context):

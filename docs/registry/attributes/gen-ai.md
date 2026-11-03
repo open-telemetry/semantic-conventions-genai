@@ -335,7 +335,15 @@ The `type` property identifies the kind of result. With `type` set to
 string, an object, a list of content blocks, or any other JSON value.
 Instrumentations SHOULD NOT parse a string the tool returned. When only
 a serialized form of a non-string value is available, the
-instrumentation SHOULD make a best effort to deserialize it.
+instrumentation SHOULD make a best effort to deserialize it. When the
+instrumentation cannot tell whether text it has was returned as a string
+or is a serialized non-string value, it SHOULD record the text as a
+string.
+
+If the instrumentation observes that the tool returned no value, such as
+`None` from a Python function or `undefined` from a JavaScript function,
+it SHOULD NOT set the attribute. Serialized text follows the rules
+above, even when it is `null`.
 
 Consumers SHOULD tolerate `type` values they do not recognize; new
 result types may be added in the future.
