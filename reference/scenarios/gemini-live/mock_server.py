@@ -44,10 +44,6 @@ drives a tool-calling turn: the server emits a ``toolCall`` (and nothing else)
 so the client runs the tool and replies with a ``toolResponse``; the server then
 produces the spoken answer as a new generation, matching Gemini Live 2.5.
 
-When the requested model is a Gemini Live 3.x model, the very first
-``audioStreamEnd`` drives the tool-calling turn directly (a single utterance
-that resolves to a tool call and then the spoken answer). The server reports
-generation completion only after the spoken answer.
 """
 
 import argparse
@@ -136,15 +132,10 @@ async def _run_tool_call(ws):
 
 async def _handler(ws):
     audio_turns = 0
-    uses_single_generation_tool_exchange = False
     voice_activity_active = False
     async for raw in ws:
         message = json.loads(raw)
         if "setup" in message:
-            # Gemini Live 3.x reports one generation across the tool exchange;
-            # 2.5 reports the tool request and answer as separate generations.
-            model = str((message["setup"] or {}).get("model", ""))
-            uses_single_generation_tool_exchange = "gemini-3" in model
             await _send(ws, {"setupComplete": {}})
         elif "tool_response" in message or "toolResponse" in message:
             # The client returned the tool result; the model now speaks its answer.
@@ -166,10 +157,7 @@ async def _handler(ws):
                     )
                     voice_activity_active = False
                 audio_turns += 1
-                if uses_single_generation_tool_exchange:
-                    # A single utterance that immediately requires a tool call.
-                    await _run_tool_call(ws)
-                elif audio_turns == 1:
+                if audio_turns == 1:
                     await _run_turn(ws)
                 elif audio_turns == 2:
                     await _run_interrupted_turn(ws)
