@@ -14,7 +14,9 @@ attribute_groups:
       - ref_group: a2a.error.attributes
       - ref: a2a.operation.return_immediately
         requirement_level:
-          conditionally_required: If `a2a.method.name` is `SendMessage`.
+          conditionally_required: >
+            If `SendMessage` is requested to return immediately (value is `true`).
+            When missing, the value is assumed to be `false`.
 
 metrics:
   - name: a2a.client.operation.duration

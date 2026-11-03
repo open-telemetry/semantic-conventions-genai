@@ -10,7 +10,7 @@
 | <a id="a2a-message-id" href="#a2a-message-id">`a2a.message.id`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The unique identifier of the A2A message. [1] | `msg-user-1234` |
 | <a id="a2a-message-reference-task-ids" href="#a2a-message-reference-task-ids">`a2a.message.reference_task_ids`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string[] | Task IDs referenced by the A2A request message. [2] | `["task-abc-5678"]` |
 | <a id="a2a-method-name" href="#a2a-method-name">`a2a.method.name`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The name of the A2A request method. [3] | `SendMessage`; `SendStreamingMessage`; `GetTask` |
-| <a id="a2a-operation-return-immediately" href="#a2a-operation-return-immediately">`a2a.operation.return_immediately`</a> | ![Development](https://img.shields.io/badge/-development-blue) | boolean | Whether the client requested the `SendMessage` operation to return immediately instead of waiting for the task to reach a terminal or interrupted state. [4] | `true`; `false` |
+| <a id="a2a-operation-return-immediately" href="#a2a-operation-return-immediately">`a2a.operation.return_immediately`</a> | ![Development](https://img.shields.io/badge/-development-blue) | boolean | Whether the client requested the `SendMessage` operation to return immediately instead of waiting for the task to reach a terminal or interrupted state. [4] | `true` |
 | <a id="a2a-protocol-version" href="#a2a-protocol-version">`a2a.protocol.version`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The version of the A2A protocol used. [5] | `1.0` |
 | <a id="a2a-task-id" href="#a2a-task-id">`a2a.task.id`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The unique identifier of an A2A task. [6] | `task-5f2a7c7d9f8e4d2a` |
 | <a id="a2a-task-state" href="#a2a-task-state">`a2a.task.state`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The state of an A2A task. [7] | `TASK_STATE_SUBMITTED`; `TASK_STATE_WORKING`; `TASK_STATE_INPUT_REQUIRED` |
@@ -23,7 +23,7 @@
 
 **[3] `a2a.method.name`:** This attribute records the logical A2A operation name defined by the protocol. For example, `SendMessage` is the A2A operation name, while HTTP+JSON maps it to `POST /message:send`. See the A2A specification for [core operations](https://a2a-protocol.org/latest/specification/#31-core-operations) and [method mappings](https://a2a-protocol.org/latest/specification/#53-method-mapping-reference).
 
-**[4] `a2a.operation.return_immediately`:** Corresponds to the `returnImmediately` field of the A2A request `SendMessageConfiguration`. Instrumentation SHOULD record the effective value: when the request does not set the field, record the protocol default, `false`. See the A2A specification for [SendMessageConfiguration](https://a2a-protocol.org/latest/specification/#322-sendmessageconfiguration).
+**[4] `a2a.operation.return_immediately`:** Corresponds to the `returnImmediately` field of the A2A request `SendMessageConfiguration`. See the A2A specification for [SendMessageConfiguration](https://a2a-protocol.org/latest/specification/#322-sendmessageconfiguration).
 
 **[5] `a2a.protocol.version`:** See the A2A specification for [versioning](https://a2a-protocol.org/latest/specification/#36-versioning).
 

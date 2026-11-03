@@ -86,12 +86,10 @@ attributes:
       interrupted state.
     note: >
       Corresponds to the `returnImmediately` field of the A2A request
-      `SendMessageConfiguration`. Instrumentation SHOULD record the effective
-      value: when the request does not set the field, record the protocol
-      default, `false`.
+      `SendMessageConfiguration`.
       See the A2A specification for
       [SendMessageConfiguration](https://a2a-protocol.org/latest/specification/#322-sendmessageconfiguration).
-    examples: [true, false]
+    examples: [true]
     stability: development
   - key: a2a.tenant
     type: string

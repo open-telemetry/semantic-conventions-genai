@@ -988,17 +988,19 @@ value SHOULD be the same as the span duration.
 | Key | Stability | [Requirement Level](https://opentelemetry.io/docs/specs/semconv/general/attribute-requirement-level/) | Value Type | Description | Example Values |
 | --- | --- | --- | --- | --- | --- |
 | [`a2a.method.name`](/docs/registry/attributes/a2a.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Required` | string | The name of the A2A request method. [1] | `SendMessage`; `SendStreamingMessage`; `GetTask` |
-| [`a2a.operation.return_immediately`](/docs/registry/attributes/a2a.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If `a2a.method.name` is `SendMessage`. | boolean | Whether the client requested the `SendMessage` operation to return immediately instead of waiting for the task to reach a terminal or interrupted state. [2] | `true`; `false` |
-| [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/error.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If and only if the operation fails. | string | Describes a class of error the operation ended with. [3] | `timeout`; `java.net.UnknownHostException`; `server_certificate_invalid`; `500` |
-| [`a2a.protocol.version`](/docs/registry/attributes/a2a.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The version of the A2A protocol used. [4] | `1.0` |
-| [`server.address`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` If applicable. | string | Host component of the selected Agent Card interface URL. [5] | `example.com`; `10.1.2.80`; `/tmp/my.sock` |
-| [`server.port`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When `server.address` is set. | int | Port component of the selected Agent Card interface URL. [6] | `80`; `8080`; `443` |
+| [`a2a.operation.return_immediately`](/docs/registry/attributes/a2a.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [2] | boolean | Whether the client requested the `SendMessage` operation to return immediately instead of waiting for the task to reach a terminal or interrupted state. [3] | `true` |
+| [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/error.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If and only if the operation fails. | string | Describes a class of error the operation ended with. [4] | `timeout`; `java.net.UnknownHostException`; `server_certificate_invalid`; `500` |
+| [`a2a.protocol.version`](/docs/registry/attributes/a2a.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The version of the A2A protocol used. [5] | `1.0` |
+| [`server.address`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` If applicable. | string | Host component of the selected Agent Card interface URL. [6] | `example.com`; `10.1.2.80`; `/tmp/my.sock` |
+| [`server.port`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When `server.address` is set. | int | Port component of the selected Agent Card interface URL. [7] | `80`; `8080`; `443` |
 
 **[1] `a2a.method.name`:** This attribute records the logical A2A operation name defined by the protocol. For example, `SendMessage` is the A2A operation name, while HTTP+JSON maps it to `POST /message:send`. See the A2A specification for [core operations](https://a2a-protocol.org/latest/specification/#31-core-operations) and [method mappings](https://a2a-protocol.org/latest/specification/#53-method-mapping-reference).
 
-**[2] `a2a.operation.return_immediately`:** Corresponds to the `returnImmediately` field of the A2A request `SendMessageConfiguration`. Instrumentation SHOULD record the effective value: when the request does not set the field, record the protocol default, `false`. See the A2A specification for [SendMessageConfiguration](https://a2a-protocol.org/latest/specification/#322-sendmessageconfiguration).
+**[2] `a2a.operation.return_immediately`:** If `SendMessage` is requested to return immediately (value is `true`). When missing, the value is assumed to be `false`.
 
-**[3] `error.type`:** This attribute SHOULD be set to the protocol-provided A2A error reason
+**[3] `a2a.operation.return_immediately`:** Corresponds to the `returnImmediately` field of the A2A request `SendMessageConfiguration`. See the A2A specification for [SendMessageConfiguration](https://a2a-protocol.org/latest/specification/#322-sendmessageconfiguration).
+
+**[4] `error.type`:** This attribute SHOULD be set to the protocol-provided A2A error reason
 when available. Use `google.rpc.ErrorInfo.reason` with domain
 `a2a-protocol.org`, for example `TASK_NOT_FOUND`, consistently across
 JSON-RPC, HTTP+JSON, and gRPC bindings.
@@ -1015,11 +1017,11 @@ See the A2A specification for
 and
 [error code mappings](https://a2a-protocol.org/latest/specification/#54-error-code-mappings).
 
-**[4] `a2a.protocol.version`:** See the A2A specification for [versioning](https://a2a-protocol.org/latest/specification/#36-versioning).
+**[5] `a2a.protocol.version`:** See the A2A specification for [versioning](https://a2a-protocol.org/latest/specification/#36-versioning).
 
-**[5] `server.address`:** When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent the server address behind any intermediaries, for example proxies, if it's available.
+**[6] `server.address`:** When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent the server address behind any intermediaries, for example proxies, if it's available.
 
-**[6] `server.port`:** When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries, for example proxies, if it's available.
+**[7] `server.port`:** When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries, for example proxies, if it's available.
 
 ---
 
@@ -1078,15 +1080,17 @@ ends with an error.
 | Key | Stability | [Requirement Level](https://opentelemetry.io/docs/specs/semconv/general/attribute-requirement-level/) | Value Type | Description | Example Values |
 | --- | --- | --- | --- | --- | --- |
 | [`a2a.method.name`](/docs/registry/attributes/a2a.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Required` | string | The name of the A2A request method. [1] | `SendMessage`; `SendStreamingMessage`; `GetTask` |
-| [`a2a.operation.return_immediately`](/docs/registry/attributes/a2a.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If `a2a.method.name` is `SendMessage`. | boolean | Whether the client requested the `SendMessage` operation to return immediately instead of waiting for the task to reach a terminal or interrupted state. [2] | `true`; `false` |
-| [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/error.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If and only if the operation fails. | string | Describes a class of error the operation ended with. [3] | `timeout`; `java.net.UnknownHostException`; `server_certificate_invalid`; `500` |
-| [`a2a.protocol.version`](/docs/registry/attributes/a2a.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The version of the A2A protocol used. [4] | `1.0` |
+| [`a2a.operation.return_immediately`](/docs/registry/attributes/a2a.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [2] | boolean | Whether the client requested the `SendMessage` operation to return immediately instead of waiting for the task to reach a terminal or interrupted state. [3] | `true` |
+| [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/registry/attributes/error.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If and only if the operation fails. | string | Describes a class of error the operation ended with. [4] | `timeout`; `java.net.UnknownHostException`; `server_certificate_invalid`; `500` |
+| [`a2a.protocol.version`](/docs/registry/attributes/a2a.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The version of the A2A protocol used. [5] | `1.0` |
 
 **[1] `a2a.method.name`:** This attribute records the logical A2A operation name defined by the protocol. For example, `SendMessage` is the A2A operation name, while HTTP+JSON maps it to `POST /message:send`. See the A2A specification for [core operations](https://a2a-protocol.org/latest/specification/#31-core-operations) and [method mappings](https://a2a-protocol.org/latest/specification/#53-method-mapping-reference).
 
-**[2] `a2a.operation.return_immediately`:** Corresponds to the `returnImmediately` field of the A2A request `SendMessageConfiguration`. Instrumentation SHOULD record the effective value: when the request does not set the field, record the protocol default, `false`. See the A2A specification for [SendMessageConfiguration](https://a2a-protocol.org/latest/specification/#322-sendmessageconfiguration).
+**[2] `a2a.operation.return_immediately`:** If `SendMessage` is requested to return immediately (value is `true`). When missing, the value is assumed to be `false`.
 
-**[3] `error.type`:** This attribute SHOULD be set to the protocol-provided A2A error reason
+**[3] `a2a.operation.return_immediately`:** Corresponds to the `returnImmediately` field of the A2A request `SendMessageConfiguration`. See the A2A specification for [SendMessageConfiguration](https://a2a-protocol.org/latest/specification/#322-sendmessageconfiguration).
+
+**[4] `error.type`:** This attribute SHOULD be set to the protocol-provided A2A error reason
 when available. Use `google.rpc.ErrorInfo.reason` with domain
 `a2a-protocol.org`, for example `TASK_NOT_FOUND`, consistently across
 JSON-RPC, HTTP+JSON, and gRPC bindings.
@@ -1103,7 +1107,7 @@ See the A2A specification for
 and
 [error code mappings](https://a2a-protocol.org/latest/specification/#54-error-code-mappings).
 
-**[4] `a2a.protocol.version`:** See the A2A specification for [versioning](https://a2a-protocol.org/latest/specification/#36-versioning).
+**[5] `a2a.protocol.version`:** See the A2A specification for [versioning](https://a2a-protocol.org/latest/specification/#36-versioning).
 
 ---
 

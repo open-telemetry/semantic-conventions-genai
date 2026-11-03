@@ -138,11 +138,8 @@ class ReferenceJsonRpcDispatcher(JsonRpcDispatcher):
         }
         _server_active.add(1, metric_attrs)
         duration_attrs = dict(metric_attrs)
-        if method == "SendMessage":
-            # The protocol default applies when the request leaves it unset.
-            duration_attrs["a2a.operation.return_immediately"] = (params.get("configuration") or {}).get(
-                "returnImmediately", False
-            )
+        if method == "SendMessage" and (params.get("configuration") or {}).get("returnImmediately"):
+            duration_attrs["a2a.operation.return_immediately"] = True
         span_attrs = {
             "a2a.method.name": method,
             "a2a.protocol.version": interface.protocol_version,
@@ -374,18 +371,21 @@ async def _create_a2a_client(card: a2a_types.AgentCard, *, streaming: bool):
     return await create_client(card, ClientConfig(streaming=streaming, httpx_client=httpx_client))
 
 
-async def run_message_send_reference(card: a2a_types.AgentCard) -> str:
+async def run_message_send_reference(
+    card: a2a_types.AgentCard, *, message_id: str = "msg-user-1", return_immediately: bool = False
+) -> str:
     """Scenario: A2A JSON-RPC send_message with a task response."""
-    print("  [send_message] A2A JSON-RPC send_message")
+    print(f"  [send_message] A2A JSON-RPC send_message (return_immediately={return_immediately})")
     method = "SendMessage"
     interface = _jsonrpc_interface(card)
     request = a2a_types.SendMessageRequest(
         tenant=interface.tenant,
         message=_message(
             "Summarize my calendar.",
-            message_id="msg-user-1",
+            message_id=message_id,
             reference_task_ids=["task-calendar-prior"],
         ),
+        configuration=a2a_types.SendMessageConfiguration(return_immediately=return_immediately),
     )
 
     host, port = mock_server_host_port(interface.url)
@@ -411,11 +411,9 @@ async def run_message_send_reference(card: a2a_types.AgentCard) -> str:
     }
     async with await _create_a2a_client(card, streaming=False) as client:
         with _reference_tracer.start_as_current_span(method, kind=SpanKind.CLIENT, attributes=span_attrs) as span:
-            duration_attrs = {
-                **metric_attrs,
-                # Unset in the request, so this is the protocol default.
-                "a2a.operation.return_immediately": request.configuration.return_immediately,
-            }
+            duration_attrs = dict(metric_attrs)
+            if request.configuration.return_immediately:
+                duration_attrs["a2a.operation.return_immediately"] = True
             _client_active.add(1, metric_attrs)
             start = time.perf_counter()
             try:
@@ -634,6 +632,7 @@ async def run_server_over_http_reference(card: a2a_types.AgentCard) -> None:
 async def run_scenarios() -> None:
     async with serve_agents() as (standalone, over_http):
         task_id = await run_message_send_reference(standalone)
+        await run_message_send_reference(standalone, message_id="msg-user-5", return_immediately=True)
         await run_message_stream_reference(standalone)
         await run_tasks_get_reference(standalone, task_id)
         await run_tasks_get_error_reference(standalone)
