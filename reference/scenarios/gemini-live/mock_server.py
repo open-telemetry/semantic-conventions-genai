@@ -37,11 +37,12 @@ Server -> client turn sequence for one voice response:
    the turn and reports token usage with an ``AUDIO`` / ``TEXT`` modality
    breakdown for both prompt and response.
 
-The first ``audioStreamEnd`` drives a simple spoken turn. A subsequent
-``audioStreamEnd`` drives a tool-calling turn: the server emits a ``toolCall``
-(and nothing else) so the client runs the tool and replies with a
-``toolResponse``; the server then produces the spoken answer as a new
-generation, matching Gemini Live 2.5.
+The first ``audioStreamEnd`` drives a simple spoken turn. The second simulates
+barge-in by emitting partial output followed by ``interrupted`` and
+``turnComplete`` without ``generationComplete``. A subsequent ``audioStreamEnd``
+drives a tool-calling turn: the server emits a ``toolCall`` (and nothing else)
+so the client runs the tool and replies with a ``toolResponse``; the server then
+produces the spoken answer as a new generation, matching Gemini Live 2.5.
 
 When the requested model is a Gemini Live 3.x model, the very first
 ``audioStreamEnd`` drives the tool-calling turn directly (a single utterance
@@ -110,6 +111,24 @@ async def _run_turn(ws):
     await _send(ws, {"serverContent": {"turnComplete": True}, "usageMetadata": _usage()})
 
 
+async def _run_interrupted_turn(ws):
+    """Emit partial output followed by Gemini's barge-in signals."""
+    await _send(ws, {"serverContent": {"outputTranscription": {"text": "It is "}}})
+    await _send(
+        ws,
+        {
+            "serverContent": {
+                "modelTurn": {
+                    "role": "model",
+                    "parts": [{"inlineData": {"mimeType": "audio/pcm", "data": OUTPUT_AUDIO_B64}}],
+                }
+            }
+        },
+    )
+    await _send(ws, {"serverContent": {"interrupted": True}})
+    await _send(ws, {"serverContent": {"turnComplete": True}, "usageMetadata": _usage()})
+
+
 async def _run_tool_call(ws):
     """Emit a tool call and nothing else; the client must reply with a toolResponse."""
     await _send(ws, {"toolCall": {"functionCalls": [FUNCTION_CALL]}})
@@ -152,6 +171,8 @@ async def _handler(ws):
                     await _run_tool_call(ws)
                 elif audio_turns == 1:
                     await _run_turn(ws)
+                elif audio_turns == 2:
+                    await _run_interrupted_turn(ws)
                 else:
                     await _run_tool_call(ws)
             elif not voice_activity_active:
@@ -252,10 +273,15 @@ def _build_ssl_context():
     return ssl_ctx
 
 
-async def _serve_ws(host, port):
+async def _serve_ws(host, websocket_port, health_port):
     ssl_ctx = _build_ssl_context()
-    async with websockets.serve(_handler, host, port, ssl=ssl_ctx):
-        await asyncio.Future()
+    async with websockets.serve(_handler, host, websocket_port, ssl=ssl_ctx):
+        health_server = _start_health_server(host, health_port)
+        try:
+            await asyncio.Future()
+        finally:
+            health_server.shutdown()
+            health_server.server_close()
 
 
 def main():
@@ -263,8 +289,7 @@ def main():
     parser.add_argument("--host", type=str, default="127.0.0.1", help="Host to bind to")
     parser.add_argument("--port", type=int, required=True, help="Health port; the WebSocket serves on port + 1")
     args = parser.parse_args()
-    _start_health_server(args.host, args.port)
-    asyncio.run(_serve_ws(args.host, args.port + 1))
+    asyncio.run(_serve_ws(args.host, args.port + 1, args.port))
 
 
 if __name__ == "__main__":

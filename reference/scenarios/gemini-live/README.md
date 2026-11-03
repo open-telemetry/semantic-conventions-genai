@@ -8,6 +8,9 @@ as the end of a generation, so the application sends the tool result and a
 second generation speaks the answer. The tool request and response are recorded
 as `tool_call` and `tool_call_response` message parts. The application executes
 the tool, so this client scenario does not emit an `execute_tool` span. The
+scenario also covers a generation interrupted by user barge-in. Generation
+spans start and end from Gemini's `server_content` completion and interruption
+signals, and use `turn_complete_reason` when the provider supplies one. The
 session is reported through the
 `gen_ai.client.realtime_session.started` / `.ended` events.
 

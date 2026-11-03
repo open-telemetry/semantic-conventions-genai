@@ -1,13 +1,16 @@
 """Reference implementation for Google Gemini Live (voice-native) inference.
 
-Exercises two speech-to-speech turns within one realtime session against the mock
+Exercises three speech-to-speech turns within one realtime session against the mock
 Gemini Live WebSocket server. Each server-side generation is a
 ``realtime_inference`` span that carries the audio-modality messages and,
 crucially, the audio token usage (``gen_ai.usage.audio.input_tokens`` /
 ``gen_ai.usage.audio.output_tokens``) alongside the transcript of the spoken
 audio.
 
-In the second turn, Gemini Live 2.5 reports the tool call as the end of a
+The second turn is interrupted by user barge-in. The span starts on the first
+``server_content`` message and ends when the provider reports ``interrupted``.
+
+In the third turn, Gemini Live 2.5 reports the tool call as the end of a
 generation. The application sends the tool result, and a second generation
 speaks the answer. The model's request is captured as a ``tool_call`` output
 part on the first generation and the application's result as a
@@ -41,6 +44,7 @@ import base64
 import json
 import os
 import ssl
+import time
 
 from opentelemetry._logs import SeverityNumber
 from opentelemetry.trace import SpanKind
@@ -149,6 +153,14 @@ def _execute_tool(function_call):
     return {"location": function_call["args"].get("location"), "temperature_f": 72, "conditions": "sunny"}
 
 
+def _turn_complete_reason(server_content):
+    """Return a provider-reported turn completion reason, if present."""
+    reason = server_content.turn_complete_reason
+    if reason is None or reason.value == "TURN_COMPLETE_REASON_UNSPECIFIED":
+        return None
+    return reason.value.lower()
+
+
 async def _run_generation(session, request_model, host, port, input_messages, break_on_tool_call):
     """Consume one server-side generation and emit its realtime_inference span.
 
@@ -156,81 +168,110 @@ async def _run_generation(session, request_model, host, port, input_messages, br
     """
     output_type = None if break_on_tool_call else "speech"
     attributes = _live_attributes(request_model, host, port, "realtime_inference", output_type=output_type)
-    with _reference_tracer.start_as_current_span(
-        f"realtime_inference {request_model}", kind=SpanKind.CLIENT, attributes=attributes
-    ) as span:
-        span.set_attribute("gen_ai.input.messages", input_messages)
+    span = None
+    generation_end_time = None
+    finish_reason = None
+    transcript_deltas = []
+    audio_chunks = []
+    usage = None
+    function_call = None
 
-        transcript_deltas = []
-        audio_chunks = []
-        usage = None
-        function_call = None
-        async for message in session.receive():
-            server_content = message.server_content
-            if server_content is not None:
-                if server_content.output_transcription and server_content.output_transcription.text:
-                    transcript_deltas.append(server_content.output_transcription.text)
-                if server_content.model_turn and server_content.model_turn.parts:
-                    for part in server_content.model_turn.parts:
-                        if part.inline_data and part.inline_data.data:
-                            audio_chunks.append(part.inline_data.data)
-            if message.usage_metadata is not None:
-                usage = message.usage_metadata
-            if break_on_tool_call and message.tool_call is not None and message.tool_call.function_calls:
-                call = message.tool_call.function_calls[0]
-                function_call = {"id": call.id, "name": call.name, "args": dict(call.args or {})}
-                break
+    async for message in session.receive():
+        server_content = message.server_content
+        if server_content is not None:
+            if span is None:
+                span = _reference_tracer.start_span(
+                    f"realtime_inference {request_model}", kind=SpanKind.CLIENT, attributes=attributes
+                )
+                span.set_attribute("gen_ai.input.messages", input_messages)
+            provider_reason = _turn_complete_reason(server_content)
+            if provider_reason is not None:
+                finish_reason = provider_reason
+            if server_content.interrupted:
+                finish_reason = finish_reason or "interrupted"
+                generation_end_time = generation_end_time or time.time_ns()
+            elif server_content.generation_complete:
+                finish_reason = finish_reason or "stop"
+                generation_end_time = generation_end_time or time.time_ns()
+            elif server_content.turn_complete and generation_end_time is None:
+                finish_reason = finish_reason or "stop"
+                generation_end_time = time.time_ns()
+            if server_content.output_transcription and server_content.output_transcription.text:
+                transcript_deltas.append(server_content.output_transcription.text)
+            if server_content.model_turn and server_content.model_turn.parts:
+                for part in server_content.model_turn.parts:
+                    if part.inline_data and part.inline_data.data:
+                        audio_chunks.append(part.inline_data.data)
+        if message.usage_metadata is not None:
+            usage = message.usage_metadata
+        if break_on_tool_call and message.tool_call is not None and message.tool_call.function_calls:
+            if span is None:
+                span = _reference_tracer.start_span(
+                    f"realtime_inference {request_model}", kind=SpanKind.CLIENT, attributes=attributes
+                )
+                span.set_attribute("gen_ai.input.messages", input_messages)
+            call = message.tool_call.function_calls[0]
+            function_call = {"id": call.id, "name": call.name, "args": dict(call.args or {})}
+            finish_reason = "tool_call"
+            generation_end_time = time.time_ns()
+            break
 
-        if function_call is not None:
-            output_messages = [
-                {
-                    "role": "assistant",
-                    "parts": [
-                        {
-                            "type": "tool_call",
-                            "id": function_call["id"],
-                            "name": function_call["name"],
-                            "arguments": function_call["args"],
-                        }
-                    ],
-                }
-            ]
-            span.set_attribute("gen_ai.response.finish_reasons", ["tool_call"])
-        else:
-            transcript = "".join(transcript_deltas)
-            output_audio = base64.b64encode(b"".join(audio_chunks)).decode() if audio_chunks else ""
-            output_messages = [
-                {
-                    "role": "assistant",
-                    "parts": [
-                        {
-                            "type": "blob",
-                            "modality": "audio",
-                            "mime_type": "audio/pcm",
-                            "content": output_audio,
-                        },
-                        {
-                            "type": "transcription",
-                            "content": transcript,
-                        },
-                    ],
-                }
-            ]
-            span.set_attribute("gen_ai.response.finish_reasons", ["stop"])
-            print(f"    -> {transcript[:60]}")
-        span.set_attribute("gen_ai.output.messages", json.dumps(output_messages))
-        if usage:
-            if usage.prompt_token_count:
-                span.set_attribute("gen_ai.usage.input_tokens", usage.prompt_token_count)
-            if usage.response_token_count:
-                span.set_attribute("gen_ai.usage.output_tokens", usage.response_token_count)
-            input_audio_tokens = _audio_modality_tokens(usage.prompt_tokens_details)
-            if input_audio_tokens is not None:
-                span.set_attribute("gen_ai.usage.audio.input_tokens", input_audio_tokens)
-            output_audio_tokens = _audio_modality_tokens(usage.response_tokens_details)
-            if output_audio_tokens is not None:
-                span.set_attribute("gen_ai.usage.audio.output_tokens", output_audio_tokens)
-        return function_call
+    if span is None:
+        raise RuntimeError("Gemini Live stream ended before the generation started")
+    if generation_end_time is None or finish_reason is None:
+        raise RuntimeError("Gemini Live stream ended without a generation completion signal")
+
+    if function_call is not None:
+        output_messages = [
+            {
+                "role": "assistant",
+                "parts": [
+                    {
+                        "type": "tool_call",
+                        "id": function_call["id"],
+                        "name": function_call["name"],
+                        "arguments": function_call["args"],
+                    }
+                ],
+            }
+        ]
+    else:
+        transcript = "".join(transcript_deltas)
+        output_audio = base64.b64encode(b"".join(audio_chunks)).decode() if audio_chunks else ""
+        output_messages = [
+            {
+                "role": "assistant",
+                "parts": [
+                    {
+                        "type": "blob",
+                        "modality": "audio",
+                        "mime_type": "audio/pcm",
+                        "content": output_audio,
+                    },
+                    {
+                        "type": "transcription",
+                        "content": transcript,
+                    },
+                ],
+            }
+        ]
+        print(f"    -> {transcript[:60]} ({finish_reason})")
+
+    span.set_attribute("gen_ai.response.finish_reasons", [finish_reason])
+    span.set_attribute("gen_ai.output.messages", json.dumps(output_messages))
+    if usage:
+        if usage.prompt_token_count:
+            span.set_attribute("gen_ai.usage.input_tokens", usage.prompt_token_count)
+        if usage.response_token_count:
+            span.set_attribute("gen_ai.usage.output_tokens", usage.response_token_count)
+        input_audio_tokens = _audio_modality_tokens(usage.prompt_tokens_details)
+        if input_audio_tokens is not None:
+            span.set_attribute("gen_ai.usage.audio.input_tokens", input_audio_tokens)
+        output_audio_tokens = _audio_modality_tokens(usage.response_tokens_details)
+        if output_audio_tokens is not None:
+            span.set_attribute("gen_ai.usage.audio.output_tokens", output_audio_tokens)
+    span.end(end_time=generation_end_time)
+    return function_call
 
 
 async def _send_user_audio(session):
@@ -320,7 +361,16 @@ async def run_gemini_live_reference():
                 session, request_model, host, live_port, _user_audio_message(), break_on_tool_call=False
             )
 
-            # Turn 2: Gemini Live 2.5 ends the first generation with a tool call.
+            # Turn 2: the user barges in while the model is responding. Gemini
+            # reports interrupted without a reason, so the finish reason falls
+            # back to "interrupted".
+            await _send_user_audio(session)
+            await _record_user_speech(session)
+            await _run_generation(
+                session, request_model, host, live_port, _user_audio_message(), break_on_tool_call=False
+            )
+
+            # Turn 3: Gemini Live 2.5 ends the first generation with a tool call.
             # The application sends the tool result, then a second generation
             # speaks the answer. The tool request and result are message parts;
             # application tool execution does not produce an execute_tool span.
