@@ -180,23 +180,7 @@ jobs:
       - name: Run implementation scenario
         env:
           SCENARIO_LIB: ${{ matrix.scenario.lib }}
-        run: |
-          output=$(mktemp)
-          trap 'rm -f "$output"' EXIT
-          set +e
-          uv run run-scenario "$SCENARIO_LIB" --strict 2>&1 | tee "$output"
-          status=${PIPESTATUS[0]}
-          set -e
-
-          if [ "$status" -eq 0 ]; then
-            exit 0
-          fi
-          if ! grep -Fq "WeaverLiveCheck did not become ready in time" "$output"; then
-            exit "$status"
-          fi
-
-          echo "Weaver live-check startup timed out; retrying scenario"
-          uv run run-scenario "$SCENARIO_LIB" --strict
+        run: uv run run-scenario "$SCENARIO_LIB" --strict
 
       - name: Check data file is up to date
         env:
