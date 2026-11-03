@@ -106,6 +106,23 @@ def _user_audio_message():
     )
 
 
+def _user_transcription_message(transcript):
+    """The provider's transcription of the user's spoken input."""
+    return json.dumps(
+        [
+            {
+                "role": "user",
+                "parts": [
+                    {
+                        "type": "transcription",
+                        "content": transcript,
+                    }
+                ],
+            }
+        ]
+    )
+
+
 def _live_attributes(request_model, host, port, operation, output_type=None):
     """Common attributes shared by the realtime_inference spans."""
     attributes = {
@@ -184,6 +201,11 @@ async def _run_generation(session, request_model, host, port, input_messages, br
                     f"realtime_inference {request_model}", kind=SpanKind.CLIENT, attributes=attributes
                 )
                 span.set_attribute("gen_ai.input.messages", input_messages)
+            if server_content.input_transcription and server_content.input_transcription.text:
+                span.set_attribute(
+                    "gen_ai.input.messages",
+                    _user_transcription_message(server_content.input_transcription.text),
+                )
             provider_reason = _turn_complete_reason(server_content)
             if provider_reason is not None:
                 finish_reason = provider_reason
@@ -333,6 +355,7 @@ async def run_gemini_live_reference():
     )
     config = types.LiveConnectConfig(
         response_modalities=["AUDIO"],
+        input_audio_transcription=types.AudioTranscriptionConfig(),
         output_audio_transcription=types.AudioTranscriptionConfig(),
     )
     async with client.aio.live.connect(model=request_model, config=config) as session:

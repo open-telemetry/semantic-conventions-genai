@@ -63,6 +63,7 @@ import websockets
 OUTPUT_AUDIO_B64 = "bW9jay1nZW1pbmktYXVkaW8="
 
 TRANSCRIPT_DELTAS = ["It is ", "sunny and ", "about 72 degrees ", "in Seattle."]
+INPUT_TRANSCRIPT = "What is the weather in Seattle?"
 
 # The tool the model asks the client to run on the tool-calling turn.
 FUNCTION_CALL = {"id": "fc_mock_gemini_001", "name": "get_weather", "args": {"location": "Seattle"}}
@@ -156,6 +157,17 @@ async def _handler(ws):
                         },
                     )
                     voice_activity_active = False
+                await _send(
+                    ws,
+                    {
+                        "serverContent": {
+                            "inputTranscription": {
+                                "text": INPUT_TRANSCRIPT,
+                                "finished": True,
+                            }
+                        }
+                    },
+                )
                 audio_turns += 1
                 if audio_turns == 1:
                     await _run_turn(ws)
