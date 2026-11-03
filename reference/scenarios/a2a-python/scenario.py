@@ -39,7 +39,7 @@ TENANT_OVER_HTTP = "billing-http"
 _reference_tracer = reference_tracer()
 _meter = reference_meter()
 # Bucket boundaries advised for the duration metrics by docs/gen-ai/a2a.md.
-_DURATION_BUCKETS = [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30, 60, 120, 300]
+_DURATION_BUCKETS = [0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10, 30, 60, 120, 300]
 _client_duration = _meter.create_histogram(
     "a2a.client.operation.duration",
     unit="s",
