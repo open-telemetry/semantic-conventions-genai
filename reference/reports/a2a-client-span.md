@@ -13,6 +13,7 @@
 | Attribute | Supporting Libraries |
 | --- | --- |
 | a2a.message.id | [a2a-python] |
+| a2a.operation.return_immediately | [a2a-python] |
 | a2a.task.id | [a2a-python] |
 | a2a.task.state | [a2a-python] |
 | a2a.tenant | [a2a-python] |

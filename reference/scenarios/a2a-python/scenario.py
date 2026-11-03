@@ -138,7 +138,8 @@ class ReferenceJsonRpcDispatcher(JsonRpcDispatcher):
         }
         _server_active.add(1, metric_attrs)
         duration_attrs = dict(metric_attrs)
-        if method == "SendMessage" and (params.get("configuration") or {}).get("returnImmediately"):
+        return_immediately = method == "SendMessage" and (params.get("configuration") or {}).get("returnImmediately")
+        if return_immediately:
             duration_attrs["a2a.operation.return_immediately"] = True
         span_attrs = {
             "a2a.method.name": method,
@@ -155,6 +156,8 @@ class ReferenceJsonRpcDispatcher(JsonRpcDispatcher):
             span_attrs["a2a.message.id"] = message["messageId"]
         if message.get("referenceTaskIds"):
             span_attrs["a2a.message.reference_task_ids"] = message["referenceTaskIds"]
+        if return_immediately:
+            span_attrs["a2a.operation.return_immediately"] = True
         if params.get("id"):
             span_attrs["a2a.task.id"] = params["id"]
         if request.client:
@@ -403,6 +406,8 @@ async def run_message_send_reference(
         span_attrs["server.address"] = host
     if port is not None:
         span_attrs["server.port"] = port
+    if request.configuration.return_immediately:
+        span_attrs["a2a.operation.return_immediately"] = True
     metric_attrs = {
         "a2a.method.name": method,
         "a2a.protocol.version": interface.protocol_version,

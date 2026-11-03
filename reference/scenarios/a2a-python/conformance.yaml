@@ -23,6 +23,12 @@ scenarios:
           type: a2a.client
       - match:
           attributes:
+            a2a.method.name: SendMessage
+            a2a.operation.return_immediately: true
+          kind: client
+          type: a2a.client
+      - match:
+          attributes:
             a2a.method.name: SendStreamingMessage
           kind: client
           type: a2a.client
@@ -41,6 +47,13 @@ scenarios:
           attributes:
             a2a.method.name: SendMessage
             a2a.tenant: billing
+          kind: server
+          type: a2a.server
+      - match:
+          attributes:
+            a2a.method.name: SendMessage
+            a2a.tenant: billing
+            a2a.operation.return_immediately: true
           kind: server
           type: a2a.server
       - match:
