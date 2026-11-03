@@ -1116,50 +1116,63 @@ generation. The model output after the tool result belongs to a new generation:
 sequenceDiagram
     participant A as Application or agent
     participant I as Instrumented realtime client
-    participant M as Model
+    participant S as Realtime service
     participant T as Tool
     A->>I: Open realtime connection
-    I->>M: Establish realtime connection
-    M-->>I: Connection established
+    I->>S: Establish realtime connection
+    S-->>I: Connection established
     I-->>A: Connection established
     Note left of I: realtime_session.started event
-    M-->>I: User speech started
+    A->>I: Stream initial user audio
+    I->>S: Stream initial user audio
+    S-->>I: Speech started, detected by VAD
     activate I
-    Note left of I: user_speech span
-    loop While user is speaking
+    Note left of I: user_speech span, opt-in
+    loop While user continues speaking
         A->>I: Stream user audio
-        I->>M: Stream user audio
+        I->>S: Stream user audio
     end
-    M-->>I: User speech stopped
+    S-->>I: Speech stopped, detected by VAD
     deactivate I
-    M-->>I: User input committed
+    S-->>I: User input committed
+    S-->>I: Generation started
     activate I
     Note left of I: realtime_inference span 1
-    M-->>I: Tool call
+    S-->>I: Tool call
+    S-->>I: Generation completed
     deactivate I
     I-->>A: Tool call
-    A->>T: Execute tool
     activate A
     Note right of A: execute_tool span
+    A->>T: Execute tool
     T-->>A: Tool result
     deactivate A
     A->>I: Send tool result
-    I->>M: Request continuation
+    I->>S: Send tool result
+    opt Provider requires an explicit continuation request
+        I->>S: Request next generation
+    end
+    S-->>I: Generation started
     activate I
     Note left of I: realtime_inference span 2
-    M-->>I: Final answer
+    loop While service generates final answer
+        S-->>I: Output audio chunk
+        I-->>A: Output audio chunk
+        A->>A: Play audio
+    end
+    S-->>I: Generation completed
     deactivate I
-    I-->>A: Final answer
     A->>I: Close realtime connection
-    I->>M: Close realtime connection
-    M-->>I: Connection closed
+    I->>S: Close realtime connection
+    S-->>I: Connection closed
     Note left of I: realtime_session.ended event
     I-->>A: Connection closed
 ```
 
 #### Spans across two generations when content capturing is disabled
 
-The first `realtime_inference` span ends when the model requests the tool:
+The first `realtime_inference` span ends when the service reports generation
+completion after requesting the tool:
 
 | Property                         | Value                                 |
 | -------------------------------- | ------------------------------------- |
