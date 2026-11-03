@@ -5,9 +5,6 @@ attribute_groups:
     attributes:
       - ref: a2a.method.name
         requirement_level: required
-      - ref: a2a.protocol.binding
-        requirement_level:
-          conditionally_required: If available.
       - ref: a2a.protocol.version
 
   - id: a2a.operation.duration.metrics.attributes

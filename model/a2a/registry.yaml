@@ -78,29 +78,6 @@ attributes:
       [versioning](https://a2a-protocol.org/latest/specification/#36-versioning).
     examples: ["1.0"]
     stability: development
-  - key: a2a.protocol.binding
-    type:
-      members:
-        - id: jsonrpc
-          value: JSONRPC
-          brief: JSON-RPC 2.0 over HTTP.
-          stability: development
-        - id: grpc
-          value: GRPC
-          brief: gRPC.
-          stability: development
-        - id: http_json
-          value: HTTP+JSON
-          brief: HTTP+JSON/REST.
-          stability: development
-    brief: The A2A protocol binding used.
-    note: >
-      Corresponds to the `protocolBinding` of the selected Agent Card interface.
-      See the A2A specification for
-      [AgentInterface](https://a2a-protocol.org/latest/specification/#446-agentinterface)
-      and
-      [protocol bindings](https://a2a-protocol.org/latest/specification/#5-protocol-binding-requirements-and-interoperability).
-    stability: development
   - key: a2a.operation.return_immediately
     type: boolean
     brief: >

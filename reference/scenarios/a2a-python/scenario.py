@@ -134,7 +134,6 @@ class ReferenceJsonRpcDispatcher(JsonRpcDispatcher):
         interface = _jsonrpc_interface(self._card)
         metric_attrs = {
             "a2a.method.name": method,
-            "a2a.protocol.binding": interface.protocol_binding,
             "a2a.protocol.version": interface.protocol_version,
         }
         _server_active.add(1, metric_attrs)
@@ -255,7 +254,6 @@ class ReferenceRestDispatcher(RestDispatcher):
         )
         metric_attrs = {
             "a2a.method.name": "GetTask",
-            "a2a.protocol.binding": interface.protocol_binding,
             "a2a.protocol.version": interface.protocol_version,
         }
         _server_active.add(1, metric_attrs)
@@ -384,7 +382,6 @@ async def run_message_send_reference(card: a2a_types.AgentCard) -> str:
         span_attrs["server.port"] = port
     metric_attrs = {
         "a2a.method.name": method,
-        "a2a.protocol.binding": interface.protocol_binding,
         "a2a.protocol.version": interface.protocol_version,
         "server.address": host,
         "server.port": port,
@@ -442,7 +439,6 @@ async def run_message_stream_reference(card: a2a_types.AgentCard) -> None:
         span_attrs["server.port"] = port
     metric_attrs = {
         "a2a.method.name": method,
-        "a2a.protocol.binding": interface.protocol_binding,
         "a2a.protocol.version": interface.protocol_version,
         "server.address": host,
         "server.port": port,
@@ -503,7 +499,6 @@ async def run_tasks_get_reference(card: a2a_types.AgentCard, task_id: str) -> No
         span_attrs["server.port"] = port
     metric_attrs = {
         "a2a.method.name": method,
-        "a2a.protocol.binding": interface.protocol_binding,
         "a2a.protocol.version": interface.protocol_version,
         "server.address": host,
         "server.port": port,
@@ -542,7 +537,6 @@ async def run_tasks_get_error_reference(card: a2a_types.AgentCard) -> None:
     }
     metric_attrs = {
         "a2a.method.name": method,
-        "a2a.protocol.binding": interface.protocol_binding,
         "a2a.protocol.version": interface.protocol_version,
         "server.address": host,
         "server.port": port,
