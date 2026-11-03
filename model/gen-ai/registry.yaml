@@ -508,8 +508,7 @@ attributes:
     brief: Human-readable name of the GenAI agent or workflow provided by the application.
     note: |
       This attribute MUST have low cardinality. It is NOT RECOMMENDED to use
-      instrumentation-time constants, framework defaults, or names of types
-      representing the agent or workflow, such as "StateGraph". When no meaningful,
+      instrumentation-time constants, framework defaults, or type names such as "StateGraph". When no meaningful,
       low-cardinality name is available, this attribute MUST NOT be captured by default.
 
       Semantic conventions for individual Generative AI frameworks SHOULD document

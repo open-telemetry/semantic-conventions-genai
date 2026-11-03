@@ -165,7 +165,7 @@ metrics:
 
       If instrumentation can only measure a single provider-facing client
       operation (for example, one model API call),
-      `gen_ai.client.operation.duration` SHOULD be used instead.
+      `gen_ai.client.*.duration`,  SHOULD be used instead.
 
       When this metric is reported alongside a `gen_ai.invoke_agent.internal`
       span, the metric value SHOULD be the same as the span duration.
