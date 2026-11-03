@@ -992,31 +992,37 @@ recorded only when instrumentation can reliably determine its boundaries.
 sequenceDiagram
     participant A as Application
     participant I as Instrumented realtime client
-    participant M as Model
+    participant S as Realtime service
     A->>I: Open realtime connection
-    I->>M: Establish realtime connection
-    M-->>I: Connection established
+    I->>S: Establish realtime connection
+    S-->>I: Connection established
     I-->>A: Connection established
     Note left of I: realtime_session.started event
-    M-->>I: User speech started
+    A->>I: Stream initial user audio
+    I->>S: Stream initial user audio
+    S-->>I: Speech started, detected by VAD
     activate I
-    Note left of I: user_speech span
-    loop While user is speaking
+    Note left of I: user_speech span, opt-in
+    loop While user continues speaking
         A->>I: Stream user audio
-        I->>M: Stream user audio
+        I->>S: Stream user audio
     end
-    M-->>I: User speech stopped
+    S-->>I: Speech stopped, detected by VAD
     deactivate I
-    M-->>I: User input committed
+    S-->>I: User input committed
+    S-->>I: Generation started
     activate I
     Note left of I: realtime_inference span
-    M-->>I: Stream output audio
-    M-->>I: Generation completed
+    loop While service generates response
+        S-->>I: Output audio chunk
+        I-->>A: Output audio chunk
+        A->>A: Play audio
+    end
+    S-->>I: Generation completed
     deactivate I
-    I-->>A: Play model output
     A->>I: Close realtime connection
-    I->>M: Close realtime connection
-    M-->>I: Connection closed
+    I->>S: Close realtime connection
+    S-->>I: Connection closed
     Note left of I: realtime_session.ended event
     I-->>A: Connection closed
 ```
