@@ -581,6 +581,8 @@ attributes:
     annotations:
       type:
         json_schema: model/gen-ai/gen-ai-tool-call-arguments.json
+      value:
+        unbounded_size: true
     note: |
       > [!WARNING]
       > This attribute may contain sensitive information.
@@ -601,6 +603,8 @@ attributes:
     annotations:
       type:
         json_schema: model/gen-ai/gen-ai-tool-call-result.json
+      value:
+        unbounded_size: true
     note: |
       > [!WARNING]
       > This attribute may contain sensitive information.
@@ -803,6 +807,8 @@ attributes:
     annotations:
       type:
         json_schema: model/gen-ai/gen-ai-retrieval-documents.json
+      value:
+        unbounded_size: true
     note: |
       Each document object SHOULD contain the following properties when available:
       `id` (string): A unique identifier for the document, `score` (double): The relevance score of the document
@@ -880,6 +886,8 @@ attributes:
     annotations:
       type:
         json_schema: model/gen-ai/gen-ai-memory-records.json
+      value:
+        unbounded_size: true
     note: |
       Instrumentations SHOULD NOT capture this attribute by default. Capture SHOULD be gated
       by an explicit user opt-in via [content capture configuration](/docs/gen-ai/gen-ai-spans.md#content-capture-configuration).
