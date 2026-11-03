@@ -39,7 +39,7 @@ def run_agent_reference(llm):
                 tool_span.set_attribute("gen_ai.tool.call.id", current_tool_call_id)
             tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps({"location": location}))
             result = "Sunny, 72°F"
-            tool_span.set_attribute("gen_ai.tool.call.result", result)
+            tool_span.set_attribute("gen_ai.tool.call.result", json.dumps({"type": "value", "content": result}))
             return result
 
     weather_tool = FunctionTool.from_defaults(fn=get_weather)

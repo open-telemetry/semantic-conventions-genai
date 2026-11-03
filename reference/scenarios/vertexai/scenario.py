@@ -78,9 +78,7 @@ def _patch_automatic_function_calling():
                     tool_span.set_attribute("gen_ai.tool.call.id", raw_call["id"])
                 tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps(raw_call.get("args") or {}))
                 result = function(**kwargs)
-                tool_span.set_attribute(
-                    "gen_ai.tool.call.result", result if isinstance(result, str) else json.dumps(result)
-                )
+                tool_span.set_attribute("gen_ai.tool.call.result", json.dumps({"type": "value", "content": result}))
                 return result
 
         return instrumented_function

@@ -56,7 +56,7 @@ def run_tool_call():
                 tool_span.set_attribute("gen_ai.tool.call.id", ctx.tool_call_id)
             tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps({"location": location}))
             result = "Sunny, 72°F"
-            tool_span.set_attribute("gen_ai.tool.call.result", result)
+            tool_span.set_attribute("gen_ai.tool.call.result", json.dumps({"type": "value", "content": result}))
             return result
 
     tools = [Tool(get_weather)]

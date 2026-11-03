@@ -211,7 +211,9 @@ def run_execute_tool_reference():
         tool_span.set_attribute("gen_ai.tool.call.id", tool_call["id"])
         tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps(tool_call["args"]))
         tool_message = get_weather.invoke(tool_call)
-        tool_span.set_attribute("gen_ai.tool.call.result", tool_message.content)
+        tool_span.set_attribute(
+            "gen_ai.tool.call.result", json.dumps({"type": "value", "content": tool_message.content})
+        )
     print(f"    -> {tool_message.content[:60]}")
 
 
@@ -257,7 +259,9 @@ def run_command_execution_reference():
             exit_code = tool_message.artifact.get("exit_code")
             if exit_code is not None:
                 tool_span.set_attribute("process.exit.code", exit_code)
-            tool_span.set_attribute("gen_ai.tool.call.result", tool_message.content)
+            tool_span.set_attribute(
+                "gen_ai.tool.call.result", json.dumps({"type": "value", "content": tool_message.content})
+            )
             return tool_message
 
     shell_tool.func = traced_shell

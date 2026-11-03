@@ -8,6 +8,12 @@ the model call themselves. Native telemetry emits model-call spans and duration
 measurements; this scenario publishes those durations as
 `gen_ai.client.inference.duration` with an OTel SDK view.
 
+The native `execute_tool` spans record `gen_ai.tool.call.result` as the tool's
+output text, such as `Sunny in Seattle`, rather than the typed
+`{"type": "value", "content": ...}` object the convention defines. The library
+sets this value itself, so the fix belongs in Agent Framework's
+instrumentation.
+
 | Operation | Should be instrumented here | Status |
 | --- | --- | --- |
 | inference (`chat`) | Yes — the chat client reports the model call | ✅ Implemented (native) |
