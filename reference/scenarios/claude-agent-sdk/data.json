@@ -14,6 +14,7 @@
     "gen_ai.execute_tool.internal": [
       "gen_ai.conversation.id",
       "gen_ai.operation.name",
+      "gen_ai.plugin.id",
       "gen_ai.plugin.name",
       "gen_ai.plugin.version",
       "gen_ai.tool.call.id",
@@ -36,9 +37,9 @@
     },
     {
       "id": "genai_span_name_format",
-      "message": "execute_tool span name should be 'execute_tool Skill', got 'execute_tool Skill release-notes'",
+      "message": "execute_tool span name should be 'execute_tool Skill', got 'execute_tool Skill deploy-tools:release-notes'",
       "signal_type": "span",
-      "signal_name": "execute_tool Skill release-notes",
+      "signal_name": "execute_tool Skill deploy-tools:release-notes",
       "context": {
         "expected_form": "execute_tool Skill",
         "keyed_attr": "gen_ai.tool.name",

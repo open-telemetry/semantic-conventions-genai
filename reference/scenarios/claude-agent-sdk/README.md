@@ -7,11 +7,14 @@ run is itself an agent invocation (tools, multiple turns). Tools run inside the
 CLI subprocess, but the CLI calls the SDK's `PreToolUse`, `PostToolUse`, and
 `PostToolUseFailure` hook callbacks in-process around each tool execution.
 
-Plugins passed in `ClaudeAgentOptions.plugins` are listed, with name and
-version, in the `init` system message. Claude Code addresses plugin skills as
+`ClaudeAgentOptions.settings` enables a plugin from a directory marketplace.
+The `init` system message lists each loaded plugin with its name, version, and
+`name@marketplace` source. Claude Code addresses plugin skills as
 `<plugin>:<skill>`, so a `Skill` tool call names the plugin that provides the
-skill. Local plugins have no identifier other than their name, so
-`gen_ai.plugin.id` is not recorded.
+skill. `gen_ai.skill.name` records that name unchanged. Plugins loaded from
+`ClaudeAgentOptions.plugins` report a placeholder source such as
+`name@inline`, which only restates the name, so `gen_ai.plugin.id` is not
+recorded for them.
 
 | Operation | Should be instrumented here | Status |
 | --- | --- | --- |

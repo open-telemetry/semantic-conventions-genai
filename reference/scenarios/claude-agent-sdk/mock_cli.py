@@ -9,9 +9,11 @@ Implements the JSON-line protocol expected by claude-agent-sdk:
   stdout -> CLI responds with control_response, system, assistant, user, and
             result messages, and sends hook_callback control requests
 
-When started with `--plugin-dir`, the mock loads each plugin manifest the way
-Claude Code does, lists the plugin and its namespaced skills in the `init`
-system message, and runs one `Skill` tool call for the first plugin skill
+When `--settings` declares a directory marketplace in `extraKnownMarketplaces`
+and enables one of its plugins in `enabledPlugins`, the mock loads the plugin
+manifest the way Claude Code does. It lists the plugin, with its
+`name@marketplace` source, and the plugin's namespaced skills in the `init`
+system message, then runs one `Skill` tool call for the first plugin skill
 between PreToolUse and PostToolUse hook callbacks.
 """
 
@@ -31,23 +33,32 @@ def write(message: dict) -> None:
     sys.stdout.flush()
 
 
-def plugin_dirs_from_argv() -> list[str]:
-    plugin_dirs = []
+def settings_from_argv() -> dict:
     args = sys.argv[1:]
     for index, arg in enumerate(args):
-        if arg == "--plugin-dir" and index + 1 < len(args):
-            plugin_dirs.append(args[index + 1])
-    return plugin_dirs
+        if arg == "--settings" and index + 1 < len(args):
+            return json.loads(args[index + 1])
+    return {}
 
 
-def load_plugins(plugin_dirs: list[str]) -> tuple[list[dict], list[str]]:
+def load_plugins(settings: dict) -> tuple[list[dict], list[str]]:
     plugins = []
     skills = []
-    for plugin_dir in plugin_dirs:
+    marketplaces = settings.get("extraKnownMarketplaces", {})
+    for plugin_source, enabled in settings.get("enabledPlugins", {}).items():
+        if not enabled:
+            continue
+        plugin_name, marketplace_name = plugin_source.split("@")
+        marketplace_dir = marketplaces[marketplace_name]["source"]["path"]
+        catalog_path = os.path.join(marketplace_dir, ".claude-plugin", "marketplace.json")
+        with open(catalog_path, encoding="utf-8") as catalog_file:
+            catalog = json.load(catalog_file)
+        entry = next(entry for entry in catalog["plugins"] if entry["name"] == plugin_name)
+        plugin_dir = os.path.normpath(os.path.join(marketplace_dir, entry["source"]))
         manifest_path = os.path.join(plugin_dir, ".claude-plugin", "plugin.json")
         with open(manifest_path, encoding="utf-8") as manifest_file:
             manifest = json.load(manifest_file)
-        plugin = {"name": manifest["name"], "path": plugin_dir}
+        plugin = {"name": manifest["name"], "path": plugin_dir, "source": plugin_source}
         if "version" in manifest:
             plugin["version"] = manifest["version"]
         plugins.append(plugin)
@@ -228,7 +239,7 @@ def handle_plugin_skill_turn(plugins: list[dict], skills: list[str]) -> None:
 
 
 def main() -> None:
-    plugins, skills = load_plugins(plugin_dirs_from_argv())
+    plugins, skills = load_plugins(settings_from_argv())
     while True:
         msg = read_message()
         if msg is None:

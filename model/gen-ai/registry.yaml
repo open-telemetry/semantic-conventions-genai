@@ -1250,7 +1250,7 @@ attributes:
       This SHOULD be the identifier the plugin source or runtime assigns, such as a
       marketplace-qualified name or a package manifest ID. It SHOULD NOT be set
       when the only value available is `gen_ai.plugin.name`.
-    examples: ["deploy-tools@acme-marketplace", "3260f06f-5275-4794-b367-3e7af29acbda"]
+    examples: ["deploy-tools@acme-tools", "3260f06f-5275-4794-b367-3e7af29acbda"]
     stability: development
   - key: gen_ai.plugin.version
     type: string

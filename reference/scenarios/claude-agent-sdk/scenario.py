@@ -11,7 +11,10 @@ MOCK_CLI_PATH = os.path.join(
     _SCRIPT_DIR,
     "mock_cli.cmd" if os.name == "nt" else "mock_cli.py",
 )
-PLUGIN_PATH = os.path.join(_SCRIPT_DIR, "plugins", "deploy-tools")
+MARKETPLACE_PATH = os.path.join(_SCRIPT_DIR, "plugins")
+# Claude Code reports these in place of a marketplace for plugins that were not
+# installed from one, so the source only restates the plugin name.
+PLACEHOLDER_PLUGIN_SOURCES = {"inline", "skills-dir", "synced", "builtin"}
 
 _reference_tracer = reference_tracer()
 
@@ -98,16 +101,17 @@ async def run_agent_query_reference():
 
 
 async def run_plugin_skill_reference():
-    """Scenario: a plugin-provided skill loaded through the `Skill` tool.
+    """Scenario: a marketplace plugin's skill loaded through the `Skill` tool.
 
     Claude Code runs tools inside the CLI subprocess, but it calls the SDK's
     `PreToolUse` and `PostToolUse` hook callbacks in-process around each tool
     execution. The `execute_tool` span opens and closes in those callbacks.
 
-    The `init` system message lists the plugins the CLI loaded from
-    `ClaudeAgentOptions.plugins`, and Claude Code addresses plugin skills as
-    `<plugin>:<skill>`, so the `Skill` tool input names the plugin that
-    provides the skill.
+    `ClaudeAgentOptions.settings` enables a plugin from a directory
+    marketplace. The `init` system message lists each loaded plugin with its
+    `name@marketplace` source and version, and Claude Code addresses plugin
+    skills as `<plugin>:<skill>`, so the `Skill` tool input names the plugin
+    that provides the skill.
     """
     from claude_agent_sdk import ClaudeAgentOptions, HookMatcher, SystemMessage, query
 
@@ -129,17 +133,18 @@ async def run_plugin_skill_reference():
         }
         span_name = f"execute_tool {hook_input['tool_name']}"
         if hook_input["tool_name"] == "Skill":
-            plugin_name, separator, skill_name = hook_input["tool_input"]["skill"].partition(":")
-            if separator:
-                attributes["gen_ai.skill.name"] = skill_name
-                plugin = loaded_plugins_by_name.get(plugin_name)
-                if plugin is not None:
-                    attributes["gen_ai.plugin.name"] = plugin["name"]
-                    if "version" in plugin:
-                        attributes["gen_ai.plugin.version"] = plugin["version"]
-            else:
-                attributes["gen_ai.skill.name"] = plugin_name
-            span_name = f"execute_tool {hook_input['tool_name']} {attributes['gen_ai.skill.name']}"
+            skill_name = hook_input["tool_input"]["skill"]
+            attributes["gen_ai.skill.name"] = skill_name
+            plugin_name, separator, _ = skill_name.partition(":")
+            plugin = loaded_plugins_by_name.get(plugin_name) if separator else None
+            if plugin is not None:
+                attributes["gen_ai.plugin.name"] = plugin["name"]
+                if "version" in plugin:
+                    attributes["gen_ai.plugin.version"] = plugin["version"]
+                source = plugin.get("source")
+                if source and source.rpartition("@")[2] not in PLACEHOLDER_PLUGIN_SOURCES:
+                    attributes["gen_ai.plugin.id"] = source
+            span_name = f"execute_tool {hook_input['tool_name']} {skill_name}"
         tool_spans_by_tool_use_id[tool_use_id] = _reference_tracer.start_span(
             span_name, kind=SpanKind.INTERNAL, attributes=attributes
         )
@@ -161,7 +166,14 @@ async def run_plugin_skill_reference():
         cli_path=MOCK_CLI_PATH,
         max_turns=2,
         permission_mode="bypassPermissions",
-        plugins=[{"type": "local", "path": PLUGIN_PATH}],
+        settings=json.dumps(
+            {
+                "extraKnownMarketplaces": {
+                    "acme-tools": {"source": {"source": "directory", "path": MARKETPLACE_PATH}},
+                },
+                "enabledPlugins": {"deploy-tools@acme-tools": True},
+            }
+        ),
         hooks={
             "PreToolUse": [HookMatcher(hooks=[on_pre_tool_use])],
             "PostToolUse": [HookMatcher(hooks=[on_post_tool_use])],

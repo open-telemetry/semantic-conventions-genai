@@ -22,7 +22,7 @@
 
 | Attribute | Supporting Libraries |
 | --- | --- |
-| gen_ai.plugin.id | (none) |
+| gen_ai.plugin.id | [claude-agent-sdk] |
 | gen_ai.plugin.version | [claude-agent-sdk] |
 | gen_ai.tool.description | [agent-framework], [autogen], [crewai], [google-adk], [google-genai], [langchain], [llamaindex], [openai-agents], [openai-assistants], [pydantic-ai], [vertexai] |
 | gen_ai.tool.type | [agent-framework], [autogen], [crewai], [google-adk], [google-genai], [langchain], [llamaindex], [openai-agents], [openai-assistants], [pydantic-ai], [vertexai] |
