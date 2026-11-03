@@ -1,6 +1,8 @@
 """Shared OTel SDK setup for all Python reference implementation tests."""
 
 import os
+import re
+from pathlib import Path
 from urllib.parse import urlparse
 
 from opentelemetry import metrics, trace
@@ -23,19 +25,30 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 GENAI_REFERENCE_INSTRUMENTATION = "gen_ai.reference"
 
 
+def _registry_schema_url() -> str:
+    manifest = Path(__file__).resolve().parents[2] / "model" / "manifest.yaml"
+    match = re.search(r"^schema_url:\s*(\S+)", manifest.read_text(encoding="utf-8"), re.MULTILINE)
+    if match is None:
+        raise RuntimeError(f"No top-level schema_url in {manifest}")
+    return match.group(1)
+
+
+_SCHEMA_URL = _registry_schema_url()
+
+
 def reference_tracer(name: str = GENAI_REFERENCE_INSTRUMENTATION) -> trace.Tracer:
     """Return the tracer used by reference scenarios to emit gen_ai.* spans."""
-    return trace.get_tracer(name)
+    return trace.get_tracer(name, schema_url=_SCHEMA_URL)
 
 
 def reference_event_logger(name: str = GENAI_REFERENCE_INSTRUMENTATION):
     """Return the Logger used by reference scenarios to emit gen_ai.* events."""
-    return get_logger_provider().get_logger(name)
+    return get_logger_provider().get_logger(name, schema_url=_SCHEMA_URL)
 
 
 def reference_meter(name: str = GENAI_REFERENCE_INSTRUMENTATION) -> metrics.Meter:
     """Return the Meter used by reference scenarios to emit gen_ai.* metrics."""
-    return metrics.get_meter(name)
+    return metrics.get_meter(name, schema_url=_SCHEMA_URL)
 
 
 def inference_duration_view() -> View:

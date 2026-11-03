@@ -8,4 +8,10 @@ document: [
   { "type": "function", "name": "get_weather", "parameters": { "type": "not-a-type" } }
 ]
 # Regenerate with `uv run pytest --update-snapshots`, do not edit by hand.
-errors: []
+errors:
+  - path: $[0].description
+    keyword: type
+    message: 123 is not of type 'string'
+  - path: $[1].parameters.type
+    keyword: anyOf
+    message: "'not-a-type' is not valid under any of the given schemas"

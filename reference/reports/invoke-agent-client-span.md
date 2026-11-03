@@ -57,9 +57,13 @@
 | Attribute | Supporting Libraries |
 | --- | --- |
 | gen_ai.input.messages | [aws-bedrock-agent], [azure-ai-foundry], [openai-assistants] |
+| gen_ai.input.messages_ref | (none) |
 | gen_ai.output.messages | [aws-bedrock-agent], [azure-ai-foundry], [openai-assistants] |
+| gen_ai.output.messages_ref | (none) |
 | gen_ai.system_instructions | [azure-ai-foundry], [openai-assistants] |
+| gen_ai.system_instructions_ref | (none) |
 | gen_ai.tool.definitions | [azure-ai-foundry], [openai-assistants] |
+| gen_ai.tool.definitions_ref | (none) |
 
 [aws-bedrock-agent]: ../scenarios/aws-bedrock-agent/scenario.py
 [azure-ai-foundry]: ../scenarios/azure-ai-foundry/scenario.py

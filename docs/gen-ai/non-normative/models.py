@@ -450,23 +450,13 @@ class JsonSchemaDraft7:
 JsonSchemaDraft7Dict = Annotated[dict[str, Any], JsonSchemaDraft7]
 
 
-class GenericToolDefinition(BaseModel):
-    """
-    Represents a tool definition in any form.
-    """
-
-    type: str = Field(description="The type of the tool.")
-    name: str = Field(description="The name of the tool.")
-
-    model_config = ConfigDict(extra="allow")
-
-
-class FunctionToolDefinition(GenericToolDefinition):
+class FunctionToolDefinition(BaseModel):
     """
     Represents a tool definition in the form of a function.
     """
 
     type: Literal["function"] = Field(description="The type of the tool.")
+    name: str = Field(description="The name of the tool.")
     description: Optional[str] = Field(
         default=None,
         description=(
@@ -488,11 +478,37 @@ class FunctionToolDefinition(GenericToolDefinition):
     model_config = ConfigDict(extra="allow")
 
 
-ToolDefinition = Union[
+KnownToolDefinition = Union[
     FunctionToolDefinition,
-    GenericToolDefinition,  # Catch-all for any other type
     # Add other tool definition types here as needed,
     # e.g. file search, code interpreter, etc
+]
+
+
+class GenericToolDefinition(BaseModel):
+    """
+    Fallback for consumers when a tool definition has a `type` not defined by
+    this version of semantic conventions (such as a provider-specific built-in
+    tool or a tool type added in a newer version).
+    """
+
+    type: str = Field(
+        description=(
+            "The type of the tool. "
+            "When recording a provider-specific tool definition, it is RECOMMENDED to prefix "
+            "the value with `gen_ai.provider.name` (for example `anthropic.web_search_20250305`) "
+            "to avoid name collisions with current or future tool types defined by semantic conventions."
+        ),
+        json_schema_extra=_not_known_types(KnownToolDefinition),
+    )
+    name: str = Field(description="The name of the tool.")
+
+    model_config = ConfigDict(extra="allow")
+
+
+ToolDefinition = Union[
+    KnownToolDefinition,
+    GenericToolDefinition,  # Catch-all for any other type
 ]
 
 
