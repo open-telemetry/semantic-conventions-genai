@@ -109,8 +109,8 @@ SEMCONV_DOC_LINKS: dict[str, str] = {
     "gen_ai.invoke_agent.tool_calls": "../../docs/gen-ai/gen-ai-metrics.md#metric-gen_aiinvoke_agenttool_calls",
     "a2a.client.operation.duration": "../../docs/gen-ai/a2a.md#metric-a2aclientoperationduration",
     "a2a.server.operation.duration": "../../docs/gen-ai/a2a.md#metric-a2aserveroperationduration",
-    "a2a.client.active_operations": "../../docs/gen-ai/a2a.md#metric-a2aclientactive_operations",
-    "a2a.server.active_operations": "../../docs/gen-ai/a2a.md#metric-a2aserveractive_operations",
+    "a2a.client.operation.active": "../../docs/gen-ai/a2a.md#metric-a2aclientoperationactive",
+    "a2a.server.operation.active": "../../docs/gen-ai/a2a.md#metric-a2aserveroperationactive",
 }
 
 

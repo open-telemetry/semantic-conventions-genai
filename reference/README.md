@@ -72,6 +72,6 @@ Run `uv run update-reports` to regenerate.
 | [Invoke Agent Tool Calls](reports/gen-ai-invoke-agent-tool-calls-metric.md) | adk_a2a, google-adk |
 | [A2A Client Operation Duration](reports/a2a-client-operation-duration-metric.md) | a2a-python |
 | [A2A Server Operation Duration](reports/a2a-server-operation-duration-metric.md) | a2a-python |
-| [A2A Client Active Operations](reports/a2a-client-active-operations-metric.md) | a2a-python |
-| [A2A Server Active Operations](reports/a2a-server-active-operations-metric.md) | a2a-python |
+| [A2A Client Operation Active](reports/a2a-client-operation-active-metric.md) | a2a-python |
+| [A2A Server Operation Active](reports/a2a-server-operation-active-metric.md) | a2a-python |
 <!-- status:end -->

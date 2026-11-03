@@ -24,8 +24,9 @@ metrics:
     brief: Duration of an A2A operation as observed by the client.
     note: |
       Measured from when the client sends the request until the response is
-      received for non-streaming calls, or until the last event of the response
-      stream is consumed for streaming calls.
+      received for non-streaming calls, until the last event of the response
+      stream is consumed for streaming calls, or until the operation ends with
+      an error.
 
       When this metric is reported alongside an `a2a.client` span, the metric
       value SHOULD be the same as the span duration.
@@ -41,13 +42,14 @@ metrics:
     brief: Duration of an A2A operation as observed by the server.
     note: |
       Measured from when the server starts handling the request until the
-      response is produced for non-streaming calls, or until the last event of
-      the response stream is sent for streaming calls.
+      response is produced for non-streaming calls, until the last event of
+      the response stream is sent for streaming calls, or until the operation
+      ends with an error.
     stability: development
     attributes:
       - ref_group: a2a.operation.duration.metrics.attributes
 
-  - name: a2a.client.active_operations
+  - name: a2a.client.operation.active
     requirement_level: recommended
     instrument: updowncounter
     unit: "{operation}"
@@ -61,7 +63,7 @@ metrics:
       - ref_group: a2a.operation.metrics.attributes
       - ref_group: a2a.client.address_and_port.attributes
 
-  - name: a2a.server.active_operations
+  - name: a2a.server.operation.active
     requirement_level: recommended
     instrument: updowncounter
     unit: "{operation}"

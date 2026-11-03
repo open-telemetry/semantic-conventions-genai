@@ -53,12 +53,12 @@ _server_duration = _meter.create_histogram(
     explicit_bucket_boundaries_advisory=_DURATION_BUCKETS,
 )
 _client_active = _meter.create_up_down_counter(
-    "a2a.client.active_operations",
+    "a2a.client.operation.active",
     unit="{operation}",
     description="Number of A2A operations in progress on the client.",
 )
 _server_active = _meter.create_up_down_counter(
-    "a2a.server.active_operations",
+    "a2a.server.operation.active",
     unit="{operation}",
     description="Number of A2A operations being processed by the server.",
 )

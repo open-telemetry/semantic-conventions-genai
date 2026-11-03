@@ -37,7 +37,7 @@
   },
   "events": {},
   "metrics": {
-    "a2a.client.active_operations": [
+    "a2a.client.operation.active": [
       "a2a.method.name",
       "a2a.protocol.version",
       "server.address",
@@ -51,7 +51,7 @@
       "server.address",
       "server.port"
     ],
-    "a2a.server.active_operations": [
+    "a2a.server.operation.active": [
       "a2a.method.name",
       "a2a.protocol.version"
     ],
