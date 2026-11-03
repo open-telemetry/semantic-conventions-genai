@@ -202,8 +202,7 @@ The `gen_ai.operation.name` SHOULD be `invoke_agent`.
 
 This span SHOULD be emitted when the instrumented API represents the target as
 an agent service outside the current process. Instrumentation SHOULD use
-information available from the target's API type or configuration; it is not
-expected to inspect the target's runtime process.
+information available from the target's API type or configuration.
 
 Examples include remote agent services accessed through the OpenAI Assistants API,
 AWS Bedrock Agents, Gemini Enterprise Agent Platform, Azure AI Foundry Agent
@@ -568,8 +567,7 @@ The `gen_ai.operation.name` SHOULD be `invoke_agent`.
 
 This span SHOULD be emitted for an agent invocation executed within the
 instrumented process. Instrumentation SHOULD use information available from
-the API type or configuration; it is not expected to inspect the agent's
-runtime process.
+the API type or configuration.
 
 Examples include local agent invocations in frameworks such as LangChain,
 CrewAI, AutoGen, or Google ADK.
