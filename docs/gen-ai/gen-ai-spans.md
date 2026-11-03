@@ -788,11 +788,11 @@ These attributes MUST be recorded as
 [AnyValue](https://opentelemetry.io/docs/specs/otel/common/#anyvalue) values
 conforming to their JSON schemas.
 
-The JSON schemas describe these attributes when serialized to JSON. Producers
-SHOULD use them as a reference for modeling values with language-specific
+The JSON schemas describe the structure of these attribute values in the
+OpenTelemetry data model, not an export format or encoding. Producers SHOULD
+use them as a reference for modeling values with language-specific `AnyValue`
 types. For example, a property with `"format": "binary"` SHOULD be recorded as
-a byte array, not a string; it may be encoded during export per the
-[AnyValue](https://opentelemetry.io/docs/specs/otel/common/#anyvalue) mapping.
+a byte array, not a string.
 
 Instrumentation MAY provide a configuration option allowing to truncate properties
 such as individual message contents, preserving JSON structure.
@@ -852,8 +852,8 @@ invoke it regardless of the span sampling decision with:
 
 - the [instructions](/model/gen-ai/gen-ai-system-instructions.json), [inputs](/model/gen-ai/gen-ai-input-messages.json),
   [outputs](/model/gen-ai/gen-ai-output-messages.json), and
-  [tool definitions](/model/gen-ai/gen-ai-tool-definitions.json) objects using
-  formats defined in this convention and before they are serialized to JSON;
+  [tool definitions](/model/gen-ai/gen-ai-tool-definitions.json) objects using the
+  structures defined in this convention;
 - the span instance
 
 The hook SHOULD receive the same instructions, inputs, outputs, and tool definitions that the
