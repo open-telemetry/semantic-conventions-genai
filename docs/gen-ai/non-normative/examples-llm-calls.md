@@ -279,8 +279,7 @@ See the [normative JSON schema](/model/gen-ai/gen-ai-input-messages.json) for mo
         "mime_type": "application/pdf",
         "uri": "s3://my-bucket/kyc-form.pdf"
       },
-      // An inline video whose payload the instrumentation did not capture:
-      // `content` is omitted while the part type, modality and MIME type are kept.
+      // An inline video without `content`
       {
         "type": "blob",
         "modality": "video",

@@ -206,12 +206,7 @@ class BlobPart(BaseModel):
     )
     content: Optional[bytes] = Field(
         default=None,
-        description=(
-            "Raw bytes of the attached data. This field SHOULD be encoded as a "
-            "base64 string when serialized to JSON. MAY be omitted when the "
-            "instrumentation does not capture the payload inline, for example "
-            "when it is stored externally or capture is limited by configuration."
-        ),
+        description="Raw bytes of the attached data. This field SHOULD be encoded as a base64 string when serialized to JSON.",
     )
 
 
