@@ -167,6 +167,17 @@
     },
     {
       "id": "genai_span_name_format",
+      "message": "execute_tool span name should be 'execute_tool load_skill', got 'execute_tool load_skill example.code-review'",
+      "signal_type": "span",
+      "signal_name": "execute_tool load_skill example.code-review",
+      "context": {
+        "expected_form": "execute_tool load_skill",
+        "keyed_attr": "gen_ai.tool.name",
+        "operation": "execute_tool"
+      }
+    },
+    {
+      "id": "genai_span_name_format",
       "message": "execute_tool span name should be 'execute_tool load_skill', got 'execute_tool load_skill ocr-tables'",
       "signal_type": "span",
       "signal_name": "execute_tool load_skill ocr-tables",
@@ -181,6 +192,17 @@
       "message": "execute_tool span name should be 'execute_tool load_skill_resource', got 'execute_tool load_skill_resource code-review references/review_policy.md'",
       "signal_type": "span",
       "signal_name": "execute_tool load_skill_resource code-review references/review_policy.md",
+      "context": {
+        "expected_form": "execute_tool load_skill_resource",
+        "keyed_attr": "gen_ai.tool.name",
+        "operation": "execute_tool"
+      }
+    },
+    {
+      "id": "genai_span_name_format",
+      "message": "execute_tool span name should be 'execute_tool load_skill_resource', got 'execute_tool load_skill_resource example.code-review references/review_policy.md'",
+      "signal_type": "span",
+      "signal_name": "execute_tool load_skill_resource example.code-review references/review_policy.md",
       "context": {
         "expected_form": "execute_tool load_skill_resource",
         "keyed_attr": "gen_ai.tool.name",
@@ -212,6 +234,37 @@
       "message": "execute_tool span name should be 'execute_tool run_skill_script', got 'execute_tool run_skill_script code-review scripts/run_checks.py'",
       "signal_type": "span",
       "signal_name": "execute_tool run_skill_script code-review scripts/run_checks.py",
+      "context": {
+        "expected_form": "execute_tool run_skill_script",
+        "keyed_attr": "gen_ai.tool.name",
+        "operation": "execute_tool"
+      }
+    },
+    {
+      "id": "genai_span_name_format",
+      "message": "execute_tool span name should be 'execute_tool run_skill_script', got 'execute_tool run_skill_script example.code-review scripts/lint.sh'",
+      "signal_type": "span",
+      "signal_name": "execute_tool run_skill_script example.code-review scripts/lint.sh",
+      "context": {
+        "expected_form": "execute_tool run_skill_script",
+        "keyed_attr": "gen_ai.tool.name",
+        "operation": "execute_tool"
+      }
+    },
+    {
+      "id": "missing_attribute",
+      "message": "Attribute 'process.exit.code' does not exist in the registry.",
+      "signal_type": "span",
+      "signal_name": "execute_tool run_skill_script example.code-review scripts/run_checks.py",
+      "context": {
+        "attribute_key": "process.exit.code"
+      }
+    },
+    {
+      "id": "genai_span_name_format",
+      "message": "execute_tool span name should be 'execute_tool run_skill_script', got 'execute_tool run_skill_script example.code-review scripts/run_checks.py'",
+      "signal_type": "span",
+      "signal_name": "execute_tool run_skill_script example.code-review scripts/run_checks.py",
       "context": {
         "expected_form": "execute_tool run_skill_script",
         "keyed_attr": "gen_ai.tool.name",
