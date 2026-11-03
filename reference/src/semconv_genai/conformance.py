@@ -115,7 +115,10 @@ def _is_stale(model: Path) -> bool:
     versions_env = SEMCONV_ROOT / "versions.env"
     if versions_env.is_file() and versions_env.stat().st_mtime > resolved_at:
         return True
-    return any(source.stat().st_mtime > resolved_at for source in MODEL_ROOT.rglob("*") if source.is_file())
+    # Directory mtimes also catch deleted or renamed registry sources.
+    if MODEL_ROOT.stat().st_mtime > resolved_at:
+        return True
+    return any(source.stat().st_mtime > resolved_at for source in MODEL_ROOT.rglob("*"))
 
 
 def coverage_model(output: Path = COVERAGE_MODEL) -> Path:
