@@ -35,16 +35,23 @@
                     "title": "Modality"
                 },
                 "content": {
-                    "description": "Raw bytes of the attached data. This field SHOULD be encoded as a base64 string when serialized to JSON.",
-                    "format": "binary",
-                    "title": "Content",
-                    "type": "string"
+                    "anyOf": [
+                        {
+                            "format": "binary",
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Raw bytes of the attached data. This field SHOULD be encoded as a base64 string when serialized to JSON. MAY be omitted when the instrumentation does not capture the payload inline, for example when it is stored externally or capture is limited by configuration.",
+                    "title": "Content"
                 }
             },
             "required": [
                 "type",
-                "modality",
-                "content"
+                "modality"
             ],
             "title": "BlobPart",
             "type": "object"

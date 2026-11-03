@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=../case.schema.json
 description: >
-  Unlike `gen_ai.input.messages`, a blob part on `gen_ai.output.messages` still
-  requires `content`.
+  A blob part on `gen_ai.output.messages` may omit `content` when the
+  instrumentation does not capture the payload inline.
 schema: gen-ai-output-messages.json
 document: [
   {
@@ -13,7 +13,4 @@ document: [
   }
 ]
 # Regenerate with `uv run pytest --update-snapshots`, do not edit by hand.
-errors:
-  - path: $[0].parts[0]
-    keyword: required
-    message: "'content' is a required property"
+errors: []
