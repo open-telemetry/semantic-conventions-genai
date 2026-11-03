@@ -182,13 +182,12 @@ def run_chat_tool_call(client):
                 span.set_attribute("gen_ai.usage.input_tokens", int(resp.usage.billed_units.input_tokens))
             if hasattr(resp.usage.billed_units, "output_tokens"):
                 span.set_attribute("gen_ai.usage.output_tokens", int(resp.usage.billed_units.output_tokens))
-        content = resp.message.content[0].text
         if hasattr(resp.message, "tool_calls") and resp.message.tool_calls:
             # The client returns the tool call; running it is app code the client
             # never sees, so there is no execute_tool span to emit here.
             print(f"    -> tool_call: {resp.message.tool_calls[0].function.name}")
         else:
-            print(f"    -> {content[:60]}")
+            print(f"    -> {resp.message.content[0].text[:60]}")
 
 
 def run_embeddings(client):

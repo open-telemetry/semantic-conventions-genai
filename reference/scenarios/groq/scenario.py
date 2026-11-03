@@ -189,9 +189,11 @@ def run_chat_streaming_reference(client):
         model = None
         response_id = None
         finish_reasons = []
+        usage = None
         for chunk in stream:
             model = model or getattr(chunk, "model", None)
             response_id = response_id or getattr(chunk, "id", None)
+            usage = chunk.usage or (chunk.x_groq and chunk.x_groq.usage) or usage
             if chunk.choices and chunk.choices[0].delta.content:
                 text += chunk.choices[0].delta.content
             if chunk.choices and chunk.choices[0].finish_reason:
@@ -202,7 +204,9 @@ def run_chat_streaming_reference(client):
             span.set_attribute("gen_ai.response.id", response_id)
         if finish_reasons:
             span.set_attribute("gen_ai.response.finish_reasons", finish_reasons)
-        # The stream carries no usage block, so token.usage MUST NOT be reported here.
+        if usage:
+            span.set_attribute("gen_ai.usage.input_tokens", usage.prompt_tokens)
+            span.set_attribute("gen_ai.usage.output_tokens", usage.completion_tokens)
         _inference_duration.record(
             time.perf_counter() - start_time,
             {

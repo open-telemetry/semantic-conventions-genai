@@ -170,6 +170,7 @@
                             "blob",
                             "file",
                             "uri",
+                            "transcription",
                             "reasoning",
                             "compaction"
                         ]
