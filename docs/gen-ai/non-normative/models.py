@@ -610,6 +610,13 @@ class ToolCallResultValue(BaseModel):
     model_config = ConfigDict(extra="allow")
 
 
+KnownToolCallResult = Union[
+    ToolCallResultValue,
+    # Add other result types here as needed,
+    # e.g. a list of message parts
+]
+
+
 class GenericToolCallResult(BaseModel):
     """
     Represents a tool call result of any other type.
@@ -620,16 +627,14 @@ class GenericToolCallResult(BaseModel):
     # validation instead of passing as an unknown type.
     type: str = Field(
         description="The type of the tool call result.",
-        json_schema_extra={"not": {"enum": ["value"]}},
+        json_schema_extra=_not_known_types(KnownToolCallResult),
     )
 
     model_config = ConfigDict(extra="allow")
 
 
-# Add new result types here, e.g. a list of message parts, and to the
-# excluded types of GenericToolCallResult.
 ToolCallResultType = Union[
-    ToolCallResultValue,
+    KnownToolCallResult,
     GenericToolCallResult,  # Catch-all for any other type
 ]
 
