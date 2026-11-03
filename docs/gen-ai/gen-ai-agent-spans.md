@@ -99,8 +99,7 @@ Instrumentations SHOULD document the list of errors they report.
 It's NOT RECOMMENDED to record in-memory agent instance ids on this attribute due to their transient nature.
 
 **[5] `gen_ai.agent.name`:** This attribute MUST have low cardinality. It is NOT RECOMMENDED to use
-instrumentation-time constants, framework defaults, or names of types
-representing the agent or workflow, such as "StateGraph". When no meaningful,
+instrumentation-time constants, framework defaults, or type names such as "StateGraph". When no meaningful,
 low-cardinality name is available, this attribute MUST NOT be captured by default.
 
 Semantic conventions for individual Generative AI frameworks SHOULD document
@@ -278,8 +277,7 @@ Instrumentations SHOULD document the list of errors they report.
 It's NOT RECOMMENDED to record in-memory agent instance ids on this attribute due to their transient nature.
 
 **[5] `gen_ai.agent.name`:** This attribute MUST have low cardinality. It is NOT RECOMMENDED to use
-instrumentation-time constants, framework defaults, or names of types
-representing the agent or workflow, such as "StateGraph". When no meaningful,
+instrumentation-time constants, framework defaults, or type names such as "StateGraph". When no meaningful,
 low-cardinality name is available, this attribute MUST NOT be captured by default.
 
 Semantic conventions for individual Generative AI frameworks SHOULD document
@@ -666,8 +664,7 @@ the canonical name of exception that occurred, or another low-cardinality error 
 Instrumentations SHOULD document the list of errors they report.
 
 **[3] `gen_ai.agent.name`:** This attribute MUST have low cardinality. It is NOT RECOMMENDED to use
-instrumentation-time constants, framework defaults, or names of types
-representing the agent or workflow, such as "StateGraph". When no meaningful,
+instrumentation-time constants, framework defaults, or type names such as "StateGraph". When no meaningful,
 low-cardinality name is available, this attribute MUST NOT be captured by default.
 
 Semantic conventions for individual Generative AI frameworks SHOULD document
@@ -947,8 +944,7 @@ the canonical name of exception that occurred, or another low-cardinality error 
 Instrumentations SHOULD document the list of errors they report.
 
 **[3] `gen_ai.agent.name`:** This attribute MUST have low cardinality. It is NOT RECOMMENDED to use
-instrumentation-time constants, framework defaults, or names of types
-representing the agent or workflow, such as "StateGraph". When no meaningful,
+instrumentation-time constants, framework defaults, or type names such as "StateGraph". When no meaningful,
 low-cardinality name is available, this attribute MUST NOT be captured by default.
 
 Semantic conventions for individual Generative AI frameworks SHOULD document
@@ -1036,8 +1032,7 @@ the canonical name of exception that occurred, or another low-cardinality error 
 Instrumentations SHOULD document the list of errors they report.
 
 **[3] `gen_ai.agent.name`:** This attribute MUST have low cardinality. It is NOT RECOMMENDED to use
-instrumentation-time constants, framework defaults, or names of types
-representing the agent or workflow, such as "StateGraph". When no meaningful,
+instrumentation-time constants, framework defaults, or type names such as "StateGraph". When no meaningful,
 low-cardinality name is available, this attribute MUST NOT be captured by default.
 
 Semantic conventions for individual Generative AI frameworks SHOULD document
@@ -1204,8 +1199,7 @@ the canonical name of exception that occurred, or another low-cardinality error 
 Instrumentations SHOULD document the list of errors they report.
 
 **[3] `gen_ai.agent.name`:** This attribute MUST have low cardinality. It is NOT RECOMMENDED to use
-instrumentation-time constants, framework defaults, or names of types
-representing the agent or workflow, such as "StateGraph". When no meaningful,
+instrumentation-time constants, framework defaults, or type names such as "StateGraph". When no meaningful,
 low-cardinality name is available, this attribute MUST NOT be captured by default.
 
 Semantic conventions for individual Generative AI frameworks SHOULD document
@@ -1368,8 +1362,7 @@ the canonical name of exception that occurred, or another low-cardinality error 
 Instrumentations SHOULD document the list of errors they report.
 
 **[3] `gen_ai.agent.name`:** This attribute MUST have low cardinality. It is NOT RECOMMENDED to use
-instrumentation-time constants, framework defaults, or names of types
-representing the agent or workflow, such as "StateGraph". When no meaningful,
+instrumentation-time constants, framework defaults, or type names such as "StateGraph". When no meaningful,
 low-cardinality name is available, this attribute MUST NOT be captured by default.
 
 Semantic conventions for individual Generative AI frameworks SHOULD document
@@ -1554,8 +1547,7 @@ the canonical name of exception that occurred, or another low-cardinality error 
 Instrumentations SHOULD document the list of errors they report.
 
 **[3] `gen_ai.agent.name`:** This attribute MUST have low cardinality. It is NOT RECOMMENDED to use
-instrumentation-time constants, framework defaults, or names of types
-representing the agent or workflow, such as "StateGraph". When no meaningful,
+instrumentation-time constants, framework defaults, or type names such as "StateGraph". When no meaningful,
 low-cardinality name is available, this attribute MUST NOT be captured by default.
 
 Semantic conventions for individual Generative AI frameworks SHOULD document

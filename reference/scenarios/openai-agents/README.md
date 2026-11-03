@@ -23,7 +23,7 @@ target's SDK turn begins. Each agent's turn has its own `invoke_agent` span.
 | Operation | Should be instrumented here | Status |
 | --- | --- | --- |
 | inference (`chat`) | No — delegates to the `openai` client | ✅ Correctly not emitted |
-| invoke_agent (internal) | Yes — `Runner.run` on an agent | ✅ Implemented |
+| invoke_agent (internal) | Yes — each agent that `Runner.run` executes | ✅ Implemented |
 | invoke_runner | Yes — `Runner.run` is the SDK entrypoint | ✅ Implemented |
 | execute_tool | Yes — the SDK runs the function tool | ✅ Implemented |
 | execute_tool (command) | Yes — the `Shell` sandbox capability runs a general command through `exec_command` | ✅ Implemented |

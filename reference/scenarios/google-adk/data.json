@@ -50,7 +50,9 @@
       "gen_ai.tool.type"
     ],
     "gen_ai.invoke_agent.duration": [
-      "gen_ai.agent.name"
+      "gen_ai.agent.name",
+      "gen_ai.operation.name",
+      "gen_ai.request.model"
     ],
     "gen_ai.invoke_agent.inference_calls": [
       "gen_ai.agent.name",
@@ -238,15 +240,6 @@
         "expected_form": "execute_tool run_skill_script",
         "keyed_attr": "gen_ai.tool.name",
         "operation": "execute_tool"
-      }
-    },
-    {
-      "id": "genai_operation_name_unknown",
-      "message": "Span 'invoke_runner' has gen_ai.operation.name='invoke_runner' which is not a documented enum value",
-      "signal_type": "span",
-      "signal_name": "invoke_runner",
-      "context": {
-        "operation": "invoke_runner"
       }
     }
   ]

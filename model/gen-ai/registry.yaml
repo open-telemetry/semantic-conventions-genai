@@ -768,6 +768,10 @@ attributes:
           value: "invoke_workflow"
           brief: 'Invoke GenAI workflow'
           stability: development
+        - id: invoke_runner
+          value: "invoke_runner"
+          brief: 'Invoke a framework runner that is not itself an agent or a workflow'
+          stability: development
         - id: plan
           value: "plan"
           brief: 'Agent planning or task decomposition phase'

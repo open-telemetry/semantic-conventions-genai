@@ -64,15 +64,6 @@
         "keyed_attr": "gen_ai.tool.name",
         "operation": "execute_tool"
       }
-    },
-    {
-      "id": "genai_operation_name_unknown",
-      "message": "Span 'invoke_runner' has gen_ai.operation.name='invoke_runner' which is not a documented enum value",
-      "signal_type": "span",
-      "signal_name": "invoke_runner",
-      "context": {
-        "operation": "invoke_runner"
-      }
     }
   ]
 }

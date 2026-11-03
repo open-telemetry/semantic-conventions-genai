@@ -26,6 +26,33 @@ SKILLS_DIR = pathlib.Path(__file__).parent / "skills"
 _reference_tracer = reference_tracer()
 _reference_meter = reference_meter()
 
+_invoke_duration = _reference_meter.create_histogram(
+    "gen_ai.invoke_agent.duration",
+    unit="s",
+    description="The end-to-end duration of a single in-process agent, workflow, or framework entrypoint invocation.",
+    explicit_bucket_boundaries_advisory=[
+        0.1,
+        0.2,
+        0.4,
+        0.8,
+        1.6,
+        3.2,
+        6.4,
+        12.8,
+        25.6,
+        51.2,
+        102.4,
+        204.8,
+        409.6,
+        900,
+        1800,
+        3600,
+        7200,
+        14400,
+        43200,
+        86400,
+    ],
+)
 _inference_calls = _reference_meter.create_histogram(
     "gen_ai.invoke_agent.inference_calls",
     unit="{inference_call}",
@@ -208,6 +235,7 @@ def run_agent_reference():
             runner_span_attributes = {
                 "gen_ai.operation.name": "invoke_runner",
             }
+            runner_start = time.perf_counter()
             with _reference_tracer.start_as_current_span(
                 "invoke_runner", attributes=runner_span_attributes
             ) as runner_span:
@@ -221,6 +249,7 @@ def run_agent_reference():
                     "gen_ai.request.model": request_model,
                     "gen_ai.agent.name": agent.name,
                 }
+                agent_start = time.perf_counter()
                 with _reference_tracer.start_as_current_span(
                     "invoke_agent test_agent", attributes=agent_span_attributes
                 ) as agent_span:
@@ -294,6 +323,9 @@ def run_agent_reference():
                         )
                         agent_span.set_attribute("gen_ai.output.messages", output_messages)
                         runner_span.set_attribute("gen_ai.output.messages", output_messages)
+                # Each duration matches its span; the runner has no name, so only the operation is set.
+                _invoke_duration.record(time.perf_counter() - agent_start, agent_span_attributes)
+            _invoke_duration.record(time.perf_counter() - runner_start, runner_span_attributes)
 
         asyncio.run(_run())
 

@@ -78,10 +78,6 @@ scenarios:
         context:
           attribute_key: gen_ai.operation.name
         reason: ADK native instrumentation records the gen_ai.invoke_agent.* metrics without gen_ai.operation.name.
-      - id: genai_operation_name_unknown
-        context:
-          operation: invoke_runner
-        reason: invoke_runner follows the invoke_{framework_entrypoint} pattern and is not a gen_ai.operation.name enum value.
     spans:
       - match:
           attributes:
