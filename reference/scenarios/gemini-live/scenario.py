@@ -49,7 +49,7 @@ import time
 from contextlib import suppress
 
 from opentelemetry._logs import SeverityNumber
-from opentelemetry.trace import SpanKind
+from opentelemetry.trace import SpanKind, Status, StatusCode
 from reference_shared import (
     flush_and_shutdown,
     mock_server_host_port,
@@ -216,64 +216,73 @@ async def _run_generation(session, request_model, host, port, input_messages, ou
             )
             span.set_attribute("gen_ai.input.messages", input_messages)
 
-    async for message in session.receive():
-        voice_activity = message.voice_activity
-        if voice_activity is not None:
-            if voice_activity.voice_activity_type == types.VoiceActivityType.ACTIVITY_START:
-                if speech_span is not None:
-                    raise RuntimeError("Received ACTIVITY_START before ACTIVITY_END")
-                speech_span = _reference_tracer.start_span(
-                    "user_speech",
-                    attributes={
-                        "gen_ai.operation.name": "user_speech",
-                        "gen_ai.provider.name": "gcp.gemini",
-                    },
-                )
-            elif voice_activity.voice_activity_type == types.VoiceActivityType.ACTIVITY_END:
-                if speech_span is None:
-                    raise RuntimeError("Received ACTIVITY_END without ACTIVITY_START")
-                speech_span.end()
-                speech_span = None
+    try:
+        async for message in session.receive():
+            voice_activity = message.voice_activity
+            if voice_activity is not None:
+                if voice_activity.voice_activity_type == types.VoiceActivityType.ACTIVITY_START:
+                    if speech_span is not None:
+                        raise RuntimeError("Received ACTIVITY_START before ACTIVITY_END")
+                    speech_span = _reference_tracer.start_span(
+                        "user_speech",
+                        attributes={
+                            "gen_ai.operation.name": "user_speech",
+                            "gen_ai.provider.name": "gcp.gemini",
+                        },
+                    )
+                elif voice_activity.voice_activity_type == types.VoiceActivityType.ACTIVITY_END:
+                    if speech_span is None:
+                        raise RuntimeError("Received ACTIVITY_END without ACTIVITY_START")
+                    speech_span.end()
+                    speech_span = None
 
-        server_content = message.server_content
-        if server_content is not None:
-            if server_content.input_transcription and server_content.input_transcription.text:
-                input_transcript_deltas.append(server_content.input_transcription.text)
-                input_messages = _user_transcription_message("".join(input_transcript_deltas))
-                if span is not None:
-                    span.set_attribute("gen_ai.input.messages", input_messages)
-            has_output = bool(server_content.output_transcription and server_content.output_transcription.text) or bool(
-                server_content.model_turn and server_content.model_turn.parts
-            )
-            if has_output:
+            server_content = message.server_content
+            if server_content is not None:
+                if server_content.input_transcription and server_content.input_transcription.text:
+                    input_transcript_deltas.append(server_content.input_transcription.text)
+                    input_messages = _user_transcription_message("".join(input_transcript_deltas))
+                    if span is not None:
+                        span.set_attribute("gen_ai.input.messages", input_messages)
+                has_output = bool(
+                    server_content.output_transcription and server_content.output_transcription.text
+                ) or bool(server_content.model_turn and server_content.model_turn.parts)
+                if has_output:
+                    start_generation_span()
+                provider_reason = _turn_complete_reason(server_content)
+                if provider_reason is not None:
+                    finish_reason = provider_reason
+                if server_content.interrupted:
+                    finish_reason = finish_reason or "interrupted"
+                    generation_end_time = generation_end_time or time.time_ns()
+                elif server_content.generation_complete:
+                    finish_reason = finish_reason or "stop"
+                    generation_end_time = generation_end_time or time.time_ns()
+                elif server_content.turn_complete and generation_end_time is None:
+                    finish_reason = finish_reason or "stop"
+                    generation_end_time = time.time_ns()
+                if server_content.output_transcription and server_content.output_transcription.text:
+                    transcript_deltas.append(server_content.output_transcription.text)
+                if server_content.model_turn and server_content.model_turn.parts:
+                    for part in server_content.model_turn.parts:
+                        if part.inline_data and part.inline_data.data:
+                            audio_chunks.append(part.inline_data.data)
+            if message.usage_metadata is not None:
+                usage = message.usage_metadata
+            if break_on_tool_call and message.tool_call is not None and message.tool_call.function_calls:
                 start_generation_span()
-            provider_reason = _turn_complete_reason(server_content)
-            if provider_reason is not None:
-                finish_reason = provider_reason
-            if server_content.interrupted:
-                finish_reason = finish_reason or "interrupted"
-                generation_end_time = generation_end_time or time.time_ns()
-            elif server_content.generation_complete:
-                finish_reason = finish_reason or "stop"
-                generation_end_time = generation_end_time or time.time_ns()
-            elif server_content.turn_complete and generation_end_time is None:
-                finish_reason = finish_reason or "stop"
+                call = message.tool_call.function_calls[0]
+                function_call = {"id": call.id, "name": call.name, "args": dict(call.args or {})}
+                finish_reason = "tool_call"
                 generation_end_time = time.time_ns()
-            if server_content.output_transcription and server_content.output_transcription.text:
-                transcript_deltas.append(server_content.output_transcription.text)
-            if server_content.model_turn and server_content.model_turn.parts:
-                for part in server_content.model_turn.parts:
-                    if part.inline_data and part.inline_data.data:
-                        audio_chunks.append(part.inline_data.data)
-        if message.usage_metadata is not None:
-            usage = message.usage_metadata
-        if break_on_tool_call and message.tool_call is not None and message.tool_call.function_calls:
-            start_generation_span()
-            call = message.tool_call.function_calls[0]
-            function_call = {"id": call.id, "name": call.name, "args": dict(call.args or {})}
-            finish_reason = "tool_call"
-            generation_end_time = time.time_ns()
-            break
+                break
+    except Exception as error:
+        error_type = type(error).__qualname__
+        for active_span in (speech_span, span):
+            if active_span is not None:
+                active_span.set_attribute("error.type", error_type)
+                active_span.set_status(Status(StatusCode.ERROR, str(error)))
+                active_span.end()
+        raise
 
     if speech_span is not None:
         raise RuntimeError("Gemini Live stream ended before ACTIVITY_END")
@@ -357,10 +366,16 @@ def _emit_session_ended(session_attributes, error):
     )
 
 
-async def _run_failed_realtime_session(client, request_model, config, session_attributes):
-    """Exercise an SDK-visible connection failure after session establishment."""
-    from google.genai import types
-
+async def _run_failed_realtime_session(
+    client,
+    request_model,
+    config,
+    session_attributes,
+    host,
+    port,
+    output_type,
+):
+    """Exercise an SDK failure while speech and generation spans are active."""
     session_started = False
     session_error = None
     try:
@@ -372,11 +387,16 @@ async def _run_failed_realtime_session(client, request_model, config, session_at
                 attributes=session_attributes,
             )
             session_started = True
-            await session.send_realtime_input(
-                audio=types.Blob(data=base64.b64decode(INPUT_AUDIO_B64), mime_type="audio/pcm")
+            await _send_user_audio(session)
+            await _run_generation(
+                session,
+                request_model,
+                host,
+                port,
+                _user_audio_message(),
+                output_type,
+                break_on_tool_call=False,
             )
-            async for _ in session.receive():
-                pass
     except Exception as error:
         session_error = error
         raise
@@ -499,7 +519,15 @@ async def run_gemini_live_reference():
             _emit_session_ended(session_attributes, session_error)
 
     with suppress(APIError):
-        await _run_failed_realtime_session(client, request_model, config, session_attributes)
+        await _run_failed_realtime_session(
+            client,
+            request_model,
+            config,
+            session_attributes,
+            host,
+            live_port,
+            output_type,
+        )
 
 
 def main():

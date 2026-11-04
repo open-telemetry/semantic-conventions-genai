@@ -156,8 +156,21 @@ async def _handler(ws):
         if "setup" in message:
             await _send(ws, {"setupComplete": {}})
         elif connection_number == 2:
-            await ws.close(code=1011, reason="mock connection failure")
-            return
+            realtime_input = message.get("realtime_input") or {}
+            if realtime_input.get("audioStreamEnd"):
+                await _send(
+                    ws,
+                    {
+                        "voiceActivity": {
+                            "type": "ACTIVITY_START",
+                            "audioOffset": "0s",
+                        }
+                    },
+                )
+                await _send_input_transcription(ws)
+                await _send_partial_output(ws)
+                await ws.close(code=1011, reason="mock connection failure")
+                return
         elif "tool_response" in message or "toolResponse" in message:
             # The client returned the tool result; the model now speaks its answer.
             await _run_turn(ws)

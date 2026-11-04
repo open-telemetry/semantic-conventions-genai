@@ -43,7 +43,7 @@ from collections import deque
 from contextlib import suppress
 
 from opentelemetry._logs import SeverityNumber
-from opentelemetry.trace import SpanKind
+from opentelemetry.trace import SpanKind, Status, StatusCode
 from reference_shared import (
     flush_and_shutdown,
     mock_server_host_port,
@@ -161,10 +161,25 @@ class _RealtimeDriver:
         # The user speaks first; every span boundary after this is driven by the
         # received events.
         self._send_user_audio(INPUT_AUDIO_B64)
-        for event in self.conn:
-            self._dispatch(event)
-            if self._done:
-                break
+        try:
+            for event in self.conn:
+                self._dispatch(event)
+                if self._done:
+                    break
+        except Exception as error:
+            self._end_active_spans(error)
+            raise
+
+    def _end_active_spans(self, error):
+        error_type = type(error).__qualname__
+        generation_span = self._gen["span"] if self._gen is not None else None
+        for span in (self._speech_span, generation_span):
+            if span is not None:
+                span.set_attribute("error.type", error_type)
+                span.set_status(Status(StatusCode.ERROR, str(error)))
+                span.end()
+        self._speech_span = None
+        self._gen = None
 
     def _send_user_audio(self, audio):
         # Streaming audio makes the server emit its own voice-activity events;
@@ -234,6 +249,7 @@ class _RealtimeDriver:
             f"realtime_inference {self.request_model}", kind=SpanKind.CLIENT, attributes=attributes
         )
         span.set_attribute("gen_ai.input.messages", self._gen["input_messages"])
+        span.set_attribute("gen_ai.response.model", self.response_model)
         self._gen["span"] = span
         self._gen["response_id"] = event.response.id
 
@@ -261,7 +277,6 @@ class _RealtimeDriver:
         span = self._gen["span"]
         if span is None:
             raise RuntimeError("Received response.done before response.created")
-        span.set_attribute("gen_ai.response.model", self.response_model)
         if self._gen["response_id"]:
             span.set_attribute("gen_ai.response.id", self._gen["response_id"])
         if self._function_call is not None:
@@ -419,7 +434,7 @@ def _emit_session_ended(session_attributes, error):
 
 
 def _run_failed_realtime_session(client, provider, request_model, host, port):
-    """Exercise an SDK-visible connection failure after session establishment."""
+    """Exercise an SDK failure while speech and generation spans are active."""
     session_attributes = {
         "gen_ai.provider.name": provider,
         "gen_ai.request.model": request_model,
@@ -433,8 +448,11 @@ def _run_failed_realtime_session(client, provider, request_model, host, port):
     try:
         with client.realtime.connect(model=request_model) as conn:
             session_event = conn.recv()
-            if session_event.session.id:
-                session_attributes["gen_ai.realtime_session.id"] = session_event.session.id
+            response_model = session_event.session.model or request_model
+            session_id = session_event.session.id
+            output_type = _output_type(session_event.session.output_modalities)
+            if session_id:
+                session_attributes["gen_ai.realtime_session.id"] = session_id
             reference_event_logger().emit(
                 event_name="gen_ai.client.realtime_session.started",
                 severity_number=SeverityNumber.INFO,
@@ -442,8 +460,16 @@ def _run_failed_realtime_session(client, provider, request_model, host, port):
                 attributes=session_attributes,
             )
             session_started = True
-            conn.send({"type": "input_audio_buffer.append", "audio": INPUT_AUDIO_B64})
-            conn.recv()
+            _RealtimeDriver(
+                conn,
+                provider,
+                request_model,
+                response_model,
+                session_id,
+                host,
+                port,
+                output_type,
+            ).run()
     except Exception as error:
         session_error = error
         raise

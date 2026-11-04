@@ -1,6 +1,7 @@
 {
   "spans": {
     "gen_ai.realtime_inference.client": [
+      "error.type",
       "gen_ai.input.messages",
       "gen_ai.operation.name",
       "gen_ai.output.messages",
@@ -19,6 +20,7 @@
       "server.port"
     ],
     "gen_ai.user_speech.internal": [
+      "error.type",
       "gen_ai.operation.name",
       "gen_ai.provider.name",
       "gen_ai.realtime_session.id"
@@ -43,5 +45,36 @@
   },
   "metrics": {},
   "entities": {},
-  "findings": []
+  "findings": [
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'realtime_inference gpt-realtime' (operation 'realtime_inference') is missing expected attribute 'gen_ai.response.finish_reasons'",
+      "signal_type": "span",
+      "signal_name": "realtime_inference gpt-realtime",
+      "context": {
+        "missing_attribute": "gen_ai.response.finish_reasons",
+        "operation": "realtime_inference"
+      }
+    },
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'realtime_inference gpt-realtime' (operation 'realtime_inference') is missing expected attribute 'gen_ai.usage.input_tokens'",
+      "signal_type": "span",
+      "signal_name": "realtime_inference gpt-realtime",
+      "context": {
+        "missing_attribute": "gen_ai.usage.input_tokens",
+        "operation": "realtime_inference"
+      }
+    },
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'realtime_inference gpt-realtime' (operation 'realtime_inference') is missing expected attribute 'gen_ai.usage.output_tokens'",
+      "signal_type": "span",
+      "signal_name": "realtime_inference gpt-realtime",
+      "context": {
+        "missing_attribute": "gen_ai.usage.output_tokens",
+        "operation": "realtime_inference"
+      }
+    }
+  ]
 }

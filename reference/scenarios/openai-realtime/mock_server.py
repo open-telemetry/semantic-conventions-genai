@@ -261,6 +261,39 @@ async def _emit_user_vad(ws):
     )
 
 
+async def _run_failed_session(ws):
+    """Close the connection with speech and generation both active."""
+    async for raw in ws:
+        message = json.loads(raw)
+        message_type = message.get("type")
+        if message_type == "input_audio_buffer.append":
+            await _emit_user_vad(ws)
+        elif message_type == "response.create":
+            await _send(
+                ws,
+                {
+                    "type": "response.created",
+                    "event_id": _event_id(),
+                    "response": {
+                        "id": "resp_mock_failure_001",
+                        "object": "realtime.response",
+                        "status": "in_progress",
+                    },
+                },
+            )
+            await _send(
+                ws,
+                {
+                    "type": "input_audio_buffer.speech_started",
+                    "event_id": _event_id(),
+                    "audio_start_ms": 0,
+                    "item_id": "item_mock_failure_speech_001",
+                },
+            )
+            await ws.close(code=1011, reason="mock connection failure")
+            return
+
+
 async def _handler(ws):
     connection_number = next(_connection_counter)
     await _send(
@@ -276,13 +309,14 @@ async def _handler(ws):
             },
         },
     )
+    if connection_number == 2:
+        await _run_failed_session(ws)
+        return
+
     barge_in_received = None
     previous_audio = None
     async with asyncio.TaskGroup() as response_tasks:
         async for raw in ws:
-            if connection_number == 2:
-                await ws.close(code=1011, reason="mock connection failure")
-                return
             message = json.loads(raw)
             message_type = message.get("type")
             if message_type == "input_audio_buffer.append":

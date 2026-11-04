@@ -34,6 +34,11 @@ scenarios:
           missing_attribute: gen_ai.usage.output_tokens
           operation: realtime_inference
         reason: Gemini Live does not report usage for the generation that returns a tool call.
+      - id: genai_expected_attribute_missing
+        context:
+          missing_attribute: gen_ai.response.finish_reasons
+          operation: realtime_inference
+        reason: The connection failure ends the error span before the provider reports a finish reason.
     # The realtime operation is not yet recognised by the shared GenAI
     # conformance classifier, so declare its client span type here.
     # Remove once the classifier recognises this operation upstream.
