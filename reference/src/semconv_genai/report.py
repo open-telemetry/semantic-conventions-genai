@@ -19,7 +19,7 @@ from pathlib import Path
 
 from semconv_genai import (
     REFERENCE_ROOT,
-    reference_scenario_file,
+    SCENARIOS_DIR,
 )
 from semconv_genai.attribute_spec import AttributeSpec, RequirementLevel
 from semconv_genai.data_files import (
@@ -87,7 +87,7 @@ SEMCONV_DOC_LINKS: dict[str, str] = {
     "plan": "../../docs/gen-ai/gen-ai-agent-spans.md#plan-span",
     "inference": "../../docs/gen-ai/client-inference.md#span-gen_aiclientinference",
     "embeddings": "../../docs/gen-ai/client-embeddings.md#span-gen_aiclientembeddings",
-    "retrieval": "../../docs/gen-ai/gen-ai-spans.md#retrievals",
+    "retrieval": "../../docs/gen-ai/retrieval.md#span-gen_airetrieval",
     "fetch_response": "../../docs/gen-ai/gen-ai-spans.md#fetch-response",
     "memory": "../../docs/gen-ai/gen-ai-spans.md#memory",
     "execute_tool": "../../docs/gen-ai/gen-ai-spans.md#execute-tool-span",
@@ -105,6 +105,7 @@ SEMCONV_DOC_LINKS: dict[str, str] = {
     "gen_ai.client.inference.duration": "../../docs/gen-ai/client-inference.md#metric-gen_aiclientinferenceduration",
     "gen_ai.client.embeddings.duration": "../../docs/gen-ai/client-embeddings.md#metric-gen_aiclientembeddingsduration",
     "gen_ai.client.embeddings.operation.input_tokens": "../../docs/gen-ai/client-embeddings.md#metric-gen_aiclientembeddingsoperationinput_tokens",
+    "gen_ai.retrieval.duration": "../../docs/gen-ai/retrieval.md#metric-gen_airetrievalduration",
     "gen_ai.invoke_agent.inference_calls": "../../docs/gen-ai/gen-ai-metrics.md#metric-gen_aiinvoke_agentinference_calls",
     "gen_ai.invoke_agent.tool_calls": "../../docs/gen-ai/gen-ai-metrics.md#metric-gen_aiinvoke_agenttool_calls",
 }
@@ -127,27 +128,51 @@ def _supporting_libraries(
     return [entry for entry in entries if by_signal(entry).get(type_key, {}).get(attr_name) == "present"]
 
 
-def _library_reference_path(library: str, output_dir: Path) -> str:
-    scenario_path = reference_scenario_file(library)
+def _scenario_reference_path(scenario: str, output_dir: Path) -> str:
+    scenario_path = SCENARIOS_DIR / scenario / "scenario.py"
     return Path(os.path.relpath(scenario_path, output_dir)).as_posix()
 
 
-def _supporting_library_refs(entries: list[ScenarioDataEntry]) -> str:
+def _reference_key(library: str, scenario: str) -> str:
+    return library if library == scenario else f"{library}@{scenario}"
+
+
+def _supporting_library_refs(
+    entries: list[ScenarioDataEntry],
+    signal_kind: str,
+    type_key: str,
+    attr_name: str,
+    used_references: set[tuple[str, str]],
+) -> str:
     """Return a comma-separated list of short reference-style library links.
 
-    The `[lib]` tokens are resolved via link-reference definitions emitted
-    once per page by ``_link_reference_block``.
+    The visible label remains the grouped instrumented library. The reference
+    key also includes the scenario so two scenarios for one library can link to
+    different files on the same report page.
     """
     if not entries:
         return EMPTY_TABLE_VALUE
-    return ", ".join(f"[{entry.library}]" for entry in entries)
+    references = []
+    for entry in entries:
+        scenarios = entry.sources.get(signal_kind, {}).get(type_key, {}).get(attr_name, (entry.library,))
+        for scenario in scenarios:
+            used_references.add((entry.library, scenario))
+            reference_key = _reference_key(entry.library, scenario)
+            if reference_key == entry.library:
+                references.append(f"[{entry.library}]")
+            else:
+                references.append(f"[{entry.library}][{reference_key}]")
+    return ", ".join(references)
 
 
-def _link_reference_block(libraries: set[str], output_dir: Path) -> list[str]:
-    """Return `[lib]: path` link-reference definitions for every ``libraries`` entry."""
-    if not libraries:
+def _link_reference_block(references: set[tuple[str, str]], output_dir: Path) -> list[str]:
+    """Return scenario-specific link-reference definitions."""
+    if not references:
         return []
-    return [f"[{lib}]: {_library_reference_path(lib, output_dir)}" for lib in sorted(libraries)]
+    return [
+        f"[{_reference_key(library, scenario)}]: {_scenario_reference_path(scenario, output_dir)}"
+        for library, scenario in sorted(references)
+    ]
 
 
 def _render_signal_section(
@@ -164,7 +189,13 @@ def _render_signal_section(
         lines.append(f"> **[Semantic Convention]({doc_link})**")
         lines.append("")
 
-    used_libraries: set[str] = set()
+    signal_kind_key = {
+        "Span": "spans",
+        "Event": "events",
+        "Entity": "entities",
+        "Metric": "metrics",
+    }[signal_kind]
+    used_references: set[tuple[str, str]] = set()
     for level in LEVEL_ORDER:
         attr_names = [a for a in spec.attrs_for_requirement_level(level) if a not in DISPLAY_HIDDEN_ATTRS]
         if not attr_names:
@@ -180,11 +211,17 @@ def _render_signal_section(
         )
         for attr_name in attr_names:
             libraries = _supporting_libraries(entries, type_key, attr_name, by_signal)
-            used_libraries.update(entry.library for entry in libraries)
-            lines.append(f"| {_table_escape(attr_name)} | {_supporting_library_refs(libraries)} |")
+            library_refs = _supporting_library_refs(
+                libraries,
+                signal_kind_key,
+                type_key,
+                attr_name,
+                used_references,
+            )
+            lines.append(f"| {_table_escape(attr_name)} | {library_refs} |")
         lines.append("")
 
-    ref_lines = _link_reference_block(used_libraries, output_dir)
+    ref_lines = _link_reference_block(used_references, output_dir)
     if ref_lines:
         lines.extend(ref_lines)
         lines.append("")

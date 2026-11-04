@@ -35,7 +35,7 @@ _SPANS = {
     "a2a_server": ("a2a.server", "A2A Server"),
     "inference": ("gen_ai.client.inference", "Inference"),
     "embeddings": ("gen_ai.client.embeddings", "Embeddings"),
-    "retrieval": ("gen_ai.retrieval.client", "Retrieval"),
+    "retrieval": ("gen_ai.retrieval", "Retrieval"),
     "fetch_response": ("gen_ai.fetch_response.client", "Fetch Response"),
     "memory": ("gen_ai.memory.client", "Memory"),
     "execute_tool": ("gen_ai.execute_tool.internal", "Execute Tool"),
@@ -44,11 +44,15 @@ _SPANS = {
     "invoke_agent_internal": ("gen_ai.invoke_agent.internal", "Invoke Agent Internal"),
     "invoke_workflow": ("gen_ai.invoke_workflow.internal", "Invoke Workflow"),
     "plan": ("gen_ai.plan.internal", "Plan"),
+    "realtime_inference": ("gen_ai.realtime_inference.client", "Realtime Inference"),
+    "user_speech": ("gen_ai.user_speech.internal", "User Speech"),
 }
 
 _EVENTS = {
     "gen_ai.client.inference.operation.details": "Inference Operation Details",
     "gen_ai.evaluation.result": "Evaluation Result",
+    "gen_ai.client.realtime_session.started": "Realtime Session Started",
+    "gen_ai.client.realtime_session.ended": "Realtime Session Ended",
 }
 
 # Client duration and token usage describe individual calls, unlike the
@@ -67,6 +71,7 @@ _METRICS = {
     "gen_ai.client.inference.duration": "Client Inference Duration",
     "gen_ai.client.embeddings.duration": "Client Embeddings Duration",
     "gen_ai.client.embeddings.operation.input_tokens": "Client Embeddings Operation Input Tokens",
+    "gen_ai.retrieval.duration": "Retrieval Duration",
     "gen_ai.invoke_agent.inference_calls": "Invoke Agent Inference Calls",
     "gen_ai.invoke_agent.tool_calls": "Invoke Agent Tool Calls",
 }
