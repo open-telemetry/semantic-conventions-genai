@@ -205,6 +205,19 @@ class _RealtimeDriver:
         self._start_generation(self._behaviors.popleft(), self._pending_user_inputs.popleft())
 
     def _start_generation(self, behavior, input_messages):
+        self._gen = {
+            "span": None,
+            "behavior": behavior,
+            "barge_in_sent": False,
+            "input_messages": input_messages,
+            "response_id": None,
+            "transcript_deltas": [],
+            "audio_deltas": [],
+            "final_transcript": None,
+        }
+        self.conn.send({"type": "response.create", "response": {"metadata": {"mock_behavior": behavior}}})
+
+    def _on_response_created(self, event):
         attributes = _live_attributes(
             self.provider,
             self.request_model,
@@ -217,19 +230,8 @@ class _RealtimeDriver:
         span = _reference_tracer.start_span(
             f"realtime_inference {self.request_model}", kind=SpanKind.CLIENT, attributes=attributes
         )
-        span.set_attribute("gen_ai.input.messages", input_messages)
-        self._gen = {
-            "span": span,
-            "behavior": behavior,
-            "barge_in_sent": False,
-            "response_id": None,
-            "transcript_deltas": [],
-            "audio_deltas": [],
-            "final_transcript": None,
-        }
-        self.conn.send({"type": "response.create", "response": {"metadata": {"mock_behavior": behavior}}})
-
-    def _on_response_created(self, event):
+        span.set_attribute("gen_ai.input.messages", self._gen["input_messages"])
+        self._gen["span"] = span
         self._gen["response_id"] = event.response.id
 
     def _on_transcript_delta(self, event):
@@ -254,6 +256,8 @@ class _RealtimeDriver:
 
     def _on_response_done(self, event):
         span = self._gen["span"]
+        if span is None:
+            raise RuntimeError("Received response.done before response.created")
         span.set_attribute("gen_ai.response.model", self.response_model)
         if self._gen["response_id"]:
             span.set_attribute("gen_ai.response.id", self._gen["response_id"])
