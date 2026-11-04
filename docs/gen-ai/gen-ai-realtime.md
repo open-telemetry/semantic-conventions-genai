@@ -201,8 +201,7 @@ known. Incomplete counts SHOULD be omitted from both signals, rather than
 recorded as operation totals. For example, Anthropic reports the input total
 at `message_start`, but its initial output count is incomplete until
 `message_delta`. The known input total can be recorded even when the output
-total is omitted. This uses absence to represent an unknown total and does
-not introduce a separate completeness attribute.
+total is omitted.
 
 **[14] `gen_ai.usage.audio.cache_read.input_tokens`:** The value SHOULD be included in `gen_ai.usage.cache_read.input_tokens` and in `gen_ai.usage.audio.input_tokens`.
 
