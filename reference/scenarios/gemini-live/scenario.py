@@ -190,7 +190,30 @@ def _turn_complete_reason(server_content):
     return reason.value.lower()
 
 
-async def _run_generation(session, request_model, host, port, input_messages, output_type, break_on_tool_call):
+class _SpeechSpanState:
+    def __init__(self):
+        self.span = None
+
+
+def _fail_active_speech_span(speech_state, error):
+    if speech_state.span is None:
+        return
+    speech_state.span.set_attribute("error.type", type(error).__qualname__)
+    speech_state.span.set_status(Status(StatusCode.ERROR, str(error)))
+    speech_state.span.end()
+    speech_state.span = None
+
+
+async def _run_generation(
+    session,
+    request_model,
+    host,
+    port,
+    input_messages,
+    output_type,
+    break_on_tool_call,
+    speech_state,
+):
     """Dispatch speech and generation events for one server-side generation.
 
     Returns the function call requested by the model, if any.
@@ -199,7 +222,6 @@ async def _run_generation(session, request_model, host, port, input_messages, ou
 
     attributes = _live_attributes(request_model, host, port, "realtime_inference", output_type=output_type)
     span = None
-    speech_span = None
     generation_end_time = None
     finish_reason = None
     input_transcript_deltas = []
@@ -221,9 +243,9 @@ async def _run_generation(session, request_model, host, port, input_messages, ou
             voice_activity = message.voice_activity
             if voice_activity is not None:
                 if voice_activity.voice_activity_type == types.VoiceActivityType.ACTIVITY_START:
-                    if speech_span is not None:
+                    if speech_state.span is not None:
                         raise RuntimeError("Received ACTIVITY_START before ACTIVITY_END")
-                    speech_span = _reference_tracer.start_span(
+                    speech_state.span = _reference_tracer.start_span(
                         "user_speech",
                         attributes={
                             "gen_ai.operation.name": "user_speech",
@@ -231,10 +253,10 @@ async def _run_generation(session, request_model, host, port, input_messages, ou
                         },
                     )
                 elif voice_activity.voice_activity_type == types.VoiceActivityType.ACTIVITY_END:
-                    if speech_span is None:
+                    if speech_state.span is None:
                         raise RuntimeError("Received ACTIVITY_END without ACTIVITY_START")
-                    speech_span.end()
-                    speech_span = None
+                    speech_state.span.end()
+                    speech_state.span = None
 
             server_content = message.server_content
             if server_content is not None:
@@ -275,73 +297,71 @@ async def _run_generation(session, request_model, host, port, input_messages, ou
                 finish_reason = "tool_call"
                 generation_end_time = time.time_ns()
                 break
+
+        if span is None:
+            raise RuntimeError("Gemini Live stream ended before the generation started")
+        if generation_end_time is None or finish_reason is None:
+            raise RuntimeError("Gemini Live stream ended without a generation completion signal")
+
+        if function_call is not None:
+            output_messages = [
+                {
+                    "role": "assistant",
+                    "parts": [
+                        {
+                            "type": "tool_call",
+                            "id": function_call["id"],
+                            "name": function_call["name"],
+                            "arguments": function_call["args"],
+                        }
+                    ],
+                }
+            ]
+        else:
+            transcript = "".join(transcript_deltas)
+            output_audio = base64.b64encode(b"".join(audio_chunks)).decode() if audio_chunks else ""
+            output_messages = [
+                {
+                    "role": "assistant",
+                    "parts": [
+                        {
+                            "type": "blob",
+                            "modality": "audio",
+                            "mime_type": "audio/pcm",
+                            "content": output_audio,
+                        },
+                        {
+                            "type": "transcription",
+                            "content": transcript,
+                        },
+                    ],
+                }
+            ]
+            print(f"    -> {transcript[:60]} ({finish_reason})")
+
+        span.set_attribute("gen_ai.response.finish_reasons", [finish_reason])
+        span.set_attribute("gen_ai.output.messages", json.dumps(output_messages))
+        if usage:
+            if usage.prompt_token_count:
+                span.set_attribute("gen_ai.usage.input_tokens", usage.prompt_token_count)
+            if usage.response_token_count:
+                span.set_attribute("gen_ai.usage.output_tokens", usage.response_token_count)
+            input_audio_tokens = _audio_modality_tokens(usage.prompt_tokens_details)
+            if input_audio_tokens is not None:
+                span.set_attribute("gen_ai.usage.audio.input_tokens", input_audio_tokens)
+            output_audio_tokens = _audio_modality_tokens(usage.response_tokens_details)
+            if output_audio_tokens is not None:
+                span.set_attribute("gen_ai.usage.audio.output_tokens", output_audio_tokens)
+        span.end(end_time=generation_end_time)
+        return function_call
     except Exception as error:
         error_type = type(error).__qualname__
-        for active_span in (speech_span, span):
-            if active_span is not None:
-                active_span.set_attribute("error.type", error_type)
-                active_span.set_status(Status(StatusCode.ERROR, str(error)))
-                active_span.end()
+        if span is not None:
+            span.set_attribute("error.type", error_type)
+            span.set_status(Status(StatusCode.ERROR, str(error)))
+            span.end()
+        _fail_active_speech_span(speech_state, error)
         raise
-
-    if speech_span is not None:
-        raise RuntimeError("Gemini Live stream ended before ACTIVITY_END")
-    if span is None:
-        raise RuntimeError("Gemini Live stream ended before the generation started")
-    if generation_end_time is None or finish_reason is None:
-        raise RuntimeError("Gemini Live stream ended without a generation completion signal")
-
-    if function_call is not None:
-        output_messages = [
-            {
-                "role": "assistant",
-                "parts": [
-                    {
-                        "type": "tool_call",
-                        "id": function_call["id"],
-                        "name": function_call["name"],
-                        "arguments": function_call["args"],
-                    }
-                ],
-            }
-        ]
-    else:
-        transcript = "".join(transcript_deltas)
-        output_audio = base64.b64encode(b"".join(audio_chunks)).decode() if audio_chunks else ""
-        output_messages = [
-            {
-                "role": "assistant",
-                "parts": [
-                    {
-                        "type": "blob",
-                        "modality": "audio",
-                        "mime_type": "audio/pcm",
-                        "content": output_audio,
-                    },
-                    {
-                        "type": "transcription",
-                        "content": transcript,
-                    },
-                ],
-            }
-        ]
-        print(f"    -> {transcript[:60]} ({finish_reason})")
-
-    span.set_attribute("gen_ai.response.finish_reasons", [finish_reason])
-    span.set_attribute("gen_ai.output.messages", json.dumps(output_messages))
-    if usage:
-        if usage.prompt_token_count:
-            span.set_attribute("gen_ai.usage.input_tokens", usage.prompt_token_count)
-        if usage.response_token_count:
-            span.set_attribute("gen_ai.usage.output_tokens", usage.response_token_count)
-        input_audio_tokens = _audio_modality_tokens(usage.prompt_tokens_details)
-        if input_audio_tokens is not None:
-            span.set_attribute("gen_ai.usage.audio.input_tokens", input_audio_tokens)
-        output_audio_tokens = _audio_modality_tokens(usage.response_tokens_details)
-        if output_audio_tokens is not None:
-            span.set_attribute("gen_ai.usage.audio.output_tokens", output_audio_tokens)
-    span.end(end_time=generation_end_time)
-    return function_call
 
 
 async def _send_user_audio(session):
@@ -378,6 +398,7 @@ async def _run_failed_realtime_session(
     """Exercise an SDK failure while speech and generation spans are active."""
     session_started = False
     session_error = None
+    speech_state = _SpeechSpanState()
     try:
         async with client.aio.live.connect(model=request_model, config=config) as session:
             reference_event_logger().emit(
@@ -396,9 +417,11 @@ async def _run_failed_realtime_session(
                 _user_audio_message(),
                 output_type,
                 break_on_tool_call=False,
+                speech_state=speech_state,
             )
     except Exception as error:
         session_error = error
+        _fail_active_speech_span(speech_state, error)
         raise
     finally:
         if session_started:
@@ -445,6 +468,7 @@ async def run_gemini_live_reference():
         session_attributes["server.port"] = live_port
     session_started = False
     session_error = None
+    speech_state = _SpeechSpanState()
     try:
         async with client.aio.live.connect(model=request_model, config=config) as session:
             # Gemini Live exposes no session id, so gen_ai.realtime_session.id is left unset.
@@ -466,6 +490,7 @@ async def run_gemini_live_reference():
                 _user_audio_message(),
                 output_type,
                 break_on_tool_call=False,
+                speech_state=speech_state,
             )
 
             # Turn 2: the user barges in while the model is responding. Gemini
@@ -480,6 +505,7 @@ async def run_gemini_live_reference():
                 _user_audio_message(),
                 output_type,
                 break_on_tool_call=False,
+                speech_state=speech_state,
             )
 
             # Turn 3: Gemini Live 2.5 ends the first generation with a tool call.
@@ -495,6 +521,7 @@ async def run_gemini_live_reference():
                 _user_audio_message(),
                 output_type,
                 break_on_tool_call=True,
+                speech_state=speech_state,
             )
             result = _execute_tool(function_call)
             await session.send_tool_response(
@@ -510,9 +537,13 @@ async def run_gemini_live_reference():
                 _tool_result_message(function_call, result),
                 output_type,
                 break_on_tool_call=False,
+                speech_state=speech_state,
             )
+            if speech_state.span is not None:
+                raise RuntimeError("Gemini Live session ended before ACTIVITY_END")
     except Exception as error:
         session_error = error
+        _fail_active_speech_span(speech_state, error)
         raise
     finally:
         if session_started:

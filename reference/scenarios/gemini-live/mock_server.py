@@ -39,10 +39,12 @@ Server -> client turn sequence for one voice response:
 
 The first ``audioStreamEnd`` drives a simple spoken turn. The second simulates
 barge-in by emitting partial output followed by ``interrupted`` and
-``turnComplete`` without ``generationComplete``. A subsequent ``audioStreamEnd``
-drives a tool-calling turn: the server emits a ``toolCall`` (and nothing else)
-so the client runs the tool and replies with a ``toolResponse``; the server then
-produces the spoken answer as a new generation, matching Gemini Live 2.5.
+``turnComplete`` without ``generationComplete``. Its ``ACTIVITY_END`` follows
+``turnComplete`` so the SDK delivers it through the next receive iterator. A
+subsequent ``audioStreamEnd`` drives a tool-calling turn: the server emits a
+``toolCall`` (and nothing else) so the client runs the tool and replies with a
+``toolResponse``; the server then produces the spoken answer as a new
+generation, matching Gemini Live 2.5.
 
 """
 
@@ -142,6 +144,18 @@ async def _send_input_transcription(ws):
         )
 
 
+async def _send_activity_end(ws):
+    await _send(
+        ws,
+        {
+            "voiceActivity": {
+                "type": "ACTIVITY_END",
+                "audioOffset": "1s",
+            }
+        },
+    )
+
+
 async def _run_tool_call(ws):
     """Emit a tool call and nothing else; the client must reply with a toolResponse."""
     await _send(ws, {"toolCall": {"functionCalls": [FUNCTION_CALL]}})
@@ -186,24 +200,22 @@ async def _handler(ws):
                     # client does not discard generation events while tracking
                     # the active user-speech span.
                     await _send_partial_output(ws)
-                if voice_activity_active:
-                    await _send(
-                        ws,
-                        {
-                            "voiceActivity": {
-                                "type": "ACTIVITY_END",
-                                "audioOffset": "1s",
-                            }
-                        },
-                    )
-                    voice_activity_active = False
                 audio_turns += 1
                 if audio_turns == 1:
+                    if voice_activity_active:
+                        await _send_activity_end(ws)
+                        voice_activity_active = False
                     await _run_turn(ws)
                 elif audio_turns == 2:
                     await _send(ws, {"serverContent": {"interrupted": True}})
                     await _send(ws, {"serverContent": {"turnComplete": True}, "usageMetadata": _usage()})
+                    if voice_activity_active:
+                        await _send_activity_end(ws)
+                        voice_activity_active = False
                 else:
+                    if voice_activity_active:
+                        await _send_activity_end(ws)
+                        voice_activity_active = False
                     await _run_tool_call(ws)
             elif not voice_activity_active:
                 await _send(
