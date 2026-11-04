@@ -43,14 +43,16 @@
       "gen_ai.operation.name"
     ]
   },
+  "entities": {},
   "findings": [
     {
       "id": "missing_attribute",
       "message": "Attribute 'process.exit.code' does not exist in the registry.",
+      "signal_type": "span",
+      "signal_name": "execute_tool shell",
       "context": {
         "attribute_key": "process.exit.code"
       }
     }
-  ],
-  "entities": {}
+  ]
 }
