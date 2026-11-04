@@ -171,7 +171,7 @@ events:
       This event represents an exception that caused a Generative AI client agent invocation operation to fail.
     note: >
       Exception recording SHOULD follow the general
-      [recording errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/recording-errors.md)
+      [recording errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/general/recording-errors.md)
       guidance. This log event SHOULD be correlated with the invoke agent client span using its trace and span identifiers.
 
       Instrumentations SHOULD set the severity to WARN (severity number 13) when recording this event.
