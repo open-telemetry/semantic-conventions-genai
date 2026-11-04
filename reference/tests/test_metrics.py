@@ -10,7 +10,13 @@ Runnable directly (``python tests/test_metrics.py``) or under pytest.
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from unittest.mock import patch
+
 from semconv_genai.data_files import _normalize_scenario_data_entry, load_scenario_data_files
+from semconv_genai.report import _entities_of, _render_signal_section
 from semconv_genai.semconv_model import entity_specs, metric_specs, span_specs
 
 _TOOL_CALLS = "gen_ai.invoke_agent.tool_calls"
@@ -101,6 +107,73 @@ def test_entities_with_sections_round_trip():
     assert entry.entities["gen_ai.main_agent"]["gen_ai.main_agent.name"] == "present"
 
 
+def test_scenarios_for_one_library_merge_entities():
+    with TemporaryDirectory() as directory:
+        scenarios = Path(directory)
+        for name, attributes in {
+            "first": ["gen_ai.main_agent.id"],
+            "second": ["gen_ai.main_agent.name"],
+        }.items():
+            scenario = scenarios / name
+            scenario.mkdir()
+            (scenario / "conformance.yaml").write_text("instrumented_library: shared\n", encoding="utf-8")
+            (scenario / "data.json").write_text(
+                json.dumps({"entities": {"gen_ai.main_agent": attributes}}),
+                encoding="utf-8",
+            )
+        with patch("semconv_genai.data_files.SCENARIOS_DIR", scenarios):
+            entries = load_scenario_data_files()
+
+    assert len(entries) == 1
+    assert entries[0].library == "shared"
+    entity = entries[0].entities["gen_ai.main_agent"]
+    assert entity["gen_ai.main_agent.id"] == "present"
+    assert entity["gen_ai.main_agent.name"] == "present"
+    assert entity["gen_ai.main_agent.description"] == "absent"
+    sources = entries[0].sources["entities"]["gen_ai.main_agent"]
+    assert sources["gen_ai.main_agent.id"] == ("first",)
+    assert sources["gen_ai.main_agent.name"] == ("second",)
+
+
+def test_report_links_attributes_to_contributing_scenarios():
+    with TemporaryDirectory() as directory:
+        root = Path(directory)
+        scenarios = root / "scenarios"
+        reports = root / "reports"
+        reports.mkdir()
+        for name, attributes in {
+            "first": ["gen_ai.main_agent.id"],
+            "second": ["gen_ai.main_agent.name"],
+        }.items():
+            scenario = scenarios / name
+            scenario.mkdir(parents=True)
+            (scenario / "conformance.yaml").write_text("instrumented_library: shared\n", encoding="utf-8")
+            (scenario / "scenario.py").write_text("", encoding="utf-8")
+            (scenario / "data.json").write_text(
+                json.dumps({"entities": {"gen_ai.main_agent": attributes}}),
+                encoding="utf-8",
+            )
+        with (
+            patch("semconv_genai.data_files.SCENARIOS_DIR", scenarios),
+            patch("semconv_genai.report.SCENARIOS_DIR", scenarios),
+        ):
+            entries = load_scenario_data_files()
+            lines = _render_signal_section(
+                entries,
+                "gen_ai.main_agent",
+                entity_specs()["gen_ai.main_agent"],
+                reports,
+                "Entity",
+                _entities_of,
+            )
+
+    report = "\n".join(lines)
+    assert "[shared][shared@first]" in report
+    assert "[shared][shared@second]" in report
+    assert "[shared@first]: ../scenarios/first/scenario.py" in report
+    assert "[shared@second]: ../scenarios/second/scenario.py" in report
+
+
 def test_registry_span_names_map_onto_report_keys():
     """A data file names spans as the registry does; reports use short keys."""
     entry = _normalize_scenario_data_entry(
@@ -140,6 +213,8 @@ if __name__ == "__main__":
     test_entity_specs_expose_required_id()
     test_entities_keep_their_registry_names()
     test_entities_with_sections_round_trip()
+    test_scenarios_for_one_library_merge_entities()
+    test_report_links_attributes_to_contributing_scenarios()
     test_registry_span_names_map_onto_report_keys()
     test_events_keep_their_registry_names()
     test_span_types_absent_from_a_data_file_are_not_reported()
