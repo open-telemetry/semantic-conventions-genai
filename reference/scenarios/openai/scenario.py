@@ -577,7 +577,7 @@ def run_responses_continuation_reference(client):
         print(f"    -> previous_response_id: {previous_response_id}")
 
 
-def run_chat_streaming_reference(client):
+def run_chat_streaming_reference(client, *, close_early=False):
     """Scenario: streaming chat completion with reference implementation."""
     print("  [chat_streaming] streaming chat completion (reference implementation)")
     request_model = "gpt-4o-mini"
@@ -615,6 +615,7 @@ def run_chat_streaming_reference(client):
         input_tokens = None
         output_tokens = None
         first_chunk_received = False
+        caller_closed = False
         for chunk in stream:
             received_at = perf_counter()
             model = model or getattr(chunk, "model", None)
@@ -646,13 +647,18 @@ def run_chat_streaming_reference(client):
             if chunk.usage:
                 input_tokens = chunk.usage.prompt_tokens
                 output_tokens = chunk.usage.completion_tokens
+            if close_early and first_chunk_received:
+                stream.close()
+                caller_closed = True
+                break
         if model:
             span.set_attribute("gen_ai.response.model", model)
         if response_id:
             span.set_attribute("gen_ai.response.id", response_id)
         if seen_choice_indexes:
             finish_reasons = [
-                finish_reasons_by_index.get(index, "error") for index in range(max(seen_choice_indexes) + 1)
+                finish_reasons_by_index.get(index, "cancelled" if caller_closed else "error")
+                for index in range(max(seen_choice_indexes) + 1)
             ]
             span.set_attribute("gen_ai.response.finish_reasons", finish_reasons)
         if text:
@@ -695,9 +701,12 @@ def run_chat_streaming_ttfc_checks():
             "usage": {"prompt_tokens": 1, "completion_tokens": 0, "total_tokens": 1} if delta is None else None,
         }
 
-    def check_stream(output_deltas, expected_ttfc, *, retry=False):
+    def check_stream(
+        output_deltas, expected_ttfc, *, retry=False, close_early=False, finish_reason=None, end_reason="stop"
+    ):
         now = 0.0
         attempts = 0
+        responses = []
 
         def advance(seconds):
             nonlocal now
@@ -720,9 +729,9 @@ def run_chat_streaming_ttfc_checks():
                 yield f"data: {json.dumps(chunk(delta))}\n\n".encode()
             for delta in output_deltas:
                 advance(0.3)
-                yield f"data: {json.dumps(chunk(delta))}\n\n".encode()
+                yield f"data: {json.dumps(chunk(delta, finish_reason))}\n\n".encode()
             advance(0.4)
-            yield f"data: {json.dumps(chunk({}, 'stop'))}\n\ndata: [DONE]\n\n".encode()
+            yield f"data: {json.dumps(chunk({}, end_reason))}\n\ndata: [DONE]\n\n".encode()
 
         def respond(request):
             nonlocal attempts
@@ -732,7 +741,9 @@ def run_chat_streaming_ttfc_checks():
             advance(0.05)
             if retry and attempts == 1:
                 return httpx2.Response(500, headers={"retry-after-ms": "200"}, json={"error": "retry"})
-            return httpx2.Response(200, headers={"content-type": "text/event-stream"}, content=events())
+            response = httpx2.Response(200, headers={"content-type": "text/event-stream"}, content=events())
+            responses.append(response)
+            return response
 
         exporter = InMemorySpanExporter()
         tracer_provider = TracerProvider()
@@ -755,7 +766,9 @@ def run_chat_streaming_ttfc_checks():
                     http_client=httpx2.Client(transport=httpx2.MockTransport(respond)),
                 ) as client,
             ):
-                run_chat_streaming_reference(client)
+                run_chat_streaming_reference(client, close_early=close_early)
+                if close_early:
+                    assert responses[-1].is_closed
             assert attempts == (2 if retry else 1)
             if retry:
                 sleep.assert_called_once_with(0.2)
@@ -763,6 +776,14 @@ def run_chat_streaming_ttfc_checks():
                 sleep.assert_not_called()
             spans = exporter.get_finished_spans()
             assert len(spans) == 1
+            if close_early:
+                assert spans[0].attributes["gen_ai.response.finish_reasons"] == (finish_reason or "cancelled",)
+                assert "error.type" not in spans[0].attributes
+                assert spans[0].status.status_code.name == "UNSET"
+                assert spans[0].attributes["gen_ai.usage.input_tokens"] == 1
+                assert spans[0].attributes["gen_ai.usage.output_tokens"] == 0
+            elif output_deltas:
+                assert spans[0].attributes["gen_ai.response.finish_reasons"] == (end_reason or "error",)
             data = reader.get_metrics_data()
             points = (
                 []
@@ -802,6 +823,9 @@ def run_chat_streaming_ttfc_checks():
     # Failed attempt: 0.1 s auth + 0.05 s request + 0.2 s SDK backoff.
     check_stream([{"content": "Hello"}], 0.85, retry=True)
     check_stream([], None)
+    check_stream([{"content": "Hello"}, {"content": " world"}], 0.5, close_early=True)
+    check_stream([{"content": "Hello"}], 0.5, close_early=True, finish_reason="stop")
+    check_stream([{"content": "Hello"}], 0.5, end_reason=None)
     print("    -> TTFC boundary checks passed")
 
 
@@ -1503,6 +1527,7 @@ def main():
     run_responses_compaction_reference(client)
     run_responses_continuation_reference(client)
     run_chat_streaming_reference(client)
+    run_chat_streaming_reference(client, close_early=True)
     run_chat_tool_call_reference(client)
     run_chat_with_document_input_reference(client)
     run_chat_image_reference(client)

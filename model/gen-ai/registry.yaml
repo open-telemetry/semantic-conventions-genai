@@ -223,16 +223,25 @@ attributes:
 
       Each position SHOULD contain the finish reason for the corresponding
       choice/candidate. If a finish reason was expected but not received, for
-      example because generation failed, was cancelled, or a stream ended before
+      example because generation failed or a stream ended unexpectedly before
       the final event, instrumentations SHOULD report `error` for that position
       instead of omitting it.
 
       `error` indicates that the generation ended abnormally, whether reported
       by the provider or inferred by the instrumentation.
+
+      If the caller intentionally closes a stream before receiving a finish reason
+      and no error was observed, instrumentations SHOULD report `cancelled` for
+      that position. Finish reasons already received from the provider SHOULD be
+      preserved. Caller-initiated closure alone SHOULD NOT cause `error.type` or
+      an error span status to be set. Instrumentations SHOULD record information
+      available at closure, including token usage, without treating partial usage
+      as the final total.
     examples:
       - [stop]
       - [stop, length]
       - [stop, length, error]
+      - [cancelled]
     stability: development
   - key: gen_ai.response.status
     type:
