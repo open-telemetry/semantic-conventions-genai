@@ -6,7 +6,7 @@ This document explains the design of the token instruments in
 ## TL;DR
 
 - **Histograms** (`gen_ai.client.inference.operation.*`) measure per-operation token size distributions. It is invalid to record more than one observation per operation that a histogram represents, so breakdowns like modality cannot go on the histogram without corrupting percentiles.
-- **Counters** (`gen_ai.client.inference.usage.*`) measure cumulative token consumption over time for cost and spend tracking. They safely carry breakdowns like modality where each token bucket increments independently.
+- **Counters** (`gen_ai.client.inference.usage.*`) measure cumulative token consumption over time for cost and spend tracking. They safely carry breakdowns like modality where each token bucket increments independently. Modality applies to the usage counters, with reasoning as the exception.
 
 ## Why is modality on counters instead of histograms? Why two sets of metrics?
 
@@ -73,11 +73,16 @@ zero when usage is missing.
 Summing a counter across `gen_ai.token.modality` must equal the known total, even
 for providers that report no modality breakdown.
 
-The counters aggregate cleanly because each token lands in one modality bucket,
-and `gen_ai.token.modality` is required on all of them. When a provider reports
-no breakdown, instrumentation still has to put tokens somewhere. Without
-`unknown`, both options fail: omitting the attribute breaks sums across
-different providers, and guessing `text` invents data.
+`gen_ai.token.modality` applies to the usage counters, with reasoning as the
+exception. On every usage counter except
+`gen_ai.client.inference.usage.reasoning.output_tokens`, each token lands in
+one modality bucket and the attribute is required. That reasoning counter
+records its total without the attribute. Reasoning usage has no useful modality
+split, so the total stays comparable across providers. When a provider reports
+no breakdown on a counter that carries modality, instrumentation still has to
+put tokens somewhere. Without `unknown`, both options fail: omitting the
+attribute breaks sums across different providers, and guessing `text` invents
+data.
 
 `unknown` means "the positive count is known but its modality cannot reliably be
 determined", not "the count is unknown".
