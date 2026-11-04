@@ -123,6 +123,16 @@ def _user_transcription_message(transcript):
     )
 
 
+def _output_type(response_modalities):
+    """Map the SDK request configuration to the convention."""
+    modalities = {str(modality).lower() for modality in response_modalities or []}
+    if any(modality.endswith("audio") for modality in modalities):
+        return "speech"
+    if any(modality.endswith("text") for modality in modalities):
+        return "text"
+    return None
+
+
 def _live_attributes(request_model, host, port, operation, output_type=None):
     """Common attributes shared by the realtime_inference spans."""
     attributes = {
@@ -178,12 +188,11 @@ def _turn_complete_reason(server_content):
     return reason.value.lower()
 
 
-async def _run_generation(session, request_model, host, port, input_messages, break_on_tool_call):
+async def _run_generation(session, request_model, host, port, input_messages, output_type, break_on_tool_call):
     """Consume one server-side generation and emit its realtime_inference span.
 
     Returns the function call requested by the model, if any.
     """
-    output_type = None if break_on_tool_call else "speech"
     attributes = _live_attributes(request_model, host, port, "realtime_inference", output_type=output_type)
     span = None
     generation_end_time = None
@@ -358,6 +367,7 @@ async def run_gemini_live_reference():
         input_audio_transcription=types.AudioTranscriptionConfig(),
         output_audio_transcription=types.AudioTranscriptionConfig(),
     )
+    output_type = _output_type(config.response_modalities)
     async with client.aio.live.connect(model=request_model, config=config) as session:
         # The realtime session is established: record its start as an event. Gemini
         # Gemini Live exposes no session id, so gen_ai.realtime_session.id is left unset.
@@ -381,7 +391,13 @@ async def run_gemini_live_reference():
             await _send_user_audio(session)
             await _record_user_speech(session)
             await _run_generation(
-                session, request_model, host, live_port, _user_audio_message(), break_on_tool_call=False
+                session,
+                request_model,
+                host,
+                live_port,
+                _user_audio_message(),
+                output_type,
+                break_on_tool_call=False,
             )
 
             # Turn 2: the user barges in while the model is responding. Gemini
@@ -390,7 +406,13 @@ async def run_gemini_live_reference():
             await _send_user_audio(session)
             await _record_user_speech(session)
             await _run_generation(
-                session, request_model, host, live_port, _user_audio_message(), break_on_tool_call=False
+                session,
+                request_model,
+                host,
+                live_port,
+                _user_audio_message(),
+                output_type,
+                break_on_tool_call=False,
             )
 
             # Turn 3: Gemini Live 2.5 ends the first generation with a tool call.
@@ -400,7 +422,13 @@ async def run_gemini_live_reference():
             await _send_user_audio(session)
             await _record_user_speech(session)
             function_call = await _run_generation(
-                session, request_model, host, live_port, _user_audio_message(), break_on_tool_call=True
+                session,
+                request_model,
+                host,
+                live_port,
+                _user_audio_message(),
+                output_type,
+                break_on_tool_call=True,
             )
             result = _execute_tool(function_call)
             await session.send_tool_response(
@@ -414,6 +442,7 @@ async def run_gemini_live_reference():
                 host,
                 live_port,
                 _tool_result_message(function_call, result),
+                output_type,
                 break_on_tool_call=False,
             )
         finally:

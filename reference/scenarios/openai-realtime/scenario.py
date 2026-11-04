@@ -90,6 +90,16 @@ def _user_audio_message(audio):
     )
 
 
+def _output_type(output_modalities):
+    """Map the effective SDK session output configuration to the convention."""
+    modalities = {str(modality).lower() for modality in output_modalities or []}
+    if "audio" in modalities:
+        return "speech"
+    if "text" in modalities:
+        return "text"
+    return None
+
+
 def _live_attributes(provider, request_model, session_id, host, port, operation, output_type=None):
     """Common attributes shared by the user_speech and realtime_inference spans."""
     attributes = {
@@ -123,7 +133,7 @@ class _RealtimeDriver:
     every span boundary is driven by the received events, not by the call order.
     """
 
-    def __init__(self, conn, provider, request_model, response_model, session_id, host, port):
+    def __init__(self, conn, provider, request_model, response_model, session_id, host, port, output_type):
         self.conn = conn
         self.provider = provider
         self.request_model = request_model
@@ -131,6 +141,7 @@ class _RealtimeDriver:
         self.session_id = session_id
         self.host = host
         self.port = port
+        self.output_type = output_type
         # What the mock should do for each committed user utterance, in order:
         # a normal answer, an interrupted answer, the interrupted turn's follow-up
         # answer, then a tool call.
@@ -194,7 +205,6 @@ class _RealtimeDriver:
         self._start_generation(self._behaviors.popleft(), self._pending_user_inputs.popleft())
 
     def _start_generation(self, behavior, input_messages):
-        output_type = None if behavior == "function_call" else "speech"
         attributes = _live_attributes(
             self.provider,
             self.request_model,
@@ -202,7 +212,7 @@ class _RealtimeDriver:
             self.host,
             self.port,
             "realtime_inference",
-            output_type=output_type,
+            output_type=self.output_type,
         )
         span = _reference_tracer.start_span(
             f"realtime_inference {self.request_model}", kind=SpanKind.CLIENT, attributes=attributes
@@ -400,6 +410,7 @@ def run_realtime_reference(client):
         session_event = conn.recv()  # session.created
         response_model = session_event.session.model or request_model
         session_id = session_event.session.id
+        output_type = _output_type(session_event.session.output_modalities)
 
         # The realtime session is established: record its start as an event,
         # correlated to the generations via realtime session id.
@@ -429,6 +440,7 @@ def run_realtime_reference(client):
                 session_id,
                 host,
                 port,
+                output_type,
             ).run()
         finally:
             # The session is closed: record its end as an event.
