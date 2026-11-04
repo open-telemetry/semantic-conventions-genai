@@ -329,9 +329,7 @@ async def _handler(ws):
                     await _emit_user_vad(ws)
                 previous_audio = audio
             elif message_type == "response.create":
-                behavior = ((message.get("response") or {}).get("metadata") or {}).get(
-                    "mock_behavior", "complete"
-                )
+                behavior = ((message.get("response") or {}).get("metadata") or {}).get("mock_behavior", "complete")
                 if behavior == "interrupted":
                     barge_in_received = asyncio.Event()
                 response_tasks.create_task(_run_response(ws, behavior, barge_in_received))
