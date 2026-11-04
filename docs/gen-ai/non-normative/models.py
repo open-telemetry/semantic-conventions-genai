@@ -597,9 +597,17 @@ class ToolCallArguments(RootModel[dict[str, Any]]):
     pass
 
 
-class ToolCallResult(RootModel[dict[str, Any]]):
+class ToolCallResult(RootModel[Any]):
     """
-    Represents object-like results returned by a tool call.
+    Represents the result returned by a tool call, which can be any JSON value.
+    """
+
+    pass
+
+
+class ToolCallResultParts(RootModel[List[MessagePart]]):
+    """
+    Represents the result returned by a tool call as ordered message parts.
     """
 
     pass
@@ -617,6 +625,7 @@ SCHEMAS: dict[str, type[BaseModel]] = {
     "gen-ai-tool-definitions.json": ToolDefinitions,
     "gen-ai-tool-call-arguments.json": ToolCallArguments,
     "gen-ai-tool-call-result.json": ToolCallResult,
+    "gen-ai-tool-call-result-parts.json": ToolCallResultParts,
     "gen-ai-retrieval-documents.json": RetrievalDocuments,
     "gen-ai-memory-records.json": MemoryRecords,
 }

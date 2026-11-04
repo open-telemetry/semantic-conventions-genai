@@ -1,0 +1,9 @@
+# yaml-language-server: $schema=../case.schema.json
+description: Tool call result parts must be an array
+schema: gen-ai-tool-call-result-parts.json
+document: { "temperature": 57 }
+# Regenerate with `uv run pytest --update-snapshots`, do not edit by hand.
+errors:
+  - path: $
+    keyword: type
+    message: "{'temperature': 57} is not of type 'array'"
