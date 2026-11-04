@@ -39,6 +39,7 @@ no manual ``input_audio_buffer.commit`` in this mode.
 
 import argparse
 import asyncio
+import base64
 import itertools
 import json
 import threading
@@ -47,6 +48,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import websockets
 
 _event_counter = itertools.count(1)
+_OUTPUT_AUDIO_CHUNKS = (b"mock-assistant", b"-audio")
 
 
 def _event_id():
@@ -138,18 +140,19 @@ async def _run_response(ws, behavior, barge_in_received=None):
                 "delta": delta,
             },
         )
-    await _send(
-        ws,
-        {
-            "type": "response.output_audio.delta",
-            "event_id": _event_id(),
-            "response_id": response_id,
-            "item_id": item_id,
-            "output_index": 0,
-            "content_index": 0,
-            "delta": "bW9jay1hc3Npc3RhbnQtYXVkaW8=",
-        },
-    )
+    for audio_chunk in _OUTPUT_AUDIO_CHUNKS:
+        await _send(
+            ws,
+            {
+                "type": "response.output_audio.delta",
+                "event_id": _event_id(),
+                "response_id": response_id,
+                "item_id": item_id,
+                "output_index": 0,
+                "content_index": 0,
+                "delta": base64.b64encode(audio_chunk).decode(),
+            },
+        )
 
     if behavior == "interrupted":
         # Barge-in: new user speech is detected while the response is in flight,

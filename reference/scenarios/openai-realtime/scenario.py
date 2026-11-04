@@ -36,6 +36,7 @@ Turn-level containers (a full user-and-model exchange) are intentionally out of
 scope: turn boundaries cannot be detected reliably across providers.
 """
 
+import base64
 import json
 import os
 from collections import deque
@@ -241,7 +242,7 @@ class _RealtimeDriver:
             self._send_user_audio(BARGE_IN_AUDIO_B64)
 
     def _on_audio_delta(self, event):
-        self._gen["audio_deltas"].append(event.delta)
+        self._gen["audio_deltas"].append(base64.b64decode(event.delta))
 
     def _on_transcript_done(self, event):
         self._gen["final_transcript"] = event.transcript
@@ -313,7 +314,7 @@ class _RealtimeDriver:
         transcript = (
             gen["final_transcript"] if gen["final_transcript"] is not None else "".join(gen["transcript_deltas"])
         )
-        output_audio = "".join(gen["audio_deltas"])
+        output_audio = base64.b64encode(b"".join(gen["audio_deltas"])).decode()
         finish_reason = _finish_reason(status, status_details)
         output_messages = [
             {
