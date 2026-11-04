@@ -200,8 +200,7 @@ known. Incomplete counts SHOULD be omitted from both signals, rather than
 recorded as operation totals. For example, Anthropic reports the input total
 at `message_start`, but its initial output count is incomplete until
 `message_delta`. The known input total can be recorded even when the output
-total is omitted. This uses absence to represent an unknown total and does
-not introduce a separate completeness attribute.
+total is omitted.
 
 **[19] `gen_ai.response.time_to_first_chunk`:** A chunk is a decoded provider stream event carrying new, non-empty output: text, refusals, reasoning (including opaque payloads), audio, images, or tool-call names or arguments. Instrumentations MUST NOT treat empty start events or events carrying only usage, roles, IDs, signatures, keep-alives, progress/status updates, or end markers as chunks. Chunk boundaries follow provider events, not TCP reads, HTTP frames, or extra SDK callbacks.
 
