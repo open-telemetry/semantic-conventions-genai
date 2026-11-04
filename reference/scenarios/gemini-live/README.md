@@ -10,7 +10,9 @@ as `tool_call` and `tool_call_response` message parts. The application executes
 the tool, so this client scenario does not emit an `execute_tool` span. The
 scenario also covers a generation interrupted by user barge-in. Generation
 spans start and end from Gemini's `server_content` completion and interruption
-signals, and use `turn_complete_reason` when the provider supplies one. The
+signals, while one dispatcher preserves interleaved voice activity,
+transcription, output, and usage messages. It uses `turn_complete_reason` when
+the provider supplies one. The
 session is reported through the
 `gen_ai.client.realtime_session.started` / `.ended` events, including an
 SDK-visible connection failure.

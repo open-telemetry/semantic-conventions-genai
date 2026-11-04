@@ -66,7 +66,7 @@ _connection_counter = itertools.count(1)
 OUTPUT_AUDIO_B64 = "bW9jay1nZW1pbmktYXVkaW8="
 
 TRANSCRIPT_DELTAS = ["It is ", "sunny and ", "about 72 degrees ", "in Seattle."]
-INPUT_TRANSCRIPT = "What is the weather in Seattle?"
+INPUT_TRANSCRIPT_DELTAS = ["What is the ", "weather in Seattle?"]
 
 # The tool the model asks the client to run on the tool-calling turn.
 FUNCTION_CALL = {"id": "fc_mock_gemini_001", "name": "get_weather", "args": {"location": "Seattle"}}
@@ -111,8 +111,8 @@ async def _run_turn(ws):
     await _send(ws, {"serverContent": {"turnComplete": True}, "usageMetadata": _usage()})
 
 
-async def _run_interrupted_turn(ws):
-    """Emit partial output followed by Gemini's barge-in signals."""
+async def _send_partial_output(ws):
+    """Begin model output without completing the generation."""
     await _send(ws, {"serverContent": {"outputTranscription": {"text": "It is "}}})
     await _send(
         ws,
@@ -125,8 +125,21 @@ async def _run_interrupted_turn(ws):
             }
         },
     )
-    await _send(ws, {"serverContent": {"interrupted": True}})
-    await _send(ws, {"serverContent": {"turnComplete": True}, "usageMetadata": _usage()})
+
+
+async def _send_input_transcription(ws):
+    for index, delta in enumerate(INPUT_TRANSCRIPT_DELTAS):
+        await _send(
+            ws,
+            {
+                "serverContent": {
+                    "inputTranscription": {
+                        "text": delta,
+                        "finished": index == len(INPUT_TRANSCRIPT_DELTAS) - 1,
+                    }
+                }
+            },
+        )
 
 
 async def _run_tool_call(ws):
@@ -153,6 +166,13 @@ async def _handler(ws):
             # The client signals the end of the user's utterance; the model then
             # generates its spoken response for the accumulated audio.
             if realtime_input.get("audioStreamEnd"):
+                await _send_input_transcription(ws)
+                output_started = audio_turns == 1
+                if output_started:
+                    # Interleave model output before ACTIVITY_END to prove the
+                    # client does not discard generation events while tracking
+                    # the active user-speech span.
+                    await _send_partial_output(ws)
                 if voice_activity_active:
                     await _send(
                         ws,
@@ -164,22 +184,12 @@ async def _handler(ws):
                         },
                     )
                     voice_activity_active = False
-                await _send(
-                    ws,
-                    {
-                        "serverContent": {
-                            "inputTranscription": {
-                                "text": INPUT_TRANSCRIPT,
-                                "finished": True,
-                            }
-                        }
-                    },
-                )
                 audio_turns += 1
                 if audio_turns == 1:
                     await _run_turn(ws)
                 elif audio_turns == 2:
-                    await _run_interrupted_turn(ws)
+                    await _send(ws, {"serverContent": {"interrupted": True}})
+                    await _send(ws, {"serverContent": {"turnComplete": True}, "usageMetadata": _usage()})
                 else:
                     await _run_tool_call(ws)
             elif not voice_activity_active:

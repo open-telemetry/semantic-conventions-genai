@@ -8,7 +8,8 @@ crucially, the audio token usage (``gen_ai.usage.audio.input_tokens`` /
 audio.
 
 The second turn is interrupted by user barge-in. The span starts on the first
-``server_content`` message and ends when the provider reports ``interrupted``.
+model-output message and ends when the provider reports ``interrupted``. Input
+transcription chunks are accumulated without starting the generation span.
 
 In the third turn, Gemini Live 2.5 reports the tool call as the end of a
 generation. The application sends the tool result, and a second generation
@@ -190,32 +191,62 @@ def _turn_complete_reason(server_content):
 
 
 async def _run_generation(session, request_model, host, port, input_messages, output_type, break_on_tool_call):
-    """Consume one server-side generation and emit its realtime_inference span.
+    """Dispatch speech and generation events for one server-side generation.
 
     Returns the function call requested by the model, if any.
     """
+    from google.genai import types
+
     attributes = _live_attributes(request_model, host, port, "realtime_inference", output_type=output_type)
     span = None
+    speech_span = None
     generation_end_time = None
     finish_reason = None
+    input_transcript_deltas = []
     transcript_deltas = []
     audio_chunks = []
     usage = None
     function_call = None
 
+    def start_generation_span():
+        nonlocal span
+        if span is None:
+            span = _reference_tracer.start_span(
+                f"realtime_inference {request_model}", kind=SpanKind.CLIENT, attributes=attributes
+            )
+            span.set_attribute("gen_ai.input.messages", input_messages)
+
     async for message in session.receive():
+        voice_activity = message.voice_activity
+        if voice_activity is not None:
+            if voice_activity.voice_activity_type == types.VoiceActivityType.ACTIVITY_START:
+                if speech_span is not None:
+                    raise RuntimeError("Received ACTIVITY_START before ACTIVITY_END")
+                speech_span = _reference_tracer.start_span(
+                    "user_speech",
+                    attributes={
+                        "gen_ai.operation.name": "user_speech",
+                        "gen_ai.provider.name": "gcp.gemini",
+                    },
+                )
+            elif voice_activity.voice_activity_type == types.VoiceActivityType.ACTIVITY_END:
+                if speech_span is None:
+                    raise RuntimeError("Received ACTIVITY_END without ACTIVITY_START")
+                speech_span.end()
+                speech_span = None
+
         server_content = message.server_content
         if server_content is not None:
-            if span is None:
-                span = _reference_tracer.start_span(
-                    f"realtime_inference {request_model}", kind=SpanKind.CLIENT, attributes=attributes
-                )
-                span.set_attribute("gen_ai.input.messages", input_messages)
             if server_content.input_transcription and server_content.input_transcription.text:
-                span.set_attribute(
-                    "gen_ai.input.messages",
-                    _user_transcription_message(server_content.input_transcription.text),
-                )
+                input_transcript_deltas.append(server_content.input_transcription.text)
+                input_messages = _user_transcription_message("".join(input_transcript_deltas))
+                if span is not None:
+                    span.set_attribute("gen_ai.input.messages", input_messages)
+            has_output = bool(server_content.output_transcription and server_content.output_transcription.text) or bool(
+                server_content.model_turn and server_content.model_turn.parts
+            )
+            if has_output:
+                start_generation_span()
             provider_reason = _turn_complete_reason(server_content)
             if provider_reason is not None:
                 finish_reason = provider_reason
@@ -237,17 +268,15 @@ async def _run_generation(session, request_model, host, port, input_messages, ou
         if message.usage_metadata is not None:
             usage = message.usage_metadata
         if break_on_tool_call and message.tool_call is not None and message.tool_call.function_calls:
-            if span is None:
-                span = _reference_tracer.start_span(
-                    f"realtime_inference {request_model}", kind=SpanKind.CLIENT, attributes=attributes
-                )
-                span.set_attribute("gen_ai.input.messages", input_messages)
+            start_generation_span()
             call = message.tool_call.function_calls[0]
             function_call = {"id": call.id, "name": call.name, "args": dict(call.args or {})}
             finish_reason = "tool_call"
             generation_end_time = time.time_ns()
             break
 
+    if speech_span is not None:
+        raise RuntimeError("Gemini Live stream ended before ACTIVITY_END")
     if span is None:
         raise RuntimeError("Gemini Live stream ended before the generation started")
     if generation_end_time is None or finish_reason is None:
@@ -356,32 +385,6 @@ async def _run_failed_realtime_session(client, request_model, config, session_at
             _emit_session_ended(session_attributes, session_error)
 
 
-async def _record_user_speech(session):
-    """Record user speech from Gemini Live voice-activity events."""
-    from google.genai import types
-
-    speech_span = None
-    async for message in session.receive():
-        voice_activity = message.voice_activity
-        if voice_activity is None:
-            continue
-        if voice_activity.voice_activity_type == types.VoiceActivityType.ACTIVITY_START:
-            speech_span = _reference_tracer.start_span(
-                "user_speech",
-                attributes={
-                    "gen_ai.operation.name": "user_speech",
-                    "gen_ai.provider.name": "gcp.gemini",
-                },
-            )
-        elif voice_activity.voice_activity_type == types.VoiceActivityType.ACTIVITY_END:
-            if speech_span is None:
-                raise RuntimeError("Received ACTIVITY_END without ACTIVITY_START")
-            speech_span.end()
-            return
-
-    raise RuntimeError("Gemini Live stream ended before ACTIVITY_END")
-
-
 async def run_gemini_live_reference():
     """Scenario: two Gemini Live voice-native turns within a single realtime session."""
     from google import genai
@@ -435,7 +438,6 @@ async def run_gemini_live_reference():
             # Turn 1: a simple voice exchange. Gemini Live voice-activity events
             # bound the user_speech span before the model generation begins.
             await _send_user_audio(session)
-            await _record_user_speech(session)
             await _run_generation(
                 session,
                 request_model,
@@ -450,7 +452,6 @@ async def run_gemini_live_reference():
             # reports interrupted without a reason, so the finish reason falls
             # back to "interrupted".
             await _send_user_audio(session)
-            await _record_user_speech(session)
             await _run_generation(
                 session,
                 request_model,
@@ -466,7 +467,6 @@ async def run_gemini_live_reference():
             # speaks the answer. The tool request and result are message parts;
             # application tool execution does not produce an execute_tool span.
             await _send_user_audio(session)
-            await _record_user_speech(session)
             function_call = await _run_generation(
                 session,
                 request_model,
