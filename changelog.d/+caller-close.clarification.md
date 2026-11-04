@@ -1,0 +1,1 @@
+Report `cancelled` when a caller intentionally closes a stream before a finish reason arrives and no error was observed. Preserve received finish reasons and available usage without marking the close as an error.
