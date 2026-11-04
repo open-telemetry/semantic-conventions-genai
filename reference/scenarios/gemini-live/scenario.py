@@ -45,6 +45,7 @@ import json
 import os
 import ssl
 import time
+from contextlib import suppress
 
 from opentelemetry._logs import SeverityNumber
 from opentelemetry.trace import SpanKind
@@ -313,6 +314,48 @@ async def _send_user_audio(session):
     await session.send_realtime_input(audio_stream_end=True)
 
 
+def _emit_session_ended(session_attributes, error):
+    attributes = dict(session_attributes)
+    severity = SeverityNumber.INFO
+    if error is not None:
+        attributes["error.type"] = type(error).__qualname__
+        severity = SeverityNumber.WARN
+    reference_event_logger().emit(
+        event_name="gen_ai.client.realtime_session.ended",
+        severity_number=severity,
+        body="Realtime session ended",
+        attributes=attributes,
+    )
+
+
+async def _run_failed_realtime_session(client, request_model, config, session_attributes):
+    """Exercise an SDK-visible connection failure after session establishment."""
+    from google.genai import types
+
+    session_started = False
+    session_error = None
+    try:
+        async with client.aio.live.connect(model=request_model, config=config) as session:
+            reference_event_logger().emit(
+                event_name="gen_ai.client.realtime_session.started",
+                severity_number=SeverityNumber.INFO,
+                body="Realtime session started",
+                attributes=session_attributes,
+            )
+            session_started = True
+            await session.send_realtime_input(
+                audio=types.Blob(data=base64.b64decode(INPUT_AUDIO_B64), mime_type="audio/pcm")
+            )
+            async for _ in session.receive():
+                pass
+    except Exception as error:
+        session_error = error
+        raise
+    finally:
+        if session_started:
+            _emit_session_ended(session_attributes, session_error)
+
+
 async def _record_user_speech(session):
     """Record user speech from Gemini Live voice-activity events."""
     from google.genai import types
@@ -343,6 +386,7 @@ async def run_gemini_live_reference():
     """Scenario: two Gemini Live voice-native turns within a single realtime session."""
     from google import genai
     from google.genai import types
+    from google.genai.errors import APIError
 
     print("  [gemini-live] voice-native inference (reference implementation)")
     request_model = "gemini-2.5-flash-native-audio-preview"
@@ -368,24 +412,26 @@ async def run_gemini_live_reference():
         output_audio_transcription=types.AudioTranscriptionConfig(),
     )
     output_type = _output_type(config.response_modalities)
-    async with client.aio.live.connect(model=request_model, config=config) as session:
-        # The realtime session is established: record its start as an event. Gemini
-        # Gemini Live exposes no session id, so gen_ai.realtime_session.id is left unset.
-        session_attributes = {
-            "gen_ai.provider.name": "gcp.gemini",
-            "gen_ai.request.model": request_model,
-        }
-        if host:
-            session_attributes["server.address"] = host
-        if live_port is not None:
-            session_attributes["server.port"] = live_port
-        reference_event_logger().emit(
-            event_name="gen_ai.client.realtime_session.started",
-            severity_number=SeverityNumber.INFO,
-            body="Realtime session started",
-            attributes=session_attributes,
-        )
-        try:
+    session_attributes = {
+        "gen_ai.provider.name": "gcp.gemini",
+        "gen_ai.request.model": request_model,
+    }
+    if host:
+        session_attributes["server.address"] = host
+    if live_port is not None:
+        session_attributes["server.port"] = live_port
+    session_started = False
+    session_error = None
+    try:
+        async with client.aio.live.connect(model=request_model, config=config) as session:
+            # Gemini Live exposes no session id, so gen_ai.realtime_session.id is left unset.
+            reference_event_logger().emit(
+                event_name="gen_ai.client.realtime_session.started",
+                severity_number=SeverityNumber.INFO,
+                body="Realtime session started",
+                attributes=session_attributes,
+            )
+            session_started = True
             # Turn 1: a simple voice exchange. Gemini Live voice-activity events
             # bound the user_speech span before the model generation begins.
             await _send_user_audio(session)
@@ -445,14 +491,15 @@ async def run_gemini_live_reference():
                 output_type,
                 break_on_tool_call=False,
             )
-        finally:
-            # The session is closed: record its end as an event.
-            reference_event_logger().emit(
-                event_name="gen_ai.client.realtime_session.ended",
-                severity_number=SeverityNumber.INFO,
-                body="Realtime session ended",
-                attributes=session_attributes,
-            )
+    except Exception as error:
+        session_error = error
+        raise
+    finally:
+        if session_started:
+            _emit_session_ended(session_attributes, session_error)
+
+    with suppress(APIError):
+        await _run_failed_realtime_session(client, request_model, config, session_attributes)
 
 
 def main():

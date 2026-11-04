@@ -48,6 +48,7 @@ produces the spoken answer as a new generation, matching Gemini Live 2.5.
 
 import argparse
 import asyncio
+import itertools
 import json
 import os
 import ssl
@@ -57,6 +58,8 @@ from datetime import UTC, datetime, timedelta
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import websockets
+
+_connection_counter = itertools.count(1)
 
 # Deterministic base64 stand-in for the PCM audio the model "speaks". The client
 # decodes it to bytes; the scenario re-encodes it for the output message.
@@ -132,12 +135,16 @@ async def _run_tool_call(ws):
 
 
 async def _handler(ws):
+    connection_number = next(_connection_counter)
     audio_turns = 0
     voice_activity_active = False
     async for raw in ws:
         message = json.loads(raw)
         if "setup" in message:
             await _send(ws, {"setupComplete": {}})
+        elif connection_number == 2:
+            await ws.close(code=1011, reason="mock connection failure")
+            return
         elif "tool_response" in message or "toolResponse" in message:
             # The client returned the tool result; the model now speaks its answer.
             await _run_turn(ws)

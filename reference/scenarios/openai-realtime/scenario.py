@@ -40,6 +40,7 @@ import base64
 import json
 import os
 from collections import deque
+from contextlib import suppress
 
 from opentelemetry._logs import SeverityNumber
 from opentelemetry.trace import SpanKind
@@ -50,6 +51,7 @@ from reference_shared import (
     reference_tracer,
     setup_otel,
 )
+from websockets.exceptions import ConnectionClosedError
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"] + "/v1"
 
@@ -402,6 +404,54 @@ def _tool_result_message(function_call, result):
     )
 
 
+def _emit_session_ended(session_attributes, error):
+    attributes = dict(session_attributes)
+    severity = SeverityNumber.INFO
+    if error is not None:
+        attributes["error.type"] = type(error).__qualname__
+        severity = SeverityNumber.WARN
+    reference_event_logger().emit(
+        event_name="gen_ai.client.realtime_session.ended",
+        severity_number=severity,
+        body="Realtime session ended",
+        attributes=attributes,
+    )
+
+
+def _run_failed_realtime_session(client, provider, request_model, host, port):
+    """Exercise an SDK-visible connection failure after session establishment."""
+    session_attributes = {
+        "gen_ai.provider.name": provider,
+        "gen_ai.request.model": request_model,
+    }
+    if host:
+        session_attributes["server.address"] = host
+    if port is not None:
+        session_attributes["server.port"] = port
+    session_started = False
+    session_error = None
+    try:
+        with client.realtime.connect(model=request_model) as conn:
+            session_event = conn.recv()
+            if session_event.session.id:
+                session_attributes["gen_ai.realtime_session.id"] = session_event.session.id
+            reference_event_logger().emit(
+                event_name="gen_ai.client.realtime_session.started",
+                severity_number=SeverityNumber.INFO,
+                body="Realtime session started",
+                attributes=session_attributes,
+            )
+            session_started = True
+            conn.send({"type": "input_audio_buffer.append", "audio": INPUT_AUDIO_B64})
+            conn.recv()
+    except Exception as error:
+        session_error = error
+        raise
+    finally:
+        if session_started:
+            _emit_session_ended(session_attributes, session_error)
+
+
 def run_realtime_reference(client):
     """Scenario: two voice-native turns within a single realtime session."""
     print("  [realtime] voice-native inference (reference implementation)")
@@ -411,32 +461,32 @@ def run_realtime_reference(client):
     # The realtime inference runs over the WebSocket endpoint (health port + 1),
     # so server.port reflects the actual remote endpoint the requests reach.
     port = http_port + 1
-    with client.realtime.connect(model=request_model) as conn:
-        session_event = conn.recv()  # session.created
-        response_model = session_event.session.model or request_model
-        session_id = session_event.session.id
-        output_type = _output_type(session_event.session.output_modalities)
+    session_attributes = {
+        "gen_ai.provider.name": provider,
+        "gen_ai.request.model": request_model,
+    }
+    if host:
+        session_attributes["server.address"] = host
+    if port is not None:
+        session_attributes["server.port"] = port
+    session_started = False
+    session_error = None
+    try:
+        with client.realtime.connect(model=request_model) as conn:
+            session_event = conn.recv()  # session.created
+            response_model = session_event.session.model or request_model
+            session_id = session_event.session.id
+            output_type = _output_type(session_event.session.output_modalities)
 
-        # The realtime session is established: record its start as an event,
-        # correlated to the generations via realtime session id.
-        session_attributes = {
-            "gen_ai.provider.name": provider,
-            "gen_ai.request.model": request_model,
-        }
-        if session_id:
-            session_attributes["gen_ai.realtime_session.id"] = session_id
-        if host:
-            session_attributes["server.address"] = host
-        if port is not None:
-            session_attributes["server.port"] = port
-        reference_event_logger().emit(
-            event_name="gen_ai.client.realtime_session.started",
-            severity_number=SeverityNumber.INFO,
-            body="Realtime session started",
-            attributes=session_attributes,
-        )
-
-        try:
+            if session_id:
+                session_attributes["gen_ai.realtime_session.id"] = session_id
+            reference_event_logger().emit(
+                event_name="gen_ai.client.realtime_session.started",
+                severity_number=SeverityNumber.INFO,
+                body="Realtime session started",
+                attributes=session_attributes,
+            )
+            session_started = True
             _RealtimeDriver(
                 conn,
                 provider,
@@ -447,14 +497,15 @@ def run_realtime_reference(client):
                 port,
                 output_type,
             ).run()
-        finally:
-            # The session is closed: record its end as an event.
-            reference_event_logger().emit(
-                event_name="gen_ai.client.realtime_session.ended",
-                severity_number=SeverityNumber.INFO,
-                body="Realtime session ended",
-                attributes=session_attributes,
-            )
+    except Exception as error:
+        session_error = error
+        raise
+    finally:
+        if session_started:
+            _emit_session_ended(session_attributes, session_error)
+
+    with suppress(ConnectionClosedError):
+        _run_failed_realtime_session(client, provider, request_model, host, port)
 
 
 def main():

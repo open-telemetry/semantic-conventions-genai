@@ -26,6 +26,7 @@
   },
   "events": {
     "gen_ai.client.realtime_session.ended": [
+      "error.type",
       "gen_ai.provider.name",
       "gen_ai.realtime_session.id",
       "gen_ai.request.model",

@@ -7,7 +7,8 @@ tool calls but does not run them — the tool executes in app code, which is not
 model operation and so is not instrumented here; the model's request and the
 app's result are captured as `tool_call` / `tool_call_response` message parts on
 the generations instead. The session itself is not an operation; it is reported
-through the `gen_ai.client.realtime_session.started` / `.ended` events.
+through the `gen_ai.client.realtime_session.started` / `.ended` events. The
+scenario also records an SDK-visible connection failure on the ended event.
 
 | Operation | Should be instrumented here | Status |
 | --- | --- | --- |

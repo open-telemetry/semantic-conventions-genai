@@ -12,7 +12,8 @@ scenario also covers a generation interrupted by user barge-in. Generation
 spans start and end from Gemini's `server_content` completion and interruption
 signals, and use `turn_complete_reason` when the provider supplies one. The
 session is reported through the
-`gen_ai.client.realtime_session.started` / `.ended` events.
+`gen_ai.client.realtime_session.started` / `.ended` events, including an
+SDK-visible connection failure.
 
 | Operation | Should be instrumented here | Status |
 | --- | --- | --- |

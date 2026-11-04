@@ -48,6 +48,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import websockets
 
 _event_counter = itertools.count(1)
+_connection_counter = itertools.count(1)
 _OUTPUT_AUDIO_CHUNKS = (b"mock-assistant", b"-audio")
 
 
@@ -261,6 +262,7 @@ async def _emit_user_vad(ws):
 
 
 async def _handler(ws):
+    connection_number = next(_connection_counter)
     await _send(
         ws,
         {
@@ -268,7 +270,7 @@ async def _handler(ws):
             "event_id": _event_id(),
             "session": {
                 "type": "realtime",
-                "id": "sess_mock_realtime_001",
+                "id": f"sess_mock_realtime_{connection_number:03d}",
                 "model": "gpt-realtime",
                 "output_modalities": ["audio"],
             },
@@ -278,6 +280,9 @@ async def _handler(ws):
     previous_audio = None
     async with asyncio.TaskGroup() as response_tasks:
         async for raw in ws:
+            if connection_number == 2:
+                await ws.close(code=1011, reason="mock connection failure")
+                return
             message = json.loads(raw)
             message_type = message.get("type")
             if message_type == "input_audio_buffer.append":
