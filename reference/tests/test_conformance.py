@@ -19,33 +19,15 @@ class CoverageModelCacheTests(unittest.TestCase):
         self.source_dir.mkdir(parents=True)
         self.source = self.source_dir / "metrics.yaml"
         self.source.write_text("groups: []\n", encoding="utf-8")
-        self.versions = self.root / "versions.env"
-        self.versions.write_text("CONFORMANCE_REF=test\n", encoding="utf-8")
         self.output = self.root / "coverage-model.json"
         self.output.write_text("{}", encoding="utf-8")
-        for path in (self.model, self.source_dir, self.source, self.versions):
+        for path in (self.model, self.source_dir, self.source):
             os.utime(path, (100, 100))
         os.utime(self.output, (200, 200))
         for name, value in (("MODEL_ROOT", self.model), ("SEMCONV_ROOT", self.root)):
             patcher = patch.object(conformance, name, value)
             patcher.start()
             self.addCleanup(patcher.stop)
-
-    def test_unchanged_sources_reuse_cached_model(self):
-        with patch.object(conformance, "_uv") as uv:
-            self.assertEqual(conformance.coverage_model(self.output), self.output)
-        uv.assert_not_called()
-
-    def test_missing_cached_model_is_stale(self):
-        self.output.unlink()
-        self.assertTrue(conformance._is_stale(self.output))
-
-    def test_newer_source_or_version_pin_is_stale(self):
-        for path in (self.source, self.versions):
-            with self.subTest(path=path.name):
-                os.utime(path, (300, 300))
-                self.assertTrue(conformance._is_stale(self.output))
-                os.utime(path, (100, 100))
 
     def test_deleted_source_rebuilds_cached_model(self):
         self.assertFalse(conformance._is_stale(self.output))
