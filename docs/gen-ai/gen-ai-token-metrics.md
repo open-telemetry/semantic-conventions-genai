@@ -32,10 +32,8 @@ Two families of token instruments are defined:
 - **Usage** (`gen_ai.client.inference.usage.*` counters) are the primary instruments
   for measuring token consumption. They track how many tokens were spent over time, spending rate,
   and serve as a proxy for cost approximation. Each token category is a separate
-  monotonic counter. [`gen_ai.token.modality`](/docs/registry/attributes/gen-ai.md)
-  applies to the usage counters, with reasoning as the exception.
-  `gen_ai.client.inference.usage.reasoning.output_tokens` records the reasoning
-  total without a modality breakdown.
+  monotonic counter broken down by [`gen_ai.token.modality`](/docs/registry/attributes/gen-ai.md),
+  except `gen_ai.client.inference.usage.reasoning.output_tokens`.
   The `cache_read`,
   `cache_write`, and `reasoning` counters report subsets of the `input_tokens`
   and `output_tokens` counters.

@@ -136,8 +136,7 @@ def record_inference_usage(usage, metric_attributes):
 
     OpenAI only breaks usage down by audio tokens, so the rest of the input and output
     goes to the `unknown` modality: the API gives no evidence that it is text. Cached
-    and cache-written tokens carry no modality breakdown. The reasoning counter
-    records its total without a modality attribute.
+    and cache-written tokens carry no modality breakdown.
     """
     input_tokens = usage.get("gen_ai.usage.input_tokens")
     if input_tokens is not None:

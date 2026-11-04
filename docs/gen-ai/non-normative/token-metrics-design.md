@@ -73,13 +73,10 @@ zero when usage is missing.
 Summing a counter across `gen_ai.token.modality` must equal the known total, even
 for providers that report no modality breakdown.
 
-`gen_ai.token.modality` applies to the usage counters, with reasoning as the
-exception. On every usage counter except
-`gen_ai.client.inference.usage.reasoning.output_tokens`, each token lands in
-one modality bucket and the attribute is required. That reasoning counter
-records its total without the attribute. Reasoning usage has no useful modality
-split, so the total stays comparable across providers. When a provider reports
-no breakdown on a counter that carries modality, instrumentation still has to
+The counters aggregate cleanly because each token lands in one modality bucket,
+and `gen_ai.token.modality` is required on all of them except
+`gen_ai.client.inference.usage.reasoning.output_tokens`, where modality has no
+useful split. When a provider reports no breakdown, instrumentation still has to
 put tokens somewhere. Without `unknown`, both options fail: omitting the
 attribute breaks sums across different providers, and guessing `text` invents
 data.
