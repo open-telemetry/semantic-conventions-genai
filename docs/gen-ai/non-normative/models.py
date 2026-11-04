@@ -597,12 +597,29 @@ class ToolCallArguments(RootModel[dict[str, Any]]):
     pass
 
 
-class ToolCallResult(RootModel[dict[str, Any]]):
+class ToolCallResult(BaseModel):
     """
-    Represents object-like results returned by a tool call.
+    Represents the result returned by a tool call. At least one field must be set.
     """
 
-    pass
+    value: Any = Field(
+        default=None,
+        description="The result as any JSON value, for example an object, an array, or a string.",
+    )
+    parts: Optional[List[MessagePart]] = Field(
+        default=None,
+        description="Content blocks that `value` cannot represent, such as images or files, as message parts.",
+    )
+
+    model_config = ConfigDict(
+        extra="allow",
+        json_schema_extra={
+            "anyOf": [
+                {"required": ["value"]},
+                {"required": ["parts"], "properties": {"parts": {"type": "array"}}},
+            ]
+        },
+    )
 
 
 # --------------------------------------------------------------------------

@@ -28,6 +28,8 @@ Run `uv run update-reports` to regenerate.
 | --- | --- |
 | [A2A Client](reports/a2a-client-span.md) | a2a-python |
 | [A2A Server](reports/a2a-server-span.md) | a2a-python |
+| [MCP Client](reports/mcp-client-span.md) | mcp |
+| [MCP Server](reports/mcp-server-span.md) | mcp |
 | [Create Agent](reports/create-agent-span.md) | anthropic, aws-bedrock-agent, azure-ai-foundry, google-genai, mistralai, openai-assistants |
 | [Invoke Agent Client](reports/invoke-agent-client-span.md) | aws-bedrock-agent, azure-ai-foundry, google-genai, openai-assistants |
 | [Invoke Agent Internal](reports/invoke-agent-internal-span.md) | adk_a2a, agent-framework, autogen, crewai, google-adk, langchain, openai-agents, pydantic-ai |
@@ -38,7 +40,7 @@ Run `uv run update-reports` to regenerate.
 | [Retrieval](reports/retrieval-span.md) | haystack, langchain, llamaindex |
 | [Fetch Response](reports/fetch-response-span.md) | openai |
 | [Memory](reports/memory-span.md) | aws-bedrock-agentcore, google-adk |
-| [Execute Tool](reports/execute-tool-span.md) | agent-framework, autogen, crewai, google-adk, google-genai, langchain, llamaindex, openai-agents, openai-assistants, pydantic-ai, vertexai |
+| [Execute Tool](reports/execute-tool-span.md) | agent-framework, anthropic, autogen, crewai, google-adk, google-genai, langchain, llamaindex, openai-agents, openai-assistants, pydantic-ai, vertexai |
 
 ### Events
 

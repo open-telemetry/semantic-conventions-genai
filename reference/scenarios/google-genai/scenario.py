@@ -122,7 +122,7 @@ def _patch_automatic_function_calling():
                 for result_part in result_parts:
                     tool_span.set_attribute(
                         "gen_ai.tool.call.result",
-                        json.dumps({"output": result_part.function_response.response}),
+                        json.dumps({"value": result_part.function_response.response}),
                     )
                 parts.extend(result_parts)
         return parts

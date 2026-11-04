@@ -1,0 +1,54 @@
+runner: genai-conformance
+instrumented_library: mcp
+instrumentation_library: reference
+
+scenarios:
+  reference:
+    run: uv run --frozen --python 3.12 --project . python scenario.py
+    expected_violations:
+      - id: genai_span_name_format
+        reason: The runner applies the execute_tool span name to MCP tool call spans, which are named `tools/call {gen_ai.tool.name}`.
+      - id: deprecated
+        context:
+          attribute_key: rpc.response.status_code
+          deprecation_note: Replaced by `rpc.status_code`.
+          deprecation_reason: renamed
+        reason: The MCP conventions reference this attribute.
+    spans:
+      - match:
+          attributes:
+            mcp.method.name: initialize
+          kind: client
+          type: mcp.client
+      - match:
+          attributes:
+            mcp.method.name: initialize
+          kind: server
+          type: mcp.server
+      - match:
+          attributes:
+            mcp.method.name: notifications/initialized
+          kind: server
+          type: mcp.server
+      - match:
+          attributes:
+            mcp.method.name: tools/call
+          kind: client
+          type: mcp.client
+      - match:
+          attributes:
+            mcp.method.name: tools/call
+          kind: server
+          type: mcp.server
+      # The SDK client lists the tools to validate structured content against
+      # the tool's output schema.
+      - match:
+          attributes:
+            mcp.method.name: tools/list
+          kind: client
+          type: mcp.client
+      - match:
+          attributes:
+            mcp.method.name: tools/list
+          kind: server
+          type: mcp.server
