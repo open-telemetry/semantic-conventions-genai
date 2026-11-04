@@ -192,34 +192,33 @@ class CompactionPart(BaseModel):
     model_config = ConfigDict(extra="allow")
 
 
-class BlobPart(BaseModel):
-    """Represents blob binary data sent inline to the model"""
+class MediaPart(BaseModel):
+    """Common media metadata for inline and referenced content."""
 
-    type: Literal["blob"] = Field(
-        description="The type of the content captured in this part."
-    )
     mime_type: Optional[str] = Field(
         default=None, description="The IANA MIME type of the attached data."
     )
     modality: Union[Modality, str] = Field(
         description="The general modality of the data if it is known. Instrumentations SHOULD also set the mimeType field if the specific type is known."
+    )
+
+
+class BlobPart(MediaPart):
+    """Represents blob binary data sent inline to the model"""
+
+    type: Literal["blob"] = Field(
+        description="The type of the content captured in this part."
     )
     content: bytes = Field(
         description="Raw bytes of the attached data. This field SHOULD be encoded as a base64 string when serialized to JSON."
     )
 
 
-class FilePart(BaseModel):
+class FilePart(MediaPart):
     """Represents an external referenced file sent to the model by file id"""
 
     type: Literal["file"] = Field(
         description="The type of the content captured in this part."
-    )
-    mime_type: Optional[str] = Field(
-        default=None, description="The IANA MIME type of the attached data."
-    )
-    modality: Union[Modality, str] = Field(
-        description="The general modality of the data if it is known. Instrumentations SHOULD also set the mimeType field if the specific type is known."
     )
     file_id: str = Field(
         description="An identifier referencing a file that was pre-uploaded to the provider."
@@ -228,17 +227,11 @@ class FilePart(BaseModel):
     model_config = ConfigDict(extra="allow")
 
 
-class UriPart(BaseModel):
+class UriPart(MediaPart):
     """Represents an external referenced file sent to the model by URI"""
 
     type: Literal["uri"] = Field(
         description="The type of the content captured in this part."
-    )
-    mime_type: Optional[str] = Field(
-        default=None, description="The IANA MIME type of the attached data."
-    )
-    modality: Union[Modality, str] = Field(
-        description="The general modality of the data if it is known. Instrumentations SHOULD also set the mimeType field if the specific type is known."
     )
     uri: str = Field(
         description=(
