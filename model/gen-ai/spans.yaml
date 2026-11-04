@@ -48,31 +48,31 @@ attribute_groups:
     attributes:
       - ref: gen_ai.usage.text.input_tokens
         requirement_level:
-          recommended: When available and non-zero.
+          recommended: When reported by the provider and non-zero.
       - ref: gen_ai.usage.image.input_tokens
         requirement_level:
-          recommended: When available and non-zero.
+          recommended: When reported by the provider and non-zero.
       - ref: gen_ai.usage.audio.input_tokens
         requirement_level:
-          recommended: When available and non-zero.
+          recommended: When reported by the provider and non-zero.
       - ref: gen_ai.usage.text.cache_read.input_tokens
         requirement_level:
-          recommended: When available and non-zero.
+          recommended: When reported by the provider and non-zero.
       - ref: gen_ai.usage.image.cache_read.input_tokens
         requirement_level:
-          recommended: When available and non-zero.
+          recommended: When reported by the provider and non-zero.
       - ref: gen_ai.usage.audio.cache_read.input_tokens
         requirement_level:
-          recommended: When available and non-zero.
+          recommended: When reported by the provider and non-zero.
       - ref: gen_ai.usage.text.output_tokens
         requirement_level:
-          recommended: When available and non-zero.
+          recommended: When reported by the provider and non-zero.
       - ref: gen_ai.usage.image.output_tokens
         requirement_level:
-          recommended: When available and non-zero.
+          recommended: When reported by the provider and non-zero.
       - ref: gen_ai.usage.audio.output_tokens
         requirement_level:
-          recommended: When available and non-zero.
+          recommended: When reported by the provider and non-zero.
       - ref: gen_ai.usage.cache_read.input_tokens
         requirement_level:
           recommended: When available and non-zero.
@@ -175,6 +175,17 @@ attribute_groups:
         requirement_level:
           conditionally_required: When applicable.
 
+  - id: attributes.gen_ai.retrieval.common
+    visibility: internal
+    attributes:
+      - ref: gen_ai.operation.name
+        annotations:
+          markdown:
+            omit_enum_table: true
+        requirement_level: required
+        examples: ["retrieval"]
+        note: SHOULD be `retrieval`.
+
 spans:
   - type: gen_ai.client.inference
     requirement_level: recommended
@@ -185,7 +196,7 @@ spans:
         Semantic conventions for individual GenAI systems and frameworks MAY specify different span name format
         and MUST follow the overall [guidelines for span names](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.56.0/specification/trace/api.md#span).
     brief: >
-      This span represents a logical client call to Generative AI model or 
+      This span represents a logical client call to Generative AI model or
       service that generates a response or requests a tool call based on the input prompt.
     note: |
       **Span kind** SHOULD be `CLIENT` and MAY be set to `INTERNAL` on spans representing
@@ -376,6 +387,9 @@ spans:
         requirement_level: required
         sampling_relevant: true
       - ref: gen_ai.operation.name
+        annotations:
+          markdown:
+            omit_enum_table: true
         sampling_relevant: true
         examples: ["embeddings"]
         note: SHOULD be `embeddings`.
@@ -415,6 +429,15 @@ spans:
     note: |
       The `gen_ai.operation.name` SHOULD be `retrieval`.
     stability: development
+    # Hosted retrieval and search APIs are not GenAI-specific, see
+    # https://github.com/open-telemetry/semantic-conventions-genai/issues/637 and
+    # https://github.com/open-telemetry/semantic-conventions/issues/1869
+    deprecated:
+      reason: obsoleted
+      note: >
+        Calls to retrieval or search services SHOULD be instrumented following
+        database or other applicable client semantic conventions. Retrieval performed
+        by GenAI frameworks and applications SHOULD be reported with the `gen_ai.retrieval` span.
     attributes:
       - ref_group: attributes.gen_ai.common
       - ref_group: attributes.gen_ai.address_and_port
@@ -431,6 +454,30 @@ spans:
       - ref: gen_ai.data_source.id
         requirement_level:
           conditionally_required: When applicable.
+
+  - type: gen_ai.retrieval
+    requirement_level: recommended
+    kind: internal
+    name:
+      note: |
+        **Span name** SHOULD be `{gen_ai.operation.name}`.
+    brief: >
+      Describes a retrieval operation - an execution of a framework retrieval pipeline
+      that returns documents relevant to a query.
+    stability: development
+    entity_associations:
+      - "gen_ai.main_agent"
+    attributes:
+      - ref_group: attributes.gen_ai.error
+      - ref_group: attributes.gen_ai.retrieval.common
+      - ref: gen_ai.operation.name
+        sampling_relevant: true
+      - ref: gen_ai.retrieval.query.text
+        requirement_level: opt_in
+      - ref: gen_ai.retrieval.top_k
+        requirement_level: recommended
+      - ref: gen_ai.retrieval.documents
+        requirement_level: opt_in
 
   - type: gen_ai.fetch_response.client
     kind: client
@@ -453,6 +500,9 @@ spans:
         requirement_level: required
         sampling_relevant: true
       - ref: gen_ai.operation.name
+        annotations:
+          markdown:
+            omit_enum_table: true
         requirement_level: required
         sampling_relevant: true
       - ref: server.address
@@ -569,6 +619,9 @@ spans:
         requirement_level: required
         sampling_relevant: true
       - ref: gen_ai.operation.name
+        annotations:
+          markdown:
+            omit_enum_table: true
         sampling_relevant: true
       - ref: server.address
         sampling_relevant: true
@@ -611,7 +664,16 @@ spans:
     note: |
       The `gen_ai.operation.name` SHOULD be `invoke_agent`.
 
-      Examples: OpenAI Assistants API, AWS Bedrock Agents.
+      This span SHOULD be emitted when the instrumented API represents the target as
+      an agent service outside the current process. Instrumentation SHOULD use
+      information available from the target's API type or configuration.
+
+      Examples include remote agent services accessed through the OpenAI Assistants API,
+      AWS Bedrock Agents, Gemini Enterprise Agent Platform, Azure AI Foundry Agent
+      Service, or an A2A endpoint.
+
+      For local agent invocations, refer to the
+      `gen_ai.invoke_agent.internal` span.
     stability: development
     attributes:
       - ref_group: attributes.gen_ai.invoke_agent.common
@@ -621,6 +683,9 @@ spans:
         requirement_level: required
         sampling_relevant: true
       - ref: gen_ai.operation.name
+        annotations:
+          markdown:
+            omit_enum_table: true
         sampling_relevant: true
       - ref: gen_ai.request.model
         sampling_relevant: true
@@ -655,13 +720,24 @@ spans:
     note: |
       The `gen_ai.operation.name` SHOULD be `invoke_agent`.
 
-      Examples: LangChain agents, CrewAI agents.
+      This span SHOULD be emitted for an agent invocation executed within the
+      instrumented process. Instrumentation SHOULD use information available from
+      the API type or configuration.
+
+      Examples include local agent invocations in frameworks such as LangChain,
+      CrewAI, AutoGen, or Google ADK.
+
+      For agent invocations targeting an out-of-process or remote agent service,
+      refer to the `gen_ai.client.invoke_agent` span.
     stability: development
     entity_associations:
       - "gen_ai.main_agent"
     attributes:
       - ref_group: attributes.gen_ai.invoke_agent.common
       - ref: gen_ai.operation.name
+        annotations:
+          markdown:
+            omit_enum_table: true
         sampling_relevant: true
       - ref: gen_ai.request.model
         sampling_relevant: true
@@ -701,6 +777,9 @@ spans:
       - ref_group: attributes.gen_ai.error
       - ref_group: attributes.gen_ai.execute_tool.common
       - ref: gen_ai.operation.name
+        annotations:
+          markdown:
+            omit_enum_table: true
         requirement_level: required
         sampling_relevant: true
       - ref: gen_ai.tool.name
@@ -762,6 +841,9 @@ spans:
     attributes:
       - ref_group: attributes.gen_ai.error
       - ref: gen_ai.operation.name
+        annotations:
+          markdown:
+            omit_enum_table: true
         requirement_level: required
         sampling_relevant: true
       - ref: gen_ai.workflow.name
@@ -803,6 +885,9 @@ spans:
     attributes:
       - ref_group: attributes.gen_ai.error
       - ref: gen_ai.operation.name
+        annotations:
+          markdown:
+            omit_enum_table: true
         requirement_level: required
         sampling_relevant: true
       - ref: gen_ai.agent.name
@@ -876,6 +961,9 @@ span_refinements:
     stability: development
     attributes:
       - ref: openai.api.type
+        annotations:
+          markdown:
+            omit_enum_table: true
         requirement_level: recommended
         note: >
           For this operation `openai.api.type` SHOULD be set to `responses`.

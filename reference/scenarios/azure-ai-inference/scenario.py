@@ -224,15 +224,18 @@ def run_chat_streaming_reference(client):
             model=request_model,
             messages=[UserMessage(content="Tell me a joke.")],
             stream=True,
+            model_extras={"stream_options": {"include_usage": True}},
         )
         text = ""
         model = None
         response_id = None
+        usage = None
         seen_choice_indexes = set()
         finish_reasons_by_index = {}
         for chunk in stream:
             model = model or getattr(chunk, "model", None)
             response_id = response_id or getattr(chunk, "id", None)
+            usage = getattr(chunk, "usage", None) or usage
             for choice in chunk.choices:
                 seen_choice_indexes.add(choice.index)
                 if choice.index == 0 and choice.delta and choice.delta.content:
@@ -243,6 +246,9 @@ def run_chat_streaming_reference(client):
             span.set_attribute("gen_ai.response.model", model)
         if response_id:
             span.set_attribute("gen_ai.response.id", response_id)
+        if usage:
+            span.set_attribute("gen_ai.usage.input_tokens", usage.prompt_tokens)
+            span.set_attribute("gen_ai.usage.output_tokens", usage.completion_tokens)
         if seen_choice_indexes:
             finish_reasons = [
                 finish_reasons_by_index.get(index, "error") for index in range(max(seen_choice_indexes) + 1)

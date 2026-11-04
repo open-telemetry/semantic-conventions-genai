@@ -16,8 +16,8 @@ scenarios:
         context:
           attribute_key: process.exit.code
         reason: Registry validation does not recognize this process attribute referenced by the command-tool refinement.
-      - id: genai_expected_attribute_missing
-        context:
-          operation: retrieval
-          missing_attribute: server.address
-        reason: In-memory retriever has no server address.
+    spans:
+      - match:
+          attributes:
+            gen_ai.operation.name: retrieval
+          type: gen_ai.retrieval

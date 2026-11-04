@@ -1,6 +1,6 @@
 # Invoke Agent Client Span
 
-> **[Semantic Convention](../../docs/gen-ai/client-agent.md#span-gen_aiclientinvoke_agent)**
+> **[Semantic Convention](../../docs/gen-ai/client-invoke-agent.md#span-gen_aiclientinvoke_agent)**
 
 ## Required
 

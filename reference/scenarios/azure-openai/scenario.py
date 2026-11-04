@@ -32,26 +32,26 @@ _embeddings_duration = _reference_meter.create_histogram(
         81.92,
     ],
 )
+
+_TOKEN_BUCKET_BOUNDARIES = (1, 4, 16, 64, 256, 1024, 4096, 16384, 65536, 262144, 1048576, 4194304, 16777216, 67108864)
 _embeddings_input_tokens = _reference_meter.create_histogram(
     "gen_ai.client.embeddings.operation.input_tokens",
     unit="{token}",
     description="The number of input tokens used per embeddings operation.",
-    explicit_bucket_boundaries_advisory=[
-        1,
-        4,
-        16,
-        64,
-        256,
-        1024,
-        4096,
-        16384,
-        65536,
-        262144,
-        1048576,
-        4194304,
-        16777216,
-        67108864,
-    ],
+    explicit_bucket_boundaries_advisory=_TOKEN_BUCKET_BOUNDARIES,
+)
+
+_operation_input_tokens = _reference_meter.create_histogram(
+    "gen_ai.client.inference.operation.input_tokens",
+    unit="{token}",
+    description="The number of input (prompt) tokens used per inference operation.",
+    explicit_bucket_boundaries_advisory=_TOKEN_BUCKET_BOUNDARIES,
+)
+_operation_output_tokens = _reference_meter.create_histogram(
+    "gen_ai.client.inference.operation.output_tokens",
+    unit="{token}",
+    description="The number of output (completion) tokens used per inference operation.",
+    explicit_bucket_boundaries_advisory=_TOKEN_BUCKET_BOUNDARIES,
 )
 
 
@@ -69,21 +69,41 @@ def run_chat_reference(client):
         span_attributes["server.address"] = host
     if port is not None:
         span_attributes["server.port"] = port
+    metric_attributes = dict(span_attributes)
+    input_token_count = 0
+    output_token_count = 0
     with _reference_tracer.start_as_current_span(
-        "chat gpt-4o-mini", kind=SpanKind.CLIENT, attributes=span_attributes
+        "chat gpt-4o-mini",
+        kind=SpanKind.CLIENT,
+        attributes=span_attributes,
+        record_exception=False,
     ) as span:
-        messages = [{"role": "user", "content": "Say hello."}]
-        resp = client.chat.completions.create(
-            model=request_model,
-            messages=messages,
-        )
-        span.set_attribute("gen_ai.response.model", resp.model)
-        span.set_attribute("gen_ai.response.id", resp.id)
-        span.set_attribute("gen_ai.response.finish_reasons", [c.finish_reason for c in resp.choices])
-        if resp.usage:
-            span.set_attribute("gen_ai.usage.input_tokens", resp.usage.prompt_tokens)
-            span.set_attribute("gen_ai.usage.output_tokens", resp.usage.completion_tokens)
-        print(f"    -> {resp.choices[0].message.content[:60]}")
+        try:
+            messages = [{"role": "user", "content": "Say hello."}]
+            resp = client.chat.completions.create(
+                model=request_model,
+                messages=messages,
+            )
+            span.set_attribute("gen_ai.response.model", resp.model)
+            metric_attributes["gen_ai.response.model"] = resp.model
+            span.set_attribute("gen_ai.response.id", resp.id)
+            span.set_attribute("gen_ai.response.finish_reasons", [c.finish_reason for c in resp.choices])
+            if resp.usage:
+                span.set_attribute("gen_ai.usage.input_tokens", resp.usage.prompt_tokens)
+                span.set_attribute("gen_ai.usage.output_tokens", resp.usage.completion_tokens)
+                if resp.usage.prompt_tokens is not None:
+                    input_token_count = resp.usage.prompt_tokens
+                if resp.usage.completion_tokens is not None:
+                    output_token_count = resp.usage.completion_tokens
+            print(f"    -> {resp.choices[0].message.content[:60]}")
+        except Exception as e:
+            span.set_status(StatusCode.ERROR, str(e))
+            span.set_attribute("error.type", type(e).__qualname__)
+            metric_attributes["error.type"] = type(e).__qualname__
+            raise
+        finally:
+            _operation_input_tokens.record(input_token_count, metric_attributes)
+            _operation_output_tokens.record(output_token_count, metric_attributes)
 
 
 def run_embeddings_reference(client):

@@ -71,7 +71,7 @@ span_refinements:
 
       Instrumentation SHOULD use the additional A2A error context to set the
       span status to `ERROR`, as permitted by the
-      [HTTP span status conventions](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/http/http-spans.md#status),
+      [HTTP span status conventions](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/http/http-spans.md#status),
       and SHOULD set `error.type` according to the
       [A2A error guidance](/docs/gen-ai/a2a.md#server), even when the HTTP response
       indicates success.

@@ -1,6 +1,6 @@
 # Client Invoke Agent Duration Metric
 
-> **[Semantic Convention](../../docs/gen-ai/client-agent.md#metric-gen_aiclientinvoke_agentduration)**
+> **[Semantic Convention](../../docs/gen-ai/client-invoke-agent.md#metric-gen_aiclientinvoke_agentduration)**
 
 ## Required
 

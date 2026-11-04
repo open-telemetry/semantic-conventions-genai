@@ -61,6 +61,15 @@ def test_embeddings_scenarios_report_embeddings_metrics():
         assert "gen_ai.client.embeddings.operation.input_tokens" in entries[library].metrics, library
 
 
+def test_retrieval_scenarios_report_retrieval_metrics():
+    entries = {entry.library: entry for entry in load_scenario_data_files()}
+    for library in ("haystack", "langchain", "llamaindex"):
+        metrics = entries[library].metrics
+        assert "gen_ai.client.operation.duration" not in metrics, library
+        assert metrics["gen_ai.retrieval.duration"]["gen_ai.operation.name"] == "present", library
+    assert entries["llamaindex"].metrics["gen_ai.retrieval.duration"]["error.type"] == "present"
+
+
 def test_invoke_agent_client_scenarios_report_invoke_agent_duration():
     entries = {entry.library: entry for entry in load_scenario_data_files()}
     for library in ("aws-bedrock-agent", "azure-ai-foundry", "google-genai", "openai-assistants"):
