@@ -28,3 +28,8 @@ scenarios:
           attributes:
             gen_ai.operation.name: embeddings
           type: gen_ai.client.embeddings
+    metrics:
+      - gen_ai.client.embeddings.duration
+      - gen_ai.client.embeddings.operation.input_tokens
+      - gen_ai.client.inference.operation.input_tokens
+      - gen_ai.client.inference.operation.output_tokens
