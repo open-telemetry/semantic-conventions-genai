@@ -179,6 +179,9 @@ attribute_groups:
     visibility: internal
     attributes:
       - ref: gen_ai.operation.name
+        annotations:
+          markdown:
+            omit_enum_table: true
         requirement_level: required
         examples: ["retrieval"]
         note: SHOULD be `retrieval`.
@@ -453,6 +456,8 @@ spans:
       Describes a retrieval operation - an execution of a framework retrieval pipeline
       that returns documents relevant to a query.
     stability: development
+    entity_associations:
+      - "gen_ai.main_agent"
     attributes:
       - ref_group: attributes.gen_ai.error
       - ref_group: attributes.gen_ai.retrieval.common
