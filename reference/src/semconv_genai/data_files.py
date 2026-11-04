@@ -89,6 +89,7 @@ class ScenarioDataEntry:
     events: dict[str, dict[str, str]]
     entities: dict[str, dict[str, str]]
     metrics: dict[str, dict[str, str]]
+    sources: dict[str, dict[str, dict[str, tuple[str, ...]]]]
 
 
 def _normalize_attr_data(
@@ -119,13 +120,38 @@ def _normalize_attr_data(
     return normalized
 
 
-def _normalize_scenario_data_entry(entry: dict[str, object], library: str) -> ScenarioDataEntry:
+def _attr_sources(
+    attr_data: dict[str, dict[str, str]],
+    scenario: str,
+) -> dict[str, dict[str, tuple[str, ...]]]:
+    return {
+        type_key: {name: (scenario,) for name, status in attrs.items() if status == "present"}
+        for type_key, attrs in attr_data.items()
+    }
+
+
+def _normalize_scenario_data_entry(
+    entry: dict[str, object],
+    library: str,
+    scenario: str | None = None,
+) -> ScenarioDataEntry:
+    spans = _normalize_attr_data(entry.get("spans"), span_specs())
+    events = _normalize_attr_data(entry.get("events"), event_specs())
+    entities = _normalize_attr_data(entry.get("entities"), entity_specs())
+    metrics = _normalize_attr_data(entry.get("metrics"), metric_specs())
+    scenario = scenario or library
     return ScenarioDataEntry(
         library=library,
-        spans=_normalize_attr_data(entry.get("spans"), span_specs()),
-        events=_normalize_attr_data(entry.get("events"), event_specs()),
-        entities=_normalize_attr_data(entry.get("entities"), entity_specs()),
-        metrics=_normalize_attr_data(entry.get("metrics"), metric_specs()),
+        spans=spans,
+        events=events,
+        entities=entities,
+        metrics=metrics,
+        sources={
+            "spans": _attr_sources(spans, scenario),
+            "events": _attr_sources(events, scenario),
+            "entities": _attr_sources(entities, scenario),
+            "metrics": _attr_sources(metrics, scenario),
+        },
     )
 
 
@@ -159,6 +185,26 @@ def _merge_attr_data(
     return merged
 
 
+def _merge_sources(
+    base: dict[str, dict[str, dict[str, tuple[str, ...]]]],
+    extra: dict[str, dict[str, dict[str, tuple[str, ...]]]],
+) -> dict[str, dict[str, dict[str, tuple[str, ...]]]]:
+    merged = {
+        signal_kind: {
+            type_key: {name: tuple(scenarios) for name, scenarios in attrs.items()}
+            for type_key, attrs in signal_types.items()
+        }
+        for signal_kind, signal_types in base.items()
+    }
+    for signal_kind, signal_types in extra.items():
+        target_signal = merged.setdefault(signal_kind, {})
+        for type_key, attrs in signal_types.items():
+            target_type = target_signal.setdefault(type_key, {})
+            for name, scenarios in attrs.items():
+                target_type[name] = tuple(sorted(set(target_type.get(name, ())) | set(scenarios)))
+    return merged
+
+
 def load_scenario_data_files() -> list[ScenarioDataEntry]:
     """Load every committed ``scenarios/<dir>/data.json``, grouped by instrumented library.
 
@@ -170,7 +216,11 @@ def load_scenario_data_files() -> list[ScenarioDataEntry]:
     by_library: dict[str, ScenarioDataEntry] = {}
     for path in sorted(SCENARIOS_DIR.glob("*/data.json")):
         library = _read_instrumented_library(path.parent)
-        entry = _normalize_scenario_data_entry(json.loads(path.read_text(encoding="utf-8")), library)
+        entry = _normalize_scenario_data_entry(
+            json.loads(path.read_text(encoding="utf-8")),
+            library,
+            path.parent.name,
+        )
         existing = by_library.get(library)
         if existing is None:
             by_library[library] = entry
@@ -181,5 +231,6 @@ def load_scenario_data_files() -> list[ScenarioDataEntry]:
                 events=_merge_attr_data(existing.events, entry.events),
                 entities=_merge_attr_data(existing.entities, entry.entities),
                 metrics=_merge_attr_data(existing.metrics, entry.metrics),
+                sources=_merge_sources(existing.sources, entry.sources),
             )
     return list(by_library.values())
