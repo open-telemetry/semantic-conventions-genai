@@ -281,9 +281,9 @@ attributes:
     stability: development
   - key: gen_ai.usage.input_tokens
     type: int
-    brief: The number of tokens used in the GenAI input (prompt).
+    brief: The total number of input (prompt) tokens across all modalities.
     note: |
-      This value SHOULD include all types of input tokens, including cached tokens.
+      This value SHOULD include cached tokens and input tokens of all modalities.
       Instrumentations SHOULD make a best effort to populate this value, using a total
       provided by the provider when available or, depending on the provider API,
       by summing different token types parsed from the provider output.
@@ -339,8 +339,10 @@ attributes:
     stability: development
   - key: gen_ai.usage.output_tokens
     type: int
-    brief: The number of tokens used in the GenAI response (completion).
+    brief: The total number of output (completion) tokens across all modalities.
     note: |
+      This value SHOULD include reasoning tokens and tokens of all modalities.
+
       When the provider reports both billed token counts and model-consumed
       token counts (for example, Cohere exposes both `usage.billed_units` and
       `usage.tokens`), instrumentations SHOULD report the billed count so the
@@ -419,10 +421,16 @@ attributes:
           value: "unknown"
           brief: 'The modality is not known.'
     brief: The modality of the tokens being counted.
-    note: >
-      When the provider does not break usage down by modality and the modality
-      cannot be reliably determined, instrumentations SHOULD report the tokens
-      under the `unknown` modality.
+    note: |
+      For each operation, token usage counter measurements across all modalities
+      SHOULD add up to the corresponding total, such as the `gen_ai.usage.input_tokens`
+      attribute or a measurement on the `gen_ai.client.inference.operation.input_tokens`
+      histogram.
+
+      Instrumentations SHOULD record tokens as `unknown` when their modality
+      cannot reliably be determined. For example, if a
+      provider reports 300 input tokens and 100 of them are audio, record 100 as
+      `audio` and 200 as `unknown`.
     examples: ['text', 'image', 'audio']
     stability: development
   - key: gen_ai.conversation.id
@@ -607,6 +615,8 @@ attributes:
     annotations:
       type:
         json_schema: model/gen-ai/gen-ai-tool-call-arguments.json
+      value:
+        unbounded_size: true
     note: |
       > [!WARNING]
       > This attribute may contain sensitive information.
@@ -627,6 +637,8 @@ attributes:
     annotations:
       type:
         json_schema: model/gen-ai/gen-ai-tool-call-result.json
+      value:
+        unbounded_size: true
     note: |
       > [!WARNING]
       > This attribute may contain sensitive information.
@@ -722,7 +734,12 @@ attributes:
           stability: development
         - id: retrieval
           value: "retrieval"
-          brief: 'Retrieval operation such as [OpenAI Search Vector Store API](https://platform.openai.com/docs/api-reference/vector-stores/search)'
+          brief: 'Execution of a retrieval pipeline that returns documents relevant to a query'
+          note: |
+            Examples include LangChain, LlamaIndex, and Haystack retrievers.
+            A retrieval pipeline usually combines other operations such as embeddings,
+            database queries, web search, or reranking. These operations SHOULD be
+            reported following their own conventions.
           stability: development
         - id: fetch_response
           value: "fetch_response"
@@ -829,6 +846,8 @@ attributes:
     annotations:
       type:
         json_schema: model/gen-ai/gen-ai-retrieval-documents.json
+      value:
+        unbounded_size: true
     note: |
       Each document object SHOULD contain the following properties when available:
       `id` (string): A unique identifier for the document, `score` (double): The relevance score of the document
@@ -906,6 +925,8 @@ attributes:
     annotations:
       type:
         json_schema: model/gen-ai/gen-ai-memory-records.json
+      value:
+        unbounded_size: true
     note: |
       Instrumentations SHOULD NOT capture this attribute by default. Capture SHOULD be gated
       by an explicit user opt-in via [content capture configuration](/docs/gen-ai/gen-ai-spans.md#content-capture-configuration).
