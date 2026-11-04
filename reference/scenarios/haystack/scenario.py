@@ -1,11 +1,34 @@
 """Reference implementation for Haystack retrieval."""
 
 import json
+import time
 
-from opentelemetry.trace import SpanKind
-from reference_shared import flush_and_shutdown, reference_tracer, setup_otel
+from opentelemetry.trace import StatusCode
+from reference_shared import flush_and_shutdown, reference_meter, reference_tracer, setup_otel
 
 _reference_tracer = reference_tracer()
+_reference_meter = reference_meter()
+_retrieval_duration = _reference_meter.create_histogram(
+    name="gen_ai.retrieval.duration",
+    unit="s",
+    description="The duration of a single retrieval operation.",
+    explicit_bucket_boundaries_advisory=[
+        0.01,
+        0.02,
+        0.04,
+        0.08,
+        0.16,
+        0.32,
+        0.64,
+        1.28,
+        2.56,
+        5.12,
+        10.24,
+        20.48,
+        40.96,
+        81.92,
+    ],
+)
 
 
 def run_retrieval():
@@ -15,46 +38,41 @@ def run_retrieval():
     from haystack.components.retrievers.in_memory import InMemoryBM25Retriever
     from haystack.document_stores.in_memory import InMemoryDocumentStore
 
-    data_source_id = "weather-knowledge-base"
     query_text = "Seattle weather"
-    top_k = 2
     document_store = InMemoryDocumentStore()
     document_store.write_documents(
         [
-            Document(
-                content="Seattle weather is rainy and cool.",
-                meta={"source_id": data_source_id, "title": "Seattle Weather"},
-            ),
-            Document(
-                content="Paris weather is mild and breezy.",
-                meta={"source_id": data_source_id, "title": "Paris Weather"},
-            ),
+            Document(content="Seattle weather is rainy and cool."),
+            Document(content="Paris weather is mild and breezy."),
+            Document(content="London weather is cloudy and damp."),
         ]
     )
-    retriever = InMemoryBM25Retriever(document_store=document_store, top_k=top_k)
+    retriever = InMemoryBM25Retriever(document_store=document_store, top_k=2)
+    # run() accepts a per-call top_k that overrides the component setting.
+    top_k = 1
 
-    with _reference_tracer.start_as_current_span("retrieval weather-knowledge-base", kind=SpanKind.CLIENT) as span:
-        span.set_attribute("gen_ai.operation.name", "retrieval")
-        span.set_attribute("gen_ai.data_source.id", data_source_id)
-        span.set_attribute("gen_ai.retrieval.top_k", top_k)
-        span.set_attribute("gen_ai.retrieval.query.text", query_text)
-        result = retriever.run(query=query_text)
-        documents = result["documents"]
-        span.set_attribute(
-            "gen_ai.retrieval.documents",
-            json.dumps(
-                [
-                    {
-                        "id": getattr(document, "id", None),
-                        "content": document.content,
-                        "title": document.meta.get("title"),
-                        "source_id": document.meta.get("source_id"),
-                    }
-                    for document in documents
-                ]
-            ),
-        )
-        print(f"    -> {documents[0].content[:60]}")
+    metric_attributes = {"gen_ai.operation.name": "retrieval"}
+    start_time = time.perf_counter()
+    with _reference_tracer.start_as_current_span(
+        "retrieval", attributes=metric_attributes, record_exception=False
+    ) as span:
+        try:
+            span.set_attribute("gen_ai.retrieval.top_k", top_k)
+            span.set_attribute("gen_ai.retrieval.query.text", query_text)
+            result = retriever.run(query=query_text, top_k=top_k)
+            documents = result["documents"]
+            span.set_attribute(
+                "gen_ai.retrieval.documents",
+                json.dumps([{"id": document.id, "score": document.score} for document in documents]),
+            )
+            print(f"    -> {documents[0].content[:60]}")
+        except Exception as e:
+            span.set_status(StatusCode.ERROR, str(e))
+            span.set_attribute("error.type", type(e).__qualname__)
+            metric_attributes = {**metric_attributes, "error.type": type(e).__qualname__}
+            raise
+        finally:
+            _retrieval_duration.record(time.perf_counter() - start_time, metric_attributes)
 
 
 def main():

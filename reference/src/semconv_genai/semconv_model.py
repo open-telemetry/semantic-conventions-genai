@@ -35,7 +35,8 @@ _SPANS = {
     "a2a_server": ("a2a.server", "A2A Server"),
     "inference": ("gen_ai.client.inference", "Inference"),
     "embeddings": ("gen_ai.client.embeddings", "Embeddings"),
-    "retrieval": ("gen_ai.retrieval.client", "Retrieval"),
+    "retrieval": ("gen_ai.retrieval", "Retrieval"),
+    "retrieval_client": ("gen_ai.retrieval.client", "Retrieval Client"),
     "fetch_response": ("gen_ai.fetch_response.client", "Fetch Response"),
     "memory": ("gen_ai.memory.client", "Memory"),
     "execute_tool": ("gen_ai.execute_tool.internal", "Execute Tool"),
@@ -67,6 +68,7 @@ _METRICS = {
     "gen_ai.client.inference.duration": "Client Inference Duration",
     "gen_ai.client.embeddings.duration": "Client Embeddings Duration",
     "gen_ai.client.embeddings.operation.input_tokens": "Client Embeddings Operation Input Tokens",
+    "gen_ai.retrieval.duration": "Retrieval Duration",
     "gen_ai.invoke_agent.inference_calls": "Invoke Agent Inference Calls",
     "gen_ai.invoke_agent.tool_calls": "Invoke Agent Tool Calls",
 }
