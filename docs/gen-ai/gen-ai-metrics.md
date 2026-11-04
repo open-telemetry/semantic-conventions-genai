@@ -36,6 +36,8 @@ see [Client Inference](client-inference.md#metrics).
 For embeddings metrics (duration, input tokens),
 see [Client Embeddings](client-embeddings.md#metrics).
 
+For retrieval metrics, see [Retrieval](retrieval.md#metrics).
+
 **Disclaimer:** These are initial Generative AI client metric instruments
 and attributes but more may be added in the future.
 
@@ -64,6 +66,7 @@ This metric SHOULD be specified with [ExplicitBucketBoundaries] of [0.01, 0.02, 
 | `gen_ai.client.operation.duration` | Histogram | `s` | GenAI operation duration. [1] | ![Development](https://img.shields.io/badge/-development-blue) | |
 
 **[1]:** This metric SHOULD NOT be reported for inference or embeddings operations; use `gen_ai.client.inference.duration` or `gen_ai.client.embeddings.duration` instead.
+This metric SHOULD NOT be reported for retrieval operations.
 
 **Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/general/signal-requirement-level.md).
 
@@ -139,7 +142,7 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 | `invoke_workflow` | Invoke GenAI workflow | ![Development](https://img.shields.io/badge/-development-blue) |
 | `plan` | Agent planning or task decomposition phase | ![Development](https://img.shields.io/badge/-development-blue) |
 | `realtime_inference` | Server-side model generation within a realtime, bidirectional streaming session such as [OpenAI Realtime](https://platform.openai.com/docs/guides/realtime) or [Gemini Live](https://ai.google.dev/gemini-api/docs/live). | ![Development](https://img.shields.io/badge/-development-blue) |
-| `retrieval` | Retrieval operation such as [OpenAI Search Vector Store API](https://platform.openai.com/docs/api-reference/vector-stores/search) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `retrieval` | Execution of a retrieval pipeline that returns documents relevant to a query [9] | ![Development](https://img.shields.io/badge/-development-blue) |
 | `search_memory` | Search/query memories from a memory store | ![Development](https://img.shields.io/badge/-development-blue) |
 | `text_completion` | Text completions operation such as [OpenAI Completions API (Legacy)](https://platform.openai.com/docs/api-reference/completions) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `update_memory` | Update existing memory records | ![Development](https://img.shields.io/badge/-development-blue) |
@@ -147,6 +150,11 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 | `user_speech` | Describes the process of recording user speech input. | ![Development](https://img.shields.io/badge/-development-blue) |
 
 **[8]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
+
+**[9]:** Examples include LangChain, LlamaIndex, and Haystack retrievers.
+A retrieval pipeline usually combines other operations such as embeddings,
+database queries, web search, or reranking. These operations SHOULD be
+reported following their own conventions.
 
 ---
 
@@ -160,9 +168,9 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 | `azure.ai.openai` | [Azure OpenAI](https://learn.microsoft.com/en-us/azure/ai-services/openai/overview) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `cohere` | [Cohere](https://cohere.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `deepseek` | [DeepSeek](https://www.deepseek.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
-| `gcp.gemini` | [Gemini](https://cloud.google.com/products/gemini) [9] | ![Development](https://img.shields.io/badge/-development-blue) |
-| `gcp.gen_ai` | Any Google generative AI endpoint [10] | ![Development](https://img.shields.io/badge/-development-blue) |
-| `gcp.vertex_ai` | [Vertex AI](https://cloud.google.com/vertex-ai) [11] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `gcp.gemini` | [Gemini](https://cloud.google.com/products/gemini) [10] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `gcp.gen_ai` | Any Google generative AI endpoint [11] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `gcp.vertex_ai` | [Vertex AI](https://cloud.google.com/vertex-ai) [12] | ![Development](https://img.shields.io/badge/-development-blue) |
 | `groq` | [Groq](https://groq.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `ibm.watsonx.ai` | [IBM Watsonx AI](https://www.ibm.com/products/watsonx-ai) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `mistral` | [Mistral](https://mistral.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
@@ -171,11 +179,11 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 | `perplexity` | [Perplexity](https://www.perplexity.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `x_ai` | [xAI](https://x.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 
-**[9]:** Used when accessing the 'generativelanguage.googleapis.com' endpoint. Also known as the AI Studio API.
+**[10]:** Used when accessing the 'generativelanguage.googleapis.com' endpoint. Also known as the AI Studio API.
 
-**[10]:** May be used when specific backend is unknown.
+**[11]:** May be used when specific backend is unknown.
 
-**[11]:** Used when accessing the 'aiplatform.googleapis.com' endpoint.
+**[12]:** Used when accessing the 'aiplatform.googleapis.com' endpoint.
 
 <!-- prettier-ignore-end -->
 <!-- END AUTOGENERATED TEXT -->
@@ -275,7 +283,7 @@ Instrumentations SHOULD document the list of errors they report.
 | `invoke_workflow` | Invoke GenAI workflow | ![Development](https://img.shields.io/badge/-development-blue) |
 | `plan` | Agent planning or task decomposition phase | ![Development](https://img.shields.io/badge/-development-blue) |
 | `realtime_inference` | Server-side model generation within a realtime, bidirectional streaming session such as [OpenAI Realtime](https://platform.openai.com/docs/guides/realtime) or [Gemini Live](https://ai.google.dev/gemini-api/docs/live). | ![Development](https://img.shields.io/badge/-development-blue) |
-| `retrieval` | Retrieval operation such as [OpenAI Search Vector Store API](https://platform.openai.com/docs/api-reference/vector-stores/search) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `retrieval` | Execution of a retrieval pipeline that returns documents relevant to a query [8] | ![Development](https://img.shields.io/badge/-development-blue) |
 | `search_memory` | Search/query memories from a memory store | ![Development](https://img.shields.io/badge/-development-blue) |
 | `text_completion` | Text completions operation such as [OpenAI Completions API (Legacy)](https://platform.openai.com/docs/api-reference/completions) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `update_memory` | Update existing memory records | ![Development](https://img.shields.io/badge/-development-blue) |
@@ -283,6 +291,11 @@ Instrumentations SHOULD document the list of errors they report.
 | `user_speech` | Describes the process of recording user speech input. | ![Development](https://img.shields.io/badge/-development-blue) |
 
 **[7]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
+
+**[8]:** Examples include LangChain, LlamaIndex, and Haystack retrievers.
+A retrieval pipeline usually combines other operations such as embeddings,
+database queries, web search, or reranking. These operations SHOULD be
+reported following their own conventions.
 
 ---
 
@@ -296,9 +309,9 @@ Instrumentations SHOULD document the list of errors they report.
 | `azure.ai.openai` | [Azure OpenAI](https://learn.microsoft.com/en-us/azure/ai-services/openai/overview) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `cohere` | [Cohere](https://cohere.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `deepseek` | [DeepSeek](https://www.deepseek.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
-| `gcp.gemini` | [Gemini](https://cloud.google.com/products/gemini) [8] | ![Development](https://img.shields.io/badge/-development-blue) |
-| `gcp.gen_ai` | Any Google generative AI endpoint [9] | ![Development](https://img.shields.io/badge/-development-blue) |
-| `gcp.vertex_ai` | [Vertex AI](https://cloud.google.com/vertex-ai) [10] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `gcp.gemini` | [Gemini](https://cloud.google.com/products/gemini) [9] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `gcp.gen_ai` | Any Google generative AI endpoint [10] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `gcp.vertex_ai` | [Vertex AI](https://cloud.google.com/vertex-ai) [11] | ![Development](https://img.shields.io/badge/-development-blue) |
 | `groq` | [Groq](https://groq.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `ibm.watsonx.ai` | [IBM Watsonx AI](https://www.ibm.com/products/watsonx-ai) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `mistral` | [Mistral](https://mistral.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
@@ -307,11 +320,11 @@ Instrumentations SHOULD document the list of errors they report.
 | `perplexity` | [Perplexity](https://www.perplexity.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `x_ai` | [xAI](https://x.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 
-**[8]:** Used when accessing the 'generativelanguage.googleapis.com' endpoint. Also known as the AI Studio API.
+**[9]:** Used when accessing the 'generativelanguage.googleapis.com' endpoint. Also known as the AI Studio API.
 
-**[9]:** May be used when specific backend is unknown.
+**[10]:** May be used when specific backend is unknown.
 
-**[10]:** Used when accessing the 'aiplatform.googleapis.com' endpoint.
+**[11]:** Used when accessing the 'aiplatform.googleapis.com' endpoint.
 
 <!-- prettier-ignore-end -->
 <!-- END AUTOGENERATED TEXT -->
@@ -398,7 +411,7 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 | `invoke_workflow` | Invoke GenAI workflow | ![Development](https://img.shields.io/badge/-development-blue) |
 | `plan` | Agent planning or task decomposition phase | ![Development](https://img.shields.io/badge/-development-blue) |
 | `realtime_inference` | Server-side model generation within a realtime, bidirectional streaming session such as [OpenAI Realtime](https://platform.openai.com/docs/guides/realtime) or [Gemini Live](https://ai.google.dev/gemini-api/docs/live). | ![Development](https://img.shields.io/badge/-development-blue) |
-| `retrieval` | Retrieval operation such as [OpenAI Search Vector Store API](https://platform.openai.com/docs/api-reference/vector-stores/search) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `retrieval` | Execution of a retrieval pipeline that returns documents relevant to a query [7] | ![Development](https://img.shields.io/badge/-development-blue) |
 | `search_memory` | Search/query memories from a memory store | ![Development](https://img.shields.io/badge/-development-blue) |
 | `text_completion` | Text completions operation such as [OpenAI Completions API (Legacy)](https://platform.openai.com/docs/api-reference/completions) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `update_memory` | Update existing memory records | ![Development](https://img.shields.io/badge/-development-blue) |
@@ -406,6 +419,11 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 | `user_speech` | Describes the process of recording user speech input. | ![Development](https://img.shields.io/badge/-development-blue) |
 
 **[6]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
+
+**[7]:** Examples include LangChain, LlamaIndex, and Haystack retrievers.
+A retrieval pipeline usually combines other operations such as embeddings,
+database queries, web search, or reranking. These operations SHOULD be
+reported following their own conventions.
 
 ---
 
@@ -419,9 +437,9 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 | `azure.ai.openai` | [Azure OpenAI](https://learn.microsoft.com/en-us/azure/ai-services/openai/overview) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `cohere` | [Cohere](https://cohere.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `deepseek` | [DeepSeek](https://www.deepseek.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
-| `gcp.gemini` | [Gemini](https://cloud.google.com/products/gemini) [7] | ![Development](https://img.shields.io/badge/-development-blue) |
-| `gcp.gen_ai` | Any Google generative AI endpoint [8] | ![Development](https://img.shields.io/badge/-development-blue) |
-| `gcp.vertex_ai` | [Vertex AI](https://cloud.google.com/vertex-ai) [9] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `gcp.gemini` | [Gemini](https://cloud.google.com/products/gemini) [8] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `gcp.gen_ai` | Any Google generative AI endpoint [9] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `gcp.vertex_ai` | [Vertex AI](https://cloud.google.com/vertex-ai) [10] | ![Development](https://img.shields.io/badge/-development-blue) |
 | `groq` | [Groq](https://groq.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `ibm.watsonx.ai` | [IBM Watsonx AI](https://www.ibm.com/products/watsonx-ai) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `mistral` | [Mistral](https://mistral.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
@@ -430,11 +448,11 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 | `perplexity` | [Perplexity](https://www.perplexity.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `x_ai` | [xAI](https://x.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 
-**[7]:** Used when accessing the 'generativelanguage.googleapis.com' endpoint. Also known as the AI Studio API.
+**[8]:** Used when accessing the 'generativelanguage.googleapis.com' endpoint. Also known as the AI Studio API.
 
-**[8]:** May be used when specific backend is unknown.
+**[9]:** May be used when specific backend is unknown.
 
-**[9]:** Used when accessing the 'aiplatform.googleapis.com' endpoint.
+**[10]:** Used when accessing the 'aiplatform.googleapis.com' endpoint.
 
 <!-- prettier-ignore-end -->
 <!-- END AUTOGENERATED TEXT -->
@@ -520,7 +538,7 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 | `invoke_workflow` | Invoke GenAI workflow | ![Development](https://img.shields.io/badge/-development-blue) |
 | `plan` | Agent planning or task decomposition phase | ![Development](https://img.shields.io/badge/-development-blue) |
 | `realtime_inference` | Server-side model generation within a realtime, bidirectional streaming session such as [OpenAI Realtime](https://platform.openai.com/docs/guides/realtime) or [Gemini Live](https://ai.google.dev/gemini-api/docs/live). | ![Development](https://img.shields.io/badge/-development-blue) |
-| `retrieval` | Retrieval operation such as [OpenAI Search Vector Store API](https://platform.openai.com/docs/api-reference/vector-stores/search) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `retrieval` | Execution of a retrieval pipeline that returns documents relevant to a query [7] | ![Development](https://img.shields.io/badge/-development-blue) |
 | `search_memory` | Search/query memories from a memory store | ![Development](https://img.shields.io/badge/-development-blue) |
 | `text_completion` | Text completions operation such as [OpenAI Completions API (Legacy)](https://platform.openai.com/docs/api-reference/completions) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `update_memory` | Update existing memory records | ![Development](https://img.shields.io/badge/-development-blue) |
@@ -528,6 +546,11 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 | `user_speech` | Describes the process of recording user speech input. | ![Development](https://img.shields.io/badge/-development-blue) |
 
 **[6]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
+
+**[7]:** Examples include LangChain, LlamaIndex, and Haystack retrievers.
+A retrieval pipeline usually combines other operations such as embeddings,
+database queries, web search, or reranking. These operations SHOULD be
+reported following their own conventions.
 
 ---
 
@@ -541,9 +564,9 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 | `azure.ai.openai` | [Azure OpenAI](https://learn.microsoft.com/en-us/azure/ai-services/openai/overview) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `cohere` | [Cohere](https://cohere.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `deepseek` | [DeepSeek](https://www.deepseek.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
-| `gcp.gemini` | [Gemini](https://cloud.google.com/products/gemini) [7] | ![Development](https://img.shields.io/badge/-development-blue) |
-| `gcp.gen_ai` | Any Google generative AI endpoint [8] | ![Development](https://img.shields.io/badge/-development-blue) |
-| `gcp.vertex_ai` | [Vertex AI](https://cloud.google.com/vertex-ai) [9] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `gcp.gemini` | [Gemini](https://cloud.google.com/products/gemini) [8] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `gcp.gen_ai` | Any Google generative AI endpoint [9] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `gcp.vertex_ai` | [Vertex AI](https://cloud.google.com/vertex-ai) [10] | ![Development](https://img.shields.io/badge/-development-blue) |
 | `groq` | [Groq](https://groq.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `ibm.watsonx.ai` | [IBM Watsonx AI](https://www.ibm.com/products/watsonx-ai) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `mistral` | [Mistral](https://mistral.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
@@ -552,11 +575,11 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 | `perplexity` | [Perplexity](https://www.perplexity.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `x_ai` | [xAI](https://x.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 
-**[7]:** Used when accessing the 'generativelanguage.googleapis.com' endpoint. Also known as the AI Studio API.
+**[8]:** Used when accessing the 'generativelanguage.googleapis.com' endpoint. Also known as the AI Studio API.
 
-**[8]:** May be used when specific backend is unknown.
+**[9]:** May be used when specific backend is unknown.
 
-**[9]:** Used when accessing the 'aiplatform.googleapis.com' endpoint.
+**[10]:** Used when accessing the 'aiplatform.googleapis.com' endpoint.
 
 <!-- prettier-ignore-end -->
 <!-- END AUTOGENERATED TEXT -->

@@ -382,7 +382,7 @@ and SHOULD be provided **at span creation time** (if provided at all):
 | `invoke_workflow` | Invoke GenAI workflow | ![Development](https://img.shields.io/badge/-development-blue) |
 | `plan` | Agent planning or task decomposition phase | ![Development](https://img.shields.io/badge/-development-blue) |
 | `realtime_inference` | Server-side model generation within a realtime, bidirectional streaming session such as [OpenAI Realtime](https://platform.openai.com/docs/guides/realtime) or [Gemini Live](https://ai.google.dev/gemini-api/docs/live). | ![Development](https://img.shields.io/badge/-development-blue) |
-| `retrieval` | Retrieval operation such as [OpenAI Search Vector Store API](https://platform.openai.com/docs/api-reference/vector-stores/search) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `retrieval` | Execution of a retrieval pipeline that returns documents relevant to a query [44] | ![Development](https://img.shields.io/badge/-development-blue) |
 | `search_memory` | Search/query memories from a memory store | ![Development](https://img.shields.io/badge/-development-blue) |
 | `text_completion` | Text completions operation such as [OpenAI Completions API (Legacy)](https://platform.openai.com/docs/api-reference/completions) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `update_memory` | Update existing memory records | ![Development](https://img.shields.io/badge/-development-blue) |
@@ -390,6 +390,11 @@ and SHOULD be provided **at span creation time** (if provided at all):
 | `user_speech` | Describes the process of recording user speech input. | ![Development](https://img.shields.io/badge/-development-blue) |
 
 **[43]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
+
+**[44]:** Examples include LangChain, LlamaIndex, and Haystack retrievers.
+A retrieval pipeline usually combines other operations such as embeddings,
+database queries, web search, or reranking. These operations SHOULD be
+reported following their own conventions.
 
 ---
 
