@@ -203,6 +203,50 @@ def run_chat(handler):
         print(f"    -> {first_block.type}")
 
 
+def run_chat_streaming_close(handler, client):
+    """Scenario: leave the Messages stream context after its first text delta."""
+    print("  [chat_streaming_close] caller closes before the final message")
+    request_model = "claude-sonnet-4-20250514"
+    messages = [{"role": "user", "content": "Tell me a story."}]
+    host, port = mock_server_host_port(MOCK_BASE_URL)
+    with handler.inference(
+        provider="anthropic",
+        request_model=request_model,
+        server_address=host,
+        server_port=port,
+    ) as inv:
+        inv.attributes["gen_ai.request.stream"] = True
+        inv.input_messages = [InputMessage(role="user", parts=[Text(content=messages[0]["content"])])]
+        caller_closed = False
+        text = ""
+        with client.messages.stream(model=request_model, max_tokens=100, messages=messages) as stream:
+            for event in stream:
+                if event.type == "message_start":
+                    message = event.message
+                    inv.response_id = message.id
+                    inv.response_model_name = message.model
+                    cache_read = message.usage.cache_read_input_tokens or 0
+                    cache_write = message.usage.cache_creation_input_tokens or 0
+                    inv.input_tokens = message.usage.input_tokens + cache_read + cache_write
+                    inv.cache_read_input_tokens = cache_read or None
+                    if cache_write:
+                        inv.attributes["gen_ai.usage.cache_write.input_tokens"] = cache_write
+                    # message_start.output_tokens is an incomplete count.
+                elif event.type == "message_delta" and event.delta.stop_reason:
+                    inv.finish_reasons = [event.delta.stop_reason]
+                    inv.output_tokens = event.usage.output_tokens
+                elif event.type == "content_block_delta" and event.delta.type == "text_delta" and event.delta.text:
+                    text += event.delta.text
+                    caller_closed = True
+                    break
+        if not inv.finish_reasons:
+            inv.finish_reasons = ["cancelled" if caller_closed else "error"]
+        if text:
+            inv.output_messages = [OutputMessage(role="assistant", parts=[Text(content=text)])]
+        record_inference_usage(inv, request_model, host, port)
+        print(f"    -> {inv.finish_reasons[0]}, input tokens: {inv.input_tokens}")
+
+
 def _has_compaction_block_in_input(messages):
     """Return True if any input message contains a compaction content block."""
     for message in messages:
@@ -598,7 +642,7 @@ def run_create_agent():
             raise
 
 
-def main():
+def main(*, caller_close=False):
     """Run all Anthropic reference scenarios."""
     print("=== Reference Implementation: Anthropic (util-genai) ===")
 
@@ -614,6 +658,12 @@ def main():
         logger_provider=lp,
         completion_hook=load_completion_hook(),
     )
+
+    if caller_close:
+        with anthropic.Anthropic(base_url=MOCK_BASE_URL, api_key="mock-key") as client:
+            run_chat_streaming_close(handler, client)
+        flush_and_shutdown(tp, lp, mp)
+        return
 
     run_chat(handler)
     run_compaction(handler)

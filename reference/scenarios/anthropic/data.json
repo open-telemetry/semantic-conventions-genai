@@ -11,6 +11,7 @@
       "gen_ai.request.max_tokens",
       "gen_ai.request.model",
       "gen_ai.request.reasoning.level",
+      "gen_ai.request.stream",
       "gen_ai.response.finish_reasons",
       "gen_ai.response.id",
       "gen_ai.response.model",
@@ -50,6 +51,7 @@
       "gen_ai.request.max_tokens",
       "gen_ai.request.model",
       "gen_ai.request.reasoning.level",
+      "gen_ai.request.stream",
       "gen_ai.response.finish_reasons",
       "gen_ai.response.id",
       "gen_ai.response.model",
@@ -128,5 +130,16 @@
     ]
   },
   "entities": {},
-  "findings": []
+  "findings": [
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'chat claude-sonnet-4-20250514' (operation 'chat') is missing expected attribute 'gen_ai.usage.output_tokens'",
+      "signal_type": "span",
+      "signal_name": "chat claude-sonnet-4-20250514",
+      "context": {
+        "missing_attribute": "gen_ai.usage.output_tokens",
+        "operation": "chat"
+      }
+    }
+  ]
 }
