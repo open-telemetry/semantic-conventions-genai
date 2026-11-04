@@ -178,9 +178,16 @@ If the caller intentionally closes a stream before receiving a finish reason
 and no error was observed, instrumentations SHOULD report `cancelled` for
 that position. Finish reasons already received from the provider SHOULD be
 preserved. Caller-initiated closure alone SHOULD NOT cause `error.type` or
-an error span status to be set. Instrumentations SHOULD record information
-available at closure, including token usage, without treating partial usage
-as the final total.
+an error span status to be set.
+
+On caller-closed streams, instrumentations SHOULD record usage attributes
+and token-usage measurements only for token categories whose totals are
+known. Incomplete counts SHOULD be omitted from both signals, rather than
+recorded as operation totals. For example, Anthropic reports the input total
+at `message_start`, but its initial output count is incomplete until
+`message_delta`. The known input total can be recorded even when the output
+total is omitted. This uses absence to represent an unknown total and does
+not introduce a separate completeness attribute.
 
 **[18] `gen_ai.response.time_to_first_chunk`:** A chunk is a decoded provider stream event carrying new, non-empty output: text, refusals, reasoning (including opaque payloads), audio, images, or tool-call names or arguments. Instrumentations MUST NOT treat empty start events or events carrying only usage, roles, IDs, signatures, keep-alives, progress/status updates, or end markers as chunks. Chunk boundaries follow provider events, not TCP reads, HTTP frames, or extra SDK callbacks.
 
@@ -207,6 +214,9 @@ Instrumentations SHOULD set this attribute when the first chunk is received and 
 **[27] `gen_ai.usage.input_tokens`:** Anthropic `input_tokens` excludes cached tokens. Compute: `gen_ai.usage.input_tokens = input_tokens + cache_read_input_tokens + cache_write_input_tokens`
 
 **[28] `gen_ai.usage.output_tokens`:** This value SHOULD include reasoning tokens and tokens of all modalities.
+
+On caller-closed streams, record this value only when the output total is
+known, as described in `gen_ai.response.finish_reasons`.
 
 When the provider reports both billed token counts and model-consumed
 token counts (for example, Cohere exposes both `usage.billed_units` and

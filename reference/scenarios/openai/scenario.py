@@ -644,7 +644,7 @@ def run_chat_streaming_reference(client, *, close_early=False):
                     text += choice.delta.content
                 if choice.finish_reason is not None:
                     finish_reasons_by_index[choice.index] = choice.finish_reason
-            if chunk.usage:
+            if chunk.usage and seen_choice_indexes and seen_choice_indexes <= finish_reasons_by_index.keys():
                 input_tokens = chunk.usage.prompt_tokens
                 output_tokens = chunk.usage.completion_tokens
             if close_early and first_chunk_received:
@@ -731,7 +731,10 @@ def run_chat_streaming_ttfc_checks():
                 advance(0.3)
                 yield f"data: {json.dumps(chunk(delta, finish_reason))}\n\n".encode()
             advance(0.4)
-            yield f"data: {json.dumps(chunk({}, end_reason))}\n\ndata: [DONE]\n\n".encode()
+            yield f"data: {json.dumps(chunk({}, end_reason))}\n\n".encode()
+            final_usage = chunk()
+            final_usage["usage"] = {"prompt_tokens": 1, "completion_tokens": 2, "total_tokens": 3}
+            yield f"data: {json.dumps(final_usage)}\n\ndata: [DONE]\n\n".encode()
 
         def respond(request):
             nonlocal attempts
@@ -757,6 +760,7 @@ def run_chat_streaming_ttfc_checks():
             with (
                 patch(f"{__name__}._reference_tracer", tracer_provider.get_tracer("gen_ai.reference")),
                 patch(f"{__name__}._time_to_first_chunk", histogram),
+                patch(f"{__name__}.record_inference_usage", wraps=record_inference_usage) as record_usage,
                 patch(f"{__name__}.perf_counter", side_effect=lambda: now),
                 patch("openai._base_client.time.sleep", side_effect=advance) as sleep,
                 openai.OpenAI(
@@ -776,14 +780,20 @@ def run_chat_streaming_ttfc_checks():
                 sleep.assert_not_called()
             spans = exporter.get_finished_spans()
             assert len(spans) == 1
+            record_usage.assert_called_once()
+            if close_early or not end_reason:
+                assert record_usage.call_args.args[0] == {}
             if close_early:
                 assert spans[0].attributes["gen_ai.response.finish_reasons"] == (finish_reason or "cancelled",)
                 assert "error.type" not in spans[0].attributes
                 assert spans[0].status.status_code.name == "UNSET"
-                assert spans[0].attributes["gen_ai.usage.input_tokens"] == 1
-                assert spans[0].attributes["gen_ai.usage.output_tokens"] == 0
+                assert "gen_ai.usage.input_tokens" not in spans[0].attributes
+                assert "gen_ai.usage.output_tokens" not in spans[0].attributes
             elif output_deltas:
                 assert spans[0].attributes["gen_ai.response.finish_reasons"] == (end_reason or "error",)
+                if end_reason:
+                    assert spans[0].attributes["gen_ai.usage.input_tokens"] == 1
+                    assert spans[0].attributes["gen_ai.usage.output_tokens"] == 2
             data = reader.get_metrics_data()
             points = (
                 []
@@ -1510,7 +1520,7 @@ def run_fetch_response_error_reference():
             raise AssertionError("Expected the SDK to reject the fetch response request")
 
 
-def main():
+def main(*, caller_close=False):
     print("=== Reference Implementation: OpenAI Reference Implementation ===")
 
     # Keep controlled-clock checks separate from the OTLP-exported reference run.
@@ -1522,12 +1532,16 @@ def main():
 
     client = openai.OpenAI(base_url=MOCK_BASE_URL, api_key="mock-key")
 
+    if caller_close:
+        run_chat_streaming_reference(client, close_early=True)
+        flush_and_shutdown(tp, lp, mp)
+        return
+
     run_chat_reference(client)
     run_chat_error_reference()
     run_responses_compaction_reference(client)
     run_responses_continuation_reference(client)
     run_chat_streaming_reference(client)
-    run_chat_streaming_reference(client, close_early=True)
     run_chat_tool_call_reference(client)
     run_chat_with_document_input_reference(client)
     run_chat_image_reference(client)

@@ -1,1 +1,1 @@
-Report `cancelled` when a caller intentionally closes a stream before a finish reason arrives and no error was observed. Preserve received finish reasons and available usage without marking the close as an error.
+Report `cancelled` when a caller intentionally closes a stream before a finish reason arrives and no error was observed. Preserve received finish reasons and known token totals without marking the close as an error. Omit incomplete token counts from usage attributes and metrics.
