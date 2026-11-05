@@ -1,5 +1,17 @@
 {
   "spans": {
+    "gen_ai.client.invoke_agent": [
+      "error.type",
+      "gen_ai.agent.id",
+      "gen_ai.agent.version",
+      "gen_ai.conversation.id",
+      "gen_ai.input.messages",
+      "gen_ai.operation.name",
+      "gen_ai.output.messages",
+      "gen_ai.provider.name",
+      "server.address",
+      "server.port"
+    ],
     "gen_ai.create_agent.client": [
       "gen_ai.agent.description",
       "gen_ai.agent.id",
@@ -11,25 +23,31 @@
       "gen_ai.system_instructions",
       "server.address",
       "server.port"
-    ],
-    "gen_ai.invoke_agent.client": [
-      "gen_ai.agent.id",
-      "gen_ai.agent.version",
-      "gen_ai.conversation.id",
-      "gen_ai.input.messages",
+    ]
+  },
+  "events": {
+    "gen_ai.client.invoke_agent.exception": [
+      "exception.message",
+      "exception.stacktrace",
+      "exception.type"
+    ]
+  },
+  "metrics": {
+    "gen_ai.client.invoke_agent.duration": [
+      "error.type",
       "gen_ai.operation.name",
-      "gen_ai.output.messages",
       "gen_ai.provider.name",
       "server.address",
       "server.port"
     ]
   },
-  "events": {},
-  "metrics": {},
+  "entities": {},
   "findings": [
     {
       "id": "genai_expected_attribute_missing",
       "message": "Span 'invoke_agent' (operation 'invoke_agent') is missing expected attribute 'gen_ai.response.finish_reasons'",
+      "signal_type": "span",
+      "signal_name": "invoke_agent",
       "context": {
         "missing_attribute": "gen_ai.response.finish_reasons",
         "operation": "invoke_agent"
@@ -38,6 +56,8 @@
     {
       "id": "genai_expected_attribute_missing",
       "message": "Span 'invoke_agent' (operation 'invoke_agent') is missing expected attribute 'gen_ai.usage.input_tokens'",
+      "signal_type": "span",
+      "signal_name": "invoke_agent",
       "context": {
         "missing_attribute": "gen_ai.usage.input_tokens",
         "operation": "invoke_agent"
@@ -46,11 +66,12 @@
     {
       "id": "genai_expected_attribute_missing",
       "message": "Span 'invoke_agent' (operation 'invoke_agent') is missing expected attribute 'gen_ai.usage.output_tokens'",
+      "signal_type": "span",
+      "signal_name": "invoke_agent",
       "context": {
         "missing_attribute": "gen_ai.usage.output_tokens",
         "operation": "invoke_agent"
       }
     }
-  ],
-  "entities": {}
+  ]
 }

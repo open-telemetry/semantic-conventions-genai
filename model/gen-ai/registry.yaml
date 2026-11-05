@@ -74,6 +74,10 @@ attributes:
           stability: development
           value: "moonshot_ai"
           brief: '[Moonshot AI](https://www.moonshot.ai/)'
+        - id: ollama
+          stability: development
+          value: "ollama"
+          brief: '[Ollama](https://ollama.com/)'
 
     brief: The Generative AI provider as identified by the client or server instrumentation.
     note: |
@@ -214,6 +218,9 @@ attributes:
       Values correspond to generations in the same order as the returned
       choices/candidates.
 
+      For interrupted generations, instrumentations SHOULD report the
+      provider-reported interruption reason when available and `interrupted` otherwise.
+
       Each position SHOULD contain the finish reason for the corresponding
       choice/candidate. If a finish reason was expected but not received, for
       example because generation failed, was cancelled, or a stream ended before
@@ -270,16 +277,20 @@ attributes:
   - key: gen_ai.response.time_to_first_chunk
     type: double
     brief: >
-      Time to first chunk in a streaming response, measured from request issuance, in seconds.
-      The value is measured from when the client issues the generation request to when the first
-      chunk is received in the response stream.
+      Time from the start of a logical inference operation to the first chunk in its streaming response, in seconds.
+    note: |
+      A chunk is a decoded provider stream event carrying new, non-empty output: text, refusals, reasoning (including opaque payloads), audio, images, or tool-call names or arguments. Instrumentations MUST NOT treat empty start events or events carrying only usage, roles, IDs, signatures, keep-alives, progress/status updates, or end markers as chunks. Chunk boundaries follow provider events, not TCP reads, HTTP frames, or extra SDK callbacks.
+
+      Instrumentations SHOULD measure the time from the start of the logical inference operation, before authentication and the first attempt, to when the first chunk is fully received by the client, before application processing. The measurement SHOULD include authentication, failed attempts, and retry backoff.
+
+      Instrumentations SHOULD set this attribute when the first chunk is received and MUST NOT set it if no chunk is received.
     examples: [0.5, 1.2]
     stability: development
   - key: gen_ai.usage.input_tokens
     type: int
-    brief: The number of tokens used in the GenAI input (prompt).
+    brief: The total number of input (prompt) tokens across all modalities.
     note: |
-      This value SHOULD include all types of input tokens, including cached tokens.
+      This value SHOULD include cached tokens and input tokens of all modalities.
       Instrumentations SHOULD make a best effort to populate this value, using a total
       provided by the provider when available or, depending on the provider API,
       by summing different token types parsed from the provider output.
@@ -335,8 +346,10 @@ attributes:
     stability: development
   - key: gen_ai.usage.output_tokens
     type: int
-    brief: The number of tokens used in the GenAI response (completion).
+    brief: The total number of output (completion) tokens across all modalities.
     note: |
+      This value SHOULD include reasoning tokens and tokens of all modalities.
+
       When the provider reports both billed token counts and model-consumed
       token counts (for example, Cohere exposes both `usage.billed_units` and
       `usage.tokens`), instrumentations SHOULD report the billed count so the
@@ -415,10 +428,16 @@ attributes:
           value: "unknown"
           brief: 'The modality is not known.'
     brief: The modality of the tokens being counted.
-    note: >
-      When the provider does not break usage down by modality and the modality
-      cannot be reliably determined, instrumentations SHOULD report the tokens
-      under the `unknown` modality.
+    note: |
+      For each operation, token usage counter measurements across all modalities
+      SHOULD add up to the corresponding total, such as the `gen_ai.usage.input_tokens`
+      attribute or a measurement on the `gen_ai.client.inference.operation.input_tokens`
+      histogram.
+
+      Instrumentations SHOULD record tokens as `unknown` when their modality
+      cannot reliably be determined. For example, if a
+      provider reports 300 input tokens and 100 of them are audio, record 100 as
+      `audio` and 200 as `unknown`.
     examples: ['text', 'image', 'audio']
     stability: development
   - key: gen_ai.conversation.id
@@ -455,6 +474,27 @@ attributes:
       SHOULD leave it unset otherwise.
     examples: [true]
     stability: development
+  - key: gen_ai.realtime_session.id
+    type: string
+    brief: The unique identifier for a realtime, bidirectional streaming session.
+    note: |
+      A realtime session is a long-lived streaming connection between client and
+      inference server.
+
+      Telemetry recorded within the same realtime session can be correlated using this identifier.
+
+      Examples:
+
+      - OpenAI Realtime exposes a session identifier (`session.id`).
+      - Gemini exposes no session identifier when using the Developer API; the enterprise API
+        provides one.
+
+      Instrumentation MAY generate or reuse a per-connection identifier or leave it unset when the
+      instrumented library does not provide one.
+
+      Instrumentations MUST NOT use `gen_ai.conversation.id` as a realtime session identifier.
+    examples: ["sess_5j66UpCpwteGg4YSxUnt7lPY"]
+    stability: development
   - key: gen_ai.agent.id
     type: string
     brief: The unique and stable identifier of the GenAI hosted agent resource.
@@ -469,7 +509,14 @@ attributes:
     stability: development
   - key: gen_ai.agent.name
     type: string
-    brief: Human-readable name of the GenAI agent provided by the application.
+    brief: Human-readable name of the GenAI agent or workflow provided by the application.
+    note: |
+      This attribute MUST have low cardinality. It is NOT RECOMMENDED to use
+      instrumentation-time constants, framework defaults, or type names such as "StateGraph". When no meaningful,
+      low-cardinality name is available, this attribute MUST NOT be captured by default.
+
+      Semantic conventions for individual Generative AI frameworks SHOULD document
+      how `gen_ai.agent.name` is recorded in the context of that framework.
     examples: ["Math Tutor", "Fiction Writer"]
     stability: development
   - key: gen_ai.agent.description
@@ -569,6 +616,8 @@ attributes:
     annotations:
       type:
         json_schema: model/gen-ai/gen-ai-tool-call-arguments.json
+      value:
+        unbounded_size: true
     note: |
       > [!WARNING]
       > This attribute may contain sensitive information.
@@ -589,6 +638,8 @@ attributes:
     annotations:
       type:
         json_schema: model/gen-ai/gen-ai-tool-call-result.json
+      value:
+        unbounded_size: true
     note: |
       > [!WARNING]
       > This attribute may contain sensitive information.
@@ -674,6 +725,14 @@ attributes:
           value: "generate_content"
           brief: 'Multimodal content generation operation such as [Gemini Generate Content](https://ai.google.dev/api/generate-content)'
           stability: development
+        - id: realtime_inference
+          value: "realtime_inference"
+          brief: 'Server-side model generation within a realtime, bidirectional streaming session such as [OpenAI Realtime](https://platform.openai.com/docs/guides/realtime) or [Gemini Live](https://ai.google.dev/gemini-api/docs/live).'
+          stability: development
+        - id: user_speech
+          value: "user_speech"
+          brief: 'Describes the process of recording user speech input.'
+          stability: development
         - id: text_completion
           value: "text_completion"
           brief: 'Text completions operation such as [OpenAI Completions API (Legacy)](https://platform.openai.com/docs/api-reference/completions)'
@@ -684,7 +743,12 @@ attributes:
           stability: development
         - id: retrieval
           value: "retrieval"
-          brief: 'Retrieval operation such as [OpenAI Search Vector Store API](https://platform.openai.com/docs/api-reference/vector-stores/search)'
+          brief: 'Execution of a retrieval pipeline that returns documents relevant to a query'
+          note: |
+            Examples include LangChain, LlamaIndex, and Haystack retrievers.
+            A retrieval pipeline usually combines other operations such as embeddings,
+            database queries, web search, or reranking. These operations SHOULD be
+            reported following their own conventions.
           stability: development
         - id: fetch_response
           value: "fetch_response"
@@ -707,6 +771,10 @@ attributes:
         - id: invoke_workflow
           value: "invoke_workflow"
           brief: 'Invoke GenAI workflow'
+          stability: development
+        - id: invoke_runner
+          value: "invoke_runner"
+          brief: 'Invoke a framework runner that is not itself an agent or a workflow'
           stability: development
         - id: plan
           value: "plan"
@@ -791,6 +859,8 @@ attributes:
     annotations:
       type:
         json_schema: model/gen-ai/gen-ai-retrieval-documents.json
+      value:
+        unbounded_size: true
     note: |
       Each document object SHOULD contain the following properties when available:
       `id` (string): A unique identifier for the document, `score` (double): The relevance score of the document
@@ -868,6 +938,8 @@ attributes:
     annotations:
       type:
         json_schema: model/gen-ai/gen-ai-memory-records.json
+      value:
+        unbounded_size: true
     note: |
       Instrumentations SHOULD NOT capture this attribute by default. Capture SHOULD be gated
       by an explicit user opt-in via [content capture configuration](/docs/gen-ai/gen-ai-spans.md#content-capture-configuration).
@@ -1159,26 +1231,6 @@ attributes:
       > [!Warning]
       > This attribute may contain sensitive information.
     examples: ["Alice", "French"]
-    stability: development
-  - key: gen_ai.workflow.name
-    type: string
-    brief: Human-readable name of the GenAI workflow provided by the application.
-    note: |
-      The workflow name is usually a static, application-unique identifier defined
-      in a framework-specific way.
-
-      For example, it can be the name of the first chain in LangChain,
-      the name of the crew in CrewAI, or the entry point agent in ADK or
-      OpenAI Agents when no explicit workflow name is provided.
-
-      This attribute MUST have low cardinality. It is NOT RECOMMENDED to use
-      instrumentation-time constants or names of types representing the workflow,
-      such as "StateGraph". When no meaningful, low-cardinality workflow name is
-      available for a given framework, this attribute MUST NOT be captured by default.
-
-      Semantic conventions for individual Generative AI frameworks SHOULD document
-      what `gen_ai.workflow.name` means in the context of that framework.
-    examples: ["multi_agent_rag", "customer_support_pipeline"]
     stability: development
   - key: gen_ai.skill.name
     type: string

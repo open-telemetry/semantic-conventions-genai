@@ -4,10 +4,10 @@ Exercises: chat, embeddings
 against a mock Cohere server, with manual OTel spans.
 """
 
-import json
 import os
 import time
 
+from opentelemetry._logs import SeverityNumber
 from opentelemetry.trace import SpanKind, StatusCode
 from reference_shared import (
     flush_and_shutdown,
@@ -105,17 +105,15 @@ def run_chat(client):
             "gen_ai.operation.name": "chat",
             "gen_ai.provider.name": "cohere",
             "gen_ai.request.model": request_model,
-            "gen_ai.input.messages": json.dumps(
-                [{"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]} for m in messages]
-            ),
-            "gen_ai.output.messages": json.dumps(
-                [
-                    {
-                        "role": "assistant",
-                        "parts": [{"type": "text", "content": content}],
-                    }
-                ]
-            ),
+            "gen_ai.input.messages": [
+                {"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]} for m in messages
+            ],
+            "gen_ai.output.messages": [
+                {
+                    "role": "assistant",
+                    "parts": [{"type": "text", "content": content}],
+                }
+            ],
         }
         if hasattr(resp, "id") and resp.id:
             event_attrs["gen_ai.response.id"] = resp.id
@@ -167,7 +165,7 @@ def run_chat_tool_call(client):
     with _reference_tracer.start_as_current_span(
         "chat command-r-plus", kind=SpanKind.CLIENT, attributes=span_attributes_2
     ) as span:
-        span.set_attribute("gen_ai.tool.definitions", json.dumps([{"type": t["type"], **t["function"]} for t in tools]))
+        span.set_attribute("gen_ai.tool.definitions", [{"type": t["type"], **t["function"]} for t in tools])
         resp = client.chat(
             model=request_model,
             messages=[{"role": "user", "content": "What's the weather in Seattle?"}],
@@ -182,13 +180,12 @@ def run_chat_tool_call(client):
                 span.set_attribute("gen_ai.usage.input_tokens", int(resp.usage.billed_units.input_tokens))
             if hasattr(resp.usage.billed_units, "output_tokens"):
                 span.set_attribute("gen_ai.usage.output_tokens", int(resp.usage.billed_units.output_tokens))
-        content = resp.message.content[0].text
         if hasattr(resp.message, "tool_calls") and resp.message.tool_calls:
             # The client returns the tool call; running it is app code the client
             # never sees, so there is no execute_tool span to emit here.
             print(f"    -> tool_call: {resp.message.tool_calls[0].function.name}")
         else:
-            print(f"    -> {content[:60]}")
+            print(f"    -> {resp.message.content[0].text[:60]}")
 
 
 def run_embeddings(client):
@@ -232,9 +229,15 @@ def run_embeddings(client):
                 span.set_attribute("gen_ai.embeddings.dimension.count", len(resp.embeddings.float_[0]))
             print(f"    -> embedding dim: {len(resp.embeddings.float_[0])}")
         except Exception as e:
+            error_type = f"{type(e).__module__}.{type(e).__qualname__}"
             span.set_status(StatusCode.ERROR, str(e))
-            span.set_attribute("error.type", type(e).__qualname__)
-            metric_attributes["error.type"] = type(e).__qualname__
+            span.set_attribute("error.type", error_type)
+            metric_attributes["error.type"] = error_type
+            reference_event_logger().emit(
+                event_name="gen_ai.client.embeddings.exception",
+                severity_number=SeverityNumber.WARN,
+                exception=e,
+            )
             raise
         finally:
             _embeddings_duration.record(time.perf_counter() - start_time, metric_attributes)

@@ -19,6 +19,12 @@ with patch.dict(os.environ, {"MOCK_LLM_URL": "http://127.0.0.1:9999"}):
 
 class NativeHandoffTests(unittest.IsolatedAsyncioTestCase):
     async def test_handoff_records_sdk_caller_tool_call_and_target(self):
+        await self._check_handoff("{}")
+
+    async def test_handoff_accepts_empty_arguments(self):
+        await self._check_handoff("")
+
+    async def _check_handoff(self, arguments):
         set_tracing_disabled(True)
         self.addCleanup(set_tracing_disabled, False)
         exporter = InMemorySpanExporter()
@@ -34,7 +40,7 @@ class NativeHandoffTests(unittest.IsolatedAsyncioTestCase):
                         id="handoff-item",
                         call_id="handoff-call",
                         name=handoffs[0].tool_name,
-                        arguments="{}",
+                        arguments=arguments,
                         type="function_call",
                     )
                 ]
@@ -56,7 +62,7 @@ class NativeHandoffTests(unittest.IsolatedAsyncioTestCase):
             patch.object(scenario, "_reference_tracer", provider.get_tracer("test")),
             patch.object(OpenAIChatCompletionsModel, "get_response", respond),
         ):
-            await scenario.run_workflow()
+            await scenario.run_runner()
 
         spans = exporter.get_finished_spans()
         transfers = [span for span in spans if span.attributes.get("gen_ai.transfer.mode") == "pass_control"]
@@ -65,7 +71,8 @@ class NativeHandoffTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(transfer.attributes["gen_ai.agent.name"], "agent-a")
         self.assertEqual(transfer.attributes["gen_ai.transfer.target.name"], "agent-b")
         self.assertEqual(transfer.attributes["gen_ai.tool.call.id"], "handoff-call")
-        self.assertEqual(transfer.attributes["gen_ai.tool.call.arguments"], "{}")
+        self.assertEqual(transfer.attributes["gen_ai.tool.call.arguments"], {})
+        self.assertEqual(transfer.attributes["gen_ai.tool.call.result"], {"assistant": "agent-b"})
         self.assertEqual(transfer.name, f"execute_tool {transfer.attributes['gen_ai.tool.name']}")
         agents = {
             span.attributes["gen_ai.agent.name"]: span
@@ -76,6 +83,14 @@ class NativeHandoffTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(transfer.parent.span_id, agents["agent-a"].context.span_id)
         self.assertLessEqual(transfer.end_time, agents["agent-b"].start_time)
         self.assertEqual(transfer.context.trace_id, agents["agent-b"].context.trace_id)
+        self.assertEqual(
+            agents["agent-a"].attributes["gen_ai.output.messages"][0]["parts"][0]["arguments"],
+            {},
+        )
+        self.assertEqual(
+            agents["agent-b"].attributes["gen_ai.output.messages"][0]["parts"][0],
+            {"type": "text", "content": "Sunny in Seattle."},
+        )
 
 
 if __name__ == "__main__":

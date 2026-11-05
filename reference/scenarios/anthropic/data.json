@@ -127,6 +127,6 @@
       "server.port"
     ]
   },
-  "findings": [],
-  "entities": {}
+  "entities": {},
+  "findings": []
 }
