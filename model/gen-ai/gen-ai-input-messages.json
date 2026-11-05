@@ -29,8 +29,12 @@
                         },
                         {
                             "type": "string"
+                        },
+                        {
+                            "type": "null"
                         }
                     ],
+                    "default": null,
                     "description": "The general modality of the data if it is known. Instrumentations SHOULD also set the mimeType field if the specific type is known.",
                     "title": "Modality"
                 },
@@ -50,8 +54,7 @@
                 }
             },
             "required": [
-                "type",
-                "modality"
+                "type"
             ],
             "title": "BlobPart",
             "type": "object"
@@ -66,55 +69,67 @@
                         },
                         {
                             "type": "string"
+                        },
+                        {
+                            "type": "null"
                         }
                     ],
+                    "default": null,
                     "description": "Role of the entity that created the message.",
                     "title": "Role"
                 },
                 "parts": {
+                    "anyOf": [
+                        {
+                            "items": {
+                                "anyOf": [
+                                    {
+                                        "$ref": "#/$defs/TextPart"
+                                    },
+                                    {
+                                        "$ref": "#/$defs/ToolCallRequestPart"
+                                    },
+                                    {
+                                        "$ref": "#/$defs/ToolCallResponsePart"
+                                    },
+                                    {
+                                        "$ref": "#/$defs/ServerToolCallPart"
+                                    },
+                                    {
+                                        "$ref": "#/$defs/ServerToolCallResponsePart"
+                                    },
+                                    {
+                                        "$ref": "#/$defs/BlobPart"
+                                    },
+                                    {
+                                        "$ref": "#/$defs/FilePart"
+                                    },
+                                    {
+                                        "$ref": "#/$defs/UriPart"
+                                    },
+                                    {
+                                        "$ref": "#/$defs/TranscriptionPart"
+                                    },
+                                    {
+                                        "$ref": "#/$defs/ReasoningPart"
+                                    },
+                                    {
+                                        "$ref": "#/$defs/CompactionPart"
+                                    },
+                                    {
+                                        "$ref": "#/$defs/GenericPart"
+                                    }
+                                ]
+                            },
+                            "type": "array"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
                     "description": "List of message parts that make up the message content.",
-                    "items": {
-                        "anyOf": [
-                            {
-                                "$ref": "#/$defs/TextPart"
-                            },
-                            {
-                                "$ref": "#/$defs/ToolCallRequestPart"
-                            },
-                            {
-                                "$ref": "#/$defs/ToolCallResponsePart"
-                            },
-                            {
-                                "$ref": "#/$defs/ServerToolCallPart"
-                            },
-                            {
-                                "$ref": "#/$defs/ServerToolCallResponsePart"
-                            },
-                            {
-                                "$ref": "#/$defs/BlobPart"
-                            },
-                            {
-                                "$ref": "#/$defs/FilePart"
-                            },
-                            {
-                                "$ref": "#/$defs/UriPart"
-                            },
-                            {
-                                "$ref": "#/$defs/TranscriptionPart"
-                            },
-                            {
-                                "$ref": "#/$defs/ReasoningPart"
-                            },
-                            {
-                                "$ref": "#/$defs/CompactionPart"
-                            },
-                            {
-                                "$ref": "#/$defs/GenericPart"
-                            }
-                        ]
-                    },
-                    "title": "Parts",
-                    "type": "array"
+                    "title": "Parts"
                 },
                 "name": {
                     "anyOf": [
@@ -130,10 +145,6 @@
                     "title": "Name"
                 }
             },
-            "required": [
-                "role",
-                "parts"
-            ],
             "title": "ChatMessage",
             "type": "object"
         },
@@ -210,21 +221,31 @@
                         },
                         {
                             "type": "string"
+                        },
+                        {
+                            "type": "null"
                         }
                     ],
+                    "default": null,
                     "description": "The general modality of the data if it is known. Instrumentations SHOULD also set the mimeType field if the specific type is known.",
                     "title": "Modality"
                 },
                 "file_id": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
                     "description": "An identifier referencing a file that was pre-uploaded to the provider.",
-                    "title": "File Id",
-                    "type": "string"
+                    "title": "File Id"
                 }
             },
             "required": [
-                "type",
-                "modality",
-                "file_id"
+                "type"
             ],
             "title": "FilePart",
             "type": "object"
@@ -313,14 +334,21 @@
                     "type": "string"
                 },
                 "content": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
                     "description": "Reasoning/thinking content received from the model.",
-                    "title": "Content",
-                    "type": "string"
+                    "title": "Content"
                 }
             },
             "required": [
-                "type",
-                "content"
+                "type"
             ],
             "title": "ReasoningPart",
             "type": "object"
@@ -359,19 +387,33 @@
                     "title": "Id"
                 },
                 "name": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
                     "description": "Name of the server tool.",
-                    "title": "Name",
-                    "type": "string"
+                    "title": "Name"
                 },
                 "server_tool_call": {
-                    "$ref": "#/$defs/GenericServerToolCall",
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/GenericServerToolCall"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
                     "description": "Polymorphic server tool call details with type discriminator. The structure varies based on the tool type."
                 }
             },
             "required": [
-                "type",
-                "name",
-                "server_tool_call"
+                "type"
             ],
             "title": "ServerToolCallPart",
             "type": "object"
@@ -400,13 +442,20 @@
                     "title": "Id"
                 },
                 "server_tool_call_response": {
-                    "$ref": "#/$defs/GenericServerToolCallResponse",
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/GenericServerToolCallResponse"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
                     "description": "Polymorphic server tool call response with type discriminator. The structure varies based on the tool type."
                 }
             },
             "required": [
-                "type",
-                "server_tool_call_response"
+                "type"
             ],
             "title": "ServerToolCallResponsePart",
             "type": "object"
@@ -422,14 +471,21 @@
                     "type": "string"
                 },
                 "content": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
                     "description": "Text content sent to or received from the model.",
-                    "title": "Content",
-                    "type": "string"
+                    "title": "Content"
                 }
             },
             "required": [
-                "type",
-                "content"
+                "type"
             ],
             "title": "TextPart",
             "type": "object"
@@ -458,9 +514,17 @@
                     "title": "Id"
                 },
                 "name": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
                     "description": "Name of the tool.",
-                    "title": "Name",
-                    "type": "string"
+                    "title": "Name"
                 },
                 "arguments": {
                     "default": null,
@@ -469,8 +533,7 @@
                 }
             },
             "required": [
-                "type",
-                "name"
+                "type"
             ],
             "title": "ToolCallRequestPart",
             "type": "object"
@@ -499,13 +562,13 @@
                     "title": "Id"
                 },
                 "response": {
+                    "default": null,
                     "description": "Tool call response.",
                     "title": "Response"
                 }
             },
             "required": [
-                "type",
-                "response"
+                "type"
             ],
             "title": "ToolCallResponsePart",
             "type": "object"
@@ -521,14 +584,21 @@
                     "type": "string"
                 },
                 "content": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
                     "description": "The text transcript of spoken audio. For input audio this is the transcription of the user's speech; for output audio it is the transcript of the model's spoken response.",
-                    "title": "Content",
-                    "type": "string"
+                    "title": "Content"
                 }
             },
             "required": [
-                "type",
-                "content"
+                "type"
             ],
             "title": "TranscriptionPart",
             "type": "object"
@@ -563,21 +633,31 @@
                         },
                         {
                             "type": "string"
+                        },
+                        {
+                            "type": "null"
                         }
                     ],
+                    "default": null,
                     "description": "The general modality of the data if it is known. Instrumentations SHOULD also set the mimeType field if the specific type is known.",
                     "title": "Modality"
                 },
                 "uri": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
                     "description": "A URI referencing attached data. It should not be a base64 data URL, which should use the `blob` part instead. The URI may use a scheme known to the provider api (e.g. `gs://bucket/object.png`), or be a publicly accessible location.",
-                    "title": "Uri",
-                    "type": "string"
+                    "title": "Uri"
                 }
             },
             "required": [
-                "type",
-                "modality",
-                "uri"
+                "type"
             ],
             "title": "UriPart",
             "type": "object"
