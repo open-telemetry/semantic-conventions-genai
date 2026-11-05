@@ -74,6 +74,10 @@ attributes:
           stability: development
           value: "moonshot_ai"
           brief: '[Moonshot AI](https://www.moonshot.ai/)'
+        - id: ollama
+          stability: development
+          value: "ollama"
+          brief: '[Ollama](https://ollama.com/)'
 
     brief: The Generative AI provider as identified by the client or server instrumentation.
     note: |
