@@ -21,12 +21,6 @@
       "gen_ai.usage.input_tokens",
       "gen_ai.usage.output_tokens"
     ],
-    "gen_ai.invoke_workflow.internal": [
-      "gen_ai.input.messages",
-      "gen_ai.operation.name",
-      "gen_ai.output.messages",
-      "gen_ai.workflow.name"
-    ],
     "gen_ai.plan.internal": [
       "gen_ai.operation.name"
     ],
@@ -52,6 +46,17 @@
       "signal_name": "execute_tool shell",
       "context": {
         "attribute_key": "process.exit.code"
+      }
+    },
+    {
+      "id": "genai_span_name_format",
+      "message": "invoke_workflow span name should be 'invoke_workflow', got 'invoke_workflow Weather graph'",
+      "signal_type": "span",
+      "signal_name": "invoke_workflow Weather graph",
+      "context": {
+        "expected_form": "invoke_workflow",
+        "keyed_attr": "gen_ai.workflow.name",
+        "operation": "invoke_workflow"
       }
     }
   ]

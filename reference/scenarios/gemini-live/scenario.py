@@ -1,0 +1,575 @@
+"""Reference implementation for Google Gemini Live (voice-native) inference.
+
+Exercises three speech-to-speech turns within one realtime session against the mock
+Gemini Live WebSocket server. Each server-side generation is a
+``realtime_inference`` span that carries the audio-modality messages and,
+crucially, the audio token usage (``gen_ai.usage.audio.input_tokens`` /
+``gen_ai.usage.audio.output_tokens``) alongside the transcript of the spoken
+audio.
+
+The second turn is interrupted by user barge-in. The span starts on the first
+model-output message and ends when the provider reports ``interrupted``. Input
+transcription chunks are accumulated without starting the generation span.
+
+In the third turn, Gemini Live 2.5 reports the tool call as the end of a
+generation. The application sends the tool result, and a second generation
+speaks the answer. The model's request is captured as a ``tool_call`` output
+part on the first generation and the application's result as a
+``tool_call_response`` input part on the answer generation. The application
+executes the tool, so this client scenario does not emit an ``execute_tool``
+span.
+
+A realtime session is long-lived and mostly idle, so it is not modeled as a span.
+Instead the session is represented by the ``gen_ai.client.realtime_session.started``
+and ``gen_ai.client.realtime_session.ended`` events. The Gemini Developer API's
+``setupComplete`` message has no fields, so it exposes no server session
+identifier to the client and ``gen_ai.realtime_session.id`` is left unset here. When
+a provider session id is not available, instrumentation may instead mint a
+client-created per-connection id (the live connection is the session boundary)
+and use it as ``gen_ai.realtime_session.id`` to correlate the session events with
+the generations.
+
+The Gemini Developer API exposes ``voice_activity`` events, so each
+``user_speech`` span is bounded by the provider's ``ACTIVITY_START`` and
+``ACTIVITY_END`` signals.
+
+This proves that generic instrumentation of ``client.aio.live.connect`` can
+capture Gemini Live server-side generations, audio token usage, audio
+transcripts, user speech, tool calls, and session lifecycle events. Turn-level
+containers are outside this scenario because providers do not expose consistent
+boundaries for a full user-and-model exchange.
+"""
+
+import asyncio
+import base64
+import json
+import os
+import ssl
+import time
+from contextlib import suppress
+
+from opentelemetry._logs import SeverityNumber
+from opentelemetry.trace import SpanKind, Status, StatusCode
+from reference_shared import (
+    flush_and_shutdown,
+    mock_server_host_port,
+    reference_event_logger,
+    reference_tracer,
+    setup_otel,
+)
+
+MOCK_BASE_URL = os.environ["MOCK_LLM_URL"]
+
+_reference_tracer = reference_tracer()
+
+# Tiny base64 stand-in for the PCM16 audio the user "speaks". The mock does not
+# decode it; it only needs to be a valid base64 audio payload.
+INPUT_AUDIO_B64 = "bW9jay11c2VyLWF1ZGlv"
+
+
+def _gemini_live_base_url(http_base_url):
+    """Derive the Gemini Live base URL from the HTTP mock base URL.
+
+    The mock serves the Gemini Live WebSocket on the next port up from its
+    HTTP (health) endpoint (see mock_server.py). The Gemini client always
+    upgrades the scheme to ``wss`` (TLS) itself, so an ``http`` base URL on that
+    port is all it needs.
+    """
+    host, port = mock_server_host_port(http_base_url)
+    return host, port + 1
+
+
+def _audio_modality_tokens(details):
+    """Return the token count for the AUDIO modality entry, if present."""
+    if not details:
+        return None
+    for detail in details:
+        if detail.modality is not None and str(detail.modality).endswith("AUDIO"):
+            return detail.token_count
+    return None
+
+
+def _user_audio_message():
+    """The user's spoken input as an audio-modality input message."""
+    return json.dumps(
+        [
+            {
+                "role": "user",
+                "parts": [
+                    {
+                        "type": "blob",
+                        "modality": "audio",
+                        "mime_type": "audio/pcm",
+                        "content": INPUT_AUDIO_B64,
+                    }
+                ],
+            }
+        ]
+    )
+
+
+def _user_transcription_message(transcript):
+    """The provider's transcription of the user's spoken input."""
+    return json.dumps(
+        [
+            {
+                "role": "user",
+                "parts": [
+                    {
+                        "type": "transcription",
+                        "content": transcript,
+                    }
+                ],
+            }
+        ]
+    )
+
+
+def _output_type(response_modalities):
+    """Map the SDK request configuration to the convention."""
+    modalities = {str(modality).lower() for modality in response_modalities or []}
+    if any(modality.endswith("audio") for modality in modalities):
+        return "speech"
+    if any(modality.endswith("text") for modality in modalities):
+        return "text"
+    return None
+
+
+def _live_attributes(request_model, host, port, operation, output_type=None):
+    """Common attributes shared by the realtime_inference spans."""
+    attributes = {
+        "gen_ai.operation.name": operation,
+        "gen_ai.provider.name": "gcp.gemini",
+        "gen_ai.request.model": request_model,
+    }
+    if output_type:
+        attributes["gen_ai.output.type"] = output_type
+    if host:
+        attributes["server.address"] = host
+    if port is not None:
+        attributes["server.port"] = port
+    return attributes
+
+
+def _tool_result_message(function_call, result):
+    """The tool result as the input message for the answer generation."""
+    return json.dumps(
+        [
+            {
+                "role": "tool",
+                "parts": [
+                    {
+                        "type": "tool_call_response",
+                        "id": function_call["id"],
+                        "response": result,
+                    }
+                ],
+            }
+        ]
+    )
+
+
+def _execute_tool(function_call):
+    """Run the requested tool on the client and return its result.
+
+    In the Gemini Live API the application executes tool calls and sends the
+    result back to the model, so this client-side work is not itself a model
+    operation and is not wrapped in a span. The request and result are captured
+    as message parts on the generations instead: a ``tool_call`` output part on
+    the requesting generation and a ``tool_call_response`` input part on the
+    answer generation.
+    """
+    return {"location": function_call["args"].get("location"), "temperature_f": 72, "conditions": "sunny"}
+
+
+def _turn_complete_reason(server_content):
+    """Return a provider-reported turn completion reason, if present."""
+    reason = server_content.turn_complete_reason
+    if reason is None or reason.value == "TURN_COMPLETE_REASON_UNSPECIFIED":
+        return None
+    return reason.value.lower()
+
+
+class _SpeechSpanState:
+    def __init__(self):
+        self.span = None
+
+
+def _fail_active_speech_span(speech_state, error):
+    if speech_state.span is None:
+        return
+    speech_state.span.set_attribute("error.type", type(error).__qualname__)
+    speech_state.span.set_status(Status(StatusCode.ERROR, str(error)))
+    speech_state.span.end()
+    speech_state.span = None
+
+
+async def _run_generation(
+    session,
+    request_model,
+    host,
+    port,
+    input_messages,
+    output_type,
+    break_on_tool_call,
+    speech_state,
+):
+    """Dispatch speech and generation events for one server-side generation.
+
+    Returns the function call requested by the model, if any.
+    """
+    from google.genai import types
+
+    attributes = _live_attributes(request_model, host, port, "realtime_inference", output_type=output_type)
+    span = None
+    generation_end_time = None
+    finish_reason = None
+    input_transcript_deltas = []
+    transcript_deltas = []
+    audio_chunks = []
+    usage = None
+    function_call = None
+
+    def start_generation_span():
+        nonlocal span
+        if span is None:
+            span = _reference_tracer.start_span(
+                f"realtime_inference {request_model}", kind=SpanKind.CLIENT, attributes=attributes
+            )
+            span.set_attribute("gen_ai.input.messages", input_messages)
+
+    try:
+        async for message in session.receive():
+            voice_activity = message.voice_activity
+            if voice_activity is not None:
+                if voice_activity.voice_activity_type == types.VoiceActivityType.ACTIVITY_START:
+                    if speech_state.span is not None:
+                        raise RuntimeError("Received ACTIVITY_START before ACTIVITY_END")
+                    speech_state.span = _reference_tracer.start_span(
+                        "user_speech",
+                        attributes={
+                            "gen_ai.operation.name": "user_speech",
+                            "gen_ai.provider.name": "gcp.gemini",
+                        },
+                    )
+                elif voice_activity.voice_activity_type == types.VoiceActivityType.ACTIVITY_END:
+                    if speech_state.span is None:
+                        raise RuntimeError("Received ACTIVITY_END without ACTIVITY_START")
+                    speech_state.span.end()
+                    speech_state.span = None
+
+            server_content = message.server_content
+            if server_content is not None:
+                if server_content.input_transcription and server_content.input_transcription.text:
+                    input_transcript_deltas.append(server_content.input_transcription.text)
+                    input_messages = _user_transcription_message("".join(input_transcript_deltas))
+                    if span is not None:
+                        span.set_attribute("gen_ai.input.messages", input_messages)
+                has_output = bool(
+                    server_content.output_transcription and server_content.output_transcription.text
+                ) or bool(server_content.model_turn and server_content.model_turn.parts)
+                if has_output:
+                    start_generation_span()
+                provider_reason = _turn_complete_reason(server_content)
+                if provider_reason is not None:
+                    finish_reason = provider_reason
+                if server_content.interrupted:
+                    finish_reason = finish_reason or "interrupted"
+                    generation_end_time = generation_end_time or time.time_ns()
+                elif server_content.generation_complete:
+                    finish_reason = finish_reason or "stop"
+                    generation_end_time = generation_end_time or time.time_ns()
+                elif server_content.turn_complete and generation_end_time is None:
+                    finish_reason = finish_reason or "stop"
+                    generation_end_time = time.time_ns()
+                if server_content.output_transcription and server_content.output_transcription.text:
+                    transcript_deltas.append(server_content.output_transcription.text)
+                if server_content.model_turn and server_content.model_turn.parts:
+                    for part in server_content.model_turn.parts:
+                        if part.inline_data and part.inline_data.data:
+                            audio_chunks.append(part.inline_data.data)
+            if message.usage_metadata is not None:
+                usage = message.usage_metadata
+            if break_on_tool_call and message.tool_call is not None and message.tool_call.function_calls:
+                start_generation_span()
+                call = message.tool_call.function_calls[0]
+                function_call = {"id": call.id, "name": call.name, "args": dict(call.args or {})}
+                finish_reason = "tool_call"
+                generation_end_time = time.time_ns()
+                break
+
+        if span is None:
+            raise RuntimeError("Gemini Live stream ended before the generation started")
+        if generation_end_time is None or finish_reason is None:
+            raise RuntimeError("Gemini Live stream ended without a generation completion signal")
+
+        if function_call is not None:
+            output_messages = [
+                {
+                    "role": "assistant",
+                    "parts": [
+                        {
+                            "type": "tool_call",
+                            "id": function_call["id"],
+                            "name": function_call["name"],
+                            "arguments": function_call["args"],
+                        }
+                    ],
+                }
+            ]
+        else:
+            transcript = "".join(transcript_deltas)
+            output_audio = base64.b64encode(b"".join(audio_chunks)).decode() if audio_chunks else ""
+            output_messages = [
+                {
+                    "role": "assistant",
+                    "parts": [
+                        {
+                            "type": "blob",
+                            "modality": "audio",
+                            "mime_type": "audio/pcm",
+                            "content": output_audio,
+                        },
+                        {
+                            "type": "transcription",
+                            "content": transcript,
+                        },
+                    ],
+                }
+            ]
+            print(f"    -> {transcript[:60]} ({finish_reason})")
+
+        span.set_attribute("gen_ai.response.finish_reasons", [finish_reason])
+        span.set_attribute("gen_ai.output.messages", json.dumps(output_messages))
+        if usage:
+            if usage.prompt_token_count:
+                span.set_attribute("gen_ai.usage.input_tokens", usage.prompt_token_count)
+            if usage.response_token_count:
+                span.set_attribute("gen_ai.usage.output_tokens", usage.response_token_count)
+            input_audio_tokens = _audio_modality_tokens(usage.prompt_tokens_details)
+            if input_audio_tokens is not None:
+                span.set_attribute("gen_ai.usage.audio.input_tokens", input_audio_tokens)
+            output_audio_tokens = _audio_modality_tokens(usage.response_tokens_details)
+            if output_audio_tokens is not None:
+                span.set_attribute("gen_ai.usage.audio.output_tokens", output_audio_tokens)
+        span.end(end_time=generation_end_time)
+        return function_call
+    except Exception as error:
+        error_type = type(error).__qualname__
+        if span is not None:
+            span.set_attribute("error.type", error_type)
+            span.set_status(Status(StatusCode.ERROR, str(error)))
+            span.end()
+        _fail_active_speech_span(speech_state, error)
+        raise
+
+
+async def _send_user_audio(session):
+    """Stream the user's audio and signal the end of the utterance."""
+    from google.genai import types
+
+    await session.send_realtime_input(audio=types.Blob(data=base64.b64decode(INPUT_AUDIO_B64), mime_type="audio/pcm"))
+    await session.send_realtime_input(audio_stream_end=True)
+
+
+def _emit_session_ended(session_attributes, error):
+    attributes = dict(session_attributes)
+    severity = SeverityNumber.INFO
+    if error is not None:
+        attributes["error.type"] = type(error).__qualname__
+        severity = SeverityNumber.WARN
+    reference_event_logger().emit(
+        event_name="gen_ai.client.realtime_session.ended",
+        severity_number=severity,
+        body="Realtime session ended",
+        attributes=attributes,
+    )
+
+
+async def _run_failed_realtime_session(
+    client,
+    request_model,
+    config,
+    session_attributes,
+    host,
+    port,
+    output_type,
+):
+    """Exercise an SDK failure while speech and generation spans are active."""
+    session_started = False
+    session_error = None
+    speech_state = _SpeechSpanState()
+    try:
+        async with client.aio.live.connect(model=request_model, config=config) as session:
+            reference_event_logger().emit(
+                event_name="gen_ai.client.realtime_session.started",
+                severity_number=SeverityNumber.INFO,
+                body="Realtime session started",
+                attributes=session_attributes,
+            )
+            session_started = True
+            await _send_user_audio(session)
+            await _run_generation(
+                session,
+                request_model,
+                host,
+                port,
+                _user_audio_message(),
+                output_type,
+                break_on_tool_call=False,
+                speech_state=speech_state,
+            )
+    except Exception as error:
+        session_error = error
+        _fail_active_speech_span(speech_state, error)
+        raise
+    finally:
+        if session_started:
+            _emit_session_ended(session_attributes, session_error)
+
+
+async def run_gemini_live_reference():
+    """Scenario: two Gemini Live voice-native turns within a single realtime session."""
+    from google import genai
+    from google.genai import types
+    from google.genai.errors import APIError
+
+    print("  [gemini-live] voice-native inference (reference implementation)")
+    request_model = "gemini-2.5-flash-native-audio-preview"
+    host, live_port = _gemini_live_base_url(MOCK_BASE_URL)
+
+    # The client forces the WebSocket scheme to wss (TLS); the mock serves TLS
+    # with a self-signed cert, so connect with an unverified SSL context.
+    unverified_ctx = ssl.create_default_context()
+    unverified_ctx.check_hostname = False
+    unverified_ctx.verify_mode = ssl.CERT_NONE
+
+    client = genai.Client(
+        api_key="mock-key",
+        http_options=types.HttpOptions(
+            base_url=f"http://{host}:{live_port}",
+            api_version="v1beta",
+            async_client_args={"ssl": unverified_ctx},
+        ),
+    )
+    config = types.LiveConnectConfig(
+        response_modalities=["AUDIO"],
+        input_audio_transcription=types.AudioTranscriptionConfig(),
+        output_audio_transcription=types.AudioTranscriptionConfig(),
+    )
+    output_type = _output_type(config.response_modalities)
+    session_attributes = {
+        "gen_ai.provider.name": "gcp.gemini",
+        "gen_ai.request.model": request_model,
+    }
+    if host:
+        session_attributes["server.address"] = host
+    if live_port is not None:
+        session_attributes["server.port"] = live_port
+    session_started = False
+    session_error = None
+    speech_state = _SpeechSpanState()
+    try:
+        async with client.aio.live.connect(model=request_model, config=config) as session:
+            # Gemini Live exposes no session id, so gen_ai.realtime_session.id is left unset.
+            reference_event_logger().emit(
+                event_name="gen_ai.client.realtime_session.started",
+                severity_number=SeverityNumber.INFO,
+                body="Realtime session started",
+                attributes=session_attributes,
+            )
+            session_started = True
+            # Turn 1: a simple voice exchange. Gemini Live voice-activity events
+            # bound the user_speech span before the model generation begins.
+            await _send_user_audio(session)
+            await _run_generation(
+                session,
+                request_model,
+                host,
+                live_port,
+                _user_audio_message(),
+                output_type,
+                break_on_tool_call=False,
+                speech_state=speech_state,
+            )
+
+            # Turn 2: the user barges in while the model is responding. Gemini
+            # reports interrupted without a reason, so the finish reason falls
+            # back to "interrupted".
+            await _send_user_audio(session)
+            await _run_generation(
+                session,
+                request_model,
+                host,
+                live_port,
+                _user_audio_message(),
+                output_type,
+                break_on_tool_call=False,
+                speech_state=speech_state,
+            )
+
+            # Turn 3: Gemini Live 2.5 ends the first generation with a tool call.
+            # The application sends the tool result, then a second generation
+            # speaks the answer. The tool request and result are message parts;
+            # application tool execution does not produce an execute_tool span.
+            await _send_user_audio(session)
+            function_call = await _run_generation(
+                session,
+                request_model,
+                host,
+                live_port,
+                _user_audio_message(),
+                output_type,
+                break_on_tool_call=True,
+                speech_state=speech_state,
+            )
+            result = _execute_tool(function_call)
+            await session.send_tool_response(
+                function_responses=[
+                    types.FunctionResponse(id=function_call["id"], name=function_call["name"], response=result)
+                ]
+            )
+            await _run_generation(
+                session,
+                request_model,
+                host,
+                live_port,
+                _tool_result_message(function_call, result),
+                output_type,
+                break_on_tool_call=False,
+                speech_state=speech_state,
+            )
+            if speech_state.span is not None:
+                raise RuntimeError("Gemini Live session ended before ACTIVITY_END")
+    except Exception as error:
+        session_error = error
+        _fail_active_speech_span(speech_state, error)
+        raise
+    finally:
+        if session_started:
+            _emit_session_ended(session_attributes, session_error)
+
+    with suppress(APIError):
+        await _run_failed_realtime_session(
+            client,
+            request_model,
+            config,
+            session_attributes,
+            host,
+            live_port,
+            output_type,
+        )
+
+
+def main():
+    print("=== Reference Implementation: Google Gemini Live (voice-native) Reference Implementation ===")
+
+    tp, lp, mp = setup_otel()
+
+    asyncio.run(run_gemini_live_reference())
+
+    flush_and_shutdown(tp, lp, mp)
+
+
+if __name__ == "__main__":
+    main()

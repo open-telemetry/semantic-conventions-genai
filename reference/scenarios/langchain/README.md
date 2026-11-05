@@ -19,3 +19,9 @@ execution.
 `gen_ai.retrieval.top_k` is read from `VectorStoreRetriever.search_kwargs["k"]`.
 Other retrievers have no common limit setting, and LangChain tracing metadata
 doesn't include it, so callback-based instrumentation can't capture it.
+
+The tool execution error handlers record a correlated
+`gen_ai.execute_tool.exception` WARN log. This scenario does not exercise those paths.
+
+The internal agent invocation error handler records a correlated
+`gen_ai.invoke_agent.exception` WARN log. This scenario does not exercise that path.

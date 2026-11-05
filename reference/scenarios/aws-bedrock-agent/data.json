@@ -13,6 +13,7 @@
       "server.port"
     ],
     "gen_ai.invoke_agent.client": [
+      "error.type",
       "gen_ai.agent.id",
       "gen_ai.agent.version",
       "gen_ai.conversation.id",
@@ -24,7 +25,13 @@
       "server.port"
     ]
   },
-  "events": {},
+  "events": {
+    "gen_ai.client.invoke_agent.exception": [
+      "exception.message",
+      "exception.stacktrace",
+      "exception.type"
+    ]
+  },
   "metrics": {},
   "entities": {},
   "findings": [
