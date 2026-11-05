@@ -9,6 +9,7 @@ import os
 from tempfile import mkdtemp
 
 import anthropic
+from anthropic.lib.tools import BetaToolRunner
 from opentelemetry.trace import SpanKind, StatusCode
 from opentelemetry.util.genai.completion_hook import load_completion_hook
 from opentelemetry.util.genai.handler import get_telemetry_handler
@@ -556,6 +557,83 @@ def run_chat_with_search_result_input(handler):
     print(f"    -> {resp.content[0].type}")
 
 
+def run_tool_runner():
+    """Scenario: the SDK tool runner executes tools that return serialized JSON and content blocks."""
+    print("  [execute_tool] Anthropic tool runner: tools returning JSON text and content blocks")
+
+    @anthropic.beta_tool
+    def get_weather(location: str):
+        """Get the current weather for a location."""
+        return [{"type": "text", "text": json.dumps({"location": location, "temperature": 57})}]
+
+    @anthropic.beta_tool
+    def get_weather_map(location: str):
+        """Get a weather summary and map for a location."""
+        return [
+            {"type": "text", "text": "Weather map for " + location},
+            {"type": "image", "source": {"type": "url", "url": "https://example.com/weather-map.png"}},
+        ]
+
+    original_run_tool = BetaToolRunner._run_tool
+
+    def traced_run_tool(runner, tool, tool_use):
+        with reference_tracer().start_as_current_span(
+            f"execute_tool {tool.name}",
+            attributes={
+                "gen_ai.operation.name": "execute_tool",
+                "gen_ai.provider.name": "anthropic",
+                "gen_ai.tool.name": tool.name,
+                "gen_ai.tool.type": "function",
+                "gen_ai.tool.call.id": tool_use.id,
+            },
+        ) as tool_span:
+            tool_span.set_attribute("gen_ai.tool.description", tool.description)
+            tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps(tool_use.input))
+            tool_result = original_run_tool(runner, tool, tool_use)
+            if tool_result.get("is_error"):
+                tool_span.set_status(StatusCode.ERROR)
+                tool_span.set_attribute("error.type", "tool_error")
+                return tool_result
+            content = tool_result["content"]
+            if not isinstance(content, str) and len(content) == 1 and content[0]["type"] == "text":
+                content = content[0]["text"]
+            if isinstance(content, str):
+                try:
+                    tool_span.set_attribute("gen_ai.tool.call.result", json.dumps(json.loads(content)))
+                except ValueError:
+                    tool_span.set_attribute("gen_ai.tool.call.result", content)
+            else:
+                tool_span.set_attribute(
+                    "gen_ai.tool.call.result",
+                    json.dumps(
+                        [
+                            {"type": "text", "content": block["text"]}
+                            if block["type"] == "text"
+                            else {"type": "uri", "modality": "image", "uri": block["source"]["url"]}
+                            for block in content
+                        ]
+                    ),
+                )
+            return tool_result
+
+    BetaToolRunner._run_tool = traced_run_tool
+    try:
+        client = anthropic.Anthropic(base_url=MOCK_BASE_URL, api_key="mock-key")
+        for tool, prompt in (
+            (get_weather, "What is the weather in Seattle?"),
+            (get_weather_map, "Show me the weather map for Seattle."),
+        ):
+            runner = client.beta.messages.tool_runner(
+                model="claude-sonnet-5",
+                max_tokens=100,
+                tools=[tool],
+                messages=[{"role": "user", "content": prompt}],
+            )
+            print(f"    -> {runner.until_done().content[0].text[:60]}")
+    finally:
+        BetaToolRunner._run_tool = original_run_tool
+
+
 def run_create_agent():
     """Scenario: create a remote agent via the Managed Agents API (`beta.agents.create`).
 
@@ -621,6 +699,7 @@ def main():
     run_chat_with_document_input(handler)
     run_chat_with_image_input(handler)
     run_chat_with_search_result_input(handler)
+    run_tool_runner()
     run_create_agent()
 
     flush_and_shutdown(tp, lp, mp)
