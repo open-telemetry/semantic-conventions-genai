@@ -92,6 +92,7 @@ SEMCONV_DOC_LINKS: dict[str, str] = {
     "memory": "../../docs/gen-ai/gen-ai-spans.md#memory",
     "execute_tool": "../../docs/gen-ai/gen-ai-spans.md#execute-tool-span",
     "gen_ai.client.embeddings.exception": "../../docs/gen-ai/client-embeddings.md#event-gen_aiclientembeddingsexception",
+    "gen_ai.client.fetch_response.exception": "../../docs/gen-ai/gen-ai-spans.md#event-gen_aiclientfetch_responseexception",
     "gen_ai.client.inference.exception": "../../docs/gen-ai/client-inference.md#event-gen_aiclientinferenceexception",
     "gen_ai.client.inference.operation.details": "../../docs/gen-ai/client-inference.md#event-gen_aiclientinferenceoperationdetails",
     "gen_ai.client.invoke_agent.exception": "../../docs/gen-ai/gen-ai-agent-spans.md#event-gen_aiclientinvoke_agentexception",

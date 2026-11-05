@@ -1358,44 +1358,56 @@ def _emit_fetch_response_span(client, response_id, starting_after=None):
         span_attributes["server.address"] = host
     if port is not None:
         span_attributes["server.port"] = port
-    with _reference_tracer.start_as_current_span("fetch_response", attributes=span_attributes) as span:
-        if starting_after is not None:
-            # Resume the streamed response from the cursor. The terminal
-            # `response.completed` event carries the full response object.
-            fetched = None
-            for event in client.responses.retrieve(response_id, stream=True, starting_after=starting_after):
-                candidate = getattr(event, "response", None)
-                if candidate is not None:
-                    fetched = candidate
-        else:
-            fetched = client.responses.retrieve(response_id)
-        span.set_attribute("gen_ai.response.id", fetched.id)
-        span.set_attribute("gen_ai.response.model", fetched.model)
-        status = getattr(fetched, "status", None)
-        if status is not None:
-            span.set_attribute("gen_ai.response.status", status)
-        finish_reason = responses_finish_reason(fetched)
-        if finish_reason is not None:
-            span.set_attribute("gen_ai.response.finish_reasons", [finish_reason])
-        service_tier = getattr(fetched, "service_tier", None)
-        if service_tier is not None:
-            span.set_attribute("openai.response.service_tier", service_tier)
-        # Content carried on the fetched response: system instructions and output
-        # messages. The original input messages are NOT part of the fetched
-        # response, so `gen_ai.input.messages` is not set here.
-        instructions = getattr(fetched, "instructions", None)
-        if instructions:
-            span.set_attribute(
-                "gen_ai.system_instructions",
-                json.dumps([{"type": "text", "content": instructions}]),
+    with _reference_tracer.start_as_current_span(
+        "fetch_response", attributes=span_attributes, record_exception=False
+    ) as span:
+        try:
+            if starting_after is not None:
+                # Resume the streamed response from the cursor. The terminal
+                # `response.completed` event carries the full response object.
+                fetched = None
+                for event in client.responses.retrieve(response_id, stream=True, starting_after=starting_after):
+                    candidate = getattr(event, "response", None)
+                    if candidate is not None:
+                        fetched = candidate
+            else:
+                fetched = client.responses.retrieve(response_id)
+            span.set_attribute("gen_ai.response.id", fetched.id)
+            span.set_attribute("gen_ai.response.model", fetched.model)
+            status = getattr(fetched, "status", None)
+            if status is not None:
+                span.set_attribute("gen_ai.response.status", status)
+            finish_reason = responses_finish_reason(fetched)
+            if finish_reason is not None:
+                span.set_attribute("gen_ai.response.finish_reasons", [finish_reason])
+            service_tier = getattr(fetched, "service_tier", None)
+            if service_tier is not None:
+                span.set_attribute("openai.response.service_tier", service_tier)
+            # Content carried on the fetched response: system instructions and output
+            # messages. The original input messages are NOT part of the fetched
+            # response, so `gen_ai.input.messages` is not set here.
+            instructions = getattr(fetched, "instructions", None)
+            if instructions:
+                span.set_attribute(
+                    "gen_ai.system_instructions",
+                    json.dumps([{"type": "text", "content": instructions}]),
+                )
+            output_messages = responses_output_messages(fetched)
+            if output_messages:
+                span.set_attribute("gen_ai.output.messages", json.dumps(output_messages))
+            # Token usage is intentionally NOT recorded on this span: no inference
+            # happens on a fetch, and the fetched response's token counts belong to
+            # the original generation (already accounted for on that operation).
+            print(f"    -> fetched {fetched.id} (status={getattr(fetched, 'status', None)})")
+        except Exception as e:
+            span.set_status(StatusCode.ERROR, str(e))
+            span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
+            reference_event_logger().emit(
+                event_name="gen_ai.client.fetch_response.exception",
+                severity_number=SeverityNumber.WARN,
+                exception=e,
             )
-        output_messages = responses_output_messages(fetched)
-        if output_messages:
-            span.set_attribute("gen_ai.output.messages", json.dumps(output_messages))
-        # Token usage is intentionally NOT recorded on this span: no inference
-        # happens on a fetch, and the fetched response's token counts belong to
-        # the original generation (already accounted for on that operation).
-        print(f"    -> fetched {fetched.id} (status={getattr(fetched, 'status', None)})")
+            raise
 
 
 def run_fetch_response_reference(client):
@@ -1454,6 +1466,31 @@ def run_fetch_response_reference(client):
     _emit_fetch_response_span(client, "resp-failed-001")
 
 
+def run_fetch_response_error_reference():
+    """Exercise a fetch exception raised by the SDK for a missing response."""
+    import httpx2
+    import openai
+
+    transport = httpx2.MockTransport(
+        lambda request: httpx2.Response(
+            404,
+            json={"error": {"message": "Response not found", "type": "invalid_request_error", "code": "not_found"}},
+        )
+    )
+    with openai.OpenAI(
+        base_url=MOCK_BASE_URL,
+        api_key="mock-key",
+        max_retries=0,
+        http_client=httpx2.Client(transport=transport),
+    ) as client:
+        try:
+            _emit_fetch_response_span(client, "resp-missing-001")
+        except openai.NotFoundError:
+            pass
+        else:
+            raise AssertionError("Expected the SDK to reject the fetch response request")
+
+
 def main():
     print("=== Reference Implementation: OpenAI Reference Implementation ===")
 
@@ -1477,6 +1514,7 @@ def main():
     run_chat_audio_reference(client)
     run_responses_with_prompt_template_reference(client)
     run_fetch_response_reference(client)
+    run_fetch_response_error_reference()
     run_embeddings_reference(client)
     run_embeddings_error_reference()
 
