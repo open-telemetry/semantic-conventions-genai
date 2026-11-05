@@ -25,3 +25,6 @@ execution is instrumentable here.
 | embeddings | Yes — text-embeddings API | ➖ Won't add — SDK deprecated |
 | create_agent | Yes — Agent Engine hosts agents remotely | ➖ Won't add — SDK deprecated |
 | invoke_agent (client) | Yes — Agent Engine hosts agents remotely | ➖ Won't add — SDK deprecated |
+
+The tool execution error handler records a correlated
+`gen_ai.execute_tool.exception` WARN log. This scenario does not exercise that path.

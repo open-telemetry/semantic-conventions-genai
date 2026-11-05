@@ -56,6 +56,57 @@
       "server.port"
     ]
   },
-  "findings": [],
-  "entities": {}
+  "entities": {},
+  "findings": [
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'chat' (operation 'chat') is missing expected attribute 'gen_ai.response.id'",
+      "signal_type": "span",
+      "signal_name": "chat",
+      "context": {
+        "missing_attribute": "gen_ai.response.id",
+        "operation": "chat"
+      }
+    },
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'chat' (operation 'chat') is missing expected attribute 'gen_ai.response.model'",
+      "signal_type": "span",
+      "signal_name": "chat",
+      "context": {
+        "missing_attribute": "gen_ai.response.model",
+        "operation": "chat"
+      }
+    },
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'chat anthropic.claude-3-haiku-20240307-v1:0' (operation 'chat') is missing expected attribute 'gen_ai.response.id'",
+      "signal_type": "span",
+      "signal_name": "chat anthropic.claude-3-haiku-20240307-v1:0",
+      "context": {
+        "missing_attribute": "gen_ai.response.id",
+        "operation": "chat"
+      }
+    },
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'chat anthropic.claude-3-haiku-20240307-v1:0' (operation 'chat') is missing expected attribute 'gen_ai.response.model'",
+      "signal_type": "span",
+      "signal_name": "chat anthropic.claude-3-haiku-20240307-v1:0",
+      "context": {
+        "missing_attribute": "gen_ai.response.model",
+        "operation": "chat"
+      }
+    },
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'embeddings amazon.titan-embed-text-v2:0' (operation 'embeddings') is missing expected attribute 'gen_ai.response.model'",
+      "signal_type": "span",
+      "signal_name": "embeddings amazon.titan-embed-text-v2:0",
+      "context": {
+        "missing_attribute": "gen_ai.response.model",
+        "operation": "embeddings"
+      }
+    }
+  ]
 }

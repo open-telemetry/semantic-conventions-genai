@@ -9,6 +9,7 @@ import time
 from contextlib import contextmanager
 from urllib.parse import urlparse
 
+from opentelemetry._logs import SeverityNumber
 from opentelemetry.trace import SpanKind, StatusCode
 from reference_shared import (
     flush_and_shutdown,
@@ -110,20 +111,30 @@ def _patch_automatic_function_calling():
             if description:
                 tool_span_attributes["gen_ai.tool.description"] = description[0]
             with _reference_tracer.start_as_current_span(
-                f"execute_tool {call.name}", attributes=tool_span_attributes
+                f"execute_tool {call.name}", attributes=tool_span_attributes, record_exception=False
             ) as tool_span:
-                if call.id:
-                    tool_span.set_attribute("gen_ai.tool.call.id", call.id)
-                tool_span.set_attribute("gen_ai.tool.call.arguments", dict(call.args or {}))
-                single = response.model_copy(deep=True)
-                single.candidates[0].content.parts = [part]
-                result_parts = original(single, function_map)
-                for result_part in result_parts:
-                    tool_span.set_attribute(
-                        "gen_ai.tool.call.result",
-                        {"output": result_part.function_response.response},
+                try:
+                    if call.id:
+                        tool_span.set_attribute("gen_ai.tool.call.id", call.id)
+                    tool_span.set_attribute("gen_ai.tool.call.arguments", dict(call.args or {}))
+                    single = response.model_copy(deep=True)
+                    single.candidates[0].content.parts = [part]
+                    result_parts = original(single, function_map)
+                    for result_part in result_parts:
+                        tool_span.set_attribute(
+                            "gen_ai.tool.call.result",
+                            {"output": result_part.function_response.response},
+                        )
+                    parts.extend(result_parts)
+                except Exception as e:
+                    tool_span.set_status(StatusCode.ERROR, str(e))
+                    tool_span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
+                    reference_event_logger().emit(
+                        event_name="gen_ai.execute_tool.exception",
+                        severity_number=SeverityNumber.WARN,
+                        exception=e,
                     )
-                parts.extend(result_parts)
+                    raise
         return parts
 
     _extra_utils.get_function_response_parts = instrumented
@@ -499,8 +510,11 @@ def run_chat_multimodal():
         "gen_ai.operation.name": "chat",
         "gen_ai.provider.name": "gcp.gemini",
         "gen_ai.request.model": request_model,
+        "server.address": _SERVER_ADDRESS,
     }
-    with _reference_tracer.start_as_current_span("chat gemini-2.0-flash", attributes=span_attributes) as span:
+    with _reference_tracer.start_as_current_span(
+        "chat gemini-2.0-flash", kind=SpanKind.CLIENT, attributes=span_attributes
+    ) as span:
         response = client.models.generate_content(
             model=request_model,
             contents=[
@@ -509,6 +523,8 @@ def run_chat_multimodal():
                 types.Part.from_bytes(data=blob, mime_type="audio/wav"),
             ],
         )
+        if response.response_id:
+            span.set_attribute("gen_ai.response.id", response.response_id)
         if response.model_version:
             span.set_attribute("gen_ai.response.model", response.model_version)
         if response.candidates and response.candidates[0].finish_reason:
@@ -557,13 +573,18 @@ def run_generate_media():
             "gen_ai.operation.name": "chat",
             "gen_ai.provider.name": "gcp.gemini",
             "gen_ai.request.model": request_model,
+            "server.address": _SERVER_ADDRESS,
         }
-        with _reference_tracer.start_as_current_span("chat gemini-2.0-flash", attributes=span_attributes) as span:
+        with _reference_tracer.start_as_current_span(
+            "chat gemini-2.0-flash", kind=SpanKind.CLIENT, attributes=span_attributes
+        ) as span:
             response = client.models.generate_content(
                 model=request_model,
                 contents=f"Generate {label} output.",
                 config=types.GenerateContentConfig(response_modalities=modalities),
             )
+            if response.response_id:
+                span.set_attribute("gen_ai.response.id", response.response_id)
             if response.model_version:
                 span.set_attribute("gen_ai.response.model", response.model_version)
             if response.candidates and response.candidates[0].finish_reason:
@@ -626,6 +647,7 @@ def run_chat_streaming():
     ) as span:
         text = ""
         model_version = None
+        response_id = None
         last_chunk = None
         for chunk in client.models.generate_content_stream(
             model=request_model,
@@ -635,7 +657,10 @@ def run_chat_streaming():
                 text += chunk.text
             if chunk.model_version:
                 model_version = chunk.model_version
+            response_id = response_id or chunk.response_id
             last_chunk = chunk
+        if response_id:
+            span.set_attribute("gen_ai.response.id", response_id)
         if model_version:
             span.set_attribute("gen_ai.response.model", model_version)
         if last_chunk and last_chunk.candidates and last_chunk.candidates[0].finish_reason:
@@ -692,9 +717,15 @@ def run_embeddings():
                 span.set_attribute("gen_ai.embeddings.dimension.count", len(response.embeddings[0].values))
             print(f"    -> embedding dim: {len(response.embeddings[0].values)}")
         except Exception as e:
+            error_type = f"{type(e).__module__}.{type(e).__qualname__}"
             span.set_status(StatusCode.ERROR, str(e))
-            span.set_attribute("error.type", type(e).__qualname__)
-            metric_attributes["error.type"] = type(e).__qualname__
+            span.set_attribute("error.type", error_type)
+            metric_attributes["error.type"] = error_type
+            reference_event_logger().emit(
+                event_name="gen_ai.client.embeddings.exception",
+                severity_number=SeverityNumber.WARN,
+                exception=e,
+            )
             raise
         finally:
             _embeddings_duration.record(time.perf_counter() - start_time, metric_attributes)

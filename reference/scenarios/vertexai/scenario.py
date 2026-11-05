@@ -9,7 +9,8 @@ import warnings
 from contextlib import contextmanager
 from urllib.parse import urlparse
 
-from opentelemetry.trace import SpanKind
+from opentelemetry._logs import SeverityNumber
+from opentelemetry.trace import SpanKind, StatusCode
 from reference_shared import flush_and_shutdown, reference_event_logger, reference_tracer, setup_otel
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"]
@@ -71,15 +72,25 @@ def _patch_automatic_function_calling():
             if description:
                 tool_span_attributes["gen_ai.tool.description"] = description
             with _reference_tracer.start_as_current_span(
-                f"execute_tool {raw_call['name']}", attributes=tool_span_attributes
+                f"execute_tool {raw_call['name']}", attributes=tool_span_attributes, record_exception=False
             ) as tool_span:
-                if raw_call.get("id"):
-                    tool_span.set_attribute("gen_ai.tool.call.id", raw_call["id"])
-                tool_span.set_attribute("gen_ai.tool.call.arguments", raw_call.get("args") or {})
-                result = function(**kwargs)
-                # TODO: Determine how to represent this string result in the object-only schema.
-                tool_span.set_attribute("gen_ai.tool.call.result", result)
-                return result
+                try:
+                    if raw_call.get("id"):
+                        tool_span.set_attribute("gen_ai.tool.call.id", raw_call["id"])
+                    tool_span.set_attribute("gen_ai.tool.call.arguments", raw_call.get("args") or {})
+                    result = function(**kwargs)
+                    # TODO: Determine how to represent this string result in the object-only schema.
+                    tool_span.set_attribute("gen_ai.tool.call.result", result)
+                    return result
+                except Exception as e:
+                    tool_span.set_status(StatusCode.ERROR, str(e))
+                    tool_span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
+                    reference_event_logger().emit(
+                        event_name="gen_ai.execute_tool.exception",
+                        severity_number=SeverityNumber.WARN,
+                        exception=e,
+                    )
+                    raise
 
         return instrumented_function
 
@@ -220,7 +231,7 @@ def run_chat():
             model = GenerativeModel(request_model)
             prompt_text = "Say hello."
             response = model.generate_content(prompt_text)
-        response_model = response.to_dict().get("modelVersion")
+        response_model = response.to_dict().get("model_version")
         response_id = response.to_dict().get("response_id")
         if response_id:
             span.set_attribute("gen_ai.response.id", response_id)
@@ -311,7 +322,10 @@ def run_chat_tool_call():
                 "What's the weather in Seattle?",
                 tools=[tool],
             )
-        response_model = response.to_dict().get("modelVersion")
+        response_model = response.to_dict().get("model_version")
+        response_id = response.to_dict().get("response_id")
+        if response_id:
+            span.set_attribute("gen_ai.response.id", response_id)
         if response_model:
             span.set_attribute("gen_ai.response.model", response_model)
         finish_reason = (
@@ -343,7 +357,9 @@ def run_chat_tool_call():
                 ),
             }
         ]
-        _emit_inference_event(request_model, input_messages, output_messages, response_model, finish_reason, usage)
+        _emit_inference_event(
+            request_model, input_messages, output_messages, response_model, finish_reason, usage, response_id
+        )
         print(f"    -> tool_call: {tool_call.name}" if tool_call else f"    -> {response.text[:60]}")
 
 
@@ -359,8 +375,11 @@ def run_chat_multimodal():
         "gen_ai.operation.name": "chat",
         "gen_ai.provider.name": "gcp.vertex_ai",
         "gen_ai.request.model": request_model,
+        "server.address": _SERVER_ADDRESS,
     }
-    with _reference_tracer.start_as_current_span("chat gemini-2.0-flash", attributes=span_attributes) as span:
+    with _reference_tracer.start_as_current_span(
+        "chat gemini-2.0-flash", kind=SpanKind.CLIENT, attributes=span_attributes
+    ) as span:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", DeprecationWarning)
             warnings.simplefilter("ignore", UserWarning)
@@ -372,7 +391,10 @@ def run_chat_multimodal():
                     Part.from_data(data=blob, mime_type="audio/wav"),
                 ]
             )
-        response_model = response.to_dict().get("modelVersion")
+        response_model = response.to_dict().get("model_version")
+        response_id = response.to_dict().get("response_id")
+        if response_id:
+            span.set_attribute("gen_ai.response.id", response_id)
         if response_model:
             span.set_attribute("gen_ai.response.model", response_model)
         finish_reason = (
@@ -399,7 +421,9 @@ def run_chat_multimodal():
             }
         ]
         output_messages = [{"role": "assistant", "parts": [{"type": "text", "content": response.text}]}]
-        _emit_inference_event(request_model, input_messages, output_messages, response_model, finish_reason, usage)
+        _emit_inference_event(
+            request_model, input_messages, output_messages, response_model, finish_reason, usage, response_id
+        )
         print("    -> multimodal usage captured")
 
 
@@ -428,7 +452,10 @@ def run_chat_streaming():
                 text += chunk.text
                 last_chunk = chunk
         if last_chunk:
-            response_model = last_chunk.to_dict().get("modelVersion")
+            response_model = last_chunk.to_dict().get("model_version")
+            response_id = last_chunk.to_dict().get("response_id")
+            if response_id:
+                span.set_attribute("gen_ai.response.id", response_id)
             if response_model:
                 span.set_attribute("gen_ai.response.model", response_model)
         if last_chunk and last_chunk.candidates and last_chunk.candidates[0].finish_reason:
