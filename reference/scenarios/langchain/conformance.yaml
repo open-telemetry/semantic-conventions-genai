@@ -29,5 +29,9 @@ scenarios:
           type: gen_ai.retrieval
       - match:
           attributes:
+            gen_ai.operation.name: execute_tool
+          type: gen_ai.execute_tool
+      - match:
+          attributes:
             gen_ai.operation.name: invoke_workflow
           type: gen_ai.invoke_agent.internal

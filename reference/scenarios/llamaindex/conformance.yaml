@@ -14,5 +14,9 @@ scenarios:
     spans:
       - match:
           attributes:
+            gen_ai.operation.name: execute_tool
+          type: gen_ai.execute_tool
+      - match:
+          attributes:
             gen_ai.operation.name: retrieval
           type: gen_ai.retrieval

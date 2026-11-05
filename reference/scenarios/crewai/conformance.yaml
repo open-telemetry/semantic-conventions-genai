@@ -23,3 +23,7 @@ scenarios:
           attributes:
             gen_ai.operation.name: invoke_workflow
           type: gen_ai.invoke_agent.internal
+      - match:
+          attributes:
+            gen_ai.operation.name: execute_tool
+          type: gen_ai.execute_tool

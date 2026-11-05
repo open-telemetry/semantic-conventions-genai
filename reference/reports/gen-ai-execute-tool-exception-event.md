@@ -1,6 +1,6 @@
 # Execute Tool Exception Event
 
-> **[Semantic Convention](../../docs/gen-ai/gen-ai-spans.md#event-gen_aiexecute_toolexception)**
+> **[Semantic Convention](../../docs/gen-ai/execute-tool.md#event-gen_aiexecute_toolexception)**
 
 ## Conditionally Required
 

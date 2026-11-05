@@ -17,3 +17,8 @@ scenarios:
           missing_attribute: gen_ai.response.finish_reasons
           operation: invoke_agent
         reason: The agent response exposes no per-generation finish reason; completion status alone does not supply one.
+    spans:
+      - match:
+          attributes:
+            gen_ai.operation.name: execute_tool
+          type: gen_ai.execute_tool

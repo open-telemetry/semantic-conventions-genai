@@ -131,7 +131,7 @@ for the details on which values classify as errors.
 
 If the span status is set to `ERROR`, the status description SHOULD match the `JSONRPCError.message` if the message is available.
 
-MCP tool call execution spans are compatible with GenAI [execute_tool spans](/docs/gen-ai/gen-ai-spans.md#execute-tool-span).
+MCP tool call execution spans are compatible with GenAI [execute_tool spans](/docs/gen-ai/execute-tool.md#span-gen_aiexecute_tool).
 
 If the MCP instrumentation can reliably detect that outer GenAI instrumentation
 is already tracing the tool execution, it SHOULD NOT create a separate span.
