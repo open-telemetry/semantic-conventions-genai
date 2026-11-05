@@ -1,14 +1,14 @@
 """Reference implementation for LangChain retrieval, planning, tool and workflow (LangGraph) runs."""
 
 import asyncio
-import json
 import os
 import time
 from typing import TypedDict
 
 from langchain_core.tools import tool
+from opentelemetry._logs import SeverityNumber
 from opentelemetry.trace import StatusCode
-from reference_shared import flush_and_shutdown, reference_meter, reference_tracer, setup_otel
+from reference_shared import flush_and_shutdown, reference_event_logger, reference_meter, reference_tracer, setup_otel
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"] + "/v1"
 
@@ -70,38 +70,47 @@ async def agent_node(state: GraphState) -> GraphState:
         "gen_ai.request.model": AGENT_MODEL,
     }
     with _reference_tracer.start_as_current_span(
-        f"invoke_agent {AGENT_NAME}", attributes=agent_span_attributes
+        f"invoke_agent {AGENT_NAME}", attributes=agent_span_attributes, record_exception=False
     ) as agent_span:
-        agent_span.set_attribute(
-            "gen_ai.system_instructions", json.dumps([{"type": "text", "content": AGENT_SYSTEM_PROMPT}])
-        )
-        agent_span.set_attribute(
-            "gen_ai.input.messages", json.dumps([{"role": "user", "parts": [{"type": "text", "content": input_text}]}])
-        )
-        agent_span.set_attribute(
-            "gen_ai.tool.definitions",
-            json.dumps([{"type": "function", "name": get_weather.name, "description": get_weather.description}]),
-        )
+        try:
+            agent_span.set_attribute("gen_ai.system_instructions", [{"type": "text", "content": AGENT_SYSTEM_PROMPT}])
+            agent_span.set_attribute(
+                "gen_ai.input.messages",
+                [{"role": "user", "parts": [{"type": "text", "content": input_text}]}],
+            )
+            agent_span.set_attribute(
+                "gen_ai.tool.definitions",
+                [{"type": "function", "name": get_weather.name, "description": get_weather.description}],
+            )
 
-        # LangChain delegates the model call to the underlying LLM client (openai),
-        # whose own instrumentation owns the inference span. The agent runs the tool
-        # itself, so the execute_tool span belongs to LangChain instrumentation.
-        result = await agent.ainvoke({"messages": [{"role": "user", "content": input_text}]})
+            # LangChain delegates the model call to the underlying LLM client (openai),
+            # whose own instrumentation owns the inference span. The agent runs the tool
+            # itself, so the execute_tool span belongs to LangChain instrumentation.
+            result = await agent.ainvoke({"messages": [{"role": "user", "content": input_text}]})
 
-        final_message = result["messages"][-1]
-        finish_reason = final_message.response_metadata.get("finish_reason")
-        if finish_reason is not None:
-            agent_span.set_attribute("gen_ai.response.finish_reasons", [finish_reason])
-        usage = getattr(final_message, "usage_metadata", None) or {}
-        if usage.get("input_tokens"):
-            agent_span.set_attribute("gen_ai.usage.input_tokens", usage["input_tokens"])
-        if usage.get("output_tokens"):
-            agent_span.set_attribute("gen_ai.usage.output_tokens", usage["output_tokens"])
-        agent_span.set_attribute(
-            "gen_ai.output.messages",
-            json.dumps([{"role": "assistant", "parts": [{"type": "text", "content": final_message.text()}]}]),
-        )
-        return {"messages": state["messages"] + [final_message.text()]}
+            final_message = result["messages"][-1]
+            finish_reason = final_message.response_metadata.get("finish_reason")
+            if finish_reason is not None:
+                agent_span.set_attribute("gen_ai.response.finish_reasons", [finish_reason])
+            usage = getattr(final_message, "usage_metadata", None) or {}
+            if usage.get("input_tokens"):
+                agent_span.set_attribute("gen_ai.usage.input_tokens", usage["input_tokens"])
+            if usage.get("output_tokens"):
+                agent_span.set_attribute("gen_ai.usage.output_tokens", usage["output_tokens"])
+            agent_span.set_attribute(
+                "gen_ai.output.messages",
+                [{"role": "assistant", "parts": [{"type": "text", "content": final_message.text()}]}],
+            )
+            return {"messages": state["messages"] + [final_message.text()]}
+        except Exception as e:
+            agent_span.set_status(StatusCode.ERROR, str(e))
+            agent_span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
+            reference_event_logger().emit(
+                event_name="gen_ai.invoke_agent.exception",
+                severity_number=SeverityNumber.WARN,
+                exception=e,
+            )
+            raise
 
 
 def format_node(state: GraphState) -> GraphState:
@@ -139,7 +148,7 @@ def run_retrieval_reference():
             documents = retriever.invoke(query_text)
             span.set_attribute(
                 "gen_ai.retrieval.documents",
-                json.dumps([{"id": document.id} for document in documents]),
+                [{"id": document.id} for document in documents],
             )
             print(f"    -> {documents[0].page_content[:60]}")
         except Exception as e:
@@ -223,12 +232,23 @@ def run_execute_tool_reference():
         "gen_ai.tool.type": "function",
     }
     with _reference_tracer.start_as_current_span(
-        f"execute_tool {get_weather.name}", attributes=tool_span_attributes
+        f"execute_tool {get_weather.name}", attributes=tool_span_attributes, record_exception=False
     ) as tool_span:
-        tool_span.set_attribute("gen_ai.tool.call.id", tool_call["id"])
-        tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps(tool_call["args"]))
-        tool_message = get_weather.invoke(tool_call)
-        tool_span.set_attribute("gen_ai.tool.call.result", tool_message.content)
+        try:
+            tool_span.set_attribute("gen_ai.tool.call.id", tool_call["id"])
+            tool_span.set_attribute("gen_ai.tool.call.arguments", tool_call["args"])
+            tool_message = get_weather.invoke(tool_call)
+            # TODO: Determine how to represent this string result in the object-only schema.
+            tool_span.set_attribute("gen_ai.tool.call.result", tool_message.content)
+        except Exception as e:
+            tool_span.set_status(StatusCode.ERROR, str(e))
+            tool_span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
+            reference_event_logger().emit(
+                event_name="gen_ai.execute_tool.exception",
+                severity_number=SeverityNumber.WARN,
+                exception=e,
+            )
+            raise
     print(f"    -> {tool_message.content[:60]}")
 
 
@@ -262,20 +282,31 @@ def run_command_execution_reference():
             "gen_ai.tool.type": "function",
         }
         with _reference_tracer.start_as_current_span(
-            f"execute_tool {shell_tool.name}", attributes=tool_span_attributes
+            f"execute_tool {shell_tool.name}", attributes=tool_span_attributes, record_exception=False
         ) as tool_span:
-            tool_span.set_attribute("gen_ai.tool.description", shell_tool.description)
-            tool_span.set_attribute("gen_ai.tool.call.id", runtime.tool_call_id)
-            tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps({"command": command}))
-            tool_message = run_shell(runtime=runtime, command=command, restart=restart)
-            # `direct`: the middleware reports the status the command exited
-            # with on the artifact of the tool message it builds. It is None
-            # when the command timed out and was killed before exiting.
-            exit_code = tool_message.artifact.get("exit_code")
-            if exit_code is not None:
-                tool_span.set_attribute("process.exit.code", exit_code)
-            tool_span.set_attribute("gen_ai.tool.call.result", tool_message.content)
-            return tool_message
+            try:
+                tool_span.set_attribute("gen_ai.tool.description", shell_tool.description)
+                tool_span.set_attribute("gen_ai.tool.call.id", runtime.tool_call_id)
+                tool_span.set_attribute("gen_ai.tool.call.arguments", {"command": command})
+                tool_message = run_shell(runtime=runtime, command=command, restart=restart)
+                # `direct`: the middleware reports the status the command exited
+                # with on the artifact of the tool message it builds. It is None
+                # when the command timed out and was killed before exiting.
+                exit_code = tool_message.artifact.get("exit_code")
+                if exit_code is not None:
+                    tool_span.set_attribute("process.exit.code", exit_code)
+                # TODO: Determine how to represent this string result in the object-only schema.
+                tool_span.set_attribute("gen_ai.tool.call.result", tool_message.content)
+                return tool_message
+            except Exception as e:
+                tool_span.set_status(StatusCode.ERROR, str(e))
+                tool_span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
+                reference_event_logger().emit(
+                    event_name="gen_ai.execute_tool.exception",
+                    severity_number=SeverityNumber.WARN,
+                    exception=e,
+                )
+                raise
 
     shell_tool.func = traced_shell
 
@@ -301,19 +332,19 @@ async def run_workflow_reference():
     builder.add_edge("agent", "format")
     builder.add_edge("format", END)
 
-    graph = builder.compile()
+    graph = builder.compile(name="Weather graph")
 
     input_text = "What's the weather in Seattle?"
-    workflow_name = "Weather graph"
+    workflow_name = graph.name
     workflow_span_attributes = {
         "gen_ai.operation.name": "invoke_workflow",
     }
     with _reference_tracer.start_as_current_span(
         f"invoke_workflow {workflow_name}", attributes=workflow_span_attributes
     ) as workflow_span:
-        workflow_span.set_attribute("gen_ai.workflow.name", workflow_name)
+        workflow_span.set_attribute("gen_ai.agent.name", workflow_name)
         workflow_span.set_attribute(
-            "gen_ai.input.messages", json.dumps([{"role": "user", "parts": [{"type": "text", "content": input_text}]}])
+            "gen_ai.input.messages", [{"role": "user", "parts": [{"type": "text", "content": input_text}]}]
         )
 
         # The graph coordinates an agent node and a formatting node; the agent
@@ -326,14 +357,12 @@ async def run_workflow_reference():
         state = await graph.ainvoke({"messages": [input_text]}, config={"run_name": workflow_name})
 
         final_output = state["messages"][-1]
-        output_messages = json.dumps(
-            [
-                {
-                    "role": "assistant",
-                    "parts": [{"type": "text", "content": str(final_output)}],
-                }
-            ]
-        )
+        output_messages = [
+            {
+                "role": "assistant",
+                "parts": [{"type": "text", "content": str(final_output)}],
+            }
+        ]
         workflow_span.set_attribute("gen_ai.output.messages", output_messages)
         print(f"    -> {final_output[:60]}")
 

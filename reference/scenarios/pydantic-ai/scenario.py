@@ -4,11 +4,13 @@ Exercises: agent run with tool calling
 against a mock OpenAI server, with manual OTel spans (no logfire/Agent.instrument_all).
 """
 
-import json
 import os
 
+from opentelemetry._logs import SeverityNumber
+from opentelemetry.trace import StatusCode
 from reference_shared import (
     flush_and_shutdown,
+    reference_event_logger,
     reference_tracer,
     setup_otel,
 )
@@ -49,15 +51,26 @@ def run_tool_call():
         if ctx.agent is not None and ctx.agent.name:
             tool_span_attributes["gen_ai.agent.name"] = ctx.agent.name
         with _reference_tracer.start_as_current_span(
-            "execute_tool get_weather", attributes=tool_span_attributes
+            "execute_tool get_weather", attributes=tool_span_attributes, record_exception=False
         ) as tool_span:
-            tool_span.set_attribute("gen_ai.tool.description", get_weather.__doc__ or "")
-            if ctx.tool_call_id:
-                tool_span.set_attribute("gen_ai.tool.call.id", ctx.tool_call_id)
-            tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps({"location": location}))
-            result = "Sunny, 72°F"
-            tool_span.set_attribute("gen_ai.tool.call.result", result)
-            return result
+            try:
+                tool_span.set_attribute("gen_ai.tool.description", get_weather.__doc__ or "")
+                if ctx.tool_call_id:
+                    tool_span.set_attribute("gen_ai.tool.call.id", ctx.tool_call_id)
+                tool_span.set_attribute("gen_ai.tool.call.arguments", {"location": location})
+                result = "Sunny, 72°F"
+                # TODO: Determine how to represent this string result in the object-only schema.
+                tool_span.set_attribute("gen_ai.tool.call.result", result)
+                return result
+            except Exception as e:
+                tool_span.set_status(StatusCode.ERROR, str(e))
+                tool_span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
+                reference_event_logger().emit(
+                    event_name="gen_ai.execute_tool.exception",
+                    severity_number=SeverityNumber.WARN,
+                    exception=e,
+                )
+                raise
 
     tools = [Tool(get_weather)]
     agent = Agent(model, system_prompt=system_prompt, tools=tools, name="weather_agent")
@@ -71,7 +84,7 @@ def run_tool_call():
         "frequency_penalty": request_frequency_penalty,
         "presence_penalty": request_presence_penalty,
     }
-    system_instructions = json.dumps([{"type": "text", "content": system_prompt}])
+    system_instructions = [{"type": "text", "content": system_prompt}]
 
     agent_span_attributes = {
         "gen_ai.operation.name": "invoke_agent",
@@ -79,22 +92,23 @@ def run_tool_call():
         "gen_ai.agent.name": agent_name,
     }
     with _reference_tracer.start_as_current_span(
-        "invoke_agent weather_agent", attributes=agent_span_attributes
+        "invoke_agent weather_agent", attributes=agent_span_attributes, record_exception=False
     ) as agent_span:
-        agent_span.set_attribute("gen_ai.request.temperature", request_temperature)
-        agent_span.set_attribute("gen_ai.request.top_p", request_top_p)
-        agent_span.set_attribute("gen_ai.request.max_tokens", request_max_tokens)
-        agent_span.set_attribute("gen_ai.request.seed", request_seed)
-        agent_span.set_attribute("gen_ai.request.stop_sequences", request_stop_sequences)
-        agent_span.set_attribute("gen_ai.request.frequency_penalty", request_frequency_penalty)
-        agent_span.set_attribute("gen_ai.request.presence_penalty", request_presence_penalty)
-        agent_span.set_attribute("gen_ai.system_instructions", system_instructions)
-        agent_span.set_attribute(
-            "gen_ai.input.messages", json.dumps([{"role": "user", "parts": [{"type": "text", "content": prompt_text}]}])
-        )
-        agent_span.set_attribute(
-            "gen_ai.tool.definitions",
-            json.dumps(
+        try:
+            agent_span.set_attribute("gen_ai.request.temperature", request_temperature)
+            agent_span.set_attribute("gen_ai.request.top_p", request_top_p)
+            agent_span.set_attribute("gen_ai.request.max_tokens", request_max_tokens)
+            agent_span.set_attribute("gen_ai.request.seed", request_seed)
+            agent_span.set_attribute("gen_ai.request.stop_sequences", request_stop_sequences)
+            agent_span.set_attribute("gen_ai.request.frequency_penalty", request_frequency_penalty)
+            agent_span.set_attribute("gen_ai.request.presence_penalty", request_presence_penalty)
+            agent_span.set_attribute("gen_ai.system_instructions", system_instructions)
+            agent_span.set_attribute(
+                "gen_ai.input.messages",
+                [{"role": "user", "parts": [{"type": "text", "content": prompt_text}]}],
+            )
+            agent_span.set_attribute(
+                "gen_ai.tool.definitions",
                 [
                     {
                         "type": "function",
@@ -103,35 +117,41 @@ def run_tool_call():
                         "parameters": t.function_schema.json_schema,
                     }
                     for t in tools
-                ]
-            ),
-        )
-        result = agent.run_sync(prompt_text, model_settings=model_settings)
-        if result.response.finish_reason is not None:
-            agent_span.set_attribute(
-                "gen_ai.response.finish_reasons",
-                [result.response.finish_reason],
+                ],
             )
-        output_parts = [
-            {"type": "text", "content": part.content}
-            for part in result.response.parts
-            if isinstance(part, TextPart) and part.content
-        ]
-        if output_parts:
-            output_messages = json.dumps(
-                [
+            result = agent.run_sync(prompt_text, model_settings=model_settings)
+            if result.response.finish_reason is not None:
+                agent_span.set_attribute(
+                    "gen_ai.response.finish_reasons",
+                    [result.response.finish_reason],
+                )
+            output_parts = [
+                {"type": "text", "content": part.content}
+                for part in result.response.parts
+                if isinstance(part, TextPart) and part.content
+            ]
+            if output_parts:
+                output_messages = [
                     {
                         "role": "assistant",
                         "parts": output_parts,
                     }
                 ]
+                agent_span.set_attribute("gen_ai.output.messages", output_messages)
+            usage = result.usage
+            if usage.total_tokens:
+                agent_span.set_attribute("gen_ai.usage.input_tokens", usage.input_tokens)
+                agent_span.set_attribute("gen_ai.usage.output_tokens", usage.output_tokens)
+            print(f"    -> {str(result.response)[:60]}")
+        except Exception as e:
+            agent_span.set_status(StatusCode.ERROR, str(e))
+            agent_span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
+            reference_event_logger().emit(
+                event_name="gen_ai.invoke_agent.exception",
+                severity_number=SeverityNumber.WARN,
+                exception=e,
             )
-            agent_span.set_attribute("gen_ai.output.messages", output_messages)
-        usage = result.usage
-        if usage.total_tokens:
-            agent_span.set_attribute("gen_ai.usage.input_tokens", usage.input_tokens)
-            agent_span.set_attribute("gen_ai.usage.output_tokens", usage.output_tokens)
-        print(f"    -> {str(result.response)[:60]}")
+            raise
 
 
 def main():

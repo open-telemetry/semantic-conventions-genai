@@ -1,6 +1,5 @@
 """Reference implementation for Haystack retrieval."""
 
-import json
 import time
 
 from opentelemetry.trace import StatusCode
@@ -63,7 +62,7 @@ def run_retrieval():
             documents = result["documents"]
             span.set_attribute(
                 "gen_ai.retrieval.documents",
-                json.dumps([{"id": document.id, "score": document.score} for document in documents]),
+                [{"id": document.id, "score": document.score} for document in documents],
             )
             print(f"    -> {documents[0].content[:60]}")
         except Exception as e:

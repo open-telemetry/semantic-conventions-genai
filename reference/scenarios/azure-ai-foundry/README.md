@@ -14,3 +14,4 @@ server-side, across a process boundary the client cannot observe.
 
 invoke_agent covers a successful run and an SDK error from a mock HTTP response.
 The failed run records the span and duration with `error.type`.
+It also records a correlated `gen_ai.client.invoke_agent.exception` WARN log.

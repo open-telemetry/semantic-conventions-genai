@@ -1,6 +1,7 @@
 {
   "spans": {
     "gen_ai.client.invoke_agent": [
+      "error.type",
       "gen_ai.agent.id",
       "gen_ai.agent.version",
       "gen_ai.conversation.id",
@@ -24,9 +25,16 @@
       "server.port"
     ]
   },
-  "events": {},
+  "events": {
+    "gen_ai.client.invoke_agent.exception": [
+      "exception.message",
+      "exception.stacktrace",
+      "exception.type"
+    ]
+  },
   "metrics": {
     "gen_ai.client.invoke_agent.duration": [
+      "error.type",
       "gen_ai.operation.name",
       "gen_ai.provider.name",
       "server.address",

@@ -10,8 +10,15 @@ import time
 from urllib.parse import urlparse
 
 from openai import OpenAI
+from opentelemetry._logs import SeverityNumber
 from opentelemetry.trace import SpanKind, StatusCode
-from reference_shared import flush_and_shutdown, reference_meter, reference_tracer, setup_otel
+from reference_shared import (
+    flush_and_shutdown,
+    reference_event_logger,
+    reference_meter,
+    reference_tracer,
+    setup_otel,
+)
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"]
 _parsed = urlparse(MOCK_BASE_URL)
@@ -93,9 +100,7 @@ def run_invoke_agent(client):
         f"create_agent {assistant_name}", kind=SpanKind.CLIENT, attributes=span_attributes
     ) as span:
         span.set_attribute("gen_ai.agent.description", assistant_description)
-        span.set_attribute(
-            "gen_ai.system_instructions", json.dumps([{"type": "text", "content": assistant_instructions}])
-        )
+        span.set_attribute("gen_ai.system_instructions", [{"type": "text", "content": assistant_instructions}])
         assistant = client.beta.assistants.create(
             model=request_model,
             name=assistant_name,
@@ -128,7 +133,7 @@ def run_invoke_agent(client):
     metric_attributes = dict(span_attributes_2)
     start_time = time.perf_counter()
     with tracer.start_as_current_span(
-        f"invoke_agent {assistant.name}", kind=SpanKind.CLIENT, attributes=span_attributes_2
+        f"invoke_agent {assistant.name}", kind=SpanKind.CLIENT, attributes=span_attributes_2, record_exception=False
     ) as span:
         span.set_attribute("gen_ai.agent.id", assistant.id)
         span.set_attribute("gen_ai.request.temperature", request_temperature)
@@ -139,15 +144,13 @@ def run_invoke_agent(client):
             span.set_attribute("gen_ai.agent.description", assistant.description)
         span.set_attribute(
             "gen_ai.input.messages",
-            json.dumps([{"role": "user", "parts": [{"type": "text", "content": user_message}]}]),
+            [{"role": "user", "parts": [{"type": "text", "content": user_message}]}],
         )
-        span.set_attribute(
-            "gen_ai.tool.definitions", json.dumps([{"type": t["type"], **t["function"]} for t in tool_defs])
-        )
+        span.set_attribute("gen_ai.tool.definitions", [{"type": t["type"], **t["function"]} for t in tool_defs])
         if getattr(assistant, "instructions", None):
             span.set_attribute(
                 "gen_ai.system_instructions",
-                json.dumps([{"type": "text", "content": assistant.instructions}]),
+                [{"type": "text", "content": assistant.instructions}],
             )
         try:
             run = client.beta.threads.runs.create(
@@ -194,8 +197,9 @@ def run_invoke_agent(client):
                         tool_span.set_attribute("gen_ai.tool.type", "function")
                         if tool_call_id:
                             tool_span.set_attribute("gen_ai.tool.call.id", tool_call_id)
-                        tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps(arguments))
+                        tool_span.set_attribute("gen_ai.tool.call.arguments", arguments)
                         result = get_weather(arguments["location"])
+                        # TODO: Determine how to represent this string result in the object-only schema.
                         tool_span.set_attribute("gen_ai.tool.call.result", result)
 
                     tool_outputs.append(
@@ -229,22 +233,25 @@ def run_invoke_agent(client):
                 text = assistant_messages[0].content[0].text.value
                 span.set_attribute(
                     "gen_ai.output.messages",
-                    json.dumps(
-                        [
-                            {
-                                "role": "assistant",
-                                "parts": [{"type": "text", "content": text}],
-                            }
-                        ]
-                    ),
+                    [
+                        {
+                            "role": "assistant",
+                            "parts": [{"type": "text", "content": text}],
+                        }
+                    ],
                 )
                 print(f"    -> {text[:60]}")
             else:
                 print("    -> (no assistant response)")
         except Exception as e:
             span.set_status(StatusCode.ERROR, str(e))
-            span.set_attribute("error.type", type(e).__qualname__)
-            metric_attributes["error.type"] = type(e).__qualname__
+            span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
+            metric_attributes["error.type"] = f"{type(e).__module__}.{type(e).__qualname__}"
+            reference_event_logger().emit(
+                event_name="gen_ai.client.invoke_agent.exception",
+                severity_number=SeverityNumber.WARN,
+                exception=e,
+            )
             raise
         finally:
             _invoke_agent_duration.record(time.perf_counter() - start_time, metric_attributes)

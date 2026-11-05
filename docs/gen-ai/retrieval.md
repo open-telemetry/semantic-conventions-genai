@@ -65,9 +65,7 @@ Instrumentations SHOULD document the list of errors they report.
 **[3] `gen_ai.retrieval.documents`:** Each document object SHOULD contain the following properties when available:
 `id` (string): A unique identifier for the document, `score` (double): The relevance score of the document
 
-Instrumentations MUST follow [JSON schema](/model/gen-ai/gen-ai-retrieval-documents.json).
-
-When the attribute is recorded on events, it MUST be recorded in structured form. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
+This attribute MUST be recorded as an [AnyValue](https://opentelemetry.io/docs/specs/otel/common/#anyvalue) conforming to its [JSON schema](/model/gen-ai/gen-ai-retrieval-documents.json).
 
 **[4] `gen_ai.retrieval.query.text`:**
 

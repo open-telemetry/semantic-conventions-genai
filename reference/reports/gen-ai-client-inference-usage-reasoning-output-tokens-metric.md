@@ -8,7 +8,6 @@
 | --- | --- |
 | gen_ai.operation.name | [google-genai], [openai] |
 | gen_ai.provider.name | [google-genai], [openai] |
-| gen_ai.token.modality | [google-genai], [openai] |
 
 ## Conditionally Required
 

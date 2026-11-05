@@ -1,12 +1,13 @@
 """Reference implementation for LlamaIndex."""
 
-import json
 import os
 import time
 
+from opentelemetry._logs import SeverityNumber
 from opentelemetry.trace import StatusCode
 from reference_shared import (
     flush_and_shutdown,
+    reference_event_logger,
     reference_meter,
     reference_tracer,
     setup_otel,
@@ -54,17 +55,28 @@ def run_agent_reference(llm):
             "gen_ai.operation.name": "execute_tool",
         }
         with _reference_tracer.start_as_current_span(
-            "execute_tool get_weather", attributes=tool_span_attributes
+            "execute_tool get_weather", attributes=tool_span_attributes, record_exception=False
         ) as tool_span:
-            tool_span.set_attribute("gen_ai.tool.name", "get_weather")
-            tool_span.set_attribute("gen_ai.tool.description", get_weather.__doc__ or "")
-            tool_span.set_attribute("gen_ai.tool.type", "function")
-            if current_tool_call_id:
-                tool_span.set_attribute("gen_ai.tool.call.id", current_tool_call_id)
-            tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps({"location": location}))
-            result = "Sunny, 72°F"
-            tool_span.set_attribute("gen_ai.tool.call.result", result)
-            return result
+            try:
+                tool_span.set_attribute("gen_ai.tool.name", "get_weather")
+                tool_span.set_attribute("gen_ai.tool.description", get_weather.__doc__ or "")
+                tool_span.set_attribute("gen_ai.tool.type", "function")
+                if current_tool_call_id:
+                    tool_span.set_attribute("gen_ai.tool.call.id", current_tool_call_id)
+                tool_span.set_attribute("gen_ai.tool.call.arguments", {"location": location})
+                result = "Sunny, 72°F"
+                # TODO: Determine how to represent this string result in the object-only schema.
+                tool_span.set_attribute("gen_ai.tool.call.result", result)
+                return result
+            except Exception as e:
+                tool_span.set_status(StatusCode.ERROR, str(e))
+                tool_span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
+                reference_event_logger().emit(
+                    event_name="gen_ai.execute_tool.exception",
+                    severity_number=SeverityNumber.WARN,
+                    exception=e,
+                )
+                raise
 
     weather_tool = FunctionTool.from_defaults(fn=get_weather)
     original_call_tool_with_selection = tool_calling.call_tool_with_selection
@@ -101,7 +113,7 @@ def retrieve_reference(retriever, query_text):
             nodes = retriever.retrieve(query_text)
             span.set_attribute(
                 "gen_ai.retrieval.documents",
-                json.dumps([{"id": node.node_id, "score": node.score} for node in nodes]),
+                [{"id": node.node_id, "score": node.score} for node in nodes],
             )
             return nodes
         except Exception as e:

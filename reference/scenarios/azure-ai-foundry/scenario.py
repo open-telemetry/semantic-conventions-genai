@@ -5,7 +5,6 @@ through the Responses API), including a failed invocation, against a mock
 Azure AI Foundry server, with manual span instrumentation.
 """
 
-import json
 import os
 import time
 from urllib.parse import urlparse
@@ -14,8 +13,15 @@ from azure.ai.projects import AIProjectClient
 from azure.ai.projects.models import PromptAgentDefinition
 from azure.core.credentials import AccessToken
 from azure.core.pipeline.policies import SansIOHTTPPolicy
+from opentelemetry._logs import SeverityNumber
 from opentelemetry.trace import SpanKind, StatusCode
-from reference_shared import flush_and_shutdown, reference_meter, reference_tracer, setup_otel
+from reference_shared import (
+    flush_and_shutdown,
+    reference_event_logger,
+    reference_meter,
+    reference_tracer,
+    setup_otel,
+)
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"]
 _parsed = urlparse(MOCK_BASE_URL)
@@ -95,8 +101,8 @@ def run_create_agent(client):
         f"create_agent {AGENT_NAME}", kind=SpanKind.CLIENT, attributes=span_attributes
     ) as span:
         span.set_attribute("gen_ai.agent.description", AGENT_DESCRIPTION)
-        span.set_attribute("gen_ai.system_instructions", json.dumps([{"type": "text", "content": AGENT_INSTRUCTIONS}]))
-        span.set_attribute("gen_ai.tool.definitions", json.dumps(TOOL_DEFS))
+        span.set_attribute("gen_ai.system_instructions", [{"type": "text", "content": AGENT_INSTRUCTIONS}])
+        span.set_attribute("gen_ai.tool.definitions", TOOL_DEFS)
         agent = client.agents.create_version(
             agent_name=AGENT_NAME,
             definition=PromptAgentDefinition(
@@ -134,11 +140,11 @@ def run_invoke_agent(openai_client, agent):
         span.set_attribute("gen_ai.request.max_tokens", REQUEST_MAX_TOKENS)
         span.set_attribute("gen_ai.request.temperature", REQUEST_TEMPERATURE)
         span.set_attribute("gen_ai.request.top_p", REQUEST_TOP_P)
-        span.set_attribute("gen_ai.system_instructions", json.dumps([{"type": "text", "content": AGENT_INSTRUCTIONS}]))
+        span.set_attribute("gen_ai.system_instructions", [{"type": "text", "content": AGENT_INSTRUCTIONS}])
         span.set_attribute(
-            "gen_ai.input.messages", json.dumps([{"role": "user", "parts": [{"type": "text", "content": USER_INPUT}]}])
+            "gen_ai.input.messages", [{"role": "user", "parts": [{"type": "text", "content": USER_INPUT}]}]
         )
-        span.set_attribute("gen_ai.tool.definitions", json.dumps(TOOL_DEFS))
+        span.set_attribute("gen_ai.tool.definitions", TOOL_DEFS)
         try:
             response = openai_client.responses.create(
                 model=AGENT_MODEL,
@@ -174,14 +180,12 @@ def run_invoke_agent(openai_client, agent):
                 span.set_attribute("gen_ai.output.type", "text")
                 span.set_attribute(
                     "gen_ai.output.messages",
-                    json.dumps(
-                        [
-                            {
-                                "role": "assistant",
-                                "parts": [{"type": "text", "content": response_text}],
-                            }
-                        ]
-                    ),
+                    [
+                        {
+                            "role": "assistant",
+                            "parts": [{"type": "text", "content": response_text}],
+                        }
+                    ],
                 )
 
             finish_reason = None
@@ -204,8 +208,13 @@ def run_invoke_agent(openai_client, agent):
             print(f"    -> {response_text or response.id}")
         except Exception as e:
             span.set_status(StatusCode.ERROR, str(e))
-            span.set_attribute("error.type", type(e).__qualname__)
-            metric_attributes["error.type"] = type(e).__qualname__
+            span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
+            metric_attributes["error.type"] = f"{type(e).__module__}.{type(e).__qualname__}"
+            reference_event_logger().emit(
+                event_name="gen_ai.client.invoke_agent.exception",
+                severity_number=SeverityNumber.WARN,
+                exception=e,
+            )
             raise
         finally:
             _invoke_agent_duration.record(time.perf_counter() - start_time, metric_attributes)
