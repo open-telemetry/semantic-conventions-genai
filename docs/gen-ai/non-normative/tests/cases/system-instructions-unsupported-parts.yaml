@@ -2,12 +2,14 @@
 description: >
   A bare string, a part missing its `type` discriminator, and a `text` part
   with non-string `content` in system instructions are rejected and do not
-  fall through to generic parts
+  fall through to generic parts, while a `text` part omitting `content` is
+  valid
 schema: gen-ai-system-instructions.json
 document: [
   "You are a helpful bot",
   { "content": "You are a helpful bot" },
-  { "type": "text", "content": 123 }
+  { "type": "text", "content": 123 },
+  { "type": "text" }
 ]
 # Regenerate with `uv run pytest --update-snapshots`, do not edit by hand.
 errors:
