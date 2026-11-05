@@ -33,7 +33,13 @@
       "server.port"
     ]
   },
-  "events": {},
+  "events": {
+    "gen_ai.client.invoke_agent.exception": [
+      "exception.message",
+      "exception.stacktrace",
+      "exception.type"
+    ]
+  },
   "metrics": {
     "gen_ai.client.invoke_agent.duration": [
       "error.type",
