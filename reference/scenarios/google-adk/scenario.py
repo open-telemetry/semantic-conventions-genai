@@ -28,6 +28,33 @@ SKILLS_DIR = pathlib.Path(__file__).parent / "skills"
 _reference_tracer = reference_tracer()
 _reference_meter = reference_meter()
 
+_invoke_duration = _reference_meter.create_histogram(
+    "gen_ai.invoke_agent.duration",
+    unit="s",
+    description="The end-to-end duration of a single in-process agent, workflow, or framework entrypoint invocation.",
+    explicit_bucket_boundaries_advisory=[
+        0.1,
+        0.2,
+        0.4,
+        0.8,
+        1.6,
+        3.2,
+        6.4,
+        12.8,
+        25.6,
+        51.2,
+        102.4,
+        204.8,
+        409.6,
+        900,
+        1800,
+        3600,
+        7200,
+        14400,
+        43200,
+        86400,
+    ],
+)
 _inference_calls = _reference_meter.create_histogram(
     "gen_ai.invoke_agent.inference_calls",
     unit="{inference_call}",
@@ -216,15 +243,16 @@ def run_agent_reference():
                 app_name="test_app",
                 user_id="test_user",
             )
-            workflow_span_attributes = {
-                "gen_ai.operation.name": "invoke_workflow",
+            # `Runner` is not itself an agent or a workflow, so its invocation is `invoke_runner`.
+            runner_span_attributes = {
+                "gen_ai.operation.name": "invoke_runner",
             }
+            runner_start = time.perf_counter()
             with _reference_tracer.start_as_current_span(
-                f"invoke_workflow {runner.app_name}", attributes=workflow_span_attributes
-            ) as workflow_span:
-                workflow_span.set_attribute("gen_ai.workflow.name", runner.app_name)
-                workflow_span.set_attribute("gen_ai.conversation.id", session.id)
-                workflow_span.set_attribute(
+                "invoke_runner", attributes=runner_span_attributes
+            ) as runner_span:
+                runner_span.set_attribute("gen_ai.conversation.id", session.id)
+                runner_span.set_attribute(
                     "gen_ai.input.messages",
                     json.dumps([{"role": "user", "parts": [{"type": "text", "content": input_text}]}]),
                 )
@@ -233,6 +261,7 @@ def run_agent_reference():
                     "gen_ai.request.model": request_model,
                     "gen_ai.agent.name": agent.name,
                 }
+                agent_start = time.perf_counter()
                 with _reference_tracer.start_as_current_span(
                     "invoke_agent test_agent", attributes=agent_span_attributes, record_exception=False
                 ) as agent_span:
@@ -306,7 +335,7 @@ def run_agent_reference():
                                 ]
                             )
                             agent_span.set_attribute("gen_ai.output.messages", output_messages)
-                            workflow_span.set_attribute("gen_ai.output.messages", output_messages)
+                            runner_span.set_attribute("gen_ai.output.messages", output_messages)
                     except Exception as e:
                         agent_span.set_status(StatusCode.ERROR, str(e))
                         agent_span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
@@ -316,12 +345,15 @@ def run_agent_reference():
                             exception=e,
                         )
                         raise
+                # Each duration matches its span; the runner has no name, so only the operation is set.
+                _invoke_duration.record(time.perf_counter() - agent_start, agent_span_attributes)
+            _invoke_duration.record(time.perf_counter() - runner_start, runner_span_attributes)
 
         asyncio.run(_run())
 
         # Both metrics are scoped to the agent invocation and emitted alongside
-        # the invoke_agent (internal) span, dimensioned by the agent name.
-        metric_attributes = {"gen_ai.agent.name": agent.name}
+        # its invoke_agent span, dimensioned by the operation and agent name.
+        metric_attributes = {"gen_ai.operation.name": "invoke_agent", "gen_ai.agent.name": agent.name}
         _inference_calls.record(call_counts["inference"], metric_attributes)
         _tool_calls.record(call_counts["tool"], metric_attributes)
 
@@ -738,9 +770,9 @@ def run_multi_agent_handoff_reference():
 
     async def run():
         session = await session_service.create_session(app_name=runner.app_name, user_id="test_user")
+        # `Runner` is not itself an agent or a workflow, so its invocation is `invoke_runner`.
         with _reference_tracer.start_as_current_span(
-            f"invoke_workflow {runner.app_name}",
-            attributes={"gen_ai.operation.name": "invoke_workflow", "gen_ai.workflow.name": runner.app_name},
+            "invoke_runner", attributes={"gen_ai.operation.name": "invoke_runner"}
         ):
             async for event in runner.run_async(
                 user_id=session.user_id,

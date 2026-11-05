@@ -23,12 +23,6 @@
       "gen_ai.tool.definitions",
       "gen_ai.usage.input_tokens",
       "gen_ai.usage.output_tokens"
-    ],
-    "gen_ai.invoke_workflow.internal": [
-      "gen_ai.input.messages",
-      "gen_ai.operation.name",
-      "gen_ai.output.messages",
-      "gen_ai.workflow.name"
     ]
   },
   "events": {
@@ -82,36 +76,6 @@
         "expected_form": "execute_tool exec_command",
         "keyed_attr": "gen_ai.tool.name",
         "operation": "execute_tool"
-      }
-    },
-    {
-      "id": "genai_expected_attribute_missing",
-      "message": "Span 'invoke_agent turn-limit-agent' (operation 'invoke_agent') is missing expected attribute 'gen_ai.response.finish_reasons'",
-      "signal_type": "span",
-      "signal_name": "invoke_agent turn-limit-agent",
-      "context": {
-        "missing_attribute": "gen_ai.response.finish_reasons",
-        "operation": "invoke_agent"
-      }
-    },
-    {
-      "id": "genai_expected_attribute_missing",
-      "message": "Span 'invoke_agent turn-limit-agent' (operation 'invoke_agent') is missing expected attribute 'gen_ai.usage.input_tokens'",
-      "signal_type": "span",
-      "signal_name": "invoke_agent turn-limit-agent",
-      "context": {
-        "missing_attribute": "gen_ai.usage.input_tokens",
-        "operation": "invoke_agent"
-      }
-    },
-    {
-      "id": "genai_expected_attribute_missing",
-      "message": "Span 'invoke_agent turn-limit-agent' (operation 'invoke_agent') is missing expected attribute 'gen_ai.usage.output_tokens'",
-      "signal_type": "span",
-      "signal_name": "invoke_agent turn-limit-agent",
-      "context": {
-        "missing_attribute": "gen_ai.usage.output_tokens",
-        "operation": "invoke_agent"
       }
     }
   ]

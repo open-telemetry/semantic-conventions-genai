@@ -22,8 +22,8 @@ tool executes. The transfer records `pass_control`; the target's separate
 | Operation | Should be instrumented here | Status |
 | --- | --- | --- |
 | inference (`chat`) | No — delegates to the model client (`google-genai`) | ✅ Correctly not emitted |
-| invoke_agent (internal) | Yes — agent run | ✅ Implemented |
-| invoke_workflow | Yes — workflow agents (e.g. `SequentialAgent`) | ✅ Implemented |
+| invoke_agent (internal) | Yes — each agent that `Runner.run` executes | ✅ Implemented |
+| invoke_runner | Yes — `Runner.run` is the SDK entrypoint | ✅ Implemented |
 | execute_tool | Yes — ADK runs the tool | ✅ Implemented |
 | memory | Yes — memory service upsert / search | ✅ Implemented |
 | skills | Yes — `SkillToolset` runs the skill tools | ✅ Implemented |
