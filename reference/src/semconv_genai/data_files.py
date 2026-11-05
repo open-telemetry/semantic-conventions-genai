@@ -43,8 +43,14 @@ SPAN_TYPE_ORDER = [
 EVENT_TYPE_ORDER = [
     "gen_ai.client.realtime_session.started",
     "gen_ai.client.realtime_session.ended",
+    "gen_ai.client.embeddings.exception",
+    "gen_ai.client.fetch_response.exception",
+    "gen_ai.client.inference.exception",
     "gen_ai.client.inference.operation.details",
+    "gen_ai.client.invoke_agent.exception",
     "gen_ai.evaluation.result",
+    "gen_ai.execute_tool.exception",
+    "gen_ai.invoke_agent.exception",
 ]
 
 # Display order for entity types in reports.
