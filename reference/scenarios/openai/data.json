@@ -189,7 +189,6 @@
       "gen_ai.provider.name",
       "gen_ai.request.model",
       "gen_ai.response.model",
-      "gen_ai.token.modality",
       "server.address",
       "server.port"
     ]

@@ -41,4 +41,4 @@ scenarios:
       - match:
           attributes:
             gen_ai.operation.name: execute_tool
-          type: gen_ai.execute_tool.internal
+          type: gen_ai.execute_tool
