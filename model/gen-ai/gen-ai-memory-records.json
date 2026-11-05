@@ -5,6 +5,7 @@
             "description": "Represents a single memory record stored in or retrieved from a memory store.",
             "properties": {
                 "content": {
+                    "default": null,
                     "description": "The content of the memory record.",
                     "title": "Content"
                 },
@@ -49,9 +50,6 @@
                     "title": "Score"
                 }
             },
-            "required": [
-                "content"
-            ],
             "title": "MemoryRecord",
             "type": "object"
         }
