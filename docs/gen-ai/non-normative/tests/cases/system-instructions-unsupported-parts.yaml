@@ -1,13 +1,15 @@
 # yaml-language-server: $schema=../case.schema.json
 description: >
-  A bare string and malformed `text` parts in system instructions
-  (missing `content` or non-string `content`) are rejected and do not
-  fall through to generic parts
+  A bare string, a part missing its `type` discriminator, and a `text` part
+  with non-string `content` in system instructions are rejected and do not
+  fall through to generic parts, while a `text` part omitting `content` is
+  valid
 schema: gen-ai-system-instructions.json
 document: [
   "You are a helpful bot",
-  { "type": "text" },
-  { "type": "text", "content": 123 }
+  { "content": "You are a helpful bot" },
+  { "type": "text", "content": 123 },
+  { "type": "text" }
 ]
 # Regenerate with `uv run pytest --update-snapshots`, do not edit by hand.
 errors:
@@ -16,7 +18,7 @@ errors:
     message: "'You are a helpful bot' is not of type 'object'"
   - path: $[1]
     keyword: required
-    message: "'content' is a required property"
+    message: "'type' is a required property"
   - path: $[2].content
     keyword: type
     message: 123 is not of type 'string'

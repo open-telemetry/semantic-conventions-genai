@@ -50,7 +50,10 @@ class TextPart(BaseModel):
     type: Literal["text"] = Field(
         description="The type of the content captured in this part."
     )
-    content: str = Field(description="Text content sent to or received from the model.")
+    content: Optional[str] = Field(
+        default=None,
+        description="Text content sent to or received from the model.",
+    )
 
     model_config = ConfigDict(extra="allow")
 
@@ -66,7 +69,9 @@ class ToolCallRequestPart(BaseModel):
     id: Optional[str] = Field(
         default=None, description="Unique identifier for the tool call."
     )
-    name: str = Field(description="Name of the tool.")
+    name: Optional[str] = Field(
+        default=None, description="Name of the tool."
+    )
     arguments: Any = Field(default=None, description="Arguments for the tool call.")
 
     model_config = ConfigDict(extra="allow")
@@ -81,7 +86,7 @@ class ToolCallResponsePart(BaseModel):
         description="The type of the content captured in this part."
     )
     id: Optional[str] = Field(default=None, description="Unique tool call identifier.")
-    response: Any = Field(description="Tool call response.")
+    response: Any = Field(default=None, description="Tool call response.")
 
     model_config = ConfigDict(extra="allow")
 
@@ -125,8 +130,11 @@ class ServerToolCallPart(BaseModel):
     id: Optional[str] = Field(
         default=None, description="Unique identifier for the server tool call."
     )
-    name: str = Field(description="Name of the server tool.")
-    server_tool_call: ServerToolCall = Field(
+    name: Optional[str] = Field(
+        default=None, description="Name of the server tool."
+    )
+    server_tool_call: Optional[ServerToolCall] = Field(
+        default=None,
         description="Polymorphic server tool call details with type discriminator. The structure varies based on the tool type.",
     )
 
@@ -143,7 +151,8 @@ class ServerToolCallResponsePart(BaseModel):
         default=None,
         description="Unique server tool call identifier matching the original call.",
     )
-    server_tool_call_response: ServerToolCallResponse = Field(
+    server_tool_call_response: Optional[ServerToolCallResponse] = Field(
+        default=None,
         description="Polymorphic server tool call response with type discriminator. The structure varies based on the tool type.",
     )
 
@@ -165,8 +174,9 @@ class ReasoningPart(BaseModel):
     type: Literal["reasoning"] = Field(
         description="The type of the content captured in this part."
     )
-    content: str = Field(
-        description="Reasoning/thinking content received from the model."
+    content: Optional[str] = Field(
+        default=None,
+        description="Reasoning/thinking content received from the model.",
     )
 
     model_config = ConfigDict(extra="allow")
@@ -198,8 +208,9 @@ class TranscriptionPart(BaseModel):
     type: Literal["transcription"] = Field(
         description="The type of the content captured in this part."
     )
-    content: str = Field(
-        description="The text transcript of spoken audio. For input audio this is the transcription of the user's speech; for output audio it is the transcript of the model's spoken response."
+    content: Optional[str] = Field(
+        default=None,
+        description="The text transcript of spoken audio. For input audio this is the transcription of the user's speech; for output audio it is the transcript of the model's spoken response.",
     )
 
     model_config = ConfigDict(extra="allow")
@@ -214,10 +225,13 @@ class BlobPart(BaseModel):
     mime_type: Optional[str] = Field(
         default=None, description="The IANA MIME type of the attached data."
     )
-    modality: Union[Modality, str] = Field(
-        description="The general modality of the data if it is known. Instrumentations SHOULD also set the mimeType field if the specific type is known."
+    modality: Union[Modality, str, None] = Field(
+        default=None,
+        description="The general modality of the data if it is known. Instrumentations SHOULD also set the mimeType field if the specific type is known.",
     )
-    content: bytes = Field(description="Raw bytes of the attached data.")
+    content: Optional[bytes] = Field(
+        default=None, description="Raw bytes of the attached data."
+    )
 
 class FilePart(BaseModel):
     """Represents an external referenced file sent to the model by file id"""
@@ -228,11 +242,13 @@ class FilePart(BaseModel):
     mime_type: Optional[str] = Field(
         default=None, description="The IANA MIME type of the attached data."
     )
-    modality: Union[Modality, str] = Field(
-        description="The general modality of the data if it is known. Instrumentations SHOULD also set the mimeType field if the specific type is known."
+    modality: Union[Modality, str, None] = Field(
+        default=None,
+        description="The general modality of the data if it is known. Instrumentations SHOULD also set the mimeType field if the specific type is known.",
     )
-    file_id: str = Field(
-        description="An identifier referencing a file that was pre-uploaded to the provider."
+    file_id: Optional[str] = Field(
+        default=None,
+        description="An identifier referencing a file that was pre-uploaded to the provider.",
     )
 
     model_config = ConfigDict(extra="allow")
@@ -247,15 +263,17 @@ class UriPart(BaseModel):
     mime_type: Optional[str] = Field(
         default=None, description="The IANA MIME type of the attached data."
     )
-    modality: Union[Modality, str] = Field(
-        description="The general modality of the data if it is known. Instrumentations SHOULD also set the mimeType field if the specific type is known."
+    modality: Union[Modality, str, None] = Field(
+        default=None,
+        description="The general modality of the data if it is known. Instrumentations SHOULD also set the mimeType field if the specific type is known.",
     )
-    uri: str = Field(
+    uri: Optional[str] = Field(
+        default=None,
         description=(
             "A URI referencing attached data. It should not be a base64 data URL, "
             "which should use the `blob` part instead. The URI may use a scheme known to "
             "the provider api (e.g. `gs://bucket/object.png`), or be a publicly accessible location."
-        )
+        ),
     )
 
     model_config = ConfigDict(extra="allow")
@@ -354,11 +372,12 @@ class Role(StrEnum):
 
 
 class ChatMessage(BaseModel):
-    role: Union[Role, str] = Field(
-        description="Role of the entity that created the message."
+    role: Union[Role, str, None] = Field(
+        default=None, description="Role of the entity that created the message."
     )
-    parts: List[MessagePart] = Field(
-        description="List of message parts that make up the message content."
+    parts: Optional[List[MessagePart]] = Field(
+        default=None,
+        description="List of message parts that make up the message content.",
     )
     name: Optional[str] = Field(
         default=None, description="The name of the participant."
@@ -467,7 +486,7 @@ class FunctionToolDefinition(BaseModel):
     """
 
     type: Literal["function"] = Field(description="The type of the tool.")
-    name: str = Field(description="The name of the tool.")
+    name: Optional[str] = Field(default=None, description="The name of the tool.")
     description: Optional[str] = Field(
         default=None,
         description=(
@@ -512,7 +531,7 @@ class GenericToolDefinition(BaseModel):
         ),
         json_schema_extra=_not_known_types(KnownToolDefinition),
     )
-    name: str = Field(description="The name of the tool.")
+    name: Optional[str] = Field(default=None, description="The name of the tool.")
 
     model_config = ConfigDict(extra="allow")
 
@@ -571,7 +590,9 @@ class MemoryRecord(BaseModel):
     Represents a single memory record stored in or retrieved from a memory store.
     """
 
-    content: Any = Field(description="The content of the memory record.")
+    content: Any = Field(
+        default=None, description="The content of the memory record."
+    )
     id: Optional[str] = Field(
         default=None, description="A unique identifier for the memory record."
     )
