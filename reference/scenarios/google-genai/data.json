@@ -58,7 +58,8 @@
       "gen_ai.request.stream",
       "gen_ai.usage.input_tokens",
       "gen_ai.usage.output_tokens",
-      "server.address"
+      "server.address",
+      "server.port"
     ]
   },
   "events": {
@@ -184,6 +185,16 @@
       "context": {
         "missing_attribute": "gen_ai.usage.input_tokens",
         "operation": "embeddings"
+      }
+    },
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'invoke_agent deep-research-pro-preview-12-2025' (operation 'invoke_agent') is missing expected attribute 'gen_ai.response.finish_reasons'",
+      "signal_type": "span",
+      "signal_name": "invoke_agent deep-research-pro-preview-12-2025",
+      "context": {
+        "missing_attribute": "gen_ai.response.finish_reasons",
+        "operation": "invoke_agent"
       }
     },
     {

@@ -21,6 +21,7 @@ from reference_shared import (
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"]
 _SERVER_ADDRESS = urlparse(MOCK_BASE_URL).hostname
+_SERVER_PORT = urlparse(MOCK_BASE_URL).port
 
 _reference_tracer = reference_tracer()
 _reference_meter = reference_meter()
@@ -403,13 +404,13 @@ def run_interactions_continuation():
         print(f"    -> previous_response_id: {previous_interaction_id}")
 
 
-def run_interactions_streaming():
-    """Scenario: Google GenAI Interactions API streaming."""
+def run_agent_interaction_streaming():
+    """Scenario: stream a Gemini managed agent invocation through the Interactions API (`agent=` flavor)."""
     from google import genai
     from google.genai import types
     from google.genai.interactions import Interaction
 
-    print("  [interactions_streaming] interactions streaming via Google GenAI (reference implementation)")
+    print("  [agent_interaction_streaming] Google GenAI: stream agent invocation via Interactions API")
     client = genai.Client(
         api_key="mock-key",
         http_options=types.HttpOptions(
@@ -417,38 +418,41 @@ def run_interactions_streaming():
             api_version="v1beta",
         ),
     )
-    request_model = "gemini-2.0-flash"
-    prompt_text = "Tell me a joke."
+    agent = "deep-research-pro-preview-12-2025"
     span_attributes = {
         "gen_ai.operation.name": "invoke_agent",
         "gen_ai.provider.name": "gcp.gemini",
-        "gen_ai.request.model": request_model,
-        "gen_ai.agent.name": "interactions_agent",
+        "gen_ai.agent.name": agent,
         "gen_ai.request.stream": True,
         "server.address": _SERVER_ADDRESS,
+        "server.port": _SERVER_PORT,
     }
     with _reference_tracer.start_as_current_span(
-        "invoke_agent interactions_agent", kind=SpanKind.CLIENT, attributes=span_attributes
+        f"invoke_agent {agent}", kind=SpanKind.CLIENT, attributes=span_attributes
     ) as span:
         interaction_stream = client.interactions.create(
-            model=request_model,
-            input=prompt_text,
+            agent=agent,
+            input="Research the history of the transistor.",
+            background=True,
             stream=True,
         )
+        # The mock server answers streaming requests with a plain Interaction.
         if isinstance(interaction_stream, Interaction):
-            if interaction_stream.id:
-                span.set_attribute("gen_ai.response.id", interaction_stream.id)
-            if interaction_stream.model:
-                span.set_attribute("gen_ai.response.model", str(interaction_stream.model))
-            if interaction_stream.usage:
-                if interaction_stream.usage.total_input_tokens:
-                    span.set_attribute("gen_ai.usage.input_tokens", interaction_stream.usage.total_input_tokens)
-                if interaction_stream.usage.total_output_tokens:
-                    span.set_attribute("gen_ai.usage.output_tokens", interaction_stream.usage.total_output_tokens)
+            interaction = interaction_stream
         else:
-            for _event in interaction_stream:
-                pass
-        print("    -> streaming interaction completed")
+            interaction = None
+            for event in interaction_stream:
+                if event.event_type == "interaction.completed":
+                    interaction = event.interaction
+        if interaction is not None:
+            if interaction.id:
+                span.set_attribute("gen_ai.response.id", interaction.id)
+            if interaction.usage:
+                if interaction.usage.total_input_tokens:
+                    span.set_attribute("gen_ai.usage.input_tokens", interaction.usage.total_input_tokens)
+                if interaction.usage.total_output_tokens:
+                    span.set_attribute("gen_ai.usage.output_tokens", interaction.usage.total_output_tokens)
+        print("    -> streaming agent interaction completed")
 
 
 def run_chat_tool_call():
@@ -834,7 +838,7 @@ def main():
 
     run_chat()
     run_interactions_continuation()
-    run_interactions_streaming()
+    run_agent_interaction_streaming()
     run_chat_tool_call()
     run_chat_multimodal()
     run_generate_media()

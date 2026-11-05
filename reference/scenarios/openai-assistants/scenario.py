@@ -273,28 +273,18 @@ def run_invoke_agent_streaming(client):
             model=request_model,
             stream=True,
         )
-        for _event in stream:
-            pass
-
-        # In the Assistants API, usage and completion state are retrieved from the run
-        run = client.beta.threads.runs.retrieve(thread_id=thread.id, run_id="run-mock-001")
-        if run.usage:
-            span.set_attribute("gen_ai.usage.input_tokens", run.usage.prompt_tokens)
-            span.set_attribute("gen_ai.usage.output_tokens", run.usage.completion_tokens)
-
-        messages = client.beta.threads.messages.list(thread_id=thread.id)
-        assistant_messages = [m for m in messages.data if m.role == "assistant"]
-        if assistant_messages:
-            text = assistant_messages[0].content[0].text.value
-            span.set_attribute(
-                "gen_ai.output.messages",
-                [
-                    {
-                        "role": "assistant",
-                        "parts": [{"type": "text", "content": text}],
-                    }
-                ],
-            )
+        output_messages = []
+        for event in stream:
+            if event.event == "thread.message.completed" and event.data.role == "assistant":
+                parts = [{"type": "text", "content": c.text.value} for c in event.data.content if c.type == "text"]
+                output_messages.append({"role": "assistant", "parts": parts})
+            elif event.event == "thread.run.completed":
+                span.set_attribute("gen_ai.response.id", event.data.id)
+                if event.data.usage:
+                    span.set_attribute("gen_ai.usage.input_tokens", event.data.usage.prompt_tokens)
+                    span.set_attribute("gen_ai.usage.output_tokens", event.data.usage.completion_tokens)
+        if output_messages:
+            span.set_attribute("gen_ai.output.messages", output_messages)
         print("    -> streaming run completed")
 
     # Clean up
