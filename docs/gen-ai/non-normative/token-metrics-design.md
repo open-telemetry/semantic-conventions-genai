@@ -66,9 +66,7 @@ Providers may report only a total without a modality breakdown. Instrumentation
 cannot fill missing modality counts with zeros.
 
 Per-operation token histograms instead record one total per inference, using
-zero when usage is missing. A stream the caller closed before the total arrived
-is the exception. Its measurement is omitted, since a zero or a partial count
-would read as the real size of that inference.
+zero when usage is missing.
 
 ## Why does `gen_ai.token.modality` have an `unknown` value?
 

@@ -231,7 +231,7 @@ def run_chat_streaming_close(handler, client):
                     inv.cache_read_input_tokens = cache_read or None
                     if cache_write:
                         inv.attributes["gen_ai.usage.cache_write.input_tokens"] = cache_write
-                    # message_start.output_tokens is an incomplete count.
+                    inv.output_tokens = message.usage.output_tokens
                 elif event.type == "message_delta" and event.delta.stop_reason:
                     inv.finish_reasons = [event.delta.stop_reason]
                     inv.output_tokens = event.usage.output_tokens
@@ -240,7 +240,7 @@ def run_chat_streaming_close(handler, client):
                     caller_closed = True
                     break
         if not inv.finish_reasons:
-            inv.finish_reasons = ["cancelled" if caller_closed else "error"]
+            inv.finish_reasons = ["interrupted" if caller_closed else "error"]
         if text:
             inv.output_messages = [OutputMessage(role="assistant", parts=[Text(content=text)])]
         record_inference_usage(inv, request_model, host, port)

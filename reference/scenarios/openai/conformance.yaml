@@ -81,15 +81,15 @@ scenarios:
         context:
           missing_attribute: gen_ai.usage.input_tokens
           operation: chat
-        reason: Caller-closed stream ends before the final usage event; unknown token totals are intentionally omitted.
+        reason: Caller closes the stream before the provider reports usage.
       - id: genai_expected_attribute_missing
         context:
           missing_attribute: gen_ai.usage.output_tokens
           operation: chat
-        reason: Caller-closed stream ends before the final usage event; unknown token totals are intentionally omitted.
+        reason: Caller closes the stream before the provider reports usage.
     spans:
       - match:
           attributes:
             gen_ai.operation.name: chat
-            gen_ai.response.finish_reasons: [cancelled]
+            gen_ai.response.finish_reasons: [interrupted]
           type: gen_ai.client.inference
