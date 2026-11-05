@@ -131,11 +131,7 @@ metrics:
       Instrumentations SHOULD record this metric for each inference operation,
       including failed ones. The recorded value SHOULD match the token count
       returned by the provider, or `0` if the response was not received or
-      did not contain token usage, except for caller-closed streams.
-
-      For caller-closed streams, instrumentation SHOULD omit this measurement
-      when the total for the token category is unknown, including when only an
-      incomplete count was received. See `gen_ai.response.finish_reasons`.
+      did not contain token usage.
     stability: development
     annotations:
       code_generation:

@@ -35,7 +35,7 @@ records a correlated `gen_ai.client.fetch_response.exception` WARN log and
 re-raises the exception.
 
 The streaming scenario also closes a response early. Missing finish reasons become
-`cancelled`, received provider reasons are preserved, and the close leaves span
+`interrupted`, received provider reasons are preserved, and the close leaves span
 status unset without `error.type`.
-Token totals and usage measurements are omitted when only incomplete counts were
-received before the caller closed the stream.
+Available token counts are recorded even when the caller closes the stream
+before the final usage event.

@@ -27,15 +27,9 @@ scenarios:
           type: gen_ai.client.inference
   caller_close:
     run: uv run --frozen --python 3.12 --project . python -c 'import scenario; scenario.main(caller_close=True)'
-    expected_violations:
-      - id: genai_expected_attribute_missing
-        context:
-          missing_attribute: gen_ai.usage.output_tokens
-          operation: chat
-        reason: Caller exits the stream context before message_delta reports the final output total.
     spans:
       - match:
           attributes:
             gen_ai.operation.name: chat
-            gen_ai.response.finish_reasons: [cancelled]
+            gen_ai.response.finish_reasons: [interrupted]
           type: gen_ai.client.inference

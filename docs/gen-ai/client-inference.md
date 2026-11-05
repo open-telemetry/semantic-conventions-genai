@@ -96,7 +96,7 @@ and MUST follow the overall [guidelines for span names](https://github.com/open-
 | [`gen_ai.request.stop_sequences`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string[] | List of sequences that the model will use to stop generating further tokens. | `["forest", "lived"]` |
 | [`gen_ai.request.temperature`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | double | The temperature setting for the GenAI request. | `0.0` |
 | [`gen_ai.request.top_p`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | double | The top_p sampling setting for the GenAI request. | `1.0` |
-| [`gen_ai.response.finish_reasons`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string[] | Array of reasons the model stopped generating tokens, corresponding to each generation received. [18] | `["stop"]`; `["stop", "length"]`; `["stop", "length", "error"]`; `["cancelled"]` |
+| [`gen_ai.response.finish_reasons`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string[] | Array of reasons the model stopped generating tokens, corresponding to each generation received. [18] | `["stop"]`; `["stop", "length"]`; `["stop", "length", "error"]`; `["interrupted"]` |
 | [`gen_ai.response.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The identifier for the completion returned in the response. | `chatcmpl-123` |
 | [`gen_ai.response.model`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The model name returned in the response. | `gpt-4-0613` |
 | [`gen_ai.response.time_to_first_chunk`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If the request was a streaming request. | double | Time from the start of a logical inference operation to the first chunk in its streaming response, in seconds. [19] | `0.5`; `1.2` |
@@ -220,19 +220,10 @@ instead of omitting it.
 `error` indicates that the generation ended abnormally, whether reported
 by the provider or inferred by the instrumentation.
 
-If the caller intentionally closes a stream before receiving a finish reason
-and no error was observed, instrumentations SHOULD report `cancelled` for
+If the caller closes or disposes a stream before receiving a finish reason
+and no error was observed, instrumentations SHOULD report `interrupted` for
 that position. Finish reasons already received from the provider SHOULD be
-preserved. Caller-initiated closure alone SHOULD NOT cause `error.type` or
-an error span status to be set.
-
-On caller-closed streams, instrumentations SHOULD record usage attributes
-and token-usage measurements only for token categories whose totals are
-known. Incomplete counts SHOULD be omitted from both signals, rather than
-recorded as operation totals. For example, Anthropic reports the input total
-at `message_start`, but its initial output count is incomplete until
-`message_delta`. The known input total can be recorded even when the output
-total is omitted.
+preserved.
 
 **[19] `gen_ai.response.time_to_first_chunk`:** A chunk is a decoded provider stream event carrying new, non-empty output: text, refusals, reasoning (including opaque payloads), audio, images, or tool-call names or arguments. Instrumentations MUST NOT treat empty start events or events carrying only usage, roles, IDs, signatures, keep-alives, progress/status updates, or end markers as chunks. Chunk boundaries follow provider events, not TCP reads, HTTP frames, or extra SDK callbacks.
 
@@ -261,9 +252,6 @@ Instrumentations SHOULD make a best effort to populate this value, using a total
 provided by the provider when available or, depending on the provider API,
 by summing different token types parsed from the provider output.
 
-On caller-closed streams, record this value only when the input total is
-known, as described in `gen_ai.response.finish_reasons`.
-
 When the provider reports both billed token counts and model-consumed
 token counts (for example, Cohere exposes both `usage.billed_units` and
 `usage.tokens`), instrumentations SHOULD report the billed count so the
@@ -278,9 +266,6 @@ if a request has 100 text tokens (40 cached) and 200 image tokens:
 - `gen_ai.usage.image.input_tokens`: 200
 
 **[29] `gen_ai.usage.output_tokens`:** This value SHOULD include reasoning tokens and tokens of all modalities.
-
-On caller-closed streams, record this value only when the output total is
-known, as described in `gen_ai.response.finish_reasons`.
 
 When the provider reports both billed token counts and model-consumed
 token counts (for example, Cohere exposes both `usage.billed_units` and
@@ -990,7 +975,7 @@ Instrumentations SHOULD set the severity to DEBUG (severity number 5) when recor
 | [`gen_ai.request.stop_sequences`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string[] | List of sequences that the model will use to stop generating further tokens. | `["forest", "lived"]` |
 | [`gen_ai.request.temperature`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | double | The temperature setting for the GenAI request. | `0.0` |
 | [`gen_ai.request.top_p`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | double | The top_p sampling setting for the GenAI request. | `1.0` |
-| [`gen_ai.response.finish_reasons`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string[] | Array of reasons the model stopped generating tokens, corresponding to each generation received. [18] | `["stop"]`; `["stop", "length"]`; `["stop", "length", "error"]`; `["cancelled"]` |
+| [`gen_ai.response.finish_reasons`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string[] | Array of reasons the model stopped generating tokens, corresponding to each generation received. [18] | `["stop"]`; `["stop", "length"]`; `["stop", "length", "error"]`; `["interrupted"]` |
 | [`gen_ai.response.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The identifier for the completion returned in the response. | `chatcmpl-123` |
 | [`gen_ai.response.model`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The model name returned in the response. | `gpt-4-0613` |
 | [`gen_ai.response.time_to_first_chunk`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If the request was a streaming request. | double | Time from the start of a logical inference operation to the first chunk in its streaming response, in seconds. [19] | `0.5`; `1.2` |
@@ -1114,19 +1099,10 @@ instead of omitting it.
 `error` indicates that the generation ended abnormally, whether reported
 by the provider or inferred by the instrumentation.
 
-If the caller intentionally closes a stream before receiving a finish reason
-and no error was observed, instrumentations SHOULD report `cancelled` for
+If the caller closes or disposes a stream before receiving a finish reason
+and no error was observed, instrumentations SHOULD report `interrupted` for
 that position. Finish reasons already received from the provider SHOULD be
-preserved. Caller-initiated closure alone SHOULD NOT cause `error.type` or
-an error span status to be set.
-
-On caller-closed streams, instrumentations SHOULD record usage attributes
-and token-usage measurements only for token categories whose totals are
-known. Incomplete counts SHOULD be omitted from both signals, rather than
-recorded as operation totals. For example, Anthropic reports the input total
-at `message_start`, but its initial output count is incomplete until
-`message_delta`. The known input total can be recorded even when the output
-total is omitted.
+preserved.
 
 **[19] `gen_ai.response.time_to_first_chunk`:** A chunk is a decoded provider stream event carrying new, non-empty output: text, refusals, reasoning (including opaque payloads), audio, images, or tool-call names or arguments. Instrumentations MUST NOT treat empty start events or events carrying only usage, roles, IDs, signatures, keep-alives, progress/status updates, or end markers as chunks. Chunk boundaries follow provider events, not TCP reads, HTTP frames, or extra SDK callbacks.
 
@@ -1155,9 +1131,6 @@ Instrumentations SHOULD make a best effort to populate this value, using a total
 provided by the provider when available or, depending on the provider API,
 by summing different token types parsed from the provider output.
 
-On caller-closed streams, record this value only when the input total is
-known, as described in `gen_ai.response.finish_reasons`.
-
 When the provider reports both billed token counts and model-consumed
 token counts (for example, Cohere exposes both `usage.billed_units` and
 `usage.tokens`), instrumentations SHOULD report the billed count so the
@@ -1172,9 +1145,6 @@ if a request has 100 text tokens (40 cached) and 200 image tokens:
 - `gen_ai.usage.image.input_tokens`: 200
 
 **[29] `gen_ai.usage.output_tokens`:** This value SHOULD include reasoning tokens and tokens of all modalities.
-
-On caller-closed streams, record this value only when the output total is
-known, as described in `gen_ai.response.finish_reasons`.
 
 When the provider reports both billed token counts and model-consumed
 token counts (for example, Cohere exposes both `usage.billed_units` and

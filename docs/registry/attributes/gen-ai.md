@@ -53,7 +53,7 @@
 | <a id="gen-ai-request-temperature" href="#gen-ai-request-temperature">`gen_ai.request.temperature`</a> | ![Development](https://img.shields.io/badge/-development-blue) | double | The temperature setting for the GenAI request. | `0.0` |
 | <a id="gen-ai-request-top-k" href="#gen-ai-request-top-k">`gen_ai.request.top_k`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The top-K sampling setting for the GenAI request: restricts token generation at each step to the K most likely next tokens. [28] | `40` |
 | <a id="gen-ai-request-top-p" href="#gen-ai-request-top-p">`gen_ai.request.top_p`</a> | ![Development](https://img.shields.io/badge/-development-blue) | double | The top_p sampling setting for the GenAI request. | `1.0` |
-| <a id="gen-ai-response-finish-reasons" href="#gen-ai-response-finish-reasons">`gen_ai.response.finish_reasons`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string[] | Array of reasons the model stopped generating tokens, corresponding to each generation received. [29] | `["stop"]`; `["stop", "length"]`; `["stop", "length", "error"]`; `["cancelled"]` |
+| <a id="gen-ai-response-finish-reasons" href="#gen-ai-response-finish-reasons">`gen_ai.response.finish_reasons`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string[] | Array of reasons the model stopped generating tokens, corresponding to each generation received. [29] | `["stop"]`; `["stop", "length"]`; `["stop", "length", "error"]`; `["interrupted"]` |
 | <a id="gen-ai-response-id" href="#gen-ai-response-id">`gen_ai.response.id`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The unique identifier for the completion. | `chatcmpl-123` |
 | <a id="gen-ai-response-model" href="#gen-ai-response-model">`gen_ai.response.model`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The name of the model that generated the response. | `gpt-4-0613` |
 | <a id="gen-ai-response-status" href="#gen-ai-response-status">`gen_ai.response.status`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The lifecycle status of a generated response, as reported by the provider when the response is fetched or polled. [30] | `completed`; `in_progress` |
@@ -304,19 +304,10 @@ instead of omitting it.
 `error` indicates that the generation ended abnormally, whether reported
 by the provider or inferred by the instrumentation.
 
-If the caller intentionally closes a stream before receiving a finish reason
-and no error was observed, instrumentations SHOULD report `cancelled` for
+If the caller closes or disposes a stream before receiving a finish reason
+and no error was observed, instrumentations SHOULD report `interrupted` for
 that position. Finish reasons already received from the provider SHOULD be
-preserved. Caller-initiated closure alone SHOULD NOT cause `error.type` or
-an error span status to be set.
-
-On caller-closed streams, instrumentations SHOULD record usage attributes
-and token-usage measurements only for token categories whose totals are
-known. Incomplete counts SHOULD be omitted from both signals, rather than
-recorded as operation totals. For example, Anthropic reports the input total
-at `message_start`, but its initial output count is incomplete until
-`message_delta`. The known input total can be recorded even when the output
-total is omitted.
+preserved.
 
 **[30] `gen_ai.response.status`:** This attribute captures the lifecycle state of a (possibly background or long-running) generation, such as whether it is queued, still running, or has reached a terminal state. It is distinct from `gen_ai.response.finish_reasons`, which describes why the model stopped once it began producing output.
 The value SHOULD be the provider's response status mapped onto the closest member of this enum or a provider-specific value when none of these apply. Semantic conventions for individual GenAI providers SHOULD document how their status values map to this attribute.
@@ -469,9 +460,6 @@ Instrumentations SHOULD make a best effort to populate this value, using a total
 provided by the provider when available or, depending on the provider API,
 by summing different token types parsed from the provider output.
 
-On caller-closed streams, record this value only when the input total is
-known, as described in `gen_ai.response.finish_reasons`.
-
 When the provider reports both billed token counts and model-consumed
 token counts (for example, Cohere exposes both `usage.billed_units` and
 `usage.tokens`), instrumentations SHOULD report the billed count so the
@@ -486,9 +474,6 @@ if a request has 100 text tokens (40 cached) and 200 image tokens:
 - `gen_ai.usage.image.input_tokens`: 200
 
 **[55] `gen_ai.usage.output_tokens`:** This value SHOULD include reasoning tokens and tokens of all modalities.
-
-On caller-closed streams, record this value only when the output total is
-known, as described in `gen_ai.response.finish_reasons`.
 
 When the provider reports both billed token counts and model-consumed
 token counts (for example, Cohere exposes both `usage.billed_units` and

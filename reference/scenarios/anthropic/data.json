@@ -130,16 +130,5 @@
     ]
   },
   "entities": {},
-  "findings": [
-    {
-      "id": "genai_expected_attribute_missing",
-      "message": "Span 'chat claude-sonnet-4-20250514' (operation 'chat') is missing expected attribute 'gen_ai.usage.output_tokens'",
-      "signal_type": "span",
-      "signal_name": "chat claude-sonnet-4-20250514",
-      "context": {
-        "missing_attribute": "gen_ai.usage.output_tokens",
-        "operation": "chat"
-      }
-    }
-  ]
+  "findings": []
 }

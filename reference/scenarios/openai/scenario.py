@@ -177,6 +177,8 @@ def responses_finish_reason(response):
         return None
     if status == "completed":
         return "stop"
+    if status == "cancelled":
+        return "interrupted"
     if status == "incomplete":
         details = getattr(response, "incomplete_details", None)
         reason = getattr(details, "reason", None) if details else None
@@ -644,7 +646,7 @@ def run_chat_streaming_reference(client, *, close_early=False):
                     text += choice.delta.content
                 if choice.finish_reason is not None:
                     finish_reasons_by_index[choice.index] = choice.finish_reason
-            if chunk.usage and seen_choice_indexes and seen_choice_indexes <= finish_reasons_by_index.keys():
+            if chunk.usage:
                 input_tokens = chunk.usage.prompt_tokens
                 output_tokens = chunk.usage.completion_tokens
             if close_early and first_chunk_received:
@@ -657,7 +659,7 @@ def run_chat_streaming_reference(client, *, close_early=False):
             span.set_attribute("gen_ai.response.id", response_id)
         if seen_choice_indexes:
             finish_reasons = [
-                finish_reasons_by_index.get(index, "cancelled" if caller_closed else "error")
+                finish_reasons_by_index.get(index, "interrupted" if caller_closed else "error")
                 for index in range(max(seen_choice_indexes) + 1)
             ]
             span.set_attribute("gen_ai.response.finish_reasons", finish_reasons)
@@ -702,7 +704,14 @@ def run_chat_streaming_ttfc_checks():
         }
 
     def check_stream(
-        output_deltas, expected_ttfc, *, retry=False, close_early=False, finish_reason=None, end_reason="stop"
+        output_deltas,
+        expected_ttfc,
+        *,
+        retry=False,
+        close_early=False,
+        finish_reason=None,
+        end_reason="stop",
+        initial_output_tokens=0,
     ):
         now = 0.0
         attempts = 0
@@ -726,7 +735,11 @@ def run_chat_streaming_ttfc_checks():
                 None,
             ):
                 advance(0.01)
-                yield f"data: {json.dumps(chunk(delta))}\n\n".encode()
+                event = chunk(delta)
+                if delta is None:
+                    event["usage"]["completion_tokens"] = initial_output_tokens
+                    event["usage"]["total_tokens"] = 1 + initial_output_tokens
+                yield f"data: {json.dumps(event)}\n\n".encode()
             for delta in output_deltas:
                 advance(0.3)
                 yield f"data: {json.dumps(chunk(delta, finish_reason))}\n\n".encode()
@@ -781,19 +794,19 @@ def run_chat_streaming_ttfc_checks():
             spans = exporter.get_finished_spans()
             assert len(spans) == 1
             record_usage.assert_called_once()
-            if close_early or not end_reason:
-                assert record_usage.call_args.args[0] == {}
+            expected_usage = {
+                "gen_ai.usage.input_tokens": 1,
+                "gen_ai.usage.output_tokens": initial_output_tokens if close_early else 2,
+            }
+            assert record_usage.call_args.args[0] == expected_usage
+            for key, value in expected_usage.items():
+                assert spans[0].attributes[key] == value
             if close_early:
-                assert spans[0].attributes["gen_ai.response.finish_reasons"] == (finish_reason or "cancelled",)
+                assert spans[0].attributes["gen_ai.response.finish_reasons"] == (finish_reason or "interrupted",)
                 assert "error.type" not in spans[0].attributes
                 assert spans[0].status.status_code.name == "UNSET"
-                assert "gen_ai.usage.input_tokens" not in spans[0].attributes
-                assert "gen_ai.usage.output_tokens" not in spans[0].attributes
             elif output_deltas:
                 assert spans[0].attributes["gen_ai.response.finish_reasons"] == (end_reason or "error",)
-                if end_reason:
-                    assert spans[0].attributes["gen_ai.usage.input_tokens"] == 1
-                    assert spans[0].attributes["gen_ai.usage.output_tokens"] == 2
             data = reader.get_metrics_data()
             points = (
                 []
@@ -836,6 +849,7 @@ def run_chat_streaming_ttfc_checks():
     check_stream([{"content": "Hello"}, {"content": " world"}], 0.5, close_early=True)
     check_stream([{"content": "Hello"}], 0.5, close_early=True, finish_reason="stop")
     check_stream([{"content": "Hello"}], 0.5, end_reason=None)
+    check_stream([{"content": "Hello"}], 0.5, close_early=True, initial_output_tokens=1)
     print("    -> TTFC boundary checks passed")
 
 
@@ -1520,11 +1534,58 @@ def run_fetch_response_error_reference():
             raise AssertionError("Expected the SDK to reject the fetch response request")
 
 
+def run_fetch_response_cancelled_checks():
+    """Check that fetching a cancelled response is still a successful fetch."""
+    from unittest.mock import patch
+
+    import httpx2
+    import openai
+    from opentelemetry.sdk.trace import TracerProvider
+    from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+    from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
+
+    response = {
+        "id": "resp-cancelled-001",
+        "object": "response",
+        "created_at": 0,
+        "model": "gpt-4o-mini",
+        "status": "cancelled",
+        "output": [],
+        "usage": {"input_tokens": 1, "output_tokens": 0, "total_tokens": 1},
+    }
+    exporter = InMemorySpanExporter()
+    tracer_provider = TracerProvider()
+    tracer_provider.add_span_processor(SimpleSpanProcessor(exporter))
+    try:
+        with (
+            patch(f"{__name__}._reference_tracer", tracer_provider.get_tracer("gen_ai.reference")),
+            openai.OpenAI(
+                base_url=MOCK_BASE_URL,
+                api_key="mock-key",
+                max_retries=0,
+                http_client=httpx2.Client(
+                    transport=httpx2.MockTransport(lambda request: httpx2.Response(200, json=response))
+                ),
+            ) as client,
+        ):
+            _emit_fetch_response_span(client, response["id"])
+        spans = exporter.get_finished_spans()
+        assert len(spans) == 1
+        assert spans[0].attributes["gen_ai.response.status"] == "cancelled"
+        assert spans[0].attributes["gen_ai.response.finish_reasons"] == ("interrupted",)
+        assert spans[0].status.status_code == StatusCode.UNSET
+        assert "error.type" not in spans[0].attributes
+        assert not any(key.startswith("gen_ai.usage.") for key in spans[0].attributes)
+    finally:
+        tracer_provider.shutdown()
+
+
 def main(*, caller_close=False):
     print("=== Reference Implementation: OpenAI Reference Implementation ===")
 
     # Keep controlled-clock checks separate from the OTLP-exported reference run.
     run_chat_streaming_ttfc_checks()
+    run_fetch_response_cancelled_checks()
 
     tp, lp, mp = setup_otel()
 
