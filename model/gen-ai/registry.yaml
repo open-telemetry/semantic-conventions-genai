@@ -201,6 +201,26 @@ attributes:
       or `last_event_id` in the [Google GenAI Interactions API](https://ai.google.dev/api/interactions-api).
     examples: ['42', 'event-abc123']
     stability: development
+  - key: gen_ai.request.is_nested
+    type: boolean
+    brief: Whether the agent invocation runs within another invocation.
+    note: |
+      `true` when the invocation runs within another `invoke_agent`,
+      `invoke_workflow`, or `invoke_{framework_entrypoint}` invocation in the same
+      process.
+
+      Instrumentations SHOULD track active invocations (for example,
+      in OpenTelemetry Context) independently of span recording.
+      They SHOULD make a best effort to detect invocations started by
+      other instrumentations in the same process.
+
+      Instrumentations SHOULD store invocation state in context under keys
+      that instrumentations from other packages and vendors can also read.
+
+      Instrumentations SHOULD NOT set the attribute to `false` unless they can
+      reliably determine that the invocation is top-level.
+    examples: [true, false]
+    stability: development
   - key: gen_ai.response.id
     type: string
     brief: The unique identifier for the completion.

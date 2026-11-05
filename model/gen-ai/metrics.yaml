@@ -206,6 +206,9 @@ metrics:
       - ref_group: attributes.gen_ai.error
       - ref: gen_ai.operation.name
         requirement_level: required
+      - ref: gen_ai.request.is_nested
+        requirement_level:
+          conditionally_required: When the invocation is nested.
       - ref_group: attributes.gen_ai.invoked_agent.internal.common
       - ref: gen_ai.request.model
         requirement_level:
