@@ -1,5 +1,69 @@
 file_format: definition/2
+attribute_groups:
+  - id: attributes.gen_ai.exception
+    visibility: internal
+    attributes:
+      - ref: exception.type
+        requirement_level:
+          conditionally_required: Required if `exception.message` is not set, recommended otherwise.
+      - ref: exception.message
+        requirement_level:
+          conditionally_required: Required if `exception.type` is not set, recommended otherwise.
+      - ref: exception.stacktrace
+
 events:
+  - name: gen_ai.client.realtime_session.started
+    requirement_level: recommended
+    brief: >
+      Recorded when a realtime, bidirectional streaming session (such as OpenAI Realtime
+      or Gemini Live) is established.
+    note: >
+      The matching `gen_ai.client.realtime_session.ended` event marks the end of the session.
+
+      Instrumentations SHOULD set the severity to INFO (severity number 9) when recording
+      this event.
+    stability: development
+    attributes:
+      - ref: gen_ai.provider.name
+        requirement_level: required
+      - ref: gen_ai.request.model
+        requirement_level:
+          conditionally_required: If available.
+      - ref: gen_ai.realtime_session.id
+        requirement_level:
+          conditionally_required: If the provider exposes a session identifier, or the instrumentation uses a client-created per-connection identifier.
+      - ref: server.address
+        requirement_level: recommended
+      - ref: server.port
+        requirement_level:
+          conditionally_required: If `server.address` is set.
+  - name: gen_ai.client.realtime_session.ended
+    requirement_level: recommended
+    brief: >
+      Recorded when a realtime, bidirectional streaming session is closed.
+    note: >
+      Emitted when the session connection is closed, whether normally or because of an error.
+
+      Instrumentations SHOULD set the severity to INFO (severity number 9) when the
+      session closes normally and WARN (severity number 13) when `error.type` is set.
+    stability: development
+    attributes:
+      - ref: gen_ai.provider.name
+        requirement_level: required
+      - ref: gen_ai.request.model
+        requirement_level:
+          conditionally_required: If available.
+      - ref: gen_ai.realtime_session.id
+        requirement_level:
+          conditionally_required: If the provider exposes a session identifier, or the instrumentation uses a client-created per-connection identifier.
+      - ref: error.type
+        requirement_level:
+          conditionally_required: If the session ended because of an error.
+      - ref: server.address
+        requirement_level: recommended
+      - ref: server.port
+        requirement_level:
+          conditionally_required: If `server.address` is set.
   - name: gen_ai.client.inference.operation.details
     requirement_level: recommended
     brief: >
@@ -40,14 +104,44 @@ events:
           completion being evaluated. This attribute helps correlate the evaluation
           event with the corresponding operation when span id is not available.
 
+  - name: gen_ai.client.inference.exception
+    requirement_level: recommended
+    brief: >
+      This event represents an exception that caused a Generative AI client inference operation
+      to fail, including `chat`, `generate_content`, and `text_completion`.
+    note: >
+      Exception recording SHOULD follow the general
+      [recording errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/general/recording-errors.md)
+      guidance. This log event SHOULD be correlated with the inference span using its trace and span identifiers.
+
+      Instrumentations SHOULD set the severity to WARN (severity number 13) when recording this event.
+
+      Instrumentations MAY provide a configuration option to populate this event
+      with attributes captured on the corresponding inference span.
+    stability: development
+    attributes:
+      - ref_group: attributes.gen_ai.exception
+
   - name: gen_ai.client.operation.exception
     requirement_level: recommended
     brief: >
-      This event represents an exception that occurred during a Generative AI client operation,
+      This event represents an exception that occurred during a Generative AI client operation other than inference, embeddings, agent invocation, or response fetching,
       such as API errors, rate limiting, model errors, timeouts, or other errors that prevent
       the operation from completing successfully.
     note: >
-      This event SHOULD be recorded when an exception occurs during Generative AI client operations.
+      This event SHOULD be recorded when an exception occurs during Generative AI client operations other than inference, embeddings, agent invocation, or response fetching.
+
+      For inference operations, instrumentations SHOULD record `gen_ai.client.inference.exception`
+      instead of this event.
+
+      For embeddings operations, instrumentations SHOULD record `gen_ai.client.embeddings.exception`
+      instead of this event.
+
+      For client agent invocation operations, instrumentations SHOULD record `gen_ai.client.invoke_agent.exception`
+      instead of this event.
+
+      For fetch response operations, instrumentations SHOULD record `gen_ai.client.fetch_response.exception`
+      instead of this event.
 
       Instrumentations SHOULD set the severity to WARN (severity number 13) when recording this event.
 
@@ -55,13 +149,93 @@ events:
       with the attributes captured on the corresponding Generative AI client span.
     stability: development
     attributes:
-      - ref: exception.type
-        requirement_level:
-          conditionally_required: Required if `exception.message` is not set, recommended otherwise.
-      - ref: exception.message
-        requirement_level:
-          conditionally_required: Required if `exception.type` is not set, recommended otherwise.
-      - ref: exception.stacktrace
+      - ref_group: attributes.gen_ai.exception
+
+  - name: gen_ai.client.embeddings.exception
+    requirement_level: recommended
+    brief: >
+      This event represents an exception that caused a Generative AI client embeddings operation to fail.
+    note: >
+      Exception recording SHOULD follow the general
+      [recording errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/general/recording-errors.md)
+      guidance. This log event SHOULD be correlated with the embeddings span using its trace and span identifiers.
+
+      Instrumentations SHOULD set the severity to WARN (severity number 13) when recording this event.
+
+      Instrumentations MAY provide a configuration option to populate this event
+      with attributes captured on the corresponding embeddings span.
+    stability: development
+    attributes:
+      - ref_group: attributes.gen_ai.exception
+
+  - name: gen_ai.client.invoke_agent.exception
+    requirement_level: recommended
+    brief: >
+      This event represents an exception that caused a Generative AI client agent invocation operation to fail.
+    note: >
+      Exception recording SHOULD follow the general
+      [recording errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/general/recording-errors.md)
+      guidance. This log event SHOULD be correlated with the invoke agent client span using its trace and span identifiers.
+
+      Instrumentations SHOULD set the severity to WARN (severity number 13) when recording this event.
+
+      Instrumentations MAY provide a configuration option to populate this event
+      with attributes captured on the corresponding invoke agent client span.
+    stability: development
+    attributes:
+      - ref_group: attributes.gen_ai.exception
+
+  - name: gen_ai.execute_tool.exception
+    requirement_level: recommended
+    brief: >
+      This event represents an exception that caused a Generative AI tool execution operation to fail.
+    note: >
+      Exception recording SHOULD follow the general
+      [recording errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/general/recording-errors.md)
+      guidance. This log event SHOULD be correlated with the execute tool span using its trace and span identifiers.
+
+      Instrumentations SHOULD set the severity to WARN (severity number 13) when recording this event.
+
+      Instrumentations MAY provide a configuration option to populate this event
+      with attributes captured on the corresponding execute tool span.
+    stability: development
+    attributes:
+      - ref_group: attributes.gen_ai.exception
+
+  - name: gen_ai.client.fetch_response.exception
+    requirement_level: recommended
+    brief: >
+      This event represents an exception that caused a Generative AI client fetch response operation to fail.
+    note: >
+      Exception recording SHOULD follow the general
+      [recording errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/general/recording-errors.md)
+      guidance. This log event SHOULD be correlated with the fetch response span using its trace and span identifiers.
+
+      Instrumentations SHOULD set the severity to WARN (severity number 13) when recording this event.
+
+      Instrumentations MAY provide a configuration option to populate this event
+      with attributes captured on the corresponding fetch response span.
+    stability: development
+    attributes:
+      - ref_group: attributes.gen_ai.exception
+
+  - name: gen_ai.invoke_agent.exception
+    requirement_level: recommended
+    brief: >
+      This event represents an exception that caused a Generative AI internal agent invocation operation to fail.
+    note: >
+      Exception recording SHOULD follow the general
+      [recording errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/general/recording-errors.md)
+      guidance. This log event SHOULD be correlated with the invoke agent internal span using its trace and span identifiers.
+
+      Instrumentations SHOULD set the severity to WARN (severity number 13) when recording this event.
+
+      Instrumentations MAY provide a configuration option to populate this event
+      with attributes captured on the corresponding invoke agent internal span.
+    stability: development
+    attributes:
+      - ref_group: attributes.gen_ai.exception
+
   - name: gen_ai.agent.paused
     requirement_level: recommended
     brief: >

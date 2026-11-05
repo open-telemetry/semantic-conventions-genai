@@ -17,3 +17,6 @@ execution happen across a process boundary it cannot observe.
 | create_agent | Yes — hosted Agents API `beta.agents.create` | ✅ Implemented |
 | invoke_agent (client) | Yes — `beta.conversations.start` runs the remote agent | ❌ Not implemented |
 | invoke_workflow | Yes — hosted Workflows API | ❌ Not implemented |
+
+The embeddings error handler records a correlated
+`gen_ai.client.embeddings.exception` WARN log. This scenario does not exercise that path.

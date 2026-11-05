@@ -56,7 +56,7 @@ class NativeHandoffTests(unittest.IsolatedAsyncioTestCase):
             patch.object(scenario, "_reference_tracer", provider.get_tracer("test")),
             patch.object(OpenAIChatCompletionsModel, "get_response", respond),
         ):
-            await scenario.run_workflow()
+            await scenario.run_runner()
 
         spans = exporter.get_finished_spans()
         transfers = [span for span in spans if span.attributes.get("gen_ai.transfer.mode") == "pass_control"]
