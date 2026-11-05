@@ -3,12 +3,14 @@
 import asyncio
 import contextlib
 import contextvars
-import json
 import os
 import time
 
+from opentelemetry._logs import SeverityNumber
+from opentelemetry.trace import StatusCode
 from reference_shared import (
     flush_and_shutdown,
+    reference_event_logger,
     reference_tracer,
     setup_otel,
 )
@@ -48,29 +50,38 @@ def run_agent_reference():
             "gen_ai.tool.type": "function",
         }
         with _reference_tracer.start_as_current_span(
-            "execute_tool get_weather", attributes=tool_span_attributes
+            "execute_tool get_weather", attributes=tool_span_attributes, record_exception=False
         ) as tool_span:
-            tool_span.set_attribute("gen_ai.tool.description", get_weather.__doc__ or "")
-            if tool_call_id:
-                tool_span.set_attribute("gen_ai.tool.call.id", tool_call_id)
-            tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps({"location": location}))
-            result = f"Sunny in {location}"
-            tool_span.set_attribute("gen_ai.tool.call.result", result)
-            return result
+            try:
+                tool_span.set_attribute("gen_ai.tool.description", get_weather.__doc__ or "")
+                if tool_call_id:
+                    tool_span.set_attribute("gen_ai.tool.call.id", tool_call_id)
+                tool_span.set_attribute("gen_ai.tool.call.arguments", {"location": location})
+                result = f"Sunny in {location}"
+                # TODO: Determine how to represent this string result in the object-only schema.
+                tool_span.set_attribute("gen_ai.tool.call.result", result)
+                return result
+            except Exception as e:
+                tool_span.set_status(StatusCode.ERROR, str(e))
+                tool_span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
+                reference_event_logger().emit(
+                    event_name="gen_ai.execute_tool.exception",
+                    severity_number=SeverityNumber.WARN,
+                    exception=e,
+                )
+                raise
 
     tool_defs = [
         {
             "type": "function",
-            "function": {
-                "name": "get_weather",
-                "description": "Get the current weather.",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "location": {"type": "string", "description": "City name"},
-                    },
-                    "required": ["location"],
+            "name": "get_weather",
+            "description": "Get the current weather.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "location": {"type": "string", "description": "City name"},
                 },
+                "required": ["location"],
             },
         }
     ]
@@ -128,74 +139,82 @@ def run_agent_reference():
                 "gen_ai.agent.name": agent.name,
             }
             with _reference_tracer.start_as_current_span(
-                "invoke_agent test_agent", attributes=agent_span_attributes
+                "invoke_agent test_agent", attributes=agent_span_attributes, record_exception=False
             ) as agent_span:
-                agent_span.set_attribute("gen_ai.agent.description", agent.description)
-                agent_span.set_attribute("gen_ai.request.seed", request_seed)
-                agent_span.set_attribute("gen_ai.request.max_tokens", request_max_tokens)
-                agent_span.set_attribute("gen_ai.request.temperature", request_temperature)
-                agent_span.set_attribute("gen_ai.request.top_p", request_top_p)
-                agent_span.set_attribute("gen_ai.request.stop_sequences", request_stop_sequences)
-                agent_span.set_attribute("gen_ai.request.frequency_penalty", request_frequency_penalty)
-                agent_span.set_attribute("gen_ai.request.presence_penalty", request_presence_penalty)
-                agent_span.set_attribute(
-                    "gen_ai.system_instructions", json.dumps([{"type": "text", "content": system_message}])
-                )
-                agent_span.set_attribute(
-                    "gen_ai.input.messages",
-                    json.dumps([{"role": "user", "parts": [{"type": "text", "content": input_text}]}]),
-                )
-                agent_span.set_attribute("gen_ai.tool.definitions", json.dumps(tool_defs))
-                # AutoGen delegates the LLM call to the underlying openai client,
-                # whose own instrumentation owns the inference span and the
-                # inference-operation-details event. This scenario emits only the
-                # agent operations; it captures the model response to populate the
-                # invoke_agent span's response attributes.
-                original_create = model_client.create
-
-                async def _capture_create(messages, **kwargs):
-                    result = await original_create(messages, **kwargs)
-                    captured_results.append(result)
-                    return result
-
-                model_client.create = _capture_create
                 try:
-                    response = await agent.on_messages(
-                        [TextMessage(content=input_text, source="user")],
-                        cancellation_token=CancellationToken(),
+                    agent_span.set_attribute("gen_ai.agent.description", agent.description)
+                    agent_span.set_attribute("gen_ai.request.seed", request_seed)
+                    agent_span.set_attribute("gen_ai.request.max_tokens", request_max_tokens)
+                    agent_span.set_attribute("gen_ai.request.temperature", request_temperature)
+                    agent_span.set_attribute("gen_ai.request.top_p", request_top_p)
+                    agent_span.set_attribute("gen_ai.request.stop_sequences", request_stop_sequences)
+                    agent_span.set_attribute("gen_ai.request.frequency_penalty", request_frequency_penalty)
+                    agent_span.set_attribute("gen_ai.request.presence_penalty", request_presence_penalty)
+                    agent_span.set_attribute(
+                        "gen_ai.system_instructions", [{"type": "text", "content": system_message}]
                     )
-                finally:
-                    model_client.create = original_create
-                if captured_results:
-                    finish_reasons = [result.finish_reason or "error" for result in captured_results]
-                    agent_span.set_attribute("gen_ai.response.finish_reasons", finish_reasons)
-                total_input_tokens = sum(
-                    result.usage.prompt_tokens
-                    for result in captured_results
-                    if getattr(result, "usage", None) is not None
-                )
-                total_output_tokens = sum(
-                    result.usage.completion_tokens
-                    for result in captured_results
-                    if getattr(result, "usage", None) is not None
-                )
-                if total_input_tokens:
-                    agent_span.set_attribute("gen_ai.usage.input_tokens", total_input_tokens)
-                if total_output_tokens:
-                    agent_span.set_attribute("gen_ai.usage.output_tokens", total_output_tokens)
-                output_messages = json.dumps(
-                    [
+                    agent_span.set_attribute(
+                        "gen_ai.input.messages",
+                        [{"role": "user", "parts": [{"type": "text", "content": input_text}]}],
+                    )
+                    agent_span.set_attribute("gen_ai.tool.definitions", tool_defs)
+                    # AutoGen delegates the LLM call to the underlying openai client,
+                    # whose own instrumentation owns the inference span and the
+                    # inference-operation-details event. This scenario emits only the
+                    # agent operations; it captures the model response to populate the
+                    # invoke_agent span's response attributes.
+                    original_create = model_client.create
+
+                    async def _capture_create(messages, **kwargs):
+                        result = await original_create(messages, **kwargs)
+                        captured_results.append(result)
+                        return result
+
+                    model_client.create = _capture_create
+                    try:
+                        response = await agent.on_messages(
+                            [TextMessage(content=input_text, source="user")],
+                            cancellation_token=CancellationToken(),
+                        )
+                    finally:
+                        model_client.create = original_create
+                    if captured_results:
+                        finish_reasons = [result.finish_reason or "error" for result in captured_results]
+                        agent_span.set_attribute("gen_ai.response.finish_reasons", finish_reasons)
+                    total_input_tokens = sum(
+                        result.usage.prompt_tokens
+                        for result in captured_results
+                        if getattr(result, "usage", None) is not None
+                    )
+                    total_output_tokens = sum(
+                        result.usage.completion_tokens
+                        for result in captured_results
+                        if getattr(result, "usage", None) is not None
+                    )
+                    if total_input_tokens:
+                        agent_span.set_attribute("gen_ai.usage.input_tokens", total_input_tokens)
+                    if total_output_tokens:
+                        agent_span.set_attribute("gen_ai.usage.output_tokens", total_output_tokens)
+                    output_messages = [
                         {
                             "role": "assistant",
                             "parts": [{"type": "text", "content": str(response.chat_message.content)}],
                         }
                     ]
-                )
-                agent_span.set_attribute(
-                    "gen_ai.output.messages",
-                    output_messages,
-                )
-                print(f"    -> {str(response.chat_message.content)[:60]}")
+                    agent_span.set_attribute(
+                        "gen_ai.output.messages",
+                        output_messages,
+                    )
+                    print(f"    -> {str(response.chat_message.content)[:60]}")
+                except Exception as e:
+                    agent_span.set_status(StatusCode.ERROR, str(e))
+                    agent_span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
+                    reference_event_logger().emit(
+                        event_name="gen_ai.invoke_agent.exception",
+                        severity_number=SeverityNumber.WARN,
+                        exception=e,
+                    )
+                    raise
 
         asyncio.run(_run())
     finally:

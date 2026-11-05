@@ -1,0 +1,6 @@
+# yaml-language-server: $schema=../case.schema.json
+description: Tool call arguments are an object with any properties
+schema: gen-ai-tool-call-arguments.json
+document: { "location": "Paris", "unit": "celsius", "days": 3 }
+# Regenerate with `uv run pytest --update-snapshots`, do not edit by hand.
+errors: []

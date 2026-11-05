@@ -1,19 +1,21 @@
 """Loading the committed ``scenarios/<library>/data.json`` files for reports.
 
 The files are written by the conformance runner, which keys every signal by its
-registry name (``gen_ai.inference.client``). Reports address span types by the
+registry name (``gen_ai.client.inference``). Reports address span types by the
 shorter keys in :mod:`semconv_genai.semconv_model`, so span keys are mapped back
-on the way in; events and metrics are already named by the registry.
+on the way in; events, entities and metrics are already named by the registry.
 """
 
 from __future__ import annotations
 
 import json
 from dataclasses import dataclass
+from pathlib import Path
 
 from semconv_genai import SCENARIOS_DIR
 from semconv_genai.attribute_spec import AttributeSpec, RequirementLevel
 from semconv_genai.semconv_model import (
+    entity_specs,
     event_specs,
     metric_specs,
     span_specs,
@@ -21,12 +23,15 @@ from semconv_genai.semconv_model import (
 
 # Display order for span types in reports.
 SPAN_TYPE_ORDER = [
+    "a2a_client",
+    "a2a_server",
     "create_agent",
     "invoke_agent_client",
     "invoke_agent_internal",
-    "invoke_workflow",
     "plan",
     "inference",
+    "realtime_inference",
+    "user_speech",
     "embeddings",
     "retrieval",
     "fetch_response",
@@ -36,8 +41,21 @@ SPAN_TYPE_ORDER = [
 
 # Display order for event types in reports.
 EVENT_TYPE_ORDER = [
+    "gen_ai.client.realtime_session.started",
+    "gen_ai.client.realtime_session.ended",
+    "gen_ai.client.embeddings.exception",
+    "gen_ai.client.fetch_response.exception",
+    "gen_ai.client.inference.exception",
     "gen_ai.client.inference.operation.details",
+    "gen_ai.client.invoke_agent.exception",
     "gen_ai.evaluation.result",
+    "gen_ai.execute_tool.exception",
+    "gen_ai.invoke_agent.exception",
+]
+
+# Display order for entity types in reports.
+ENTITY_TYPE_ORDER = [
+    "gen_ai.main_agent",
 ]
 
 
@@ -74,7 +92,9 @@ class ScenarioDataEntry:
     library: str
     spans: dict[str, dict[str, str]]
     events: dict[str, dict[str, str]]
+    entities: dict[str, dict[str, str]]
     metrics: dict[str, dict[str, str]]
+    sources: dict[str, dict[str, dict[str, tuple[str, ...]]]]
 
 
 def _normalize_attr_data(
@@ -90,25 +110,132 @@ def _normalize_attr_data(
         if spec.registry_id not in value:
             continue
         recorded = value[spec.registry_id]
-        present = set(recorded) if isinstance(recorded, (dict, list)) else set()
+        if isinstance(recorded, list):
+            present = set(recorded)
+        elif isinstance(recorded, dict):
+            present = set()
+            for k, v in recorded.items():
+                if isinstance(v, (list, tuple, set)):
+                    present.update(v)
+                else:
+                    present.add(k)
+        else:
+            present = set()
         normalized[type_key] = {name: "present" if name in present else "absent" for name in attr_names(spec)}
     return normalized
 
 
-def _normalize_scenario_data_entry(entry: dict[str, object], library: str) -> ScenarioDataEntry:
+def _attr_sources(
+    attr_data: dict[str, dict[str, str]],
+    scenario: str,
+) -> dict[str, dict[str, tuple[str, ...]]]:
+    return {
+        type_key: {name: (scenario,) for name, status in attrs.items() if status == "present"}
+        for type_key, attrs in attr_data.items()
+    }
+
+
+def _normalize_scenario_data_entry(
+    entry: dict[str, object],
+    library: str,
+    scenario: str | None = None,
+) -> ScenarioDataEntry:
+    spans = _normalize_attr_data(entry.get("spans"), span_specs())
+    events = _normalize_attr_data(entry.get("events"), event_specs())
+    entities = _normalize_attr_data(entry.get("entities"), entity_specs())
+    metrics = _normalize_attr_data(entry.get("metrics"), metric_specs())
+    scenario = scenario or library
     return ScenarioDataEntry(
         library=library,
-        spans=_normalize_attr_data(entry.get("spans"), span_specs()),
-        events=_normalize_attr_data(entry.get("events"), event_specs()),
-        metrics=_normalize_attr_data(entry.get("metrics"), metric_specs()),
+        spans=spans,
+        events=events,
+        entities=entities,
+        metrics=metrics,
+        sources={
+            "spans": _attr_sources(spans, scenario),
+            "events": _attr_sources(events, scenario),
+            "entities": _attr_sources(entities, scenario),
+            "metrics": _attr_sources(metrics, scenario),
+        },
     )
 
 
+def _read_instrumented_library(scenario_dir: Path) -> str:
+    """Return the library a scenario instruments, from its ``conformance.yaml``.
+
+    Several scenario directories can exercise the same underlying library (the
+    Gemini Live scenarios all instrument ``google-genai``; ``openai-realtime``
+    instruments ``openai``). Reports group by the declared library so one
+    library is listed once, not once per scenario directory.
+    """
+    conformance = scenario_dir / "conformance.yaml"
+    if conformance.is_file():
+        for line in conformance.read_text(encoding="utf-8").splitlines():
+            stripped = line.strip()
+            if stripped.startswith("instrumented_library:"):
+                return stripped.split(":", 1)[1].strip()
+    return scenario_dir.name
+
+
+def _merge_attr_data(
+    base: dict[str, dict[str, str]],
+    extra: dict[str, dict[str, str]],
+) -> dict[str, dict[str, str]]:
+    """Combine two scenarios' signal statuses; an attribute is present if either has it."""
+    merged = {type_key: dict(attrs) for type_key, attrs in base.items()}
+    for type_key, attrs in extra.items():
+        target = merged.setdefault(type_key, {})
+        for name, status in attrs.items():
+            target[name] = "present" if "present" in (target.get(name, "absent"), status) else "absent"
+    return merged
+
+
+def _merge_sources(
+    base: dict[str, dict[str, dict[str, tuple[str, ...]]]],
+    extra: dict[str, dict[str, dict[str, tuple[str, ...]]]],
+) -> dict[str, dict[str, dict[str, tuple[str, ...]]]]:
+    merged = {
+        signal_kind: {
+            type_key: {name: tuple(scenarios) for name, scenarios in attrs.items()}
+            for type_key, attrs in signal_types.items()
+        }
+        for signal_kind, signal_types in base.items()
+    }
+    for signal_kind, signal_types in extra.items():
+        target_signal = merged.setdefault(signal_kind, {})
+        for type_key, attrs in signal_types.items():
+            target_type = target_signal.setdefault(type_key, {})
+            for name, scenarios in attrs.items():
+                target_type[name] = tuple(sorted(set(target_type.get(name, ())) | set(scenarios)))
+    return merged
+
+
 def load_scenario_data_files() -> list[ScenarioDataEntry]:
-    """Load every committed ``scenarios/<library>/data.json``."""
+    """Load every committed ``scenarios/<dir>/data.json``, grouped by instrumented library.
+
+    Scenario directories that instrument the same library are merged into a
+    single entry keyed by the library declared in ``conformance.yaml``.
+    """
     if not SCENARIOS_DIR.is_dir():
         return []
-    return [
-        _normalize_scenario_data_entry(json.loads(path.read_text(encoding="utf-8")), path.parent.name)
-        for path in sorted(SCENARIOS_DIR.glob("*/data.json"))
-    ]
+    by_library: dict[str, ScenarioDataEntry] = {}
+    for path in sorted(SCENARIOS_DIR.glob("*/data.json")):
+        library = _read_instrumented_library(path.parent)
+        entry = _normalize_scenario_data_entry(
+            json.loads(path.read_text(encoding="utf-8")),
+            library,
+            path.parent.name,
+        )
+        existing = by_library.get(library)
+        if existing is None:
+            by_library[library] = entry
+        else:
+            by_library[library] = ScenarioDataEntry(
+                library=library,
+                spans=_merge_attr_data(existing.spans, entry.spans),
+                events=_merge_attr_data(existing.events, entry.events),
+                entities=_merge_attr_data(existing.entities, entry.entities),
+                metrics=_merge_attr_data(existing.metrics, entry.metrics),
+                sources=_merge_sources(existing.sources, entry.sources),
+            )
+    return list(by_library.values())

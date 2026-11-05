@@ -9,16 +9,16 @@ import os
 from urllib.parse import urlparse
 
 from openai import OpenAI
-from opentelemetry import trace
+from opentelemetry._logs import SeverityNumber
 from opentelemetry.trace import SpanKind, StatusCode
-from reference_shared import flush_and_shutdown, setup_otel
+from reference_shared import flush_and_shutdown, reference_event_logger, reference_tracer, setup_otel
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"]
 _parsed = urlparse(MOCK_BASE_URL)
 _SERVER_ADDRESS = _parsed.hostname or "localhost"
 _SERVER_PORT = _parsed.port or 443
 
-tracer = trace.get_tracer("gen_ai.client.openai")
+tracer = reference_tracer("gen_ai.client.openai")
 
 
 def run_invoke_agent(client):
@@ -70,9 +70,7 @@ def run_invoke_agent(client):
         f"create_agent {assistant_name}", kind=SpanKind.CLIENT, attributes=span_attributes
     ) as span:
         span.set_attribute("gen_ai.agent.description", assistant_description)
-        span.set_attribute(
-            "gen_ai.system_instructions", json.dumps([{"type": "text", "content": assistant_instructions}])
-        )
+        span.set_attribute("gen_ai.system_instructions", [{"type": "text", "content": assistant_instructions}])
         assistant = client.beta.assistants.create(
             model=request_model,
             name=assistant_name,
@@ -103,7 +101,7 @@ def run_invoke_agent(client):
         "server.port": _SERVER_PORT,
     }
     with tracer.start_as_current_span(
-        f"invoke_agent {assistant.name}", kind=SpanKind.CLIENT, attributes=span_attributes_2
+        f"invoke_agent {assistant.name}", kind=SpanKind.CLIENT, attributes=span_attributes_2, record_exception=False
     ) as span:
         span.set_attribute("gen_ai.agent.id", assistant.id)
         span.set_attribute("gen_ai.request.temperature", request_temperature)
@@ -114,13 +112,13 @@ def run_invoke_agent(client):
             span.set_attribute("gen_ai.agent.description", assistant.description)
         span.set_attribute(
             "gen_ai.input.messages",
-            json.dumps([{"role": "user", "parts": [{"type": "text", "content": user_message}]}]),
+            [{"role": "user", "parts": [{"type": "text", "content": user_message}]}],
         )
-        span.set_attribute("gen_ai.tool.definitions", json.dumps(tool_defs))
+        span.set_attribute("gen_ai.tool.definitions", [{"type": t["type"], **t["function"]} for t in tool_defs])
         if getattr(assistant, "instructions", None):
             span.set_attribute(
                 "gen_ai.system_instructions",
-                json.dumps([{"type": "text", "content": assistant.instructions}]),
+                [{"type": "text", "content": assistant.instructions}],
             )
         try:
             run = client.beta.threads.runs.create(
@@ -142,14 +140,6 @@ def run_invoke_agent(client):
                     function_call = getattr(tool_call, "function", None)
                     tool_call_id = getattr(tool_call, "id", None)
                     tool_name = getattr(function_call, "name", "get_weather")
-                    tool_definition = next(
-                        (
-                            definition
-                            for definition in tool_defs
-                            if definition.get("function", {}).get("name") == tool_name
-                        ),
-                        None,
-                    )
                     arguments_json = getattr(function_call, "arguments", "{}") or "{}"
                     arguments = json.loads(arguments_json)
 
@@ -157,18 +147,27 @@ def run_invoke_agent(client):
                         "gen_ai.operation.name": "execute_tool",
                     }
                     with tracer.start_as_current_span(
-                        "execute_tool", kind=SpanKind.CLIENT, attributes=tool_span_attributes
+                        f"execute_tool {tool_name}", kind=SpanKind.INTERNAL, attributes=tool_span_attributes
                     ) as tool_span:
+                        tool_span.set_attribute("gen_ai.conversation.id", thread.id)
                         tool_span.set_attribute("gen_ai.tool.name", tool_name)
                         tool_span.set_attribute(
                             "gen_ai.tool.description",
-                            (tool_definition or {}).get("function", {}).get("description", ""),
+                            next(
+                                (
+                                    d["function"].get("description", "")
+                                    for d in tool_defs
+                                    if d["function"]["name"] == tool_name
+                                ),
+                                "",
+                            ),
                         )
                         tool_span.set_attribute("gen_ai.tool.type", "function")
                         if tool_call_id:
                             tool_span.set_attribute("gen_ai.tool.call.id", tool_call_id)
-                        tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps(arguments))
+                        tool_span.set_attribute("gen_ai.tool.call.arguments", arguments)
                         result = get_weather(arguments["location"])
+                        # TODO: Determine how to represent this string result in the object-only schema.
                         tool_span.set_attribute("gen_ai.tool.call.result", result)
 
                     tool_outputs.append(
@@ -202,20 +201,24 @@ def run_invoke_agent(client):
                 text = assistant_messages[0].content[0].text.value
                 span.set_attribute(
                     "gen_ai.output.messages",
-                    json.dumps(
-                        [
-                            {
-                                "role": "assistant",
-                                "parts": [{"type": "text", "content": text}],
-                            }
-                        ]
-                    ),
+                    [
+                        {
+                            "role": "assistant",
+                            "parts": [{"type": "text", "content": text}],
+                        }
+                    ],
                 )
                 print(f"    -> {text[:60]}")
             else:
                 print("    -> (no assistant response)")
         except Exception as e:
             span.set_status(StatusCode.ERROR, str(e))
+            span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
+            reference_event_logger().emit(
+                event_name="gen_ai.client.invoke_agent.exception",
+                severity_number=SeverityNumber.WARN,
+                exception=e,
+            )
             raise
 
     # Clean up
@@ -262,7 +265,7 @@ def run_invoke_agent_streaming(client):
         span.set_attribute("gen_ai.conversation.id", thread.id)
         span.set_attribute(
             "gen_ai.input.messages",
-            json.dumps([{"role": "user", "parts": [{"type": "text", "content": user_message}]}]),
+            [{"role": "user", "parts": [{"type": "text", "content": user_message}]}],
         )
         stream = client.beta.threads.runs.create(
             thread_id=thread.id,
@@ -285,14 +288,12 @@ def run_invoke_agent_streaming(client):
             text = assistant_messages[0].content[0].text.value
             span.set_attribute(
                 "gen_ai.output.messages",
-                json.dumps(
-                    [
-                        {
-                            "role": "assistant",
-                            "parts": [{"type": "text", "content": text}],
-                        }
-                    ]
-                ),
+                [
+                    {
+                        "role": "assistant",
+                        "parts": [{"type": "text", "content": text}],
+                    }
+                ],
             )
         print("    -> streaming run completed")
 

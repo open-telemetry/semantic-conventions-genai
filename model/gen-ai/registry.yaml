@@ -66,14 +66,18 @@ attributes:
           stability: development
           value: "groq"
           brief: '[Groq](https://groq.com/)'
-        - id: mistral_ai
+        - id: mistral
           stability: development
-          value: "mistral_ai"
-          brief: '[Mistral AI](https://mistral.ai/)'
+          value: "mistral"
+          brief: '[Mistral](https://mistral.ai/)'
         - id: moonshot_ai
           stability: development
           value: "moonshot_ai"
           brief: '[Moonshot AI](https://www.moonshot.ai/)'
+        - id: ollama
+          stability: development
+          value: "ollama"
+          brief: '[Ollama](https://ollama.com/)'
 
     brief: The Generative AI provider as identified by the client or server instrumentation.
     note: |
@@ -174,7 +178,7 @@ attributes:
       The reasoning or thinking effort level requested for a GenAI model.
     note: >
       The value SHOULD be the exact string value sent to the provider.
-      
+
       Semantic conventions for individual providers SHOULD document
       which input parameter maps to this attribute.
     examples: ['low', 'medium', 'high']
@@ -213,6 +217,9 @@ attributes:
     note: |
       Values correspond to generations in the same order as the returned
       choices/candidates.
+
+      For interrupted generations, instrumentations SHOULD report the
+      provider-reported interruption reason when available and `interrupted` otherwise.
 
       Each position SHOULD contain the finish reason for the corresponding
       choice/candidate. If a finish reason was expected but not received, for
@@ -270,16 +277,20 @@ attributes:
   - key: gen_ai.response.time_to_first_chunk
     type: double
     brief: >
-      Time to first chunk in a streaming response, measured from request issuance, in seconds.
-      The value is measured from when the client issues the generation request to when the first
-      chunk is received in the response stream.
+      Time from the start of a logical inference operation to the first chunk in its streaming response, in seconds.
+    note: |
+      A chunk is a decoded provider stream event carrying new, non-empty output: text, refusals, reasoning (including opaque payloads), audio, images, or tool-call names or arguments. Instrumentations MUST NOT treat empty start events or events carrying only usage, roles, IDs, signatures, keep-alives, progress/status updates, or end markers as chunks. Chunk boundaries follow provider events, not TCP reads, HTTP frames, or extra SDK callbacks.
+
+      Instrumentations SHOULD measure the time from the start of the logical inference operation, before authentication and the first attempt, to when the first chunk is fully received by the client, before application processing. The measurement SHOULD include authentication, failed attempts, and retry backoff.
+
+      Instrumentations SHOULD set this attribute when the first chunk is received and MUST NOT set it if no chunk is received.
     examples: [0.5, 1.2]
     stability: development
   - key: gen_ai.usage.input_tokens
     type: int
-    brief: The number of tokens used in the GenAI input (prompt).
+    brief: The total number of input (prompt) tokens across all modalities.
     note: |
-      This value SHOULD include all types of input tokens, including cached tokens.
+      This value SHOULD include cached tokens and input tokens of all modalities.
       Instrumentations SHOULD make a best effort to populate this value, using a total
       provided by the provider when available or, depending on the provider API,
       by summing different token types parsed from the provider output.
@@ -335,8 +346,10 @@ attributes:
     stability: development
   - key: gen_ai.usage.output_tokens
     type: int
-    brief: The number of tokens used in the GenAI response (completion).
+    brief: The total number of output (completion) tokens across all modalities.
     note: |
+      This value SHOULD include reasoning tokens and tokens of all modalities.
+
       When the provider reports both billed token counts and model-consumed
       token counts (for example, Cohere exposes both `usage.billed_units` and
       `usage.tokens`), instrumentations SHOULD report the billed count so the
@@ -395,19 +408,37 @@ attributes:
       and in `gen_ai.usage.audio.input_tokens`.
     examples: [60]
     stability: development
-  - key: gen_ai.token.type
+  - key: gen_ai.token.modality
     type:
       members:
-        - id: input
+        - id: text
           stability: development
-          value: "input"
-          brief: 'Input tokens (prompt, input, etc.)'
-        - id: output
+          value: "text"
+          brief: 'Text tokens.'
+        - id: image
           stability: development
-          value: "output"
-          brief: 'Output tokens (completion, response, etc.)'
-    brief: The type of token being counted.
-    examples: ['input', 'output']
+          value: "image"
+          brief: 'Image tokens.'
+        - id: audio
+          stability: development
+          value: "audio"
+          brief: 'Audio tokens.'
+        - id: unknown
+          stability: development
+          value: "unknown"
+          brief: 'The modality is not known.'
+    brief: The modality of the tokens being counted.
+    note: |
+      For each operation, token usage counter measurements across all modalities
+      SHOULD add up to the corresponding total, such as the `gen_ai.usage.input_tokens`
+      attribute or a measurement on the `gen_ai.client.inference.operation.input_tokens`
+      histogram.
+
+      Instrumentations SHOULD record tokens as `unknown` when their modality
+      cannot reliably be determined. For example, if a
+      provider reports 300 input tokens and 100 of them are audio, record 100 as
+      `audio` and 200 as `unknown`.
+    examples: ['text', 'image', 'audio']
     stability: development
   - key: gen_ai.conversation.id
     type: string
@@ -443,6 +474,27 @@ attributes:
       SHOULD leave it unset otherwise.
     examples: [true]
     stability: development
+  - key: gen_ai.realtime_session.id
+    type: string
+    brief: The unique identifier for a realtime, bidirectional streaming session.
+    note: |
+      A realtime session is a long-lived streaming connection between client and
+      inference server.
+
+      Telemetry recorded within the same realtime session can be correlated using this identifier.
+
+      Examples:
+
+      - OpenAI Realtime exposes a session identifier (`session.id`).
+      - Gemini exposes no session identifier when using the Developer API; the enterprise API
+        provides one.
+
+      Instrumentation MAY generate or reuse a per-connection identifier or leave it unset when the
+      instrumented library does not provide one.
+
+      Instrumentations MUST NOT use `gen_ai.conversation.id` as a realtime session identifier.
+    examples: ["sess_5j66UpCpwteGg4YSxUnt7lPY"]
+    stability: development
   - key: gen_ai.agent.id
     type: string
     brief: The unique and stable identifier of the GenAI hosted agent resource.
@@ -457,7 +509,14 @@ attributes:
     stability: development
   - key: gen_ai.agent.name
     type: string
-    brief: Human-readable name of the GenAI agent provided by the application.
+    brief: Human-readable name of the GenAI agent or workflow provided by the application.
+    note: |
+      This attribute MUST have low cardinality. It is NOT RECOMMENDED to use
+      instrumentation-time constants, framework defaults, or type names such as "StateGraph". When no meaningful,
+      low-cardinality name is available, this attribute MUST NOT be captured by default.
+
+      Semantic conventions for individual Generative AI frameworks SHOULD document
+      how `gen_ai.agent.name` is recorded in the context of that framework.
     examples: ["Math Tutor", "Fiction Writer"]
     stability: development
   - key: gen_ai.agent.description
@@ -470,6 +529,55 @@ attributes:
     brief: The version of the GenAI agent.
     examples: ["1.0.0", "2025-05-01"]
     stability: development
+  - key: gen_ai.transfer.mode
+    type:
+      members:
+        - id: return_to_caller
+          value: "return_to_caller"
+          brief: The initiator waits for the target to finish and then resumes execution.
+          stability: development
+        - id: pass_control
+          value: "pass_control"
+          brief: The initiator does not wait for the target to finish. The target takes control of the remaining work.
+          stability: development
+    brief: Describes how control passes to the transfer target.
+    stability: development
+  - key: gen_ai.transfer.target.name
+    type: string
+    brief: The human-readable name of the agent targeted by the transfer.
+    examples: ["weather_agent"]
+    stability: development
+  - key: gen_ai.main_agent.id
+    type: string
+    brief: The unique and stable identifier of the top-level Generative AI agent in the process
+    note: >
+      For main agents, this SHOULD be the provider-assigned stable identifier of the
+      agent resource such as [AWS Bedrock agent ARN](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_Agent.html)
+      or [GCP Agent Registry identifier](https://docs.cloud.google.com/agent-registry/concepts#agent-identifier).
+
+      Instrumentation MUST NOT generate `gen_ai.main_agent.id` from an in-memory or
+      process-local identifier. If no stable identifier is available, the agent entity
+      is not emitted, and instrumentation continues to report `gen_ai.agent.name` at
+      the span level when relevant.
+
+    examples: ['asst_5j66UpCpwteGg4YSxUnt7lPY', 'arn:aws:bedrock:us-east-1:123:agent/42', 'urn:agent:projects-123:projects:123:locations:us-east1:aiplatform:reasoningEngines:456']
+    stability: development
+  - key: gen_ai.main_agent.name
+    type: string
+    brief: The human-readable name of the top-level Generative AI agent in the process.
+    note: >
+      In Agent-to-Agent (A2A) communication, this maps to the `name` property declared
+      in the Agent Card.
+    examples: ["Math Tutor", "Fiction Writer"]
+    stability: development
+  - key: gen_ai.main_agent.description
+    type: string
+    brief: The free-form description of the top-level Generative AI agent in the process.
+    note: >
+      In Agent-to-Agent (A2A) communication, this maps to the `description` property declared
+      in the Agent Card.
+    examples: ["Helps with math problems", "Generates fiction stories"]
+    stability: development
   - key: gen_ai.tool.name
     type: string
     brief: Name of the tool utilized by the agent.
@@ -477,7 +585,10 @@ attributes:
     stability: development
   - key: gen_ai.tool.call.id
     type: string
-    brief: The tool call identifier.
+    brief: The tool call identifier supplied by the model or provider.
+    note: |
+      This attribute SHOULD be set to the identifier received from the model or provider
+      if and only if one was supplied.
     examples: ['call_mszuSIzqtI65i1wAUOE8w5H4']
     stability: development
   - key: gen_ai.tool.description
@@ -505,6 +616,8 @@ attributes:
     annotations:
       type:
         json_schema: model/gen-ai/gen-ai-tool-call-arguments.json
+      value:
+        unbounded_size: true
     note: |
       > [!WARNING]
       > This attribute may contain sensitive information.
@@ -525,6 +638,8 @@ attributes:
     annotations:
       type:
         json_schema: model/gen-ai/gen-ai-tool-call-result.json
+      value:
+        unbounded_size: true
     note: |
       > [!WARNING]
       > This attribute may contain sensitive information.
@@ -549,6 +664,8 @@ attributes:
     annotations:
       type:
         json_schema: model/gen-ai/gen-ai-tool-definitions.json
+      value:
+        unbounded_size: true
     note: |
       > [!WARNING]
       > This attribute may contain sensitive information.
@@ -608,6 +725,14 @@ attributes:
           value: "generate_content"
           brief: 'Multimodal content generation operation such as [Gemini Generate Content](https://ai.google.dev/api/generate-content)'
           stability: development
+        - id: realtime_inference
+          value: "realtime_inference"
+          brief: 'Server-side model generation within a realtime, bidirectional streaming session such as [OpenAI Realtime](https://platform.openai.com/docs/guides/realtime) or [Gemini Live](https://ai.google.dev/gemini-api/docs/live).'
+          stability: development
+        - id: user_speech
+          value: "user_speech"
+          brief: 'Describes the process of recording user speech input.'
+          stability: development
         - id: text_completion
           value: "text_completion"
           brief: 'Text completions operation such as [OpenAI Completions API (Legacy)](https://platform.openai.com/docs/api-reference/completions)'
@@ -618,7 +743,12 @@ attributes:
           stability: development
         - id: retrieval
           value: "retrieval"
-          brief: 'Retrieval operation such as [OpenAI Search Vector Store API](https://platform.openai.com/docs/api-reference/vector-stores/search)'
+          brief: 'Execution of a retrieval pipeline that returns documents relevant to a query'
+          note: |
+            Examples include LangChain, LlamaIndex, and Haystack retrievers.
+            A retrieval pipeline usually combines other operations such as embeddings,
+            database queries, web search, or reranking. These operations SHOULD be
+            reported following their own conventions.
           stability: development
         - id: fetch_response
           value: "fetch_response"
@@ -641,6 +771,10 @@ attributes:
         - id: invoke_workflow
           value: "invoke_workflow"
           brief: 'Invoke GenAI workflow'
+          stability: development
+        - id: invoke_runner
+          value: "invoke_runner"
+          brief: 'Invoke a framework runner that is not itself an agent or a workflow'
           stability: development
         - id: plan
           value: "plan"
@@ -725,6 +859,8 @@ attributes:
     annotations:
       type:
         json_schema: model/gen-ai/gen-ai-retrieval-documents.json
+      value:
+        unbounded_size: true
     note: |
       Each document object SHOULD contain the following properties when available:
       `id` (string): A unique identifier for the document, `score` (double): The relevance score of the document
@@ -790,7 +926,7 @@ attributes:
     brief: The search query used to retrieve memories.
     note: |
       Instrumentations SHOULD NOT capture this attribute by default. Capture SHOULD be gated
-      by an explicit user opt-in, for example `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT`.
+      by an explicit user opt-in via [content capture configuration](/docs/gen-ai/gen-ai-spans.md#content-capture-configuration).
 
       > [!Warning]
       > This attribute may contain sensitive information.
@@ -802,9 +938,11 @@ attributes:
     annotations:
       type:
         json_schema: model/gen-ai/gen-ai-memory-records.json
+      value:
+        unbounded_size: true
     note: |
       Instrumentations SHOULD NOT capture this attribute by default. Capture SHOULD be gated
-      by an explicit user opt-in, for example `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT`.
+      by an explicit user opt-in via [content capture configuration](/docs/gen-ai/gen-ai-spans.md#content-capture-configuration).
 
       > [!Warning]
       > This attribute may contain sensitive information including user/PII data.
@@ -833,6 +971,8 @@ attributes:
     annotations:
       type:
         json_schema: model/gen-ai/gen-ai-system-instructions.json
+      value:
+        unbounded_size: true
     note: |
       This attribute SHOULD be used when the corresponding provider or API
       allows to provide system instructions or messages separately from the
@@ -869,6 +1009,22 @@ attributes:
           }
         ]
     stability: development
+  - key: gen_ai.system_instructions_ref
+    type: string
+    brief: An absolute URI identifying the system instructions in external storage.
+    note: |
+      The presence of this attribute does not indicate whether storing the
+      content succeeded or whether the content remains available.
+
+      It is NOT RECOMMENDED to embed credentials, such as signed URL
+      query parameters, in the URI. Access to the stored content SHOULD be
+      secured by other means, for example by storage-level access control.
+
+      > [!Warning]
+      > The URI may expose sensitive storage metadata, such as storage provider,
+      > bucket or container names, tenant or object identifiers.
+    examples: ["s3://example-bucket/gen-ai/e68562472088cf0fec6124d5268608b01b1e248afb408e748738d39c6352d169_system_instruction.json"]
+    stability: development
   - key: gen_ai.input.messages
     type: any
     brief: >
@@ -876,6 +1032,8 @@ attributes:
     annotations:
       type:
         json_schema: model/gen-ai/gen-ai-input-messages.json
+      value:
+        unbounded_size: true
     note: |
       Messages MUST be provided in the order they were sent to the model.
       Instrumentations MAY provide a way for users to filter or truncate
@@ -923,12 +1081,30 @@ attributes:
           }
         ]
     stability: development
+  - key: gen_ai.input.messages_ref
+    type: string
+    brief: An absolute URI identifying the input messages in external storage.
+    note: |
+      The presence of this attribute does not indicate whether storing the
+      content succeeded or whether the content remains available.
+
+      It is NOT RECOMMENDED to embed credentials, such as signed URL
+      query parameters, in the URI. Access to the stored content SHOULD be
+      secured by other means, for example by storage-level access control.
+
+      > [!Warning]
+      > The URI may expose sensitive storage metadata, such as storage provider,
+      > bucket or container names, tenant or object identifiers.
+    examples: ["s3://example-bucket/gen-ai/674f35f4-e3f6-41f5-b104-864b3964f6d3_inputs.json"]
+    stability: development
   - key: gen_ai.output.messages
     type: any
     brief: Messages returned by the model where each message represents a specific model response (choice, candidate).
     annotations:
       type:
         json_schema: model/gen-ai/gen-ai-output-messages.json
+      value:
+        unbounded_size: true
     note: |
       Each message represents a single output choice/candidate generated by
       the model. Each message corresponds to exactly one generation
@@ -939,6 +1115,11 @@ attributes:
       output messages. `gen_ai.response.finish_reasons` remains aligned with the
       generations returned by the provider, not with a filtered or truncated
       `gen_ai.output.messages` value.
+
+      When an operation ends in an error, this attribute SHOULD only be set
+      when the operation produced output, including partial streamed output.
+      Instrumentation SHOULD NOT synthesize output content for a failed
+      operation.
 
       > [!Warning]
       > This attribute is likely to contain sensitive information including user/PII data.
@@ -958,6 +1139,38 @@ attributes:
             ]
           }
         ]
+    stability: development
+  - key: gen_ai.output.messages_ref
+    type: string
+    brief: An absolute URI identifying the output messages in external storage.
+    note: |
+      The presence of this attribute does not indicate whether storing the
+      content succeeded or whether the content remains available.
+
+      It is NOT RECOMMENDED to embed credentials, such as signed URL
+      query parameters, in the URI. Access to the stored content SHOULD be
+      secured by other means, for example by storage-level access control.
+
+      > [!Warning]
+      > The URI may expose sensitive storage metadata, such as storage provider,
+      > bucket or container names, tenant or object identifiers.
+    examples: ["s3://example-bucket/gen-ai/674f35f4-e3f6-41f5-b104-864b3964f6d3_outputs.json"]
+    stability: development
+  - key: gen_ai.tool.definitions_ref
+    type: string
+    brief: An absolute URI identifying the tool definitions in external storage.
+    note: |
+      The presence of this attribute does not indicate whether storing the
+      content succeeded or whether the content remains available.
+
+      It is NOT RECOMMENDED to embed credentials, such as signed URL
+      query parameters, in the URI. Access to the stored content SHOULD be
+      secured by other means, for example by storage-level access control.
+
+      > [!Warning]
+      > The URI may expose sensitive storage metadata, such as storage provider,
+      > bucket or container names, tenant or object identifiers.
+    examples: ["s3://example-bucket/gen-ai/b61c3b21581c79d687c07f31970d1a9482dca47756ccf014d408fd6cd091ef66_tool.definitions.json"]
     stability: development
   - key: gen_ai.evaluation.name
     type: string
@@ -1019,23 +1232,36 @@ attributes:
       > This attribute may contain sensitive information.
     examples: ["Alice", "French"]
     stability: development
-  - key: gen_ai.workflow.name
+  - key: gen_ai.skill.name
     type: string
-    brief: Human-readable name of the GenAI workflow provided by the application.
+    brief: The name of the [Agent Skill](https://agentskills.io/specification#skill-md-format).
+    examples: ["code-review", "pdf-processing"]
+    stability: development
+  - key: gen_ai.skill.description
+    type: string
+    brief: The [description of the Agent Skill](https://agentskills.io/specification#skill-md-format).
     note: |
-      The workflow name is usually a static, application-unique identifier defined
-      in a framework-specific way.
+      > [!WARNING]
+      > This attribute may contain sensitive information.
+    examples: ["Review a changelist against the team's review policy."]
+    stability: development
+  - key: gen_ai.skill.source.uri
+    type: string
+    brief: The source URI for loading the skill.
+    note: |
+      This SHOULD identify the skill source, not a temporary location where the
+      skill was materialized for execution.
 
-      For example, it can be the name of the first chain in LangChain,
-      the name of the crew in CrewAI, or the entry point agent in ADK or
-      OpenAI Agents when no explicit workflow name is provided.
+      > [!WARNING]
+      > This attribute may contain sensitive information.
 
-      This attribute MUST have low cardinality. It is NOT RECOMMENDED to use
-      instrumentation-time constants or names of types representing the workflow,
-      such as "StateGraph". When no meaningful, low-cardinality workflow name is
-      available for a given framework, this attribute MUST NOT be captured by default.
-
-      Semantic conventions for individual Generative AI frameworks SHOULD document
-      what `gen_ai.workflow.name` means in the context of that framework.
-    examples: ["multi_agent_rag", "customer_support_pipeline"]
+      Sensitive URI components, such as user information and access tokens in query
+      parameters, SHOULD be scrubbed when instrumentations can identify them.
+    examples:
+      ["https://skills.example.com/code-review", "gs://example-skills/code-review", "file:///opt/skills/code-review"]
+    stability: development
+  - key: gen_ai.skill.resource.name
+    type: string
+    brief: The skill-relative name of the resource (script, reference, or asset) being accessed or executed.
+    examples: ["references/review_policy.md", "assets/report_template.html"]
     stability: development

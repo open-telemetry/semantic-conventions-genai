@@ -1,0 +1,15 @@
+# yaml-language-server: $schema=../case.schema.json
+description: Every tool definition needs `type` and `name`
+schema: gen-ai-tool-definitions.json
+document: [
+  { "type": "function", "description": "no name" },
+  { "name": "no type" }
+]
+# Regenerate with `uv run pytest --update-snapshots`, do not edit by hand.
+errors:
+  - path: $[0]
+    keyword: required
+    message: "'name' is a required property"
+  - path: $[1]
+    keyword: required
+    message: "'type' is a required property"

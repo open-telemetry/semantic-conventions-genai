@@ -4,10 +4,32 @@ The Google Agent Development Kit (ADK) is an agent framework. It calls models
 through its model layer (e.g. `google-genai`), so it **delegates inference**. It
 owns the agent, workflow, tool, and memory operations it runs directly.
 
+The retry test runs the basic agent scenario with a real `google-genai` client
+and a mocked HTTP transport returning 503 then 200. For the two HTTP attempts,
+the scenario records one inference call in `gen_ai.invoke_agent.inference_calls`.
+
+The agent-as-tool scenario records the caller's session ID on the tool span.
+The specialist span wraps ADK's actual agent execution, after tool argument
+validation. Both agents record finish reasons and accumulated token usage from
+their own ADK events, filtered by `event.author`.
+
+The native handoff scenario registers `sub_agents` and instruments
+`TransferToAgentTool.run_async`. The caller comes from `ToolContext.agent_name`,
+and the target comes from `ToolContext.actions.transfer_to_agent` after the
+tool executes. The transfer records `pass_control`; the target's separate
+`BaseAgent.run_async` span starts after the transfer tool returns.
+
 | Operation | Should be instrumented here | Status |
 | --- | --- | --- |
 | inference (`chat`) | No — delegates to the model client (`google-genai`) | ✅ Correctly not emitted |
-| invoke_agent (internal) | Yes — agent run | ✅ Implemented |
-| invoke_workflow | Yes — workflow agents (e.g. `SequentialAgent`) | ✅ Implemented |
+| invoke_agent (internal) | Yes — each agent that `Runner.run` executes | ✅ Implemented |
+| invoke_runner | Yes — `Runner.run` is the SDK entrypoint | ✅ Implemented |
 | execute_tool | Yes — ADK runs the tool | ✅ Implemented |
 | memory | Yes — memory service upsert / search | ✅ Implemented |
+| skills | Yes — `SkillToolset` runs the skill tools | ✅ Implemented |
+
+The tool execution error handlers record a correlated
+`gen_ai.execute_tool.exception` WARN log. This scenario does not exercise those paths.
+
+The internal agent invocation error handlers record a correlated
+`gen_ai.invoke_agent.exception` WARN log. This scenario does not exercise those paths.

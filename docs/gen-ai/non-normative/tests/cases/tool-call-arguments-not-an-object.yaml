@@ -1,0 +1,9 @@
+# yaml-language-server: $schema=../case.schema.json
+description: Tool call arguments must be an object, not the raw JSON-encoded string providers return
+schema: gen-ai-tool-call-arguments.json
+document: "{\"location\": \"Paris\"}"
+# Regenerate with `uv run pytest --update-snapshots`, do not edit by hand.
+errors:
+  - path: $
+    keyword: type
+    message: "'{\"location\": \"Paris\"}' is not of type 'object'"

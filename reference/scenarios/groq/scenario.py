@@ -1,9 +1,9 @@
 """Reference implementation for Groq."""
 
-import json
 import os
 import time
 
+from opentelemetry.trace import SpanKind
 from reference_shared import (
     flush_and_shutdown,
     mock_server_host_port,
@@ -39,10 +39,10 @@ _token_usage = _meter.create_histogram(
         67108864,
     ],
 )
-_operation_duration = _meter.create_histogram(
-    "gen_ai.client.operation.duration",
+_inference_duration = _meter.create_histogram(
+    "gen_ai.client.inference.duration",
     unit="s",
-    description="GenAI operation duration.",
+    description="GenAI client inference operation duration.",
     explicit_bucket_boundaries_advisory=[
         0.01,
         0.02,
@@ -71,8 +71,11 @@ def run_chat_reference(client):
         "gen_ai.operation.name": "chat",
         "gen_ai.provider.name": "groq",
         "gen_ai.request.model": request_model,
+        "server.address": _SERVER_ADDRESS,
     }
-    with _reference_tracer.start_as_current_span("chat llama-3.1-8b-instant", attributes=span_attributes) as span:
+    with _reference_tracer.start_as_current_span(
+        "chat llama-3.1-8b-instant", kind=SpanKind.CLIENT, attributes=span_attributes
+    ) as span:
         messages = [{"role": "user", "content": "Say hello."}]
         start_time = time.perf_counter()
         resp = client.chat.completions.create(
@@ -80,7 +83,7 @@ def run_chat_reference(client):
             messages=messages,
         )
         duration = time.perf_counter() - start_time
-        _operation_duration.record(
+        _inference_duration.record(
             duration,
             {
                 "gen_ai.operation.name": "chat",
@@ -125,22 +128,21 @@ def run_chat_reference(client):
         # Emit inference operation details event
         event_attrs = {
             "gen_ai.operation.name": "chat",
+            "gen_ai.provider.name": "groq",
             "gen_ai.request.model": request_model,
             "gen_ai.response.id": resp.id,
             "gen_ai.response.model": resp.model,
             "gen_ai.response.finish_reasons": [c.finish_reason for c in resp.choices],
-            "gen_ai.input.messages": json.dumps(
-                [{"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]} for m in messages]
-            ),
-            "gen_ai.output.messages": json.dumps(
-                [
-                    {
-                        "role": c.message.role,
-                        "parts": [{"type": "text", "content": c.message.content}],
-                    }
-                    for c in resp.choices
-                ]
-            ),
+            "gen_ai.input.messages": [
+                {"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]} for m in messages
+            ],
+            "gen_ai.output.messages": [
+                {
+                    "role": c.message.role,
+                    "parts": [{"type": "text", "content": c.message.content}],
+                }
+                for c in resp.choices
+            ],
         }
         if resp.usage:
             event_attrs["gen_ai.usage.input_tokens"] = resp.usage.prompt_tokens
@@ -163,13 +165,14 @@ def run_chat_streaming_reference(client):
         "gen_ai.operation.name": "chat",
         "gen_ai.provider.name": "groq",
         "gen_ai.request.model": request_model,
+        "server.address": _SERVER_ADDRESS,
     }
-    with _reference_tracer.start_as_current_span("chat llama-3.1-8b-instant", attributes=span_attributes_2) as span:
+    with _reference_tracer.start_as_current_span(
+        "chat llama-3.1-8b-instant", kind=SpanKind.CLIENT, attributes=span_attributes_2
+    ) as span:
         span.set_attribute(
             "gen_ai.input.messages",
-            json.dumps(
-                [{"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]} for m in request_messages]
-            ),
+            [{"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]} for m in request_messages],
         )
         start_time = time.perf_counter()
         stream = client.chat.completions.create(
@@ -181,9 +184,11 @@ def run_chat_streaming_reference(client):
         model = None
         response_id = None
         finish_reasons = []
+        usage = None
         for chunk in stream:
             model = model or getattr(chunk, "model", None)
             response_id = response_id or getattr(chunk, "id", None)
+            usage = chunk.usage or (chunk.x_groq and chunk.x_groq.usage) or usage
             if chunk.choices and chunk.choices[0].delta.content:
                 text += chunk.choices[0].delta.content
             if chunk.choices and chunk.choices[0].finish_reason:
@@ -194,8 +199,10 @@ def run_chat_streaming_reference(client):
             span.set_attribute("gen_ai.response.id", response_id)
         if finish_reasons:
             span.set_attribute("gen_ai.response.finish_reasons", finish_reasons)
-        # The stream carries no usage block, so token.usage MUST NOT be reported here.
-        _operation_duration.record(
+        if usage:
+            span.set_attribute("gen_ai.usage.input_tokens", usage.prompt_tokens)
+            span.set_attribute("gen_ai.usage.output_tokens", usage.completion_tokens)
+        _inference_duration.record(
             time.perf_counter() - start_time,
             {
                 "gen_ai.operation.name": "chat",
@@ -232,9 +239,12 @@ def run_chat_tool_call_reference(client):
         "gen_ai.operation.name": "chat",
         "gen_ai.provider.name": "groq",
         "gen_ai.request.model": request_model,
+        "server.address": _SERVER_ADDRESS,
     }
-    with _reference_tracer.start_as_current_span("chat llama-3.1-8b-instant", attributes=span_attributes_3) as span:
-        span.set_attribute("gen_ai.tool.definitions", json.dumps(tools))
+    with _reference_tracer.start_as_current_span(
+        "chat llama-3.1-8b-instant", kind=SpanKind.CLIENT, attributes=span_attributes_3
+    ) as span:
+        span.set_attribute("gen_ai.tool.definitions", [{"type": t["type"], **t["function"]} for t in tools])
         start_time = time.perf_counter()
         resp = client.chat.completions.create(
             model=request_model,
@@ -242,7 +252,7 @@ def run_chat_tool_call_reference(client):
             tools=tools,
         )
         duration = time.perf_counter() - start_time
-        _operation_duration.record(
+        _inference_duration.record(
             duration,
             {
                 "gen_ai.operation.name": "chat",

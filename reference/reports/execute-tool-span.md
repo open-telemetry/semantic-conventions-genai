@@ -1,6 +1,6 @@
 # Execute Tool Span
 
-> **[Semantic Convention](../../docs/gen-ai/gen-ai-spans.md#execute-tool-span)**
+> **[Semantic Convention](../../docs/gen-ai/execute-tool.md#span-gen_aiexecute_tool)**
 
 ## Required
 
@@ -14,12 +14,13 @@
 | Attribute | Supporting Libraries |
 | --- | --- |
 | gen_ai.agent.name | [google-adk], [openai-agents], [pydantic-ai] |
+| gen_ai.conversation.id | [google-adk], [openai-assistants] |
+| gen_ai.tool.call.id | [agent-framework], [autogen], [google-adk], [google-genai], [langchain], [llamaindex], [openai-agents], [openai-assistants], [pydantic-ai], [vertexai] |
 
 ## Recommended
 
 | Attribute | Supporting Libraries |
 | --- | --- |
-| gen_ai.tool.call.id | [agent-framework], [autogen], [google-adk], [google-genai], [langchain], [llamaindex], [openai-agents], [openai-assistants], [pydantic-ai], [vertexai] |
 | gen_ai.tool.description | [agent-framework], [autogen], [crewai], [google-adk], [google-genai], [langchain], [llamaindex], [openai-agents], [openai-assistants], [pydantic-ai], [vertexai] |
 | gen_ai.tool.type | [agent-framework], [autogen], [crewai], [google-adk], [google-genai], [langchain], [llamaindex], [openai-agents], [openai-assistants], [pydantic-ai], [vertexai] |
 

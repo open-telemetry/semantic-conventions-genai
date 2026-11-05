@@ -1,6 +1,5 @@
 """Reference implementation: AWS Bedrock AgentCore memory APIs."""
 
-import json
 import os
 from datetime import UTC, datetime
 
@@ -19,6 +18,19 @@ CREATE_MEMORY_TEXT = "User prefers vegetarian meals."
 UPDATED_MEMORY_TEXT = "User prefers vegetarian meals and dark mode."
 QUERY_TEXT = "vegetarian meal preference"
 TIMESTAMP = datetime(2026, 1, 1, 12, 0, 0, tzinfo=UTC)
+
+
+def should_capture_content_on_spans() -> bool:
+    mode = (
+        (
+            os.environ.get("OTEL_INSTRUMENTATION_GENAI_CAPTURE_CONTENT")
+            or os.environ.get("OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT")
+            or ""
+        )
+        .strip()
+        .upper()
+    )
+    return mode in ("SPAN_ONLY", "SPAN_AND_EVENT")
 
 
 def create_agentcore_control_client():
@@ -101,18 +113,17 @@ def run_create_and_update_memory_reference(client, memory_id):
         )
         memory_record_id = response["successfulRecords"][0]["memoryRecordId"]
         span.set_attribute("gen_ai.memory.record.count", len(create_records))
-        span.set_attribute(
-            "gen_ai.memory.records",
-            json.dumps(
+        if should_capture_content_on_spans():
+            span.set_attribute(
+                "gen_ai.memory.records",
                 [
                     {
                         "content": create_records[0]["content"]["text"],
                         "id": memory_record_id,
                         "metadata": {"author": create_records[0]["metadata"]["author"]["stringValue"]},
                     }
-                ]
-            ),
-        )
+                ],
+            )
 
     print("  [update_memory] Bedrock AgentCore BatchUpdateMemoryRecords")
     update_records = [
@@ -143,18 +154,17 @@ def run_create_and_update_memory_reference(client, memory_id):
             records=update_records,
         )
         span.set_attribute("gen_ai.memory.record.count", len(update_records))
-        span.set_attribute(
-            "gen_ai.memory.records",
-            json.dumps(
+        if should_capture_content_on_spans():
+            span.set_attribute(
+                "gen_ai.memory.records",
                 [
                     {
                         "content": update_records[0]["content"]["text"],
                         "id": update_records[0]["memoryRecordId"],
                         "metadata": {"author": update_records[0]["metadata"]["author"]["stringValue"]},
                     }
-                ]
-            ),
-        )
+                ],
+            )
     return memory_record_id
 
 
@@ -180,7 +190,8 @@ def run_search_memory_reference(client, memory_id):
     with _reference_tracer.start_as_current_span(
         "search_memory", kind=SpanKind.CLIENT, attributes=span_attributes
     ) as span:
-        span.set_attribute("gen_ai.memory.query.text", search_criteria["searchQuery"])
+        if should_capture_content_on_spans():
+            span.set_attribute("gen_ai.memory.query.text", search_criteria["searchQuery"])
         response = client.retrieve_memory_records(
             memoryId=memory_id,
             namespace=NAMESPACE,
@@ -200,7 +211,8 @@ def run_search_memory_reference(client, memory_id):
                 }
             )
         span.set_attribute("gen_ai.memory.record.count", len(memory_records))
-        span.set_attribute("gen_ai.memory.records", json.dumps(memory_records))
+        if should_capture_content_on_spans():
+            span.set_attribute("gen_ai.memory.records", memory_records)
 
 
 def run_delete_memory_reference(client, memory_id, memory_record_id):
@@ -252,6 +264,7 @@ def run_delete_memory_store_reference(client, memory_id):
 
 def main():
     print("=== Reference Implementation: AWS Bedrock AgentCore Memory ===")
+    os.environ["OTEL_INSTRUMENTATION_GENAI_CAPTURE_CONTENT"] = "SPAN_ONLY"
     tp, lp, mp = setup_otel()
 
     control_client = create_agentcore_control_client()

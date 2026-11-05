@@ -1,6 +1,6 @@
-# Client Token Usage Metric
+# Client Inference Duration Metric
 
-> **[Semantic Convention](../../docs/gen-ai/gen-ai-metrics.md#metric-gen_aiclienttokenusage)**
+> **[Semantic Convention](../../docs/gen-ai/client-inference.md#metric-gen_aiclientinferenceduration)**
 
 ## Required
 
@@ -8,7 +8,6 @@
 | --- | --- |
 | gen_ai.operation.name | [agent-framework], [anthropic], [groq] |
 | gen_ai.provider.name | [agent-framework], [anthropic], [groq] |
-| gen_ai.token.type | [agent-framework], [anthropic], [groq] |
 
 ## Conditionally Required
 

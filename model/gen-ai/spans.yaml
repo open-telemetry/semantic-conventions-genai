@@ -48,37 +48,37 @@ attribute_groups:
     attributes:
       - ref: gen_ai.usage.text.input_tokens
         requirement_level:
-          recommended: When applicable.
+          recommended: When reported by the provider and non-zero.
       - ref: gen_ai.usage.image.input_tokens
         requirement_level:
-          recommended: When applicable.
+          recommended: When reported by the provider and non-zero.
       - ref: gen_ai.usage.audio.input_tokens
         requirement_level:
-          recommended: When applicable.
+          recommended: When reported by the provider and non-zero.
       - ref: gen_ai.usage.text.cache_read.input_tokens
         requirement_level:
-          recommended: When applicable.
+          recommended: When reported by the provider and non-zero.
       - ref: gen_ai.usage.image.cache_read.input_tokens
         requirement_level:
-          recommended: When applicable.
+          recommended: When reported by the provider and non-zero.
       - ref: gen_ai.usage.audio.cache_read.input_tokens
         requirement_level:
-          recommended: When applicable.
+          recommended: When reported by the provider and non-zero.
       - ref: gen_ai.usage.text.output_tokens
         requirement_level:
-          recommended: When applicable.
+          recommended: When reported by the provider and non-zero.
       - ref: gen_ai.usage.image.output_tokens
         requirement_level:
-          recommended: When applicable.
+          recommended: When reported by the provider and non-zero.
       - ref: gen_ai.usage.audio.output_tokens
         requirement_level:
-          recommended: When applicable.
+          recommended: When reported by the provider and non-zero.
       - ref: gen_ai.usage.cache_read.input_tokens
         requirement_level:
-          recommended: When applicable.
+          recommended: When available and non-zero.
       - ref: gen_ai.usage.cache_write.input_tokens
         requirement_level:
-          recommended: When applicable.
+          recommended: When available and non-zero.
 
   - id: attributes.gen_ai.content
     visibility: internal
@@ -91,15 +91,22 @@ attribute_groups:
         requirement_level: opt_in
       - ref: gen_ai.tool.definitions
         requirement_level: opt_in
+      - ref: gen_ai.system_instructions_ref
+        requirement_level: opt_in
+      - ref: gen_ai.input.messages_ref
+        requirement_level: opt_in
+      - ref: gen_ai.output.messages_ref
+        requirement_level: opt_in
+      - ref: gen_ai.tool.definitions_ref
+        requirement_level: opt_in
 
   - id: attributes.gen_ai.invoked_agent.internal.common
     visibility: internal
     attributes:
       - ref: gen_ai.agent.name
-        brief: The human-readable name of the invoked GenAI agent.
         requirement_level:
           conditionally_required: When available.
-      # not including agent description since this group is shared between 
+      # not including agent description since this group is shared between
       # spans and metrics and description is not needed on metrics
       - ref: gen_ai.request.model
         brief: The name of the GenAI model configured for the agent.
@@ -167,8 +174,19 @@ attribute_groups:
         requirement_level:
           conditionally_required: When applicable.
 
+  - id: attributes.gen_ai.retrieval.common
+    visibility: internal
+    attributes:
+      - ref: gen_ai.operation.name
+        annotations:
+          markdown:
+            omit_enum_table: true
+        requirement_level: required
+        examples: ["retrieval"]
+        note: SHOULD be `retrieval`.
+
 spans:
-  - type: gen_ai.inference.client
+  - type: gen_ai.client.inference
     requirement_level: recommended
     kind: client
     name:
@@ -177,19 +195,98 @@ spans:
         Semantic conventions for individual GenAI systems and frameworks MAY specify different span name format
         and MUST follow the overall [guidelines for span names](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.56.0/specification/trace/api.md#span).
     brief: >
-      This span represents a client call to Generative AI model or service that generates
-      a response or requests a tool call based on the input prompt.
+      This span represents a logical client call to Generative AI model or
+      service that generates a response or requests a tool call based on the input prompt.
     note: |
       **Span kind** SHOULD be `CLIENT` and MAY be set to `INTERNAL` on spans representing
       call to models running in the same process. It's RECOMMENDED to use `CLIENT` kind
       when the GenAI system being instrumented usually runs in a different process than its
       client or when the GenAI call happens over instrumented protocol such as HTTP.
+
+      One client request may involve multiple server-side inference operations.
+      The model provider or server, when instrumented, may record those operations
+      as nested inference spans.
+
+      Telemetry consumers should group inference spans by [`service.name`](https://opentelemetry.io/docs/specs/semconv/registry/entities/service/)
+      when counting operations or tokens.
     stability: development
     attributes:
       - ref_group: attributes.gen_ai.common
       - ref_group: attributes.gen_ai.address_and_port
-      - ref_group: attributes.gen_ai.usage
-      - ref_group: attributes.gen_ai.usage.breakdown
+      - ref: gen_ai.usage.input_tokens
+        brief: >
+          The number of input tokens reported by the provider for this inference operation.
+        requirement_level: recommended
+      - ref: gen_ai.usage.output_tokens
+        brief: >
+          The number of output tokens reported by the provider for this inference operation.
+        requirement_level: recommended
+      - ref: gen_ai.usage.text.input_tokens
+        brief: >
+          The number of text input tokens,
+          as reported by the provider for this inference operation.
+        requirement_level:
+          recommended: When available and non-zero.
+      - ref: gen_ai.usage.image.input_tokens
+        brief: >
+          The number of image input tokens,
+          as reported by the provider for this inference operation.
+        requirement_level:
+          recommended: When available and non-zero.
+      - ref: gen_ai.usage.audio.input_tokens
+        brief: >
+          The number of audio input tokens,
+          as reported by the provider for this inference operation.
+        requirement_level:
+          recommended: When available and non-zero.
+      - ref: gen_ai.usage.text.cache_read.input_tokens
+        brief: >
+          The number of text input tokens served from a provider-managed cache,
+          as reported by the provider for this inference operation.
+        requirement_level:
+          recommended: When available and non-zero.
+      - ref: gen_ai.usage.image.cache_read.input_tokens
+        brief: >
+          The number of image input tokens served from a provider-managed cache,
+          as reported by the provider for this inference operation.
+        requirement_level:
+          recommended: When available and non-zero.
+      - ref: gen_ai.usage.audio.cache_read.input_tokens
+        brief: >
+          The number of audio input tokens served from a provider-managed cache,
+          as reported by the provider for this inference operation.
+        requirement_level:
+          recommended: When available and non-zero.
+      - ref: gen_ai.usage.text.output_tokens
+        brief: >
+          The number of text output tokens,
+          as reported by the provider for this inference operation.
+        requirement_level:
+          recommended: When available and non-zero.
+      - ref: gen_ai.usage.image.output_tokens
+        brief: >
+          The number of image output tokens,
+          as reported by the provider for this inference operation.
+        requirement_level:
+          recommended: When available and non-zero.
+      - ref: gen_ai.usage.audio.output_tokens
+        brief: >
+          The number of audio output tokens,
+          as reported by the provider for this inference operation.
+        requirement_level:
+          recommended: When available and non-zero.
+      - ref: gen_ai.usage.cache_read.input_tokens
+        brief: >
+          The number of input tokens served from a provider-managed cache,
+          as reported by the provider for this inference operation.
+        requirement_level:
+          recommended: When available and non-zero.
+      - ref: gen_ai.usage.cache_write.input_tokens
+        brief: >
+          The number of input tokens written to a provider-managed cache,
+          as reported by the provider for this inference operation.
+        requirement_level:
+          recommended: When available and non-zero.
       - ref_group: attributes.gen_ai.content
       - ref_group: attributes.gen_ai.error
       - ref: gen_ai.request.max_tokens
@@ -226,21 +323,22 @@ spans:
         requirement_level:
           recommended: When available and if the request references a previous response.
       - ref: gen_ai.response.id
+        brief: The identifier for the completion returned in the response.
         requirement_level: recommended
       - ref: gen_ai.response.model
+        brief: The model name returned in the response.
         requirement_level: recommended
-        note: >
-          If available. The name of the GenAI model that provided the response. If the model is supplied by a vendor,
-          then the value must be the exact name of the model actually used. If the model is a
-          fine-tuned custom model, the value should have a more specific name than the base model that's been fine-tuned.
       - ref: gen_ai.response.finish_reasons
         requirement_level: recommended
       - ref: gen_ai.response.time_to_first_chunk
         requirement_level:
           recommended: If the request was a streaming request.
       - ref: gen_ai.usage.reasoning.output_tokens
+        brief: >
+          The number of output tokens used for reasoning (e.g. chain-of-thought, extended thinking),
+          as reported by the provider for this inference operation.
         requirement_level:
-          recommended: When applicable.
+          recommended: When available and non-zero.
         note: >
           The value SHOULD be included in `gen_ai.usage.output_tokens`.
       - ref: gen_ai.prompt.name
@@ -270,23 +368,95 @@ spans:
       - ref: gen_ai.request.model
         sampling_relevant: true
 
-  - type: gen_ai.embeddings.client
+  - type: gen_ai.realtime_inference.client
     requirement_level: recommended
     kind: client
     name:
-      note: >
+      note: |
         **Span name** SHOULD be `{gen_ai.operation.name} {gen_ai.request.model}`.
+        Semantic conventions for individual GenAI systems and frameworks MAY specify different span name format
+        and MUST follow the overall [guidelines for span names](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.56.0/specification/trace/api.md#span).
     brief: >
-      Describes GenAI embeddings span - a request to a Generative AI model or service
-      that generates an embeddings based on the input.
+      This span represents one server-side model generation within a realtime, bidirectional
+      streaming session (such as OpenAI Realtime or Gemini Live).
     note: |
-      The `gen_ai.operation.name` SHOULD be `embeddings`.
+      The instrumentation SHOULD do the best effort to determine when server started
+      and ended generation based on the available information and SHOULD NOT report
+      this span if there is no reliable way to determine either start or end.
+
+      For example,
+
+      - start of generation may be determined based on event received from the server,
+        the first chunk of output content
+      - end of generation may be determined based on completion or interruption event
+
+      Instrumentation SHOULD record one `realtime_inference` span for each generation
+      identified by the model provider. If a provider ends a generation when it requests
+      a tool and starts another generation after receiving the tool result, instrumentation
+      SHOULD record two spans. If the provider keeps one generation active across the tool
+      round trip, instrumentation SHOULD record one span covering the complete generation.
+
+      Instrumentation SHOULD do the best effort to include information about the generation
+      that may come after generation completing event, such as usage but SHOULD only
+      wait for this information if there is a way to end the span reliably.
+
+      Instrumentation SHOULD NOT create this span by default for generations expected to be
+      long-running or non-conversational, such as speech translation or transcription.
+
+      The `gen_ai.operation.name` SHOULD be `realtime_inference`.
     stability: development
     attributes:
       - ref_group: attributes.gen_ai.common
       - ref_group: attributes.gen_ai.address_and_port
+      - ref_group: attributes.gen_ai.usage
+      - ref_group: attributes.gen_ai.usage.breakdown
       - ref_group: attributes.gen_ai.error
+      - ref: gen_ai.system_instructions
+        requirement_level: opt_in
+      - ref: gen_ai.input.messages
+        requirement_level: opt_in
+        note: >
+          This attribute represents the input that initiated the generation. It SHOULD NOT
+          include intermediate events that occur while the generation is active, such as a
+          tool result sent in response to a tool call.
+      - ref: gen_ai.output.messages
+        requirement_level: opt_in
+        note: >
+          This attribute represents the output produced by the completed generation. It SHOULD
+          NOT include intermediate events that occur while the generation is active, such as a
+          tool call that the application handles before the generation completes. Recording
+          intermediate realtime events is outside the scope of this convention and is tracked
+          in [#633](https://github.com/open-telemetry/semantic-conventions-genai/issues/633).
+      - ref: gen_ai.tool.definitions
+        requirement_level: opt_in
+      - ref: gen_ai.request.max_tokens
+        requirement_level: recommended
+      - ref: gen_ai.request.reasoning.level
+        requirement_level:
+          recommended: When applicable.
+      - ref: gen_ai.output.type
+        requirement_level:
+          conditionally_required: When applicable and if the request includes an output format.
+      - ref: gen_ai.response.id
+        requirement_level:
+          recommended: When available.
+      - ref: gen_ai.response.model
+        requirement_level: recommended
+      - ref: gen_ai.response.finish_reasons
+        requirement_level: recommended
+      - ref: gen_ai.usage.reasoning.output_tokens
+        requirement_level:
+          recommended: When applicable.
+        note: >
+          The value SHOULD be included in `gen_ai.usage.output_tokens`.
+      - ref: gen_ai.conversation.id
+        requirement_level:
+          conditionally_required: If and only if the instrumented library has one readily available.
+      - ref: gen_ai.realtime_session.id
+        requirement_level:
+          conditionally_required: If the provider exposes a session identifier, or the instrumentation uses a client-created per-connection identifier.
       - ref: gen_ai.provider.name
+        # TODO: Not adding to common attributes because of https://github.com/open-telemetry/weaver/issues/479
         requirement_level: required
         sampling_relevant: true
       - ref: gen_ai.operation.name
@@ -297,14 +467,91 @@ spans:
         sampling_relevant: true
       - ref: gen_ai.request.model
         sampling_relevant: true
+
+  - type: gen_ai.user_speech.internal
+    requirement_level: opt_in
+    kind: internal
+    name:
+      note: |
+        **Span name** SHOULD be `{gen_ai.operation.name}`.
+        Semantic conventions for individual GenAI systems and frameworks MAY specify a different span name format.
+    brief: >
+      This span represents the capture of a user speech utterance.
+    note: |
+      Instrumentation MAY record this span when it can reliably determine the start and end
+      of user speech, either through voice-activity detection (VAD) events in the model
+      response (for example OpenAI Realtime `input_audio_buffer.speech_started` /
+      `input_audio_buffer.speech_stopped`) or through client-side events when the application
+      requires the user to manually start and stop recording.
+
+      If instrumentation cannot reliably determine when user speech starts and ends,
+      it SHOULD NOT record this span.
+
+      This span applies only to speech. Text and other non-speech input SHOULD be
+      recorded in `gen_ai.input.messages` on the corresponding
+      `gen_ai.realtime_inference.client` span.
+
+      The `gen_ai.operation.name` SHOULD be `user_speech`.
+    stability: development
+    attributes:
+      - ref_group: attributes.gen_ai.error
+      - ref: gen_ai.realtime_session.id
+        requirement_level:
+          conditionally_required: If the provider exposes a session identifier, or the instrumentation uses a client-created per-connection identifier.
+      - ref: gen_ai.provider.name
+        requirement_level:
+          recommended: If the start and end of user speech are determined from events in the model response.
+        sampling_relevant: true
+      - ref: gen_ai.operation.name
+        requirement_level: required
+        sampling_relevant: true
+
+  - type: gen_ai.client.embeddings
+    requirement_level: recommended
+    kind: client
+    name:
+      note: >
+        **Span name** SHOULD be `{gen_ai.operation.name} {gen_ai.request.model}`.
+    brief: >
+      Describes a GenAI embeddings operation - a client call to a model or service
+      that returns embeddings for one or more inputs.
+    stability: development
+    attributes:
+      - ref_group: attributes.gen_ai.common
+      - ref_group: attributes.gen_ai.address_and_port
+      - ref_group: attributes.gen_ai.error
+      - ref: gen_ai.provider.name
+        requirement_level: required
+        sampling_relevant: true
+      - ref: gen_ai.operation.name
+        annotations:
+          markdown:
+            omit_enum_table: true
+        sampling_relevant: true
+        examples: ["embeddings"]
+        note: SHOULD be `embeddings`.
+      - ref: server.address
+        sampling_relevant: true
+      - ref: server.port
+        sampling_relevant: true
+      - ref: gen_ai.request.model
+        sampling_relevant: true
+        examples: ["text-embedding-3-small", "gemini-embedding-001"]
       - ref: gen_ai.request.encoding_formats
         requirement_level: recommended
       - ref: gen_ai.usage.input_tokens
         requirement_level: recommended
+        note: |
+          The total number of input tokens across all inputs in the request,
+          as reported by the provider.
+
+          When the provider reports both billed and model-consumed token counts,
+          instrumentations SHOULD report the billed count.
       - ref: gen_ai.embeddings.dimension.count
         requirement_level: recommended
       - ref: gen_ai.response.model
         requirement_level: recommended
+        examples: ["text-embedding-3-small"]
 
   - type: gen_ai.retrieval.client
     requirement_level: recommended
@@ -319,6 +566,15 @@ spans:
     note: |
       The `gen_ai.operation.name` SHOULD be `retrieval`.
     stability: development
+    # Hosted retrieval and search APIs are not GenAI-specific, see
+    # https://github.com/open-telemetry/semantic-conventions-genai/issues/637 and
+    # https://github.com/open-telemetry/semantic-conventions/issues/1869
+    deprecated:
+      reason: obsoleted
+      note: >
+        Calls to retrieval or search services SHOULD be instrumented following
+        database or other applicable client semantic conventions. Retrieval performed
+        by GenAI frameworks and applications SHOULD be reported with the `gen_ai.retrieval` span.
     attributes:
       - ref_group: attributes.gen_ai.common
       - ref_group: attributes.gen_ai.address_and_port
@@ -335,6 +591,30 @@ spans:
       - ref: gen_ai.data_source.id
         requirement_level:
           conditionally_required: When applicable.
+
+  - type: gen_ai.retrieval
+    requirement_level: recommended
+    kind: internal
+    name:
+      note: |
+        **Span name** SHOULD be `{gen_ai.operation.name}`.
+    brief: >
+      Describes a retrieval operation - an execution of a framework retrieval pipeline
+      that returns documents relevant to a query.
+    stability: development
+    entity_associations:
+      - "gen_ai.main_agent"
+    attributes:
+      - ref_group: attributes.gen_ai.error
+      - ref_group: attributes.gen_ai.retrieval.common
+      - ref: gen_ai.operation.name
+        sampling_relevant: true
+      - ref: gen_ai.retrieval.query.text
+        requirement_level: opt_in
+      - ref: gen_ai.retrieval.top_k
+        requirement_level: recommended
+      - ref: gen_ai.retrieval.documents
+        requirement_level: opt_in
 
   - type: gen_ai.fetch_response.client
     kind: client
@@ -357,6 +637,9 @@ spans:
         requirement_level: required
         sampling_relevant: true
       - ref: gen_ai.operation.name
+        annotations:
+          markdown:
+            omit_enum_table: true
         requirement_level: required
         sampling_relevant: true
       - ref: server.address
@@ -476,6 +759,9 @@ spans:
         requirement_level: required
         sampling_relevant: true
       - ref: gen_ai.operation.name
+        annotations:
+          markdown:
+            omit_enum_table: true
         sampling_relevant: true
       - ref: server.address
         sampling_relevant: true
@@ -518,7 +804,16 @@ spans:
     note: |
       The `gen_ai.operation.name` SHOULD be `invoke_agent`.
 
-      Examples: OpenAI Assistants API, AWS Bedrock Agents.
+      This span SHOULD be emitted when the instrumented API represents the target as
+      an agent service outside the current process. Instrumentation SHOULD use
+      information available from the target's API type or configuration.
+
+      Examples include remote agent services accessed through the OpenAI Assistants API,
+      AWS Bedrock Agents, Gemini Enterprise Agent Platform, Azure AI Foundry Agent
+      Service, or an A2A endpoint.
+
+      For local agent invocations, refer to the
+      `gen_ai.invoke_agent.internal` span.
     stability: development
     attributes:
       - ref_group: attributes.gen_ai.invoke_agent.common
@@ -528,6 +823,9 @@ spans:
         requirement_level: required
         sampling_relevant: true
       - ref: gen_ai.operation.name
+        annotations:
+          markdown:
+            omit_enum_table: true
         sampling_relevant: true
       - ref: gen_ai.request.model
         sampling_relevant: true
@@ -557,26 +855,101 @@ spans:
     kind: internal
     name:
       note: |
-        **Span name** SHOULD be `invoke_agent {gen_ai.agent.name}` if `gen_ai.agent.name` is readily available.
-        When `gen_ai.agent.name` is not available, it SHOULD be `invoke_agent`.
-        Semantic conventions for individual GenAI systems and frameworks MAY specify different span name format.
+        **Span name** SHOULD be `{gen_ai.operation.name} {gen_ai.agent.name}` if `gen_ai.agent.name`
+        is readily available. When `gen_ai.agent.name` is not available, it SHOULD be
+        `{gen_ai.operation.name}`.
+        Semantic conventions for individual GenAI systems and frameworks MAY specify a different
+        span name format.
     brief: >
-      Describes GenAI agent invocation within the same process.
+      Describes an in-process GenAI agent, workflow, or framework entrypoint invocation.
     note: |
-      The `gen_ai.operation.name` SHOULD be `invoke_agent`.
+      This span SHOULD be emitted for an agent, workflow, or framework entrypoint invocation
+      executed within the instrumented process. Instrumentation SHOULD use information available
+      from the API type or configuration.
 
-      Examples: LangChain agents, CrewAI agents.
+      For agent invocations targeting an out-of-process or remote agent service,
+      refer to the `gen_ai.invoke_agent.client` span.
+
+      Instrumentations SHOULD set `gen_ai.operation.name` to:
+
+      - `invoke_agent` when an LLM drives the control flow through tool calls, for example
+        LangChain [`create_agent`](https://docs.langchain.com/oss/python/langchain/agents), OpenAI
+        Agents [`Agent`](https://openai.github.io/openai-agents-python/agents/), CrewAI
+        [`Agent`](https://docs.crewai.com/concepts/agents), Microsoft Agent Framework
+        [`Agent`](https://learn.microsoft.com/agent-framework/), Pydantic AI `Agent`, and ADK
+        [`LlmAgent`](https://adk.dev/agents/llm-agents/).
+      - `invoke_workflow` when the application defines the control flow, for example LangGraph
+        [`StateGraph`](https://reference.langchain.com/python/langgraph/graphs), Microsoft Agent
+        Framework [`Workflow`](https://learn.microsoft.com/agent-framework/workflows/), CrewAI
+        [`Crew`](https://docs.crewai.com/concepts/crews), and ADK `Workflow`.
+      - `invoke_{framework_entrypoint}` when the framework entrypoint is not itself an agent or a
+        workflow, where `{framework_entrypoint}` is the framework's name for the entrypoint, for
+        example `invoke_runner` for ADK [`Runner.run(...)`](https://adk.dev/runtime/) and OpenAI
+        Agents [`Runner.run(...)`](https://openai.github.io/openai-agents-python/ref/run/#agents.run.Runner.run).
+
+      Framework-specific semantic conventions and instrumentations SHOULD document which of their
+      operations they report as `invoke_agent`, `invoke_workflow`, or
+      `invoke_{framework_entrypoint}`, and the `{framework_entrypoint}` names they use.
+
+      The span SHOULD NOT be reported when the invocation is an internal implementation detail
+      of another operation (e.g., an agent or tool that spins up a runner/workflow under the hood
+      to delegate to a sub-agent) rather than a user-facing entry point. Workflows defined by the
+      application SHOULD be reported even when nested, for example a sub-graph invoked as a node
+      of another graph.
     stability: development
+    entity_associations:
+      - "gen_ai.main_agent"
     attributes:
       - ref_group: attributes.gen_ai.invoke_agent.common
       - ref: gen_ai.operation.name
+        annotations:
+          markdown:
+            omit_enum_table: true
         sampling_relevant: true
       - ref: gen_ai.request.model
+        requirement_level:
+          recommended: When `gen_ai.operation.name` is `invoke_agent`, if applicable.
         sampling_relevant: true
       - ref: gen_ai.agent.name
         sampling_relevant: true
+      - ref: gen_ai.request.max_tokens
+        requirement_level:
+          recommended: When `gen_ai.operation.name` is `invoke_agent`.
+      - ref: gen_ai.request.choice.count
+        requirement_level:
+          conditionally_required: When `gen_ai.operation.name` is `invoke_agent`, if available, in the request, and !=1.
+      - ref: gen_ai.request.temperature
+        requirement_level:
+          recommended: When `gen_ai.operation.name` is `invoke_agent`.
+      - ref: gen_ai.request.top_p
+        requirement_level:
+          recommended: When `gen_ai.operation.name` is `invoke_agent`.
+      - ref: gen_ai.request.stop_sequences
+        requirement_level:
+          recommended: When `gen_ai.operation.name` is `invoke_agent`.
+      - ref: gen_ai.request.frequency_penalty
+        requirement_level:
+          recommended: When `gen_ai.operation.name` is `invoke_agent`.
+      - ref: gen_ai.request.presence_penalty
+        requirement_level:
+          recommended: When `gen_ai.operation.name` is `invoke_agent`.
+      - ref: gen_ai.request.seed
+        requirement_level:
+          conditionally_required: When `gen_ai.operation.name` is `invoke_agent`, if applicable and if the request includes a seed.
+      - ref: gen_ai.output.type
+        requirement_level:
+          conditionally_required: When `gen_ai.operation.name` is `invoke_agent`, when applicable and if the request includes an output format.
+      - ref: gen_ai.response.finish_reasons
+        requirement_level:
+          recommended: When `gen_ai.operation.name` is `invoke_agent`.
+      - ref: gen_ai.usage.input_tokens
+        requirement_level:
+          recommended: When `gen_ai.operation.name` is `invoke_agent`.
+      - ref: gen_ai.usage.output_tokens
+        requirement_level:
+          recommended: When `gen_ai.operation.name` is `invoke_agent`.
 
-  - type: gen_ai.execute_tool.internal
+  - type: gen_ai.execute_tool
     requirement_level: recommended
     kind: internal
     name:
@@ -595,18 +968,30 @@ spans:
       are encouraged to follow this semantic convention for tools invoked by their
       own code and to manually instrument any tool calls that automatic
       instrumentations do not cover.
+
+      When the library API or state identifies a specialized tool call,
+      instrumentation SHOULD apply the corresponding
+      [refinement](/docs/gen-ai/execute-tool.md#specialized-tool-call-spans) to the execute-tool
+      span. Available refinements include
+      [agents exposed as tools](/docs/gen-ai/execute-tool.md#agent-as-a-tool) and
+      [Agent Skills](/docs/gen-ai/execute-tool.md#agent-skills).
     stability: development
+    entity_associations:
+      - "gen_ai.main_agent"
     attributes:
       - ref_group: attributes.gen_ai.error
       - ref_group: attributes.gen_ai.execute_tool.common
       - ref: gen_ai.operation.name
+        annotations:
+          markdown:
+            omit_enum_table: true
         requirement_level: required
         sampling_relevant: true
       - ref: gen_ai.tool.name
         sampling_relevant: true
       - ref: gen_ai.tool.call.id
         requirement_level:
-          recommended: If available.
+          conditionally_required: If and only if the model or provider supplied a tool call identifier.
       - ref: gen_ai.tool.description
         requirement_level:
           recommended: If available.
@@ -614,59 +999,12 @@ spans:
         sampling_relevant: true
       - ref: gen_ai.agent.name
         sampling_relevant: true
+      - ref: gen_ai.conversation.id
+        requirement_level:
+          conditionally_required: If available.
       - ref: gen_ai.tool.call.arguments
         requirement_level: opt_in
       - ref: gen_ai.tool.call.result
-        requirement_level: opt_in
-
-  - type: gen_ai.invoke_workflow.internal
-    requirement_level: recommended
-    kind: internal
-    name:
-      note: >
-        **Span name** SHOULD be `invoke_workflow {gen_ai.workflow.name}`.
-    brief: >
-      Represents an operation that executes a coordinated process composed of multiple agents
-      or other operations involving generative AI.
-    note: |
-      The `gen_ai.operation.name` SHOULD be `invoke_workflow`.
-
-      The workflow span SHOULD be reported for operations that trigger the execution
-      of composable processes (e.g., graphs, orchestrators) coordinating multiple
-      agents or GenAI calls. It SHOULD NOT be reported for standalone agent invocations.
-
-      The `invoke_workflow` span SHOULD NOT be reported when the workflow invocation is
-      an internal implementation detail of another operation (e.g., an agent or tool that
-      spins up a runner/workflow under the hood to delegate to a sub-agent) rather than
-      a user-facing entry point. Workflows defined by the application SHOULD be reported
-      even when nested, for example a sub-graph invoked as a node of another graph.
-
-      Framework-specific semantic conventions SHOULD define which operations to report
-      as workflows and MAY specify heuristics to distinguish them from standalone
-      agent invocations and internal operations.
-
-      Examples of workflow invocations in different frameworks include:
-
-      - **ADK**: [`Runner.run(...)`](https://adk.dev/workflows/) with multi-agent or graph workflow.
-      - **CrewAI**: [`Crew.kickoff()`](https://docs.crewai.com/concepts/crews)
-      - **LangChain / LangGraph**: [`*Graph*.invoke(...)`](https://reference.langchain.com/python/langgraph/graphs)
-      - **Microsoft Agent Framework**: [`Workflow*.run(...)`](https://learn.microsoft.com/agent-framework/workflows/)
-      - **OpenAI Agents**: [`Runner.run(starting_agent=...)`](https://openai.github.io/openai-agents-python/ref/run/#agents.run.Runner.run) with handoffs, sub-agents, or agents-as-tools.
-    stability: development
-    attributes:
-      - ref_group: attributes.gen_ai.error
-      - ref: gen_ai.operation.name
-        requirement_level: required
-        sampling_relevant: true
-      - ref: gen_ai.workflow.name
-        requirement_level:
-          conditionally_required: When available.
-      - ref: gen_ai.conversation.id
-        requirement_level:
-          conditionally_required: If and only if the instrumented library has one readily available, or the user application provides one through OpenTelemetry context or library-specific mechanisms.
-      - ref: gen_ai.input.messages
-        requirement_level: opt_in
-      - ref: gen_ai.output.messages
         requirement_level: opt_in
 
   - type: gen_ai.plan.internal
@@ -692,9 +1030,14 @@ spans:
       NOT be reported when the instrumentation cannot distinguish planning from generic
       reasoning or normal inference.
     stability: development
+    entity_associations:
+      - "gen_ai.main_agent"
     attributes:
       - ref_group: attributes.gen_ai.error
       - ref: gen_ai.operation.name
+        annotations:
+          markdown:
+            omit_enum_table: true
         requirement_level: required
         sampling_relevant: true
       - ref: gen_ai.agent.name
@@ -704,8 +1047,8 @@ spans:
         sampling_relevant: true
 
 span_refinements:
-  - id: openai.inference.client
-    ref: gen_ai.inference.client
+  - id: openai.gen_ai.client.inference
+    ref: gen_ai.client.inference
     brief: >
       Semantic Conventions for [OpenAI](https://openai.com/) client spans extend
       and override the semantic conventions for [Gen AI Spans](gen-ai-spans.md).
@@ -768,6 +1111,9 @@ span_refinements:
     stability: development
     attributes:
       - ref: openai.api.type
+        annotations:
+          markdown:
+            omit_enum_table: true
         requirement_level: recommended
         note: >
           For this operation `openai.api.type` SHOULD be set to `responses`.
@@ -787,8 +1133,8 @@ span_refinements:
         requirement_level:
           conditionally_required: If the response was received and includes a service_tier.
 
-  - id: azure.ai.inference.client
-    ref: gen_ai.inference.client
+  - id: azure.ai.gen_ai.client.inference
+    ref: gen_ai.client.inference
     brief: >
       Semantic Conventions for [Azure AI Inference](https://learn.microsoft.com/rest/api/microsoft-foundry/modelinference/)
       client spans extend and override the semantic conventions for [Gen AI Spans](gen-ai-spans.md).
@@ -827,8 +1173,8 @@ span_refinements:
         requirement_level:
           conditionally_required: If not default (443).
 
-  - id: anthropic.inference.client
-    ref: gen_ai.inference.client
+  - id: anthropic.gen_ai.client.inference
+    ref: gen_ai.client.inference
     brief: >
       Semantic Conventions for [Anthropic](https://www.anthropic.com/) client spans extend
       and override the semantic conventions for [Gen AI Spans](gen-ai-spans.md).
@@ -854,8 +1200,8 @@ span_refinements:
           Anthropic reports this separately from `input_tokens`.
           This value MUST be added to the Anthropic `input_tokens` to compute `gen_ai.usage.input_tokens`.
 
-  - id: aws.bedrock.inference.client
-    ref: gen_ai.inference.client
+  - id: aws.bedrock.gen_ai.client.inference
+    ref: gen_ai.client.inference
     brief: >
       Semantic Conventions for [AWS Bedrock](https://aws.amazon.com/bedrock/) client spans extend
       and override the semantic conventions for [Gen AI Spans](gen-ai-spans.md).
@@ -869,3 +1215,171 @@ span_refinements:
         requirement_level: required
       - ref: aws.bedrock.knowledge_base.id
         requirement_level: recommended
+
+  - id: gen_ai.execute_tool.transfer
+    ref: gen_ai.execute_tool
+    name:
+      note: |
+        **Span name** SHOULD be `execute_tool {gen_ai.tool.name}`.
+        Semantic conventions for individual frameworks MAY specify different span name format.
+    brief: >
+      Describes a tool call that transfers work or control to another agent.
+    note: |
+      Instrumentation SHOULD use this refinement for tool calls that the
+      instrumented framework or protocol identifies as agent transfers and
+      SHOULD NOT report additional spans for these tool calls.
+      It MUST NOT be used for transfers that do not happen through a tool call.
+
+      Examples include:
+
+      - [Google ADK agent tools](https://google.github.io/adk-docs/tools-custom/function-tools/#agent-tool)
+        that invoke a configured sub-agent;
+      - [LangChain or LangGraph transfer tools](https://docs.langchain.com/oss/python/langchain/multi-agent/handoffs)
+        that return a `Command` targeting another agent node;
+      - [OpenAI Agents tools](https://openai.github.io/openai-agents-python/tools/#agents-as-tools)
+        created from another agent.
+    stability: development
+    attributes:
+      - ref: gen_ai.transfer.mode
+        requirement_level:
+          conditionally_required: When readily available from the instrumented library API or state, including when the transfer attempt fails.
+      - ref: gen_ai.transfer.target.name
+        requirement_level:
+          conditionally_required: When readily available from the instrumented library API or state, including when the transfer attempt fails.
+        sampling_relevant: true
+  - id: gen_ai.execute_tool.load_skill
+    ref: gen_ai.execute_tool
+    brief: Describes a tool call that loads a skill into an agent's context.
+    name:
+      note: |
+        **Span name** SHOULD be `execute_tool {gen_ai.tool.name} {gen_ai.skill.name}`
+        when `gen_ai.skill.name` is available and `execute_tool {gen_ai.tool.name}`
+        otherwise.
+    note: |
+      This refinement applies when a dedicated tool loads a skill.
+      Examples include:
+
+      - [Google ADK](https://adk.dev/skills/) `load_skill`;
+      - [OpenAI Agents](https://openai.github.io/openai-agents-python/sandbox/guide/)
+        `load_skill` for a lazy skill source;
+      - [Strands Agents](https://strandsagents.com/docs/user-guide/sdk/plugins/skills/)
+        `skills`;
+      - [Agno](https://docs.agno.com/skills/overview)
+        `get_skill_instructions`.
+    stability: development
+    attributes:
+      - ref: gen_ai.skill.name
+        requirement_level:
+          conditionally_required: If the skill name is available.
+        sampling_relevant: true
+      - ref: gen_ai.skill.description
+        requirement_level:
+          recommended: If the skill description is available.
+      - ref: gen_ai.skill.source.uri
+        requirement_level:
+          recommended: If the skill source URI is available.
+
+  - id: gen_ai.execute_tool.read_skill_resource
+    ref: gen_ai.execute_tool
+    brief: Describes a tool call that reads a resource belonging to a skill.
+    name:
+      note: |
+        **Span name** SHOULD be
+        `execute_tool {gen_ai.tool.name} {gen_ai.skill.name} {gen_ai.skill.resource.name}`
+        when the skill and resource names are available,
+        `execute_tool {gen_ai.tool.name} {gen_ai.skill.resource.name}` when only the
+        resource name is available, and `execute_tool {gen_ai.tool.name}` otherwise.
+
+        The skill name SHOULD NOT be appended by itself.
+    note: |
+      This refinement applies when a dedicated tool reads a skill resource.
+      Examples include:
+
+      - [Google ADK](https://adk.dev/skills/) `load_skill_resource`;
+      - [Microsoft Agent Framework](https://learn.microsoft.com/agent-framework/agents/skills)
+        `read_skill_resource`;
+      - [Agno](https://docs.agno.com/skills/overview)
+        `get_skill_reference` and `get_skill_script` when called with
+        `execute=false`.
+    stability: development
+    attributes:
+      - ref: gen_ai.skill.name
+        requirement_level:
+          conditionally_required: If the skill name is available.
+        sampling_relevant: true
+      - ref: gen_ai.skill.resource.name
+        requirement_level:
+          conditionally_required: If the skill resource name is available.
+        sampling_relevant: true
+      - ref: gen_ai.skill.description
+        requirement_level:
+          recommended: If the skill description is available.
+      - ref: gen_ai.skill.source.uri
+        requirement_level:
+          recommended: If the skill source URI is available.
+
+  - id: gen_ai.execute_tool.command
+    ref: gen_ai.execute_tool
+    brief: Describes a tool call that executes one or more commands.
+    name:
+      note: |
+        **Span name** SHOULD be:
+
+        - `execute_tool {gen_ai.tool.name} {gen_ai.skill.name} {gen_ai.skill.resource.name}`
+          when the skill and resource names are both available;
+        - `execute_tool {gen_ai.tool.name} {gen_ai.skill.resource.name}` when only the
+          skill resource name is available;
+        - `execute_tool {gen_ai.tool.name} {process.executable.name}` when only the
+          executable name is available;
+        - `execute_tool {gen_ai.tool.name}` otherwise.
+
+        The skill name SHOULD NOT be appended without the resource name.
+    note: |
+      This refinement applies when a tool represents command execution,
+      including the execution of skill's script.
+
+      Examples include:
+
+      - [OpenAI Agents](https://openai.github.io/openai-agents-python/sandbox/guide/)
+        `exec_command`, which runs both general commands and scripts from
+        materialized skills;
+      - [LangChain Deep Agents](https://docs.langchain.com/oss/python/deepagents/overview)
+        sandbox `execute`, which runs both general commands and skill scripts;
+      - [Strands Agents](https://strandsagents.com/docs/user-guide/sdk/plugins/skills/)
+        `shell`, which is used for both general commands and bundled skill
+        scripts;
+      - [Anthropic](https://platform.claude.com/docs/en/agents-and-tools/tool-use/bash-tool)
+        client `bash` for general commands;
+      - [Google ADK](https://adk.dev/skills/) `run_skill_script`, which is
+        dedicated to scripts bundled with skills;
+      - [Agno](https://docs.agno.com/skills/overview) `get_skill_script` when
+        called with `execute=true`.
+
+      Instrumentations MAY also emit additional spans following the
+      [CLI client span conventions](https://opentelemetry.io/docs/specs/semconv/cli/cli-spans/)
+      for each observed command, script, or process execution.
+    stability: development
+    attributes:
+      - ref: gen_ai.skill.name
+        requirement_level:
+          conditionally_required: If the command is associated with a skill and its name is available.
+        sampling_relevant: true
+      - ref: gen_ai.skill.resource.name
+        requirement_level:
+          conditionally_required: If the command executes a named skill resource and the name is available.
+        sampling_relevant: true
+      - ref: gen_ai.skill.description
+        requirement_level:
+          recommended: If the command is associated with a skill and its description is available.
+      - ref: gen_ai.skill.source.uri
+        requirement_level:
+          recommended: If the command is associated with a skill and its source URI is available.
+      - ref: process.executable.name
+        requirement_level:
+          conditionally_required: If the tool directly executes a single process and the executable name is available.
+      - ref: process.executable.path
+        requirement_level:
+          recommended: If the tool directly executes a single process and the executable path is available.
+      - ref: process.exit.code
+        requirement_level:
+          conditionally_required: If the tool reports a single command or process exit code.

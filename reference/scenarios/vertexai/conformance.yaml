@@ -11,3 +11,31 @@ env:
 scenarios:
   reference:
     run: uv run --frozen --python 3.12 --project . python scenario.py
+    expected_violations:
+      - id: genai_expected_attribute_missing
+        context:
+          missing_attribute: gen_ai.response.id
+          operation: chat
+        reason: The conformance mock's Gemini stream chunks carry no responseId or modelVersion; real Gemini streams do.
+      - id: genai_expected_attribute_missing
+        context:
+          missing_attribute: gen_ai.response.model
+          operation: chat
+        reason: The conformance mock's Gemini stream chunks carry no responseId or modelVersion; real Gemini streams do.
+    spans:
+      - match:
+          attributes:
+            gen_ai.operation.name: chat
+          type: gen_ai.client.inference
+      - match:
+          attributes:
+            gen_ai.operation.name: generate_content
+          type: gen_ai.client.inference
+      - match:
+          attributes:
+            gen_ai.operation.name: text_completion
+          type: gen_ai.client.inference
+      - match:
+          attributes:
+            gen_ai.operation.name: execute_tool
+          type: gen_ai.execute_tool

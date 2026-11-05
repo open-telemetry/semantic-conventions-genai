@@ -7,7 +7,21 @@ server:
 
 env:
   MOCK_LLM_URL: ${MOCK_SERVER_URL}
+  ANTHROPIC_OPEN_TELEMETRY: "false"
 
 scenarios:
   reference:
     run: uv run --frozen --python 3.12 --project . python scenario.py
+    spans:
+      - match:
+          attributes:
+            gen_ai.operation.name: chat
+          type: gen_ai.client.inference
+      - match:
+          attributes:
+            gen_ai.operation.name: generate_content
+          type: gen_ai.client.inference
+      - match:
+          attributes:
+            gen_ai.operation.name: text_completion
+          type: gen_ai.client.inference

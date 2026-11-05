@@ -1,6 +1,8 @@
 """Shared OTel SDK setup for all Python reference implementation tests."""
 
 import os
+import re
+from pathlib import Path
 from urllib.parse import urlparse
 
 from opentelemetry import metrics, trace
@@ -23,19 +25,38 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 GENAI_REFERENCE_INSTRUMENTATION = "gen_ai.reference"
 
 
+def _registry_schema_url() -> str:
+    manifest = Path(__file__).resolve().parents[2] / "model" / "manifest.yaml"
+    match = re.search(r"^schema_url:\s*(\S+)", manifest.read_text(encoding="utf-8"), re.MULTILINE)
+    if match is None:
+        raise RuntimeError(f"No top-level schema_url in {manifest}")
+    return match.group(1)
+
+
+_SCHEMA_URL = _registry_schema_url()
+
+
 def reference_tracer(name: str = GENAI_REFERENCE_INSTRUMENTATION) -> trace.Tracer:
     """Return the tracer used by reference scenarios to emit gen_ai.* spans."""
-    return trace.get_tracer(name)
+    return trace.get_tracer(name, schema_url=_SCHEMA_URL)
 
 
 def reference_event_logger(name: str = GENAI_REFERENCE_INSTRUMENTATION):
     """Return the Logger used by reference scenarios to emit gen_ai.* events."""
-    return get_logger_provider().get_logger(name)
+    return get_logger_provider().get_logger(name, schema_url=_SCHEMA_URL)
 
 
 def reference_meter(name: str = GENAI_REFERENCE_INSTRUMENTATION) -> metrics.Meter:
     """Return the Meter used by reference scenarios to emit gen_ai.* metrics."""
-    return metrics.get_meter(name)
+    return metrics.get_meter(name, schema_url=_SCHEMA_URL)
+
+
+def inference_duration_view() -> View:
+    """Publish inference-only client duration measurements under their semantic name."""
+    return View(
+        instrument_name="gen_ai.client.operation.duration",
+        name="gen_ai.client.inference.duration",
+    )
 
 
 def mock_server_host_port(url: str) -> tuple[str | None, int | None]:
@@ -50,15 +71,14 @@ def mock_server_host_port(url: str) -> tuple[str | None, int | None]:
     return parsed.hostname, parsed.port
 
 
-def setup_otel():
+def setup_otel(resource: Resource | None = None, *, metric_views: tuple[View, ...] = ()):
     """Configure OTel SDK with OTLP exporters.
 
     Returns (TracerProvider, LoggerProvider, MeterProvider).
     """
+    if resource is None:
+        resource = Resource.get_empty()
     endpoint = os.environ["OTEL_EXPORTER_OTLP_ENDPOINT"]
-    # Empty Resource keeps Weaver live-check focused on the gen_ai.* surface
-    # under test. Real apps should set service.name etc.
-    resource = Resource.get_empty()
 
     tp = TracerProvider(resource=resource)
     tp.add_span_processor(BatchSpanProcessor(OTLPSpanExporter(endpoint=endpoint, insecure=True)))
@@ -76,11 +96,19 @@ def setup_otel():
         metric_readers=[reader],
         resource=resource,
         views=[
+            *metric_views,
             View(
                 instrument_name="otel.sdk.span.*",
                 meter_name="opentelemetry-sdk",
                 aggregation=DropAggregation(),
-            )
+            ),
+            # Instrumentation libraries still emit the removed
+            # `gen_ai.client.token.usage` histogram; scenarios that wrap one record
+            # the inference usage instruments themselves.
+            View(
+                instrument_name="gen_ai.client.token.usage",
+                aggregation=DropAggregation(),
+            ),
         ],
     )
     metrics.set_meter_provider(mp)

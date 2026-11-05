@@ -4,10 +4,11 @@ Exercises: agent task execution, agent planning (CrewPlanner)
 against a mock OpenAI server, with manual OTel spans.
 """
 
-import json
 import os
 
-from reference_shared import flush_and_shutdown, reference_tracer, setup_otel
+from opentelemetry._logs import SeverityNumber
+from opentelemetry.trace import StatusCode
+from reference_shared import flush_and_shutdown, reference_event_logger, reference_tracer, setup_otel
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"] + "/v1"
 
@@ -58,15 +59,26 @@ def run_crew():
             "gen_ai.operation.name": "execute_tool",
         }
         with _reference_tracer.start_as_current_span(
-            "execute_tool get_weather", attributes=tool_span_attributes
+            "execute_tool get_weather", attributes=tool_span_attributes, record_exception=False
         ) as tool_span:
-            tool_span.set_attribute("gen_ai.tool.name", "get_weather")
-            tool_span.set_attribute("gen_ai.tool.description", get_weather.func.__doc__ or "")
-            tool_span.set_attribute("gen_ai.tool.type", "function")
-            tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps({"location": location}))
-            result = "Sunny, 72°F"
-            tool_span.set_attribute("gen_ai.tool.call.result", result)
-            return result
+            try:
+                tool_span.set_attribute("gen_ai.tool.name", "get_weather")
+                tool_span.set_attribute("gen_ai.tool.description", get_weather.func.__doc__ or "")
+                tool_span.set_attribute("gen_ai.tool.type", "function")
+                tool_span.set_attribute("gen_ai.tool.call.arguments", {"location": location})
+                result = "Sunny, 72°F"
+                # TODO: Determine how to represent this string result in the object-only schema.
+                tool_span.set_attribute("gen_ai.tool.call.result", result)
+                return result
+            except Exception as e:
+                tool_span.set_status(StatusCode.ERROR, str(e))
+                tool_span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
+                reference_event_logger().emit(
+                    event_name="gen_ai.execute_tool.exception",
+                    severity_number=SeverityNumber.WARN,
+                    exception=e,
+                )
+                raise
 
     tools = [get_weather]
 
@@ -87,20 +99,20 @@ def run_crew():
         agent=researcher,
     )
 
-    crew = Crew(agents=[researcher], tasks=[task], verbose=False)
-    workflow_name = getattr(crew, "name", None)
+    # CrewAI names every crew "crew" unless the application names it, and that default
+    # identifies nothing, so the crew gets an application-defined name.
+    crew = Crew(name="weather_crew", agents=[researcher], tasks=[task], verbose=False)
 
     workflow_span_attributes = {
         "gen_ai.operation.name": "invoke_workflow",
+        "gen_ai.agent.name": crew.name,
     }
     with _reference_tracer.start_as_current_span(
-        "invoke_workflow crew", attributes=workflow_span_attributes
+        f"invoke_workflow {crew.name}", attributes=workflow_span_attributes
     ) as workflow_span:
-        if workflow_name:
-            workflow_span.set_attribute("gen_ai.workflow.name", workflow_name)
         workflow_span.set_attribute(
             "gen_ai.input.messages",
-            json.dumps([{"role": "user", "parts": [{"type": "text", "content": task.description}]}]),
+            [{"role": "user", "parts": [{"type": "text", "content": task.description}]}],
         )
         # CrewAI delegates the LLM call to the underlying LLM client, whose
         # own instrumentation owns the inference span. This scenario emits only
@@ -108,14 +120,12 @@ def run_crew():
         result = crew.kickoff()
         workflow_span.set_attribute(
             "gen_ai.output.messages",
-            json.dumps(
-                [
-                    {
-                        "role": "assistant",
-                        "parts": [{"type": "text", "content": str(result)}],
-                    }
-                ]
-            ),
+            [
+                {
+                    "role": "assistant",
+                    "parts": [{"type": "text", "content": str(result)}],
+                }
+            ],
         )
         print(f"    -> {str(result)[:60]}")
 
@@ -165,15 +175,26 @@ def run_agent():
             "gen_ai.operation.name": "execute_tool",
         }
         with _reference_tracer.start_as_current_span(
-            "execute_tool get_weather", attributes=tool_span_attributes
+            "execute_tool get_weather", attributes=tool_span_attributes, record_exception=False
         ) as tool_span:
-            tool_span.set_attribute("gen_ai.tool.name", "get_weather")
-            tool_span.set_attribute("gen_ai.tool.description", get_weather.func.__doc__ or "")
-            tool_span.set_attribute("gen_ai.tool.type", "function")
-            tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps({"location": location}))
-            result = "Sunny, 72°F"
-            tool_span.set_attribute("gen_ai.tool.call.result", result)
-            return result
+            try:
+                tool_span.set_attribute("gen_ai.tool.name", "get_weather")
+                tool_span.set_attribute("gen_ai.tool.description", get_weather.func.__doc__ or "")
+                tool_span.set_attribute("gen_ai.tool.type", "function")
+                tool_span.set_attribute("gen_ai.tool.call.arguments", {"location": location})
+                result = "Sunny, 72°F"
+                # TODO: Determine how to represent this string result in the object-only schema.
+                tool_span.set_attribute("gen_ai.tool.call.result", result)
+                return result
+            except Exception as e:
+                tool_span.set_status(StatusCode.ERROR, str(e))
+                tool_span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
+                reference_event_logger().emit(
+                    event_name="gen_ai.execute_tool.exception",
+                    severity_number=SeverityNumber.WARN,
+                    exception=e,
+                )
+                raise
 
     tools = [get_weather]
 
@@ -197,76 +218,80 @@ def run_agent():
     }
 
     with _reference_tracer.start_as_current_span(
-        f"invoke_agent {researcher_role}", attributes=agent_span_attributes
+        f"invoke_agent {researcher_role}", attributes=agent_span_attributes, record_exception=False
     ) as agent_span:
-        agent_span.set_attribute("gen_ai.request.choice.count", request_choice_count)
-        agent_span.set_attribute("gen_ai.request.max_tokens", request_max_tokens)
-        agent_span.set_attribute("gen_ai.request.temperature", request_temperature)
-        agent_span.set_attribute("gen_ai.request.seed", request_seed)
-        agent_span.set_attribute("gen_ai.request.stop_sequences", request_stop_sequences)
-        agent_span.set_attribute("gen_ai.request.frequency_penalty", request_frequency_penalty)
-        agent_span.set_attribute("gen_ai.request.presence_penalty", request_presence_penalty)
-        agent_span.set_attribute("gen_ai.request.top_p", request_top_p)
-        agent_span.set_attribute("gen_ai.system_instructions", json.dumps([{"type": "text", "content": system_prompt}]))
-        agent_span.set_attribute(
-            "gen_ai.input.messages",
-            json.dumps([{"role": "user", "parts": [{"type": "text", "content": task_description}]}]),
-        )
-        agent_span.set_attribute(
-            "gen_ai.tool.definitions",
-            json.dumps(
+        try:
+            agent_span.set_attribute("gen_ai.request.choice.count", request_choice_count)
+            agent_span.set_attribute("gen_ai.request.max_tokens", request_max_tokens)
+            agent_span.set_attribute("gen_ai.request.temperature", request_temperature)
+            agent_span.set_attribute("gen_ai.request.seed", request_seed)
+            agent_span.set_attribute("gen_ai.request.stop_sequences", request_stop_sequences)
+            agent_span.set_attribute("gen_ai.request.frequency_penalty", request_frequency_penalty)
+            agent_span.set_attribute("gen_ai.request.presence_penalty", request_presence_penalty)
+            agent_span.set_attribute("gen_ai.request.top_p", request_top_p)
+            agent_span.set_attribute("gen_ai.system_instructions", [{"type": "text", "content": system_prompt}])
+            agent_span.set_attribute(
+                "gen_ai.input.messages",
+                [{"role": "user", "parts": [{"type": "text", "content": task_description}]}],
+            )
+            agent_span.set_attribute(
+                "gen_ai.tool.definitions",
                 [
                     {
                         "type": "function",
-                        "function": {
-                            "name": t.name,
-                            "description": t.func.__doc__,
-                            "parameters": t.args_schema.model_json_schema(),
-                        },
+                        "name": t.name,
+                        "description": t.func.__doc__,
+                        "parameters": t.args_schema.model_json_schema(),
                     }
                     for t in researcher.tools
-                ]
-            ),
-        )
-        original_create = researcher.llm._client.chat.completions.create
-
-        def _capture_completion(*args, **kwargs):
-            nonlocal captured_completion
-            response = original_create(*args, **kwargs)
-            captured_completion = response
-            return response
-
-        researcher.llm._client.chat.completions.create = _capture_completion
-        try:
-            result = researcher.kickoff(task_description)
-        finally:
-            researcher.llm._client.chat.completions.create = original_create
-
-        if captured_completion is not None:
-            if hasattr(captured_completion, "parse"):
-                captured_completion = captured_completion.parse()
-            agent_span.set_attribute("gen_ai.response.model", captured_completion.model)
-            agent_span.set_attribute("gen_ai.response.id", captured_completion.id)
-            agent_span.set_attribute(
-                "gen_ai.response.finish_reasons",
-                [choice.finish_reason or "error" for choice in captured_completion.choices],
+                ],
             )
-            if captured_completion.usage:
-                agent_span.set_attribute("gen_ai.usage.input_tokens", captured_completion.usage.prompt_tokens)
-                agent_span.set_attribute("gen_ai.usage.output_tokens", captured_completion.usage.completion_tokens)
+            original_create = researcher.llm._client.chat.completions.create
 
-        agent_span.set_attribute(
-            "gen_ai.output.messages",
-            json.dumps(
+            def _capture_completion(*args, **kwargs):
+                nonlocal captured_completion
+                response = original_create(*args, **kwargs)
+                captured_completion = response
+                return response
+
+            researcher.llm._client.chat.completions.create = _capture_completion
+            try:
+                result = researcher.kickoff(task_description)
+            finally:
+                researcher.llm._client.chat.completions.create = original_create
+
+            if captured_completion is not None:
+                if hasattr(captured_completion, "parse"):
+                    captured_completion = captured_completion.parse()
+                agent_span.set_attribute("gen_ai.response.model", captured_completion.model)
+                agent_span.set_attribute("gen_ai.response.id", captured_completion.id)
+                agent_span.set_attribute(
+                    "gen_ai.response.finish_reasons",
+                    [choice.finish_reason or "error" for choice in captured_completion.choices],
+                )
+                if captured_completion.usage:
+                    agent_span.set_attribute("gen_ai.usage.input_tokens", captured_completion.usage.prompt_tokens)
+                    agent_span.set_attribute("gen_ai.usage.output_tokens", captured_completion.usage.completion_tokens)
+
+            agent_span.set_attribute(
+                "gen_ai.output.messages",
                 [
                     {
                         "role": "assistant",
                         "parts": [{"type": "text", "content": str(result)}],
                     }
-                ]
-            ),
-        )
-        print(f"    -> {str(result)[:60]}")
+                ],
+            )
+            print(f"    -> {str(result)[:60]}")
+        except Exception as e:
+            agent_span.set_status(StatusCode.ERROR, str(e))
+            agent_span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
+            reference_event_logger().emit(
+                event_name="gen_ai.invoke_agent.exception",
+                severity_number=SeverityNumber.WARN,
+                exception=e,
+            )
+            raise
 
 
 def _run_crew_planning_scenario(*, header, task_description):

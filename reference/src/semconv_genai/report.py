@@ -19,10 +19,11 @@ from pathlib import Path
 
 from semconv_genai import (
     REFERENCE_ROOT,
-    reference_scenario_file,
+    SCENARIOS_DIR,
 )
 from semconv_genai.attribute_spec import AttributeSpec, RequirementLevel
 from semconv_genai.data_files import (
+    ENTITY_TYPE_ORDER,
     EVENT_TYPE_ORDER,
     SPAN_TYPE_ORDER,
     ScenarioDataEntry,
@@ -30,6 +31,7 @@ from semconv_genai.data_files import (
     metric_type_order,
 )
 from semconv_genai.semconv_model import (
+    entity_specs,
     event_specs,
     metric_specs,
     span_specs,
@@ -66,27 +68,50 @@ def _events_of(entry: ScenarioDataEntry) -> dict[str, dict[str, str]]:
     return entry.events
 
 
+def _entities_of(entry: ScenarioDataEntry) -> dict[str, dict[str, str]]:
+    return entry.entities
+
+
 def _metrics_of(entry: ScenarioDataEntry) -> dict[str, dict[str, str]]:
     return entry.metrics
 
 
 # Relative paths from reports/ to the semantic convention doc page + anchor.
 SEMCONV_DOC_LINKS: dict[str, str] = {
+    "a2a_client": "../../docs/gen-ai/a2a.md#client",
+    "a2a_server": "../../docs/gen-ai/a2a.md#server",
     "create_agent": "../../docs/gen-ai/gen-ai-agent-spans.md#create-agent-span",
     "invoke_agent_client": "../../docs/gen-ai/gen-ai-agent-spans.md#invoke-agent-client-span",
     "invoke_agent_internal": "../../docs/gen-ai/gen-ai-agent-spans.md#invoke-agent-internal-span",
-    "invoke_workflow": "../../docs/gen-ai/gen-ai-agent-spans.md#invoke-workflow-span",
     "plan": "../../docs/gen-ai/gen-ai-agent-spans.md#plan-span",
-    "inference": "../../docs/gen-ai/gen-ai-spans.md#inference",
-    "embeddings": "../../docs/gen-ai/gen-ai-spans.md#embeddings",
-    "retrieval": "../../docs/gen-ai/gen-ai-spans.md#retrievals",
+    "inference": "../../docs/gen-ai/client-inference.md#span-gen_aiclientinference",
+    "embeddings": "../../docs/gen-ai/client-embeddings.md#span-gen_aiclientembeddings",
+    "retrieval": "../../docs/gen-ai/retrieval.md#span-gen_airetrieval",
     "fetch_response": "../../docs/gen-ai/gen-ai-spans.md#fetch-response",
     "memory": "../../docs/gen-ai/gen-ai-spans.md#memory",
-    "execute_tool": "../../docs/gen-ai/gen-ai-spans.md#execute-tool-span",
-    "gen_ai.client.inference.operation.details": "../../docs/gen-ai/gen-ai-events.md#event-gen_aiclientinferenceoperationdetails",
+    "execute_tool": "../../docs/gen-ai/execute-tool.md#span-gen_aiexecute_tool",
+    "gen_ai.client.embeddings.exception": "../../docs/gen-ai/client-embeddings.md#event-gen_aiclientembeddingsexception",
+    "gen_ai.client.fetch_response.exception": "../../docs/gen-ai/gen-ai-spans.md#event-gen_aiclientfetch_responseexception",
+    "gen_ai.client.inference.exception": "../../docs/gen-ai/client-inference.md#event-gen_aiclientinferenceexception",
+    "gen_ai.client.inference.operation.details": "../../docs/gen-ai/client-inference.md#event-gen_aiclientinferenceoperationdetails",
+    "gen_ai.client.invoke_agent.exception": "../../docs/gen-ai/gen-ai-agent-spans.md#event-gen_aiclientinvoke_agentexception",
     "gen_ai.evaluation.result": "../../docs/gen-ai/gen-ai-events.md#event-gen_aievaluationresult",
-    "gen_ai.client.token.usage": "../../docs/gen-ai/gen-ai-metrics.md#metric-gen_aiclienttokenusage",
+    "gen_ai.execute_tool.exception": "../../docs/gen-ai/execute-tool.md#event-gen_aiexecute_toolexception",
+    "gen_ai.invoke_agent.exception": "../../docs/gen-ai/gen-ai-agent-spans.md#event-gen_aiinvoke_agentexception",
+    "gen_ai.main_agent": "../../docs/registry/entities/gen-ai.md#gen-ai-main-agent",
+    "gen_ai.client.inference.usage.input_tokens": "../../docs/gen-ai/gen-ai-token-metrics.md#metric-gen_aiclientinferenceusageinput_tokens",
+    "gen_ai.client.inference.usage.output_tokens": "../../docs/gen-ai/gen-ai-token-metrics.md#metric-gen_aiclientinferenceusageoutput_tokens",
+    "gen_ai.client.inference.usage.cache_read.input_tokens": "../../docs/gen-ai/gen-ai-token-metrics.md#metric-gen_aiclientinferenceusagecache_readinput_tokens",
+    "gen_ai.client.inference.usage.cache_write.input_tokens": "../../docs/gen-ai/gen-ai-token-metrics.md#metric-gen_aiclientinferenceusagecache_writeinput_tokens",
+    "gen_ai.client.inference.usage.reasoning.output_tokens": "../../docs/gen-ai/gen-ai-token-metrics.md#metric-gen_aiclientinferenceusagereasoningoutput_tokens",
+    "gen_ai.client.inference.operation.input_tokens": "../../docs/gen-ai/gen-ai-token-metrics.md#metric-gen_aiclientinferenceoperationinput_tokens",
+    "gen_ai.client.inference.operation.output_tokens": "../../docs/gen-ai/gen-ai-token-metrics.md#metric-gen_aiclientinferenceoperationoutput_tokens",
     "gen_ai.client.operation.duration": "../../docs/gen-ai/gen-ai-metrics.md#metric-gen_aiclientoperationduration",
+    "gen_ai.client.inference.duration": "../../docs/gen-ai/client-inference.md#metric-gen_aiclientinferenceduration",
+    "gen_ai.client.embeddings.duration": "../../docs/gen-ai/client-embeddings.md#metric-gen_aiclientembeddingsduration",
+    "gen_ai.client.embeddings.operation.input_tokens": "../../docs/gen-ai/client-embeddings.md#metric-gen_aiclientembeddingsoperationinput_tokens",
+    "gen_ai.execute_tool.duration": "../../docs/gen-ai/execute-tool.md#metric-gen_aiexecute_toolduration",
+    "gen_ai.retrieval.duration": "../../docs/gen-ai/retrieval.md#metric-gen_airetrievalduration",
     "gen_ai.invoke_agent.inference_calls": "../../docs/gen-ai/gen-ai-metrics.md#metric-gen_aiinvoke_agentinference_calls",
     "gen_ai.invoke_agent.tool_calls": "../../docs/gen-ai/gen-ai-metrics.md#metric-gen_aiinvoke_agenttool_calls",
 }
@@ -109,27 +134,51 @@ def _supporting_libraries(
     return [entry for entry in entries if by_signal(entry).get(type_key, {}).get(attr_name) == "present"]
 
 
-def _library_reference_path(library: str, output_dir: Path) -> str:
-    scenario_path = reference_scenario_file(library)
+def _scenario_reference_path(scenario: str, output_dir: Path) -> str:
+    scenario_path = SCENARIOS_DIR / scenario / "scenario.py"
     return Path(os.path.relpath(scenario_path, output_dir)).as_posix()
 
 
-def _supporting_library_refs(entries: list[ScenarioDataEntry]) -> str:
+def _reference_key(library: str, scenario: str) -> str:
+    return library if library == scenario else f"{library}@{scenario}"
+
+
+def _supporting_library_refs(
+    entries: list[ScenarioDataEntry],
+    signal_kind: str,
+    type_key: str,
+    attr_name: str,
+    used_references: set[tuple[str, str]],
+) -> str:
     """Return a comma-separated list of short reference-style library links.
 
-    The `[lib]` tokens are resolved via link-reference definitions emitted
-    once per page by ``_link_reference_block``.
+    The visible label remains the grouped instrumented library. The reference
+    key also includes the scenario so two scenarios for one library can link to
+    different files on the same report page.
     """
     if not entries:
         return EMPTY_TABLE_VALUE
-    return ", ".join(f"[{entry.library}]" for entry in entries)
+    references = []
+    for entry in entries:
+        scenarios = entry.sources.get(signal_kind, {}).get(type_key, {}).get(attr_name, (entry.library,))
+        for scenario in scenarios:
+            used_references.add((entry.library, scenario))
+            reference_key = _reference_key(entry.library, scenario)
+            if reference_key == entry.library:
+                references.append(f"[{entry.library}]")
+            else:
+                references.append(f"[{entry.library}][{reference_key}]")
+    return ", ".join(references)
 
 
-def _link_reference_block(libraries: set[str], output_dir: Path) -> list[str]:
-    """Return `[lib]: path` link-reference definitions for every ``libraries`` entry."""
-    if not libraries:
+def _link_reference_block(references: set[tuple[str, str]], output_dir: Path) -> list[str]:
+    """Return scenario-specific link-reference definitions."""
+    if not references:
         return []
-    return [f"[{lib}]: {_library_reference_path(lib, output_dir)}" for lib in sorted(libraries)]
+    return [
+        f"[{_reference_key(library, scenario)}]: {_scenario_reference_path(scenario, output_dir)}"
+        for library, scenario in sorted(references)
+    ]
 
 
 def _render_signal_section(
@@ -146,7 +195,13 @@ def _render_signal_section(
         lines.append(f"> **[Semantic Convention]({doc_link})**")
         lines.append("")
 
-    used_libraries: set[str] = set()
+    signal_kind_key = {
+        "Span": "spans",
+        "Event": "events",
+        "Entity": "entities",
+        "Metric": "metrics",
+    }[signal_kind]
+    used_references: set[tuple[str, str]] = set()
     for level in LEVEL_ORDER:
         attr_names = [a for a in spec.attrs_for_requirement_level(level) if a not in DISPLAY_HIDDEN_ATTRS]
         if not attr_names:
@@ -162,11 +217,17 @@ def _render_signal_section(
         )
         for attr_name in attr_names:
             libraries = _supporting_libraries(entries, type_key, attr_name, by_signal)
-            used_libraries.update(entry.library for entry in libraries)
-            lines.append(f"| {_table_escape(attr_name)} | {_supporting_library_refs(libraries)} |")
+            library_refs = _supporting_library_refs(
+                libraries,
+                signal_kind_key,
+                type_key,
+                attr_name,
+                used_references,
+            )
+            lines.append(f"| {_table_escape(attr_name)} | {library_refs} |")
         lines.append("")
 
-    ref_lines = _link_reference_block(used_libraries, output_dir)
+    ref_lines = _link_reference_block(used_references, output_dir)
     if ref_lines:
         lines.extend(ref_lines)
         lines.append("")
@@ -248,6 +309,22 @@ def generate_index_markdown(
     lines.extend(
         [
             "",
+            "### Entities",
+            "",
+            "| Entity | Libraries |",
+            "| --- | --- |",
+        ]
+    )
+
+    for entity_type in ENTITY_TYPE_ORDER:
+        spec = entity_specs()[entity_type]
+        filename = _report_filename(entity_type, "entity")
+        supporting = _get_supporting_entries(entries, entity_type, spec, _entities_of)
+        lines.append(f"| [{spec.label}](reports/{filename}) | {_library_dir_links(supporting)} |")
+
+    lines.extend(
+        [
+            "",
             "### Metrics",
             "",
             "| Metric | Libraries |",
@@ -283,6 +360,12 @@ def write_report_pages(output_dir: Path) -> None:
         spec = event_specs()[event_type]
         page_path = reports_dir / _report_filename(event_type, "event")
         page_lines = _render_signal_section(entries, event_type, spec, reports_dir, "Event", _events_of)
+        page_path.write_text(_generate_detail_page(page_lines), encoding="utf-8")
+
+    for entity_type in ENTITY_TYPE_ORDER:
+        spec = entity_specs()[entity_type]
+        page_path = reports_dir / _report_filename(entity_type, "entity")
+        page_lines = _render_signal_section(entries, entity_type, spec, reports_dir, "Entity", _entities_of)
         page_path.write_text(_generate_detail_page(page_lines), encoding="utf-8")
 
     for metric_type in metric_type_order():

@@ -25,9 +25,10 @@ All registered attributes are listed by namespace in this registry.
 
 Currently, the following namespaces exist:
 
+- [A2A](a2a.md)
 - [AWS](aws.md)
 - [Gen AI](gen-ai.md)
 - [MCP](mcp.md)
 - [OpenAI](openai.md)
 
-[developers recommendations]: https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/naming.md#recommendations-for-application-developers
+[developers recommendations]: https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/general/naming.md#recommendations-for-application-developers

@@ -5,7 +5,6 @@ thread, run, poll) against a mock Azure AI Foundry server, with manual span
 instrumentation.
 """
 
-import json
 import os
 from urllib.parse import urlparse
 
@@ -13,16 +12,16 @@ from azure.ai.projects import AIProjectClient
 from azure.ai.projects.models import PromptAgentDefinition
 from azure.core.credentials import AccessToken
 from azure.core.pipeline.policies import SansIOHTTPPolicy
-from opentelemetry import trace
+from opentelemetry._logs import SeverityNumber
 from opentelemetry.trace import SpanKind, StatusCode
-from reference_shared import flush_and_shutdown, setup_otel
+from reference_shared import flush_and_shutdown, reference_event_logger, reference_tracer, setup_otel
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"]
 _parsed = urlparse(MOCK_BASE_URL)
 _SERVER_ADDRESS = _parsed.hostname or "localhost"
 _SERVER_PORT = _parsed.port or 443
 
-tracer = trace.get_tracer("gen_ai.client.azure_ai_foundry")
+tracer = reference_tracer("gen_ai.client.azure_ai_foundry")
 
 AGENT_MODEL = "gpt-4o-mini"
 AGENT_NAME = "refimpl-test-agent"
@@ -54,16 +53,14 @@ def run_invoke_agent(client):
     tool_defs = [
         {
             "type": "function",
-            "function": {
-                "name": "get_weather",
-                "description": "Get the current weather",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "location": {"type": "string", "description": "City name"},
-                    },
-                    "required": ["location"],
+            "name": "get_weather",
+            "description": "Get the current weather",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "location": {"type": "string", "description": "City name"},
                 },
+                "required": ["location"],
             },
         }
     ]
@@ -81,8 +78,8 @@ def run_invoke_agent(client):
         f"create_agent {AGENT_NAME}", kind=SpanKind.CLIENT, attributes=span_attributes
     ) as span:
         span.set_attribute("gen_ai.agent.description", AGENT_DESCRIPTION)
-        span.set_attribute("gen_ai.system_instructions", json.dumps([{"type": "text", "content": AGENT_INSTRUCTIONS}]))
-        span.set_attribute("gen_ai.tool.definitions", json.dumps(tool_defs))
+        span.set_attribute("gen_ai.system_instructions", [{"type": "text", "content": AGENT_INSTRUCTIONS}])
+        span.set_attribute("gen_ai.tool.definitions", tool_defs)
         agent = client.agents.create_version(
             agent_name=AGENT_NAME,
             definition=PromptAgentDefinition(
@@ -108,16 +105,16 @@ def run_invoke_agent(client):
         "server.port": _SERVER_PORT,
     }
     with tracer.start_as_current_span(
-        f"invoke_agent {agent.name}", kind=SpanKind.CLIENT, attributes=span_attributes_2
+        f"invoke_agent {agent.name}", kind=SpanKind.CLIENT, attributes=span_attributes_2, record_exception=False
     ) as span:
         span.set_attribute("gen_ai.request.max_tokens", REQUEST_MAX_TOKENS)
         span.set_attribute("gen_ai.request.temperature", REQUEST_TEMPERATURE)
         span.set_attribute("gen_ai.request.top_p", REQUEST_TOP_P)
-        span.set_attribute("gen_ai.system_instructions", json.dumps([{"type": "text", "content": AGENT_INSTRUCTIONS}]))
+        span.set_attribute("gen_ai.system_instructions", [{"type": "text", "content": AGENT_INSTRUCTIONS}])
         span.set_attribute(
-            "gen_ai.input.messages", json.dumps([{"role": "user", "parts": [{"type": "text", "content": USER_INPUT}]}])
+            "gen_ai.input.messages", [{"role": "user", "parts": [{"type": "text", "content": USER_INPUT}]}]
         )
-        span.set_attribute("gen_ai.tool.definitions", json.dumps(tool_defs))
+        span.set_attribute("gen_ai.tool.definitions", tool_defs)
         try:
             response = openai_client.responses.create(
                 model=AGENT_MODEL,
@@ -139,12 +136,12 @@ def run_invoke_agent(client):
                 span.set_attribute("gen_ai.agent.id", response.assistant_id)
 
             response_text = None
-            for output in getattr(response, "output", []) or []:
-                if getattr(output, "type", None) != "message":
+            for output in response.output or []:
+                if output.type != "message":
                     continue
-                for content in getattr(output, "content", []) or []:
-                    if getattr(content, "type", None) == "output_text":
-                        response_text = getattr(content, "text", None)
+                for content in output.content or []:
+                    if content.type == "output_text":
+                        response_text = content.text
                         break
                 if response_text:
                     break
@@ -153,15 +150,26 @@ def run_invoke_agent(client):
                 span.set_attribute("gen_ai.output.type", "text")
                 span.set_attribute(
                     "gen_ai.output.messages",
-                    json.dumps(
-                        [
-                            {
-                                "role": "assistant",
-                                "parts": [{"type": "text", "content": response_text}],
-                            }
-                        ]
-                    ),
+                    [
+                        {
+                            "role": "assistant",
+                            "parts": [{"type": "text", "content": response_text}],
+                        }
+                    ],
                 )
+
+            finish_reason = None
+            if response.status == "completed":
+                finish_reason = "stop"
+            elif response.status == "incomplete":
+                reason = response.incomplete_details.reason if response.incomplete_details else None
+                finish_reason = {"max_output_tokens": "length", "content_filter": "content_filter"}.get(
+                    reason, "incomplete"
+                )
+            elif response.status in ("failed", "cancelled"):
+                finish_reason = "error"
+            if finish_reason is not None:
+                span.set_attribute("gen_ai.response.finish_reasons", [finish_reason])
 
             if response.usage:
                 span.set_attribute("gen_ai.usage.input_tokens", response.usage.input_tokens)
@@ -170,6 +178,12 @@ def run_invoke_agent(client):
             print(f"    -> {response_text or response.id}")
         except Exception as e:
             span.set_status(StatusCode.ERROR, str(e))
+            span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
+            reference_event_logger().emit(
+                event_name="gen_ai.client.invoke_agent.exception",
+                severity_number=SeverityNumber.WARN,
+                exception=e,
+            )
             raise
         finally:
             openai_client.close()

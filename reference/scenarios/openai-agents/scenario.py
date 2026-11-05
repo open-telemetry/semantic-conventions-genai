@@ -1,43 +1,157 @@
 """Reference implementation for OpenAI Agents.
 
-Exercises: agent run with tool calling and a multi-agent run with handoffs
-wrapped in a workflow span, against a mock OpenAI server, with manual OTel spans.
+Exercises: agent run with tool calling, agent-as-tool delegation, sandboxed
+command execution, and a multi-agent run with handoffs wrapped in an
+invoke_runner span, against a mock OpenAI server, with manual OTel spans.
 """
 
 import asyncio
 import json
 import os
+import posixpath
+from contextvars import ContextVar
+from unittest.mock import patch
 
 import openai
 from agents import Agent, RunConfig, Runner, function_tool
+from agents.exceptions import MaxTurnsExceeded, ModelBehaviorError
 from agents.models.openai_chatcompletions import OpenAIChatCompletionsModel
+from agents.run import AgentRunner
 from agents.tool import FunctionTool, ToolContext
-from reference_shared import flush_and_shutdown, reference_tracer, setup_otel
+from opentelemetry import trace
+from opentelemetry._logs import SeverityNumber
+from opentelemetry.trace import StatusCode
+from reference_shared import flush_and_shutdown, reference_event_logger, reference_tracer, setup_otel
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"] + "/v1"
+# The shell this deployment lets the sandboxed agent run commands with.
+SANDBOX_SHELL = "/bin/bash"
 
 _reference_tracer = reference_tracer()
 
 
+def instrument_function_tool(tool: FunctionTool) -> FunctionTool:
+    original_on_invoke_tool = tool.on_invoke_tool
+
+    async def traced_on_invoke_tool(ctx, input_json):
+        tool_span_attributes = {
+            "gen_ai.operation.name": "execute_tool",
+            "gen_ai.tool.name": tool.name,
+            "gen_ai.tool.type": "function",
+        }
+        if ctx.agent is not None and ctx.agent.name:
+            tool_span_attributes["gen_ai.agent.name"] = ctx.agent.name
+        with _reference_tracer.start_as_current_span(
+            f"execute_tool {tool.name}", attributes=tool_span_attributes, record_exception=False
+        ) as tool_span:
+            try:
+                tool_span.set_attribute("gen_ai.tool.description", tool.description)
+                if ctx.tool_call_id:
+                    tool_span.set_attribute("gen_ai.tool.call.id", ctx.tool_call_id)
+                tool_span.set_attribute("gen_ai.tool.call.arguments", json.loads(input_json or "{}"))
+                result = await original_on_invoke_tool(ctx, input_json)
+                # TODO: Determine how to represent this string result in the object-only schema.
+                tool_span.set_attribute("gen_ai.tool.call.result", result)
+                return result
+            except Exception as e:
+                tool_span.set_status(StatusCode.ERROR, str(e))
+                tool_span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
+                reference_event_logger().emit(
+                    event_name="gen_ai.execute_tool.exception",
+                    severity_number=SeverityNumber.WARN,
+                    exception=e,
+                )
+                raise
+
+    tool.on_invoke_tool = traced_on_invoke_tool
+    return tool
+
+
+@instrument_function_tool
 @function_tool
 def get_weather(ctx: ToolContext[None], location: str) -> str:
     """Get the current weather for a location."""
-    tool_span_attributes = {
-        "gen_ai.operation.name": "execute_tool",
-        "gen_ai.tool.name": "get_weather",
-        "gen_ai.tool.type": "function",
+    return "Sunny, 72°F"
+
+
+async def _emit_agent_span(client, agent, input_text, **run_kwargs):
+    captured_responses = []
+    agent_span_attributes = {
+        "gen_ai.operation.name": "invoke_agent",
+        "gen_ai.request.model": agent.model.model,
+        "gen_ai.agent.name": agent.name,
     }
-    if ctx.agent is not None and ctx.agent.name:
-        tool_span_attributes["gen_ai.agent.name"] = ctx.agent.name
     with _reference_tracer.start_as_current_span(
-        "execute_tool get_weather", attributes=tool_span_attributes
-    ) as tool_span:
-        tool_span.set_attribute("gen_ai.tool.description", get_weather.description)
-        tool_span.set_attribute("gen_ai.tool.call.id", ctx.tool_call_id)
-        tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps({"location": location}))
-        result = "Sunny, 72°F"
-        tool_span.set_attribute("gen_ai.tool.call.result", result)
-        return result
+        f"invoke_agent {agent.name}", attributes=agent_span_attributes, record_exception=False
+    ) as agent_span:
+        try:
+            if agent.instructions:
+                agent_span.set_attribute(
+                    "gen_ai.system_instructions", [{"type": "text", "content": agent.instructions}]
+                )
+            agent_span.set_attribute(
+                "gen_ai.input.messages",
+                [{"role": "user", "parts": [{"type": "text", "content": input_text}]}],
+            )
+            if agent.tools:
+                agent_span.set_attribute(
+                    "gen_ai.tool.definitions",
+                    [
+                        {
+                            "type": "function",
+                            "name": t.name,
+                            "description": t.description,
+                            "parameters": t.params_json_schema,
+                        }
+                        for t in agent.tools
+                        if isinstance(t, FunctionTool)
+                    ],
+                )
+            original_create = client.chat.completions.create
+
+            async def _capture_create(*args, **kwargs):
+                response = await original_create(*args, **kwargs)
+                captured_responses.append(response)
+                return response
+
+            client.chat.completions.create = _capture_create
+            try:
+                result = await Runner.run(agent, input_text, **run_kwargs)
+            finally:
+                client.chat.completions.create = original_create
+            usage = result.context_wrapper.usage
+            if usage.total_tokens:
+                agent_span.set_attribute("gen_ai.usage.input_tokens", usage.input_tokens)
+                agent_span.set_attribute("gen_ai.usage.output_tokens", usage.output_tokens)
+            if captured_responses:
+                last_response = captured_responses[-1]
+                finish_reasons = [
+                    getattr(choice, "finish_reason", None) or "error"
+                    for choice in getattr(last_response, "choices", []) or []
+                ]
+                if finish_reasons:
+                    agent_span.set_attribute("gen_ai.response.finish_reasons", finish_reasons)
+            if result.final_output:
+                agent_span.set_attribute(
+                    "gen_ai.output.messages",
+                    [
+                        {
+                            "role": "assistant",
+                            "parts": [{"type": "text", "content": str(result.final_output)}],
+                        }
+                    ],
+                )
+            print(f"    -> {str(result.final_output)[:60]}")
+        except Exception as e:
+            agent_span.set_status(StatusCode.ERROR, str(e))
+            agent_span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
+            reference_event_logger().emit(
+                event_name="gen_ai.invoke_agent.exception",
+                severity_number=SeverityNumber.WARN,
+                exception=e,
+            )
+            raise
+    return result
 
 
 async def run_agent():
@@ -47,7 +161,6 @@ async def run_agent():
     model = OpenAIChatCompletionsModel(model=request_model, openai_client=client)
 
     tools = [get_weather]
-    captured_responses = []
     agent = Agent(
         name="test-agent",
         instructions="You are a helpful assistant.",
@@ -57,75 +170,309 @@ async def run_agent():
     input_text = "What's the weather in Seattle?"
 
     print("  [agent_run] agent with tool calling (reference implementation)")
-    agent_span_attributes = {
-        "gen_ai.operation.name": "invoke_agent",
-        "gen_ai.request.model": request_model,
-        "gen_ai.agent.name": agent.name,
-    }
-    with _reference_tracer.start_as_current_span(
-        "invoke_agent test-agent", attributes=agent_span_attributes
-    ) as agent_span:
-        agent_span.set_attribute(
-            "gen_ai.system_instructions", json.dumps([{"type": "text", "content": agent.instructions}])
-        )
-        agent_span.set_attribute(
-            "gen_ai.input.messages", json.dumps([{"role": "user", "parts": [{"type": "text", "content": input_text}]}])
-        )
-        agent_span.set_attribute(
-            "gen_ai.tool.definitions",
-            json.dumps(
-                [
-                    {
-                        "type": "function",
-                        "function": {"name": t.name, "description": t.description, "parameters": t.params_json_schema},
-                    }
-                    for t in tools
-                    if isinstance(t, FunctionTool)
-                ]
-            ),
-        )
-        original_create = client.chat.completions.create
+    await _emit_agent_span(client, agent, input_text)
 
-        async def _capture_create(*args, **kwargs):
-            response = await original_create(*args, **kwargs)
-            captured_responses.append(response)
-            return response
 
-        client.chat.completions.create = _capture_create
-        try:
-            result = await Runner.run(agent, input_text)
-        finally:
-            client.chat.completions.create = original_create
-        usage = result.context_wrapper.usage
-        if usage.total_tokens:
-            agent_span.set_attribute("gen_ai.usage.input_tokens", usage.input_tokens)
-            agent_span.set_attribute("gen_ai.usage.output_tokens", usage.output_tokens)
-        if captured_responses:
-            last_response = captured_responses[-1]
-            finish_reasons = [
-                getattr(choice, "finish_reason", None) or "error"
-                for choice in getattr(last_response, "choices", []) or []
-            ]
-            if finish_reasons:
-                agent_span.set_attribute("gen_ai.response.finish_reasons", finish_reasons)
-        if result.final_output:
-            agent_span.set_attribute(
-                "gen_ai.output.messages",
-                json.dumps(
-                    [
-                        {
-                            "role": "assistant",
-                            "parts": [{"type": "text", "content": str(result.final_output)}],
-                        }
+async def run_tool_error_reference():
+    """Exercise an SDK tool-argument validation exception."""
+
+    @instrument_function_tool
+    @function_tool(failure_error_function=None)
+    def get_weather(location: str) -> str:
+        """Get the current weather for a location."""
+        return f"Sunny in {location}"
+
+    input_json = '{"location": 42}'
+    tool_context = ToolContext(
+        context=None,
+        tool_name=get_weather.name,
+        tool_call_id="",
+        tool_arguments=input_json,
+    )
+    print("  [tool_error] SDK tool-argument validation (reference implementation)")
+    try:
+        await get_weather.on_invoke_tool(tool_context, input_json)
+    except ModelBehaviorError:
+        pass
+    else:
+        raise AssertionError("Expected the SDK to reject the tool arguments")
+
+
+async def run_agent_error_reference():
+    """Exercise the SDK's agent turn-limit exception."""
+    client = openai.AsyncOpenAI(base_url=MOCK_BASE_URL, api_key="mock-key")
+    model = OpenAIChatCompletionsModel(model="gpt-4o-mini", openai_client=client)
+    agent = Agent(name="turn-limit-agent", model=model)
+
+    print("  [agent_error] SDK agent turn limit (reference implementation)")
+    try:
+        await _emit_agent_span(client, agent, "Hello", max_turns=0)
+    except MaxTurnsExceeded:
+        pass
+    else:
+        raise AssertionError("Expected the SDK to enforce the agent turn limit")
+
+
+async def run_agent_as_tool_delegation():
+    """Delegation: a caller agent invokes another agent exposed via `Agent.as_tool`.
+
+    `Agent.as_tool()` runs the target agent as a function tool and returns its
+    result to the original agent. The caller-owned `execute_tool` span records
+    the transfer; the child `invoke_agent` span records the target's execution.
+    """
+    client = openai.AsyncOpenAI(base_url=MOCK_BASE_URL, api_key="mock-key")
+    request_model = "gpt-4o-mini"
+    model = OpenAIChatCompletionsModel(model=request_model, openai_client=client)
+
+    # The target agent has no tools, so its mock model call returns plain text.
+    specialist = Agent(
+        name="weather-specialist",
+        instructions="You report the weather.",
+        model=model,
+    )
+    weather_tool = specialist.as_tool(
+        tool_name="weather-specialist",
+        tool_description="Delegate weather questions to the weather specialist agent.",
+    )
+
+    original_on_invoke_tool = weather_tool.on_invoke_tool
+
+    async def _traced_on_invoke_tool(tool_context, input_json):
+        transfer_attributes = {
+            "gen_ai.agent.name": tool_context.agent.name,
+            "gen_ai.transfer.mode": "return_to_caller",
+            "gen_ai.transfer.target.name": weather_tool._agent_instance.name,
+        }
+        assert transfer_attributes == {
+            "gen_ai.agent.name": "assistant",
+            "gen_ai.transfer.mode": "return_to_caller",
+            "gen_ai.transfer.target.name": "weather-specialist",
+        }
+        tool_span_attributes = {
+            "gen_ai.operation.name": "execute_tool",
+            "gen_ai.tool.name": weather_tool.name,
+            "gen_ai.tool.type": "function",
+            **transfer_attributes,
+        }
+        with _reference_tracer.start_as_current_span(
+            f"execute_tool {weather_tool.name}", attributes=tool_span_attributes, record_exception=False
+        ) as tool_span:
+            try:
+                tool_span.set_attribute("gen_ai.tool.call.id", tool_context.tool_call_id)
+                tool_span.set_attribute("gen_ai.tool.call.arguments", json.loads(input_json or "{}"))
+                result = await original_on_invoke_tool(tool_context, input_json)
+                # TODO: Determine how to represent this string result in the object-only schema.
+                tool_span.set_attribute("gen_ai.tool.call.result", result)
+            except Exception as e:
+                tool_span.set_status(StatusCode.ERROR, str(e))
+                tool_span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
+                reference_event_logger().emit(
+                    event_name="gen_ai.execute_tool.exception",
+                    severity_number=SeverityNumber.WARN,
+                    exception=e,
+                )
+                raise
+        return result
+
+    model_responses = ContextVar("delegation_model_responses", default=None)
+    original_create = client.chat.completions.create
+    original_agent_run = AgentRunner.run
+
+    async def _capture_create(*args, **kwargs):
+        response = await original_create(*args, **kwargs)
+        responses = model_responses.get()
+        if responses is not None:
+            responses.append(response)
+        return response
+
+    async def _traced_agent_run(runner, starting_agent, input, **kwargs):
+        agent_span_attributes = {
+            "gen_ai.operation.name": "invoke_agent",
+            "gen_ai.request.model": starting_agent.model.model,
+            "gen_ai.agent.name": starting_agent.name,
+        }
+        with _reference_tracer.start_as_current_span(
+            f"invoke_agent {starting_agent.name}", attributes=agent_span_attributes, record_exception=False
+        ) as agent_span:
+            try:
+                agent_span.set_attribute(
+                    "gen_ai.system_instructions", [{"type": "text", "content": starting_agent.instructions}]
+                )
+                agent_span.set_attribute(
+                    "gen_ai.input.messages",
+                    [{"role": "user", "parts": [{"type": "text", "content": input}]}],
+                )
+                responses = []
+                token = model_responses.set(responses)
+                try:
+                    result = await original_agent_run(runner, starting_agent, input, **kwargs)
+                finally:
+                    model_responses.reset(token)
+                # Agent.as_tool shares context usage with its caller. Each run's raw
+                # responses identify its own model usage without counting the other agent.
+                if result.raw_responses:
+                    agent_span.set_attribute(
+                        "gen_ai.usage.input_tokens",
+                        sum(response.usage.input_tokens for response in result.raw_responses),
+                    )
+                    agent_span.set_attribute(
+                        "gen_ai.usage.output_tokens",
+                        sum(response.usage.output_tokens for response in result.raw_responses),
+                    )
+                finish_reasons = []
+                if responses:
+                    finish_reasons = [
+                        choice.finish_reason for choice in responses[-1].choices if choice.finish_reason is not None
                     ]
-                ),
+                    if finish_reasons:
+                        agent_span.set_attribute("gen_ai.response.finish_reasons", finish_reasons)
+                output_message = {
+                    "role": "assistant",
+                    "parts": [{"type": "text", "content": str(result.final_output)}],
+                }
+                if len(finish_reasons) == 1:
+                    output_message["finish_reason"] = finish_reasons[0]
+                agent_span.set_attribute("gen_ai.output.messages", [output_message])
+            except Exception as e:
+                agent_span.set_status(StatusCode.ERROR, str(e))
+                agent_span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
+                reference_event_logger().emit(
+                    event_name="gen_ai.invoke_agent.exception",
+                    severity_number=SeverityNumber.WARN,
+                    exception=e,
+                )
+                raise
+        return result
+
+    caller = Agent(
+        name="assistant",
+        instructions="You are a helpful assistant. Delegate weather questions to the specialist.",
+        model=model,
+        tools=[weather_tool],
+    )
+    input_text = "What's the weather in Seattle?"
+
+    print("  [delegation] agent-as-tool via Agent.as_tool (reference implementation)")
+    with (
+        patch.object(weather_tool, "on_invoke_tool", _traced_on_invoke_tool),
+        patch.object(AgentRunner, "run", _traced_agent_run),
+        patch.object(client.chat.completions, "create", _capture_create),
+    ):
+        result = await Runner.run(caller, input_text)
+    print(f"    -> {str(result.final_output)[:60]}")
+
+
+async def run_command_execution():
+    """Sandboxed command execution through the SDK's `exec_command` tool."""
+    from agents.run_config import SandboxRunConfig
+    from agents.sandbox import SandboxAgent
+    from agents.sandbox.capabilities import Shell
+    from agents.sandbox.capabilities.tools import ExecCommandTool
+    from agents.sandbox.sandboxes import UnixLocalSandboxClient
+
+    print("  [command] sandboxed command execution (reference implementation)")
+
+    client = openai.AsyncOpenAI(base_url=MOCK_BASE_URL, api_key="mock-key")
+    request_model = "gpt-4o-mini"
+    model = OpenAIChatCompletionsModel(model=request_model, openai_client=client)
+
+    class _TracedExecCommandTool(ExecCommandTool):
+        """Records an `execute_tool` span around `ExecCommandTool`."""
+
+        async def _invoke(self, ctx, raw_input):
+            args = self.args_model.model_validate_json(raw_input)
+            executable = args.shell
+            executable_name = posixpath.basename(executable) if executable else None
+            attributes = {
+                "gen_ai.operation.name": "execute_tool",
+                "gen_ai.tool.name": self.name,
+                "gen_ai.tool.type": "function",
+            }
+            if ctx.agent is not None and ctx.agent.name:
+                attributes["gen_ai.agent.name"] = ctx.agent.name
+            span_name = f"execute_tool {self.name}"
+            if executable_name:
+                attributes["process.executable.name"] = executable_name
+                span_name = f"{span_name} {executable_name}"
+            with _reference_tracer.start_as_current_span(
+                span_name, attributes=attributes, record_exception=False
+            ) as span:
+                try:
+                    span.set_attribute("gen_ai.tool.description", self.description)
+                    span.set_attribute("gen_ai.tool.call.id", ctx.tool_call_id)
+                    span.set_attribute("gen_ai.tool.call.arguments", json.loads(raw_input))
+                    if executable_name and posixpath.isabs(executable):
+                        span.set_attribute("process.executable.path", executable)
+                    result = await self.run(args)
+                    # TODO: Determine how to represent this string result in the object-only schema.
+                    span.set_attribute("gen_ai.tool.call.result", result)
+                    return result
+                except Exception as exc:
+                    span.set_attribute("error.type", f"{type(exc).__module__}.{type(exc).__qualname__}")
+                    span.set_status(StatusCode.ERROR, str(exc))
+                    reference_event_logger().emit(
+                        event_name="gen_ai.execute_tool.exception",
+                        severity_number=SeverityNumber.WARN,
+                        exception=exc,
+                    )
+                    raise
+
+    sandbox_client = UnixLocalSandboxClient()
+    session = await sandbox_client.create()
+    await session.start()
+    original_pty_exec_start = session.pty_exec_start
+
+    async def _pty_exec_start(*command, **kwargs):
+        update = await original_pty_exec_start(*command, **kwargs)
+        if update.exit_code is not None:
+            trace.get_current_span().set_attribute("process.exit.code", update.exit_code)
+        return update
+
+    session.pty_exec_start = _pty_exec_start
+
+    allowed_command = ""
+
+    def configure_tools(toolset):
+        """Swap in the traced tool and narrow what the model may run."""
+        toolset.exec_command = _TracedExecCommandTool(session=session)
+        properties = toolset.exec_command.params_json_schema["properties"]
+        properties["cmd"] = {**properties["cmd"], "enum": [allowed_command]}
+        properties["shell"] = {
+            "type": "string",
+            "enum": [SANDBOX_SHELL],
+            "description": properties["shell"]["description"],
+        }
+        toolset.exec_command.params_json_schema["required"] = ["cmd", "shell"]
+
+    agent = SandboxAgent(
+        name="command-agent",
+        instructions="You run shell commands to answer questions about the workspace.",
+        model=model,
+        capabilities=[Shell(configure_tools=configure_tools)],
+    )
+
+    runs = (
+        ("List the files in the workspace.", "ls -1a"),
+        ("Show me the report.", "cat missing-report.txt"),
+    )
+    try:
+        for input_text, command in runs:
+            allowed_command = command
+            result = await Runner.run(
+                agent,
+                input_text,
+                run_config=RunConfig(sandbox=SandboxRunConfig(session=session)),
             )
-        print(f"    -> {str(result.final_output)[:60]}")
+            print(f"    -> {str(result.final_output)[:60]}")
+    finally:
+        await session.shutdown()
 
 
-async def run_workflow():
-    """Run a multi-agent handoff wrapped in a workflow span representing the SDK workflow tracing."""
+async def run_runner():
+    """Run a multi-agent handoff wrapped in an `invoke_runner` span for the `Runner.run` call."""
     from agents import handoff
+    from agents import run as agent_run
+    from agents.run_internal import turn_resolution
 
     client = openai.AsyncOpenAI(base_url=MOCK_BASE_URL, api_key="mock-key")
     request_model = "gpt-4o-mini"
@@ -144,33 +491,124 @@ async def run_workflow():
     )
     input_text = "What's the weather in Seattle?"
 
-    print("  [workflow_run] agent run as workflow (reference implementation)")
-    workflow_name = "sequential-agents"
-    workflow_span_attributes = {
-        "gen_ai.operation.name": "invoke_workflow",
+    original_execute_handoffs = turn_resolution.execute_handoffs
+    original_run_single_turn = agent_run.run_single_turn
+    original_create = client.chat.completions.create
+
+    async def traced_execute_handoffs(*, public_agent, run_handoffs, **kwargs):
+        # The SDK executes only the first handoff when a model requests several.
+        selected = run_handoffs[0]
+        original_invoke = selected.handoff.on_invoke_handoff
+
+        async def traced_invoke(context, arguments):
+            attributes = {
+                "gen_ai.operation.name": "execute_tool",
+                "gen_ai.tool.name": selected.tool_call.name,
+                "gen_ai.tool.type": "function",
+                "gen_ai.agent.name": public_agent.name,
+            }
+            with _reference_tracer.start_as_current_span(
+                f"execute_tool {selected.tool_call.name}", attributes=attributes, record_exception=False
+            ) as span:
+                try:
+                    span.set_attribute("gen_ai.tool.call.id", selected.tool_call.call_id)
+                    span.set_attribute("gen_ai.tool.call.arguments", json.loads(arguments or "{}"))
+                    target = await original_invoke(context, arguments)
+                    span.set_attribute("gen_ai.transfer.mode", "pass_control")
+                    span.set_attribute("gen_ai.transfer.target.name", target.name)
+                    span.set_attribute(
+                        "gen_ai.tool.call.result", json.loads(selected.handoff.get_transfer_message(target))
+                    )
+                    return target
+                except Exception as e:
+                    span.set_status(StatusCode.ERROR, str(e))
+                    span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
+                    reference_event_logger().emit(
+                        event_name="gen_ai.execute_tool.exception",
+                        severity_number=SeverityNumber.WARN,
+                        exception=e,
+                    )
+                    raise
+
+        with patch.object(selected.handoff, "on_invoke_handoff", traced_invoke):
+            return await original_execute_handoffs(public_agent=public_agent, run_handoffs=run_handoffs, **kwargs)
+
+    async def traced_run_single_turn(*, bindings, **kwargs):
+        agent = bindings.public_agent
+        attributes = {
+            "gen_ai.operation.name": "invoke_agent",
+            "gen_ai.agent.name": agent.name,
+            "gen_ai.request.model": agent.model.model,
+        }
+        with _reference_tracer.start_as_current_span(
+            f"invoke_agent {agent.name}", attributes=attributes, record_exception=False
+        ) as span:
+            try:
+                result = await original_run_single_turn(bindings=bindings, **kwargs)
+                span.set_attribute("gen_ai.usage.input_tokens", result.model_response.usage.input_tokens)
+                span.set_attribute("gen_ai.usage.output_tokens", result.model_response.usage.output_tokens)
+                parts = []
+                for item in result.model_response.output:
+                    if item.type == "message":
+                        parts.extend(
+                            {"type": "text", "content": content.text}
+                            for content in item.content
+                            if content.type == "output_text"
+                        )
+                    elif item.type == "function_call":
+                        parts.append(
+                            {
+                                "type": "tool_call",
+                                "id": item.call_id,
+                                "name": item.name,
+                                "arguments": json.loads(item.arguments or "{}"),
+                            }
+                        )
+                if parts:
+                    span.set_attribute("gen_ai.output.messages", [{"role": "assistant", "parts": parts}])
+                return result
+            except Exception as e:
+                span.set_status(StatusCode.ERROR, str(e))
+                span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
+                reference_event_logger().emit(
+                    event_name="gen_ai.invoke_agent.exception",
+                    severity_number=SeverityNumber.WARN,
+                    exception=e,
+                )
+                raise
+
+    async def capture_create(*args, **kwargs):
+        response = await original_create(*args, **kwargs)
+        finish_reasons = [choice.finish_reason for choice in response.choices if choice.finish_reason is not None]
+        if finish_reasons:
+            trace.get_current_span().set_attribute("gen_ai.response.finish_reasons", finish_reasons)
+        return response
+
+    print("  [runner_run] multi-agent handoff via Runner.run (reference implementation)")
+    # `Runner` is not itself an agent or a workflow, so its invocation is `invoke_runner`.
+    runner_span_attributes = {
+        "gen_ai.operation.name": "invoke_runner",
     }
-    with _reference_tracer.start_as_current_span(
-        f"invoke_workflow {workflow_name}", attributes=workflow_span_attributes
-    ) as workflow_span:
-        workflow_span.set_attribute("gen_ai.workflow.name", workflow_name)
-        workflow_span.set_attribute(
-            "gen_ai.input.messages", json.dumps([{"role": "user", "parts": [{"type": "text", "content": input_text}]}])
+    with _reference_tracer.start_as_current_span("invoke_runner", attributes=runner_span_attributes) as runner_span:
+        runner_span.set_attribute(
+            "gen_ai.input.messages", [{"role": "user", "parts": [{"type": "text", "content": input_text}]}]
         )
 
-        # Note: Agent spans (invoke_agent) are expected to be children of the
-        # workflow span but are omitted for brevity in this scenario.
-        result = await Runner.run(agent_a, input_text, run_config=RunConfig(workflow_name=workflow_name))
+        with (
+            patch.object(turn_resolution, "execute_handoffs", traced_execute_handoffs),
+            patch.object(agent_run, "run_single_turn", traced_run_single_turn),
+            patch.object(client.chat.completions, "create", capture_create),
+        ):
+            result = await Runner.run(agent_a, input_text)
 
         if result.final_output:
-            output_messages = json.dumps(
-                [
-                    {
-                        "role": "assistant",
-                        "parts": [{"type": "text", "content": str(result.final_output)}],
-                    }
-                ]
-            )
-            workflow_span.set_attribute("gen_ai.output.messages", output_messages)
+            output_messages = [
+                {
+                    "role": "assistant",
+                    "parts": [{"type": "text", "content": str(result.final_output)}],
+                }
+            ]
+            runner_span.set_attribute("gen_ai.output.messages", output_messages)
         print(f"    -> {str(result.final_output)[:60]}")
 
 
@@ -180,7 +618,11 @@ def main():
     tp, lp, mp = setup_otel()
 
     asyncio.run(run_agent())
-    asyncio.run(run_workflow())
+    asyncio.run(run_tool_error_reference())
+    asyncio.run(run_agent_error_reference())
+    asyncio.run(run_agent_as_tool_delegation())
+    asyncio.run(run_command_execution())
+    asyncio.run(run_runner())
 
     flush_and_shutdown(tp, lp, mp)
 
