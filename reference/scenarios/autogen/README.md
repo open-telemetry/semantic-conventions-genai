@@ -12,3 +12,6 @@ it runs directly.
 | invoke_agent (internal) | Yes — agent run | ✅ Implemented |
 | execute_tool | Yes — AutoGen runs the tool | ✅ Implemented |
 | invoke_workflow | Yes — team / group chat orchestration (e.g. `RoundRobinGroupChat`) | ❌ Not implemented |
+
+The tool execution error handler records a correlated
+`gen_ai.execute_tool.exception` WARN log. This scenario does not exercise that path.

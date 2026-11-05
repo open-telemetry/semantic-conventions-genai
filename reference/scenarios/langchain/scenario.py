@@ -7,8 +7,9 @@ import time
 from typing import TypedDict
 
 from langchain_core.tools import tool
+from opentelemetry._logs import SeverityNumber
 from opentelemetry.trace import StatusCode
-from reference_shared import flush_and_shutdown, reference_meter, reference_tracer, setup_otel
+from reference_shared import flush_and_shutdown, reference_event_logger, reference_meter, reference_tracer, setup_otel
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"] + "/v1"
 
@@ -223,12 +224,22 @@ def run_execute_tool_reference():
         "gen_ai.tool.type": "function",
     }
     with _reference_tracer.start_as_current_span(
-        f"execute_tool {get_weather.name}", attributes=tool_span_attributes
+        f"execute_tool {get_weather.name}", attributes=tool_span_attributes, record_exception=False
     ) as tool_span:
-        tool_span.set_attribute("gen_ai.tool.call.id", tool_call["id"])
-        tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps(tool_call["args"]))
-        tool_message = get_weather.invoke(tool_call)
-        tool_span.set_attribute("gen_ai.tool.call.result", tool_message.content)
+        try:
+            tool_span.set_attribute("gen_ai.tool.call.id", tool_call["id"])
+            tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps(tool_call["args"]))
+            tool_message = get_weather.invoke(tool_call)
+            tool_span.set_attribute("gen_ai.tool.call.result", tool_message.content)
+        except Exception as e:
+            tool_span.set_status(StatusCode.ERROR, str(e))
+            tool_span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
+            reference_event_logger().emit(
+                event_name="gen_ai.execute_tool.exception",
+                severity_number=SeverityNumber.WARN,
+                exception=e,
+            )
+            raise
     print(f"    -> {tool_message.content[:60]}")
 
 
@@ -262,20 +273,30 @@ def run_command_execution_reference():
             "gen_ai.tool.type": "function",
         }
         with _reference_tracer.start_as_current_span(
-            f"execute_tool {shell_tool.name}", attributes=tool_span_attributes
+            f"execute_tool {shell_tool.name}", attributes=tool_span_attributes, record_exception=False
         ) as tool_span:
-            tool_span.set_attribute("gen_ai.tool.description", shell_tool.description)
-            tool_span.set_attribute("gen_ai.tool.call.id", runtime.tool_call_id)
-            tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps({"command": command}))
-            tool_message = run_shell(runtime=runtime, command=command, restart=restart)
-            # `direct`: the middleware reports the status the command exited
-            # with on the artifact of the tool message it builds. It is None
-            # when the command timed out and was killed before exiting.
-            exit_code = tool_message.artifact.get("exit_code")
-            if exit_code is not None:
-                tool_span.set_attribute("process.exit.code", exit_code)
-            tool_span.set_attribute("gen_ai.tool.call.result", tool_message.content)
-            return tool_message
+            try:
+                tool_span.set_attribute("gen_ai.tool.description", shell_tool.description)
+                tool_span.set_attribute("gen_ai.tool.call.id", runtime.tool_call_id)
+                tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps({"command": command}))
+                tool_message = run_shell(runtime=runtime, command=command, restart=restart)
+                # `direct`: the middleware reports the status the command exited
+                # with on the artifact of the tool message it builds. It is None
+                # when the command timed out and was killed before exiting.
+                exit_code = tool_message.artifact.get("exit_code")
+                if exit_code is not None:
+                    tool_span.set_attribute("process.exit.code", exit_code)
+                tool_span.set_attribute("gen_ai.tool.call.result", tool_message.content)
+                return tool_message
+            except Exception as e:
+                tool_span.set_status(StatusCode.ERROR, str(e))
+                tool_span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
+                reference_event_logger().emit(
+                    event_name="gen_ai.execute_tool.exception",
+                    severity_number=SeverityNumber.WARN,
+                    exception=e,
+                )
+                raise
 
     shell_tool.func = traced_shell
 
