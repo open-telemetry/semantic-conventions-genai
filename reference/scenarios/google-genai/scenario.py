@@ -249,8 +249,7 @@ def _record_inference_usage(usage, metric_attributes):
         )
     reasoning_tokens = usage.get("gen_ai.usage.reasoning.output_tokens")
     if reasoning_tokens is not None and reasoning_tokens > 0:
-        # Google reports no modality for thoughts tokens.
-        _reasoning_output_tokens.add(reasoning_tokens, {**metric_attributes, "gen_ai.token.modality": "unknown"})
+        _reasoning_output_tokens.add(reasoning_tokens, metric_attributes)
 
 
 def _emit_inference_event(request_model, input_messages, output_messages, response, usage):

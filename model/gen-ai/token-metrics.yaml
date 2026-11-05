@@ -102,16 +102,13 @@ metrics:
 
       Instrumentation SHOULD record contributions from successful and failed
       inference operations. Each measurement MUST be a known, strictly positive
-      modality contribution.
-
-      When a contribution's modality cannot reliably be determined,
-      instrumentation MUST set `gen_ai.token.modality` to `unknown`.
+      reasoning token count.
     stability: development
     annotations:
       code_generation:
         metric_value_type: int
     attributes:
-      - ref_group: metric_attributes.gen_ai.inference_usage
+      - ref_group: metric_attributes.gen_ai.inference
 
   - name: gen_ai.client.inference.operation.input_tokens
     requirement_level: recommended

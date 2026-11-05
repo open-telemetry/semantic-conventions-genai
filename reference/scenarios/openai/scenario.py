@@ -136,8 +136,8 @@ def record_inference_usage(usage, metric_attributes):
     """Record the usage instruments from the same `gen_ai.usage.*` values the span carries.
 
     OpenAI only breaks usage down by audio tokens, so the rest of the input and output
-    goes to the `unknown` modality: the API gives no evidence that it is text. Cached,
-    cache-written, and reasoning tokens carry no modality breakdown at all.
+    goes to the `unknown` modality: the API gives no evidence that it is text. Cached
+    and cache-written tokens carry no modality breakdown.
     """
     input_tokens = usage.get("gen_ai.usage.input_tokens")
     if input_tokens is not None:
@@ -152,11 +152,13 @@ def record_inference_usage(usage, metric_attributes):
     for attribute, counter in (
         ("gen_ai.usage.cache_read.input_tokens", _cache_read_input_tokens),
         ("gen_ai.usage.cache_write.input_tokens", _cache_write_input_tokens),
-        ("gen_ai.usage.reasoning.output_tokens", _reasoning_output_tokens),
     ):
         value = usage.get(attribute)
         if value is not None and value > 0:
             counter.add(value, {**metric_attributes, "gen_ai.token.modality": "unknown"})
+    reasoning_tokens = usage.get("gen_ai.usage.reasoning.output_tokens")
+    if reasoning_tokens is not None and reasoning_tokens > 0:
+        _reasoning_output_tokens.add(reasoning_tokens, metric_attributes)
 
 
 def chat_finish_reasons(choices, expected_count=None):
