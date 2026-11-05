@@ -14,7 +14,7 @@ from unittest.mock import patch
 
 import openai
 from agents import Agent, RunConfig, Runner, function_tool
-from agents.exceptions import ModelBehaviorError
+from agents.exceptions import MaxTurnsExceeded, ModelBehaviorError
 from agents.models.openai_chatcompletions import OpenAIChatCompletionsModel
 from agents.run import AgentRunner
 from agents.tool import FunctionTool, ToolContext
@@ -73,6 +73,90 @@ def get_weather(ctx: ToolContext[None], location: str) -> str:
     return "Sunny, 72°F"
 
 
+async def _emit_agent_span(client, agent, input_text, **run_kwargs):
+    captured_responses = []
+    agent_span_attributes = {
+        "gen_ai.operation.name": "invoke_agent",
+        "gen_ai.request.model": agent.model.model,
+        "gen_ai.agent.name": agent.name,
+    }
+    with _reference_tracer.start_as_current_span(
+        f"invoke_agent {agent.name}", attributes=agent_span_attributes, record_exception=False
+    ) as agent_span:
+        try:
+            if agent.instructions:
+                agent_span.set_attribute(
+                    "gen_ai.system_instructions", json.dumps([{"type": "text", "content": agent.instructions}])
+                )
+            agent_span.set_attribute(
+                "gen_ai.input.messages",
+                json.dumps([{"role": "user", "parts": [{"type": "text", "content": input_text}]}]),
+            )
+            if agent.tools:
+                agent_span.set_attribute(
+                    "gen_ai.tool.definitions",
+                    json.dumps(
+                        [
+                            {
+                                "type": "function",
+                                "name": t.name,
+                                "description": t.description,
+                                "parameters": t.params_json_schema,
+                            }
+                            for t in agent.tools
+                            if isinstance(t, FunctionTool)
+                        ]
+                    ),
+                )
+            original_create = client.chat.completions.create
+
+            async def _capture_create(*args, **kwargs):
+                response = await original_create(*args, **kwargs)
+                captured_responses.append(response)
+                return response
+
+            client.chat.completions.create = _capture_create
+            try:
+                result = await Runner.run(agent, input_text, **run_kwargs)
+            finally:
+                client.chat.completions.create = original_create
+            usage = result.context_wrapper.usage
+            if usage.total_tokens:
+                agent_span.set_attribute("gen_ai.usage.input_tokens", usage.input_tokens)
+                agent_span.set_attribute("gen_ai.usage.output_tokens", usage.output_tokens)
+            if captured_responses:
+                last_response = captured_responses[-1]
+                finish_reasons = [
+                    getattr(choice, "finish_reason", None) or "error"
+                    for choice in getattr(last_response, "choices", []) or []
+                ]
+                if finish_reasons:
+                    agent_span.set_attribute("gen_ai.response.finish_reasons", finish_reasons)
+            if result.final_output:
+                agent_span.set_attribute(
+                    "gen_ai.output.messages",
+                    json.dumps(
+                        [
+                            {
+                                "role": "assistant",
+                                "parts": [{"type": "text", "content": str(result.final_output)}],
+                            }
+                        ]
+                    ),
+                )
+            print(f"    -> {str(result.final_output)[:60]}")
+        except Exception as e:
+            agent_span.set_status(StatusCode.ERROR, str(e))
+            agent_span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
+            reference_event_logger().emit(
+                event_name="gen_ai.invoke_agent.exception",
+                severity_number=SeverityNumber.WARN,
+                exception=e,
+            )
+            raise
+    return result
+
+
 async def run_agent():
     """Run a simple agent with the OpenAI Agents SDK, with manual spans."""
     client = openai.AsyncOpenAI(base_url=MOCK_BASE_URL, api_key="mock-key")
@@ -80,7 +164,6 @@ async def run_agent():
     model = OpenAIChatCompletionsModel(model=request_model, openai_client=client)
 
     tools = [get_weather]
-    captured_responses = []
     agent = Agent(
         name="test-agent",
         instructions="You are a helpful assistant.",
@@ -90,72 +173,7 @@ async def run_agent():
     input_text = "What's the weather in Seattle?"
 
     print("  [agent_run] agent with tool calling (reference implementation)")
-    agent_span_attributes = {
-        "gen_ai.operation.name": "invoke_agent",
-        "gen_ai.request.model": request_model,
-        "gen_ai.agent.name": agent.name,
-    }
-    with _reference_tracer.start_as_current_span(
-        "invoke_agent test-agent", attributes=agent_span_attributes
-    ) as agent_span:
-        agent_span.set_attribute(
-            "gen_ai.system_instructions", json.dumps([{"type": "text", "content": agent.instructions}])
-        )
-        agent_span.set_attribute(
-            "gen_ai.input.messages", json.dumps([{"role": "user", "parts": [{"type": "text", "content": input_text}]}])
-        )
-        agent_span.set_attribute(
-            "gen_ai.tool.definitions",
-            json.dumps(
-                [
-                    {
-                        "type": "function",
-                        "name": t.name,
-                        "description": t.description,
-                        "parameters": t.params_json_schema,
-                    }
-                    for t in tools
-                    if isinstance(t, FunctionTool)
-                ]
-            ),
-        )
-        original_create = client.chat.completions.create
-
-        async def _capture_create(*args, **kwargs):
-            response = await original_create(*args, **kwargs)
-            captured_responses.append(response)
-            return response
-
-        client.chat.completions.create = _capture_create
-        try:
-            result = await Runner.run(agent, input_text)
-        finally:
-            client.chat.completions.create = original_create
-        usage = result.context_wrapper.usage
-        if usage.total_tokens:
-            agent_span.set_attribute("gen_ai.usage.input_tokens", usage.input_tokens)
-            agent_span.set_attribute("gen_ai.usage.output_tokens", usage.output_tokens)
-        if captured_responses:
-            last_response = captured_responses[-1]
-            finish_reasons = [
-                getattr(choice, "finish_reason", None) or "error"
-                for choice in getattr(last_response, "choices", []) or []
-            ]
-            if finish_reasons:
-                agent_span.set_attribute("gen_ai.response.finish_reasons", finish_reasons)
-        if result.final_output:
-            agent_span.set_attribute(
-                "gen_ai.output.messages",
-                json.dumps(
-                    [
-                        {
-                            "role": "assistant",
-                            "parts": [{"type": "text", "content": str(result.final_output)}],
-                        }
-                    ]
-                ),
-            )
-        print(f"    -> {str(result.final_output)[:60]}")
+    await _emit_agent_span(client, agent, input_text)
 
 
 async def run_tool_error_reference():
@@ -181,6 +199,21 @@ async def run_tool_error_reference():
         pass
     else:
         raise AssertionError("Expected the SDK to reject the tool arguments")
+
+
+async def run_agent_error_reference():
+    """Exercise the SDK's agent turn-limit exception."""
+    client = openai.AsyncOpenAI(base_url=MOCK_BASE_URL, api_key="mock-key")
+    model = OpenAIChatCompletionsModel(model="gpt-4o-mini", openai_client=client)
+    agent = Agent(name="turn-limit-agent", model=model)
+
+    print("  [agent_error] SDK agent turn limit (reference implementation)")
+    try:
+        await _emit_agent_span(client, agent, "Hello", max_turns=0)
+    except MaxTurnsExceeded:
+        pass
+    else:
+        raise AssertionError("Expected the SDK to enforce the agent turn limit")
 
 
 async def run_agent_as_tool_delegation():
@@ -261,43 +294,56 @@ async def run_agent_as_tool_delegation():
             "gen_ai.agent.name": starting_agent.name,
         }
         with _reference_tracer.start_as_current_span(
-            f"invoke_agent {starting_agent.name}", attributes=agent_span_attributes
+            f"invoke_agent {starting_agent.name}", attributes=agent_span_attributes, record_exception=False
         ) as agent_span:
-            agent_span.set_attribute(
-                "gen_ai.system_instructions", json.dumps([{"type": "text", "content": starting_agent.instructions}])
-            )
-            agent_span.set_attribute(
-                "gen_ai.input.messages", json.dumps([{"role": "user", "parts": [{"type": "text", "content": input}]}])
-            )
-            responses = []
-            token = model_responses.set(responses)
             try:
-                result = await original_agent_run(runner, starting_agent, input, **kwargs)
-            finally:
-                model_responses.reset(token)
-            # Agent.as_tool shares context usage with its caller. Each run's raw
-            # responses identify its own model usage without counting the other agent.
-            if result.raw_responses:
                 agent_span.set_attribute(
-                    "gen_ai.usage.input_tokens", sum(response.usage.input_tokens for response in result.raw_responses)
+                    "gen_ai.system_instructions", json.dumps([{"type": "text", "content": starting_agent.instructions}])
                 )
                 agent_span.set_attribute(
-                    "gen_ai.usage.output_tokens", sum(response.usage.output_tokens for response in result.raw_responses)
+                    "gen_ai.input.messages",
+                    json.dumps([{"role": "user", "parts": [{"type": "text", "content": input}]}]),
                 )
-            finish_reasons = []
-            if responses:
-                finish_reasons = [
-                    choice.finish_reason for choice in responses[-1].choices if choice.finish_reason is not None
-                ]
-                if finish_reasons:
-                    agent_span.set_attribute("gen_ai.response.finish_reasons", finish_reasons)
-            output_message = {
-                "role": "assistant",
-                "parts": [{"type": "text", "content": str(result.final_output)}],
-            }
-            if len(finish_reasons) == 1:
-                output_message["finish_reason"] = finish_reasons[0]
-            agent_span.set_attribute("gen_ai.output.messages", json.dumps([output_message]))
+                responses = []
+                token = model_responses.set(responses)
+                try:
+                    result = await original_agent_run(runner, starting_agent, input, **kwargs)
+                finally:
+                    model_responses.reset(token)
+                # Agent.as_tool shares context usage with its caller. Each run's raw
+                # responses identify its own model usage without counting the other agent.
+                if result.raw_responses:
+                    agent_span.set_attribute(
+                        "gen_ai.usage.input_tokens",
+                        sum(response.usage.input_tokens for response in result.raw_responses),
+                    )
+                    agent_span.set_attribute(
+                        "gen_ai.usage.output_tokens",
+                        sum(response.usage.output_tokens for response in result.raw_responses),
+                    )
+                finish_reasons = []
+                if responses:
+                    finish_reasons = [
+                        choice.finish_reason for choice in responses[-1].choices if choice.finish_reason is not None
+                    ]
+                    if finish_reasons:
+                        agent_span.set_attribute("gen_ai.response.finish_reasons", finish_reasons)
+                output_message = {
+                    "role": "assistant",
+                    "parts": [{"type": "text", "content": str(result.final_output)}],
+                }
+                if len(finish_reasons) == 1:
+                    output_message["finish_reason"] = finish_reasons[0]
+                agent_span.set_attribute("gen_ai.output.messages", json.dumps([output_message]))
+            except Exception as e:
+                agent_span.set_status(StatusCode.ERROR, str(e))
+                agent_span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
+                reference_event_logger().emit(
+                    event_name="gen_ai.invoke_agent.exception",
+                    severity_number=SeverityNumber.WARN,
+                    exception=e,
+                )
+                raise
         return result
 
     caller = Agent(
@@ -493,30 +539,42 @@ async def run_workflow():
             "gen_ai.agent.name": agent.name,
             "gen_ai.request.model": agent.model.model,
         }
-        with _reference_tracer.start_as_current_span(f"invoke_agent {agent.name}", attributes=attributes) as span:
-            result = await original_run_single_turn(bindings=bindings, **kwargs)
-            span.set_attribute("gen_ai.usage.input_tokens", result.model_response.usage.input_tokens)
-            span.set_attribute("gen_ai.usage.output_tokens", result.model_response.usage.output_tokens)
-            parts = []
-            for item in result.model_response.output:
-                if item.type == "message":
-                    parts.extend(
-                        {"type": "text", "content": content.text}
-                        for content in item.content
-                        if content.type == "output_text"
-                    )
-                elif item.type == "function_call":
-                    parts.append(
-                        {
-                            "type": "tool_call",
-                            "id": item.call_id,
-                            "name": item.name,
-                            "arguments": json.loads(item.arguments),
-                        }
-                    )
-            if parts:
-                span.set_attribute("gen_ai.output.messages", json.dumps([{"role": "assistant", "parts": parts}]))
-            return result
+        with _reference_tracer.start_as_current_span(
+            f"invoke_agent {agent.name}", attributes=attributes, record_exception=False
+        ) as span:
+            try:
+                result = await original_run_single_turn(bindings=bindings, **kwargs)
+                span.set_attribute("gen_ai.usage.input_tokens", result.model_response.usage.input_tokens)
+                span.set_attribute("gen_ai.usage.output_tokens", result.model_response.usage.output_tokens)
+                parts = []
+                for item in result.model_response.output:
+                    if item.type == "message":
+                        parts.extend(
+                            {"type": "text", "content": content.text}
+                            for content in item.content
+                            if content.type == "output_text"
+                        )
+                    elif item.type == "function_call":
+                        parts.append(
+                            {
+                                "type": "tool_call",
+                                "id": item.call_id,
+                                "name": item.name,
+                                "arguments": json.loads(item.arguments),
+                            }
+                        )
+                if parts:
+                    span.set_attribute("gen_ai.output.messages", json.dumps([{"role": "assistant", "parts": parts}]))
+                return result
+            except Exception as e:
+                span.set_status(StatusCode.ERROR, str(e))
+                span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
+                reference_event_logger().emit(
+                    event_name="gen_ai.invoke_agent.exception",
+                    severity_number=SeverityNumber.WARN,
+                    exception=e,
+                )
+                raise
 
     async def capture_create(*args, **kwargs):
         response = await original_create(*args, **kwargs)
@@ -565,6 +623,7 @@ def main():
 
     asyncio.run(run_agent())
     asyncio.run(run_tool_error_reference())
+    asyncio.run(run_agent_error_reference())
     asyncio.run(run_agent_as_tool_delegation())
     asyncio.run(run_command_execution())
     asyncio.run(run_workflow())

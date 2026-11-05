@@ -71,38 +71,49 @@ async def agent_node(state: GraphState) -> GraphState:
         "gen_ai.request.model": AGENT_MODEL,
     }
     with _reference_tracer.start_as_current_span(
-        f"invoke_agent {AGENT_NAME}", attributes=agent_span_attributes
+        f"invoke_agent {AGENT_NAME}", attributes=agent_span_attributes, record_exception=False
     ) as agent_span:
-        agent_span.set_attribute(
-            "gen_ai.system_instructions", json.dumps([{"type": "text", "content": AGENT_SYSTEM_PROMPT}])
-        )
-        agent_span.set_attribute(
-            "gen_ai.input.messages", json.dumps([{"role": "user", "parts": [{"type": "text", "content": input_text}]}])
-        )
-        agent_span.set_attribute(
-            "gen_ai.tool.definitions",
-            json.dumps([{"type": "function", "name": get_weather.name, "description": get_weather.description}]),
-        )
+        try:
+            agent_span.set_attribute(
+                "gen_ai.system_instructions", json.dumps([{"type": "text", "content": AGENT_SYSTEM_PROMPT}])
+            )
+            agent_span.set_attribute(
+                "gen_ai.input.messages",
+                json.dumps([{"role": "user", "parts": [{"type": "text", "content": input_text}]}]),
+            )
+            agent_span.set_attribute(
+                "gen_ai.tool.definitions",
+                json.dumps([{"type": "function", "name": get_weather.name, "description": get_weather.description}]),
+            )
 
-        # LangChain delegates the model call to the underlying LLM client (openai),
-        # whose own instrumentation owns the inference span. The agent runs the tool
-        # itself, so the execute_tool span belongs to LangChain instrumentation.
-        result = await agent.ainvoke({"messages": [{"role": "user", "content": input_text}]})
+            # LangChain delegates the model call to the underlying LLM client (openai),
+            # whose own instrumentation owns the inference span. The agent runs the tool
+            # itself, so the execute_tool span belongs to LangChain instrumentation.
+            result = await agent.ainvoke({"messages": [{"role": "user", "content": input_text}]})
 
-        final_message = result["messages"][-1]
-        finish_reason = final_message.response_metadata.get("finish_reason")
-        if finish_reason is not None:
-            agent_span.set_attribute("gen_ai.response.finish_reasons", [finish_reason])
-        usage = getattr(final_message, "usage_metadata", None) or {}
-        if usage.get("input_tokens"):
-            agent_span.set_attribute("gen_ai.usage.input_tokens", usage["input_tokens"])
-        if usage.get("output_tokens"):
-            agent_span.set_attribute("gen_ai.usage.output_tokens", usage["output_tokens"])
-        agent_span.set_attribute(
-            "gen_ai.output.messages",
-            json.dumps([{"role": "assistant", "parts": [{"type": "text", "content": final_message.text()}]}]),
-        )
-        return {"messages": state["messages"] + [final_message.text()]}
+            final_message = result["messages"][-1]
+            finish_reason = final_message.response_metadata.get("finish_reason")
+            if finish_reason is not None:
+                agent_span.set_attribute("gen_ai.response.finish_reasons", [finish_reason])
+            usage = getattr(final_message, "usage_metadata", None) or {}
+            if usage.get("input_tokens"):
+                agent_span.set_attribute("gen_ai.usage.input_tokens", usage["input_tokens"])
+            if usage.get("output_tokens"):
+                agent_span.set_attribute("gen_ai.usage.output_tokens", usage["output_tokens"])
+            agent_span.set_attribute(
+                "gen_ai.output.messages",
+                json.dumps([{"role": "assistant", "parts": [{"type": "text", "content": final_message.text()}]}]),
+            )
+            return {"messages": state["messages"] + [final_message.text()]}
+        except Exception as e:
+            agent_span.set_status(StatusCode.ERROR, str(e))
+            agent_span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
+            reference_event_logger().emit(
+                event_name="gen_ai.invoke_agent.exception",
+                severity_number=SeverityNumber.WARN,
+                exception=e,
+            )
+            raise
 
 
 def format_node(state: GraphState) -> GraphState:

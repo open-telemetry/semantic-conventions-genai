@@ -55,6 +55,7 @@ Run `uv run update-reports` to regenerate.
 | [Client Invoke Agent Exception](reports/gen-ai-client-invoke-agent-exception-event.md) | aws-bedrock-agent |
 | [Evaluation Result](reports/gen-ai-evaluation-result-event.md) | azure-ai-evaluation, deepeval, dspy |
 | [Execute Tool Exception](reports/gen-ai-execute-tool-exception-event.md) | openai-agents |
+| [Invoke Agent Exception](reports/gen-ai-invoke-agent-exception-event.md) | openai-agents |
 
 ### Entities
 
