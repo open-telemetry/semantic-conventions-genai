@@ -10,9 +10,16 @@ This document defines semantic conventions for recording exceptions on Generativ
 
 <!-- toc -->
 
+- [Operation-specific exception events](#operation-specific-exception-events)
 - [Generative AI client operation exception](#generative-ai-client-operation-exception)
 
 <!-- tocstop -->
+
+## Operation-specific exception events
+
+| Operation | Exception event |
+| --- | --- |
+| Client inference | [`gen_ai.client.inference.exception`](client-inference.md#event-gen_aiclientinferenceexception) |
 
 ## Generative AI client operation exception
 
@@ -25,9 +32,10 @@ This document defines semantic conventions for recording exceptions on Generativ
 
 The event name MUST be `gen_ai.client.operation.exception`.
 
-This event represents an exception that occurred during a Generative AI client operation, such as API errors, rate limiting, model errors, timeouts, or other errors that prevent the operation from completing successfully.
+This event represents an exception that occurred during a Generative AI client operation other than inference, such as API errors, rate limiting, model errors, timeouts, or other errors that prevent the operation from completing successfully.
 
-This event SHOULD be recorded when an exception occurs during Generative AI client operations.
+This event SHOULD be recorded when an exception occurs during Generative AI client operations other than inference.
+For inference operations, instrumentations SHOULD record `gen_ai.client.inference.exception` instead of this event.
 Instrumentations SHOULD set the severity to WARN (severity number 13) when recording this event.
 Instrumentations MAY provide a configuration option to populate exception events with the attributes captured on the corresponding Generative AI client span.
 
