@@ -4,7 +4,6 @@ Exercises: chat, chat_streaming, embeddings
 against a mock Google GenAI server, with manual OTel spans.
 """
 
-import json
 import os
 import time
 from contextlib import contextmanager
@@ -117,14 +116,14 @@ def _patch_automatic_function_calling():
                 try:
                     if call.id:
                         tool_span.set_attribute("gen_ai.tool.call.id", call.id)
-                    tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps(dict(call.args or {})))
+                    tool_span.set_attribute("gen_ai.tool.call.arguments", dict(call.args or {}))
                     single = response.model_copy(deep=True)
                     single.candidates[0].content.parts = [part]
                     result_parts = original(single, function_map)
                     for result_part in result_parts:
                         tool_span.set_attribute(
                             "gen_ai.tool.call.result",
-                            json.dumps({"output": result_part.function_response.response}),
+                            {"output": result_part.function_response.response},
                         )
                     parts.extend(result_parts)
                 except Exception as e:
@@ -258,8 +257,8 @@ def _emit_inference_event(request_model, input_messages, output_messages, respon
         "gen_ai.operation.name": "chat",
         "gen_ai.provider.name": "gcp.gemini",
         "gen_ai.request.model": request_model,
-        "gen_ai.input.messages": json.dumps(input_messages),
-        "gen_ai.output.messages": json.dumps(output_messages),
+        "gen_ai.input.messages": input_messages,
+        "gen_ai.output.messages": output_messages,
     }
     if response.model_version:
         event_attrs["gen_ai.response.model"] = response.model_version
@@ -378,18 +377,15 @@ def run_interactions_continuation():
             "gen_ai.provider.name": "gcp.gemini",
             "gen_ai.request.model": request_model,
             "gen_ai.request.previous_response.id": previous_interaction_id,
-            "gen_ai.input.messages": json.dumps(
-                [{"role": "user", "parts": [{"type": "text", "content": prompt_text}]}]
-            ),
-            "gen_ai.output.messages": json.dumps(
-                [
-                    {
-                        "role": "assistant",
-                        "parts": [{"type": "text", "content": "This is a response from the mock interactions server."}],
-                    }
-                ]
-            ),
+            "gen_ai.input.messages": [{"role": "user", "parts": [{"type": "text", "content": prompt_text}]}],
         }
+        if interaction.output_text is not None:
+            event_attrs["gen_ai.output.messages"] = [
+                {
+                    "role": "assistant",
+                    "parts": [{"type": "text", "content": interaction.output_text}],
+                }
+            ]
         if interaction.id:
             event_attrs["gen_ai.response.id"] = interaction.id
         if interaction.model:
@@ -445,20 +441,18 @@ def run_chat_tool_call():
     ):
         span.set_attribute(
             "gen_ai.tool.definitions",
-            json.dumps(
-                [
-                    {
-                        "type": "function",
-                        "name": "get_weather",
-                        "description": "Get the current weather",
-                        "parameters": {
-                            "type": "object",
-                            "properties": {"location": {"type": "string", "description": "City name"}},
-                            "required": ["location"],
-                        },
-                    }
-                ]
-            ),
+            [
+                {
+                    "type": "function",
+                    "name": "get_weather",
+                    "description": "Get the current weather",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {"location": {"type": "string", "description": "City name"}},
+                        "required": ["location"],
+                    },
+                }
+            ],
         )
         response = client.models.generate_content(
             model=request_model,
@@ -511,9 +505,6 @@ def run_chat_multimodal():
     request_model = "gemini-2.0-flash"
     # Payload bytes are ignored by the mock, which only inspects the MIME type.
     blob = b"\x00" * 16
-    import base64
-
-    blob_b64 = base64.b64encode(blob).decode("ascii")
     span_attributes = {
         "gen_ai.operation.name": "chat",
         "gen_ai.provider.name": "gcp.gemini",
@@ -549,8 +540,8 @@ def run_chat_multimodal():
                 "role": "user",
                 "parts": [
                     {"type": "text", "content": "Summarize the attached media."},
-                    {"type": "blob", "mime_type": "image/png", "modality": "image", "content": blob_b64},
-                    {"type": "blob", "mime_type": "audio/wav", "modality": "audio", "content": blob_b64},
+                    {"type": "blob", "mime_type": "image/png", "modality": "image", "content": blob},
+                    {"type": "blob", "mime_type": "audio/wav", "modality": "audio", "content": blob},
                 ],
             }
         ]
@@ -566,8 +557,6 @@ def run_chat_multimodal():
 
 def run_generate_media():
     """Scenario: image + audio output generation, emitting per-modality output usage."""
-    import base64
-
     from google import genai
     from google.genai import types
 
@@ -619,7 +608,7 @@ def run_generate_media():
                             "mime_type": mime_type,
                             # e.g. "image/png" -> "image", "audio/wav" -> "audio"
                             "modality": mime_type.split("/", 1)[0],
-                            "content": base64.b64encode(part.inline_data.data).decode("ascii"),
+                            "content": part.inline_data.data,
                         }
                     )
             output_messages = [
@@ -774,7 +763,7 @@ def run_create_agent():
         f"create_agent {agent_name}", kind=SpanKind.CLIENT, attributes=span_attributes
     ) as span:
         span.set_attribute("gen_ai.agent.description", agent_description)
-        span.set_attribute("gen_ai.system_instructions", json.dumps([{"type": "text", "content": agent_system}]))
+        span.set_attribute("gen_ai.system_instructions", [{"type": "text", "content": agent_system}])
         try:
             agent = client.agents.create(
                 id=agent_name,

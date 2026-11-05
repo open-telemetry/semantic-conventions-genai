@@ -46,9 +46,7 @@
 {%- set schema_path = annotations['type']['json_schema'] | trim | trim('/') -%}
 {%- endif -%}
 {%- if schema_path -%}
-Instrumentations MUST follow [JSON schema](/{{ schema_path }}).
-
-When the attribute is recorded on events, it MUST be recorded in structured form. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
+This attribute MUST be recorded as an [AnyValue](https://opentelemetry.io/docs/specs/otel/common/#anyvalue) conforming to its [JSON schema](/{{ schema_path }}).
 {%- endif -%}
 {%- endmacro %}
 

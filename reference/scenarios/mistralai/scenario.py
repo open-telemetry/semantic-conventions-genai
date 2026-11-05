@@ -4,7 +4,6 @@ Exercises: chat, chat_streaming, embeddings, create_agent
 against a mock server, with manual OTel spans.
 """
 
-import json
 import os
 import time
 
@@ -100,7 +99,7 @@ def run_chat(client):
     ) as span:
         span.set_attribute(
             "gen_ai.input.messages",
-            json.dumps([{"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]} for m in messages]),
+            [{"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]} for m in messages],
         )
         resp = client.chat.complete(
             model=request_model,
@@ -121,18 +120,16 @@ def run_chat(client):
             "gen_ai.operation.name": "chat",
             "gen_ai.provider.name": "mistral",
             "gen_ai.request.model": request_model,
-            "gen_ai.input.messages": json.dumps(
-                [{"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]} for m in messages]
-            ),
-            "gen_ai.output.messages": json.dumps(
-                [
-                    {
-                        "role": "assistant",
-                        "parts": [{"type": "text", "content": c.message.content}],
-                    }
-                    for c in resp.choices
-                ]
-            ),
+            "gen_ai.input.messages": [
+                {"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]} for m in messages
+            ],
+            "gen_ai.output.messages": [
+                {
+                    "role": "assistant",
+                    "parts": [{"type": "text", "content": c.message.content}],
+                }
+                for c in resp.choices
+            ],
         }
         if resp.model:
             event_attrs["gen_ai.response.model"] = resp.model
@@ -185,10 +182,10 @@ def run_chat_tool_call(client):
     with _reference_tracer.start_as_current_span(
         "chat mistral-large-latest", kind=SpanKind.CLIENT, attributes=span_attributes_2
     ) as span:
-        span.set_attribute("gen_ai.tool.definitions", json.dumps([{"type": t["type"], **t["function"]} for t in tools]))
+        span.set_attribute("gen_ai.tool.definitions", [{"type": t["type"], **t["function"]} for t in tools])
         span.set_attribute(
             "gen_ai.input.messages",
-            json.dumps([{"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]} for m in messages]),
+            [{"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]} for m in messages],
         )
         resp = client.chat.complete(
             model=request_model,
@@ -233,7 +230,7 @@ def run_chat_streaming(client):
     ) as span:
         span.set_attribute(
             "gen_ai.input.messages",
-            json.dumps([{"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]} for m in messages]),
+            [{"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]} for m in messages],
         )
         text = ""
         response_model = None
@@ -278,14 +275,12 @@ def run_chat_streaming(client):
         if text:
             span.set_attribute(
                 "gen_ai.output.messages",
-                json.dumps(
-                    [
-                        {
-                            "role": "assistant",
-                            "parts": [{"type": "text", "content": text}],
-                        }
-                    ]
-                ),
+                [
+                    {
+                        "role": "assistant",
+                        "parts": [{"type": "text", "content": text}],
+                    }
+                ],
             )
         print(f"    -> {text[:60]}")
 
@@ -372,7 +367,7 @@ def run_create_agent(client):
         f"create_agent {agent_name}", kind=SpanKind.CLIENT, attributes=span_attributes
     ) as span:
         span.set_attribute("gen_ai.agent.description", agent_description)
-        span.set_attribute("gen_ai.system_instructions", json.dumps([{"type": "text", "content": agent_instructions}]))
+        span.set_attribute("gen_ai.system_instructions", [{"type": "text", "content": agent_instructions}])
         try:
             agent = client.beta.agents.create(
                 model=request_model,

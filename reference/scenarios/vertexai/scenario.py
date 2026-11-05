@@ -4,7 +4,6 @@ Exercises: chat, chat_streaming
 against a mock Vertex AI server, with manual OTel spans.
 """
 
-import json
 import os
 import warnings
 from contextlib import contextmanager
@@ -78,11 +77,10 @@ def _patch_automatic_function_calling():
                 try:
                     if raw_call.get("id"):
                         tool_span.set_attribute("gen_ai.tool.call.id", raw_call["id"])
-                    tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps(raw_call.get("args") or {}))
+                    tool_span.set_attribute("gen_ai.tool.call.arguments", raw_call.get("args") or {})
                     result = function(**kwargs)
-                    tool_span.set_attribute(
-                        "gen_ai.tool.call.result", result if isinstance(result, str) else json.dumps(result)
-                    )
+                    # TODO: Determine how to represent this string result in the object-only schema.
+                    tool_span.set_attribute("gen_ai.tool.call.result", result)
                     return result
                 except Exception as e:
                     tool_span.set_status(StatusCode.ERROR, str(e))
@@ -176,8 +174,8 @@ def _emit_inference_event(
         "gen_ai.operation.name": "chat",
         "gen_ai.provider.name": "gcp.vertex_ai",
         "gen_ai.request.model": request_model,
-        "gen_ai.input.messages": json.dumps(input_messages),
-        "gen_ai.output.messages": json.dumps(output_messages),
+        "gen_ai.input.messages": input_messages,
+        "gen_ai.output.messages": output_messages,
     }
     if response_model:
         event_attrs["gen_ai.response.model"] = response_model
@@ -302,20 +300,18 @@ def run_chat_tool_call():
     ):
         span.set_attribute(
             "gen_ai.tool.definitions",
-            json.dumps(
-                [
-                    {
-                        "type": "function",
-                        "name": "get_weather",
-                        "description": "Get the current weather",
-                        "parameters": {
-                            "type": "object",
-                            "properties": {"location": {"type": "string", "description": "City name"}},
-                            "required": ["location"],
-                        },
-                    }
-                ]
-            ),
+            [
+                {
+                    "type": "function",
+                    "name": "get_weather",
+                    "description": "Get the current weather",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {"location": {"type": "string", "description": "City name"}},
+                        "required": ["location"],
+                    },
+                }
+            ],
         )
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", DeprecationWarning)
@@ -375,9 +371,6 @@ def run_chat_multimodal():
     request_model = "gemini-2.0-flash"
     # Payload bytes are ignored by the mock, which only inspects the MIME type.
     blob = b"\x00" * 16
-    import base64
-
-    blob_b64 = base64.b64encode(blob).decode("ascii")
     span_attributes = {
         "gen_ai.operation.name": "chat",
         "gen_ai.provider.name": "gcp.vertex_ai",
@@ -422,8 +415,8 @@ def run_chat_multimodal():
                 "role": "user",
                 "parts": [
                     {"type": "text", "content": "Summarize the attached media."},
-                    {"type": "blob", "mime_type": "image/png", "modality": "image", "content": blob_b64},
-                    {"type": "blob", "mime_type": "audio/wav", "modality": "audio", "content": blob_b64},
+                    {"type": "blob", "mime_type": "image/png", "modality": "image", "content": blob},
+                    {"type": "blob", "mime_type": "audio/wav", "modality": "audio", "content": blob},
                 ],
             }
         ]

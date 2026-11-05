@@ -148,15 +148,11 @@ operation.
 See [Recording content on attributes](/docs/gen-ai/gen-ai-spans.md#recording-content-on-attributes)
 section for more details.
 
-Instrumentations MUST follow [JSON schema](/model/gen-ai/gen-ai-output-messages.json).
-
-When the attribute is recorded on events, it MUST be recorded in structured form. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
+This attribute MUST be recorded as an [AnyValue](https://opentelemetry.io/docs/specs/otel/common/#anyvalue) conforming to its [JSON schema](/model/gen-ai/gen-ai-output-messages.json).
 
 **[12] `gen_ai.system_instructions`:** Only content carried on the fetched response is recorded. A fetched response contains the system instructions, output messages, and tool definitions but not the original input messages, so `gen_ai.input.messages` is not set on this span.
 
-Instrumentations MUST follow [JSON schema](/model/gen-ai/gen-ai-system-instructions.json).
-
-When the attribute is recorded on events, it MUST be recorded in structured form. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
+This attribute MUST be recorded as an [AnyValue](https://opentelemetry.io/docs/specs/otel/common/#anyvalue) conforming to its [JSON schema](/model/gen-ai/gen-ai-system-instructions.json).
 
 **[13] `gen_ai.tool.definitions`:**
 
@@ -167,9 +163,7 @@ Since this attribute could be large, it's NOT RECOMMENDED to populate
 non-required properties by default. Instrumentations MAY provide a way
 to enable populating optional properties.
 
-Instrumentations MUST follow [JSON schema](/model/gen-ai/gen-ai-tool-definitions.json).
-
-When the attribute is recorded on events, it MUST be recorded in structured form. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
+This attribute MUST be recorded as an [AnyValue](https://opentelemetry.io/docs/specs/otel/common/#anyvalue) conforming to its [JSON schema](/model/gen-ai/gen-ai-tool-definitions.json).
 
 The following attributes can be important for making sampling decisions
 and SHOULD be provided **at span creation time** (if provided at all):
@@ -383,9 +377,7 @@ by an explicit user opt-in via [content capture configuration](/docs/gen-ai/gen-
 > [!Warning]
 > This attribute may contain sensitive information including user/PII data.
 
-Instrumentations MUST follow [JSON schema](/model/gen-ai/gen-ai-memory-records.json).
-
-When the attribute is recorded on events, it MUST be recorded in structured form. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
+This attribute MUST be recorded as an [AnyValue](https://opentelemetry.io/docs/specs/otel/common/#anyvalue) conforming to its [JSON schema](/model/gen-ai/gen-ai-memory-records.json).
 
 ---
 
@@ -518,15 +510,15 @@ formally defined in [inputs JSON schema](/model/gen-ai/gen-ai-input-messages.jso
 [outputs JSON schema](/model/gen-ai/gen-ai-output-messages.json). See also their representation
 in [Python code](./non-normative/models.py).
 
-> [!NOTE]
->
-> Recording structured attributes is supported on events (or logs) and may not
-> yet be supported on spans. See [OTEP: Extending attributes to support complex values](https://github.com/open-telemetry/opentelemetry-specification/blob/main/oteps/4485-extending-attributes-to-support-complex-values.md)
-> for the details.
+These attributes MUST be recorded as
+[AnyValue](https://opentelemetry.io/docs/specs/otel/common/#anyvalue) values
+conforming to their JSON schemas.
 
-If structured attributes are not yet supported on spans in a given language, the
-corresponding attribute value SHOULD be serialized to JSON string on spans and
-recorded in its structured form on events.
+The JSON schemas describe the structure of these attribute values in the
+OpenTelemetry data model, not an export format or encoding. Producers SHOULD
+use them as a reference for modeling values with language-specific `AnyValue`
+types. For example, a property with `"format": "binary"` SHOULD be recorded as
+a byte array, not a string.
 
 Instrumentation MAY provide a configuration option allowing to truncate properties
 such as individual message contents, preserving JSON structure.
@@ -586,8 +578,8 @@ invoke it regardless of the span sampling decision with:
 
 - the [instructions](/model/gen-ai/gen-ai-system-instructions.json), [inputs](/model/gen-ai/gen-ai-input-messages.json),
   [outputs](/model/gen-ai/gen-ai-output-messages.json), and
-  [tool definitions](/model/gen-ai/gen-ai-tool-definitions.json) objects using
-  formats defined in this convention and before they are serialized to JSON;
+  [tool definitions](/model/gen-ai/gen-ai-tool-definitions.json) objects using the
+  structures defined in this convention;
 - the span instance
 
 The hook SHOULD receive the same instructions, inputs, outputs, and tool definitions that the
