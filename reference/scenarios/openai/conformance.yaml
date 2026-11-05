@@ -12,6 +12,7 @@ scenarios:
   reference:
     run: uv run --frozen --python 3.12 --project . python scenario.py
     events:
+      - gen_ai.client.embeddings.exception
       - gen_ai.client.inference.exception
       - gen_ai.client.inference.operation.details
     expected_violations:

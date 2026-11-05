@@ -44,6 +44,7 @@ SPAN_TYPE_ORDER = [
 EVENT_TYPE_ORDER = [
     "gen_ai.client.realtime_session.started",
     "gen_ai.client.realtime_session.ended",
+    "gen_ai.client.embeddings.exception",
     "gen_ai.client.inference.exception",
     "gen_ai.client.inference.operation.details",
     "gen_ai.evaluation.result",
