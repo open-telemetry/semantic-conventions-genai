@@ -7,7 +7,7 @@ Assistants API is covered by the `openai-assistants` scenario).
 
 | Operation | Should be instrumented here | Status |
 | --- | --- | --- |
-| inference (`chat`) | Yes — calls the model directly | ✅ Implemented, including streaming TTFC |
+| inference (`chat`) | Yes — calls the model directly, including multimodal input parts | ✅ Implemented, including streaming TTFC |
 | embeddings | Yes — calls the model directly | ✅ Implemented |
 | fetch_response | Yes — Responses API `client.responses.retrieve` | ✅ Implemented |
 | execute_tool | No — the base client returns tool calls but doesn't execute them; the tool runs in app code | ➖ Not instrumentable |
