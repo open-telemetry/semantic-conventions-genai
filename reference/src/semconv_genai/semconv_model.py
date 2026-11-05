@@ -67,6 +67,7 @@ _METRICS = {
     "gen_ai.client.inference.duration": "Client Inference Duration",
     "gen_ai.client.embeddings.duration": "Client Embeddings Duration",
     "gen_ai.client.embeddings.operation.input_tokens": "Client Embeddings Operation Input Tokens",
+    "gen_ai.execute_tool.duration": "Execute Tool Duration",
     "gen_ai.retrieval.duration": "Retrieval Duration",
     "gen_ai.invoke_agent.inference_calls": "Invoke Agent Inference Calls",
     "gen_ai.invoke_agent.tool_calls": "Invoke Agent Tool Calls",
