@@ -1219,21 +1219,22 @@ attributes:
       members:
         - id: numerical
           value: "numerical"
-          brief: 'The evaluator produces a number. `gen_ai.evaluation.score.value` is the result; `gen_ai.evaluation.score.label`, when present, names or judges that number.'
+          brief: 'The result is a number. `gen_ai.evaluation.score.value` is the result; `gen_ai.evaluation.score.label`, when present, names or judges that number.'
           stability: development
         - id: categorical
           value: "categorical"
-          brief: 'The evaluator picks one of a fixed set of categories. `gen_ai.evaluation.score.label` is the result; `gen_ai.evaluation.score.value`, when present, is a numeric code for the category.'
+          brief: 'The result is one of a fixed set of categories. `gen_ai.evaluation.score.label` is the result; `gen_ai.evaluation.score.value`, when present, is a numeric code for the category.'
           stability: development
-    brief: Whether the evaluator produces a numeric score or a category.
+    brief: Whether the result is a numeric score or a category.
     note: >
       An evaluator can return both `gen_ai.evaluation.score.value` and
       `gen_ai.evaluation.score.label`. This attribute tells consumers which one is
       the result, for example whether to chart scores as a distribution or count
       categories.
 
-      This is a property of the evaluator, recorded on each result so the result can
-      be interpreted on its own.
+      It is usually fixed for an evaluator, but an evaluator that scores several
+      dimensions can use a different scale per dimension, so it is recorded on each
+      result.
     stability: development
   - key: gen_ai.evaluation.explanation
     type: string

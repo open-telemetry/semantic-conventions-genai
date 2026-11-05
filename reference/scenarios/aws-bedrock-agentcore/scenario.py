@@ -279,10 +279,14 @@ def run_delete_memory_store_reference(client, memory_id):
 def run_evaluation_reference(control_client, data_client):
     """Scenario: evaluation result event via AgentCore Evaluate, with the evaluator's rating scale."""
     print("  [evaluate] Bedrock AgentCore Evaluate")
-    # The evaluator definition says whether it produces a number or picks a category.
+    # The evaluator definition says whether it produces a number or picks a category,
+    # either for the whole evaluator or per dimension for multi-dimensional evaluators.
     evaluator = control_client.get_evaluator(evaluatorId=EVALUATOR_ID)
     rating_scale = evaluator["evaluatorConfig"]["llmAsAJudge"]["ratingScale"]
-    rating_scale_kind = "numerical" if "numerical" in rating_scale else "categorical"
+    dimension_scales = {
+        dimension["dimensionName"]: dimension["dimensionRatingScale"]
+        for dimension in rating_scale.get("multiDimensional", [])
+    }
 
     with _reference_tracer.start_as_current_span("reference.evaluation", kind=SpanKind.INTERNAL):
         response = data_client.evaluate(
@@ -290,6 +294,8 @@ def run_evaluation_reference(control_client, data_client):
             evaluationInput={"sessionSpans": [SESSION_SPAN]},
         )
         for result in response["evaluationResults"]:
+            scale = dimension_scales.get(result.get("evaluationDimensionName"), rating_scale)
+            rating_scale_kind = "numerical" if "numerical" in scale else "categorical"
             attributes = {
                 "gen_ai.evaluation.name": result["evaluatorName"],
                 "gen_ai.evaluation.score.rating_scale": rating_scale_kind,
