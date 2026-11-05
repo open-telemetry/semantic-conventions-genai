@@ -5,6 +5,7 @@ Exercises: create_agent (Bedrock Agent CreateAgent API) and invoke_agent
 manual span instrumentation.
 """
 
+import json
 import os
 from io import BytesIO
 from unittest.mock import patch

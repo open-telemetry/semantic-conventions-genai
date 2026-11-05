@@ -1,5 +1,6 @@
 """Reference implementation for OpenAI."""
 
+import json
 import os
 import time
 from time import perf_counter
