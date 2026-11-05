@@ -58,7 +58,16 @@ def test_inference_scenarios_report_inference_duration():
 
 def test_embeddings_scenarios_report_embeddings_metrics():
     entries = {entry.library: entry for entry in load_scenario_data_files()}
-    libraries = ("aws-bedrock", "azure-ai-inference", "azure-openai", "cohere", "google-genai", "litellm", "mistralai", "openai")
+    libraries = (
+        "aws-bedrock",
+        "azure-ai-inference",
+        "azure-openai",
+        "cohere",
+        "google-genai",
+        "litellm",
+        "mistralai",
+        "openai",
+    )
     for library in libraries:
         metrics = entries[library].metrics
         assert "gen_ai.client.embeddings.duration" in metrics, library
@@ -89,6 +98,14 @@ def test_retrieval_scenarios_report_retrieval_metrics():
         assert "gen_ai.client.operation.duration" not in metrics, library
         assert metrics["gen_ai.retrieval.duration"]["gen_ai.operation.name"] == "present", library
     assert entries["llamaindex"].metrics["gen_ai.retrieval.duration"]["error.type"] == "present"
+
+
+def test_invoke_agent_client_scenarios_report_invoke_agent_duration():
+    entries = {entry.library: entry for entry in load_scenario_data_files()}
+    for library in ("aws-bedrock-agent", "azure-ai-foundry", "google-genai", "openai-assistants"):
+        metrics = entries[library].metrics
+        assert "gen_ai.client.invoke_agent.duration" in metrics, library
+        assert metrics["gen_ai.client.invoke_agent.duration"]["gen_ai.operation.name"] == "present", library
 
 
 def test_entity_specs_expose_required_id():
@@ -225,6 +242,7 @@ if __name__ == "__main__":
     test_committed_google_adk_metrics_round_trip()
     test_inference_scenarios_report_inference_duration()
     test_embeddings_scenarios_report_embeddings_metrics()
+    test_invoke_agent_client_scenarios_report_invoke_agent_duration()
     test_execute_tool_scenario_reports_duration()
     test_entity_specs_expose_required_id()
     test_entities_keep_their_registry_names()

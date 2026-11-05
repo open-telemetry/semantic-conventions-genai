@@ -1,5 +1,17 @@
 {
   "spans": {
+    "gen_ai.client.invoke_agent": [
+      "error.type",
+      "gen_ai.agent.id",
+      "gen_ai.agent.version",
+      "gen_ai.conversation.id",
+      "gen_ai.input.messages",
+      "gen_ai.operation.name",
+      "gen_ai.output.messages",
+      "gen_ai.provider.name",
+      "server.address",
+      "server.port"
+    ],
     "gen_ai.create_agent.client": [
       "gen_ai.agent.description",
       "gen_ai.agent.id",
@@ -11,18 +23,6 @@
       "gen_ai.system_instructions",
       "server.address",
       "server.port"
-    ],
-    "gen_ai.invoke_agent.client": [
-      "error.type",
-      "gen_ai.agent.id",
-      "gen_ai.agent.version",
-      "gen_ai.conversation.id",
-      "gen_ai.input.messages",
-      "gen_ai.operation.name",
-      "gen_ai.output.messages",
-      "gen_ai.provider.name",
-      "server.address",
-      "server.port"
     ]
   },
   "events": {
@@ -32,7 +32,15 @@
       "exception.type"
     ]
   },
-  "metrics": {},
+  "metrics": {
+    "gen_ai.client.invoke_agent.duration": [
+      "error.type",
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "server.address",
+      "server.port"
+    ]
+  },
   "entities": {},
   "findings": [
     {

@@ -9,6 +9,7 @@ def test_committed_exception_events_round_trip():
         ("openai", "gen_ai.client.inference.exception"),
         ("openai", "gen_ai.client.embeddings.exception"),
         ("aws-bedrock-agent", "gen_ai.client.invoke_agent.exception"),
+        ("azure-ai-foundry", "gen_ai.client.invoke_agent.exception"),
         ("openai-agents", "gen_ai.execute_tool.exception"),
         ("openai", "gen_ai.client.fetch_response.exception"),
         ("openai-agents", "gen_ai.invoke_agent.exception"),

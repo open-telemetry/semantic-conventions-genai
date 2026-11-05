@@ -40,7 +40,7 @@ _SPANS = {
     "memory": ("gen_ai.memory.client", "Memory"),
     "execute_tool": ("gen_ai.execute_tool", "Execute Tool"),
     "create_agent": ("gen_ai.create_agent.client", "Create Agent"),
-    "invoke_agent_client": ("gen_ai.invoke_agent.client", "Invoke Agent Client"),
+    "invoke_agent_client": ("gen_ai.client.invoke_agent", "Invoke Agent Client"),
     "invoke_agent_internal": ("gen_ai.invoke_agent.internal", "Invoke Agent Internal"),
     "plan": ("gen_ai.plan.internal", "Plan"),
     "realtime_inference": ("gen_ai.realtime_inference.client", "Realtime Inference"),
@@ -78,6 +78,7 @@ _METRICS = {
     "gen_ai.client.embeddings.operation.input_tokens": "Client Embeddings Operation Input Tokens",
     "gen_ai.execute_tool.duration": "Execute Tool Duration",
     "gen_ai.retrieval.duration": "Retrieval Duration",
+    "gen_ai.client.invoke_agent.duration": "Client Invoke Agent Duration",
     "gen_ai.invoke_agent.inference_calls": "Invoke Agent Inference Calls",
     "gen_ai.invoke_agent.tool_calls": "Invoke Agent Tool Calls",
 }

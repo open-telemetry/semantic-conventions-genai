@@ -7,6 +7,7 @@ manual span instrumentation.
 
 import json
 import os
+import time
 from io import BytesIO
 from unittest.mock import patch
 from urllib.parse import urlparse
@@ -15,7 +16,13 @@ import boto3
 from botocore.awsrequest import AWSResponse
 from opentelemetry._logs import SeverityNumber
 from opentelemetry.trace import SpanKind, StatusCode
-from reference_shared import flush_and_shutdown, reference_event_logger, reference_tracer, setup_otel
+from reference_shared import (
+    flush_and_shutdown,
+    reference_event_logger,
+    reference_meter,
+    reference_tracer,
+    setup_otel,
+)
 from urllib3.response import HTTPResponse
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"]
@@ -24,6 +31,29 @@ _SERVER_ADDRESS = _parsed.hostname or "localhost"
 _SERVER_PORT = _parsed.port or 443
 
 tracer = reference_tracer("gen_ai.client.aws_bedrock")
+_reference_meter = reference_meter()
+
+_invoke_agent_duration = _reference_meter.create_histogram(
+    "gen_ai.client.invoke_agent.duration",
+    unit="s",
+    description="GenAI client invoke agent operation duration.",
+    explicit_bucket_boundaries_advisory=[
+        0.01,
+        0.02,
+        0.04,
+        0.08,
+        0.16,
+        0.32,
+        0.64,
+        1.28,
+        2.56,
+        5.12,
+        10.24,
+        20.48,
+        40.96,
+        81.92,
+    ],
+)
 
 AGENT_ALIAS_ID = "MOCK_ALIAS_ID"
 SESSION_ID = "mock-session-001"
@@ -84,6 +114,8 @@ def run_invoke_agent(client, agent_id):
         "server.address": _SERVER_ADDRESS,
         "server.port": _SERVER_PORT,
     }
+    metric_attributes = dict(span_attributes)
+    start_time = time.perf_counter()
     with tracer.start_as_current_span(
         "invoke_agent", kind=SpanKind.CLIENT, attributes=span_attributes, record_exception=False
     ) as span:
@@ -137,12 +169,15 @@ def run_invoke_agent(client, agent_id):
         except Exception as e:
             span.set_status(StatusCode.ERROR, str(e))
             span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
+            metric_attributes["error.type"] = f"{type(e).__module__}.{type(e).__qualname__}"
             reference_event_logger().emit(
                 event_name="gen_ai.client.invoke_agent.exception",
                 severity_number=SeverityNumber.WARN,
                 exception=e,
             )
             raise
+        finally:
+            _invoke_agent_duration.record(time.perf_counter() - start_time, metric_attributes)
 
 
 def run_invoke_agent_error(client, agent_id):

@@ -6,12 +6,19 @@ against a mock OpenAI server, with manual span instrumentation.
 
 import json
 import os
+import time
 from urllib.parse import urlparse
 
 from openai import OpenAI
 from opentelemetry._logs import SeverityNumber
 from opentelemetry.trace import SpanKind, StatusCode
-from reference_shared import flush_and_shutdown, reference_event_logger, reference_tracer, setup_otel
+from reference_shared import (
+    flush_and_shutdown,
+    reference_event_logger,
+    reference_meter,
+    reference_tracer,
+    setup_otel,
+)
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"]
 _parsed = urlparse(MOCK_BASE_URL)
@@ -19,6 +26,29 @@ _SERVER_ADDRESS = _parsed.hostname or "localhost"
 _SERVER_PORT = _parsed.port or 443
 
 tracer = reference_tracer("gen_ai.client.openai")
+_reference_meter = reference_meter()
+
+_invoke_agent_duration = _reference_meter.create_histogram(
+    "gen_ai.client.invoke_agent.duration",
+    unit="s",
+    description="GenAI client invoke agent operation duration.",
+    explicit_bucket_boundaries_advisory=[
+        0.01,
+        0.02,
+        0.04,
+        0.08,
+        0.16,
+        0.32,
+        0.64,
+        1.28,
+        2.56,
+        5.12,
+        10.24,
+        20.48,
+        40.96,
+        81.92,
+    ],
+)
 
 
 def run_invoke_agent(client):
@@ -100,6 +130,8 @@ def run_invoke_agent(client):
         "server.address": _SERVER_ADDRESS,
         "server.port": _SERVER_PORT,
     }
+    metric_attributes = dict(span_attributes_2)
+    start_time = time.perf_counter()
     with tracer.start_as_current_span(
         f"invoke_agent {assistant.name}", kind=SpanKind.CLIENT, attributes=span_attributes_2, record_exception=False
     ) as span:
@@ -214,12 +246,15 @@ def run_invoke_agent(client):
         except Exception as e:
             span.set_status(StatusCode.ERROR, str(e))
             span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
+            metric_attributes["error.type"] = f"{type(e).__module__}.{type(e).__qualname__}"
             reference_event_logger().emit(
                 event_name="gen_ai.client.invoke_agent.exception",
                 severity_number=SeverityNumber.WARN,
                 exception=e,
             )
             raise
+        finally:
+            _invoke_agent_duration.record(time.perf_counter() - start_time, metric_attributes)
 
     # Clean up
     client.beta.assistants.delete(assistant.id)
@@ -254,12 +289,14 @@ def run_invoke_agent_streaming(client):
         "gen_ai.provider.name": "openai",
         "gen_ai.request.model": request_model,
         "gen_ai.agent.name": assistant.name or "",
-        "gen_ai.request.stream": True,
         "server.address": _SERVER_ADDRESS,
         "server.port": _SERVER_PORT,
     }
+    metric_attributes = dict(span_attributes)
+    span_attributes["gen_ai.request.stream"] = True
+    start_time = time.perf_counter()
     with tracer.start_as_current_span(
-        f"invoke_agent {assistant.name}", kind=SpanKind.CLIENT, attributes=span_attributes
+        f"invoke_agent {assistant.name}", kind=SpanKind.CLIENT, attributes=span_attributes, record_exception=False
     ) as span:
         span.set_attribute("gen_ai.agent.id", assistant.id)
         span.set_attribute("gen_ai.conversation.id", thread.id)
@@ -267,25 +304,38 @@ def run_invoke_agent_streaming(client):
             "gen_ai.input.messages",
             [{"role": "user", "parts": [{"type": "text", "content": user_message}]}],
         )
-        stream = client.beta.threads.runs.create(
-            thread_id=thread.id,
-            assistant_id=assistant.id,
-            model=request_model,
-            stream=True,
-        )
-        output_messages = []
-        for event in stream:
-            if event.event == "thread.message.completed" and event.data.role == "assistant":
-                parts = [{"type": "text", "content": c.text.value} for c in event.data.content if c.type == "text"]
-                output_messages.append({"role": "assistant", "parts": parts})
-            elif event.event == "thread.run.completed":
-                span.set_attribute("gen_ai.response.id", event.data.id)
-                if event.data.usage:
-                    span.set_attribute("gen_ai.usage.input_tokens", event.data.usage.prompt_tokens)
-                    span.set_attribute("gen_ai.usage.output_tokens", event.data.usage.completion_tokens)
-        if output_messages:
-            span.set_attribute("gen_ai.output.messages", output_messages)
-        print("    -> streaming run completed")
+        try:
+            stream = client.beta.threads.runs.create(
+                thread_id=thread.id,
+                assistant_id=assistant.id,
+                model=request_model,
+                stream=True,
+            )
+            output_messages = []
+            for event in stream:
+                if event.event == "thread.message.completed" and event.data.role == "assistant":
+                    parts = [{"type": "text", "content": c.text.value} for c in event.data.content if c.type == "text"]
+                    output_messages.append({"role": "assistant", "parts": parts})
+                elif event.event == "thread.run.completed":
+                    span.set_attribute("gen_ai.response.id", event.data.id)
+                    if event.data.usage:
+                        span.set_attribute("gen_ai.usage.input_tokens", event.data.usage.prompt_tokens)
+                        span.set_attribute("gen_ai.usage.output_tokens", event.data.usage.completion_tokens)
+            if output_messages:
+                span.set_attribute("gen_ai.output.messages", output_messages)
+            print("    -> streaming run completed")
+        except Exception as e:
+            span.set_status(StatusCode.ERROR, str(e))
+            span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
+            metric_attributes["error.type"] = f"{type(e).__module__}.{type(e).__qualname__}"
+            reference_event_logger().emit(
+                event_name="gen_ai.client.invoke_agent.exception",
+                severity_number=SeverityNumber.WARN,
+                exception=e,
+            )
+            raise
+        finally:
+            _invoke_agent_duration.record(time.perf_counter() - start_time, metric_attributes)
 
     # Clean up
     client.beta.assistants.delete(assistant.id)

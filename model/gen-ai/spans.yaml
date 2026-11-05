@@ -791,7 +791,7 @@ spans:
         note: ""  # note is not needed here
 
 
-  - type: gen_ai.invoke_agent.client
+  - type: gen_ai.client.invoke_agent
     requirement_level: recommended
     kind: client
     name:
@@ -868,7 +868,7 @@ spans:
       from the API type or configuration.
 
       For agent invocations targeting an out-of-process or remote agent service,
-      refer to the `gen_ai.invoke_agent.client` span.
+      refer to the `gen_ai.client.invoke_agent` span.
 
       Instrumentations SHOULD set `gen_ai.operation.name` to:
 
