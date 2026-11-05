@@ -6,7 +6,7 @@ This document explains the design of the token instruments in
 ## TL;DR
 
 - **Histograms** (`gen_ai.client.inference.operation.*`) measure per-operation token size distributions. It is invalid to record more than one observation per operation that a histogram represents, so breakdowns like modality cannot go on the histogram without corrupting percentiles.
-- **Counters** (`gen_ai.client.inference.usage.*`) measure cumulative token consumption over time for cost and spend tracking. They safely carry breakdowns like modality where each token bucket increments independently. Modality applies to the usage counters, with reasoning as the exception.
+- **Counters** (`gen_ai.client.inference.usage.*`) measure cumulative token consumption over time for cost and spend tracking. Except for the reasoning counter, they safely carry breakdowns like modality where each token bucket increments independently.
 
 ## Why is modality on counters instead of histograms? Why two sets of metrics?
 
@@ -75,11 +75,12 @@ for providers that report no modality breakdown.
 
 The counters aggregate cleanly because each token lands in one modality bucket,
 and `gen_ai.token.modality` is required on all of them except
-`gen_ai.client.inference.usage.reasoning.output_tokens`, where modality has no
-useful split. When a provider reports no breakdown, instrumentation still has to
-put tokens somewhere. Without `unknown`, both options fail: omitting the
-attribute breaks sums across different providers, and guessing `text` invents
-data.
+`gen_ai.client.inference.usage.reasoning.output_tokens`. Providers report
+reasoning tokens without a modality breakdown and bill them as text or general
+output tokens, so that counter has nothing to split. When a provider reports no
+breakdown for the other counters, instrumentation still has to put tokens
+somewhere. Without `unknown`, both options fail: omitting the attribute breaks
+sums across different providers, and guessing `text` invents data.
 
 `unknown` means "the positive count is known but its modality cannot reliably be
 determined", not "the count is unknown".
