@@ -18,6 +18,11 @@ attribute_groups:
       - ref: a2a.message.reference_task_ids
         requirement_level:
           recommended: When the request message references task IDs.
+      - ref: a2a.operation.return_immediately
+        requirement_level:
+          conditionally_required: >
+            If `SendMessage` is requested to return immediately (value is `true`).
+            When missing, the value is assumed to be `false`.
       - ref: a2a.task.id
         requirement_level:
           conditionally_required: When the A2A request or response contains a single task ID.
@@ -37,6 +42,10 @@ attribute_groups:
     visibility: internal
     attributes:
       - ref_group: a2a.protocol.attributes
+      - ref_group: a2a.error.attributes
+  - id: a2a.error.attributes
+    visibility: internal
+    attributes:
       - ref: error.type
         requirement_level:
           conditionally_required: If and only if the operation fails.

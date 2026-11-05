@@ -81,4 +81,8 @@ Run `uv run update-reports` to regenerate.
 | [Retrieval Duration](reports/gen-ai-retrieval-duration-metric.md) | haystack, langchain, llamaindex |
 | [Invoke Agent Inference Calls](reports/gen-ai-invoke-agent-inference-calls-metric.md) | adk_a2a, google-adk |
 | [Invoke Agent Tool Calls](reports/gen-ai-invoke-agent-tool-calls-metric.md) | adk_a2a, google-adk |
+| [A2A Client Operation Duration](reports/a2a-client-operation-duration-metric.md) | a2a-python |
+| [A2A Server Operation Duration](reports/a2a-server-operation-duration-metric.md) | a2a-python |
+| [A2A Client Operation Active](reports/a2a-client-operation-active-metric.md) | a2a-python |
+| [A2A Server Operation Active](reports/a2a-server-operation-active-metric.md) | a2a-python |
 <!-- status:end -->

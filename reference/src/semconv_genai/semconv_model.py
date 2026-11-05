@@ -80,6 +80,10 @@ _METRICS = {
     "gen_ai.retrieval.duration": "Retrieval Duration",
     "gen_ai.invoke_agent.inference_calls": "Invoke Agent Inference Calls",
     "gen_ai.invoke_agent.tool_calls": "Invoke Agent Tool Calls",
+    "a2a.client.operation.duration": "A2A Client Operation Duration",
+    "a2a.server.operation.duration": "A2A Server Operation Duration",
+    "a2a.client.operation.active": "A2A Client Operation Active",
+    "a2a.server.operation.active": "A2A Server Operation Active",
 }
 
 _ENTITIES = {

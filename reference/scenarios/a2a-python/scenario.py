@@ -3,6 +3,7 @@
 import asyncio
 import json
 import socket
+import time
 from contextlib import asynccontextmanager
 
 import httpx
@@ -13,12 +14,14 @@ from a2a.server.routes import create_agent_card_routes
 from a2a.server.routes.jsonrpc_dispatcher import JsonRpcDispatcher
 from a2a.server.routes.rest_dispatcher import RestDispatcher
 from a2a.utils.constants import VERSION_HEADER, TransportProtocol
+from a2a.utils.errors import A2A_ERROR_REASONS, A2AError
 from agent import agent_card, request_handler
 from opentelemetry.instrumentation.asgi import OpenTelemetryMiddleware
 from opentelemetry.trace import SpanKind, StatusCode, get_current_span, use_span
 from reference_shared import (
     flush_and_shutdown,
     mock_server_host_port,
+    reference_meter,
     reference_tracer,
     setup_otel,
 )
@@ -34,6 +37,31 @@ TENANT = "billing"
 TENANT_OVER_HTTP = "billing-http"
 
 _reference_tracer = reference_tracer()
+_meter = reference_meter()
+# Bucket boundaries advised for the duration metrics by docs/gen-ai/a2a.md.
+_DURATION_BUCKETS = [0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10, 30, 60, 120, 300]
+_client_duration = _meter.create_histogram(
+    "a2a.client.operation.duration",
+    unit="s",
+    description="Duration of an A2A operation as observed by the client.",
+    explicit_bucket_boundaries_advisory=_DURATION_BUCKETS,
+)
+_server_duration = _meter.create_histogram(
+    "a2a.server.operation.duration",
+    unit="s",
+    description="Duration of an A2A operation as observed by the server.",
+    explicit_bucket_boundaries_advisory=_DURATION_BUCKETS,
+)
+_client_active = _meter.create_up_down_counter(
+    "a2a.client.operation.active",
+    unit="{operation}",
+    description="Number of A2A operations in progress on the client.",
+)
+_server_active = _meter.create_up_down_counter(
+    "a2a.server.operation.active",
+    unit="{operation}",
+    description="Number of A2A operations being processed by the server.",
+)
 
 ROLE_USER = a2a_types.Role.Value("ROLE_USER")
 
@@ -98,11 +126,21 @@ class ReferenceJsonRpcDispatcher(JsonRpcDispatcher):
         self._enrich_transport_span = enrich_transport_span
 
     async def handle_requests(self, request: Request) -> Response:
+        start = time.perf_counter()
         body = await request.json()
         method = body["method"]
         params = body.get("params") or {}
         message = params.get("message") or {}
         interface = _jsonrpc_interface(self._card)
+        metric_attrs = {
+            "a2a.method.name": method,
+            "a2a.protocol.version": interface.protocol_version,
+        }
+        _server_active.add(1, metric_attrs)
+        duration_attrs = dict(metric_attrs)
+        return_immediately = method == "SendMessage" and (params.get("configuration") or {}).get("returnImmediately")
+        if return_immediately:
+            duration_attrs["a2a.operation.return_immediately"] = True
         span_attrs = {
             "a2a.method.name": method,
             "a2a.protocol.version": interface.protocol_version,
@@ -118,6 +156,8 @@ class ReferenceJsonRpcDispatcher(JsonRpcDispatcher):
             span_attrs["a2a.message.id"] = message["messageId"]
         if message.get("referenceTaskIds"):
             span_attrs["a2a.message.reference_task_ids"] = message["referenceTaskIds"]
+        if return_immediately:
+            span_attrs["a2a.operation.return_immediately"] = True
         if params.get("id"):
             span_attrs["a2a.task.id"] = params["id"]
         if request.client:
@@ -130,66 +170,90 @@ class ReferenceJsonRpcDispatcher(JsonRpcDispatcher):
             span = get_current_span()
             span.update_name(method)
             span.set_attributes(span_attrs)
-            response = await super().handle_requests(request)
         else:
             span = _reference_tracer.start_span(method, kind=SpanKind.SERVER, attributes=span_attrs)
+
+        # A streaming response is recorded when its stream ends, not here.
+        streaming = False
+        try:
             with use_span(span, end_on_exit=False):
                 response = await super().handle_requests(request)
 
-        events = getattr(response, "body_iterator", None)
-        if events is None:
-            payload = json.loads(response.body)
-            if error := payload.get("error"):
-                span.set_status(StatusCode.ERROR)
-                span.set_attribute("error.type", _a2a_error_reason(error.get("data")) or str(error["code"]))
-            else:
-                result = payload.get("result") or {}
-                task = result.get("task") or result
-                span.set_attribute("a2a.task.id", task["id"])
-                span.set_attribute("a2a.task.state", task["status"]["state"])
-                span.set_attribute("gen_ai.conversation.id", task["contextId"])
-            if not self._enrich_transport_span:
-                span.end()
-            return response
-
-        # A streaming call is not served until the client has drained the
-        # stream, so the span stays open until the last event is yielded.
-        async def traced_events():
-            task_ids: set[str] = set()
-            task_states: set[str] = set()
-            context_ids: set[str] = set()
-            try:
-                async for event in events:
-                    payload = json.loads(event["data"])
-                    if error := payload.get("error"):
-                        span.set_status(StatusCode.ERROR)
-                        span.set_attribute("error.type", _a2a_error_reason(error.get("data")) or str(error["code"]))
+            events = getattr(response, "body_iterator", None)
+            if events is None:
+                payload = json.loads(response.body)
+                if error := payload.get("error"):
+                    error_type = _a2a_error_reason(error.get("data")) or str(error["code"])
+                    span.set_status(StatusCode.ERROR)
+                    span.set_attribute("error.type", error_type)
+                    duration_attrs["error.type"] = error_type
+                else:
                     result = payload.get("result") or {}
-                    if task := result.get("task"):
-                        task_ids.add(task["id"])
-                        task_states.add(task["status"]["state"])
-                        context_ids.add(task["contextId"])
-                    update = result.get("statusUpdate")
-                    if update:
-                        task_ids.add(update["taskId"])
-                        task_states.add(update["status"]["state"])
-                        context_ids.add(update["contextId"])
-                    if artifact := result.get("artifactUpdate"):
-                        task_ids.add(artifact["taskId"])
-                        context_ids.add(artifact["contextId"])
-                    yield event
-            finally:
-                if len(task_ids) == 1:
-                    span.set_attribute("a2a.task.id", next(iter(task_ids)))
-                if len(task_states) == 1:
-                    span.set_attribute("a2a.task.state", next(iter(task_states)))
-                if len(context_ids) == 1:
-                    span.set_attribute("gen_ai.conversation.id", next(iter(context_ids)))
+                    task = result.get("task") or result
+                    span.set_attribute("a2a.task.id", task["id"])
+                    span.set_attribute("a2a.task.state", task["status"]["state"])
+                    span.set_attribute("gen_ai.conversation.id", task["contextId"])
+                return response
+
+            # A streaming call is not served until the client has drained the
+            # stream, so the span stays open until the last event is yielded.
+            async def traced_events():
+                task_ids: set[str] = set()
+                task_states: set[str] = set()
+                context_ids: set[str] = set()
+                try:
+                    async for event in events:
+                        payload = json.loads(event["data"])
+                        if error := payload.get("error"):
+                            error_type = _a2a_error_reason(error.get("data")) or str(error["code"])
+                            span.set_status(StatusCode.ERROR)
+                            span.set_attribute("error.type", error_type)
+                            duration_attrs["error.type"] = error_type
+                        result = payload.get("result") or {}
+                        if task := result.get("task"):
+                            task_ids.add(task["id"])
+                            task_states.add(task["status"]["state"])
+                            context_ids.add(task["contextId"])
+                        update = result.get("statusUpdate")
+                        if update:
+                            task_ids.add(update["taskId"])
+                            task_states.add(update["status"]["state"])
+                            context_ids.add(update["contextId"])
+                        if artifact := result.get("artifactUpdate"):
+                            task_ids.add(artifact["taskId"])
+                            context_ids.add(artifact["contextId"])
+                        yield event
+                except Exception as exc:
+                    span.set_status(StatusCode.ERROR)
+                    span.set_attribute("error.type", type(exc).__qualname__)
+                    duration_attrs["error.type"] = type(exc).__qualname__
+                    raise
+                finally:
+                    if len(task_ids) == 1:
+                        span.set_attribute("a2a.task.id", next(iter(task_ids)))
+                    if len(task_states) == 1:
+                        span.set_attribute("a2a.task.state", next(iter(task_states)))
+                    if len(context_ids) == 1:
+                        span.set_attribute("gen_ai.conversation.id", next(iter(context_ids)))
+                    if not self._enrich_transport_span:
+                        span.end()
+                    _server_duration.record(time.perf_counter() - start, duration_attrs)
+                    _server_active.add(-1, metric_attrs)
+
+            response.body_iterator = traced_events()
+            streaming = True
+            return response
+        except Exception as exc:
+            span.set_status(StatusCode.ERROR)
+            span.set_attribute("error.type", type(exc).__qualname__)
+            duration_attrs["error.type"] = type(exc).__qualname__
+            raise
+        finally:
+            if not streaming:
                 if not self._enrich_transport_span:
                     span.end()
-
-        response.body_iterator = traced_events()
-        return response
+                _server_duration.record(time.perf_counter() - start, duration_attrs)
+                _server_active.add(-1, metric_attrs)
 
 
 class ReferenceRestDispatcher(RestDispatcher):
@@ -200,9 +264,16 @@ class ReferenceRestDispatcher(RestDispatcher):
         self._card = card
 
     async def on_get_task(self, request: Request) -> Response:
+        start = time.perf_counter()
         interface = next(
             i for i in self._card.supported_interfaces if i.protocol_binding == TransportProtocol.HTTP_JSON
         )
+        metric_attrs = {
+            "a2a.method.name": "GetTask",
+            "a2a.protocol.version": interface.protocol_version,
+        }
+        _server_active.add(1, metric_attrs)
+        duration_attrs = dict(metric_attrs)
         span = get_current_span()
         span.update_name("GetTask")
         span.set_attributes(
@@ -216,12 +287,23 @@ class ReferenceRestDispatcher(RestDispatcher):
                 "gen_ai.agent.version": self._card.version,
             }
         )
-        response = await super().on_get_task(request)
-        if error := json.loads(response.body).get("error"):
-            # The A2A reason identifies the error more precisely than the HTTP status.
+        try:
+            response = await super().on_get_task(request)
+            if error := json.loads(response.body).get("error"):
+                # The A2A reason identifies the error more precisely than the HTTP status.
+                error_type = _a2a_error_reason(error.get("details")) or str(error["code"])
+                span.set_status(StatusCode.ERROR)
+                span.set_attribute("error.type", error_type)
+                duration_attrs["error.type"] = error_type
+            return response
+        except Exception as exc:
             span.set_status(StatusCode.ERROR)
-            span.set_attribute("error.type", _a2a_error_reason(error.get("details")) or str(error["code"]))
-        return response
+            span.set_attribute("error.type", type(exc).__qualname__)
+            duration_attrs["error.type"] = type(exc).__qualname__
+            raise
+        finally:
+            _server_duration.record(time.perf_counter() - start, duration_attrs)
+            _server_active.add(-1, metric_attrs)
 
 
 def _free_port() -> int:
@@ -292,18 +374,21 @@ async def _create_a2a_client(card: a2a_types.AgentCard, *, streaming: bool):
     return await create_client(card, ClientConfig(streaming=streaming, httpx_client=httpx_client))
 
 
-async def run_message_send_reference(card: a2a_types.AgentCard) -> str:
+async def run_message_send_reference(
+    card: a2a_types.AgentCard, *, message_id: str = "msg-user-1", return_immediately: bool = False
+) -> str:
     """Scenario: A2A JSON-RPC send_message with a task response."""
-    print("  [send_message] A2A JSON-RPC send_message")
+    print(f"  [send_message] A2A JSON-RPC send_message (return_immediately={return_immediately})")
     method = "SendMessage"
     interface = _jsonrpc_interface(card)
     request = a2a_types.SendMessageRequest(
         tenant=interface.tenant,
         message=_message(
             "Summarize my calendar.",
-            message_id="msg-user-1",
+            message_id=message_id,
             reference_task_ids=["task-calendar-prior"],
         ),
+        configuration=a2a_types.SendMessageConfiguration(return_immediately=return_immediately),
     )
 
     host, port = mock_server_host_port(interface.url)
@@ -321,14 +406,36 @@ async def run_message_send_reference(card: a2a_types.AgentCard) -> str:
         span_attrs["server.address"] = host
     if port is not None:
         span_attrs["server.port"] = port
-    with _reference_tracer.start_as_current_span(method, kind=SpanKind.CLIENT, attributes=span_attrs) as span:
-        async with await _create_a2a_client(card, streaming=False) as client:
-            response = await anext(client.send_message(request))
-        task = response.task
-        task_state = _task_state_value(task.status.state)
-        span.set_attribute("a2a.task.id", task.id)
-        span.set_attribute("a2a.task.state", task_state)
-        span.set_attribute("gen_ai.conversation.id", task.context_id)
+    if request.configuration.return_immediately:
+        span_attrs["a2a.operation.return_immediately"] = True
+    metric_attrs = {
+        "a2a.method.name": method,
+        "a2a.protocol.version": interface.protocol_version,
+        "server.address": host,
+        "server.port": port,
+    }
+    async with await _create_a2a_client(card, streaming=False) as client:
+        with _reference_tracer.start_as_current_span(method, kind=SpanKind.CLIENT, attributes=span_attrs) as span:
+            duration_attrs = dict(metric_attrs)
+            if request.configuration.return_immediately:
+                duration_attrs["a2a.operation.return_immediately"] = True
+            _client_active.add(1, metric_attrs)
+            start = time.perf_counter()
+            try:
+                response = await anext(client.send_message(request))
+            except Exception as exc:
+                # The SDK maps each A2A error class to its protocol reason.
+                duration_attrs["error.type"] = A2A_ERROR_REASONS.get(type(exc)) or type(exc).__qualname__
+                span.set_attribute("error.type", duration_attrs["error.type"])
+                raise
+            finally:
+                _client_duration.record(time.perf_counter() - start, duration_attrs)
+                _client_active.add(-1, metric_attrs)
+            task = response.task
+            task_state = _task_state_value(task.status.state)
+            span.set_attribute("a2a.task.id", task.id)
+            span.set_attribute("a2a.task.state", task_state)
+            span.set_attribute("gen_ai.conversation.id", task.context_id)
     print(f"    -> {task.id} {task_state}")
     return task.id
 
@@ -361,31 +468,49 @@ async def run_message_stream_reference(card: a2a_types.AgentCard) -> None:
         span_attrs["server.address"] = host
     if port is not None:
         span_attrs["server.port"] = port
-    with _reference_tracer.start_as_current_span(method, kind=SpanKind.CLIENT, attributes=span_attrs) as span:
-        async with await _create_a2a_client(card, streaming=True) as client:
-            async for event in client.send_message(request):
-                event_count += 1
-                if event.HasField("task"):
-                    task_ids.add(event.task.id)
-                    context_ids.add(event.task.context_id)
-                    task_states.add(_task_state_value(event.task.status.state))
-                if event.HasField("status_update"):
-                    task_ids.add(event.status_update.task_id)
-                    context_ids.add(event.status_update.context_id)
-                    task_states.add(_task_state_value(event.status_update.status.state))
-                if event.HasField("artifact_update"):
-                    task_ids.add(event.artifact_update.task_id)
-                    context_ids.add(event.artifact_update.context_id)
+    metric_attrs = {
+        "a2a.method.name": method,
+        "a2a.protocol.version": interface.protocol_version,
+        "server.address": host,
+        "server.port": port,
+    }
+    async with await _create_a2a_client(card, streaming=True) as client:
+        with _reference_tracer.start_as_current_span(method, kind=SpanKind.CLIENT, attributes=span_attrs) as span:
+            duration_attrs = dict(metric_attrs)
+            _client_active.add(1, metric_attrs)
+            start = time.perf_counter()
+            try:
+                async for event in client.send_message(request):
+                    event_count += 1
+                    if event.HasField("task"):
+                        task_ids.add(event.task.id)
+                        context_ids.add(event.task.context_id)
+                        task_states.add(_task_state_value(event.task.status.state))
+                    if event.HasField("status_update"):
+                        task_ids.add(event.status_update.task_id)
+                        context_ids.add(event.status_update.context_id)
+                        task_states.add(_task_state_value(event.status_update.status.state))
+                    if event.HasField("artifact_update"):
+                        task_ids.add(event.artifact_update.task_id)
+                        context_ids.add(event.artifact_update.context_id)
+            except Exception as exc:
+                duration_attrs["error.type"] = A2A_ERROR_REASONS.get(type(exc)) or type(exc).__qualname__
+                span.set_attribute("error.type", duration_attrs["error.type"])
+                raise
+            finally:
+                # The stream is fully consumed, or the call failed.
+                _client_duration.record(time.perf_counter() - start, duration_attrs)
+                _client_active.add(-1, metric_attrs)
 
-        assert task_ids
-        assert task_states
-        assert context_ids
-        if len(task_ids) == 1:
-            span.set_attribute("a2a.task.id", next(iter(task_ids)))
-        if len(task_states) == 1:
-            span.set_attribute("a2a.task.state", next(iter(task_states)))
-        if len(context_ids) == 1:
-            span.set_attribute("gen_ai.conversation.id", next(iter(context_ids)))
+            assert task_ids
+            assert task_states
+            assert context_ids
+            if len(task_ids) == 1:
+                span.set_attribute("a2a.task.id", next(iter(task_ids)))
+            if len(task_states) == 1:
+                span.set_attribute("a2a.task.state", next(iter(task_states)))
+            if len(context_ids) == 1:
+                span.set_attribute("gen_ai.conversation.id", next(iter(context_ids)))
     print(f"    -> {event_count} events")
 
 
@@ -410,13 +535,76 @@ async def run_tasks_get_reference(card: a2a_types.AgentCard, task_id: str) -> No
         span_attrs["server.address"] = host
     if port is not None:
         span_attrs["server.port"] = port
-    with _reference_tracer.start_as_current_span(method, kind=SpanKind.CLIENT, attributes=span_attrs) as span:
-        async with await _create_a2a_client(card, streaming=False) as client:
-            task = await client.get_task(request)
-        task_state = _task_state_value(task.status.state)
-        span.set_attribute("a2a.task.state", task_state)
-        span.set_attribute("gen_ai.conversation.id", task.context_id)
+    metric_attrs = {
+        "a2a.method.name": method,
+        "a2a.protocol.version": interface.protocol_version,
+        "server.address": host,
+        "server.port": port,
+    }
+    async with await _create_a2a_client(card, streaming=False) as client:
+        with _reference_tracer.start_as_current_span(method, kind=SpanKind.CLIENT, attributes=span_attrs) as span:
+            duration_attrs = dict(metric_attrs)
+            _client_active.add(1, metric_attrs)
+            start = time.perf_counter()
+            try:
+                task = await client.get_task(request)
+            except Exception as exc:
+                duration_attrs["error.type"] = A2A_ERROR_REASONS.get(type(exc)) or type(exc).__qualname__
+                span.set_attribute("error.type", duration_attrs["error.type"])
+                raise
+            finally:
+                _client_duration.record(time.perf_counter() - start, duration_attrs)
+                _client_active.add(-1, metric_attrs)
+            task_state = _task_state_value(task.status.state)
+            span.set_attribute("a2a.task.state", task_state)
+            span.set_attribute("gen_ai.conversation.id", task.context_id)
     print(f"    -> {request.id} {task_state}")
+
+
+async def run_tasks_get_error_reference(card: a2a_types.AgentCard) -> None:
+    """Scenario: A2A JSON-RPC get_task for a task the server does not know."""
+    print("  [get_task_error] A2A JSON-RPC get_task for a missing task")
+    method = "GetTask"
+    interface = _jsonrpc_interface(card)
+    request = a2a_types.GetTaskRequest(tenant=interface.tenant, id="missing-task")
+
+    host, port = mock_server_host_port(interface.url)
+    span_attrs = {
+        "a2a.method.name": method,
+        "a2a.protocol.version": interface.protocol_version,
+        "a2a.tenant": request.tenant,
+        "a2a.task.id": request.id,
+        "gen_ai.agent.name": card.name,
+        "gen_ai.agent.description": card.description,
+        "gen_ai.agent.version": card.version,
+        "server.address": host,
+        "server.port": port,
+    }
+    metric_attrs = {
+        "a2a.method.name": method,
+        "a2a.protocol.version": interface.protocol_version,
+        "server.address": host,
+        "server.port": port,
+    }
+    async with await _create_a2a_client(card, streaming=False) as client:
+        with _reference_tracer.start_as_current_span(method, kind=SpanKind.CLIENT, attributes=span_attrs) as span:
+            duration_attrs = dict(metric_attrs)
+            _client_active.add(1, metric_attrs)
+            start = time.perf_counter()
+            try:
+                await client.get_task(request)
+            except A2AError as exc:
+                # The SDK maps each A2A error class to its protocol reason.
+                error_type = A2A_ERROR_REASONS.get(type(exc)) or type(exc).__qualname__
+                span.set_status(StatusCode.ERROR)
+                span.set_attribute("error.type", error_type)
+                duration_attrs["error.type"] = error_type
+            else:
+                raise AssertionError("GetTask for a missing task succeeded")
+            finally:
+                _client_duration.record(time.perf_counter() - start, duration_attrs)
+                _client_active.add(-1, metric_attrs)
+    print(f"    -> {request.id} {error_type}")
 
 
 async def run_server_over_http_reference(card: a2a_types.AgentCard) -> None:
@@ -449,8 +637,10 @@ async def run_server_over_http_reference(card: a2a_types.AgentCard) -> None:
 async def run_scenarios() -> None:
     async with serve_agents() as (standalone, over_http):
         task_id = await run_message_send_reference(standalone)
+        await run_message_send_reference(standalone, message_id="msg-user-5", return_immediately=True)
         await run_message_stream_reference(standalone)
         await run_tasks_get_reference(standalone, task_id)
+        await run_tasks_get_error_reference(standalone)
         await run_server_over_http_reference(over_http)
         await run_server_error_reference(over_http)
 
