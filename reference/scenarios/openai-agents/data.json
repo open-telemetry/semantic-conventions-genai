@@ -1,6 +1,7 @@
 {
   "spans": {
     "gen_ai.execute_tool.internal": [
+      "error.type",
       "gen_ai.agent.name",
       "gen_ai.operation.name",
       "gen_ai.tool.call.arguments",
@@ -11,6 +12,7 @@
       "gen_ai.tool.type"
     ],
     "gen_ai.invoke_agent.internal": [
+      "error.type",
       "gen_ai.agent.name",
       "gen_ai.input.messages",
       "gen_ai.operation.name",
@@ -21,15 +23,20 @@
       "gen_ai.tool.definitions",
       "gen_ai.usage.input_tokens",
       "gen_ai.usage.output_tokens"
-    ],
-    "gen_ai.invoke_workflow.internal": [
-      "gen_ai.input.messages",
-      "gen_ai.operation.name",
-      "gen_ai.output.messages",
-      "gen_ai.workflow.name"
     ]
   },
-  "events": {},
+  "events": {
+    "gen_ai.execute_tool.exception": [
+      "exception.message",
+      "exception.stacktrace",
+      "exception.type"
+    ],
+    "gen_ai.invoke_agent.exception": [
+      "exception.message",
+      "exception.stacktrace",
+      "exception.type"
+    ]
+  },
   "metrics": {},
   "entities": {},
   "findings": [

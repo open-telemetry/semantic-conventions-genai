@@ -16,8 +16,18 @@ scenarios:
         context:
           attribute_key: process.exit.code
         reason: Registry validation does not recognize this process attribute referenced by the command-tool refinement.
-      - id: genai_expected_attribute_missing
+      - id: genai_span_name_format
         context:
-          operation: retrieval
-          missing_attribute: server.address
-        reason: In-memory retriever has no server address.
+          expected_form: invoke_workflow
+          keyed_attr: gen_ai.workflow.name
+          operation: invoke_workflow
+        reason: The runner still keys invoke_workflow span names on gen_ai.workflow.name.
+    spans:
+      - match:
+          attributes:
+            gen_ai.operation.name: retrieval
+          type: gen_ai.retrieval
+      - match:
+          attributes:
+            gen_ai.operation.name: invoke_workflow
+          type: gen_ai.invoke_agent.internal

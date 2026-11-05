@@ -21,17 +21,10 @@
       "gen_ai.usage.input_tokens",
       "gen_ai.usage.output_tokens"
     ],
-    "gen_ai.invoke_workflow.internal": [
-      "gen_ai.input.messages",
-      "gen_ai.operation.name",
-      "gen_ai.output.messages",
-      "gen_ai.workflow.name"
-    ],
     "gen_ai.plan.internal": [
       "gen_ai.operation.name"
     ],
-    "gen_ai.retrieval.client": [
-      "gen_ai.data_source.id",
+    "gen_ai.retrieval": [
       "gen_ai.operation.name",
       "gen_ai.retrieval.documents",
       "gen_ai.retrieval.query.text",
@@ -39,7 +32,11 @@
     ]
   },
   "events": {},
-  "metrics": {},
+  "metrics": {
+    "gen_ai.retrieval.duration": [
+      "gen_ai.operation.name"
+    ]
+  },
   "entities": {},
   "findings": [
     {
@@ -52,13 +49,14 @@
       }
     },
     {
-      "id": "genai_expected_attribute_missing",
-      "message": "Span 'retrieval weather-knowledge-base' (operation 'retrieval') is missing expected attribute 'server.address'",
+      "id": "genai_span_name_format",
+      "message": "invoke_workflow span name should be 'invoke_workflow', got 'invoke_workflow Weather graph'",
       "signal_type": "span",
-      "signal_name": "retrieval weather-knowledge-base",
+      "signal_name": "invoke_workflow Weather graph",
       "context": {
-        "missing_attribute": "server.address",
-        "operation": "retrieval"
+        "expected_form": "invoke_workflow",
+        "keyed_attr": "gen_ai.workflow.name",
+        "operation": "invoke_workflow"
       }
     }
   ]
