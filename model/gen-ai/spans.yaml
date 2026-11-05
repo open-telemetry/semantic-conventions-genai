@@ -912,6 +912,9 @@ spans:
         sampling_relevant: true
       - ref: gen_ai.agent.name
         sampling_relevant: true
+      - ref: gen_ai.request.is_nested
+        requirement_level:
+          conditionally_required: When the invocation is nested.
       - ref: gen_ai.request.max_tokens
         requirement_level:
           recommended: When `gen_ai.operation.name` is `invoke_agent`.

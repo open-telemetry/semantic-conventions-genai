@@ -21,7 +21,14 @@ from agents.tool import FunctionTool, ToolContext
 from opentelemetry import trace
 from opentelemetry._logs import SeverityNumber
 from opentelemetry.trace import StatusCode
-from reference_shared import flush_and_shutdown, reference_event_logger, reference_tracer, setup_otel
+from reference_shared import (
+    flush_and_shutdown,
+    invocation_scope,
+    nested_invocation_attributes,
+    reference_event_logger,
+    reference_tracer,
+    setup_otel,
+)
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"] + "/v1"
 # The shell this deployment lets the sandboxed agent run commands with.
@@ -288,6 +295,7 @@ async def run_agent_as_tool_delegation():
     async def _traced_agent_run(runner, starting_agent, input, **kwargs):
         agent_span_attributes = {
             "gen_ai.operation.name": "invoke_agent",
+            **nested_invocation_attributes(),
             "gen_ai.request.model": starting_agent.model.model,
             "gen_ai.agent.name": starting_agent.name,
         }
@@ -305,7 +313,9 @@ async def run_agent_as_tool_delegation():
                 responses = []
                 token = model_responses.set(responses)
                 try:
-                    result = await original_agent_run(runner, starting_agent, input, **kwargs)
+                    # The same patched `AgentRunner.run` serves the caller and the agent it runs as a tool.
+                    with invocation_scope():
+                        result = await original_agent_run(runner, starting_agent, input, **kwargs)
                 finally:
                     model_responses.reset(token)
                 # Agent.as_tool shares context usage with its caller. Each run's raw
@@ -537,6 +547,7 @@ async def run_runner():
         agent = bindings.public_agent
         attributes = {
             "gen_ai.operation.name": "invoke_agent",
+            **nested_invocation_attributes(),
             "gen_ai.agent.name": agent.name,
             "gen_ai.request.model": agent.model.model,
         }
@@ -589,7 +600,10 @@ async def run_runner():
     runner_span_attributes = {
         "gen_ai.operation.name": "invoke_runner",
     }
-    with _reference_tracer.start_as_current_span("invoke_runner", attributes=runner_span_attributes) as runner_span:
+    with (
+        _reference_tracer.start_as_current_span("invoke_runner", attributes=runner_span_attributes) as runner_span,
+        invocation_scope(),
+    ):
         runner_span.set_attribute(
             "gen_ai.input.messages", [{"role": "user", "parts": [{"type": "text", "content": input_text}]}]
         )
