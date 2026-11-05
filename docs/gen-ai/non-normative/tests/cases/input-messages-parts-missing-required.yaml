@@ -11,12 +11,28 @@ document: [
       { "content": "hello" },
       { "type": "text" },
       { "type": "text", "text": "hello" },
-      { "type": "blob", "mime_type": "image/png" }
+      { "type": "blob", "mime_type": "image/png" },
+      { "type": "file" },
+      { "type": "uri" },
+      { "type": "tool_call" },
+      { "type": "tool_call_response" },
+      { "type": "reasoning" },
+      { "type": "transcription" },
+      { "type": "server_tool_call" },
+      { "type": "server_tool_call_response" },
+      { "type": "server_tool_call", "server_tool_call": {} },
+      { "type": "server_tool_call_response", "server_tool_call_response": {} }
     ]
   }
 ]
 # Regenerate with `uv run pytest --update-snapshots`, do not edit by hand.
 errors:
   - path: $[0].parts[0]
+    keyword: required
+    message: "'type' is a required property"
+  - path: $[0].parts[12].server_tool_call
+    keyword: required
+    message: "'type' is a required property"
+  - path: $[0].parts[13].server_tool_call_response
     keyword: required
     message: "'type' is a required property"
