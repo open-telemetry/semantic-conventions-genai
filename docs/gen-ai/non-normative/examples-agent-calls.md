@@ -62,21 +62,20 @@ and resumes after the specialist returns. Content capturing is disabled.
 ## Agent tool transfer that passes control
 
 In this example, `agent-a` calls a transfer tool that passes control to `agent-b`.
-The enclosing workflow invokes the agents as separate steps, so their spans are
+The enclosing framework runner invokes the agents as separate steps, so their spans are
 siblings. The transfer tool selects the next agent but does not invoke it.
 Content capturing is disabled.
 
-**Enclosing workflow span:**
+**Enclosing runner span:**
 
 | Property | Value |
 | --- | --- |
-| Span name | `"invoke_workflow sequential-agents"` |
+| Span name | `"invoke_runner"` |
 | Span kind | `INTERNAL` |
 | Span status | `UNSET` |
 | Trace id | `"7d3a91e25c6f408ab2e019f7d4c83560"` |
 | Span id | `"5d9fb1324680ace2"` |
-| `gen_ai.operation.name` | `"invoke_workflow"` |
-| `gen_ai.workflow.name` | `"sequential-agents"` |
+| `gen_ai.operation.name` | `"invoke_runner"` |
 
 **Source agent span:**
 
