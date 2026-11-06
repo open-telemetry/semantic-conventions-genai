@@ -76,7 +76,7 @@ Here's an example of a tool call request with injected
       "tracestate": "rojo=00f067aa0ba902b7,congo=t61rcWkgMzE"
     }
   },
-  "id": 1,
+  "id": 1
 }
 ```
 
@@ -95,7 +95,7 @@ example:
       "baggage": "userId=alice,serverNode=DF%2028,isProduction=false"
     }
   },
-  "id": 1,
+  "id": 1
 }
 ```
 
