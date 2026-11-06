@@ -295,11 +295,11 @@ def run_evaluation_reference(control_client, data_client):
         )
         for result in response["evaluationResults"]:
             scale = dimension_scales.get(result.get("evaluationDimensionName"), rating_scale)
-            rating_scale_kind = "numerical" if "numerical" in scale else "categorical"
-            attributes = {
-                "gen_ai.evaluation.name": result["evaluatorName"],
-                "gen_ai.evaluation.score.rating_scale": rating_scale_kind,
-            }
+            # A multi-dimensional result without a dimension name has no known scale.
+            rating_scale_kind = next((kind for kind in ("numerical", "categorical") if kind in scale), None)
+            attributes = {"gen_ai.evaluation.name": result["evaluatorName"]}
+            if rating_scale_kind:
+                attributes["gen_ai.evaluation.score.rating_scale"] = rating_scale_kind
             if "value" in result:
                 attributes["gen_ai.evaluation.score.value"] = result["value"]
             if "label" in result:
