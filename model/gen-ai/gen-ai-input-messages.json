@@ -35,16 +35,23 @@
                     "title": "Modality"
                 },
                 "content": {
+                    "anyOf": [
+                        {
+                            "format": "binary",
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
                     "description": "Raw bytes of the attached data.",
-                    "format": "binary",
-                    "title": "Content",
-                    "type": "string"
+                    "title": "Content"
                 }
             },
             "required": [
                 "type",
-                "modality",
-                "content"
+                "modality"
             ],
             "title": "BlobPart",
             "type": "object"
