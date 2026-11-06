@@ -21,6 +21,8 @@
 | --- | --- |
 | gen_ai.evaluation.explanation | [aws-bedrock-agentcore], [azure-ai-evaluation], [deepeval] |
 | gen_ai.evaluation.score.direction | [azure-ai-evaluation] |
+| gen_ai.evaluation.score.max | [aws-bedrock-agentcore] |
+| gen_ai.evaluation.score.min | [aws-bedrock-agentcore] |
 | gen_ai.evaluation.score.rating_scale | [aws-bedrock-agentcore] |
 | gen_ai.response.id | (none) |
 

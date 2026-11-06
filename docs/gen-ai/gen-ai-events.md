@@ -45,8 +45,10 @@ This event captures the result of evaluating GenAI output for quality, accuracy,
 | [`gen_ai.evaluation.score.value`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If applicable. | double | The evaluation score returned by the evaluator. | `4.0` |
 | [`gen_ai.evaluation.explanation`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | A free-form explanation for the assigned score provided by the evaluator. | `The response is factually accurate but lacks sufficient detail to fully address the question.` |
 | [`gen_ai.evaluation.score.direction`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` [3] | string | Whether a higher or a lower `gen_ai.evaluation.score.value` is better. [4] | `maximize`; `minimize` |
-| [`gen_ai.evaluation.score.rating_scale`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` When the evaluator defines it. | string | Whether the result is a numeric score or a category. [5] | `numerical`; `categorical` |
-| [`gen_ai.response.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` When available. | string | The unique identifier for the completion. [6] | `chatcmpl-123` |
+| [`gen_ai.evaluation.score.max`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` [5] | double | The highest score the evaluator can produce. [6] | `5.0`; `100.0` |
+| [`gen_ai.evaluation.score.min`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` [7] | double | The lowest score the evaluator can produce. [8] | `0.0`; `1.0` |
+| [`gen_ai.evaluation.score.rating_scale`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` When the evaluator defines it. | string | Whether the result is a numeric score or a category. [9] | `numerical`; `categorical` |
+| [`gen_ai.response.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` When available. | string | The unique identifier for the completion. [10] | `chatcmpl-123` |
 
 **[1] `error.type`:** The `error.type` SHOULD match the error code returned by the Generative AI provider or the client library,
 the canonical name of exception that occurred, or another low-cardinality error identifier.
@@ -59,10 +61,19 @@ Instrumentations SHOULD document the list of errors they report.
 **[4] `gen_ai.evaluation.score.direction`:** Evaluators differ in which way is better: a higher relevance score is better, a higher toxicity score is worse. Without this attribute, consumers cannot tell a good result from a bad one when comparing, charting, or alerting on scores.
 This is a property of the evaluator, recorded on each result so the result can be interpreted on its own. It applies only to scores where one direction is always better. Evaluators whose acceptable scores lie within a range SHOULD NOT set this attribute.
 
-**[5] `gen_ai.evaluation.score.rating_scale`:** An evaluator can return both `gen_ai.evaluation.score.value` and `gen_ai.evaluation.score.label`. This attribute tells consumers which one is the result, for example whether to chart scores as a distribution or count categories.
+**[5] `gen_ai.evaluation.score.max`:** When `gen_ai.evaluation.score.value` is set and the evaluator defines its score range.
+
+**[6] `gen_ai.evaluation.score.max`:** Together with `gen_ai.evaluation.score.min`, tells consumers the scale of `gen_ai.evaluation.score.value`, for example 1 to 5 or 0 to 100, so scores from different evaluators can be charted and compared.
+This is a property of the evaluator, recorded on each result so the result can be interpreted on its own.
+
+**[7] `gen_ai.evaluation.score.min`:** When `gen_ai.evaluation.score.value` is set and the evaluator defines its score range.
+
+**[8] `gen_ai.evaluation.score.min`:** See `gen_ai.evaluation.score.max`.
+
+**[9] `gen_ai.evaluation.score.rating_scale`:** An evaluator can return both `gen_ai.evaluation.score.value` and `gen_ai.evaluation.score.label`. This attribute tells consumers which one is the result, for example whether to chart scores as a distribution or count categories.
 It is usually fixed for an evaluator, but an evaluator that scores several dimensions can use a different scale per dimension, so it is recorded on each result.
 
-**[6] `gen_ai.response.id`:** The unique identifier assigned to the specific
+**[10] `gen_ai.response.id`:** The unique identifier assigned to the specific
 completion being evaluated. This attribute helps correlate the evaluation
 event with the corresponding operation when span id is not available.
 

@@ -1192,6 +1192,25 @@ attributes:
       Possible values depend on the evaluation metric and evaluator used; implementations SHOULD document the possible values.
     examples: ["relevant", "not_relevant", "correct", "incorrect", "pass", "fail"]
     stability: development
+  - key: gen_ai.evaluation.score.max
+    type: double
+    brief: The highest score the evaluator can produce.
+    note: >
+      Together with `gen_ai.evaluation.score.min`, tells consumers the scale of
+      `gen_ai.evaluation.score.value`, for example 1 to 5 or 0 to 100, so scores from
+      different evaluators can be charted and compared.
+
+      This is a property of the evaluator, recorded on each result so the result can
+      be interpreted on its own.
+    examples: [5.0, 100.0]
+    stability: development
+  - key: gen_ai.evaluation.score.min
+    type: double
+    brief: The lowest score the evaluator can produce.
+    note: >
+      See `gen_ai.evaluation.score.max`.
+    examples: [0.0, 1.0]
+    stability: development
   - key: gen_ai.evaluation.score.direction
     type:
       members:

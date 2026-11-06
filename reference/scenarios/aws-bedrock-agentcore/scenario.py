@@ -300,6 +300,11 @@ def run_evaluation_reference(control_client, data_client):
             attributes = {"gen_ai.evaluation.name": result["evaluatorName"]}
             if rating_scale_kind:
                 attributes["gen_ai.evaluation.score.rating_scale"] = rating_scale_kind
+            # A numerical scale lists every score the evaluator can give.
+            scale_values = [entry["value"] for entry in scale.get("numerical", [])]
+            if scale_values:
+                attributes["gen_ai.evaluation.score.min"] = min(scale_values)
+                attributes["gen_ai.evaluation.score.max"] = max(scale_values)
             if "value" in result:
                 attributes["gen_ai.evaluation.score.value"] = result["value"]
             if "label" in result:
