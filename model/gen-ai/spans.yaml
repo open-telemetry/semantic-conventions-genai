@@ -174,6 +174,31 @@ attribute_groups:
         requirement_level:
           conditionally_required: When applicable.
 
+  - id: attributes.gen_ai.execute_tool.command.error
+    visibility: internal
+    attributes:
+      - ref: error.type
+        requirement_level:
+          conditionally_required: If the operation ended in an error.
+        note: |
+          Depending on the framework, a tool call failure may surface as an exception
+          or as a response that indicates an error. Instrumentations SHOULD, when
+          possible, extract error details from the response.
+
+          `error.type` SHOULD be the canonical name of the exception or another
+          low-cardinality error identifier from the response, such as an error code.
+          When the call raised no exception and the response reports no error other
+          than a single non-zero exit code, `error.type` SHOULD be the string
+          representation of that exit code.
+
+          Some commands exit with a non-zero code for outcomes that are not
+          errors. For example, `grep` exits with `1` when no lines match and with
+          `2` when an error occurs. Instrumentations MAY use additional context,
+          such as the known exit codes of common commands, to decide which exit
+          codes are errors.
+
+          Instrumentations SHOULD document how they populate `error.type`.
+
   - id: attributes.gen_ai.retrieval.common
     visibility: internal
     attributes:
@@ -1380,6 +1405,7 @@ span_refinements:
       - ref: process.executable.path
         requirement_level:
           recommended: If the tool directly executes a single process and the executable path is available.
+      - ref_group: attributes.gen_ai.execute_tool.command.error
       - ref: process.exit.code
         requirement_level:
-          conditionally_required: If the tool reports a single command or process exit code.
+          conditionally_required: If the tool reports a single process exit code.
