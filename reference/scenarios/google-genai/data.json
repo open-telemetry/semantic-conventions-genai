@@ -36,6 +36,7 @@
       "gen_ai.agent.name",
       "gen_ai.operation.name",
       "gen_ai.provider.name",
+      "gen_ai.request.stream",
       "gen_ai.usage.input_tokens",
       "gen_ai.usage.output_tokens",
       "server.address",

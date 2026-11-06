@@ -1307,7 +1307,7 @@ def run_responses_with_prompt_template_reference(client):
         print(f"    -> {(output_text or '')[:60]}")
 
 
-def _emit_fetch_response_span(client, response_id, starting_after=None):
+def _emit_fetch_response_span(client, response_id, starting_after=None, stream=False):
     """Fetch a response by id and emit the `gen_ai.fetch_response.client` span.
 
     Owns its own span boundary, so all attributes are set inline here. Every
@@ -1325,6 +1325,7 @@ def _emit_fetch_response_span(client, response_id, starting_after=None):
     - `gen_ai.system_instructions` and `gen_ai.output.messages` are the content
       carried by the fetched response. The original input messages are NOT part
       of the fetched response object, so `gen_ai.input.messages` is not recorded.
+    - `gen_ai.request.stream` is recorded when the request is made in streaming mode.
     - `gen_ai.request.stream_cursor` is the resume cursor (OpenAI `starting_after`),
       a request-side parameter available at the call boundary, recorded only when
       the fetch resumes a streamed response from a prior position.
@@ -1342,6 +1343,8 @@ def _emit_fetch_response_span(client, response_id, starting_after=None):
         "gen_ai.response.id": response_id,
         "openai.api.type": "responses",
     }
+    if stream:
+        span_attributes["gen_ai.request.stream"] = True
     if starting_after is not None:
         span_attributes["gen_ai.request.stream_cursor"] = str(starting_after)
     if host:
@@ -1352,11 +1355,13 @@ def _emit_fetch_response_span(client, response_id, starting_after=None):
         "fetch_response", attributes=span_attributes, record_exception=False
     ) as span:
         try:
-            if starting_after is not None:
-                # Resume the streamed response from the cursor. The terminal
-                # `response.completed` event carries the full response object.
+            if stream:
+                # The terminal `response.completed` event carries the full response object.
                 fetched = None
-                for event in client.responses.retrieve(response_id, stream=True, starting_after=starting_after):
+                retrieve_kwargs = {"stream": True}
+                if starting_after is not None:
+                    retrieve_kwargs["starting_after"] = starting_after
+                for event in client.responses.retrieve(response_id, **retrieve_kwargs):
                     candidate = getattr(event, "response", None)
                     if candidate is not None:
                         fetched = candidate
@@ -1449,7 +1454,7 @@ def run_fetch_response_reference(client):
         sequence_number = getattr(event, "sequence_number", None)
         if sequence_number is not None:
             last_sequence_number = sequence_number
-    _emit_fetch_response_span(client, background_id, starting_after=last_sequence_number)
+    _emit_fetch_response_span(client, background_id, starting_after=last_sequence_number, stream=True)
 
     # Fetch a response whose original generation failed. The fetch succeeds; the
     # failure surfaces only via gen_ai.response.finish_reasons.

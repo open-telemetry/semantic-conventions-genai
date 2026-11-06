@@ -436,15 +436,16 @@ def run_interactions_continuation():
         print(f"    -> previous_response_id: {previous_interaction_id}")
 
 
-def run_agent_interaction():
+def run_agent_interaction(stream=False):
     """Scenario: invoke a Gemini managed agent through the Interactions API (`agent=` flavor).
 
     The agent runs server-side, so only the client invoke_agent operation is instrumentable here.
     """
     from google import genai
     from google.genai import types
+    from google.genai.interactions import Interaction
 
-    print("  [agent_interaction] Google GenAI: invoke agent via Interactions API")
+    print(f"  [agent_interaction] Google GenAI: invoke agent via Interactions API (stream={stream})")
     client = genai.Client(
         api_key="mock-key",
         http_options=types.HttpOptions(
@@ -461,21 +462,42 @@ def run_agent_interaction():
         "server.port": _SERVER_PORT,
     }
     metric_attributes = dict(span_attributes)
+    if stream:
+        span_attributes["gen_ai.request.stream"] = True
     start_time = time.perf_counter()
     with _reference_tracer.start_as_current_span(
         f"invoke_agent {agent}", kind=SpanKind.CLIENT, attributes=span_attributes, record_exception=False
     ) as span:
         try:
-            interaction = client.interactions.create(
-                agent=agent,
-                input="Research the history of the transistor.",
-            )
-            if interaction.usage:
-                if interaction.usage.total_input_tokens:
-                    span.set_attribute("gen_ai.usage.input_tokens", interaction.usage.total_input_tokens)
-                if interaction.usage.total_output_tokens:
-                    span.set_attribute("gen_ai.usage.output_tokens", interaction.usage.total_output_tokens)
-            print(f"    -> {interaction.id} ({interaction.status})")
+            if stream:
+                interaction_stream = client.interactions.create(
+                    agent=agent,
+                    input="Research the history of the transistor.",
+                    background=True,
+                    stream=True,
+                )
+                # The mock server answers streaming requests with a plain Interaction.
+                if isinstance(interaction_stream, Interaction):
+                    interaction = interaction_stream
+                else:
+                    interaction = None
+                    for event in interaction_stream:
+                        if event.event_type == "interaction.completed":
+                            interaction = event.interaction
+            else:
+                interaction = client.interactions.create(
+                    agent=agent,
+                    input="Research the history of the transistor.",
+                )
+            if interaction is not None:
+                if stream and interaction.id:
+                    span.set_attribute("gen_ai.response.id", interaction.id)
+                if interaction.usage:
+                    if interaction.usage.total_input_tokens:
+                        span.set_attribute("gen_ai.usage.input_tokens", interaction.usage.total_input_tokens)
+                    if interaction.usage.total_output_tokens:
+                        span.set_attribute("gen_ai.usage.output_tokens", interaction.usage.total_output_tokens)
+                print(f"    -> {interaction.id} ({interaction.status})")
         except Exception as e:
             span.set_status(StatusCode.ERROR, str(e))
             span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
@@ -873,6 +895,7 @@ def main():
 
     run_chat()
     run_interactions_continuation()
+    run_agent_interaction(stream=True)
     run_chat_tool_call()
     run_chat_multimodal()
     run_generate_media()
