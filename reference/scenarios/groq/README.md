@@ -11,5 +11,8 @@ code.
 | execute_tool | No — the client returns tool calls but doesn't execute them; the tool runs in app code | ➖ Not instrumentable |
 
 The chat, streaming, and tool-call examples record one input and output token
-histogram sample per inference operation when the SDK returns usage. The samples
-use the same token counts as the span and the recommended token bucket boundaries.
+histogram sample per inference operation, including zero samples when usage is
+unavailable or the SDK fails. Failures carry `error.type` and are re-raised.
+Positive known counts also go to usage counters with modality `unknown`, since
+Groq provides no modality breakdown. The histograms use the recommended token
+bucket boundaries.
