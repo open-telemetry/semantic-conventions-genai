@@ -126,3 +126,55 @@ def flush_and_shutdown(tp, lp, mp):
     lp.shutdown()
     mp.shutdown()
     print("Done.")
+
+
+class ObservedStream:
+    """Observe SDK iteration and closure without relying on the caller's loop."""
+
+    def __init__(self, manager):
+        self._manager = manager
+        self.exhausted = False
+        self.closed_early = False
+        self.error = None
+
+    def __enter__(self):
+        try:
+            self._stream = self._manager.__enter__()
+        except Exception as exc:
+            self.error = exc
+            raise
+        return self
+
+    def __iter__(self):
+        try:
+            yield from self._stream
+            self.exhausted = True
+        except Exception as exc:
+            self.error = exc
+            raise
+
+    def close(self):
+        self.closed_early = not self.exhausted
+        try:
+            self._stream.close()
+        except Exception as exc:
+            self.error = exc
+            raise
+
+    def __exit__(self, exc_type, exc, tb):
+        self.closed_early = not self.exhausted
+        if exc is not None:
+            self.error = exc
+        try:
+            return self._manager.__exit__(exc_type, exc, tb)
+        except Exception as error:
+            self.error = error
+            raise
+
+    @property
+    def finish_reason(self):
+        if self.error is not None:
+            return "error"
+        if self.exhausted or self.closed_early:
+            return "interrupted"
+        return None

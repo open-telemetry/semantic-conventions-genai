@@ -296,18 +296,15 @@ For interrupted generations, instrumentations SHOULD report the
 provider-reported interruption reason when available and `interrupted` otherwise.
 
 Each position SHOULD contain the finish reason for the corresponding
-choice/candidate. If a finish reason was expected but not received, for
-example because generation failed or a stream ended unexpectedly before
-the final event, instrumentations SHOULD report `error` for that position
-instead of omitting it.
+choice/candidate. If generation failed before a finish reason was received,
+instrumentations SHOULD report `error` for that position instead of omitting it.
 
 `error` indicates that the generation ended abnormally, whether reported
 by the provider or inferred by the instrumentation.
 
-If the caller closes or disposes a stream before receiving a finish reason
-and no error was observed, instrumentations SHOULD report `interrupted` for
-that position. Finish reasons already received from the provider SHOULD be
-preserved.
+If a stream ends gracefully before receiving a finish reason, instrumentations
+SHOULD report `interrupted` for that position. Finish reasons already received
+from the provider SHOULD be preserved.
 
 **[30] `gen_ai.response.status`:** This attribute captures the lifecycle state of a (possibly background or long-running) generation, such as whether it is queued, still running, or has reached a terminal state. It is distinct from `gen_ai.response.finish_reasons`, which describes why the model stopped once it began producing output.
 The value SHOULD be the provider's response status mapped onto the closest member of this enum or a provider-specific value when none of these apply. Semantic conventions for individual GenAI providers SHOULD document how their status values map to this attribute.

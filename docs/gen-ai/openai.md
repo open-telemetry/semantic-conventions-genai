@@ -193,18 +193,15 @@ For interrupted generations, instrumentations SHOULD report the
 provider-reported interruption reason when available and `interrupted` otherwise.
 
 Each position SHOULD contain the finish reason for the corresponding
-choice/candidate. If a finish reason was expected but not received, for
-example because generation failed or a stream ended unexpectedly before
-the final event, instrumentations SHOULD report `error` for that position
-instead of omitting it.
+choice/candidate. If generation failed before a finish reason was received,
+instrumentations SHOULD report `error` for that position instead of omitting it.
 
 `error` indicates that the generation ended abnormally, whether reported
 by the provider or inferred by the instrumentation.
 
-If the caller closes or disposes a stream before receiving a finish reason
-and no error was observed, instrumentations SHOULD report `interrupted` for
-that position. Finish reasons already received from the provider SHOULD be
-preserved.
+If a stream ends gracefully before receiving a finish reason, instrumentations
+SHOULD report `interrupted` for that position. Finish reasons already received
+from the provider SHOULD be preserved.
 
 **[20] `gen_ai.response.time_to_first_chunk`:** A chunk is a decoded provider stream event carrying new, non-empty output: text, refusals, reasoning (including opaque payloads), audio, images, or tool-call names or arguments. Instrumentations MUST NOT treat empty start events or events carrying only usage, roles, IDs, signatures, keep-alives, progress/status updates, or end markers as chunks. Chunk boundaries follow provider events, not TCP reads, HTTP frames, or extra SDK callbacks.
 
@@ -523,7 +520,7 @@ Instrumentations SHOULD document the list of errors they report.
 
 **[8] `server.port`:** When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries, for example proxies, if it's available.
 
-**[9] `gen_ai.response.finish_reasons`:** Derived from the fetched response `status`: a `completed` response maps to its stop reason, a `failed` response to `error`, a `cancelled` response to `interrupted`, and an `incomplete` response to its `incomplete_details.reason` (for example `max_output_tokens` maps to `length` and `content_filter` to `content_filter`).
+**[9] `gen_ai.response.finish_reasons`:** Derived from the fetched response `status`: a `completed` response maps to its stop reason, a `failed` response to `error`, a `cancelled` response to `interrupted`, and an `incomplete` response to its `incomplete_details.reason` (for example `max_output_tokens` maps to `length` and `content_filter` to `content_filter`). If the fetched stream ends gracefully before a final status or finish reason arrives, report `interrupted` without inferring a terminal response status.
 
 **[10] `gen_ai.response.status`:** Set from the fetched response `status` field, whose values (`queued`, `in_progress`, `completed`, `incomplete`, `failed`, `cancelled`) map directly onto this attribute.
 

@@ -124,7 +124,7 @@ Instrumentations SHOULD document the list of errors they report.
 
 **[8] `server.port`:** When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries, for example proxies, if it's available.
 
-**[9] `gen_ai.response.finish_reasons`:** Conveys the outcome of the original generation as recorded on the fetched response, derived from its status: a completed generation maps to its stop reason, an incomplete one to why it was cut short (for example `length` or `content_filter`), a failed generation to `error`, and a cancelled generation to `interrupted`.
+**[9] `gen_ai.response.finish_reasons`:** Conveys the outcome of the original generation as recorded on the fetched response, derived from its status: a completed generation maps to its stop reason, an incomplete one to why it was cut short (for example `length` or `content_filter`), a failed generation to `error`, and a cancelled generation to `interrupted`. If a fetched stream ends gracefully before a final status or finish reason arrives, report `interrupted` for the unfinished generation. This describes the fetched stream and does not infer the original generation's status.
 
 **[10] `gen_ai.response.status`:** The lifecycle status of the fetched response as reported by the provider, mapped onto the cross-provider enum. For a background or streamed response this conveys whether generation is still queued or in progress, or has reached a terminal state such as completed, failed, or cancelled.
 
