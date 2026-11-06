@@ -18,26 +18,18 @@ MOCK_BASE_URL = os.environ["MOCK_LLM_URL"]
 _reference_tracer = reference_tracer()
 _meter = reference_meter()
 # Bucket boundaries advised for each metric by docs/gen-ai/gen-ai-metrics.md.
-_token_usage = _meter.create_histogram(
-    "gen_ai.client.token.usage",
+_TOKEN_BUCKETS = [1, 4, 16, 64, 256, 1024, 4096, 16384, 65536, 262144, 1048576, 4194304, 16777216, 67108864]
+_input_tokens = _meter.create_histogram(
+    "gen_ai.client.inference.operation.input_tokens",
     unit="{token}",
-    description="Number of input and output tokens used.",
-    explicit_bucket_boundaries_advisory=[
-        1,
-        4,
-        16,
-        64,
-        256,
-        1024,
-        4096,
-        16384,
-        65536,
-        262144,
-        1048576,
-        4194304,
-        16777216,
-        67108864,
-    ],
+    description="The number of input (prompt) tokens used per inference operation.",
+    explicit_bucket_boundaries_advisory=_TOKEN_BUCKETS,
+)
+_output_tokens = _meter.create_histogram(
+    "gen_ai.client.inference.operation.output_tokens",
+    unit="{token}",
+    description="The number of output (completion) tokens used per inference operation.",
+    explicit_bucket_boundaries_advisory=_TOKEN_BUCKETS,
 )
 _inference_duration = _meter.create_histogram(
     "gen_ai.client.inference.duration",
@@ -61,6 +53,21 @@ _inference_duration = _meter.create_histogram(
     ],
 )
 _SERVER_ADDRESS, _SERVER_PORT = mock_server_host_port(MOCK_BASE_URL)
+
+
+def record_token_usage(usage, request_model, response_model):
+    """Record one input and output histogram sample per inference operation."""
+    attributes = {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "groq",
+        "gen_ai.request.model": request_model,
+        "server.address": _SERVER_ADDRESS,
+        "server.port": _SERVER_PORT,
+    }
+    if response_model:
+        attributes["gen_ai.response.model"] = response_model
+    _input_tokens.record(usage.prompt_tokens or 0, attributes)
+    _output_tokens.record(usage.completion_tokens or 0, attributes)
 
 
 def run_chat_reference(client):
@@ -100,30 +107,7 @@ def run_chat_reference(client):
         if resp.usage:
             span.set_attribute("gen_ai.usage.input_tokens", resp.usage.prompt_tokens)
             span.set_attribute("gen_ai.usage.output_tokens", resp.usage.completion_tokens)
-            _token_usage.record(
-                resp.usage.prompt_tokens,
-                {
-                    "gen_ai.operation.name": "chat",
-                    "gen_ai.provider.name": "groq",
-                    "gen_ai.request.model": request_model,
-                    "gen_ai.response.model": resp.model,
-                    "gen_ai.token.type": "input",
-                    "server.address": _SERVER_ADDRESS,
-                    "server.port": _SERVER_PORT,
-                },
-            )
-            _token_usage.record(
-                resp.usage.completion_tokens,
-                {
-                    "gen_ai.operation.name": "chat",
-                    "gen_ai.provider.name": "groq",
-                    "gen_ai.request.model": request_model,
-                    "gen_ai.response.model": resp.model,
-                    "gen_ai.token.type": "output",
-                    "server.address": _SERVER_ADDRESS,
-                    "server.port": _SERVER_PORT,
-                },
-            )
+            record_token_usage(resp.usage, request_model, resp.model)
 
         # Emit inference operation details event
         event_attrs = {
@@ -202,6 +186,7 @@ def run_chat_streaming_reference(client):
         if usage:
             span.set_attribute("gen_ai.usage.input_tokens", usage.prompt_tokens)
             span.set_attribute("gen_ai.usage.output_tokens", usage.completion_tokens)
+            record_token_usage(usage, request_model, model)
         _inference_duration.record(
             time.perf_counter() - start_time,
             {
@@ -269,30 +254,7 @@ def run_chat_tool_call_reference(client):
         if resp.usage:
             span.set_attribute("gen_ai.usage.input_tokens", resp.usage.prompt_tokens)
             span.set_attribute("gen_ai.usage.output_tokens", resp.usage.completion_tokens)
-            _token_usage.record(
-                resp.usage.prompt_tokens,
-                {
-                    "gen_ai.operation.name": "chat",
-                    "gen_ai.provider.name": "groq",
-                    "gen_ai.request.model": request_model,
-                    "gen_ai.response.model": resp.model,
-                    "gen_ai.token.type": "input",
-                    "server.address": _SERVER_ADDRESS,
-                    "server.port": _SERVER_PORT,
-                },
-            )
-            _token_usage.record(
-                resp.usage.completion_tokens,
-                {
-                    "gen_ai.operation.name": "chat",
-                    "gen_ai.provider.name": "groq",
-                    "gen_ai.request.model": request_model,
-                    "gen_ai.response.model": resp.model,
-                    "gen_ai.token.type": "output",
-                    "server.address": _SERVER_ADDRESS,
-                    "server.port": _SERVER_PORT,
-                },
-            )
+            record_token_usage(resp.usage, request_model, resp.model)
         choice = resp.choices[0]
         if choice.message.tool_calls:
             # The client returns the tool call; running it is app code the client

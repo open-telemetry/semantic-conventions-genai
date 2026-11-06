@@ -24,3 +24,7 @@ scenarios:
           attributes:
             gen_ai.operation.name: text_completion
           type: gen_ai.client.inference
+    metrics:
+      - gen_ai.client.inference.duration
+      - gen_ai.client.inference.operation.input_tokens
+      - gen_ai.client.inference.operation.output_tokens
