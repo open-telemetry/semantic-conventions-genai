@@ -290,26 +290,30 @@ events:
       When the resumed work begins a new active execution segment (after a
       process restart, durable recovery, resumption in a different worker, or
       when the prior segment was exported in a different trace),
-      instrumentations MUST identify the suspended boundary the segment
-      continues from via `gen_ai.agent.resumed_from.type` and
-      `gen_ai.agent.resumed_from.id`, and MUST record the same
-      `gen_ai.agent.execution.id` as the suspended segment. When resumption
-      continues within the same still-open span, instrumentations SHOULD NOT
-      record the `resumed_from` pair. The two attributes MUST be recorded
-      together or not at all. When the segment continues from a checkpoint
-      taken at a pause boundary, recording the pause id lets a consumer
-      identify the pause without retrieving the `gen_ai.agent.checkpointed`
-      record.
+      instrumentations MUST record the same `gen_ai.agent.execution.id` as the
+      suspended segment. When the instrumentation can identify the boundary
+      the segment continues from, it MUST also record
+      `gen_ai.agent.resumed_from.type` and `gen_ai.agent.resumed_from.id`.
+      Otherwise both are omitted and the event carries the execution id alone:
+      instrumentations MUST NOT synthesize a boundary id or substitute a
+      session or workflow id for one. Without the id, resumptions of the same
+      execution from different boundaries cannot be told apart. When
+      resumption continues within the same still-open span, instrumentations
+      SHOULD NOT record the `resumed_from` pair. The two attributes MUST be
+      recorded together or not at all. When the segment continues from a
+      checkpoint taken at a pause boundary, recording the pause id lets a
+      consumer identify the pause without retrieving the
+      `gen_ai.agent.checkpointed` record.
     stability: development
     attributes:
       - ref: gen_ai.agent.execution.id
         requirement_level: required
       - ref: gen_ai.agent.resumed_from.type
         requirement_level:
-          conditionally_required: When the resumed work begins a new active execution segment.
+          conditionally_required: When the resumed work begins a new active execution segment and the instrumentation can identify the boundary it continues from.
       - ref: gen_ai.agent.resumed_from.id
         requirement_level:
-          conditionally_required: When the resumed work begins a new active execution segment.
+          conditionally_required: When the resumed work begins a new active execution segment and the instrumentation can identify the boundary it continues from.
       - ref: gen_ai.agent.pause.id
         requirement_level:
           recommended: When `gen_ai.agent.resumed_from.type` is `checkpoint` and that checkpoint was taken at a pause boundary.

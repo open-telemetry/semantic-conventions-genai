@@ -133,6 +133,10 @@ as indicated by `gen_ai.agent.resumed_from.type`. Together with a shared
 suspend/resume chain even when the original record is closed, sampled
 out, or exported in a separate trace.
 
+It names the boundary the segment continued from, not checkpoint
+ancestry or the branch the run continued on. A runtime-owned identifier
+MAY be used when it identifies that boundary.
+
 **[7] `gen_ai.agent.resumed_from.type`:** Carrying the boundary kind at all means a consumer holding only the
 resumed record can tell what it references without resolving the
 counterpart event, which may be closed, sampled out, or exported in a
