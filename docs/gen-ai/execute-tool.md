@@ -737,10 +737,15 @@ The skill name SHOULD NOT be appended without the resource name.
 
 **[1] `gen_ai.operation.name`:** If one of the predefined values applies, but specific system uses a different name it's RECOMMENDED to document it in the semantic conventions for specific GenAI system and use system-specific name in the instrumentation. If a different name is not documented, instrumentation libraries SHOULD use applicable predefined value.
 
-**[2] `error.type`:** When the tool reports a single non-zero exit code and no other error,
-`error.type` SHOULD be set to the string representation of that exit
-code. Otherwise, it SHOULD be the canonical name of the exception that
-occurred or another low-cardinality error identifier.
+**[2] `error.type`:** Depending on the framework, a tool call failure may surface as an exception
+or as a response that indicates an error. Instrumentations SHOULD, when
+possible, extract error details from the response.
+
+`error.type` SHOULD be the canonical name of the exception or another
+low-cardinality error identifier from the response, such as an error code.
+When the call raised no exception and the response reports no error other
+than a single non-zero exit code, `error.type` SHOULD be the string
+representation of that exit code.
 
 Some commands exit with a non-zero code for outcomes that are not
 errors. For example, `grep` exits with `1` when no lines match and with
@@ -1129,10 +1134,15 @@ tool call, including failed ones.
 | [`process.exit.code`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/process.md) | ![Release Candidate](https://img.shields.io/badge/-rc-mediumorchid) | `Conditionally Required` If the tool reports a single process exit code. | int | The exit code of the process. | `127` |
 | [`gen_ai.tool.type`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If available. | string | Type of the tool utilized by the agent [5] | `function`; `extension`; `datastore` |
 
-**[1] `error.type`:** When the tool reports a single non-zero exit code and no other error,
-`error.type` SHOULD be set to the string representation of that exit
-code. Otherwise, it SHOULD be the canonical name of the exception that
-occurred or another low-cardinality error identifier.
+**[1] `error.type`:** Depending on the framework, a tool call failure may surface as an exception
+or as a response that indicates an error. Instrumentations SHOULD, when
+possible, extract error details from the response.
+
+`error.type` SHOULD be the canonical name of the exception or another
+low-cardinality error identifier from the response, such as an error code.
+When the call raised no exception and the response reports no error other
+than a single non-zero exit code, `error.type` SHOULD be the string
+representation of that exit code.
 
 Some commands exit with a non-zero code for outcomes that are not
 errors. For example, `grep` exits with `1` when no lines match and with

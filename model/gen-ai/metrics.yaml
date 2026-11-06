@@ -420,22 +420,7 @@ metric_refinements:
       - ref: gen_ai.skill.resource.name
         requirement_level:
           conditionally_required: If the command executes an existing skill resource and its name is available.
-      - ref: error.type
-        requirement_level:
-          conditionally_required: If the operation ended in an error.
-        note: |
-          When the tool reports a single non-zero exit code and no other error,
-          `error.type` SHOULD be set to the string representation of that exit
-          code. Otherwise, it SHOULD be the canonical name of the exception that
-          occurred or another low-cardinality error identifier.
-
-          Some commands exit with a non-zero code for outcomes that are not
-          errors. For example, `grep` exits with `1` when no lines match and with
-          `2` when an error occurs. Instrumentations MAY use additional context,
-          such as the known exit codes of common commands, to decide which exit
-          codes are errors.
-
-          Instrumentations SHOULD document how they populate `error.type`.
+      - ref_group: attributes.gen_ai.execute_tool.command.error
       - ref: process.exit.code
         requirement_level:
           conditionally_required: If the tool reports a single process exit code.
