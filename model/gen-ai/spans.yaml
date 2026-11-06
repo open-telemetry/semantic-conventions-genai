@@ -347,7 +347,7 @@ spans:
       - ref: gen_ai.prompt.version
         requirement_level:
           conditionally_required: when `gen_ai.prompt.name` is set and a version is available
-      - ref: gen_ai.prompt.variable
+      - ref: gen_ai.prompt.variables
         requirement_level: opt_in
       - ref: gen_ai.conversation.id
         requirement_level:

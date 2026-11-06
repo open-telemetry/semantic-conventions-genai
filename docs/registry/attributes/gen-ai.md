@@ -34,7 +34,7 @@
 | <a id="gen-ai-output-messages-ref" href="#gen-ai-output-messages-ref">`gen_ai.output.messages_ref`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | An absolute URI identifying the output messages in external storage. [18] | `s3://example-bucket/gen-ai/674f35f4-e3f6-41f5-b104-864b3964f6d3_outputs.json` |
 | <a id="gen-ai-output-type" href="#gen-ai-output-type">`gen_ai.output.type`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | Represents the content type requested by the client. [19] | `text`; `json`; `image` |
 | <a id="gen-ai-prompt-name" href="#gen-ai-prompt-name">`gen_ai.prompt.name`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The name of the prompt that uniquely identifies it. | `analyze-code` |
-| <a id="gen-ai-prompt-variable" href="#gen-ai-prompt-variable">`gen_ai.prompt.variable`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The variables supplied to the prompt template, the `<key>` being the variable name, the value being the variable value. [20] | `Alice`; `French` |
+| <a id="gen-ai-prompt-variables" href="#gen-ai-prompt-variables">`gen_ai.prompt.variables`</a> | ![Development](https://img.shields.io/badge/-development-blue) | any | Variables passed to the prompt template. [20] | {<br>&nbsp;&nbsp;"user_name": "Alice",<br>&nbsp;&nbsp;"language": "French"<br>} |
 | <a id="gen-ai-prompt-version" href="#gen-ai-prompt-version">`gen_ai.prompt.version`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The version of the prompt template used. [21] | `1.0.0`; `2025-05-01`; `prod`; `v2` |
 | <a id="gen-ai-provider-name" href="#gen-ai-provider-name">`gen_ai.provider.name`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The Generative AI provider as identified by the client or server instrumentation. [22] | `openai`; `gcp.gen_ai`; `gcp.vertex_ai` |
 | <a id="gen-ai-realtime-session-id" href="#gen-ai-realtime-session-id">`gen_ai.realtime_session.id`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The unique identifier for a realtime, bidirectional streaming session. [23] | `sess_5j66UpCpwteGg4YSxUnt7lPY` |
@@ -220,20 +220,20 @@ secured by other means, for example by storage-level access control.
 This attribute specifies the output modality and not the actual output format. For example, if an image is requested, the actual output could be a URL pointing to an image file.
 Additional output format details may be recorded in the future in the `gen_ai.output.{type}.*` attributes.
 
-**[20] `gen_ai.prompt.variable`:** Prompt templates are parameterized with variables that are filled in
-at runtime. This attribute records the variable values passed to the
-template. The attribute name defines the variable name, and the
-attribute value is the variable value serialized as a string.
+**[20] `gen_ai.prompt.variables`:**
 
-Examples:
-
-- A variable `user_name` with value `Alice` SHOULD be recorded as
-  the `gen_ai.prompt.variable.user_name` attribute with value `"Alice"`.
-- A variable `language` with value `French` SHOULD be recorded as
-  the `gen_ai.prompt.variable.language` attribute with value `"French"`.
-
-> [!Warning]
+> [!WARNING]
 > This attribute may contain sensitive information.
+
+Prompt templates are parameterized with variables that are filled in
+at runtime. This attribute records the map of variable names to their
+values passed to the template.
+
+It's expected to be an object - in case a serialized string is available
+to the instrumentation, the instrumentation SHOULD do the best effort to
+deserialize it to an object.
+
+This attribute MUST be recorded as an [AnyValue](https://opentelemetry.io/docs/specs/otel/common/#anyvalue) conforming to its [JSON schema](/model/gen-ai/gen-ai-prompt-variables.json).
 
 **[21] `gen_ai.prompt.version`:** The version string can follow any versioning scheme chosen by the
 application (e.g., SemVer, date-based, or platform-specific tags).

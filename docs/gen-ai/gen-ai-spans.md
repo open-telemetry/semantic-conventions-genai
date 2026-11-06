@@ -540,7 +540,7 @@ The content capture configuration governs the following attributes and their rep
 - [`gen_ai.tool.call.arguments`](/docs/registry/attributes/gen-ai.md#gen-ai-tool-call-arguments)
 - [`gen_ai.tool.call.result`](/docs/registry/attributes/gen-ai.md#gen-ai-tool-call-result)
 - [`gen_ai.retrieval.query.text`](/docs/registry/attributes/gen-ai.md#gen-ai-retrieval-query-text)
-- [`gen_ai.prompt.variable.*`](/docs/registry/attributes/gen-ai.md#gen-ai-prompt-variable)
+- [`gen_ai.prompt.variables`](/docs/registry/attributes/gen-ai.md#gen-ai-prompt-variables)
 - [`gen_ai.memory.query.text`](/docs/registry/attributes/gen-ai.md#gen-ai-memory-query-text)
 - [`gen_ai.memory.records`](/docs/registry/attributes/gen-ai.md#gen-ai-memory-records)
 

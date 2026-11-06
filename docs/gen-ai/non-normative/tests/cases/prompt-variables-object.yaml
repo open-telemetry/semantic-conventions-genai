@@ -1,0 +1,6 @@
+# yaml-language-server: $schema=../case.schema.json
+description: Prompt variables are an object with any properties
+schema: gen-ai-prompt-variables.json
+document: { "user_name": "Alice", "language": "French", "max_items": 5 }
+# Regenerate with `uv run pytest --update-snapshots`, do not edit by hand.
+errors: []

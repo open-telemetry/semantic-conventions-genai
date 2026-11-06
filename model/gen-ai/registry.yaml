@@ -1212,25 +1212,31 @@ attributes:
       version identifier used by that system.
     examples: ["1.0.0", "2025-05-01", "prod", "v2"]
     stability: development
-  - key: gen_ai.prompt.variable
-    type: template[string]
-    brief: The variables supplied to the prompt template, the `<key>` being the variable name, the value being the variable value.
+  - key: gen_ai.prompt.variables
+    type: any
+    brief: Variables passed to the prompt template.
+    annotations:
+      type:
+        json_schema: model/gen-ai/gen-ai-prompt-variables.json
+      value:
+        unbounded_size: true
     note: |
-      Prompt templates are parameterized with variables that are filled in
-      at runtime. This attribute records the variable values passed to the
-      template. The attribute name defines the variable name, and the
-      attribute value is the variable value serialized as a string.
-
-      Examples:
-
-      - A variable `user_name` with value `Alice` SHOULD be recorded as
-        the `gen_ai.prompt.variable.user_name` attribute with value `"Alice"`.
-      - A variable `language` with value `French` SHOULD be recorded as
-        the `gen_ai.prompt.variable.language` attribute with value `"French"`.
-
-      > [!Warning]
+      > [!WARNING]
       > This attribute may contain sensitive information.
-    examples: ["Alice", "French"]
+
+      Prompt templates are parameterized with variables that are filled in
+      at runtime. This attribute records the map of variable names to their
+      values passed to the template.
+
+      It's expected to be an object - in case a serialized string is available
+      to the instrumentation, the instrumentation SHOULD do the best effort to
+      deserialize it to an object.
+    examples:
+      - |
+        {
+          "user_name": "Alice",
+          "language": "French"
+        }
     stability: development
   - key: gen_ai.skill.name
     type: string

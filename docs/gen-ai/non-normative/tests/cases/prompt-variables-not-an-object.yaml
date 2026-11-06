@@ -1,0 +1,9 @@
+# yaml-language-server: $schema=../case.schema.json
+description: Prompt variables must be an object, not a JSON-encoded string
+schema: gen-ai-prompt-variables.json
+document: "{\"user_name\": \"Alice\"}"
+# Regenerate with `uv run pytest --update-snapshots`, do not edit by hand.
+errors:
+  - path: $
+    keyword: type
+    message: "'{\"user_name\": \"Alice\"}' is not of type 'object'"
