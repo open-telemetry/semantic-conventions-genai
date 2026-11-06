@@ -684,8 +684,11 @@ spans:
         note: >
           Conveys the outcome of the original generation as recorded on the fetched response,
           derived from its status: a completed generation maps to its stop reason, an incomplete
-          one to why it was cut short (for example `length` or `content_filter`), and a failed or
-          cancelled generation to `error`.
+          one to why it was cut short (for example `length` or `content_filter`), a failed
+          generation to `error`, and a cancelled generation to `interrupted`.
+          If a fetched stream ends gracefully before a final status or finish reason
+          arrives, report `interrupted` for the unfinished generation. This describes
+          the fetched stream and does not infer the original generation's status.
 
   - type: gen_ai.memory.client
     requirement_level: recommended
@@ -1126,9 +1129,11 @@ span_refinements:
         requirement_level: recommended
         note: >
           Derived from the fetched response `status`: a `completed` response maps to its stop
-          reason, a `failed` or `cancelled` response to `error`, and an `incomplete` response to
-          its `incomplete_details.reason` (for example `max_output_tokens` maps to `length` and
-          `content_filter` to `content_filter`).
+          reason, a `failed` response to `error`, a `cancelled` response to `interrupted`, and an
+          `incomplete` response to its `incomplete_details.reason` (for example `max_output_tokens`
+          maps to `length` and `content_filter` to `content_filter`). If the fetched
+          stream ends gracefully before a final status or finish reason arrives,
+          report `interrupted` without inferring a terminal response status.
       - ref: openai.response.service_tier
         requirement_level:
           conditionally_required: If the response was received and includes a service_tier.

@@ -33,3 +33,9 @@ Fetch response exercises the SDK's `NotFoundError` from
 `client.responses.retrieve` using a mock HTTP 404 response. The error handler
 records a correlated `gen_ai.client.fetch_response.exception` WARN log and
 re-raises the exception.
+
+The streaming scenario also closes a response early. Missing finish reasons become
+`interrupted`, received provider reasons are preserved, and the close leaves span
+status unset without `error.type`.
+Available token counts are recorded even when the caller closes the stream
+before the final usage event.
