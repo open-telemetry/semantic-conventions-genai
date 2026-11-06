@@ -83,11 +83,12 @@ Run `uv run update-reports` to regenerate.
 | [Server Request Duration](reports/gen-ai-server-request-duration-metric.md) | transformers |
 | [Server Time To First Token](reports/gen-ai-server-time-to-first-token-metric.md) | transformers |
 | [Server Time Per Output Token](reports/gen-ai-server-time-per-output-token-metric.md) | transformers |
-| [Execute Tool Duration](reports/gen-ai-execute-tool-duration-metric.md) | google-adk |
+| [Execute Tool Duration](reports/gen-ai-execute-tool-duration-metric.md) | agent-framework, google-adk |
 | [Retrieval Duration](reports/gen-ai-retrieval-duration-metric.md) | haystack, langchain, llamaindex |
 | [Client Invoke Agent Duration](reports/gen-ai-client-invoke-agent-duration-metric.md) | aws-bedrock-agent, azure-ai-foundry, google-genai, openai-assistants |
 | [Invoke Agent Inference Calls](reports/gen-ai-invoke-agent-inference-calls-metric.md) | adk_a2a, google-adk |
-| [Invoke Agent Tool Calls](reports/gen-ai-invoke-agent-tool-calls-metric.md) | adk_a2a, google-adk |
+| [Invoke Agent Tool Calls](reports/gen-ai-invoke-agent-tool-calls-metric.md) | adk_a2a, agent-framework, google-adk |
+| [Invoke Agent Skill Loads](reports/gen-ai-invoke-agent-skill-loads-metric.md) | agent-framework, google-adk |
 | [MCP Client Operation Duration](reports/mcp-client-operation-duration-metric.md) | mcp |
 | [MCP Server Operation Duration](reports/mcp-server-operation-duration-metric.md) | mcp |
 | [MCP Client Session Duration](reports/mcp-client-session-duration-metric.md) | mcp |
