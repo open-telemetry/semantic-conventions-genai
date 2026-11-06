@@ -65,7 +65,7 @@
 | gen_ai.input.messages_ref | [anthropic] |
 | gen_ai.output.messages | [agent-framework], [anthropic], [aws-bedrock], [claude-agent-sdk], [litellm], [mistralai], [openai] |
 | gen_ai.output.messages_ref | [anthropic] |
-| gen_ai.prompt.variable | (none) |
+| gen_ai.prompt.variables | [aws-bedrock], [openai] |
 | gen_ai.system_instructions | [agent-framework], [anthropic] |
 | gen_ai.system_instructions_ref | [anthropic] |
 | gen_ai.tool.definitions | [anthropic], [aws-bedrock], [azure-ai-inference], [cohere], [google-genai], [groq], [litellm], [mistralai], [openai], [vertexai] |
