@@ -9,3 +9,5 @@ code.
 | --- | --- | --- |
 | inference (`chat`) | Yes — calls the model directly | ✅ Implemented |
 | execute_tool | No — the client returns tool calls but doesn't execute them; the tool runs in app code | ➖ Not instrumentable |
+
+Groq gives no modality breakdown, so the usage counters use `unknown`.
