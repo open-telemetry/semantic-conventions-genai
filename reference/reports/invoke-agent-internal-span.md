@@ -18,6 +18,7 @@
 | gen_ai.data_source.id | (none) |
 | gen_ai.output.type | (none) |
 | gen_ai.request.choice.count | [agent-framework], [crewai], [google-adk] |
+| gen_ai.request.is_nested | [google-adk], [langchain], [openai-agents] |
 | gen_ai.request.seed | [agent-framework], [autogen], [crewai], [pydantic-ai] |
 
 ## Recommended

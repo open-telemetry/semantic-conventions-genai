@@ -2,10 +2,11 @@
 
 import os
 import re
+from contextlib import contextmanager
 from pathlib import Path
 from urllib.parse import urlparse
 
-from opentelemetry import metrics, trace
+from opentelemetry import context, metrics, trace
 from opentelemetry._logs import get_logger_provider, set_logger_provider
 from opentelemetry.exporter.otlp.proto.grpc._log_exporter import OTLPLogExporter
 from opentelemetry.exporter.otlp.proto.grpc.metric_exporter import OTLPMetricExporter
@@ -49,6 +50,25 @@ def reference_event_logger(name: str = GENAI_REFERENCE_INSTRUMENTATION):
 def reference_meter(name: str = GENAI_REFERENCE_INSTRUMENTATION) -> metrics.Meter:
     """Return the Meter used by reference scenarios to emit gen_ai.* metrics."""
     return metrics.get_meter(name, schema_url=_SCHEMA_URL)
+
+
+# Active invoke_* invocations, tracked independently of span recording.
+_INVOCATION_KEY = context.create_key("gen_ai.invocation")
+
+
+@contextmanager
+def invocation_scope():
+    """Mark an invoke_* invocation as active for the code it runs."""
+    token = context.attach(context.set_value(_INVOCATION_KEY, True))
+    try:
+        yield
+    finally:
+        context.detach(token)
+
+
+def nested_invocation_attributes() -> dict:
+    """Return `gen_ai.request.is_nested` when another invocation is active; it is never set to `false`."""
+    return {"gen_ai.request.is_nested": True} if context.get_value(_INVOCATION_KEY) else {}
 
 
 def inference_duration_view() -> View:
