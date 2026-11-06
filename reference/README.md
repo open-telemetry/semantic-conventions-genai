@@ -52,7 +52,7 @@ Run `uv run update-reports` to regenerate.
 | [Client Inference Exception](reports/gen-ai-client-inference-exception-event.md) | openai |
 | [Inference Operation Details](reports/gen-ai-client-inference-operation-details-event.md) | anthropic, aws-bedrock, azure-ai-inference, cohere, google-genai, groq, litellm, mistralai, openai, vertexai |
 | [Client Invoke Agent Exception](reports/gen-ai-client-invoke-agent-exception-event.md) | aws-bedrock-agent, azure-ai-foundry |
-| [Evaluation Result](reports/gen-ai-evaluation-result-event.md) | azure-ai-evaluation, deepeval, dspy |
+| [Evaluation Result](reports/gen-ai-evaluation-result-event.md) | aws-bedrock-agentcore, azure-ai-evaluation, deepeval, dspy |
 | [Execute Tool Exception](reports/gen-ai-execute-tool-exception-event.md) | openai-agents |
 | [Invoke Agent Exception](reports/gen-ai-invoke-agent-exception-event.md) | openai-agents |
 

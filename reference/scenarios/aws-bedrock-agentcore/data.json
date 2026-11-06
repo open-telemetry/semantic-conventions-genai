@@ -12,7 +12,17 @@
       "server.port"
     ]
   },
-  "events": {},
+  "events": {
+    "gen_ai.evaluation.result": [
+      "gen_ai.evaluation.explanation",
+      "gen_ai.evaluation.name",
+      "gen_ai.evaluation.score.label",
+      "gen_ai.evaluation.score.max",
+      "gen_ai.evaluation.score.min",
+      "gen_ai.evaluation.score.rating_scale",
+      "gen_ai.evaluation.score.value"
+    ]
+  },
   "metrics": {},
   "entities": {},
   "findings": []
