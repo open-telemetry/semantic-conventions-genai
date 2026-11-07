@@ -32,6 +32,7 @@ See also:
 
 * [Agent2Agent Protocol](./a2a.md): Semantic Conventions for [A2A](https://a2a-protocol.org)
 * [Model Context Protocol](./mcp.md): Semantic Conventions for [MCP](https://modelcontextprotocol.io)
+* [Migration guide](./non-normative/migration.md): How to update queries, dashboards, and alerts after breaking changes.
 
 ## Attributes shared across operations
 
