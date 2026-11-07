@@ -8,14 +8,6 @@ attributes:
     note: >
       This is useful when using a custom or self-hosted Ollama instance.
 
-  - key: ollama.request.num_predict
-    type: int
-    brief: The maximum number of tokens to generate (Ollama-specific parameter).
-    examples: [128, 512]
-    stability: development
-    note: >
-      This is the Ollama-specific parameter name for max_tokens.
-
   - key: ollama.request.num_ctx
     type: int
     brief: The size of the context window for the model.
@@ -58,11 +50,14 @@ attributes:
   - key: ollama.response.total_duration
     type: int
     brief: The total time in nanoseconds the model took to generate the response.
-    examples: [1500000000]  # 1.5 seconds
+    examples: [1500000000]
     stability: development
+    note: >
+      Ollama reports this value natively in the response. It measures the full
+      server-side generation time, including model load time.
 
   - key: ollama.response.load_duration
     type: int
     brief: The time in nanoseconds the model took to load.
-    examples: [500000000]  # 0.5 seconds
+    examples: [500000000]
     stability: development
