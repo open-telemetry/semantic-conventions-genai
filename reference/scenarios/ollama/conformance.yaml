@@ -17,6 +17,11 @@ scenarios:
           operation: chat
           missing_attribute: gen_ai.response.id
         reason: Ollama's API does not return a response id, so the reference implementation cannot set gen_ai.response.id.
+      - id: genai_expected_attribute_missing
+        context:
+          operation: embeddings
+          missing_attribute: gen_ai.request.encoding_formats
+        reason: Ollama's embed API does not accept an encoding format parameter and always returns float32 embeddings, so the reference implementation cannot set gen_ai.request.encoding_formats.
     spans:
       - match:
           attributes:
