@@ -6,7 +6,9 @@ tool itself running in application code.
 
 Demonstrates the [Ollama technology-specific semantic conventions](../../../docs/gen-ai/ollama.md)
 on the standard GenAI client spans, using the `ollama` SDK against the mock
-Ollama server.
+Ollama server. The scenarios cover a basic chat completion, a chat completion
+that offers a tool and receives a tool call, a streaming chat completion, an
+embedding generation, and the failure paths of chat and embeddings.
 
 | Operation | Should be instrumented here | Status |
 | --- | --- | --- |
@@ -19,6 +21,8 @@ Ollama server.
 
 - `gen_ai.client.inference` span for a chat completion (`gen_ai.operation.name = "chat"`), including:
   - generic GenAI request, response, and usage attributes
+  - `gen_ai.tool.definitions` when the request offers tools, and `tool_call` message parts when the model answers with a tool call
+  - `gen_ai.request.stream` and `gen_ai.response.time_to_first_chunk` for streaming requests
   - `ollama.request.base_url` and the `num_ctx`, `num_batch`, `num_gpu`, and
     `main_gpu` Ollama-specific request options, each read from the same
     `options` object handed to the SDK call
@@ -28,7 +32,9 @@ Ollama server.
   input token usage, the native Ollama response timings, and the `num_ctx` request
   option passed through the SDK `options` object
 - `gen_ai.client.inference.operation.details` event (DEBUG severity) with the input
-  and output messages, the server endpoint, and the request options
+  and output messages — recorded only when message-content capture is opted in via
+  `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT` — the server endpoint, and
+  the request options
 - `gen_ai.client.inference.exception` and `gen_ai.client.embeddings.exception` events
   (WARN severity) on the SDK failure paths
 - `gen_ai.client.inference.duration` around the SDK chat call, with the explicit
@@ -45,8 +51,17 @@ unlimited generation), and the native `prompt_eval_count` and `eval_count` respo
 fields as `gen_ai.usage.input_tokens` and `gen_ai.usage.output_tokens`.
 
 The failure paths point the SDK at a server that accepts no connections: they record
-`error.type` on the span, the duration and zero-valued token histograms on the
-metrics, emit the GenAI exception events, and re-raise the SDK exception.
+`error.type` and `gen_ai.response.finish_reasons = ["error"]` on the failed chat span,
+the duration and zero-valued token histograms on the metrics, emit the GenAI exception
+events, and re-raise the SDK exception. The run fails if a failure-path call does not
+raise.
+
+## Conformance
+
+`conformance.yaml` declares value assertions for every chat and embeddings span,
+including the failure spans, and enables message-content capture
+(`OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=EVENT_ONLY`) so the operation
+details events carry the input and output messages.
 
 ## Running
 
