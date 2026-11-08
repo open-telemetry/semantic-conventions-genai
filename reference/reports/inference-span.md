@@ -20,7 +20,7 @@
 | gen_ai.request.choice.count | [agent-framework], [openai] |
 | gen_ai.request.model | [adk_a2a], [agent-framework], [anthropic], [aws-bedrock], [azure-ai-inference], [azure-openai], [cohere], [google-genai], [groq], [litellm], [mistralai], [ollama], [openai], [vertexai] |
 | gen_ai.request.seed | [ollama], [openai] |
-| gen_ai.request.stream | [openai] |
+| gen_ai.request.stream | [ollama], [openai] |
 | gen_ai.request.top_k | [ollama] |
 | server.port | [anthropic], [aws-bedrock], [azure-ai-inference], [azure-openai], [cohere], [google-genai], [litellm], [mistralai], [ollama], [openai] |
 
@@ -40,7 +40,7 @@
 | gen_ai.response.finish_reasons | [adk_a2a], [anthropic], [aws-bedrock], [azure-ai-inference], [azure-openai], [claude-agent-sdk], [cohere], [google-genai], [groq], [litellm], [mistralai], [ollama], [openai], [vertexai] |
 | gen_ai.response.id | [agent-framework], [anthropic], [azure-ai-inference], [azure-openai], [claude-agent-sdk], [cohere], [google-genai], [groq], [litellm], [mistralai], [openai], [vertexai] |
 | gen_ai.response.model | [agent-framework], [anthropic], [azure-ai-inference], [azure-openai], [claude-agent-sdk], [google-genai], [groq], [litellm], [mistralai], [ollama], [openai], [vertexai] |
-| gen_ai.response.time_to_first_chunk | [openai] |
+| gen_ai.response.time_to_first_chunk | [ollama], [openai] |
 | gen_ai.usage.audio.cache_read.input_tokens | [google-genai], [vertexai] |
 | gen_ai.usage.audio.input_tokens | [google-genai], [openai], [vertexai] |
 | gen_ai.usage.audio.output_tokens | [google-genai], [openai] |
@@ -68,7 +68,7 @@
 | gen_ai.prompt.variable | (none) |
 | gen_ai.system_instructions | [agent-framework], [anthropic] |
 | gen_ai.system_instructions_ref | [anthropic] |
-| gen_ai.tool.definitions | [anthropic], [aws-bedrock], [azure-ai-inference], [cohere], [google-genai], [groq], [litellm], [mistralai], [openai], [vertexai] |
+| gen_ai.tool.definitions | [anthropic], [aws-bedrock], [azure-ai-inference], [cohere], [google-genai], [groq], [litellm], [mistralai], [ollama], [openai], [vertexai] |
 | gen_ai.tool.definitions_ref | [anthropic] |
 
 [adk_a2a]: ../scenarios/adk_a2a/scenario.py

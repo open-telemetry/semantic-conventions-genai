@@ -20,7 +20,7 @@
 | gen_ai.request.choice.count | (none) |
 | gen_ai.request.model | [anthropic], [aws-bedrock], [azure-ai-inference], [cohere], [google-genai], [groq], [litellm], [mistralai], [ollama], [openai], [vertexai] |
 | gen_ai.request.seed | [ollama] |
-| gen_ai.request.stream | (none) |
+| gen_ai.request.stream | [ollama] |
 | gen_ai.request.top_k | [ollama] |
 | server.port | [anthropic], [azure-ai-inference], [ollama], [openai] |
 
@@ -68,7 +68,7 @@
 | gen_ai.prompt.variable | (none) |
 | gen_ai.system_instructions | [anthropic] |
 | gen_ai.system_instructions_ref | [anthropic] |
-| gen_ai.tool.definitions | [anthropic] |
+| gen_ai.tool.definitions | [anthropic], [ollama] |
 | gen_ai.tool.definitions_ref | [anthropic] |
 
 [anthropic]: ../scenarios/anthropic/scenario.py
