@@ -22,16 +22,16 @@
 | gen_ai.request.seed | [ollama] |
 | gen_ai.request.stream | (none) |
 | gen_ai.request.top_k | [ollama] |
-| server.port | [anthropic], [azure-ai-inference], [openai] |
+| server.port | [anthropic], [azure-ai-inference], [ollama], [openai] |
 
 ## Recommended
 
 | Attribute | Supporting Libraries |
 | --- | --- |
 | gen_ai.conversation.compacted | [anthropic], [openai] |
-| gen_ai.request.frequency_penalty | (none) |
+| gen_ai.request.frequency_penalty | [ollama] |
 | gen_ai.request.max_tokens | [anthropic], [ollama] |
-| gen_ai.request.presence_penalty | (none) |
+| gen_ai.request.presence_penalty | [ollama] |
 | gen_ai.request.previous_response.id | [google-genai], [openai] |
 | gen_ai.request.reasoning.level | [anthropic] |
 | gen_ai.request.stop_sequences | [ollama] |
@@ -55,7 +55,7 @@
 | gen_ai.usage.text.cache_read.input_tokens | [google-genai], [vertexai] |
 | gen_ai.usage.text.input_tokens | [google-genai], [vertexai] |
 | gen_ai.usage.text.output_tokens | [google-genai], [vertexai] |
-| server.address | [anthropic], [azure-ai-inference], [openai] |
+| server.address | [anthropic], [azure-ai-inference], [ollama], [openai] |
 
 ## Opt-In
 

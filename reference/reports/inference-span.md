@@ -29,9 +29,9 @@
 | Attribute | Supporting Libraries |
 | --- | --- |
 | gen_ai.conversation.compacted | [anthropic], [openai] |
-| gen_ai.request.frequency_penalty | [openai] |
+| gen_ai.request.frequency_penalty | [ollama], [openai] |
 | gen_ai.request.max_tokens | [anthropic], [ollama], [openai] |
-| gen_ai.request.presence_penalty | [openai] |
+| gen_ai.request.presence_penalty | [ollama], [openai] |
 | gen_ai.request.previous_response.id | [google-genai], [openai] |
 | gen_ai.request.reasoning.level | [anthropic], [openai] |
 | gen_ai.request.stop_sequences | [ollama], [openai] |
