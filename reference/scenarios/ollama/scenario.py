@@ -6,6 +6,7 @@ against a mock Ollama server, with manual OTel spans and metrics.
 
 import os
 import traceback
+from itertools import pairwise
 from time import perf_counter
 from urllib.parse import urlsplit, urlunsplit
 
@@ -756,7 +757,7 @@ def run_chat_streaming(client, base_url):
                 # of gen_ai.response.time_to_first_chunk and are only
                 # recorded when the stream delivered content chunks.
                 _time_to_first_chunk.record(chunk_times[0] - started_at, metric_attributes)
-                for previous, current in zip(chunk_times, chunk_times[1:]):
+                for previous, current in pairwise(chunk_times):
                     _time_per_output_chunk.record(current - previous, metric_attributes)
 
             content = "".join(content_parts)
