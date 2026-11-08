@@ -30,8 +30,11 @@ Ollama calls use the standard GenAI client spans; no Ollama-specific span types 
 | Ollama endpoint | Span type | `gen_ai.operation.name` |
 | --- | --- | --- |
 | `/api/chat` | `gen_ai.client.inference` | `chat` |
-| `/api/generate` | `gen_ai.client.inference` | `text_completion` |
 | `/api/embed` | `gen_ai.client.embeddings` | `embeddings` |
+
+The `/api/generate` endpoint maps to `gen_ai.client.inference` with
+`gen_ai.operation.name = "text_completion"`. This mapping is deferred until a runnable
+reference demonstration exists; the reference scenario does not exercise the endpoint today.
 
 ## Request options mapping
 
@@ -70,9 +73,10 @@ self-hosted deployments, where models are loaded on demand.
 
 Ollama-specific attributes capture request options and response metrics that are unique to
 the Ollama platform and have no generic GenAI equivalent. They are defined in the
-[Ollama attribute registry](/docs/registry/attributes/ollama.md) and follow the standard
-[GenAI client inference](client-inference.md) and [GenAI client embeddings](client-embeddings.md)
-span conventions.
+[Ollama attribute registry](/docs/registry/attributes/ollama.md) and recorded as refinements
+of the standard [GenAI client inference](client-inference.md) and
+[GenAI client embeddings](client-embeddings.md) span conventions when
+`gen_ai.provider.name` is `"ollama"`.
 
 - `ollama.request.base_url`: the base URL of the Ollama API endpoint.
 - `ollama.request.num_ctx`: the size of the context window for the model.
