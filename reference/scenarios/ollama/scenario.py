@@ -213,7 +213,6 @@ def run_chat(client, base_url, *, expect_error=False):
             elapsed = perf_counter() - started_at
             error_type = type(exc).__name__
             span.set_attribute("error.type", error_type)
-            span.record_exception(exc)
             span.set_status(StatusCode.ERROR, str(exc))
             metric_attributes = _metric_attributes("chat", request_model, None, host, port, error_type)
             _inference_duration.record(elapsed, metric_attributes)
@@ -333,7 +332,6 @@ def run_embed(client, base_url, *, expect_error=False):
             elapsed = perf_counter() - started_at
             error_type = type(exc).__name__
             span.set_attribute("error.type", error_type)
-            span.record_exception(exc)
             span.set_status(StatusCode.ERROR, str(exc))
             metric_attributes = _metric_attributes("embeddings", request_model, None, host, port, error_type)
             _embeddings_duration.record(elapsed, metric_attributes)
@@ -389,7 +387,9 @@ def main():
     for operation in (run_chat, run_embed):
         try:
             operation(failing_client, UNREACHABLE_BASE_URL, expect_error=True)
-        except httpx.HTTPError as exc:
+        # The ollama SDK raises a builtin ConnectionError on connection
+        # failures; other transport failures surface as httpx exceptions.
+        except (httpx.HTTPError, ConnectionError) as exc:
             print(f"    -> failed as expected ({type(exc).__name__})")
 
     flush_and_shutdown(tp, lp, mp)

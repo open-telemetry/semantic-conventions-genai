@@ -19,6 +19,26 @@ scenarios:
         reason: Ollama's API does not return a response id, so the reference implementation cannot set gen_ai.response.id.
       - id: genai_expected_attribute_missing
         context:
+          operation: chat
+          missing_attribute: gen_ai.response.finish_reasons
+        reason: The failure-path chat operation points the SDK at a server that accepts no connections, so the operation fails before any response exists and the span cannot carry gen_ai.response.finish_reasons.
+      - id: genai_expected_attribute_missing
+        context:
+          operation: chat
+          missing_attribute: gen_ai.response.model
+        reason: The failure-path chat operation points the SDK at a server that accepts no connections, so the operation fails before any response exists and the span cannot carry gen_ai.response.model.
+      - id: genai_expected_attribute_missing
+        context:
+          operation: chat
+          missing_attribute: gen_ai.usage.input_tokens
+        reason: The failure-path chat operation points the SDK at a server that accepts no connections, so no token usage is returned and the span cannot carry gen_ai.usage.input_tokens.
+      - id: genai_expected_attribute_missing
+        context:
+          operation: chat
+          missing_attribute: gen_ai.usage.output_tokens
+        reason: The failure-path chat operation points the SDK at a server that accepts no connections, so no token usage is returned and the span cannot carry gen_ai.usage.output_tokens.
+      - id: genai_expected_attribute_missing
+        context:
           operation: embeddings
           missing_attribute: gen_ai.request.encoding_formats
         reason: Ollama's embed API does not accept an encoding format parameter and always returns float32 embeddings, so the reference implementation cannot set gen_ai.request.encoding_formats.
