@@ -212,7 +212,9 @@ def run_chat(client, base_url, *, expect_error=False):
                 stream=False,
                 options=request_options,
             )
-        except Exception as exc:
+        # The ollama SDK raises a builtin ConnectionError on connection
+        # failures; other transport failures surface as httpx exceptions.
+        except (httpx.HTTPError, ConnectionError) as exc:
             failure = exc
             elapsed = perf_counter() - started_at
             error_type = type(exc).__name__
@@ -337,7 +339,9 @@ def run_embed(client, base_url, *, expect_error=False):
         started_at = perf_counter()
         try:
             resp = client.embed(model=request_model, input=input_text, options=request_options)
-        except Exception as exc:
+        # The ollama SDK raises a builtin ConnectionError on connection
+        # failures; other transport failures surface as httpx exceptions.
+        except (httpx.HTTPError, ConnectionError) as exc:
             failure = exc
             elapsed = perf_counter() - started_at
             error_type = type(exc).__name__
