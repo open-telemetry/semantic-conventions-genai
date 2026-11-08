@@ -1,0 +1,63 @@
+file_format: definition/2
+attributes:
+  - key: ollama.request.base_url
+    type: string
+    brief: The base URL of the Ollama API endpoint.
+    examples: ['http://localhost:11434', 'https://ollama.example.com']
+    stability: development
+    note: >
+      This is useful when using a custom or self-hosted Ollama instance.
+
+  - key: ollama.request.num_ctx
+    type: int
+    brief: The size of the context window for the model.
+    examples: [2048, 4096, 32768]
+    stability: development
+    note: >
+      This represents the maximum number of tokens the model can consider from the
+      conversation history.
+
+  - key: ollama.request.num_batch
+    type: int
+    brief: The number of tokens to process in parallel.
+    examples: [8, 16, 32]
+    stability: development
+
+  - key: ollama.request.num_gpu
+    type: int
+    brief: The number of GPUs to use for inference.
+    examples: [1, 2, 4]
+    stability: development
+
+  - key: ollama.request.main_gpu
+    type: int
+    brief: The index of the main GPU to use.
+    examples: [0, 1]
+    stability: development
+
+  - key: ollama.request.low_vram
+    type: boolean
+    brief: Indicates whether to use low VRAM mode.
+    examples: [true, false]
+    stability: development
+
+  - key: ollama.request.f16_kv
+    type: boolean
+    brief: Indicates whether to use 16-bit floating point for key-value cache.
+    examples: [true, false]
+    stability: development
+
+  - key: ollama.response.total_duration
+    type: int
+    brief: The total time in nanoseconds the model took to generate the response.
+    examples: [1500000000]
+    stability: development
+    note: >
+      Ollama reports this value natively in the response. It measures the full
+      server-side generation time, including model load time.
+
+  - key: ollama.response.load_duration
+    type: int
+    brief: The time in nanoseconds the model took to load.
+    examples: [500000000]
+    stability: development
