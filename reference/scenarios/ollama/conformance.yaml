@@ -42,6 +42,21 @@ scenarios:
           operation: embeddings
           missing_attribute: gen_ai.request.encoding_formats
         reason: Ollama's embed API does not accept an encoding format parameter and always returns float32 embeddings, so the reference implementation cannot set gen_ai.request.encoding_formats.
+      - id: genai_expected_attribute_missing
+        context:
+          operation: embeddings
+          missing_attribute: gen_ai.embeddings.dimension.count
+        reason: The failure-path embeddings operation points the SDK at a server that accepts no connections, so the operation fails before any embedding vector exists and the span cannot carry gen_ai.embeddings.dimension.count.
+      - id: genai_expected_attribute_missing
+        context:
+          operation: embeddings
+          missing_attribute: gen_ai.response.model
+        reason: The failure-path embeddings operation points the SDK at a server that accepts no connections, so the operation fails before any response exists and the span cannot carry gen_ai.response.model.
+      - id: genai_expected_attribute_missing
+        context:
+          operation: embeddings
+          missing_attribute: gen_ai.usage.input_tokens
+        reason: The failure-path embeddings operation points the SDK at a server that accepts no connections, so no token usage is returned and the span cannot carry gen_ai.usage.input_tokens.
     spans:
       - match:
           attributes:
