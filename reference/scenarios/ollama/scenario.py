@@ -313,7 +313,9 @@ def run_embed(client, base_url, *, expect_error=False):
     exception is re-raised once the span has closed, so the OTel SDK does not
     add exception attributes the GenAI registry does not define.
     """
-    label = "embeddings failure (unreachable server)" if expect_error else "embedding generation (reference implementation)"
+    label = (
+        "embeddings failure (unreachable server)" if expect_error else "embedding generation (reference implementation)"
+    )
     print(f"  [embeddings] {label}")
     request_model = "nomic-embed-text"
     host, port = mock_server_host_port(base_url)
