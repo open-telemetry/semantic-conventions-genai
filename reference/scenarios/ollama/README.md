@@ -33,8 +33,8 @@ embedding generation, and the failure paths of chat and embeddings.
   option passed through the SDK `options` object
 - `gen_ai.client.inference.operation.details` event (DEBUG severity) with the input
   and output messages — recorded only when message-content capture is opted in via
-  `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT` — the server endpoint, and
-  the request options
+  `OTEL_INSTRUMENTATION_GENAI_CAPTURE_CONTENT` — the server endpoint, the request
+  options, and `gen_ai.response.time_to_first_chunk` for the streaming request
 - `gen_ai.client.inference.exception` and `gen_ai.client.embeddings.exception` events
   (WARN severity) on the SDK failure paths
 - `gen_ai.client.inference.duration` around the SDK chat call, with the explicit
@@ -43,6 +43,8 @@ embedding generation, and the failure paths of chat and embeddings.
   counters, recorded under the `unknown` modality because Ollama reports no per-modality
   token breakdown
 - `gen_ai.client.inference.operation.input_tokens` and `gen_ai.client.inference.operation.output_tokens` histograms
+- `gen_ai.client.inference.time_to_first_chunk` and `gen_ai.client.inference.time_per_output_chunk` histograms
+  for the streaming chat completion, recorded from the arrival times of the content chunks
 - `gen_ai.client.embeddings.duration` and `gen_ai.client.embeddings.operation.input_tokens`
 
 Ollama's `num_predict` option is recorded as `gen_ai.request.max_tokens` only for
@@ -60,7 +62,7 @@ raise.
 
 `conformance.yaml` declares value assertions for every chat and embeddings span,
 including the failure spans, and enables message-content capture
-(`OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=EVENT_ONLY`) so the operation
+(`OTEL_INSTRUMENTATION_GENAI_CAPTURE_CONTENT=EVENT_ONLY`) so the operation
 details events carry the input and output messages.
 
 ## Running

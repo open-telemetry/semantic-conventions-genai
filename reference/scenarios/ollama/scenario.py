@@ -29,11 +29,17 @@ MOCK_BASE_URL = os.environ["MOCK_LLM_URL"]
 UNREACHABLE_BASE_URL = "http://127.0.0.1:1"
 
 # Message content is only recorded on the operation details events when the
-# user explicitly opts in, per the "Recording content on attributes" section
+# user explicitly opts in, per the "Content capture configuration" section
 # of docs/gen-ai/gen-ai-spans.md. The scenario configuration enables
 # EVENT_ONLY; without an opt-in the events are still emitted, without the
 # gen_ai.input.messages and gen_ai.output.messages payloads.
-_capture_content = os.environ.get("OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT", "NO_CONTENT")
+_capture_content = os.environ.get("OTEL_INSTRUMENTATION_GENAI_CAPTURE_CONTENT", "NO_CONTENT").strip().upper()
+if _capture_content not in ("NO_CONTENT", "SPAN_ONLY", "EVENT_ONLY", "SPAN_AND_EVENT"):
+    # Unrecognized values fall back to the default capture mode, per the
+    # content capture configuration section of docs/gen-ai/gen-ai-spans.md.
+    _capture_content = "NO_CONTENT"
+# The reference implementation emits content on the operation details events
+# only, so SPAN_ONLY behaves like NO_CONTENT here.
 _record_event_messages = _capture_content in ("EVENT_ONLY", "SPAN_AND_EVENT")
 
 # The ollama SDK raises ollama.ResponseError when the server reports an error
@@ -44,7 +50,7 @@ _SDK_FAILURES = (httpx.HTTPError, ConnectionError, ollama.ResponseError)
 
 # Explicit bucket boundaries recommended by docs/gen-ai/client-inference.md,
 # docs/gen-ai/client-embeddings.md, and docs/gen-ai/gen-ai-token-metrics.md
-# for the duration and per-operation token histograms.
+# for the duration, streaming chunk, and per-operation token histograms.
 _DURATION_BOUNDARIES = [0.01, 0.02, 0.04, 0.08, 0.16, 0.32, 0.64, 1.28, 2.56, 5.12, 10.24, 20.48, 40.96, 81.92]
 _TOKEN_BOUNDARIES = [1, 4, 16, 64, 256, 1024, 4096, 16384, 65536, 262144, 1048576, 4194304, 16777216, 67108864]
 
@@ -65,6 +71,16 @@ _operation_output_tokens = _reference_meter.create_histogram(
     "gen_ai.client.inference.operation.output_tokens",
     unit="{token}",
     description="The number of output (completion) tokens used per inference operation.",
+)
+_time_to_first_chunk = _reference_meter.create_histogram(
+    "gen_ai.client.inference.time_to_first_chunk",
+    unit="s",
+    description="Time from the start of a logical inference operation to the first chunk in its streaming response.",
+)
+_time_per_output_chunk = _reference_meter.create_histogram(
+    "gen_ai.client.inference.time_per_output_chunk",
+    unit="s",
+    description="Time per output chunk, recorded for each chunk received after the first one.",
 )
 _input_tokens = _reference_meter.create_counter(
     "gen_ai.client.inference.usage.input_tokens",
@@ -99,6 +115,8 @@ def _metric_views():
         _bucket_view("gen_ai.client.inference.duration", _DURATION_BOUNDARIES),
         _bucket_view("gen_ai.client.inference.operation.input_tokens", _TOKEN_BOUNDARIES),
         _bucket_view("gen_ai.client.inference.operation.output_tokens", _TOKEN_BOUNDARIES),
+        _bucket_view("gen_ai.client.inference.time_to_first_chunk", _DURATION_BOUNDARIES),
+        _bucket_view("gen_ai.client.inference.time_per_output_chunk", _DURATION_BOUNDARIES),
         _bucket_view("gen_ai.client.embeddings.duration", _DURATION_BOUNDARIES),
         _bucket_view("gen_ai.client.embeddings.operation.input_tokens", _TOKEN_BOUNDARIES),
     )
@@ -579,9 +597,11 @@ def run_chat_streaming(client, base_url):
 
     The request is made with `stream=True`, so the span carries
     `gen_ai.request.stream` and, once the first chunk with content arrives,
-    `gen_ai.response.time_to_first_chunk`. The usage counts and the native
-    Ollama timings are read from the final chunk, which carries them like a
-    non-streaming response body.
+    `gen_ai.response.time_to_first_chunk`. The `time_to_first_chunk` and
+    `time_per_output_chunk` histograms are recorded from the arrival times of
+    the content chunks, and the usage counts and the native Ollama timings
+    are read from the final chunk, which carries them like a non-streaming
+    response body.
     """
     print("  [chat] streaming completion (reference implementation)")
     request_model = "llama3.2"
@@ -639,7 +659,7 @@ def run_chat_streaming(client, base_url):
         "chat llama3.2", kind=SpanKind.CLIENT, attributes=span_attributes
     ) as span:
         started_at = perf_counter()
-        first_chunk_at = None
+        chunk_times = []
         final_chunk = None
         try:
             stream = client.chat(
@@ -650,10 +670,9 @@ def run_chat_streaming(client, base_url):
             )
             for chunk in stream:
                 if chunk.message and chunk.message.content:
-                    if first_chunk_at is None:
-                        # A chunk is a decoded stream event carrying new,
-                        # non-empty output, per the time_to_first_chunk note.
-                        first_chunk_at = perf_counter()
+                    # A chunk is a decoded stream event carrying new,
+                    # non-empty output, per the time_to_first_chunk note.
+                    chunk_times.append(perf_counter())
                     content_parts.append(chunk.message.content)
                 if chunk.done:
                     final_chunk = chunk
@@ -675,8 +694,8 @@ def run_chat_streaming(client, base_url):
             if port is not None:
                 metric_attributes["server.port"] = port
             _inference_duration.record(elapsed, metric_attributes)
-            # No chunk was received, so time_to_first_chunk stays unset, per
-            # its requirement.
+            # No chunk was received, so time_to_first_chunk and the streaming
+            # chunk histograms stay unset, per their requirements.
             _operation_input_tokens.record(0, metric_attributes)
             _operation_output_tokens.record(0, metric_attributes)
             reference_event_logger().emit(
@@ -691,6 +710,7 @@ def run_chat_streaming(client, base_url):
             )
         else:
             elapsed = perf_counter() - started_at
+            first_chunk_at = chunk_times[0] if chunk_times else None
             if first_chunk_at is not None:
                 # Time from the start of the logical operation, before the
                 # request is made, to the first chunk fully received by the
@@ -731,6 +751,13 @@ def run_chat_streaming(client, base_url):
                 _input_tokens.add(input_tokens, {**metric_attributes, "gen_ai.token.modality": "unknown"})
             if output_tokens:
                 _output_tokens.add(output_tokens, {**metric_attributes, "gen_ai.token.modality": "unknown"})
+            if chunk_times:
+                # The streaming chunk histograms follow the chunk definition
+                # of gen_ai.response.time_to_first_chunk and are only
+                # recorded when the stream delivered content chunks.
+                _time_to_first_chunk.record(chunk_times[0] - started_at, metric_attributes)
+                for previous, current in zip(chunk_times, chunk_times[1:]):
+                    _time_per_output_chunk.record(current - previous, metric_attributes)
 
             content = "".join(content_parts)
             event_attrs = {
@@ -758,6 +785,8 @@ def run_chat_streaming(client, base_url):
                 ]
             if request_options["num_predict"] >= 0:
                 event_attrs["gen_ai.request.max_tokens"] = request_options["num_predict"]
+            if first_chunk_at is not None:
+                event_attrs["gen_ai.response.time_to_first_chunk"] = first_chunk_at - started_at
             if response_model:
                 event_attrs["gen_ai.response.model"] = response_model
             if final_chunk is not None and final_chunk.done_reason:
