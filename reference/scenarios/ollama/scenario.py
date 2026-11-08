@@ -78,18 +78,19 @@ def _metric_attributes(operation, request_model, response_model, host, port):
 def _record_inference_usage(input_tokens, output_tokens, metric_attributes):
     """Record the usage instruments from the same gen_ai.usage.* values the span carries.
 
-    Ollama reports no per-modality token breakdown, so every counter point goes
-    to the unknown modality.
+    The per-operation histograms are recorded for every inference operation: the
+    value is the token count returned by the provider, or 0 when the response
+    contains no token usage. Ollama reports no per-modality token breakdown, so
+    every counter point goes to the unknown modality, and the usage counters are
+    only incremented for known positive counts.
     """
     modality_attributes = {**metric_attributes, "gen_ai.token.modality": "unknown"}
-    if input_tokens is not None:
-        _operation_input_tokens.record(input_tokens, metric_attributes)
-        if input_tokens > 0:
-            _input_tokens.add(input_tokens, modality_attributes)
-    if output_tokens is not None:
-        _operation_output_tokens.record(output_tokens, metric_attributes)
-        if output_tokens > 0:
-            _output_tokens.add(output_tokens, modality_attributes)
+    _operation_input_tokens.record(input_tokens if input_tokens is not None else 0, metric_attributes)
+    _operation_output_tokens.record(output_tokens if output_tokens is not None else 0, metric_attributes)
+    if input_tokens:
+        _input_tokens.add(input_tokens, modality_attributes)
+    if output_tokens:
+        _output_tokens.add(output_tokens, modality_attributes)
 
 
 def run_chat(client):
@@ -178,6 +179,12 @@ def run_chat(client):
             "gen_ai.operation.name": "chat",
             "gen_ai.provider.name": "ollama",
             "gen_ai.request.model": request_model,
+            "gen_ai.request.max_tokens": request_options["num_predict"],
+            "gen_ai.request.temperature": request_options["temperature"],
+            "gen_ai.request.top_p": request_options["top_p"],
+            "gen_ai.request.top_k": request_options["top_k"],
+            "gen_ai.request.stop_sequences": request_options["stop"],
+            "gen_ai.request.seed": request_options["seed"],
             "gen_ai.input.messages": [
                 {"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]} for m in messages
             ],

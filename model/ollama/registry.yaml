@@ -25,9 +25,13 @@ attributes:
 
   - key: ollama.request.num_gpu
     type: int
-    brief: The number of GPUs to use for inference.
+    brief: The number of model layers to offload to GPUs for inference.
     examples: [1, 2, 4]
     stability: development
+    note: >
+      This corresponds to the Ollama `num_gpu` option. It controls how many model
+      layers are offloaded to the GPU(s) for inference, not the number of GPU
+      devices used.
 
   - key: ollama.request.main_gpu
     type: int
