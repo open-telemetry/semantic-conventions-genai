@@ -13,13 +13,15 @@
 | <a id="ollama-request-main-gpu" href="#ollama-request-main-gpu">`ollama.request.main_gpu`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The index of the main GPU to use. | `0`; `1` |
 | <a id="ollama-request-num-batch" href="#ollama-request-num-batch">`ollama.request.num_batch`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The number of tokens to process in parallel. | `8`; `16`; `32` |
 | <a id="ollama-request-num-ctx" href="#ollama-request-num-ctx">`ollama.request.num_ctx`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The size of the context window for the model. [2] | `2048`; `4096`; `32768` |
-| <a id="ollama-request-num-gpu" href="#ollama-request-num-gpu">`ollama.request.num_gpu`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The number of GPUs to use for inference. | `1`; `2`; `4` |
+| <a id="ollama-request-num-gpu" href="#ollama-request-num-gpu">`ollama.request.num_gpu`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The number of model layers to offload to GPUs for inference. [3] | `1`; `2`; `4` |
 | <a id="ollama-response-load-duration" href="#ollama-response-load-duration">`ollama.response.load_duration`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The time in nanoseconds the model took to load. | `500000000` |
-| <a id="ollama-response-total-duration" href="#ollama-response-total-duration">`ollama.response.total_duration`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The total time in nanoseconds the model took to generate the response. [3] | `1500000000` |
+| <a id="ollama-response-total-duration" href="#ollama-response-total-duration">`ollama.response.total_duration`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The total time in nanoseconds the model took to generate the response. [4] | `1500000000` |
 
 
 **[1] `ollama.request.base_url`:** This is useful when using a custom or self-hosted Ollama instance.
 
 **[2] `ollama.request.num_ctx`:** This represents the maximum number of tokens the model can consider from the conversation history.
 
-**[3] `ollama.response.total_duration`:** Ollama reports this value natively in the response. It measures the full server-side generation time, including model load time.
+**[3] `ollama.request.num_gpu`:** This corresponds to the Ollama `num_gpu` option. It controls how many model layers are offloaded to the GPU(s) for inference, not the number of GPU devices used.
+
+**[4] `ollama.response.total_duration`:** Ollama reports this value natively in the response. It measures the full server-side generation time, including model load time.

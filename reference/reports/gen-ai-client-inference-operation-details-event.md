@@ -19,9 +19,9 @@
 | gen_ai.prompt.version | [aws-bedrock], [openai] |
 | gen_ai.request.choice.count | (none) |
 | gen_ai.request.model | [anthropic], [aws-bedrock], [azure-ai-inference], [cohere], [google-genai], [groq], [litellm], [mistralai], [ollama], [openai], [vertexai] |
-| gen_ai.request.seed | (none) |
+| gen_ai.request.seed | [ollama] |
 | gen_ai.request.stream | (none) |
-| gen_ai.request.top_k | (none) |
+| gen_ai.request.top_k | [ollama] |
 | server.port | [anthropic], [azure-ai-inference], [openai] |
 
 ## Recommended
@@ -30,13 +30,13 @@
 | --- | --- |
 | gen_ai.conversation.compacted | [anthropic], [openai] |
 | gen_ai.request.frequency_penalty | (none) |
-| gen_ai.request.max_tokens | [anthropic] |
+| gen_ai.request.max_tokens | [anthropic], [ollama] |
 | gen_ai.request.presence_penalty | (none) |
 | gen_ai.request.previous_response.id | [google-genai], [openai] |
 | gen_ai.request.reasoning.level | [anthropic] |
-| gen_ai.request.stop_sequences | (none) |
-| gen_ai.request.temperature | (none) |
-| gen_ai.request.top_p | (none) |
+| gen_ai.request.stop_sequences | [ollama] |
+| gen_ai.request.temperature | [ollama] |
+| gen_ai.request.top_p | [ollama] |
 | gen_ai.response.finish_reasons | [anthropic], [aws-bedrock], [azure-ai-inference], [cohere], [google-genai], [groq], [litellm], [mistralai], [ollama], [openai], [vertexai] |
 | gen_ai.response.id | [anthropic], [azure-ai-inference], [cohere], [google-genai], [groq], [litellm], [mistralai], [openai], [vertexai] |
 | gen_ai.response.model | [anthropic], [azure-ai-inference], [google-genai], [groq], [litellm], [mistralai], [ollama], [openai], [vertexai] |
