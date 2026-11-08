@@ -7,6 +7,8 @@ attributes:
     stability: development
     note: >
       This is useful when using a custom or self-hosted Ollama instance.
+      User information (credentials) embedded in the URL MUST be removed before
+      the URL is recorded, and sensitive query parameter values MUST be scrubbed.
 
   - key: ollama.request.num_ctx
     type: int
@@ -39,18 +41,6 @@ attributes:
     examples: [0, 1]
     stability: development
 
-  - key: ollama.request.low_vram
-    type: boolean
-    brief: Indicates whether to use low VRAM mode.
-    examples: [true, false]
-    stability: development
-
-  - key: ollama.request.f16_kv
-    type: boolean
-    brief: Indicates whether to use 16-bit floating point for key-value cache.
-    examples: [true, false]
-    stability: development
-
   - key: ollama.response.total_duration
     type: int
     brief: The total time in nanoseconds the model took to generate the response.
@@ -80,7 +70,9 @@ span_refinements:
         requirement_level: recommended
         note: >
           Corresponds to the `host` configuration of the Ollama client: the base
-          URL of the API endpoint the client connects to.
+          URL of the API endpoint the client connects to. User information
+          (credentials) embedded in the URL MUST be removed before the URL is
+          recorded, and sensitive query parameter values MUST be scrubbed.
       - ref: ollama.request.num_ctx
         requirement_level:
           conditionally_required: If the request `options` include `num_ctx`.
@@ -101,16 +93,6 @@ span_refinements:
           conditionally_required: If the request `options` include `main_gpu`.
         note: >
           Corresponds to the `main_gpu` option in the request `options` object.
-      - ref: ollama.request.low_vram
-        requirement_level:
-          conditionally_required: If the request `options` include `low_vram`.
-        note: >
-          Corresponds to the `low_vram` option in the request `options` object.
-      - ref: ollama.request.f16_kv
-        requirement_level:
-          conditionally_required: If the request `options` include `f16_kv`.
-        note: >
-          Corresponds to the `f16_kv` option in the request `options` object.
       - ref: ollama.response.total_duration
         requirement_level: recommended
         note: >
@@ -133,7 +115,14 @@ span_refinements:
         requirement_level: recommended
         note: >
           Corresponds to the `host` configuration of the Ollama client: the base
-          URL of the API endpoint the client connects to.
+          URL of the API endpoint the client connects to. User information
+          (credentials) embedded in the URL MUST be removed before the URL is
+          recorded, and sensitive query parameter values MUST be scrubbed.
+      - ref: ollama.request.num_ctx
+        requirement_level:
+          conditionally_required: If the request `options` include `num_ctx`.
+        note: >
+          Corresponds to the `num_ctx` option in the request `options` object.
       - ref: ollama.response.total_duration
         requirement_level: recommended
         note: >
