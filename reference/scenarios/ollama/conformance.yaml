@@ -11,6 +11,12 @@ env:
 scenarios:
   reference:
     run: uv run --frozen --python 3.12 --project . python scenario.py
+    expected_violations:
+      - id: genai_expected_attribute_missing
+        context:
+          operation: chat
+          missing_attribute: gen_ai.response.id
+        reason: Ollama's API does not return a response id, so the reference implementation cannot set gen_ai.response.id.
     spans:
       - match:
           attributes:

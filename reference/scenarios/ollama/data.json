@@ -14,10 +14,6 @@
       "gen_ai.response.model",
       "gen_ai.usage.input_tokens",
       "gen_ai.usage.output_tokens",
-      "ollama.request.base_url",
-      "ollama.request.num_ctx",
-      "ollama.response.load_duration",
-      "ollama.response.total_duration",
       "server.address",
       "server.port"
     ]
@@ -37,5 +33,16 @@
   },
   "metrics": {},
   "entities": {},
-  "findings": []
+  "findings": [
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'chat llama3.2' (operation 'chat') is missing expected attribute 'gen_ai.response.id'",
+      "signal_type": "span",
+      "signal_name": "chat llama3.2",
+      "context": {
+        "missing_attribute": "gen_ai.response.id",
+        "operation": "chat"
+      }
+    }
+  ]
 }
