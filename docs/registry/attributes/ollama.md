@@ -7,15 +7,15 @@
 
 | Key | Stability | Value Type | Description | Example Values |
 | --- | --- | --- | --- | --- |
-| <a id="ollama-request-base-url" href="#ollama-request-base-url">`ollama.request.base_url`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The base URL of the Ollama API endpoint. [1] | `http://localhost:11434`; `https://ollama.example.com`  |
-| <a id="ollama-request-f16-kv" href="#ollama-request-f16-kv">`ollama.request.f16_kv`</a> | ![Development](https://img.shields.io/badge/-development-blue) | boolean | Indicates whether to use 16-bit floating point for key-value cache. | `true`; `false`  |
-| <a id="ollama-request-low-vram" href="#ollama-request-low-vram">`ollama.request.low_vram`</a> | ![Development](https://img.shields.io/badge/-development-blue) | boolean | Indicates whether to use low VRAM mode. | `true`; `false`  |
-| <a id="ollama-request-main-gpu" href="#ollama-request-main-gpu">`ollama.request.main_gpu`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The index of the main GPU to use. | `0`; `1`  |
-| <a id="ollama-request-num-batch" href="#ollama-request-num-batch">`ollama.request.num_batch`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The number of tokens to process in parallel. | `8`; `16`; `32`  |
-| <a id="ollama-request-num-ctx" href="#ollama-request-num-ctx">`ollama.request.num_ctx`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The size of the context window for the model. [2] | `2048`; `4096`; `32768`  |
-| <a id="ollama-request-num-gpu" href="#ollama-request-num-gpu">`ollama.request.num_gpu`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The number of GPUs to use for inference. | `1`; `2`; `4`  |
-| <a id="ollama-response-load-duration" href="#ollama-response-load-duration">`ollama.response.load_duration`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The time in nanoseconds the model took to load. | `500000000`  |
-| <a id="ollama-response-total-duration" href="#ollama-response-total-duration">`ollama.response.total_duration`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The total time in nanoseconds the model took to generate the response. [3] | `1500000000`  |
+| <a id="ollama-request-base-url" href="#ollama-request-base-url">`ollama.request.base_url`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The base URL of the Ollama API endpoint. [1] | `http://localhost:11434`; `https://ollama.example.com` |
+| <a id="ollama-request-f16-kv" href="#ollama-request-f16-kv">`ollama.request.f16_kv`</a> | ![Development](https://img.shields.io/badge/-development-blue) | boolean | Indicates whether to use 16-bit floating point for key-value cache. | `true`; `false` |
+| <a id="ollama-request-low-vram" href="#ollama-request-low-vram">`ollama.request.low_vram`</a> | ![Development](https://img.shields.io/badge/-development-blue) | boolean | Indicates whether to use low VRAM mode. | `true`; `false` |
+| <a id="ollama-request-main-gpu" href="#ollama-request-main-gpu">`ollama.request.main_gpu`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The index of the main GPU to use. | `0`; `1` |
+| <a id="ollama-request-num-batch" href="#ollama-request-num-batch">`ollama.request.num_batch`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The number of tokens to process in parallel. | `8`; `16`; `32` |
+| <a id="ollama-request-num-ctx" href="#ollama-request-num-ctx">`ollama.request.num_ctx`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The size of the context window for the model. [2] | `2048`; `4096`; `32768` |
+| <a id="ollama-request-num-gpu" href="#ollama-request-num-gpu">`ollama.request.num_gpu`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The number of GPUs to use for inference. | `1`; `2`; `4` |
+| <a id="ollama-response-load-duration" href="#ollama-response-load-duration">`ollama.response.load_duration`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The time in nanoseconds the model took to load. | `500000000` |
+| <a id="ollama-response-total-duration" href="#ollama-response-total-duration">`ollama.response.total_duration`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The total time in nanoseconds the model took to generate the response. [3] | `1500000000` |
 
 
 **[1] `ollama.request.base_url`:** This is useful when using a custom or self-hosted Ollama instance.
