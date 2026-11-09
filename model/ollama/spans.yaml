@@ -67,6 +67,21 @@ span_refinements:
           conditionally_required: If the request `options` include `num_ctx`.
         note: >
           Corresponds to the `num_ctx` option in the request `options` object.
+      - ref: ollama.request.num_batch
+        requirement_level:
+          conditionally_required: If the request `options` include `num_batch`.
+        note: >
+          Corresponds to the `num_batch` option in the request `options` object.
+      - ref: ollama.request.num_gpu
+        requirement_level:
+          conditionally_required: If the request `options` include `num_gpu`.
+        note: >
+          Corresponds to the `num_gpu` option in the request `options` object.
+      - ref: ollama.request.main_gpu
+        requirement_level:
+          conditionally_required: If the request `options` include `main_gpu`.
+        note: >
+          Corresponds to the `main_gpu` option in the request `options` object.
       - ref: ollama.response.total_duration
         requirement_level: recommended
         note: >

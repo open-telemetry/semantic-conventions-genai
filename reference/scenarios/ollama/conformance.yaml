@@ -8,6 +8,7 @@ server:
 env:
   MOCK_LLM_URL: ${MOCK_SERVER_URL}
   OTEL_INSTRUMENTATION_GENAI_CAPTURE_CONTENT: EVENT_ONLY
+  OTEL_INSTRUMENTATION_GENAI_CAPTURE_TOOL_DEFINITIONS: "true"
 
 scenarios:
   reference:
@@ -53,17 +54,23 @@ scenarios:
           operation: embeddings
           missing_attribute: gen_ai.usage.input_tokens
         reason: The failure-path embeddings operation points the SDK at a server that accepts no connections, so no token usage is returned and the span cannot carry gen_ai.usage.input_tokens.
+      - id: genai_expected_attribute_missing
+        context:
+          operation: text_completion
+          missing_attribute: gen_ai.response.id
+        reason: Ollama's API does not return a response id, so the reference implementation cannot set gen_ai.response.id.
     spans:
       # Every chat span that succeeds carries the same request options and the
       # same mock response timings, so the Ollama refinement attributes are
-      # asserted once for all three scenarios (basic, tool call, streaming).
+      # asserted once for all four scenarios (basic, tool call, formatted,
+      # streaming).
       - match:
           attributes:
             gen_ai.operation.name: chat
             gen_ai.response.model: llama3.2
           type: gen_ai.client.inference
         expect:
-          count: 3
+          count: 4
           attributes:
             ollama.request.num_ctx: 2048
             ollama.request.num_batch: 512
@@ -84,6 +91,19 @@ scenarios:
             gen_ai.tool.definitions:
               present: true
             gen_ai.response.finish_reasons: [stop]
+      # The formatted scenario is singled out by its seed; the request passes
+      # format="json", so the conditionally required gen_ai.output.type must
+      # be recorded along with the provider-reported finish reason.
+      - match:
+          attributes:
+            gen_ai.operation.name: chat
+            gen_ai.request.seed: 45
+          type: gen_ai.client.inference
+        expect:
+          count: 1
+          attributes:
+            gen_ai.output.type: json
+            gen_ai.response.finish_reasons: [stop]
       # The streaming scenario is singled out by its seed and must report the
       # streaming request flag and the time to the first content chunk.
       - match:
@@ -97,6 +117,29 @@ scenarios:
             gen_ai.request.stream: true
             gen_ai.response.time_to_first_chunk:
               present: true
+      # The text completion scenario calls client.generate against a
+      # scenario-local /api/generate mock (the shared mock server implements
+      # /api/chat and /api/embed only), so its span carries the Ollama
+      # refinement attributes from the request options and the canned
+      # response timings.
+      - match:
+          attributes:
+            gen_ai.operation.name: text_completion
+          type: gen_ai.client.inference
+        expect:
+          count: 1
+          attributes:
+            gen_ai.request.model: llama3.2
+            gen_ai.response.model: llama3.2
+            gen_ai.response.finish_reasons: [stop]
+            gen_ai.usage.input_tokens: 42
+            gen_ai.usage.output_tokens: 17
+            ollama.request.num_ctx: 2048
+            ollama.request.num_batch: 512
+            ollama.request.num_gpu: 1
+            ollama.request.main_gpu: 0
+            ollama.response.total_duration: 1000000000
+            ollama.response.load_duration: 100000000
       # The failure-path chat span points at a server that accepts no
       # connections: the sanitized base URL, an error type, and the "error"
       # finish reason required when the operation fails before any
@@ -113,8 +156,9 @@ scenarios:
             gen_ai.response.finish_reasons: [error]
             error.type:
               present: true
-      # The successful embeddings span carries the num_ctx request option and
-      # the native Ollama response timings.
+      # The successful embeddings span carries the num_ctx, num_batch,
+      # num_gpu, and main_gpu request options and the native Ollama
+      # response timings.
       - match:
           attributes:
             gen_ai.operation.name: embeddings
@@ -124,6 +168,9 @@ scenarios:
           count: 1
           attributes:
             ollama.request.num_ctx: 2048
+            ollama.request.num_batch: 512
+            ollama.request.num_gpu: 1
+            ollama.request.main_gpu: 0
             ollama.response.total_duration: 1000000000
             ollama.response.load_duration: 100000000
       # The failure-path embeddings span points at a server that accepts no

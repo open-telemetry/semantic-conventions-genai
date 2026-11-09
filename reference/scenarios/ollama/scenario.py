@@ -1,11 +1,15 @@
 """Reference implementation for Ollama.
 
-Exercises: chat (basic, tool call, and streaming) and embeddings
-against a mock Ollama server, with manual OTel spans and metrics.
+Exercises: chat (basic, tool call, formatted, and streaming), embeddings, and
+text completion (against a scenario-local /api/generate mock) with manual OTel
+spans and metrics.
 """
 
+import json
 import os
+import threading
 import traceback
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from itertools import pairwise
 from time import perf_counter
 from urllib.parse import urlsplit, urlunsplit
@@ -42,6 +46,15 @@ if _capture_content not in ("NO_CONTENT", "SPAN_ONLY", "EVENT_ONLY", "SPAN_AND_E
 # The reference implementation emits content on the operation details events
 # only, so SPAN_ONLY behaves like NO_CONTENT here.
 _record_event_messages = _capture_content in ("EVENT_ONLY", "SPAN_AND_EVENT")
+
+# gen_ai.tool.definitions is opt-in on the inference span: tool schemas can
+# be large and may contain sensitive information, and the content capture
+# setting does not govern schema capture, per the attribute's registry note.
+# The scenario configuration enables the opt-in so the conformance runner can
+# assert the definitions are recorded.
+_capture_tool_definitions = (
+    os.environ.get("OTEL_INSTRUMENTATION_GENAI_CAPTURE_TOOL_DEFINITIONS", "").strip().lower() == "true"
+)
 
 # The ollama SDK raises ollama.ResponseError when the server reports an error
 # status, a builtin ConnectionError on connection failures, and httpx
@@ -153,6 +166,43 @@ def _require_failure(operation, client, base_url):
         print(f"    -> failed as expected ({type(exc).__name__})")
         return exc
     raise RuntimeError(f"{operation.__name__} unexpectedly succeeded against {base_url}")
+
+
+class _GenerateMockHandler(BaseHTTPRequestHandler):
+    """Serve a canned /api/generate response.
+
+    The shared conformance mock server implements /api/chat and /api/embed
+    only, so the text completion demonstration serves /api/generate from this
+    in-process HTTP server with a deterministic response, following the
+    scenario-local mock technique of reference/scenarios/gemini-live.
+    """
+
+    def do_POST(self):
+        if self.path != "/api/generate":
+            self.send_error(404)
+            return
+        body = json.dumps(
+            {
+                "model": "llama3.2",
+                "created_at": "2026-01-01T00:00:00Z",
+                "response": "Hello!",
+                "done": True,
+                "done_reason": "stop",
+                "total_duration": 1000000000,
+                "load_duration": 100000000,
+                "prompt_eval_count": 42,
+                "eval_count": 17,
+            }
+        ).encode()
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def log_message(self, format, *args):
+        # Silence per-request stderr output; the scenario prints its own lines.
+        return
 
 
 def run_chat(client, base_url, *, expect_error=False):
@@ -272,8 +322,11 @@ def run_chat(client, base_url, *, expect_error=False):
             if resp.model:
                 span.set_attribute("gen_ai.response.model", resp.model)
                 response_model = resp.model
-            if resp.done_reason:
-                span.set_attribute("gen_ai.response.finish_reasons", [resp.done_reason])
+            # A finish reason is expected for every generation; the registry
+            # fallback reports "error" when the response omits it.
+            span.set_attribute(
+                "gen_ai.response.finish_reasons", [resp.done_reason] if resp.done_reason else ["error"]
+            )
             if resp.prompt_eval_count is not None:
                 input_tokens = int(resp.prompt_eval_count)
                 span.set_attribute("gen_ai.usage.input_tokens", input_tokens)
@@ -337,8 +390,7 @@ def run_chat(client, base_url, *, expect_error=False):
                 event_attrs["gen_ai.request.max_tokens"] = request_options["num_predict"]
             if resp.model:
                 event_attrs["gen_ai.response.model"] = resp.model
-            if resp.done_reason:
-                event_attrs["gen_ai.response.finish_reasons"] = [resp.done_reason]
+            event_attrs["gen_ai.response.finish_reasons"] = [resp.done_reason] if resp.done_reason else ["error"]
             if input_tokens is not None:
                 event_attrs["gen_ai.usage.input_tokens"] = input_tokens
             if output_tokens is not None:
@@ -365,9 +417,11 @@ def run_chat_with_tools(client, base_url):
 
     The request offers a weather tool through the SDK `tools` argument, and
     the mock server answers with a tool call. The span records the offered
-    tools as `gen_ai.tool.definitions`; the operation details event records
-    the model's answer as `tool_call` parts of the output message. Ollama
-    tool calls carry no identifier, which the output message parts permit.
+    tools as `gen_ai.tool.definitions`, an opt-in attribute recorded only when
+    tool-definition capture is enabled; the operation details event records
+    the model's answer as `tool_call` parts of the output message, keeping any
+    text of the same response as an independent part. Ollama tool calls carry
+    no identifier, which the output message parts permit.
     """
     print("  [chat] tool call (reference implementation)")
     request_model = "llama3.2"
@@ -424,13 +478,16 @@ def run_chat_with_tools(client, base_url):
         "gen_ai.request.presence_penalty": request_options["presence_penalty"],
         "gen_ai.request.stop_sequences": request_options["stop"],
         "gen_ai.request.seed": request_options["seed"],
-        "gen_ai.tool.definitions": tool_definitions,
         "ollama.request.base_url": _sanitize_base_url(base_url),
         "ollama.request.num_ctx": request_options["num_ctx"],
         "ollama.request.num_batch": request_options["num_batch"],
         "ollama.request.num_gpu": request_options["num_gpu"],
         "ollama.request.main_gpu": request_options["main_gpu"],
     }
+    # gen_ai.tool.definitions is opt-in: tool schemas may be large or
+    # sensitive, so they are only recorded when explicitly enabled.
+    if _capture_tool_definitions:
+        span_attributes["gen_ai.tool.definitions"] = tool_definitions
     if request_options["num_predict"] >= 0:
         span_attributes["gen_ai.request.max_tokens"] = request_options["num_predict"]
     if host:
@@ -493,8 +550,11 @@ def run_chat_with_tools(client, base_url):
             if resp.model:
                 span.set_attribute("gen_ai.response.model", resp.model)
                 response_model = resp.model
-            if resp.done_reason:
-                span.set_attribute("gen_ai.response.finish_reasons", [resp.done_reason])
+            # A finish reason is expected for every generation; the registry
+            # fallback reports "error" when the response omits it.
+            span.set_attribute(
+                "gen_ai.response.finish_reasons", [resp.done_reason] if resp.done_reason else ["error"]
+            )
             if resp.prompt_eval_count is not None:
                 input_tokens = int(resp.prompt_eval_count)
                 span.set_attribute("gen_ai.usage.input_tokens", input_tokens)
@@ -525,21 +585,20 @@ def run_chat_with_tools(client, base_url):
             if output_tokens:
                 _output_tokens.add(output_tokens, {**metric_attributes, "gen_ai.token.modality": "unknown"})
 
-            if resp.message.tool_calls:
-                for call in resp.message.tool_calls:
-                    part = {
+            # A response can carry text and tool calls at the same time, so
+            # both are captured as independent parts of the output message.
+            if resp.message.content:
+                output_parts.append({"type": "text", "content": resp.message.content})
+            for call in resp.message.tool_calls or []:
+                # Ollama tool calls carry no identifier, which the output
+                # message parts permit.
+                output_parts.append(
+                    {
                         "type": "tool_call",
                         "name": call.function.name,
                         "arguments": call.function.arguments,
                     }
-                    # Ollama tool calls carry no identifier; the id is only
-                    # recorded when the SDK exposes one.
-                    call_id = getattr(call, "id", None)
-                    if call_id:
-                        part["id"] = call_id
-                    output_parts.append(part)
-            else:
-                output_parts = [{"type": "text", "content": resp.message.content}]
+                )
             event_attrs = {
                 "gen_ai.operation.name": "chat",
                 "gen_ai.provider.name": "ollama",
@@ -551,8 +610,9 @@ def run_chat_with_tools(client, base_url):
                 "gen_ai.request.presence_penalty": request_options["presence_penalty"],
                 "gen_ai.request.stop_sequences": request_options["stop"],
                 "gen_ai.request.seed": request_options["seed"],
-                "gen_ai.tool.definitions": tool_definitions,
             }
+            if _capture_tool_definitions:
+                event_attrs["gen_ai.tool.definitions"] = tool_definitions
             if _record_event_messages:
                 event_attrs["gen_ai.input.messages"] = [
                     {"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]} for m in messages
@@ -567,8 +627,7 @@ def run_chat_with_tools(client, base_url):
                 event_attrs["gen_ai.request.max_tokens"] = request_options["num_predict"]
             if resp.model:
                 event_attrs["gen_ai.response.model"] = resp.model
-            if resp.done_reason:
-                event_attrs["gen_ai.response.finish_reasons"] = [resp.done_reason]
+            event_attrs["gen_ai.response.finish_reasons"] = [resp.done_reason] if resp.done_reason else ["error"]
             if input_tokens is not None:
                 event_attrs["gen_ai.usage.input_tokens"] = input_tokens
             if output_tokens is not None:
@@ -591,6 +650,197 @@ def run_chat_with_tools(client, base_url):
             print(f"    -> tool call: {part['name']}({part['arguments']})")
         elif part["type"] == "text" and part["content"]:
             print(f"    -> {part['content'][:60]}")
+
+
+def run_chat_formatted(client, base_url):
+    """Scenario: chat completion requesting JSON output.
+
+    The request passes `format="json"`, so the span and the operation details
+    event carry `gen_ai.output.type = "json"`, per the conditionally required
+    `gen_ai.output.type` attribute for requests that include an output format.
+    """
+    print("  [chat] formatted JSON completion (reference implementation)")
+    request_model = "llama3.2"
+    host, port = mock_server_host_port(base_url)
+    # One options object handed to the SDK call; the ollama.request.* and
+    # gen_ai.request.* span attributes read their values from it.
+    request_options = {
+        "num_predict": 100,
+        "temperature": 0.5,
+        "top_p": 0.9,
+        "top_k": 40,
+        "frequency_penalty": 1.0,
+        "presence_penalty": 0.5,
+        "stop": ["\n\n"],
+        "seed": 45,
+        "num_ctx": 2048,
+        "num_batch": 512,
+        "num_gpu": 1,
+        "main_gpu": 0,
+    }
+    span_attributes = {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "ollama",
+        "gen_ai.request.model": request_model,
+        "gen_ai.request.temperature": request_options["temperature"],
+        "gen_ai.request.top_p": request_options["top_p"],
+        "gen_ai.request.top_k": request_options["top_k"],
+        "gen_ai.request.frequency_penalty": request_options["frequency_penalty"],
+        "gen_ai.request.presence_penalty": request_options["presence_penalty"],
+        "gen_ai.request.stop_sequences": request_options["stop"],
+        "gen_ai.request.seed": request_options["seed"],
+        "gen_ai.output.type": "json",
+        "ollama.request.base_url": _sanitize_base_url(base_url),
+        "ollama.request.num_ctx": request_options["num_ctx"],
+        "ollama.request.num_batch": request_options["num_batch"],
+        "ollama.request.num_gpu": request_options["num_gpu"],
+        "ollama.request.main_gpu": request_options["main_gpu"],
+    }
+    if request_options["num_predict"] >= 0:
+        span_attributes["gen_ai.request.max_tokens"] = request_options["num_predict"]
+    if host:
+        span_attributes["server.address"] = host
+    if port is not None:
+        span_attributes["server.port"] = port
+    messages = [
+        {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "user", "content": "Reply with a JSON object."},
+    ]
+    input_tokens = None
+    output_tokens = None
+    response_model = None
+    content = None
+    failure = None
+    with _reference_tracer.start_as_current_span(
+        "chat llama3.2", kind=SpanKind.CLIENT, attributes=span_attributes
+    ) as span:
+        started_at = perf_counter()
+        try:
+            resp = client.chat(
+                model=request_model,
+                messages=messages,
+                stream=False,
+                format="json",
+                options=request_options,
+            )
+        except _SDK_FAILURES as exc:
+            failure = exc
+            elapsed = perf_counter() - started_at
+            error_type = type(exc).__name__
+            span.set_attribute("error.type", error_type)
+            span.set_attribute("gen_ai.response.finish_reasons", ["error"])
+            span.set_status(StatusCode.ERROR, str(exc))
+            metric_attributes = {
+                "gen_ai.operation.name": "chat",
+                "gen_ai.provider.name": "ollama",
+                "gen_ai.request.model": request_model,
+                "error.type": error_type,
+            }
+            if host:
+                metric_attributes["server.address"] = host
+            if port is not None:
+                metric_attributes["server.port"] = port
+            _inference_duration.record(elapsed, metric_attributes)
+            _operation_input_tokens.record(0, metric_attributes)
+            _operation_output_tokens.record(0, metric_attributes)
+            reference_event_logger().emit(
+                event_name="gen_ai.client.inference.exception",
+                severity_number=SeverityNumber.WARN,
+                body="Inference operation failed",
+                attributes={
+                    "exception.type": error_type,
+                    "exception.message": str(exc),
+                    "exception.stacktrace": traceback.format_exc(),
+                },
+            )
+        else:
+            elapsed = perf_counter() - started_at
+            if resp.model:
+                span.set_attribute("gen_ai.response.model", resp.model)
+                response_model = resp.model
+            # A finish reason is expected for every generation; the registry
+            # fallback reports "error" when the response omits it.
+            span.set_attribute(
+                "gen_ai.response.finish_reasons", [resp.done_reason] if resp.done_reason else ["error"]
+            )
+            if resp.prompt_eval_count is not None:
+                input_tokens = int(resp.prompt_eval_count)
+                span.set_attribute("gen_ai.usage.input_tokens", input_tokens)
+            if resp.eval_count is not None:
+                output_tokens = int(resp.eval_count)
+                span.set_attribute("gen_ai.usage.output_tokens", output_tokens)
+            if resp.total_duration is not None:
+                span.set_attribute("ollama.response.total_duration", int(resp.total_duration))
+            if resp.load_duration is not None:
+                span.set_attribute("ollama.response.load_duration", int(resp.load_duration))
+
+            metric_attributes = {
+                "gen_ai.operation.name": "chat",
+                "gen_ai.provider.name": "ollama",
+                "gen_ai.request.model": request_model,
+            }
+            if response_model:
+                metric_attributes["gen_ai.response.model"] = response_model
+            if host:
+                metric_attributes["server.address"] = host
+            if port is not None:
+                metric_attributes["server.port"] = port
+            _inference_duration.record(elapsed, metric_attributes)
+            _operation_input_tokens.record(input_tokens if input_tokens is not None else 0, metric_attributes)
+            _operation_output_tokens.record(output_tokens if output_tokens is not None else 0, metric_attributes)
+            if input_tokens:
+                _input_tokens.add(input_tokens, {**metric_attributes, "gen_ai.token.modality": "unknown"})
+            if output_tokens:
+                _output_tokens.add(output_tokens, {**metric_attributes, "gen_ai.token.modality": "unknown"})
+
+            content = resp.message.content
+            event_attrs = {
+                "gen_ai.operation.name": "chat",
+                "gen_ai.provider.name": "ollama",
+                "gen_ai.request.model": request_model,
+                "gen_ai.request.temperature": request_options["temperature"],
+                "gen_ai.request.top_p": request_options["top_p"],
+                "gen_ai.request.top_k": request_options["top_k"],
+                "gen_ai.request.frequency_penalty": request_options["frequency_penalty"],
+                "gen_ai.request.presence_penalty": request_options["presence_penalty"],
+                "gen_ai.request.stop_sequences": request_options["stop"],
+                "gen_ai.request.seed": request_options["seed"],
+                "gen_ai.output.type": "json",
+            }
+            if _record_event_messages:
+                event_attrs["gen_ai.input.messages"] = [
+                    {"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]} for m in messages
+                ]
+                event_attrs["gen_ai.output.messages"] = [
+                    {
+                        "role": "assistant",
+                        "parts": [{"type": "text", "content": content}],
+                    }
+                ]
+            if request_options["num_predict"] >= 0:
+                event_attrs["gen_ai.request.max_tokens"] = request_options["num_predict"]
+            if resp.model:
+                event_attrs["gen_ai.response.model"] = resp.model
+            event_attrs["gen_ai.response.finish_reasons"] = [resp.done_reason] if resp.done_reason else ["error"]
+            if input_tokens is not None:
+                event_attrs["gen_ai.usage.input_tokens"] = input_tokens
+            if output_tokens is not None:
+                event_attrs["gen_ai.usage.output_tokens"] = output_tokens
+            if host:
+                event_attrs["server.address"] = host
+            if port is not None:
+                event_attrs["server.port"] = port
+            reference_event_logger().emit(
+                event_name="gen_ai.client.inference.operation.details",
+                severity_number=SeverityNumber.DEBUG,
+                body="Inference operation details",
+                attributes=event_attrs,
+            )
+
+    if failure is not None:
+        raise failure
+    if content:
+        print(f"    -> {content[:60]}")
 
 
 def run_chat_streaming(client, base_url):
@@ -683,6 +933,11 @@ def run_chat_streaming(client, base_url):
             error_type = type(exc).__name__
             span.set_attribute("error.type", error_type)
             span.set_attribute("gen_ai.response.finish_reasons", ["error"])
+            if chunk_times:
+                # A chunk arrived before the failure, so the measured latency
+                # to it is preserved on the failed span; it stays unset only
+                # when no chunk was received.
+                span.set_attribute("gen_ai.response.time_to_first_chunk", chunk_times[0] - started_at)
             span.set_status(StatusCode.ERROR, str(exc))
             metric_attributes = {
                 "gen_ai.operation.name": "chat",
@@ -721,8 +976,6 @@ def run_chat_streaming(client, base_url):
                 if final_chunk.model:
                     span.set_attribute("gen_ai.response.model", final_chunk.model)
                     response_model = final_chunk.model
-                if final_chunk.done_reason:
-                    span.set_attribute("gen_ai.response.finish_reasons", [final_chunk.done_reason])
                 if final_chunk.prompt_eval_count is not None:
                     input_tokens = int(final_chunk.prompt_eval_count)
                     span.set_attribute("gen_ai.usage.input_tokens", input_tokens)
@@ -733,6 +986,13 @@ def run_chat_streaming(client, base_url):
                     span.set_attribute("ollama.response.total_duration", int(final_chunk.total_duration))
                 if final_chunk.load_duration is not None:
                     span.set_attribute("ollama.response.load_duration", int(final_chunk.load_duration))
+            # A finish reason is expected for every generation; the registry
+            # fallback reports "error" when the stream ends without one.
+            if final_chunk is not None and final_chunk.done_reason:
+                finish_reasons = [final_chunk.done_reason]
+            else:
+                finish_reasons = ["error"]
+            span.set_attribute("gen_ai.response.finish_reasons", finish_reasons)
 
             metric_attributes = {
                 "gen_ai.operation.name": "chat",
@@ -790,8 +1050,7 @@ def run_chat_streaming(client, base_url):
                 event_attrs["gen_ai.response.time_to_first_chunk"] = first_chunk_at - started_at
             if response_model:
                 event_attrs["gen_ai.response.model"] = response_model
-            if final_chunk is not None and final_chunk.done_reason:
-                event_attrs["gen_ai.response.finish_reasons"] = [final_chunk.done_reason]
+            event_attrs["gen_ai.response.finish_reasons"] = finish_reasons
             if input_tokens is not None:
                 event_attrs["gen_ai.usage.input_tokens"] = input_tokens
             if output_tokens is not None:
@@ -828,13 +1087,25 @@ def run_embed(client, base_url, *, expect_error=False):
     print(f"  [embeddings] {label}")
     request_model = "nomic-embed-text"
     host, port = mock_server_host_port(base_url)
-    request_options = {"num_ctx": 2048}
+    # One options object handed to the SDK call; the ollama.request.* span
+    # attributes read their values from it. The embeddings refinement records
+    # num_batch, num_gpu, and main_gpu with the same conditions as the
+    # inference refinement, because client.embed accepts the same options.
+    request_options = {
+        "num_ctx": 2048,
+        "num_batch": 512,
+        "num_gpu": 1,
+        "main_gpu": 0,
+    }
     span_attributes = {
         "gen_ai.operation.name": "embeddings",
         "gen_ai.provider.name": "ollama",
         "gen_ai.request.model": request_model,
         "ollama.request.base_url": _sanitize_base_url(base_url),
         "ollama.request.num_ctx": request_options["num_ctx"],
+        "ollama.request.num_batch": request_options["num_batch"],
+        "ollama.request.num_gpu": request_options["num_gpu"],
+        "ollama.request.main_gpu": request_options["main_gpu"],
     }
     if host:
         span_attributes["server.address"] = host
@@ -912,6 +1183,128 @@ def run_embed(client, base_url, *, expect_error=False):
     print(f"    -> embedding dim: {dimension}")
 
 
+def run_text_completion():
+    """Scenario: text completion with reference implementation.
+
+    The Ollama SDK exposes `client.generate` for the `/api/generate` endpoint,
+    which maps to a `gen_ai.client.inference` span with
+    `gen_ai.operation.name = "text_completion"`. The shared conformance mock
+    server implements `/api/chat` and `/api/embed` only, so this scenario
+    serves a canned `/api/generate` response from an in-process HTTP server
+    and makes a real SDK call against it.
+    """
+    print("  [generate] text completion (reference implementation, local /api/generate mock)")
+    server = ThreadingHTTPServer(("127.0.0.1", 0), _GenerateMockHandler)
+    port = server.server_address[1]
+    server_thread = threading.Thread(target=server.serve_forever, daemon=True)
+    server_thread.start()
+    try:
+        base_url = f"http://127.0.0.1:{port}"
+        client = ollama.Client(host=base_url)
+        request_model = "llama3.2"
+        request_options = {
+            "num_ctx": 2048,
+            "num_batch": 512,
+            "num_gpu": 1,
+            "main_gpu": 0,
+        }
+        prompt = "Say hello."
+        span_attributes = {
+            "gen_ai.operation.name": "text_completion",
+            "gen_ai.provider.name": "ollama",
+            "gen_ai.request.model": request_model,
+            "ollama.request.base_url": _sanitize_base_url(base_url),
+            "ollama.request.num_ctx": request_options["num_ctx"],
+            "ollama.request.num_batch": request_options["num_batch"],
+            "ollama.request.num_gpu": request_options["num_gpu"],
+            "ollama.request.main_gpu": request_options["main_gpu"],
+            "server.address": "127.0.0.1",
+            "server.port": port,
+        }
+        input_tokens = None
+        output_tokens = None
+        response_model = None
+        content = None
+        with _reference_tracer.start_as_current_span(
+            "text_completion llama3.2", kind=SpanKind.CLIENT, attributes=span_attributes
+        ) as span:
+            started_at = perf_counter()
+            resp = client.generate(model=request_model, prompt=prompt, options=request_options)
+            elapsed = perf_counter() - started_at
+            if resp.model:
+                span.set_attribute("gen_ai.response.model", resp.model)
+                response_model = resp.model
+            # A finish reason is expected for every generation; the registry
+            # fallback reports "error" when the response omits it.
+            span.set_attribute(
+                "gen_ai.response.finish_reasons", [resp.done_reason] if resp.done_reason else ["error"]
+            )
+            if resp.prompt_eval_count is not None:
+                input_tokens = int(resp.prompt_eval_count)
+                span.set_attribute("gen_ai.usage.input_tokens", input_tokens)
+            if resp.eval_count is not None:
+                output_tokens = int(resp.eval_count)
+                span.set_attribute("gen_ai.usage.output_tokens", output_tokens)
+            if resp.total_duration is not None:
+                span.set_attribute("ollama.response.total_duration", int(resp.total_duration))
+            if resp.load_duration is not None:
+                span.set_attribute("ollama.response.load_duration", int(resp.load_duration))
+
+            metric_attributes = {
+                "gen_ai.operation.name": "text_completion",
+                "gen_ai.provider.name": "ollama",
+                "gen_ai.request.model": request_model,
+            }
+            if response_model:
+                metric_attributes["gen_ai.response.model"] = response_model
+            metric_attributes["server.address"] = "127.0.0.1"
+            metric_attributes["server.port"] = port
+            _inference_duration.record(elapsed, metric_attributes)
+            _operation_input_tokens.record(input_tokens if input_tokens is not None else 0, metric_attributes)
+            _operation_output_tokens.record(output_tokens if output_tokens is not None else 0, metric_attributes)
+            if input_tokens:
+                _input_tokens.add(input_tokens, {**metric_attributes, "gen_ai.token.modality": "unknown"})
+            if output_tokens:
+                _output_tokens.add(output_tokens, {**metric_attributes, "gen_ai.token.modality": "unknown"})
+
+            content = resp.response
+            event_attrs = {
+                "gen_ai.operation.name": "text_completion",
+                "gen_ai.provider.name": "ollama",
+                "gen_ai.request.model": request_model,
+                "gen_ai.response.finish_reasons": [resp.done_reason] if resp.done_reason else ["error"],
+            }
+            if _record_event_messages:
+                event_attrs["gen_ai.input.messages"] = [
+                    {"role": "user", "parts": [{"type": "text", "content": prompt}]}
+                ]
+                event_attrs["gen_ai.output.messages"] = [
+                    {
+                        "role": "assistant",
+                        "parts": [{"type": "text", "content": content}],
+                    }
+                ]
+            if resp.model:
+                event_attrs["gen_ai.response.model"] = resp.model
+            if input_tokens is not None:
+                event_attrs["gen_ai.usage.input_tokens"] = input_tokens
+            if output_tokens is not None:
+                event_attrs["gen_ai.usage.output_tokens"] = output_tokens
+            event_attrs["server.address"] = "127.0.0.1"
+            event_attrs["server.port"] = port
+            reference_event_logger().emit(
+                event_name="gen_ai.client.inference.operation.details",
+                severity_number=SeverityNumber.DEBUG,
+                body="Inference operation details",
+                attributes=event_attrs,
+            )
+    finally:
+        server.shutdown()
+        server.server_close()
+    if content:
+        print(f"    -> {content[:60]}")
+
+
 def main():
     print("=== Reference Implementation: Ollama ===")
 
@@ -922,8 +1315,10 @@ def main():
 
     run_chat(client, MOCK_BASE_URL)
     run_chat_with_tools(client, MOCK_BASE_URL)
+    run_chat_formatted(client, MOCK_BASE_URL)
     run_chat_streaming(client, MOCK_BASE_URL)
     run_embed(client, MOCK_BASE_URL)
+    run_text_completion()
 
     # The failure paths point the SDK at a server that accepts no
     # connections: error spans, exception events, and zero-valued metrics are
