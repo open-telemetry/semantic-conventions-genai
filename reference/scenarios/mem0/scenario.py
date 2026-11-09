@@ -1,6 +1,5 @@
 """Reference implementation: mem0 Memory add and search."""
 
-import json
 import os
 import tempfile
 
@@ -13,7 +12,10 @@ MOCK_BASE_URL = os.environ["MOCK_LLM_URL"] + "/v1"
 _reference_tracer = reference_tracer()
 
 # gen_ai.memory.query.text and gen_ai.memory.records carry content, so they are opt-in.
-CAPTURE_CONTENT = os.environ.get("OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT", "").lower() == "true"
+CAPTURE_CONTENT = os.environ.get("OTEL_INSTRUMENTATION_GENAI_CAPTURE_CONTENT", "").strip().upper() in (
+    "SPAN_ONLY",
+    "SPAN_AND_EVENT",
+)
 
 USER_ID = "test-user"
 MEMORY_TEXT = "User prefers vegetarian meals and dark mode."
@@ -67,7 +69,7 @@ def run_create_memory_reference(memory):
         if CAPTURE_CONTENT:
             span.set_attribute(
                 "gen_ai.memory.records",
-                json.dumps([{"content": result["memory"], "id": result["id"]} for result in results]),
+                [{"content": result["memory"], "id": result["id"]} for result in results],
             )
 
 
@@ -85,9 +87,7 @@ def run_search_memory_reference(memory):
         if CAPTURE_CONTENT:
             span.set_attribute(
                 "gen_ai.memory.records",
-                json.dumps(
-                    [{"content": result["memory"], "id": result["id"], "score": result["score"]} for result in results]
-                ),
+                [{"content": result["memory"], "id": result["id"], "score": result["score"]} for result in results],
             )
 
 
