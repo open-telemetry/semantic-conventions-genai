@@ -14,7 +14,7 @@
 | Attribute | Supporting Libraries |
 | --- | --- |
 | gen_ai.conversation.id | [adk_a2a], [agent-framework] |
-| gen_ai.output.type | (none) |
+| gen_ai.output.type | [ollama] |
 | gen_ai.prompt.name | [aws-bedrock], [openai] |
 | gen_ai.prompt.version | [aws-bedrock], [openai] |
 | gen_ai.request.choice.count | [agent-framework], [openai] |

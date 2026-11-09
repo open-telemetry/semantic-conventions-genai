@@ -16,7 +16,7 @@
 | <a id="ollama-response-total-duration" href="#ollama-response-total-duration">`ollama.response.total_duration`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The total time in nanoseconds the model took to generate the response. [4] | `1500000000` |
 
 
-**[1] `ollama.request.base_url`:** This is useful when using a custom or self-hosted Ollama instance. User information (credentials) embedded in the URL MUST be removed before the URL is recorded, and sensitive query parameter values MUST be scrubbed.
+**[1] `ollama.request.base_url`:** This is useful when using a custom or self-hosted Ollama instance: beyond `server.address` and `server.port`, the base URL carries the scheme (plain HTTP versus TLS) and any path prefix, for example the route of a reverse proxy in front of the instance, which those attributes do not record. User information (credentials) embedded in the URL MUST be removed before the URL is recorded, and sensitive query parameter values MUST be scrubbed.
 
 **[2] `ollama.request.num_ctx`:** This represents the maximum number of tokens the model can consider from the conversation history.
 
