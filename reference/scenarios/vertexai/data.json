@@ -6,6 +6,7 @@
       "gen_ai.request.model",
       "gen_ai.response.finish_reasons",
       "gen_ai.response.id",
+      "gen_ai.response.model",
       "gen_ai.tool.definitions",
       "gen_ai.usage.audio.cache_read.input_tokens",
       "gen_ai.usage.audio.input_tokens",
@@ -20,7 +21,7 @@
       "gen_ai.usage.text.output_tokens",
       "server.address"
     ],
-    "gen_ai.execute_tool.internal": [
+    "gen_ai.execute_tool": [
       "gen_ai.operation.name",
       "gen_ai.tool.call.arguments",
       "gen_ai.tool.call.id",
@@ -39,6 +40,7 @@
       "gen_ai.request.model",
       "gen_ai.response.finish_reasons",
       "gen_ai.response.id",
+      "gen_ai.response.model",
       "gen_ai.usage.audio.cache_read.input_tokens",
       "gen_ai.usage.audio.input_tokens",
       "gen_ai.usage.cache_read.input_tokens",
@@ -53,6 +55,6 @@
     ]
   },
   "metrics": {},
-  "findings": [],
-  "entities": {}
+  "entities": {},
+  "findings": []
 }

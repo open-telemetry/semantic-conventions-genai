@@ -1,0 +1,1 @@
+Consolidate execute tool span, specialized tool call span, and duration metric conventions, and clarify that execute tool operations use `gen_ai.execute_tool.duration` instead of `gen_ai.client.operation.duration`.

@@ -10,12 +10,13 @@ import asyncio
 import os
 
 import httpx
-from a2a.client import A2AClient
-from a2a.types import AgentCard, Message, MessageSendParams, Part, Role, SendMessageRequest, TextPart
+from a2a.client import ClientConfig, ClientFactory
+from a2a.types import AgentCard, Message, Part, Role, SendMessageRequest
 from google.adk.a2a.utils.agent_card_builder import AgentCardBuilder
 from google.adk.a2a.utils.agent_to_a2a import to_a2a
 from google.adk.agents import Agent
 from google.adk.models.google_llm import Gemini
+from google.protobuf.json_format import MessageToDict
 from opentelemetry.sdk.resources import Resource
 from reference_shared import flush_and_shutdown, setup_otel
 
@@ -29,7 +30,7 @@ AGENT_BASE_URL = f"http://{AGENT_HOST}"
 def resolve_main_agent_id(card: AgentCard) -> str:
     """Prefer a hosting platform-injected id; otherwise fall back to the
     AgentCard url."""
-    return os.environ.get("GEN_AI_MAIN_AGENT_ID") or card.url
+    return os.environ.get("GEN_AI_MAIN_AGENT_ID") or card.supported_interfaces[0].url
 
 
 def build_agent() -> Agent:
@@ -64,19 +65,16 @@ async def run():
         httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url=AGENT_BASE_URL) as httpx_client,
     ):
         print("  [a2a_showcase] A2A client invoking the ADK agent over ASGI transport")
-        client = A2AClient(httpx_client, agent_card=card)
+        client = ClientFactory(ClientConfig(httpx_client=httpx_client, streaming=False)).create(card)
         request = SendMessageRequest(
-            id="req-1",
-            params=MessageSendParams(
-                message=Message(
-                    role=Role.user,
-                    message_id="msg-req-1",
-                    parts=[Part(root=TextPart(text="Find me a flight to Seattle."))],
-                )
-            ),
+            message=Message(
+                role=Role.ROLE_USER,
+                message_id="msg-req-1",
+                parts=[Part(text="Find me a flight to Seattle.")],
+            )
         )
-        response = await client.send_message(request)
-        print(f"    -> {response.model_dump(exclude_none=True, mode='json').get('result', '')}"[:120])
+        async for response in client.send_message(request):
+            print(f"    -> {MessageToDict(response)}"[:120])
 
     flush_and_shutdown(tp, lp, mp)
 

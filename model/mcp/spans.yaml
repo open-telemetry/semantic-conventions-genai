@@ -34,13 +34,13 @@ spans:
       or notification or by the MCP server when server initiates the operation.
       It covers the time to receive the response or ack from the peer.
 
-      **Span status**: refer to the [Recording Errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/recording-errors.md)
+      **Span status**: refer to the [Recording Errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/general/recording-errors.md)
       document for details on how to record span status. See also `rpc.response.status_code` attribute
       for the details on which values classify as errors.
 
       If the span status is set to `ERROR`, the status description SHOULD match the `JSONRPCError.message` if the message is available.
 
-      MCP tool call execution spans are compatible with GenAI [execute_tool spans](/docs/gen-ai/gen-ai-spans.md#execute-tool-span).
+      MCP tool call execution spans are compatible with GenAI [execute_tool spans](/docs/gen-ai/execute-tool.md#span-gen_aiexecute_tool).
 
       If the MCP instrumentation can reliably detect that outer GenAI instrumentation
       is already tracing the tool execution, it SHOULD NOT create a separate span.
@@ -96,7 +96,7 @@ spans:
       It's reported by the MCP server when client initiates the request
       (or notification) or by the MCP client when server initiates the operation.
 
-      **Span status**: refer to the [Recording Errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/recording-errors.md)
+      **Span status**: refer to the [Recording Errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/general/recording-errors.md)
       document for details on how to record span status. See also `rpc.response.status_code` attribute
       for the details on which values classify as errors.
 

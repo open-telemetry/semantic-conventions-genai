@@ -1,6 +1,6 @@
 # Embeddings Span
 
-> **[Semantic Convention](../../docs/gen-ai/gen-ai-spans.md#embeddings)**
+> **[Semantic Convention](../../docs/gen-ai/client-embeddings.md#span-gen_aiclientembeddings)**
 
 ## Required
 
@@ -14,7 +14,7 @@
 | Attribute | Supporting Libraries |
 | --- | --- |
 | gen_ai.request.model | [aws-bedrock], [azure-ai-inference], [azure-openai], [cohere], [google-genai], [litellm], [mistralai], [openai] |
-| server.port | [aws-bedrock], [azure-ai-inference], [azure-openai], [cohere], [mistralai], [openai] |
+| server.port | [aws-bedrock], [azure-ai-inference], [azure-openai], [cohere], [litellm], [mistralai], [openai] |
 
 ## Recommended
 

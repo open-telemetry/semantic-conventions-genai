@@ -1,0 +1,1 @@
+Deprecate the `gen_ai.retrieval.client` span. Calls to retrieval or search services should follow database or other applicable client semantic conventions; retrieval performed by GenAI frameworks and applications should use the `gen_ai.retrieval` span. ([#637](https://github.com/open-telemetry/semantic-conventions-genai/issues/637))
