@@ -324,9 +324,7 @@ def run_chat(client, base_url, *, expect_error=False):
                 response_model = resp.model
             # A finish reason is expected for every generation; the registry
             # fallback reports "error" when the response omits it.
-            span.set_attribute(
-                "gen_ai.response.finish_reasons", [resp.done_reason] if resp.done_reason else ["error"]
-            )
+            span.set_attribute("gen_ai.response.finish_reasons", [resp.done_reason] if resp.done_reason else ["error"])
             if resp.prompt_eval_count is not None:
                 input_tokens = int(resp.prompt_eval_count)
                 span.set_attribute("gen_ai.usage.input_tokens", input_tokens)
@@ -552,9 +550,7 @@ def run_chat_with_tools(client, base_url):
                 response_model = resp.model
             # A finish reason is expected for every generation; the registry
             # fallback reports "error" when the response omits it.
-            span.set_attribute(
-                "gen_ai.response.finish_reasons", [resp.done_reason] if resp.done_reason else ["error"]
-            )
+            span.set_attribute("gen_ai.response.finish_reasons", [resp.done_reason] if resp.done_reason else ["error"])
             if resp.prompt_eval_count is not None:
                 input_tokens = int(resp.prompt_eval_count)
                 span.set_attribute("gen_ai.usage.input_tokens", input_tokens)
@@ -760,9 +756,7 @@ def run_chat_formatted(client, base_url):
                 response_model = resp.model
             # A finish reason is expected for every generation; the registry
             # fallback reports "error" when the response omits it.
-            span.set_attribute(
-                "gen_ai.response.finish_reasons", [resp.done_reason] if resp.done_reason else ["error"]
-            )
+            span.set_attribute("gen_ai.response.finish_reasons", [resp.done_reason] if resp.done_reason else ["error"])
             if resp.prompt_eval_count is not None:
                 input_tokens = int(resp.prompt_eval_count)
                 span.set_attribute("gen_ai.usage.input_tokens", input_tokens)
@@ -1236,9 +1230,7 @@ def run_text_completion():
                 response_model = resp.model
             # A finish reason is expected for every generation; the registry
             # fallback reports "error" when the response omits it.
-            span.set_attribute(
-                "gen_ai.response.finish_reasons", [resp.done_reason] if resp.done_reason else ["error"]
-            )
+            span.set_attribute("gen_ai.response.finish_reasons", [resp.done_reason] if resp.done_reason else ["error"])
             if resp.prompt_eval_count is not None:
                 input_tokens = int(resp.prompt_eval_count)
                 span.set_attribute("gen_ai.usage.input_tokens", input_tokens)
