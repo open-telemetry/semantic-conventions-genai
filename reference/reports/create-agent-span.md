@@ -31,6 +31,7 @@
 | Attribute | Supporting Libraries |
 | --- | --- |
 | gen_ai.system_instructions | [anthropic], [aws-bedrock-agent], [azure-ai-foundry], [google-genai], [mistralai], [openai-assistants] |
+| gen_ai.system_instructions_ref | (none) |
 
 [anthropic]: ../scenarios/anthropic/scenario.py
 [aws-bedrock-agent]: ../scenarios/aws-bedrock-agent/scenario.py

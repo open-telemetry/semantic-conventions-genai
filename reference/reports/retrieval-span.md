@@ -19,7 +19,9 @@
 | Attribute | Supporting Libraries |
 | --- | --- |
 | gen_ai.retrieval.documents | [haystack], [langchain], [llamaindex] |
+| gen_ai.retrieval.documents_ref | (none) |
 | gen_ai.retrieval.query.text | [haystack], [langchain], [llamaindex] |
+| gen_ai.retrieval.query.text_ref | (none) |
 
 [haystack]: ../scenarios/haystack/scenario.py
 [langchain]: ../scenarios/langchain/scenario.py
