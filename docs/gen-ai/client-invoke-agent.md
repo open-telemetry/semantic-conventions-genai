@@ -348,8 +348,9 @@ secured by other means, for example by storage-level access control.
 > This attribute may contain sensitive information.
 
 Since this attribute could be large, it's NOT RECOMMENDED to populate
-non-required properties by default. Instrumentations MAY provide a way
-to enable populating optional properties.
+properties other than `type` and `name` (such as `description` and
+`parameters`) by default. Instrumentations MAY provide a way to enable
+populating additional properties.
 
 This attribute MUST be recorded as an [AnyValue](https://opentelemetry.io/docs/specs/otel/common/#anyvalue) conforming to its [JSON schema](/model/gen-ai/gen-ai-tool-definitions.json).
 
