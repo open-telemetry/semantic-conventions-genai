@@ -37,6 +37,7 @@ SPAN_TYPE_ORDER = [
     "fetch_response",
     "memory",
     "execute_tool",
+    "apply_guardrail_client",
 ]
 
 # Display order for event types in reports.
@@ -51,6 +52,7 @@ EVENT_TYPE_ORDER = [
     "gen_ai.evaluation.result",
     "gen_ai.execute_tool.exception",
     "gen_ai.invoke_agent.exception",
+    "gen_ai.guardrail.result",
 ]
 
 # Display order for entity types in reports.

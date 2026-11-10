@@ -1,5 +1,18 @@
 {
   "spans": {
+    "gen_ai.apply_guardrail.client": [
+      "gen_ai.guardrail.component.name",
+      "gen_ai.guardrail.policy.id",
+      "gen_ai.guardrail.policy.version",
+      "gen_ai.guardrail.result.reason",
+      "gen_ai.guardrail.result.type",
+      "gen_ai.guardrail.result.value",
+      "gen_ai.guardrail.source",
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "server.address",
+      "server.port"
+    ],
     "gen_ai.client.embeddings": [
       "gen_ai.embeddings.dimension.count",
       "gen_ai.operation.name",
@@ -38,9 +51,26 @@
       "gen_ai.response.finish_reasons",
       "gen_ai.usage.input_tokens",
       "gen_ai.usage.output_tokens"
+    ],
+    "gen_ai.guardrail.result": [
+      "gen_ai.guardrail.component.name",
+      "gen_ai.guardrail.content.input.value",
+      "gen_ai.guardrail.content.output.value",
+      "gen_ai.guardrail.policy.id",
+      "gen_ai.guardrail.policy.version",
+      "gen_ai.guardrail.result.reason",
+      "gen_ai.guardrail.result.type",
+      "gen_ai.guardrail.result.value",
+      "gen_ai.guardrail.risk.category",
+      "gen_ai.guardrail.source",
+      "gen_ai.provider.name"
     ]
   },
   "metrics": {
+    "gen_ai.client.apply_guardrail.duration": [
+      "gen_ai.guardrail.component.name",
+      "gen_ai.provider.name"
+    ],
     "gen_ai.client.embeddings.duration": [
       "gen_ai.operation.name",
       "gen_ai.provider.name",
@@ -56,57 +86,6 @@
       "server.port"
     ]
   },
-  "entities": {},
-  "findings": [
-    {
-      "id": "genai_expected_attribute_missing",
-      "message": "Span 'chat' (operation 'chat') is missing expected attribute 'gen_ai.response.id'",
-      "signal_type": "span",
-      "signal_name": "chat",
-      "context": {
-        "missing_attribute": "gen_ai.response.id",
-        "operation": "chat"
-      }
-    },
-    {
-      "id": "genai_expected_attribute_missing",
-      "message": "Span 'chat' (operation 'chat') is missing expected attribute 'gen_ai.response.model'",
-      "signal_type": "span",
-      "signal_name": "chat",
-      "context": {
-        "missing_attribute": "gen_ai.response.model",
-        "operation": "chat"
-      }
-    },
-    {
-      "id": "genai_expected_attribute_missing",
-      "message": "Span 'chat anthropic.claude-3-haiku-20240307-v1:0' (operation 'chat') is missing expected attribute 'gen_ai.response.id'",
-      "signal_type": "span",
-      "signal_name": "chat anthropic.claude-3-haiku-20240307-v1:0",
-      "context": {
-        "missing_attribute": "gen_ai.response.id",
-        "operation": "chat"
-      }
-    },
-    {
-      "id": "genai_expected_attribute_missing",
-      "message": "Span 'chat anthropic.claude-3-haiku-20240307-v1:0' (operation 'chat') is missing expected attribute 'gen_ai.response.model'",
-      "signal_type": "span",
-      "signal_name": "chat anthropic.claude-3-haiku-20240307-v1:0",
-      "context": {
-        "missing_attribute": "gen_ai.response.model",
-        "operation": "chat"
-      }
-    },
-    {
-      "id": "genai_expected_attribute_missing",
-      "message": "Span 'embeddings amazon.titan-embed-text-v2:0' (operation 'embeddings') is missing expected attribute 'gen_ai.response.model'",
-      "signal_type": "span",
-      "signal_name": "embeddings amazon.titan-embed-text-v2:0",
-      "context": {
-        "missing_attribute": "gen_ai.response.model",
-        "operation": "embeddings"
-      }
-    }
-  ]
+  "findings": [],
+  "entities": {}
 }
