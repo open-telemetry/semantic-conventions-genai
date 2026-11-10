@@ -1050,8 +1050,10 @@ def run_chat_streaming(
     `tool_call` parts of the output message. The serving model is captured
     from the first chunk that carries it, so a stream that fails mid-stream
     still records gen_ai.response.model, and the output accumulated before
-    a mid-stream failure is recorded on the enabled capture destinations
-    before the exception is re-raised.
+    a mid-stream failure is recorded on the span when span capture is
+    enabled and copied to the exception event only when both span and event
+    capture are enabled, since the exception event may only copy attributes
+    captured on the span, before the exception is re-raised.
     """
     if expect_error:
         label = "streaming failure (connection dropped mid-stream)"
@@ -1225,9 +1227,11 @@ def run_chat_streaming(
             _operation_input_tokens.record(0, metric_attributes)
             _operation_output_tokens.record(0, metric_attributes)
             # The stream may have delivered output before it failed, so the
-            # partial output is recorded on the enabled capture destinations
-            # before the exception is re-raised; a failure that produced no
-            # output leaves gen_ai.output.messages unset.
+            # partial output is recorded on the span when span capture is
+            # enabled and copied to the exception event when both span and
+            # event capture are enabled, before the exception is re-raised;
+            # a failure that produced no output leaves
+            # gen_ai.output.messages unset.
             partial_parts = []
             partial_content = "".join(content_parts)
             if partial_content:
@@ -1243,11 +1247,11 @@ def run_chat_streaming(
                 "exception.message": str(exc),
                 "exception.stacktrace": traceback.format_exc(),
             }
-            if _record_event_messages(mode) and partial_parts:
-                # The registry permits the exception event to carry the
-                # attributes captured on the corresponding inference span,
-                # so the partial output is included when event capture is
-                # enabled.
+            if _record_span_messages(mode) and _record_event_messages(mode) and partial_parts:
+                # The exception event may only copy attributes captured on
+                # the corresponding inference span, so the partial output is
+                # included only when both span and event capture are enabled
+                # (the SPAN_AND_EVENT mode).
                 exception_event_attributes["gen_ai.output.messages"] = [
                     {
                         "role": "assistant",
@@ -1354,7 +1358,6 @@ def run_chat_streaming(
             if _record_event_messages(mode):
                 event_attrs["gen_ai.input.messages"] = [
                     {"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]} for m in messages
-                ]
                 event_attrs["gen_ai.output.messages"] = [{"role": "assistant", "parts": output_parts}]
             if request_options["num_predict"] >= 0:
                 event_attrs["gen_ai.request.max_tokens"] = request_options["num_predict"]
@@ -1662,6 +1665,9 @@ def run_chat_streaming_failure():
     the model and the partial output delivered before the failure, the
     finish reason falls back to "error", and the streaming chunk histograms
     are still recorded from the chunk that arrived, per their requirements.
+    The run uses the SPAN_AND_EVENT capture mode, so the partial output is
+    recorded on the span and, since the exception event may only copy
+    attributes captured on the span, also carried by the exception event.
     The run fails if the call does not raise.
     """
     server = ThreadingHTTPServer(("127.0.0.1", 0), _StreamingFailureMockHandler)
@@ -1672,7 +1678,15 @@ def run_chat_streaming_failure():
         base_url = f"http://127.0.0.1:{port}"
         client = ollama.Client(host=base_url)
         try:
-            run_chat_streaming(client, base_url, expect_error=True, seed=49, mock_host="127.0.0.1", mock_port=port)
+            run_chat_streaming(
+                client,
+                base_url,
+                expect_error=True,
+                seed=49,
+                capture_mode="SPAN_AND_EVENT",
+                mock_host="127.0.0.1",
+                mock_port=port,
+            )
         except _SDK_FAILURES as exc:
             print(f"    -> failed as expected ({type(exc).__name__})")
         else:
@@ -1696,7 +1710,9 @@ def main():
     run_chat_streaming(client, MOCK_BASE_URL)
     # The span content capture modes are exercised with explicit per-call
     # overrides: SPAN_ONLY records the messages on the span only, and
-    # SPAN_AND_EVENT on both the span and the operation details event.
+    # SPAN_AND_EVENT on both the span and the operation details event; the
+    # mid-stream failure run below also uses SPAN_AND_EVENT, so its partial
+    # output is captured on the span and copied to the exception event.
     run_chat(client, MOCK_BASE_URL, capture_mode="SPAN_ONLY", seed=46)
     run_chat(client, MOCK_BASE_URL, capture_mode="SPAN_AND_EVENT", seed=47)
     run_embed(client, MOCK_BASE_URL)

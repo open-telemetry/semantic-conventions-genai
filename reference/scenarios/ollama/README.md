@@ -86,8 +86,10 @@ scenario-local mock that drops the connection mid-stream: they record
 the duration and zero-valued token histograms on the metrics, emit the GenAI exception
 events, and re-raise the SDK exception. A failed streaming chat preserves
 `gen_ai.response.time_to_first_chunk` on the span and still records the streaming chunk
-histograms when a chunk arrived before the failure. The run fails if a failure-path
-call does not raise.
+histograms when a chunk arrived before the failure. The mid-stream failure runs with the
+`SPAN_AND_EVENT` capture mode, so its partial output is recorded on the span and, since
+the exception event may only copy attributes captured on the span, also carried by the
+exception event. The run fails if a failure-path call does not raise.
 
 ## Conformance
 

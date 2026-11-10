@@ -170,7 +170,9 @@ scenarios:
       # The streaming failure scenario is singled out by its seed: a chunk
       # arrived before the connection dropped, so the time to it and the
       # model the stream identified are preserved, and the finish reason
-      # falls back to "error".
+      # falls back to "error". The run uses the SPAN_AND_EVENT capture mode,
+      # so the input messages and the partial output delivered before the
+      # failure are also preserved on the span.
       - match:
           attributes:
             gen_ai.operation.name: chat
@@ -184,6 +186,10 @@ scenarios:
               present: true
             gen_ai.response.model: llama3.2
             gen_ai.response.finish_reasons: [error]
+            gen_ai.input.messages:
+              present: true
+            gen_ai.output.messages:
+              present: true
             error.type:
               present: true
       # The text completion scenario calls client.generate against a
