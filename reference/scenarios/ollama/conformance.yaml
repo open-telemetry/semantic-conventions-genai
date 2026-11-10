@@ -23,17 +23,17 @@ scenarios:
         context:
           operation: chat
           missing_attribute: gen_ai.response.model
-        reason: The failure-path chat operation points the SDK at a server that accepts no connections, so the operation fails before any response exists and the span cannot carry gen_ai.response.model.
+        reason: The failure-path chat operations point the SDK at a server that accepts no connections or drop the connection mid-stream, so the operation fails before a complete response exists and the span cannot carry gen_ai.response.model.
       - id: genai_expected_attribute_missing
         context:
           operation: chat
           missing_attribute: gen_ai.usage.input_tokens
-        reason: The failure-path chat operation points the SDK at a server that accepts no connections, so no token usage is returned and the span cannot carry gen_ai.usage.input_tokens.
+        reason: The failure-path chat operations point the SDK at a server that accepts no connections or drop the connection mid-stream, so no token usage is returned and the span cannot carry gen_ai.usage.input_tokens.
       - id: genai_expected_attribute_missing
         context:
           operation: chat
           missing_attribute: gen_ai.usage.output_tokens
-        reason: The failure-path chat operation points the SDK at a server that accepts no connections, so no token usage is returned and the span cannot carry gen_ai.usage.output_tokens.
+        reason: The failure-path chat operations point the SDK at a server that accepts no connections or drop the connection mid-stream, so no token usage is returned and the span cannot carry gen_ai.usage.output_tokens.
       - id: genai_expected_attribute_missing
         context:
           operation: embeddings
@@ -62,15 +62,15 @@ scenarios:
     spans:
       # Every chat span that succeeds carries the same request options and the
       # same mock response timings, so the Ollama refinement attributes are
-      # asserted once for all four scenarios (basic, tool call, formatted,
-      # streaming).
+      # asserted once for all seven scenarios (basic, tool call, formatted,
+      # streaming, streaming tool call, and the two span content capture modes).
       - match:
           attributes:
             gen_ai.operation.name: chat
             gen_ai.response.model: llama3.2
           type: gen_ai.client.inference
         expect:
-          count: 4
+          count: 7
           attributes:
             ollama.request.num_ctx: 2048
             ollama.request.num_batch: 512
@@ -105,7 +105,7 @@ scenarios:
             gen_ai.output.type: json
             gen_ai.response.finish_reasons: [stop]
       # The streaming scenario is singled out by its seed and must report the
-      # streaming request flag and the time to the first content chunk.
+      # streaming request flag and the time to the first chunk with output.
       - match:
           attributes:
             gen_ai.operation.name: chat
@@ -116,6 +116,69 @@ scenarios:
           attributes:
             gen_ai.request.stream: true
             gen_ai.response.time_to_first_chunk:
+              present: true
+      # The span content capture modes are singled out by their seeds: the
+      # SPAN_ONLY and SPAN_AND_EVENT runs record the input and output
+      # messages on the span, per the content capture configuration of the
+      # generic conventions.
+      - match:
+          attributes:
+            gen_ai.operation.name: chat
+            gen_ai.request.seed: 46
+          type: gen_ai.client.inference
+        expect:
+          count: 1
+          attributes:
+            gen_ai.input.messages:
+              present: true
+            gen_ai.output.messages:
+              present: true
+      - match:
+          attributes:
+            gen_ai.operation.name: chat
+            gen_ai.request.seed: 47
+          type: gen_ai.client.inference
+        expect:
+          count: 1
+          attributes:
+            gen_ai.input.messages:
+              present: true
+            gen_ai.output.messages:
+              present: true
+      # The streaming tool-call scenario is singled out by its seed: the
+      # request offers the weather tool, so the span carries the tool
+      # definitions, and the first chunk with output carries the tool-call
+      # payload, so the time to it is recorded.
+      - match:
+          attributes:
+            gen_ai.operation.name: chat
+            gen_ai.request.seed: 48
+          type: gen_ai.client.inference
+        expect:
+          count: 1
+          attributes:
+            gen_ai.request.stream: true
+            gen_ai.response.time_to_first_chunk:
+              present: true
+            gen_ai.response.finish_reasons: [stop]
+            gen_ai.tool.definitions:
+              present: true
+      # The streaming failure scenario is singled out by its seed: a chunk
+      # arrived before the connection dropped, so the time to it is
+      # preserved, and the finish reason falls back to "error".
+      - match:
+          attributes:
+            gen_ai.operation.name: chat
+            gen_ai.request.seed: 49
+          type: gen_ai.client.inference
+        expect:
+          count: 1
+          attributes:
+            gen_ai.request.stream: true
+            gen_ai.response.time_to_first_chunk:
+              present: true
+            gen_ai.response.finish_reasons: [error]
+            error.type:
               present: true
       # The text completion scenario calls client.generate against a
       # scenario-local /api/generate mock (the shared mock server implements
@@ -186,3 +249,4 @@ scenarios:
             ollama.request.base_url: 'http://127.0.0.1:1'
             error.type:
               present: true
+

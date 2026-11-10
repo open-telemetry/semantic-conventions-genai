@@ -8,9 +8,12 @@ Demonstrates the [Ollama technology-specific semantic conventions](../../../docs
 on the standard GenAI client spans, using the `ollama` SDK against the mock
 Ollama server. The scenarios cover a basic chat completion, a chat completion
 that offers a tool and receives a tool call, a formatted chat completion requesting
-JSON output, a streaming chat completion, an embedding generation, a text completion
-against a scenario-local `/api/generate` mock, and the failure paths of chat and
-embeddings.
+JSON output, a streaming chat completion, a streaming tool call served by a
+scenario-local `/api/chat` mock, a streaming chat completion that fails mid-stream
+when a scenario-local mock drops the connection, chat completions exercising the
+`SPAN_ONLY` and `SPAN_AND_EVENT` content capture modes on the span, an embedding
+generation, a text completion against a scenario-local `/api/generate` mock, and
+the failure paths of chat and embeddings.
 
 | Operation | Should be instrumented here | Status |
 | --- | --- | --- |
@@ -28,6 +31,10 @@ embeddings.
     since tool schemas may be large and may contain sensitive information — and
     `tool_call` message parts when the model answers with a tool call, keeping any
     text of the same response as an independent part
+  - `gen_ai.input.messages` and `gen_ai.output.messages` when message-content
+    capture is opted in with the `SPAN_ONLY` or `SPAN_AND_EVENT` mode of
+    `OTEL_INSTRUMENTATION_GENAI_CAPTURE_CONTENT`, per the content capture
+    configuration of the generic conventions
   - `gen_ai.output.type = "json"` when the request passes `format = "json"`
   - `gen_ai.request.stream` and `gen_ai.response.time_to_first_chunk` for streaming requests
   - `ollama.request.base_url` and the `num_ctx`, `num_batch`, `num_gpu`, and
@@ -44,9 +51,11 @@ embeddings.
   `num_batch`, `num_gpu`, and `main_gpu` request options passed through the SDK
   `options` object
 - `gen_ai.client.inference.operation.details` event (DEBUG severity) with the input
-  and output messages — recorded only when message-content capture is opted in via
-  `OTEL_INSTRUMENTATION_GENAI_CAPTURE_CONTENT` — the server endpoint, the request
-  options, and `gen_ai.response.time_to_first_chunk` for the streaming request
+  and output messages — the event carries them when the `EVENT_ONLY` or
+  `SPAN_AND_EVENT` capture mode is enabled via `OTEL_INSTRUMENTATION_GENAI_CAPTURE_CONTENT`,
+  while the span carries them when the `SPAN_ONLY` or `SPAN_AND_EVENT` mode is
+  enabled — the server endpoint, the request options, and
+  `gen_ai.response.time_to_first_chunk` for the streaming requests
 - `gen_ai.client.inference.exception` and `gen_ai.client.embeddings.exception` events
   (WARN severity) on the SDK failure paths
 - `gen_ai.client.inference.duration` around the SDK chat and generate calls, with the
@@ -56,7 +65,10 @@ embeddings.
   token breakdown
 - `gen_ai.client.inference.operation.input_tokens` and `gen_ai.client.inference.operation.output_tokens` histograms
 - `gen_ai.client.inference.time_to_first_chunk` and `gen_ai.client.inference.time_per_output_chunk` histograms
-  for the streaming chat completion, recorded from the arrival times of the content chunks
+  for the streaming chat completions, recorded from the arrival times of the chunks
+  that carry new output — text, reasoning, or tool-call names or arguments, per the
+  chunk definition of the generic attribute — and still recorded on a failed stream
+  when a chunk arrived
 - `gen_ai.client.embeddings.duration` and `gen_ai.client.embeddings.operation.input_tokens`
 
 Ollama's `num_predict` option is recorded as `gen_ai.request.max_tokens` only for
@@ -68,12 +80,14 @@ When a response omits an expected finish reason, for example a stream that ends
 without a final chunk, the fallback required by the generic conventions records
 `gen_ai.response.finish_reasons = ["error"]`.
 
-The failure paths point the SDK at a server that accepts no connections: they record
+The failure paths point the SDK at a server that accepts no connections, or at a
+scenario-local mock that drops the connection mid-stream: they record
 `error.type` and `gen_ai.response.finish_reasons = ["error"]` on the failed chat span,
 the duration and zero-valued token histograms on the metrics, emit the GenAI exception
 events, and re-raise the SDK exception. A failed streaming chat preserves
-`gen_ai.response.time_to_first_chunk` when a content chunk arrived before the failure.
-The run fails if a failure-path call does not raise.
+`gen_ai.response.time_to_first_chunk` on the span and still records the streaming chunk
+histograms when a chunk arrived before the failure. The run fails if a failure-path
+call does not raise.
 
 ## Conformance
 
@@ -82,7 +96,9 @@ embeddings span, including the failure spans, and enables message-content captur
 (`OTEL_INSTRUMENTATION_GENAI_CAPTURE_CONTENT=EVENT_ONLY`) so the operation details
 events carry the input and output messages, and tool-definition capture
 (`OTEL_INSTRUMENTATION_GENAI_CAPTURE_TOOL_DEFINITIONS=true`) so the offered tool
-definitions are recorded.
+definitions are recorded. The span content capture modes are exercised with per-call
+overrides, so the runs with `SPAN_ONLY` and `SPAN_AND_EVENT` record the input and
+output messages on the span.
 
 ## Running
 
@@ -96,3 +112,4 @@ uv run run-scenario ollama
 
 - [Ollama technology-specific semantic conventions](../../../docs/gen-ai/ollama.md)
 - [Ollama documentation](https://docs.ollama.com/)
+

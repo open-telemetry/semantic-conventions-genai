@@ -1,8 +1,9 @@
 """Reference implementation for Ollama.
 
-Exercises: chat (basic, tool call, formatted, and streaming), embeddings, and
-text completion (against a scenario-local /api/generate mock) with manual OTel
-spans and metrics.
+Exercises: chat (basic, tool call, formatted, streaming, and the span content
+capture modes), embeddings, and text completion (against a scenario-local
+/api/generate mock), plus a streaming tool call and a mid-stream failure
+against scenario-local /api/chat mocks, with manual OTel spans and metrics.
 """
 
 import json
@@ -33,19 +34,11 @@ MOCK_BASE_URL = os.environ["MOCK_LLM_URL"]
 # A host that accepts no connections, used to exercise the SDK failure paths.
 UNREACHABLE_BASE_URL = "http://127.0.0.1:1"
 
-# Message content is only recorded on the operation details events when the
-# user explicitly opts in, per the "Content capture configuration" section
-# of docs/gen-ai/gen-ai-spans.md. The scenario configuration enables
-# EVENT_ONLY; without an opt-in the events are still emitted, without the
-# gen_ai.input.messages and gen_ai.output.messages payloads.
-_capture_content = os.environ.get("OTEL_INSTRUMENTATION_GENAI_CAPTURE_CONTENT", "NO_CONTENT").strip().upper()
-if _capture_content not in ("NO_CONTENT", "SPAN_ONLY", "EVENT_ONLY", "SPAN_AND_EVENT"):
-    # Unrecognized values fall back to the default capture mode, per the
-    # content capture configuration section of docs/gen-ai/gen-ai-spans.md.
-    _capture_content = "NO_CONTENT"
-# The reference implementation emits content on the operation details events
-# only, so SPAN_ONLY behaves like NO_CONTENT here.
-_record_event_messages = _capture_content in ("EVENT_ONLY", "SPAN_AND_EVENT")
+# Message content capture is configured through
+# OTEL_INSTRUMENTATION_GENAI_CAPTURE_CONTENT; see _capture_mode below. The
+# scenario configuration enables EVENT_ONLY, so the operation details events
+# carry the gen_ai.input.messages and gen_ai.output.messages payloads, and
+# the span capture modes are exercised with per-call overrides.
 
 # gen_ai.tool.definitions is opt-in on the inference span: tool schemas can
 # be large and may contain sensitive information, and the content capture
@@ -55,6 +48,34 @@ _record_event_messages = _capture_content in ("EVENT_ONLY", "SPAN_AND_EVENT")
 _capture_tool_definitions = (
     os.environ.get("OTEL_INSTRUMENTATION_GENAI_CAPTURE_TOOL_DEFINITIONS", "").strip().lower() == "true"
 )
+
+# The weather tool used by the tool-call scenarios: the ollama SDK takes
+# OpenAI-style tool definitions, while gen_ai.tool.definitions records the
+# flat semantic-convention shape. Both scenarios share the same definitions,
+# so the recorded values stay identical.
+_WEATHER_TOOLS = [
+    {
+        "type": "function",
+        "function": {
+            "name": "get_weather",
+            "description": "Get the current weather for a given location.",
+            "parameters": {
+                "type": "object",
+                "properties": {"location": {"type": "string"}},
+                "required": ["location"],
+            },
+        },
+    }
+]
+_WEATHER_TOOL_DEFINITIONS = [
+    {
+        "type": tool["type"],
+        "name": tool["function"]["name"],
+        "description": tool["function"]["description"],
+        "parameters": tool["function"]["parameters"],
+    }
+    for tool in _WEATHER_TOOLS
+]
 
 # The ollama SDK raises ollama.ResponseError when the server reports an error
 # status, a builtin ConnectionError on connection failures, and httpx
@@ -153,6 +174,49 @@ def _sanitize_base_url(url):
     return urlunsplit((parts.scheme, netloc, parts.path, "", ""))
 
 
+def _capture_mode():
+    """Return the configured message-content capture mode.
+
+    Message content is only recorded when the user explicitly opts in, per
+    the "Content capture configuration" section of docs/gen-ai/gen-ai-spans.md.
+    Unrecognized values fall back to the default NO_CONTENT mode.
+    """
+    mode = os.environ.get("OTEL_INSTRUMENTATION_GENAI_CAPTURE_CONTENT", "NO_CONTENT").strip().upper()
+    if mode not in ("NO_CONTENT", "SPAN_ONLY", "EVENT_ONLY", "SPAN_AND_EVENT"):
+        return "NO_CONTENT"
+    return mode
+
+
+def _record_span_messages(mode):
+    """Whether the capture mode records the input and output messages on the span."""
+    return mode in ("SPAN_ONLY", "SPAN_AND_EVENT")
+
+
+def _record_event_messages(mode):
+    """Whether the capture mode records the input and output messages on the event."""
+    return mode in ("EVENT_ONLY", "SPAN_AND_EVENT")
+
+
+def _chunk_has_output(message):
+    """Whether a stream chunk carries new, non-empty output.
+
+    The chunk definition of gen_ai.response.time_to_first_chunk covers every
+    decoded stream event with new output: text, reasoning, and tool-call
+    names or arguments. Roles, usage, and end-of-stream markers do not count.
+    """
+    if message is None:
+        return False
+    if getattr(message, "content", None):
+        return True
+    if getattr(message, "thinking", None):
+        return True
+    for call in getattr(message, "tool_calls", None) or []:
+        function = getattr(call, "function", None)
+        if function is not None and (getattr(function, "name", None) or getattr(function, "arguments", None)):
+            return True
+    return False
+
+
 def _require_failure(operation, client, base_url):
     """Run `operation` against `base_url`, which accepts no connections.
 
@@ -205,7 +269,102 @@ class _GenerateMockHandler(BaseHTTPRequestHandler):
         return
 
 
-def run_chat(client, base_url, *, expect_error=False):
+class _StreamingToolsMockHandler(BaseHTTPRequestHandler):
+    """Serve a canned /api/chat tool-call stream.
+
+    The streaming tool-call demonstration serves an ndjson chunk sequence
+    from this in-process HTTP server with a deterministic tool call,
+    following the scenario-local mock technique of reference/scenarios/gemini-live:
+    the first chunk carries only the role, the second the tool call, and the
+    final chunk the done marker with the usage counts.
+    """
+
+    def do_POST(self):
+        if self.path != "/api/chat":
+            self.send_error(404)
+            return
+        length = int(self.headers.get("Content-Length", 0))
+        self.rfile.read(length)
+        chunks = [
+            {
+                "model": "llama3.2",
+                "created_at": "2026-01-01T00:00:00Z",
+                "message": {"role": "assistant", "content": ""},
+                "done": False,
+            },
+            {
+                "model": "llama3.2",
+                "created_at": "2026-01-01T00:00:01Z",
+                "message": {
+                    "role": "assistant",
+                    "content": "",
+                    "tool_calls": [{"function": {"name": "get_weather", "arguments": {"location": "Paris"}}}],
+                },
+                "done": False,
+            },
+            {
+                "model": "llama3.2",
+                "created_at": "2026-01-01T00:00:02Z",
+                "message": {"role": "assistant", "content": ""},
+                "done": True,
+                "done_reason": "stop",
+                "total_duration": 1000000000,
+                "load_duration": 100000000,
+                "prompt_eval_count": 11,
+                "eval_count": 5,
+            },
+        ]
+        body = ("".join(json.dumps(chunk) + "\n" for chunk in chunks)).encode()
+        self.send_response(200)
+        self.send_header("Content-Type", "application/x-ndjson")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def log_message(self, format, *args):
+        # Silence per-request stderr output; the scenario prints its own lines.
+        return
+
+
+class _StreamingFailureMockHandler(BaseHTTPRequestHandler):
+    """Serve a /api/chat stream that drops mid-stream.
+
+    The response promises one ndjson chunk more than it delivers, then
+    closes the connection, so the SDK raises a transport error after a chunk
+    arrived: the failure path where the stream delivered output but did not
+    complete.
+    """
+
+    def do_POST(self):
+        if self.path != "/api/chat":
+            self.send_error(404)
+            return
+        length = int(self.headers.get("Content-Length", 0))
+        self.rfile.read(length)
+        first_chunk = {
+            "model": "llama3.2",
+            "created_at": "2026-01-01T00:00:00Z",
+            "message": {"role": "assistant", "content": "Hel"},
+            "done": False,
+        }
+        first = (json.dumps(first_chunk) + "\n").encode()
+        self.send_response(200)
+        self.send_header("Content-Type", "application/x-ndjson")
+        # The content length promises a second chunk that is never delivered.
+        self.send_header("Content-Length", str(len(first) + 64))
+        self.end_headers()
+        self.wfile.write(first)
+        self.wfile.flush()
+        # Closing the connection with the promised body undelivered makes
+        # the SDK raise a transport error mid-stream.
+        self.close_connection = True
+
+    def log_message(self, format, *args):
+        # Silence per-request stderr output; the scenario prints its own lines.
+        return
+
+
+def run_chat(client, base_url, *, expect_error=False, capture_mode=None, seed=42):
     """Scenario: chat completion with reference implementation.
 
     When `expect_error` is set the client points at an unreachable server, so
@@ -215,10 +374,18 @@ def run_chat(client, base_url, *, expect_error=False):
     per the finish-reason guidance for operations that fail before any
     generation exists. The exception is re-raised once the span has closed, so
     the OTel SDK does not add exception attributes the GenAI registry does not
-    define.
+    define. The `seed` option and the `capture_mode` override parameterize the
+    run for the conformance assertions and exercise the span content capture
+    modes.
     """
-    label = "chat failure (unreachable server)" if expect_error else "basic chat completion (reference implementation)"
+    if expect_error:
+        label = "chat failure (unreachable server)"
+    elif capture_mode is not None:
+        label = f"chat completion with {capture_mode} content capture"
+    else:
+        label = "basic chat completion (reference implementation)"
     print(f"  [chat] {label}")
+    mode = _capture_mode() if capture_mode is None else capture_mode
     request_model = "llama3.2"
     host, port = mock_server_host_port(base_url)
     # One options object handed to the SDK call; the ollama.request.* and
@@ -231,7 +398,7 @@ def run_chat(client, base_url, *, expect_error=False):
         "frequency_penalty": 1.0,
         "presence_penalty": 0.5,
         "stop": ["\n\n"],
-        "seed": 42,
+        "seed": seed,
         "num_ctx": 2048,
         "num_batch": 512,
         "num_gpu": 1,
@@ -267,6 +434,13 @@ def run_chat(client, base_url, *, expect_error=False):
         {"role": "system", "content": "You are a helpful assistant."},
         {"role": "user", "content": "Say hello."},
     ]
+    # Message content is recorded on the span when the SPAN_ONLY or
+    # SPAN_AND_EVENT capture mode is enabled, per the content capture
+    # configuration section of docs/gen-ai/gen-ai-spans.md.
+    if _record_span_messages(mode):
+        span_attributes["gen_ai.input.messages"] = [
+            {"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]} for m in messages
+        ]
     input_tokens = None
     output_tokens = None
     response_model = None
@@ -362,6 +536,11 @@ def run_chat(client, base_url, *, expect_error=False):
                 _output_tokens.add(output_tokens, {**metric_attributes, "gen_ai.token.modality": "unknown"})
 
             content = resp.message.content
+            if _record_span_messages(mode):
+                span.set_attribute(
+                    "gen_ai.output.messages",
+                    [{"role": "assistant", "parts": [{"type": "text", "content": content}]}],
+                )
             event_attrs = {
                 "gen_ai.operation.name": "chat",
                 "gen_ai.provider.name": "ollama",
@@ -374,7 +553,7 @@ def run_chat(client, base_url, *, expect_error=False):
                 "gen_ai.request.stop_sequences": request_options["stop"],
                 "gen_ai.request.seed": request_options["seed"],
             }
-            if _record_event_messages:
+            if _record_event_messages(mode):
                 event_attrs["gen_ai.input.messages"] = [
                     {"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]} for m in messages
                 ]
@@ -422,6 +601,7 @@ def run_chat_with_tools(client, base_url):
     no identifier, which the output message parts permit.
     """
     print("  [chat] tool call (reference implementation)")
+    mode = _capture_mode()
     request_model = "llama3.2"
     host, port = mock_server_host_port(base_url)
     # One options object handed to the SDK call; the ollama.request.* and
@@ -440,31 +620,8 @@ def run_chat_with_tools(client, base_url):
         "num_gpu": 1,
         "main_gpu": 0,
     }
-    # The ollama SDK takes OpenAI-style tool definitions, while
-    # gen_ai.tool.definitions records the flat semantic-convention shape.
-    tools = [
-        {
-            "type": "function",
-            "function": {
-                "name": "get_weather",
-                "description": "Get the current weather for a given location.",
-                "parameters": {
-                    "type": "object",
-                    "properties": {"location": {"type": "string"}},
-                    "required": ["location"],
-                },
-            },
-        }
-    ]
-    tool_definitions = [
-        {
-            "type": tool["type"],
-            "name": tool["function"]["name"],
-            "description": tool["function"]["description"],
-            "parameters": tool["function"]["parameters"],
-        }
-        for tool in tools
-    ]
+    tools = _WEATHER_TOOLS
+    tool_definitions = _WEATHER_TOOL_DEFINITIONS
     span_attributes = {
         "gen_ai.operation.name": "chat",
         "gen_ai.provider.name": "ollama",
@@ -496,6 +653,13 @@ def run_chat_with_tools(client, base_url):
         {"role": "system", "content": "You are a helpful assistant."},
         {"role": "user", "content": "What is the weather in Paris?"},
     ]
+    # Message content is recorded on the span when the SPAN_ONLY or
+    # SPAN_AND_EVENT capture mode is enabled, per the content capture
+    # configuration section of docs/gen-ai/gen-ai-spans.md.
+    if _record_span_messages(mode):
+        span_attributes["gen_ai.input.messages"] = [
+            {"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]} for m in messages
+        ]
     input_tokens = None
     output_tokens = None
     response_model = None
@@ -595,6 +759,8 @@ def run_chat_with_tools(client, base_url):
                         "arguments": call.function.arguments,
                     }
                 )
+            if _record_span_messages(mode):
+                span.set_attribute("gen_ai.output.messages", [{"role": "assistant", "parts": output_parts}])
             event_attrs = {
                 "gen_ai.operation.name": "chat",
                 "gen_ai.provider.name": "ollama",
@@ -609,7 +775,7 @@ def run_chat_with_tools(client, base_url):
             }
             if _capture_tool_definitions:
                 event_attrs["gen_ai.tool.definitions"] = tool_definitions
-            if _record_event_messages:
+            if _record_event_messages(mode):
                 event_attrs["gen_ai.input.messages"] = [
                     {"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]} for m in messages
                 ]
@@ -656,6 +822,7 @@ def run_chat_formatted(client, base_url):
     `gen_ai.output.type` attribute for requests that include an output format.
     """
     print("  [chat] formatted JSON completion (reference implementation)")
+    mode = _capture_mode()
     request_model = "llama3.2"
     host, port = mock_server_host_port(base_url)
     # One options object handed to the SDK call; the ollama.request.* and
@@ -702,6 +869,13 @@ def run_chat_formatted(client, base_url):
         {"role": "system", "content": "You are a helpful assistant."},
         {"role": "user", "content": "Reply with a JSON object."},
     ]
+    # Message content is recorded on the span when the SPAN_ONLY or
+    # SPAN_AND_EVENT capture mode is enabled, per the content capture
+    # configuration section of docs/gen-ai/gen-ai-spans.md.
+    if _record_span_messages(mode):
+        span_attributes["gen_ai.input.messages"] = [
+            {"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]} for m in messages
+        ]
     input_tokens = None
     output_tokens = None
     response_model = None
@@ -788,6 +962,11 @@ def run_chat_formatted(client, base_url):
                 _output_tokens.add(output_tokens, {**metric_attributes, "gen_ai.token.modality": "unknown"})
 
             content = resp.message.content
+            if _record_span_messages(mode):
+                span.set_attribute(
+                    "gen_ai.output.messages",
+                    [{"role": "assistant", "parts": [{"type": "text", "content": content}]}],
+                )
             event_attrs = {
                 "gen_ai.operation.name": "chat",
                 "gen_ai.provider.name": "ollama",
@@ -801,7 +980,7 @@ def run_chat_formatted(client, base_url):
                 "gen_ai.request.seed": request_options["seed"],
                 "gen_ai.output.type": "json",
             }
-            if _record_event_messages:
+            if _record_event_messages(mode):
                 event_attrs["gen_ai.input.messages"] = [
                     {"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]} for m in messages
                 ]
@@ -837,20 +1016,47 @@ def run_chat_formatted(client, base_url):
         print(f"    -> {content[:60]}")
 
 
-def run_chat_streaming(client, base_url):
+def run_chat_streaming(
+    client,
+    base_url,
+    *,
+    expect_error=False,
+    tools=None,
+    seed=44,
+    capture_mode=None,
+    mock_host=None,
+    mock_port=None,
+):
     """Scenario: streaming chat completion with reference implementation.
 
     The request is made with `stream=True`, so the span carries
-    `gen_ai.request.stream` and, once the first chunk with content arrives,
-    `gen_ai.response.time_to_first_chunk`. The `time_to_first_chunk` and
-    `time_per_output_chunk` histograms are recorded from the arrival times of
-    the content chunks, and the usage counts and the native Ollama timings
-    are read from the final chunk, which carries them like a non-streaming
-    response body.
+    `gen_ai.request.stream` and, once the first chunk with output arrives,
+    `gen_ai.response.time_to_first_chunk`. A chunk is a decoded stream event
+    carrying new, non-empty output - text, reasoning, or tool-call names or
+    arguments - per the chunk definition of the generic attribute, so the
+    arrival times are taken from every such chunk, not only text. The
+    `time_to_first_chunk` and `time_per_output_chunk` histograms are recorded
+    from the chunk arrival times, also on a failed stream when a chunk
+    arrived, and the usage counts and the native Ollama timings are read from
+    the final chunk, which carries them like a non-streaming response body.
+    When `tools` is passed the request offers the weather tool and the stream
+    answers with a tool call, recorded as `tool_call` parts of the output
+    message.
     """
-    print("  [chat] streaming completion (reference implementation)")
+    if expect_error:
+        label = "streaming failure (connection dropped mid-stream)"
+    elif tools:
+        label = "streaming tool call"
+    else:
+        label = "streaming completion"
+    print(f"  [chat] {label} (reference implementation)")
+    mode = _capture_mode() if capture_mode is None else capture_mode
     request_model = "llama3.2"
     host, port = mock_server_host_port(base_url)
+    if mock_host is not None:
+        host = mock_host
+    if mock_port is not None:
+        port = mock_port
     # One options object handed to the SDK call; the ollama.request.* and
     # gen_ai.request.* span attributes read their values from it.
     request_options = {
@@ -861,7 +1067,7 @@ def run_chat_streaming(client, base_url):
         "frequency_penalty": 1.0,
         "presence_penalty": 0.5,
         "stop": ["\n\n"],
-        "seed": 44,
+        "seed": seed,
         "num_ctx": 2048,
         "num_batch": 512,
         "num_gpu": 1,
@@ -885,6 +1091,10 @@ def run_chat_streaming(client, base_url):
         "ollama.request.num_gpu": request_options["num_gpu"],
         "ollama.request.main_gpu": request_options["main_gpu"],
     }
+    # gen_ai.tool.definitions is opt-in: tool schemas may be large or
+    # sensitive, so they are only recorded when explicitly enabled.
+    if tools and _capture_tool_definitions:
+        span_attributes["gen_ai.tool.definitions"] = _WEATHER_TOOL_DEFINITIONS
     if request_options["num_predict"] >= 0:
         span_attributes["gen_ai.request.max_tokens"] = request_options["num_predict"]
     if host:
@@ -895,10 +1105,18 @@ def run_chat_streaming(client, base_url):
         {"role": "system", "content": "You are a helpful assistant."},
         {"role": "user", "content": "Say hello."},
     ]
+    # Message content is recorded on the span when the SPAN_ONLY or
+    # SPAN_AND_EVENT capture mode is enabled, per the content capture
+    # configuration section of docs/gen-ai/gen-ai-spans.md.
+    if _record_span_messages(mode):
+        span_attributes["gen_ai.input.messages"] = [
+            {"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]} for m in messages
+        ]
     input_tokens = None
     output_tokens = None
     response_model = None
     content_parts = []
+    output_tool_calls = []
     failure = None
     with _reference_tracer.start_as_current_span(
         "chat llama3.2", kind=SpanKind.CLIENT, attributes=span_attributes
@@ -910,15 +1128,27 @@ def run_chat_streaming(client, base_url):
             stream = client.chat(
                 model=request_model,
                 messages=messages,
+                tools=tools,
                 stream=True,
                 options=request_options,
             )
             for chunk in stream:
-                if chunk.message and chunk.message.content:
+                message = getattr(chunk, "message", None)
+                if _chunk_has_output(message):
                     # A chunk is a decoded stream event carrying new,
-                    # non-empty output, per the time_to_first_chunk note.
+                    # non-empty output: text, reasoning, or tool-call names
+                    # or arguments, per the chunk definition.
                     chunk_times.append(perf_counter())
-                    content_parts.append(chunk.message.content)
+                    if message.content:
+                        content_parts.append(message.content)
+                    for call in message.tool_calls or []:
+                        output_tool_calls.append(
+                            {
+                                "type": "tool_call",
+                                "name": call.function.name,
+                                "arguments": call.function.arguments,
+                            }
+                        )
                 if chunk.done:
                     final_chunk = chunk
         except _SDK_FAILURES as exc:
@@ -932,6 +1162,22 @@ def run_chat_streaming(client, base_url):
                 # to it is preserved on the failed span; it stays unset only
                 # when no chunk was received.
                 span.set_attribute("gen_ai.response.time_to_first_chunk", chunk_times[0] - started_at)
+                # The streaming chunk histograms are recorded whenever a
+                # chunk arrived, including on a failed stream, per their
+                # requirements. The metric refinement carries no error.type:
+                # these points record chunk latencies, not the failure.
+                chunk_metric_attributes = {
+                    "gen_ai.operation.name": "chat",
+                    "gen_ai.provider.name": "ollama",
+                    "gen_ai.request.model": request_model,
+                }
+                if host:
+                    chunk_metric_attributes["server.address"] = host
+                if port is not None:
+                    chunk_metric_attributes["server.port"] = port
+                _time_to_first_chunk.record(chunk_times[0] - started_at, chunk_metric_attributes)
+                for previous, current in pairwise(chunk_times):
+                    _time_per_output_chunk.record(current - previous, chunk_metric_attributes)
             span.set_status(StatusCode.ERROR, str(exc))
             metric_attributes = {
                 "gen_ai.operation.name": "chat",
@@ -944,8 +1190,9 @@ def run_chat_streaming(client, base_url):
             if port is not None:
                 metric_attributes["server.port"] = port
             _inference_duration.record(elapsed, metric_attributes)
-            # No chunk was received, so time_to_first_chunk and the streaming
-            # chunk histograms stay unset, per their requirements.
+            # The per-operation histograms are recorded for every operation,
+            # so a failure records zero tokens; the streaming chunk
+            # histograms above are only recorded when a chunk arrived.
             _operation_input_tokens.record(0, metric_attributes)
             _operation_output_tokens.record(0, metric_attributes)
             reference_event_logger().emit(
@@ -1009,12 +1256,20 @@ def run_chat_streaming(client, base_url):
             if chunk_times:
                 # The streaming chunk histograms follow the chunk definition
                 # of gen_ai.response.time_to_first_chunk and are only
-                # recorded when the stream delivered content chunks.
+                # recorded when the stream delivered chunks with output.
                 _time_to_first_chunk.record(chunk_times[0] - started_at, metric_attributes)
                 for previous, current in pairwise(chunk_times):
                     _time_per_output_chunk.record(current - previous, metric_attributes)
 
             content = "".join(content_parts)
+            output_parts = []
+            if content:
+                output_parts.append({"type": "text", "content": content})
+            # The accumulated tool calls are captured as independent parts
+            # of the output message, alongside any text of the response.
+            output_parts.extend(output_tool_calls)
+            if _record_span_messages(mode):
+                span.set_attribute("gen_ai.output.messages", [{"role": "assistant", "parts": output_parts}])
             event_attrs = {
                 "gen_ai.operation.name": "chat",
                 "gen_ai.provider.name": "ollama",
@@ -1028,16 +1283,13 @@ def run_chat_streaming(client, base_url):
                 "gen_ai.request.stop_sequences": request_options["stop"],
                 "gen_ai.request.seed": request_options["seed"],
             }
-            if _record_event_messages:
+            if tools and _capture_tool_definitions:
+                event_attrs["gen_ai.tool.definitions"] = _WEATHER_TOOL_DEFINITIONS
+            if _record_event_messages(mode):
                 event_attrs["gen_ai.input.messages"] = [
                     {"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]} for m in messages
                 ]
-                event_attrs["gen_ai.output.messages"] = [
-                    {
-                        "role": "assistant",
-                        "parts": [{"type": "text", "content": content}],
-                    }
-                ]
+                event_attrs["gen_ai.output.messages"] = [{"role": "assistant", "parts": output_parts}]
             if request_options["num_predict"] >= 0:
                 event_attrs["gen_ai.request.max_tokens"] = request_options["num_predict"]
             if first_chunk_at is not None:
@@ -1062,6 +1314,8 @@ def run_chat_streaming(client, base_url):
 
     if failure is not None:
         raise failure
+    for part in output_tool_calls:
+        print(f"    -> tool call: {part['name']}({part['arguments']})")
     if content_parts:
         print(f"    -> {''.join(content_parts)[:60]}")
 
@@ -1188,6 +1442,7 @@ def run_text_completion():
     and makes a real SDK call against it.
     """
     print("  [generate] text completion (reference implementation, local /api/generate mock)")
+    mode = _capture_mode()
     server = ThreadingHTTPServer(("127.0.0.1", 0), _GenerateMockHandler)
     port = server.server_address[1]
     server_thread = threading.Thread(target=server.serve_forever, daemon=True)
@@ -1215,6 +1470,11 @@ def run_text_completion():
             "server.address": "127.0.0.1",
             "server.port": port,
         }
+        # Message content is recorded on the span when the SPAN_ONLY or
+        # SPAN_AND_EVENT capture mode is enabled, per the content capture
+        # configuration section of docs/gen-ai/gen-ai-spans.md.
+        if _record_span_messages(mode):
+            span_attributes["gen_ai.input.messages"] = [{"role": "user", "parts": [{"type": "text", "content": prompt}]}]
         input_tokens = None
         output_tokens = None
         response_model = None
@@ -1260,13 +1520,18 @@ def run_text_completion():
                 _output_tokens.add(output_tokens, {**metric_attributes, "gen_ai.token.modality": "unknown"})
 
             content = resp.response
+            if _record_span_messages(mode):
+                span.set_attribute(
+                    "gen_ai.output.messages",
+                    [{"role": "assistant", "parts": [{"type": "text", "content": content}]}],
+                )
             event_attrs = {
                 "gen_ai.operation.name": "text_completion",
                 "gen_ai.provider.name": "ollama",
                 "gen_ai.request.model": request_model,
                 "gen_ai.response.finish_reasons": [resp.done_reason] if resp.done_reason else ["error"],
             }
-            if _record_event_messages:
+            if _record_event_messages(mode):
                 event_attrs["gen_ai.input.messages"] = [
                     {"role": "user", "parts": [{"type": "text", "content": prompt}]}
                 ]
@@ -1297,6 +1562,56 @@ def run_text_completion():
         print(f"    -> {content[:60]}")
 
 
+def run_chat_streaming_tools():
+    """Scenario: streaming chat completion offering a tool.
+
+    The request offers the weather tool through the SDK `tools` argument
+    against a scenario-local /api/chat mock that answers with a tool call, so
+    the first chunk with output carries the tool-call payload rather than
+    text: the chunk arrival times, and with them time_to_first_chunk, are
+    driven by the tool-call chunk, per the chunk definition.
+    """
+    server = ThreadingHTTPServer(("127.0.0.1", 0), _StreamingToolsMockHandler)
+    port = server.server_address[1]
+    server_thread = threading.Thread(target=server.serve_forever, daemon=True)
+    server_thread.start()
+    try:
+        base_url = f"http://127.0.0.1:{port}"
+        client = ollama.Client(host=base_url)
+        run_chat_streaming(client, base_url, tools=_WEATHER_TOOLS, seed=48, mock_host="127.0.0.1", mock_port=port)
+    finally:
+        server.shutdown()
+        server.server_close()
+
+
+def run_chat_streaming_failure():
+    """Scenario: streaming chat completion that fails mid-stream.
+
+    A scenario-local /api/chat mock serves the first chunk of the stream and
+    then drops the connection, so the SDK raises a transport error after a
+    chunk arrived: the failed span preserves gen_ai.response.time_to_first_chunk,
+    the finish reason falls back to "error", and the streaming chunk
+    histograms are still recorded from the chunk that arrived, per their
+    requirements. The run fails if the call does not raise.
+    """
+    server = ThreadingHTTPServer(("127.0.0.1", 0), _StreamingFailureMockHandler)
+    port = server.server_address[1]
+    server_thread = threading.Thread(target=server.serve_forever, daemon=True)
+    server_thread.start()
+    try:
+        base_url = f"http://127.0.0.1:{port}"
+        client = ollama.Client(host=base_url)
+        try:
+            run_chat_streaming(client, base_url, expect_error=True, seed=49, mock_host="127.0.0.1", mock_port=port)
+        except _SDK_FAILURES as exc:
+            print(f"    -> failed as expected ({type(exc).__name__})")
+        else:
+            raise RuntimeError("run_chat_streaming unexpectedly succeeded against the mid-stream failure mock")
+    finally:
+        server.shutdown()
+        server.server_close()
+
+
 def main():
     print("=== Reference Implementation: Ollama ===")
 
@@ -1309,8 +1624,15 @@ def main():
     run_chat_with_tools(client, MOCK_BASE_URL)
     run_chat_formatted(client, MOCK_BASE_URL)
     run_chat_streaming(client, MOCK_BASE_URL)
+    # The span content capture modes are exercised with explicit per-call
+    # overrides: SPAN_ONLY records the messages on the span only, and
+    # SPAN_AND_EVENT on both the span and the operation details event.
+    run_chat(client, MOCK_BASE_URL, capture_mode="SPAN_ONLY", seed=46)
+    run_chat(client, MOCK_BASE_URL, capture_mode="SPAN_AND_EVENT", seed=47)
     run_embed(client, MOCK_BASE_URL)
     run_text_completion()
+    run_chat_streaming_tools()
+    run_chat_streaming_failure()
 
     # The failure paths point the SDK at a server that accepts no
     # connections: error spans, exception events, and zero-valued metrics are
@@ -1324,3 +1646,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
