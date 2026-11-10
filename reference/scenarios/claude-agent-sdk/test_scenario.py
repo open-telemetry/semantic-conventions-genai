@@ -1,6 +1,5 @@
 """Check plugin tool telemetry and mock CLI hook failures."""
 
-import json
 import os
 import unittest
 from unittest.mock import patch
@@ -63,7 +62,7 @@ class PluginSkillTests(unittest.IsolatedAsyncioTestCase):
         attributes = spans[0].attributes
         with self.subTest("arguments"):
             self.assertEqual(
-                json.loads(attributes.get("gen_ai.tool.call.arguments", "{}")),
+                dict(attributes.get("gen_ai.tool.call.arguments", {})),
                 {"skill": "deploy-tools:release-notes"},
             )
         with self.subTest("result"):

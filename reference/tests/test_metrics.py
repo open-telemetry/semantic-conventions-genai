@@ -10,14 +10,20 @@ Runnable directly (``python tests/test_metrics.py``) or under pytest.
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from unittest.mock import patch
+
 from semconv_genai.data_files import _normalize_scenario_data_entry, load_scenario_data_files
+from semconv_genai.report import SEMCONV_DOC_LINKS, _entities_of, _render_signal_section, generate_index_markdown
 from semconv_genai.semconv_model import entity_specs, metric_specs, span_specs
 
 _TOOL_CALLS = "gen_ai.invoke_agent.tool_calls"
 _INFERENCE_CALLS = "gen_ai.invoke_agent.inference_calls"
 
 
-def test_metric_specs_expose_recommended_agent_name():
+def test_metric_specs_expose_conditionally_required_agent_name():
     specs = metric_specs()
     assert specs, "expected at least one tracked metric"
     # Only the per-invocation agent metrics are agent-scoped; gen_ai.client.*
@@ -25,7 +31,7 @@ def test_metric_specs_expose_recommended_agent_name():
     # gen_ai.agent.name, so this checks the invoke_agent metrics specifically
     # rather than every tracked metric.
     for name in (_INFERENCE_CALLS, _TOOL_CALLS):
-        assert "gen_ai.agent.name" in specs[name].recommended, name
+        assert "gen_ai.agent.name" in specs[name].conditionally_required, name
 
 
 def test_metric_specs_are_named_as_the_registry_names_them():
@@ -52,13 +58,54 @@ def test_inference_scenarios_report_inference_duration():
 
 def test_embeddings_scenarios_report_embeddings_metrics():
     entries = {entry.library: entry for entry in load_scenario_data_files()}
-    libraries = ("aws-bedrock", "azure-ai-inference", "azure-openai", "cohere", "google-genai", "litellm", "mistralai", "openai")
+    libraries = (
+        "aws-bedrock",
+        "azure-ai-inference",
+        "azure-openai",
+        "cohere",
+        "google-genai",
+        "litellm",
+        "mistralai",
+        "openai",
+    )
     for library in libraries:
         metrics = entries[library].metrics
         assert "gen_ai.client.embeddings.duration" in metrics, library
         assert metrics["gen_ai.client.embeddings.duration"]["gen_ai.operation.name"] == "present", library
     for library in set(libraries) - {"google-genai"}:
         assert "gen_ai.client.embeddings.operation.input_tokens" in entries[library].metrics, library
+
+
+def test_execute_tool_scenario_reports_duration():
+    entries = load_scenario_data_files()
+    adk = next(entry for entry in entries if entry.library == "google-adk")
+    for attribute in ("error.type", "gen_ai.agent.name", "gen_ai.tool.name", "gen_ai.tool.type"):
+        assert adk.metrics["gen_ai.execute_tool.duration"][attribute] == "present", attribute
+    assert (
+        "| [Execute Tool Duration](reports/gen-ai-execute-tool-duration-metric.md) | google-adk |"
+        in generate_index_markdown(entries)
+    )
+    assert (
+        SEMCONV_DOC_LINKS["gen_ai.execute_tool.duration"]
+        == "../../docs/gen-ai/execute-tool.md#metric-gen_aiexecute_toolduration"
+    )
+
+
+def test_retrieval_scenarios_report_retrieval_metrics():
+    entries = {entry.library: entry for entry in load_scenario_data_files()}
+    for library in ("haystack", "langchain", "llamaindex"):
+        metrics = entries[library].metrics
+        assert "gen_ai.client.operation.duration" not in metrics, library
+        assert metrics["gen_ai.retrieval.duration"]["gen_ai.operation.name"] == "present", library
+    assert entries["llamaindex"].metrics["gen_ai.retrieval.duration"]["error.type"] == "present"
+
+
+def test_invoke_agent_client_scenarios_report_invoke_agent_duration():
+    entries = {entry.library: entry for entry in load_scenario_data_files()}
+    for library in ("aws-bedrock-agent", "azure-ai-foundry", "google-genai", "openai-assistants"):
+        metrics = entries[library].metrics
+        assert "gen_ai.client.invoke_agent.duration" in metrics, library
+        assert metrics["gen_ai.client.invoke_agent.duration"]["gen_ai.operation.name"] == "present", library
 
 
 def test_entity_specs_expose_required_id():
@@ -92,6 +139,73 @@ def test_entities_with_sections_round_trip():
     assert entry.entities["gen_ai.main_agent"]["gen_ai.main_agent.name"] == "present"
 
 
+def test_scenarios_for_one_library_merge_entities():
+    with TemporaryDirectory() as directory:
+        scenarios = Path(directory)
+        for name, attributes in {
+            "first": ["gen_ai.main_agent.id"],
+            "second": ["gen_ai.main_agent.name"],
+        }.items():
+            scenario = scenarios / name
+            scenario.mkdir()
+            (scenario / "conformance.yaml").write_text("instrumented_library: shared\n", encoding="utf-8")
+            (scenario / "data.json").write_text(
+                json.dumps({"entities": {"gen_ai.main_agent": attributes}}),
+                encoding="utf-8",
+            )
+        with patch("semconv_genai.data_files.SCENARIOS_DIR", scenarios):
+            entries = load_scenario_data_files()
+
+    assert len(entries) == 1
+    assert entries[0].library == "shared"
+    entity = entries[0].entities["gen_ai.main_agent"]
+    assert entity["gen_ai.main_agent.id"] == "present"
+    assert entity["gen_ai.main_agent.name"] == "present"
+    assert entity["gen_ai.main_agent.description"] == "absent"
+    sources = entries[0].sources["entities"]["gen_ai.main_agent"]
+    assert sources["gen_ai.main_agent.id"] == ("first",)
+    assert sources["gen_ai.main_agent.name"] == ("second",)
+
+
+def test_report_links_attributes_to_contributing_scenarios():
+    with TemporaryDirectory() as directory:
+        root = Path(directory)
+        scenarios = root / "scenarios"
+        reports = root / "reports"
+        reports.mkdir()
+        for name, attributes in {
+            "first": ["gen_ai.main_agent.id"],
+            "second": ["gen_ai.main_agent.name"],
+        }.items():
+            scenario = scenarios / name
+            scenario.mkdir(parents=True)
+            (scenario / "conformance.yaml").write_text("instrumented_library: shared\n", encoding="utf-8")
+            (scenario / "scenario.py").write_text("", encoding="utf-8")
+            (scenario / "data.json").write_text(
+                json.dumps({"entities": {"gen_ai.main_agent": attributes}}),
+                encoding="utf-8",
+            )
+        with (
+            patch("semconv_genai.data_files.SCENARIOS_DIR", scenarios),
+            patch("semconv_genai.report.SCENARIOS_DIR", scenarios),
+        ):
+            entries = load_scenario_data_files()
+            lines = _render_signal_section(
+                entries,
+                "gen_ai.main_agent",
+                entity_specs()["gen_ai.main_agent"],
+                reports,
+                "Entity",
+                _entities_of,
+            )
+
+    report = "\n".join(lines)
+    assert "[shared][shared@first]" in report
+    assert "[shared][shared@second]" in report
+    assert "[shared@first]: ../scenarios/first/scenario.py" in report
+    assert "[shared@second]: ../scenarios/second/scenario.py" in report
+
+
 def test_registry_span_names_map_onto_report_keys():
     """A data file names spans as the registry does; reports use short keys."""
     entry = _normalize_scenario_data_entry(
@@ -123,14 +237,18 @@ def test_span_specs_are_named_in_recognized_registry_namespaces():
 
 
 if __name__ == "__main__":
-    test_metric_specs_expose_recommended_agent_name()
+    test_metric_specs_expose_conditionally_required_agent_name()
     test_metric_specs_are_named_as_the_registry_names_them()
     test_committed_google_adk_metrics_round_trip()
     test_inference_scenarios_report_inference_duration()
     test_embeddings_scenarios_report_embeddings_metrics()
+    test_invoke_agent_client_scenarios_report_invoke_agent_duration()
+    test_execute_tool_scenario_reports_duration()
     test_entity_specs_expose_required_id()
     test_entities_keep_their_registry_names()
     test_entities_with_sections_round_trip()
+    test_scenarios_for_one_library_merge_entities()
+    test_report_links_attributes_to_contributing_scenarios()
     test_registry_span_names_map_onto_report_keys()
     test_events_keep_their_registry_names()
     test_span_types_absent_from_a_data_file_are_not_reported()

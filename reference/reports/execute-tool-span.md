@@ -1,6 +1,6 @@
 # Execute Tool Span
 
-> **[Semantic Convention](../../docs/gen-ai/gen-ai-spans.md#execute-tool-span)**
+> **[Semantic Convention](../../docs/gen-ai/execute-tool.md#span-gen_aiexecute_tool)**
 
 ## Required
 

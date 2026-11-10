@@ -48,7 +48,7 @@ async def run_agent_query_reference():
     }
     with _reference_tracer.start_as_current_span("chat", kind=SpanKind.CLIENT, attributes=span_attributes) as span:
         span.set_attribute(
-            "gen_ai.input.messages", json.dumps([{"role": "user", "parts": [{"type": "text", "content": prompt_text}]}])
+            "gen_ai.input.messages", [{"role": "user", "parts": [{"type": "text", "content": prompt_text}]}]
         )
         output_text = ""
         response_model = None
@@ -89,14 +89,12 @@ async def run_agent_query_reference():
         if output_text:
             span.set_attribute(
                 "gen_ai.output.messages",
-                json.dumps(
-                    [
-                        {
-                            "role": "assistant",
-                            "parts": [{"type": "text", "content": output_text}],
-                        }
-                    ]
-                ),
+                [
+                    {
+                        "role": "assistant",
+                        "parts": [{"type": "text", "content": output_text}],
+                    }
+                ],
             )
 
 
@@ -129,7 +127,7 @@ async def run_plugin_skill_reference():
             "gen_ai.operation.name": "execute_tool",
             "gen_ai.tool.name": hook_input["tool_name"],
             "gen_ai.tool.call.id": tool_use_id,
-            "gen_ai.tool.call.arguments": json.dumps(hook_input["tool_input"]),
+            "gen_ai.tool.call.arguments": hook_input["tool_input"],
             "gen_ai.conversation.id": hook_input["session_id"],
         }
         span_name = f"execute_tool {hook_input['tool_name']}"
@@ -153,10 +151,7 @@ async def run_plugin_skill_reference():
 
     async def on_post_tool_use(hook_input, tool_use_id, context):
         span = tool_spans_by_tool_use_id.pop(tool_use_id)
-        tool_response = hook_input["tool_response"]
-        span.set_attribute(
-            "gen_ai.tool.call.result", tool_response if isinstance(tool_response, str) else json.dumps(tool_response)
-        )
+        span.set_attribute("gen_ai.tool.call.result", hook_input["tool_response"])
         span.end()
         return {}
 

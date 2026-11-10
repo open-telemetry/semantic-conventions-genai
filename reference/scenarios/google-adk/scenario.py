@@ -2,7 +2,6 @@
 
 import asyncio
 import contextlib
-import json
 import os
 import pathlib
 import shutil
@@ -11,10 +10,12 @@ import time
 from unittest.mock import patch
 
 from opentelemetry import trace as _trace
+from opentelemetry._logs import SeverityNumber
 from opentelemetry.sdk.trace import SpanProcessor
 from opentelemetry.trace import StatusCode
 from reference_shared import (
     flush_and_shutdown,
+    reference_event_logger,
     reference_meter,
     reference_tracer,
     setup_otel,
@@ -26,6 +27,33 @@ SKILLS_DIR = pathlib.Path(__file__).parent / "skills"
 _reference_tracer = reference_tracer()
 _reference_meter = reference_meter()
 
+_invoke_duration = _reference_meter.create_histogram(
+    "gen_ai.invoke_agent.duration",
+    unit="s",
+    description="The end-to-end duration of a single in-process agent, workflow, or framework entrypoint invocation.",
+    explicit_bucket_boundaries_advisory=[
+        0.1,
+        0.2,
+        0.4,
+        0.8,
+        1.6,
+        3.2,
+        6.4,
+        12.8,
+        25.6,
+        51.2,
+        102.4,
+        204.8,
+        409.6,
+        900,
+        1800,
+        3600,
+        7200,
+        14400,
+        43200,
+        86400,
+    ],
+)
 _inference_calls = _reference_meter.create_histogram(
     "gen_ai.invoke_agent.inference_calls",
     unit="{inference_call}",
@@ -152,15 +180,26 @@ def run_agent_reference():
             "gen_ai.agent.name": tool_context.agent_name,
         }
         with _reference_tracer.start_as_current_span(
-            "execute_tool get_weather", attributes=tool_span_attributes
+            "execute_tool get_weather", attributes=tool_span_attributes, record_exception=False
         ) as tool_span:
-            tool_span.set_attribute("gen_ai.conversation.id", tool_context.session.id)
-            tool_span.set_attribute("gen_ai.tool.description", "Get the current weather.")
-            if tool_context.function_call_id:
-                tool_span.set_attribute("gen_ai.tool.call.id", tool_context.function_call_id)
-            tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps({"location": location}))
-            result = f"Sunny in {location}"
-            tool_span.set_attribute("gen_ai.tool.call.result", result)
+            try:
+                tool_span.set_attribute("gen_ai.conversation.id", tool_context.session.id)
+                tool_span.set_attribute("gen_ai.tool.description", "Get the current weather.")
+                if tool_context.function_call_id:
+                    tool_span.set_attribute("gen_ai.tool.call.id", tool_context.function_call_id)
+                tool_span.set_attribute("gen_ai.tool.call.arguments", {"location": location})
+                result = f"Sunny in {location}"
+                # TODO: Determine how to represent this string result in the object-only schema.
+                tool_span.set_attribute("gen_ai.tool.call.result", result)
+            except Exception as e:
+                tool_span.set_status(StatusCode.ERROR, str(e))
+                tool_span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
+                reference_event_logger().emit(
+                    event_name="gen_ai.execute_tool.exception",
+                    severity_number=SeverityNumber.WARN,
+                    exception=e,
+                )
+                raise
         return result
 
     tool_defs = [
@@ -204,102 +243,115 @@ def run_agent_reference():
                 app_name="test_app",
                 user_id="test_user",
             )
-            workflow_span_attributes = {
-                "gen_ai.operation.name": "invoke_workflow",
+            # `Runner` is not itself an agent or a workflow, so its invocation is `invoke_runner`.
+            runner_span_attributes = {
+                "gen_ai.operation.name": "invoke_runner",
             }
+            runner_start = time.perf_counter()
             with _reference_tracer.start_as_current_span(
-                f"invoke_workflow {runner.app_name}", attributes=workflow_span_attributes
-            ) as workflow_span:
-                workflow_span.set_attribute("gen_ai.workflow.name", runner.app_name)
-                workflow_span.set_attribute("gen_ai.conversation.id", session.id)
-                workflow_span.set_attribute(
+                "invoke_runner", attributes=runner_span_attributes
+            ) as runner_span:
+                runner_span.set_attribute("gen_ai.conversation.id", session.id)
+                runner_span.set_attribute(
                     "gen_ai.input.messages",
-                    json.dumps([{"role": "user", "parts": [{"type": "text", "content": input_text}]}]),
+                    [{"role": "user", "parts": [{"type": "text", "content": input_text}]}],
                 )
                 agent_span_attributes = {
                     "gen_ai.operation.name": "invoke_agent",
                     "gen_ai.request.model": request_model,
                     "gen_ai.agent.name": agent.name,
                 }
+                agent_start = time.perf_counter()
                 with _reference_tracer.start_as_current_span(
-                    "invoke_agent test_agent", attributes=agent_span_attributes
+                    "invoke_agent test_agent", attributes=agent_span_attributes, record_exception=False
                 ) as agent_span:
-                    agent_span.set_attribute("gen_ai.request.choice.count", request_choice_count)
-                    agent_span.set_attribute("gen_ai.request.max_tokens", request_max_tokens)
-                    agent_span.set_attribute("gen_ai.request.temperature", request_temperature)
-                    agent_span.set_attribute("gen_ai.request.top_p", request_top_p)
-                    agent_span.set_attribute("gen_ai.request.top_k", request_top_k)
-                    agent_span.set_attribute("gen_ai.request.frequency_penalty", request_frequency_penalty)
-                    agent_span.set_attribute("gen_ai.request.presence_penalty", request_presence_penalty)
-                    agent_span.set_attribute("gen_ai.request.stop_sequences", request_stop_sequences)
-                    agent_span.set_attribute("gen_ai.conversation.id", session.id)
-                    agent_span.set_attribute(
-                        "gen_ai.system_instructions",
-                        json.dumps([{"type": "text", "content": agent.instruction}]),
-                    )
-                    agent_span.set_attribute(
-                        "gen_ai.input.messages",
-                        json.dumps([{"role": "user", "parts": [{"type": "text", "content": input_text}]}]),
-                    )
-                    agent_span.set_attribute("gen_ai.tool.definitions", json.dumps(tool_defs))
-                    usage_metadata = None
-                    finish_reason = None
-                    last_text = ""
-                    async for event in runner.run_async(
-                        user_id="test_user",
-                        session_id=session.id,
-                        new_message=types.Content(
-                            role="user",
-                            parts=[types.Part(text=input_text)],
-                        ),
-                    ):
-                        if getattr(event, "usage_metadata", None) is not None:
-                            # Only model-response events carry usage, so this counts
-                            # one inference call per LLM round-trip.
-                            call_counts["inference"] += 1
-                            usage_metadata = event.usage_metadata
-                        event_finish_reason = getattr(event, "finish_reason", None)
-                        if isinstance(event, dict):
-                            event_finish_reason = event.get("finish_reason")
-                        if event_finish_reason is not None:
-                            finish_reason = getattr(event_finish_reason, "value", event_finish_reason)
-                        if event.content and event.content.parts:
-                            text = event.content.parts[0].text
-                            if text:
-                                last_text = text
-                                print(f"    -> {text[:60]}")
-                    if usage_metadata is not None:
-                        prompt_token_count = getattr(usage_metadata, "prompt_token_count", None)
-                        candidate_token_count = getattr(usage_metadata, "candidates_token_count", None)
-                        if isinstance(usage_metadata, dict):
-                            prompt_token_count = usage_metadata.get("prompt_token_count")
-                            candidate_token_count = usage_metadata.get("candidates_token_count")
-                        if prompt_token_count is not None:
-                            agent_span.set_attribute("gen_ai.usage.input_tokens", prompt_token_count)
-                        if candidate_token_count is not None:
-                            agent_span.set_attribute("gen_ai.usage.output_tokens", candidate_token_count)
-                    if finish_reason is not None:
+                    try:
+                        agent_span.set_attribute("gen_ai.request.choice.count", request_choice_count)
+                        agent_span.set_attribute("gen_ai.request.max_tokens", request_max_tokens)
+                        agent_span.set_attribute("gen_ai.request.temperature", request_temperature)
+                        agent_span.set_attribute("gen_ai.request.top_p", request_top_p)
+                        agent_span.set_attribute("gen_ai.request.top_k", request_top_k)
+                        agent_span.set_attribute("gen_ai.request.frequency_penalty", request_frequency_penalty)
+                        agent_span.set_attribute("gen_ai.request.presence_penalty", request_presence_penalty)
+                        agent_span.set_attribute("gen_ai.request.stop_sequences", request_stop_sequences)
+                        agent_span.set_attribute("gen_ai.conversation.id", session.id)
                         agent_span.set_attribute(
-                            "gen_ai.response.finish_reasons",
-                            [str(finish_reason).lower()],
+                            "gen_ai.system_instructions",
+                            [{"type": "text", "content": agent.instruction}],
                         )
-                    if last_text:
-                        output_messages = json.dumps(
-                            [
+                        agent_span.set_attribute(
+                            "gen_ai.input.messages",
+                            [{"role": "user", "parts": [{"type": "text", "content": input_text}]}],
+                        )
+                        agent_span.set_attribute("gen_ai.tool.definitions", tool_defs)
+                        usage_metadata = None
+                        finish_reason = None
+                        last_text = ""
+                        async for event in runner.run_async(
+                            user_id="test_user",
+                            session_id=session.id,
+                            new_message=types.Content(
+                                role="user",
+                                parts=[types.Part(text=input_text)],
+                            ),
+                        ):
+                            if getattr(event, "usage_metadata", None) is not None:
+                                # Only model-response events carry usage, so this counts
+                                # one inference call per LLM round-trip.
+                                call_counts["inference"] += 1
+                                usage_metadata = event.usage_metadata
+                            event_finish_reason = getattr(event, "finish_reason", None)
+                            if isinstance(event, dict):
+                                event_finish_reason = event.get("finish_reason")
+                            if event_finish_reason is not None:
+                                finish_reason = getattr(event_finish_reason, "value", event_finish_reason)
+                            if event.content and event.content.parts:
+                                text = event.content.parts[0].text
+                                if text:
+                                    last_text = text
+                                    print(f"    -> {text[:60]}")
+                        if usage_metadata is not None:
+                            prompt_token_count = getattr(usage_metadata, "prompt_token_count", None)
+                            candidate_token_count = getattr(usage_metadata, "candidates_token_count", None)
+                            if isinstance(usage_metadata, dict):
+                                prompt_token_count = usage_metadata.get("prompt_token_count")
+                                candidate_token_count = usage_metadata.get("candidates_token_count")
+                            if prompt_token_count is not None:
+                                agent_span.set_attribute("gen_ai.usage.input_tokens", prompt_token_count)
+                            if candidate_token_count is not None:
+                                agent_span.set_attribute("gen_ai.usage.output_tokens", candidate_token_count)
+                        if finish_reason is not None:
+                            agent_span.set_attribute(
+                                "gen_ai.response.finish_reasons",
+                                [str(finish_reason).lower()],
+                            )
+                        if last_text:
+                            output_messages = [
                                 {
                                     "role": "assistant",
                                     "parts": [{"type": "text", "content": last_text}],
                                 }
                             ]
+                            agent_span.set_attribute("gen_ai.output.messages", output_messages)
+                            runner_span.set_attribute("gen_ai.output.messages", output_messages)
+                    except Exception as e:
+                        agent_span.set_status(StatusCode.ERROR, str(e))
+                        agent_span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
+                        reference_event_logger().emit(
+                            event_name="gen_ai.invoke_agent.exception",
+                            severity_number=SeverityNumber.WARN,
+                            exception=e,
                         )
-                        agent_span.set_attribute("gen_ai.output.messages", output_messages)
-                        workflow_span.set_attribute("gen_ai.output.messages", output_messages)
+                        raise
+                # Each duration matches its span; the runner has no name, so only the operation is set.
+                _invoke_duration.record(time.perf_counter() - agent_start, agent_span_attributes)
+            _invoke_duration.record(time.perf_counter() - runner_start, runner_span_attributes)
 
         asyncio.run(_run())
 
         # Both metrics are scoped to the agent invocation and emitted alongside
-        # the invoke_agent (internal) span, dimensioned by the agent name.
-        metric_attributes = {"gen_ai.agent.name": agent.name}
+        # its invoke_agent span, dimensioned by the operation and agent name.
+        metric_attributes = {"gen_ai.operation.name": "invoke_agent", "gen_ai.agent.name": agent.name}
         _inference_calls.record(call_counts["inference"], metric_attributes)
         _tool_calls.record(call_counts["tool"], metric_attributes)
 
@@ -341,15 +393,13 @@ def run_memory_reference():
             user_id=user_id,
             events=[event],
         )
-        memory_records = json.dumps(
-            [
-                {
-                    "content": memory_text,
-                    "id": event.id,
-                    "metadata": {"author": event.author, "session_id": session.id},
-                }
-            ]
-        )
+        memory_records = [
+            {
+                "content": memory_text,
+                "id": event.id,
+                "metadata": {"author": event.author, "session_id": session.id},
+            }
+        ]
 
         upsert_span_attributes = {
             "gen_ai.operation.name": "upsert_memory",
@@ -382,7 +432,7 @@ def run_memory_reference():
                     search_record["id"] = memory.id
                 search_records.append(search_record)
             search_span.set_attribute("gen_ai.memory.record.count", len(search_records))
-            search_span.set_attribute("gen_ai.memory.records", json.dumps(search_records))
+            search_span.set_attribute("gen_ai.memory.records", search_records)
 
     asyncio.run(_run())
 
@@ -439,13 +489,24 @@ def run_multi_agent_delegation_reference():
                 **transfer_attributes,
             }
             with _reference_tracer.start_as_current_span(
-                f"execute_tool {agent_tool.name}", attributes=tool_span_attributes
+                f"execute_tool {agent_tool.name}", attributes=tool_span_attributes, record_exception=False
             ) as tool_span:
-                if tool_context.function_call_id:
-                    tool_span.set_attribute("gen_ai.tool.call.id", tool_context.function_call_id)
-                tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps(args))
-                result = await original_run_async(args=args, tool_context=tool_context)
-                tool_span.set_attribute("gen_ai.tool.call.result", str(result))
+                try:
+                    if tool_context.function_call_id:
+                        tool_span.set_attribute("gen_ai.tool.call.id", tool_context.function_call_id)
+                    tool_span.set_attribute("gen_ai.tool.call.arguments", args)
+                    result = await original_run_async(args=args, tool_context=tool_context)
+                    # TODO: Determine how to represent this string result in the object-only schema.
+                    tool_span.set_attribute("gen_ai.tool.call.result", result)
+                except Exception as e:
+                    tool_span.set_status(StatusCode.ERROR, str(e))
+                    tool_span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
+                    reference_event_logger().emit(
+                        event_name="gen_ai.execute_tool.exception",
+                        severity_number=SeverityNumber.WARN,
+                        exception=e,
+                    )
+                    raise
             return result
 
         async def _traced_specialist_run_async(active_runner, *, session_id, **kwargs):
@@ -462,36 +523,48 @@ def run_multi_agent_delegation_reference():
                 "gen_ai.conversation.id": session_id,
             }
             with _reference_tracer.start_as_current_span(
-                f"invoke_agent {agent.name}", attributes=sub_agent_span_attributes
+                f"invoke_agent {agent.name}", attributes=sub_agent_span_attributes, record_exception=False
             ) as sub_agent_span:
-                input_tokens = None
-                output_tokens = None
-                last_text = ""
-                async for event in original_runner_run_async(active_runner, session_id=session_id, **kwargs):
-                    if event.author == agent.name:
-                        usage = event.usage_metadata
-                        if usage is not None:
-                            if usage.prompt_token_count is not None:
-                                input_tokens = (input_tokens or 0) + usage.prompt_token_count
-                            if usage.candidates_token_count is not None:
-                                output_tokens = (output_tokens or 0) + usage.candidates_token_count
-                        if event.finish_reason is not None:
-                            finish_reason = getattr(event.finish_reason, "value", event.finish_reason)
-                            sub_agent_span.set_attribute("gen_ai.response.finish_reasons", [str(finish_reason).lower()])
-                        if event.content and event.content.parts:
-                            for part in event.content.parts:
-                                if part.text:
-                                    last_text = part.text
-                    yield event
-                if input_tokens is not None:
-                    sub_agent_span.set_attribute("gen_ai.usage.input_tokens", input_tokens)
-                if output_tokens is not None:
-                    sub_agent_span.set_attribute("gen_ai.usage.output_tokens", output_tokens)
-                if last_text:
-                    sub_agent_span.set_attribute(
-                        "gen_ai.output.messages",
-                        json.dumps([{"role": "assistant", "parts": [{"type": "text", "content": last_text}]}]),
+                try:
+                    input_tokens = None
+                    output_tokens = None
+                    last_text = ""
+                    async for event in original_runner_run_async(active_runner, session_id=session_id, **kwargs):
+                        if event.author == agent.name:
+                            usage = event.usage_metadata
+                            if usage is not None:
+                                if usage.prompt_token_count is not None:
+                                    input_tokens = (input_tokens or 0) + usage.prompt_token_count
+                                if usage.candidates_token_count is not None:
+                                    output_tokens = (output_tokens or 0) + usage.candidates_token_count
+                            if event.finish_reason is not None:
+                                finish_reason = getattr(event.finish_reason, "value", event.finish_reason)
+                                sub_agent_span.set_attribute(
+                                    "gen_ai.response.finish_reasons", [str(finish_reason).lower()]
+                                )
+                            if event.content and event.content.parts:
+                                for part in event.content.parts:
+                                    if part.text:
+                                        last_text = part.text
+                        yield event
+                    if input_tokens is not None:
+                        sub_agent_span.set_attribute("gen_ai.usage.input_tokens", input_tokens)
+                    if output_tokens is not None:
+                        sub_agent_span.set_attribute("gen_ai.usage.output_tokens", output_tokens)
+                    if last_text:
+                        sub_agent_span.set_attribute(
+                            "gen_ai.output.messages",
+                            [{"role": "assistant", "parts": [{"type": "text", "content": last_text}]}],
+                        )
+                except Exception as e:
+                    sub_agent_span.set_status(StatusCode.ERROR, str(e))
+                    sub_agent_span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
+                    reference_event_logger().emit(
+                        event_name="gen_ai.invoke_agent.exception",
+                        severity_number=SeverityNumber.WARN,
+                        exception=e,
                     )
+                    raise
 
         root_agent = Agent(
             name="root_agent",
@@ -512,47 +585,57 @@ def run_multi_agent_delegation_reference():
                 "gen_ai.agent.description": root_agent.description,
             }
             with _reference_tracer.start_as_current_span(
-                "invoke_agent root_agent", attributes=agent_span_attributes
+                "invoke_agent root_agent", attributes=agent_span_attributes, record_exception=False
             ) as agent_span:
-                agent_span.set_attribute("gen_ai.conversation.id", session.id)
-                agent_span.set_attribute(
-                    "gen_ai.input.messages",
-                    json.dumps([{"role": "user", "parts": [{"type": "text", "content": input_text}]}]),
-                )
-                last_text = ""
-                finish_reason = None
-                input_tokens = None
-                output_tokens = None
-                async for event in runner.run_async(
-                    user_id="test_user",
-                    session_id=session.id,
-                    new_message=types.Content(role="user", parts=[types.Part(text=input_text)]),
-                ):
-                    if event.author == root_agent.name:
-                        usage = event.usage_metadata
-                        if usage is not None:
-                            if usage.prompt_token_count is not None:
-                                input_tokens = (input_tokens or 0) + usage.prompt_token_count
-                            if usage.candidates_token_count is not None:
-                                output_tokens = (output_tokens or 0) + usage.candidates_token_count
-                        if event.finish_reason is not None:
-                            finish_reason = getattr(event.finish_reason, "value", event.finish_reason)
-                        if event.content and event.content.parts:
-                            for part in event.content.parts:
-                                if part.text:
-                                    last_text = part.text
-                if input_tokens is not None:
-                    agent_span.set_attribute("gen_ai.usage.input_tokens", input_tokens)
-                if output_tokens is not None:
-                    agent_span.set_attribute("gen_ai.usage.output_tokens", output_tokens)
-                if finish_reason is not None:
-                    agent_span.set_attribute("gen_ai.response.finish_reasons", [str(finish_reason).lower()])
-                if last_text:
+                try:
+                    agent_span.set_attribute("gen_ai.conversation.id", session.id)
                     agent_span.set_attribute(
-                        "gen_ai.output.messages",
-                        json.dumps([{"role": "assistant", "parts": [{"type": "text", "content": last_text}]}]),
+                        "gen_ai.input.messages",
+                        [{"role": "user", "parts": [{"type": "text", "content": input_text}]}],
                     )
-                    print(f"    -> {last_text[:60]}")
+                    last_text = ""
+                    finish_reason = None
+                    input_tokens = None
+                    output_tokens = None
+                    async for event in runner.run_async(
+                        user_id="test_user",
+                        session_id=session.id,
+                        new_message=types.Content(role="user", parts=[types.Part(text=input_text)]),
+                    ):
+                        if event.author == root_agent.name:
+                            usage = event.usage_metadata
+                            if usage is not None:
+                                if usage.prompt_token_count is not None:
+                                    input_tokens = (input_tokens or 0) + usage.prompt_token_count
+                                if usage.candidates_token_count is not None:
+                                    output_tokens = (output_tokens or 0) + usage.candidates_token_count
+                            if event.finish_reason is not None:
+                                finish_reason = getattr(event.finish_reason, "value", event.finish_reason)
+                            if event.content and event.content.parts:
+                                for part in event.content.parts:
+                                    if part.text:
+                                        last_text = part.text
+                    if input_tokens is not None:
+                        agent_span.set_attribute("gen_ai.usage.input_tokens", input_tokens)
+                    if output_tokens is not None:
+                        agent_span.set_attribute("gen_ai.usage.output_tokens", output_tokens)
+                    if finish_reason is not None:
+                        agent_span.set_attribute("gen_ai.response.finish_reasons", [str(finish_reason).lower()])
+                    if last_text:
+                        agent_span.set_attribute(
+                            "gen_ai.output.messages",
+                            [{"role": "assistant", "parts": [{"type": "text", "content": last_text}]}],
+                        )
+                        print(f"    -> {last_text[:60]}")
+                except Exception as e:
+                    agent_span.set_status(StatusCode.ERROR, str(e))
+                    agent_span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
+                    reference_event_logger().emit(
+                        event_name="gen_ai.invoke_agent.exception",
+                        severity_number=SeverityNumber.WARN,
+                        exception=e,
+                    )
+                    raise
 
         with (
             patch.object(agent_tool, "run_async", _traced_run_async),
@@ -600,17 +683,30 @@ def run_multi_agent_handoff_reference():
             "gen_ai.agent.name": tool_context.agent_name,
             "gen_ai.conversation.id": tool_context.session.id,
         }
-        with _reference_tracer.start_as_current_span(f"execute_tool {tool.name}", attributes=attributes) as span:
-            if tool_context.function_call_id:
-                span.set_attribute("gen_ai.tool.call.id", tool_context.function_call_id)
-            span.set_attribute("gen_ai.tool.call.arguments", json.dumps(args))
-            result = await original_tool_run(tool, args=args, tool_context=tool_context)
-            target_name = tool_context.actions.transfer_to_agent
-            if target_name:
-                span.set_attribute("gen_ai.transfer.mode", "pass_control")
-                span.set_attribute("gen_ai.transfer.target.name", target_name)
-            span.set_attribute("gen_ai.tool.call.result", json.dumps(result))
-            return result
+        with _reference_tracer.start_as_current_span(
+            f"execute_tool {tool.name}", attributes=attributes, record_exception=False
+        ) as span:
+            try:
+                if tool_context.function_call_id:
+                    span.set_attribute("gen_ai.tool.call.id", tool_context.function_call_id)
+                span.set_attribute("gen_ai.tool.call.arguments", args)
+                result = await original_tool_run(tool, args=args, tool_context=tool_context)
+                target_name = tool_context.actions.transfer_to_agent
+                if target_name:
+                    span.set_attribute("gen_ai.transfer.mode", "pass_control")
+                    span.set_attribute("gen_ai.transfer.target.name", target_name)
+                if result is not None:
+                    span.set_attribute("gen_ai.tool.call.result", result)
+                return result
+            except Exception as e:
+                span.set_status(StatusCode.ERROR, str(e))
+                span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
+                reference_event_logger().emit(
+                    event_name="gen_ai.execute_tool.exception",
+                    severity_number=SeverityNumber.WARN,
+                    exception=e,
+                )
+                raise
 
     async def traced_agent_run(agent, parent_context):
         attributes = {
@@ -623,42 +719,56 @@ def run_multi_agent_handoff_reference():
         input_tokens = None
         output_tokens = None
         try:
-            async with contextlib.aclosing(original_agent_run(agent, parent_context)) as events:
-                while True:
-                    # Restore agent context for each SDK step, not across a yield
-                    # where Runner restores the caller's context.
-                    with _trace.use_span(span, end_on_exit=False):
-                        event = await anext(events, None)
-                    if event is None:
-                        break
-                    if event.author == agent.name:
-                        if event.usage_metadata is not None:
-                            if event.usage_metadata.prompt_token_count is not None:
-                                input_tokens = (input_tokens or 0) + event.usage_metadata.prompt_token_count
-                            if event.usage_metadata.candidates_token_count is not None:
-                                output_tokens = (output_tokens or 0) + event.usage_metadata.candidates_token_count
-                        if event.finish_reason is not None:
-                            span.set_attribute("gen_ai.response.finish_reasons", [event.finish_reason.value.lower()])
-                        if event.content and event.content.parts:
-                            text = "".join(part.text for part in event.content.parts if part.text)
-                            if text:
+            try:
+                async with contextlib.aclosing(original_agent_run(agent, parent_context)) as events:
+                    while True:
+                        # Restore agent context for each SDK step, not across a yield
+                        # where Runner restores the caller's context.
+                        with _trace.use_span(span, end_on_exit=False, record_exception=False):
+                            event = await anext(events, None)
+                        if event is None:
+                            break
+                        if event.author == agent.name:
+                            if event.usage_metadata is not None:
+                                if event.usage_metadata.prompt_token_count is not None:
+                                    input_tokens = (input_tokens or 0) + event.usage_metadata.prompt_token_count
+                                if event.usage_metadata.candidates_token_count is not None:
+                                    output_tokens = (output_tokens or 0) + event.usage_metadata.candidates_token_count
+                            if event.finish_reason is not None:
                                 span.set_attribute(
-                                    "gen_ai.output.messages",
-                                    json.dumps([{"role": "assistant", "parts": [{"type": "text", "content": text}]}]),
+                                    "gen_ai.response.finish_reasons", [event.finish_reason.value.lower()]
                                 )
-                    yield event
+                            if event.content and event.content.parts:
+                                text = "".join(part.text for part in event.content.parts if part.text)
+                                if text:
+                                    span.set_attribute(
+                                        "gen_ai.output.messages",
+                                        [{"role": "assistant", "parts": [{"type": "text", "content": text}]}],
+                                    )
+                        yield event
+            finally:
+                if input_tokens is not None:
+                    span.set_attribute("gen_ai.usage.input_tokens", input_tokens)
+                if output_tokens is not None:
+                    span.set_attribute("gen_ai.usage.output_tokens", output_tokens)
+        except Exception as e:
+            span.set_status(StatusCode.ERROR, str(e))
+            span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
+            with _trace.use_span(span, end_on_exit=False, record_exception=False):
+                reference_event_logger().emit(
+                    event_name="gen_ai.invoke_agent.exception",
+                    severity_number=SeverityNumber.WARN,
+                    exception=e,
+                )
+            raise
         finally:
-            if input_tokens is not None:
-                span.set_attribute("gen_ai.usage.input_tokens", input_tokens)
-            if output_tokens is not None:
-                span.set_attribute("gen_ai.usage.output_tokens", output_tokens)
             span.end()
 
     async def run():
         session = await session_service.create_session(app_name=runner.app_name, user_id="test_user")
+        # `Runner` is not itself an agent or a workflow, so its invocation is `invoke_runner`.
         with _reference_tracer.start_as_current_span(
-            f"invoke_workflow {runner.app_name}",
-            attributes={"gen_ai.operation.name": "invoke_workflow", "gen_ai.workflow.name": runner.app_name},
+            "invoke_runner", attributes={"gen_ai.operation.name": "invoke_runner"}
         ):
             async for event in runner.run_async(
                 user_id=session.user_id,
@@ -748,30 +858,42 @@ def run_skills_reference():
             with _reference_tracer.start_as_current_span(
                 self._span_name(skill_name, resource_name),
                 attributes=attributes,
+                record_exception=False,
             ) as span:
-                span.set_attribute("gen_ai.tool.description", self.description)
-                span.set_attribute("gen_ai.agent.name", tool_context.agent_name)
-                if tool_context.function_call_id:
-                    span.set_attribute("gen_ai.tool.call.id", tool_context.function_call_id)
-                span.set_attribute("gen_ai.tool.call.arguments", json.dumps(args))
-                # `direct`: the toolset holds the `Skill` the call names, so its
-                # frontmatter and the location ADK loaded it from are in hand.
-                skill = skills_by_name.get(skill_name)
-                if skill is not None:
-                    span.set_attribute("gen_ai.skill.description", skill.description)
-                    if skill._uri is not None:
-                        span.set_attribute("gen_ai.skill.source.uri", skill._uri)
-                result = await super().run_async(args=args, tool_context=tool_context)
-                # `direct`: every skill tool reports a failure as an `error_code` on
-                # its result, which is the value ADK's own telemetry hook reads too.
-                error_type = result.get("error_code") if isinstance(result, dict) else None
-                if error_type:
-                    span.set_attribute("error.type", error_type)
-                    span.set_status(StatusCode.ERROR, result.get("error", ""))
-                else:
-                    span.set_attribute("gen_ai.tool.call.result", json.dumps(result, default=str))
-                self._record_skill_signals(span, args, result, error_type, tool_context)
-                return result
+                try:
+                    span.set_attribute("gen_ai.tool.description", self.description)
+                    span.set_attribute("gen_ai.agent.name", tool_context.agent_name)
+                    if tool_context.function_call_id:
+                        span.set_attribute("gen_ai.tool.call.id", tool_context.function_call_id)
+                    span.set_attribute("gen_ai.tool.call.arguments", args)
+                    # `direct`: the toolset holds the `Skill` the call names, so its
+                    # frontmatter and the location ADK loaded it from are in hand.
+                    skill = skills_by_name.get(skill_name)
+                    if skill is not None:
+                        span.set_attribute("gen_ai.skill.description", skill.description)
+                        if skill._uri is not None:
+                            span.set_attribute("gen_ai.skill.source.uri", skill._uri)
+                    result = await super().run_async(args=args, tool_context=tool_context)
+                    # `direct`: every skill tool reports a failure as an `error_code` on
+                    # its result, which is the value ADK's own telemetry hook reads too.
+                    error_type = result.get("error_code") if isinstance(result, dict) else None
+                    if error_type:
+                        span.set_attribute("error.type", error_type)
+                        span.set_status(StatusCode.ERROR, result.get("error", ""))
+                    else:
+                        # TODO: Determine how to represent this string result in the object-only schema.
+                        span.set_attribute("gen_ai.tool.call.result", result)
+                    self._record_skill_signals(span, args, result, error_type, tool_context)
+                    return result
+                except Exception as e:
+                    span.set_status(StatusCode.ERROR, str(e))
+                    span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
+                    reference_event_logger().emit(
+                        event_name="gen_ai.execute_tool.exception",
+                        severity_number=SeverityNumber.WARN,
+                        exception=e,
+                    )
+                    raise
 
         def _record_skill_signals(self, span, args, result, error_type, tool_context):
             """Hook for the per-tool skill attributes."""
@@ -915,51 +1037,61 @@ def run_skills_reference():
                 "gen_ai.agent.name": agent_name,
             }
             with _reference_tracer.start_as_current_span(
-                f"invoke_agent {agent_name}", attributes=agent_span_attributes
+                f"invoke_agent {agent_name}", attributes=agent_span_attributes, record_exception=False
             ) as agent_span:
-                agent_span.set_attribute("gen_ai.conversation.id", session_id)
-                agent_span.set_attribute(
-                    "gen_ai.system_instructions",
-                    json.dumps([{"type": "text", "content": agent.instruction}]),
-                )
-                agent_span.set_attribute(
-                    "gen_ai.input.messages",
-                    json.dumps([{"role": "user", "parts": [{"type": "text", "content": prompt}]}]),
-                )
-                usage_metadata = None
-                finish_reason = None
-                last_text = ""
-                async for event in runner.run_async(
-                    user_id=user_id,
-                    session_id=session_id,
-                    new_message=types.Content(role="user", parts=[types.Part(text=prompt)]),
-                ):
-                    if getattr(event, "usage_metadata", None) is not None:
-                        usage_metadata = event.usage_metadata
-                    if getattr(event, "finish_reason", None) is not None:
-                        finish_reason = getattr(event.finish_reason, "value", event.finish_reason)
-                    if event.content and event.content.parts and event.content.parts[0].text:
-                        last_text = event.content.parts[0].text
-                if usage_metadata is not None:
-                    if getattr(usage_metadata, "prompt_token_count", None) is not None:
-                        agent_span.set_attribute("gen_ai.usage.input_tokens", usage_metadata.prompt_token_count)
-                    if getattr(usage_metadata, "candidates_token_count", None) is not None:
-                        agent_span.set_attribute("gen_ai.usage.output_tokens", usage_metadata.candidates_token_count)
-                if finish_reason is not None:
-                    agent_span.set_attribute("gen_ai.response.finish_reasons", [str(finish_reason).lower()])
-                if last_text:
+                try:
+                    agent_span.set_attribute("gen_ai.conversation.id", session_id)
                     agent_span.set_attribute(
-                        "gen_ai.output.messages",
-                        json.dumps(
+                        "gen_ai.system_instructions",
+                        [{"type": "text", "content": agent.instruction}],
+                    )
+                    agent_span.set_attribute(
+                        "gen_ai.input.messages",
+                        [{"role": "user", "parts": [{"type": "text", "content": prompt}]}],
+                    )
+                    usage_metadata = None
+                    finish_reason = None
+                    last_text = ""
+                    async for event in runner.run_async(
+                        user_id=user_id,
+                        session_id=session_id,
+                        new_message=types.Content(role="user", parts=[types.Part(text=prompt)]),
+                    ):
+                        if getattr(event, "usage_metadata", None) is not None:
+                            usage_metadata = event.usage_metadata
+                        if getattr(event, "finish_reason", None) is not None:
+                            finish_reason = getattr(event.finish_reason, "value", event.finish_reason)
+                        if event.content and event.content.parts and event.content.parts[0].text:
+                            last_text = event.content.parts[0].text
+                    if usage_metadata is not None:
+                        if getattr(usage_metadata, "prompt_token_count", None) is not None:
+                            agent_span.set_attribute("gen_ai.usage.input_tokens", usage_metadata.prompt_token_count)
+                        if getattr(usage_metadata, "candidates_token_count", None) is not None:
+                            agent_span.set_attribute(
+                                "gen_ai.usage.output_tokens", usage_metadata.candidates_token_count
+                            )
+                    if finish_reason is not None:
+                        agent_span.set_attribute("gen_ai.response.finish_reasons", [str(finish_reason).lower()])
+                    if last_text:
+                        agent_span.set_attribute(
+                            "gen_ai.output.messages",
                             [
                                 {
                                     "role": "assistant",
                                     "parts": [{"type": "text", "content": last_text}],
                                     "finish_reason": str(finish_reason or "stop").lower(),
                                 }
-                            ]
-                        ),
+                            ],
+                        )
+                except Exception as e:
+                    agent_span.set_status(StatusCode.ERROR, str(e))
+                    agent_span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
+                    reference_event_logger().emit(
+                        event_name="gen_ai.invoke_agent.exception",
+                        severity_number=SeverityNumber.WARN,
+                        exception=e,
                     )
+                    raise
 
         async def _phases():
             # The skill lifecycle. Each stage is its own conversation, so each
