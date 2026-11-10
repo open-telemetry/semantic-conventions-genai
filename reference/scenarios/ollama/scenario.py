@@ -1358,6 +1358,7 @@ def run_chat_streaming(
             if _record_event_messages(mode):
                 event_attrs["gen_ai.input.messages"] = [
                     {"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]} for m in messages
+                ]
                 event_attrs["gen_ai.output.messages"] = [{"role": "assistant", "parts": output_parts}]
             if request_options["num_predict"] >= 0:
                 event_attrs["gen_ai.request.max_tokens"] = request_options["num_predict"]
