@@ -101,6 +101,8 @@ def run_hooks(event_name: str, hook_input: dict, tool_use_id: str) -> None:
             if message is None:
                 return
             if message.get("type") == "control_response" and message["response"].get("request_id") == request_id:
+                if message["response"].get("subtype") == "error":
+                    raise RuntimeError(message["response"]["error"])
                 break
 
 

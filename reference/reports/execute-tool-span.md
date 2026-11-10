@@ -31,8 +31,8 @@
 
 | Attribute | Supporting Libraries |
 | --- | --- |
-| gen_ai.tool.call.arguments | [agent-framework], [autogen], [crewai], [google-adk], [google-genai], [langchain], [llamaindex], [openai-agents], [openai-assistants], [pydantic-ai], [vertexai] |
-| gen_ai.tool.call.result | [agent-framework], [autogen], [crewai], [google-adk], [google-genai], [langchain], [llamaindex], [openai-agents], [openai-assistants], [pydantic-ai], [vertexai] |
+| gen_ai.tool.call.arguments | [agent-framework], [autogen], [claude-agent-sdk], [crewai], [google-adk], [google-genai], [langchain], [llamaindex], [openai-agents], [openai-assistants], [pydantic-ai], [vertexai] |
+| gen_ai.tool.call.result | [agent-framework], [autogen], [claude-agent-sdk], [crewai], [google-adk], [google-genai], [langchain], [llamaindex], [openai-agents], [openai-assistants], [pydantic-ai], [vertexai] |
 
 [agent-framework]: ../scenarios/agent-framework/scenario.py
 [autogen]: ../scenarios/autogen/scenario.py

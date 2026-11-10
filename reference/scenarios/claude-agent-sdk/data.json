@@ -17,7 +17,9 @@
       "gen_ai.plugin.id",
       "gen_ai.plugin.name",
       "gen_ai.plugin.version",
+      "gen_ai.tool.call.arguments",
       "gen_ai.tool.call.id",
+      "gen_ai.tool.call.result",
       "gen_ai.tool.name"
     ]
   },

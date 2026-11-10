@@ -6,6 +6,7 @@ instrumentable library observes it — so it is the inference boundary here. The
 run is itself an agent invocation (tools, multiple turns). Tools run inside the
 CLI subprocess, but the CLI calls the SDK's `PreToolUse`, `PostToolUse`, and
 `PostToolUseFailure` hook callbacks in-process around each tool execution.
+The tool span records the hook's tool input and successful response.
 
 `ClaudeAgentOptions.settings` enables a plugin from a directory marketplace.
 The `init` system message lists each loaded plugin with its name, version, and
