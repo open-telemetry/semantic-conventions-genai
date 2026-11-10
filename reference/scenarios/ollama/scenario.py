@@ -1474,7 +1474,9 @@ def run_text_completion():
         # SPAN_AND_EVENT capture mode is enabled, per the content capture
         # configuration section of docs/gen-ai/gen-ai-spans.md.
         if _record_span_messages(mode):
-            span_attributes["gen_ai.input.messages"] = [{"role": "user", "parts": [{"type": "text", "content": prompt}]}]
+            span_attributes["gen_ai.input.messages"] = [
+                {"role": "user", "parts": [{"type": "text", "content": prompt}]}
+            ]
         input_tokens = None
         output_tokens = None
         response_model = None
