@@ -23,7 +23,7 @@ scenarios:
         context:
           operation: chat
           missing_attribute: gen_ai.response.model
-        reason: The failure-path chat operations point the SDK at a server that accepts no connections or drop the connection mid-stream, so the operation fails before a complete response exists and the span cannot carry gen_ai.response.model.
+        reason: The failure-path chat operation points the SDK at a server that accepts no connections, so the operation fails before a response exists and the span cannot carry gen_ai.response.model.
       - id: genai_expected_attribute_missing
         context:
           operation: chat
@@ -63,11 +63,15 @@ scenarios:
       # Every chat span that succeeds carries the same request options and the
       # same mock response timings, so the Ollama refinement attributes are
       # asserted once for all seven scenarios (basic, tool call, formatted,
-      # streaming, streaming tool call, and the two span content capture modes).
+      # streaming, streaming tool call, and the two span content capture
+      # modes); the successful finish reason keeps the mid-stream failure
+      # span out, now that the stream identifies the model before the
+      # connection drops.
       - match:
           attributes:
             gen_ai.operation.name: chat
             gen_ai.response.model: llama3.2
+            gen_ai.response.finish_reasons: [stop]
           type: gen_ai.client.inference
         expect:
           count: 7
@@ -164,8 +168,9 @@ scenarios:
             gen_ai.tool.definitions:
               present: true
       # The streaming failure scenario is singled out by its seed: a chunk
-      # arrived before the connection dropped, so the time to it is
-      # preserved, and the finish reason falls back to "error".
+      # arrived before the connection dropped, so the time to it and the
+      # model the stream identified are preserved, and the finish reason
+      # falls back to "error".
       - match:
           attributes:
             gen_ai.operation.name: chat
@@ -177,6 +182,7 @@ scenarios:
             gen_ai.request.stream: true
             gen_ai.response.time_to_first_chunk:
               present: true
+            gen_ai.response.model: llama3.2
             gen_ai.response.finish_reasons: [error]
             error.type:
               present: true

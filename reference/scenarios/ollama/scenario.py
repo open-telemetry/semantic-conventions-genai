@@ -275,8 +275,8 @@ class _StreamingToolsMockHandler(BaseHTTPRequestHandler):
     The streaming tool-call demonstration serves an ndjson chunk sequence
     from this in-process HTTP server with a deterministic tool call,
     following the scenario-local mock technique of reference/scenarios/gemini-live:
-    the first chunk carries only the role, the second the tool call, and the
-    final chunk the done marker with the usage counts.
+    the first chunk carries only the role, the second reasoning, the third
+    the tool call, and the final chunk the done marker with the usage counts.
     """
 
     def do_POST(self):
@@ -295,6 +295,12 @@ class _StreamingToolsMockHandler(BaseHTTPRequestHandler):
             {
                 "model": "llama3.2",
                 "created_at": "2026-01-01T00:00:01Z",
+                "message": {"role": "assistant", "content": "", "thinking": "Thinking about the weather in Paris."},
+                "done": False,
+            },
+            {
+                "model": "llama3.2",
+                "created_at": "2026-01-01T00:00:02Z",
                 "message": {
                     "role": "assistant",
                     "content": "",
@@ -304,7 +310,7 @@ class _StreamingToolsMockHandler(BaseHTTPRequestHandler):
             },
             {
                 "model": "llama3.2",
-                "created_at": "2026-01-01T00:00:02Z",
+                "created_at": "2026-01-01T00:00:03Z",
                 "message": {"role": "assistant", "content": ""},
                 "done": True,
                 "done_reason": "stop",
@@ -1040,8 +1046,12 @@ def run_chat_streaming(
     arrived, and the usage counts and the native Ollama timings are read from
     the final chunk, which carries them like a non-streaming response body.
     When `tools` is passed the request offers the weather tool and the stream
-    answers with a tool call, recorded as `tool_call` parts of the output
-    message.
+    answers with reasoning followed by a tool call, recorded as reasoning and
+    `tool_call` parts of the output message. The serving model is captured
+    from the first chunk that carries it, so a stream that fails mid-stream
+    still records gen_ai.response.model, and the output accumulated before
+    a mid-stream failure is recorded on the enabled capture destinations
+    before the exception is re-raised.
     """
     if expect_error:
         label = "streaming failure (connection dropped mid-stream)"
@@ -1115,7 +1125,9 @@ def run_chat_streaming(
     input_tokens = None
     output_tokens = None
     response_model = None
+    stream_model = None
     content_parts = []
+    thinking_parts = []
     output_tool_calls = []
     failure = None
     with _reference_tracer.start_as_current_span(
@@ -1133,6 +1145,11 @@ def run_chat_streaming(
                 options=request_options,
             )
             for chunk in stream:
+                if getattr(chunk, "model", None):
+                    # The first chunk that identifies the serving model is
+                    # kept, so a stream that fails mid-stream still carries
+                    # gen_ai.response.model.
+                    stream_model = chunk.model
                 message = getattr(chunk, "message", None)
                 if _chunk_has_output(message):
                     # A chunk is a decoded stream event carrying new,
@@ -1141,6 +1158,9 @@ def run_chat_streaming(
                     chunk_times.append(perf_counter())
                     if message.content:
                         content_parts.append(message.content)
+                    thinking = getattr(message, "thinking", None)
+                    if thinking:
+                        thinking_parts.append(thinking)
                     for call in message.tool_calls or []:
                         output_tool_calls.append(
                             {
@@ -1157,6 +1177,11 @@ def run_chat_streaming(
             error_type = type(exc).__name__
             span.set_attribute("error.type", error_type)
             span.set_attribute("gen_ai.response.finish_reasons", ["error"])
+            if stream_model:
+                # The stream identified the serving model before it failed,
+                # so the model is preserved on the span and the metrics that
+                # carry it on the success path.
+                span.set_attribute("gen_ai.response.model", stream_model)
             if chunk_times:
                 # A chunk arrived before the failure, so the measured latency
                 # to it is preserved on the failed span; it stays unset only
@@ -1175,6 +1200,8 @@ def run_chat_streaming(
                     chunk_metric_attributes["server.address"] = host
                 if port is not None:
                     chunk_metric_attributes["server.port"] = port
+                if stream_model:
+                    chunk_metric_attributes["gen_ai.response.model"] = stream_model
                 _time_to_first_chunk.record(chunk_times[0] - started_at, chunk_metric_attributes)
                 for previous, current in pairwise(chunk_times):
                     _time_per_output_chunk.record(current - previous, chunk_metric_attributes)
@@ -1189,21 +1216,49 @@ def run_chat_streaming(
                 metric_attributes["server.address"] = host
             if port is not None:
                 metric_attributes["server.port"] = port
+            if stream_model:
+                metric_attributes["gen_ai.response.model"] = stream_model
             _inference_duration.record(elapsed, metric_attributes)
             # The per-operation histograms are recorded for every operation,
             # so a failure records zero tokens; the streaming chunk
             # histograms above are only recorded when a chunk arrived.
             _operation_input_tokens.record(0, metric_attributes)
             _operation_output_tokens.record(0, metric_attributes)
+            # The stream may have delivered output before it failed, so the
+            # partial output is recorded on the enabled capture destinations
+            # before the exception is re-raised; a failure that produced no
+            # output leaves gen_ai.output.messages unset.
+            partial_parts = []
+            partial_content = "".join(content_parts)
+            if partial_content:
+                partial_parts.append({"type": "text", "content": partial_content})
+            partial_reasoning = "".join(thinking_parts)
+            if partial_reasoning:
+                partial_parts.append({"type": "reasoning", "content": partial_reasoning})
+            partial_parts.extend(output_tool_calls)
+            if _record_span_messages(mode) and partial_parts:
+                span.set_attribute("gen_ai.output.messages", [{"role": "assistant", "parts": partial_parts}])
+            exception_event_attributes = {
+                "exception.type": error_type,
+                "exception.message": str(exc),
+                "exception.stacktrace": traceback.format_exc(),
+            }
+            if _record_event_messages(mode) and partial_parts:
+                # The registry permits the exception event to carry the
+                # attributes captured on the corresponding inference span,
+                # so the partial output is included when event capture is
+                # enabled.
+                exception_event_attributes["gen_ai.output.messages"] = [
+                    {
+                        "role": "assistant",
+                        "parts": partial_parts,
+                    }
+                ]
             reference_event_logger().emit(
                 event_name="gen_ai.client.inference.exception",
                 severity_number=SeverityNumber.WARN,
                 body="Inference operation failed",
-                attributes={
-                    "exception.type": error_type,
-                    "exception.message": str(exc),
-                    "exception.stacktrace": traceback.format_exc(),
-                },
+                attributes=exception_event_attributes,
             )
         else:
             elapsed = perf_counter() - started_at
@@ -1227,6 +1282,11 @@ def run_chat_streaming(
                     span.set_attribute("ollama.response.total_duration", int(final_chunk.total_duration))
                 if final_chunk.load_duration is not None:
                     span.set_attribute("ollama.response.load_duration", int(final_chunk.load_duration))
+            if response_model is None and stream_model:
+                # The final chunk omitted the model, so the one seen first
+                # on an intermediate chunk is kept.
+                response_model = stream_model
+                span.set_attribute("gen_ai.response.model", stream_model)
             # A finish reason is expected for every generation; the registry
             # fallback reports "error" when the stream ends without one.
             if final_chunk is not None and final_chunk.done_reason:
@@ -1265,6 +1325,12 @@ def run_chat_streaming(
             output_parts = []
             if content:
                 output_parts.append({"type": "text", "content": content})
+            reasoning = "".join(thinking_parts)
+            if reasoning:
+                # The reasoning accumulated across chunks is captured as an
+                # independent reasoning part of the output message, after the
+                # text and before the tool calls.
+                output_parts.append({"type": "reasoning", "content": reasoning})
             # The accumulated tool calls are captured as independent parts
             # of the output message, alongside any text of the response.
             output_parts.extend(output_tool_calls)
@@ -1568,10 +1634,11 @@ def run_chat_streaming_tools():
     """Scenario: streaming chat completion offering a tool.
 
     The request offers the weather tool through the SDK `tools` argument
-    against a scenario-local /api/chat mock that answers with a tool call, so
-    the first chunk with output carries the tool-call payload rather than
-    text: the chunk arrival times, and with them time_to_first_chunk, are
-    driven by the tool-call chunk, per the chunk definition.
+    against a scenario-local /api/chat mock that answers with reasoning
+    followed by a tool call, so the first chunk with output carries the
+    reasoning payload and the stream also exercises the reasoning capture:
+    the chunk arrival times, and with them time_to_first_chunk, are driven
+    by the reasoning chunk, per the chunk definition.
     """
     server = ThreadingHTTPServer(("127.0.0.1", 0), _StreamingToolsMockHandler)
     port = server.server_address[1]
@@ -1592,9 +1659,10 @@ def run_chat_streaming_failure():
     A scenario-local /api/chat mock serves the first chunk of the stream and
     then drops the connection, so the SDK raises a transport error after a
     chunk arrived: the failed span preserves gen_ai.response.time_to_first_chunk,
-    the finish reason falls back to "error", and the streaming chunk
-    histograms are still recorded from the chunk that arrived, per their
-    requirements. The run fails if the call does not raise.
+    the model and the partial output delivered before the failure, the
+    finish reason falls back to "error", and the streaming chunk histograms
+    are still recorded from the chunk that arrived, per their requirements.
+    The run fails if the call does not raise.
     """
     server = ThreadingHTTPServer(("127.0.0.1", 0), _StreamingFailureMockHandler)
     port = server.server_address[1]
