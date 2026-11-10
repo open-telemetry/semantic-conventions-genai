@@ -55,7 +55,11 @@ spans:
       - ref_group: mcp.client.status.attributes
       - ref: gen_ai.tool.call.arguments
         requirement_level: opt_in
+      - ref: gen_ai.tool.call.arguments_ref
+        requirement_level: opt_in
       - ref: gen_ai.tool.call.result
+        requirement_level: opt_in
+      - ref: gen_ai.tool.call.result_ref
         requirement_level: opt_in
       - ref: gen_ai.prompt.variable
         note: |
@@ -115,7 +119,11 @@ spans:
 
       - ref: gen_ai.tool.call.arguments
         requirement_level: opt_in
+      - ref: gen_ai.tool.call.arguments_ref
+        requirement_level: opt_in
       - ref: gen_ai.tool.call.result
+        requirement_level: opt_in
+      - ref: gen_ai.tool.call.result_ref
         requirement_level: opt_in
       - ref: gen_ai.prompt.variable
         note: |

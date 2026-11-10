@@ -429,6 +429,14 @@ spans:
           in [#633](https://github.com/open-telemetry/semantic-conventions-genai/issues/633).
       - ref: gen_ai.tool.definitions
         requirement_level: opt_in
+      - ref: gen_ai.system_instructions_ref
+        requirement_level: opt_in
+      - ref: gen_ai.input.messages_ref
+        requirement_level: opt_in
+      - ref: gen_ai.output.messages_ref
+        requirement_level: opt_in
+      - ref: gen_ai.tool.definitions_ref
+        requirement_level: opt_in
       - ref: gen_ai.request.max_tokens
         requirement_level: recommended
       - ref: gen_ai.request.reasoning.level
@@ -581,9 +589,13 @@ spans:
       - ref_group: attributes.gen_ai.error
       - ref: gen_ai.retrieval.query.text
         requirement_level: opt_in
+      - ref: gen_ai.retrieval.query.text_ref
+        requirement_level: opt_in
       - ref: gen_ai.retrieval.top_k
         requirement_level: recommended
       - ref: gen_ai.retrieval.documents
+        requirement_level: opt_in
+      - ref: gen_ai.retrieval.documents_ref
         requirement_level: opt_in
       - ref: gen_ai.provider.name
         requirement_level:
@@ -611,9 +623,13 @@ spans:
         sampling_relevant: true
       - ref: gen_ai.retrieval.query.text
         requirement_level: opt_in
+      - ref: gen_ai.retrieval.query.text_ref
+        requirement_level: opt_in
       - ref: gen_ai.retrieval.top_k
         requirement_level: recommended
       - ref: gen_ai.retrieval.documents
+        requirement_level: opt_in
+      - ref: gen_ai.retrieval.documents_ref
         requirement_level: opt_in
 
   - type: gen_ai.fetch_response.client
@@ -669,6 +685,12 @@ spans:
       - ref: gen_ai.output.messages
         requirement_level: opt_in
       - ref: gen_ai.tool.definitions
+        requirement_level: opt_in
+      - ref: gen_ai.system_instructions_ref
+        requirement_level: opt_in
+      - ref: gen_ai.output.messages_ref
+        requirement_level: opt_in
+      - ref: gen_ai.tool.definitions_ref
         requirement_level: opt_in
       - ref: gen_ai.response.model
         requirement_level: recommended
@@ -735,7 +757,11 @@ spans:
           recommended: If the operation involves memory records and the count is available.
       - ref: gen_ai.memory.query.text
         requirement_level: opt_in
+      - ref: gen_ai.memory.query.text_ref
+        requirement_level: opt_in
       - ref: gen_ai.memory.records
+        requirement_level: opt_in
+      - ref: gen_ai.memory.records_ref
         requirement_level: opt_in
 
   - type: gen_ai.create_agent.client
@@ -789,6 +815,8 @@ spans:
       - ref: gen_ai.system_instructions
         requirement_level: opt_in
         note: ""  # note is not needed here
+      - ref: gen_ai.system_instructions_ref
+        requirement_level: opt_in
 
 
   - type: gen_ai.client.invoke_agent
@@ -1004,7 +1032,11 @@ spans:
           conditionally_required: If available.
       - ref: gen_ai.tool.call.arguments
         requirement_level: opt_in
+      - ref: gen_ai.tool.call.arguments_ref
+        requirement_level: opt_in
       - ref: gen_ai.tool.call.result
+        requirement_level: opt_in
+      - ref: gen_ai.tool.call.result_ref
         requirement_level: opt_in
 
   - type: gen_ai.plan.internal

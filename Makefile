@@ -66,7 +66,8 @@ check-policies:
 		-r ./model \
 		--v2 \
 		--policy '$(POLICY_REPO_URL)@$(POLICY_REPO_REF)[policies/check]' \
-		--policy policies/check/json-schema-annotations
+		--policy policies/check/json-schema-annotations \
+		--policy policies/check/unbounded-reference-attributes
 		# --baseline-registry '$(BASELINE_REGISTRY)' \ uncomment after removing deprecated entries
 
 # Generate the attribute registry pages under docs/registry/ from local

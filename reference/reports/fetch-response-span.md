@@ -32,7 +32,10 @@
 | Attribute | Supporting Libraries |
 | --- | --- |
 | gen_ai.output.messages | [openai] |
+| gen_ai.output.messages_ref | (none) |
 | gen_ai.system_instructions | [openai] |
+| gen_ai.system_instructions_ref | (none) |
 | gen_ai.tool.definitions | (none) |
+| gen_ai.tool.definitions_ref | (none) |
 
 [openai]: ../scenarios/openai/scenario.py

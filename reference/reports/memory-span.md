@@ -29,7 +29,9 @@
 | Attribute | Supporting Libraries |
 | --- | --- |
 | gen_ai.memory.query.text | [aws-bedrock-agentcore], [google-adk] |
+| gen_ai.memory.query.text_ref | (none) |
 | gen_ai.memory.records | [aws-bedrock-agentcore], [google-adk] |
+| gen_ai.memory.records_ref | (none) |
 
 [aws-bedrock-agentcore]: ../scenarios/aws-bedrock-agentcore/scenario.py
 [google-adk]: ../scenarios/google-adk/scenario.py
