@@ -68,7 +68,7 @@ Run `uv run update-reports` to regenerate.
 | --- | --- |
 | [Client Inference Usage Input Tokens](reports/gen-ai-client-inference-usage-input-tokens-metric.md) | anthropic, google-genai, ollama, openai |
 | [Client Inference Usage Output Tokens](reports/gen-ai-client-inference-usage-output-tokens-metric.md) | anthropic, google-genai, ollama, openai |
-| [Client Inference Cache Read Input Tokens](reports/gen-ai-client-inference-usage-cache-read-input-tokens-metric.md) | anthropic, google-genai, openai |
+| [Client Inference Cache Read Input Tokens](reports/gen-ai-client-inference-usage-cache-read-input-tokens-metric.md) | anthropic, google-genai, ollama, openai |
 | [Client Inference Cache Write Input Tokens](reports/gen-ai-client-inference-usage-cache-write-input-tokens-metric.md) | anthropic, openai |
 | [Client Inference Reasoning Output Tokens](reports/gen-ai-client-inference-usage-reasoning-output-tokens-metric.md) | google-genai, openai |
 | [Client Inference Operation Input Tokens](reports/gen-ai-client-inference-operation-input-tokens-metric.md) | anthropic, azure-openai, google-genai, ollama, openai |
