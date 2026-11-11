@@ -1,0 +1,263 @@
+{
+  "spans": {
+    "gen_ai.client.embeddings": [
+      "error.type",
+      "gen_ai.embeddings.dimension.count",
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "gen_ai.request.model",
+      "gen_ai.response.model",
+      "gen_ai.usage.input_tokens",
+      "server.address",
+      "server.port"
+    ],
+    "gen_ai.client.inference": [
+      "error.type",
+      "gen_ai.input.messages",
+      "gen_ai.operation.name",
+      "gen_ai.output.messages",
+      "gen_ai.output.type",
+      "gen_ai.provider.name",
+      "gen_ai.request.frequency_penalty",
+      "gen_ai.request.max_tokens",
+      "gen_ai.request.model",
+      "gen_ai.request.presence_penalty",
+      "gen_ai.request.seed",
+      "gen_ai.request.stop_sequences",
+      "gen_ai.request.stream",
+      "gen_ai.request.temperature",
+      "gen_ai.request.top_k",
+      "gen_ai.request.top_p",
+      "gen_ai.response.finish_reasons",
+      "gen_ai.response.model",
+      "gen_ai.response.time_to_first_chunk",
+      "gen_ai.tool.definitions",
+      "gen_ai.usage.cache_read.input_tokens",
+      "gen_ai.usage.input_tokens",
+      "gen_ai.usage.output_tokens",
+      "server.address",
+      "server.port"
+    ]
+  },
+  "events": {
+    "gen_ai.client.embeddings.exception": [
+      "exception.message",
+      "exception.stacktrace",
+      "exception.type"
+    ],
+    "gen_ai.client.inference.exception": [
+      "exception.message",
+      "exception.stacktrace",
+      "exception.type"
+    ],
+    "gen_ai.client.inference.operation.details": [
+      "gen_ai.input.messages",
+      "gen_ai.operation.name",
+      "gen_ai.output.messages",
+      "gen_ai.output.type",
+      "gen_ai.provider.name",
+      "gen_ai.request.frequency_penalty",
+      "gen_ai.request.max_tokens",
+      "gen_ai.request.model",
+      "gen_ai.request.presence_penalty",
+      "gen_ai.request.seed",
+      "gen_ai.request.stop_sequences",
+      "gen_ai.request.stream",
+      "gen_ai.request.temperature",
+      "gen_ai.request.top_k",
+      "gen_ai.request.top_p",
+      "gen_ai.response.finish_reasons",
+      "gen_ai.response.model",
+      "gen_ai.response.time_to_first_chunk",
+      "gen_ai.tool.definitions",
+      "gen_ai.usage.cache_read.input_tokens",
+      "gen_ai.usage.input_tokens",
+      "gen_ai.usage.output_tokens",
+      "server.address",
+      "server.port"
+    ]
+  },
+  "metrics": {
+    "gen_ai.client.embeddings.duration": [
+      "error.type",
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "gen_ai.request.model",
+      "gen_ai.response.model",
+      "server.address",
+      "server.port"
+    ],
+    "gen_ai.client.embeddings.operation.input_tokens": [
+      "error.type",
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "gen_ai.request.model",
+      "gen_ai.response.model",
+      "server.address",
+      "server.port"
+    ],
+    "gen_ai.client.inference.duration": [
+      "error.type",
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "gen_ai.request.model",
+      "gen_ai.response.model",
+      "server.address",
+      "server.port"
+    ],
+    "gen_ai.client.inference.operation.input_tokens": [
+      "error.type",
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "gen_ai.request.model",
+      "gen_ai.response.model",
+      "server.address",
+      "server.port"
+    ],
+    "gen_ai.client.inference.operation.output_tokens": [
+      "error.type",
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "gen_ai.request.model",
+      "gen_ai.response.model",
+      "server.address",
+      "server.port"
+    ],
+    "gen_ai.client.inference.time_per_output_chunk": [
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "gen_ai.request.model",
+      "gen_ai.response.model",
+      "server.address",
+      "server.port"
+    ],
+    "gen_ai.client.inference.time_to_first_chunk": [
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "gen_ai.request.model",
+      "gen_ai.response.model",
+      "server.address",
+      "server.port"
+    ],
+    "gen_ai.client.inference.usage.cache_read.input_tokens": [
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "gen_ai.request.model",
+      "gen_ai.response.model",
+      "gen_ai.token.modality",
+      "server.address",
+      "server.port"
+    ],
+    "gen_ai.client.inference.usage.input_tokens": [
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "gen_ai.request.model",
+      "gen_ai.response.model",
+      "gen_ai.token.modality",
+      "server.address",
+      "server.port"
+    ],
+    "gen_ai.client.inference.usage.output_tokens": [
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "gen_ai.request.model",
+      "gen_ai.response.model",
+      "gen_ai.token.modality",
+      "server.address",
+      "server.port"
+    ]
+  },
+  "entities": {},
+  "findings": [
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'chat llama3.2' (operation 'chat') is missing expected attribute 'gen_ai.response.id'",
+      "signal_type": "span",
+      "signal_name": "chat llama3.2",
+      "context": {
+        "missing_attribute": "gen_ai.response.id",
+        "operation": "chat"
+      }
+    },
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'chat llama3.2' (operation 'chat') is missing expected attribute 'gen_ai.response.model'",
+      "signal_type": "span",
+      "signal_name": "chat llama3.2",
+      "context": {
+        "missing_attribute": "gen_ai.response.model",
+        "operation": "chat"
+      }
+    },
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'chat llama3.2' (operation 'chat') is missing expected attribute 'gen_ai.usage.input_tokens'",
+      "signal_type": "span",
+      "signal_name": "chat llama3.2",
+      "context": {
+        "missing_attribute": "gen_ai.usage.input_tokens",
+        "operation": "chat"
+      }
+    },
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'chat llama3.2' (operation 'chat') is missing expected attribute 'gen_ai.usage.output_tokens'",
+      "signal_type": "span",
+      "signal_name": "chat llama3.2",
+      "context": {
+        "missing_attribute": "gen_ai.usage.output_tokens",
+        "operation": "chat"
+      }
+    },
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'embeddings nomic-embed-text' (operation 'embeddings') is missing expected attribute 'gen_ai.embeddings.dimension.count'",
+      "signal_type": "span",
+      "signal_name": "embeddings nomic-embed-text",
+      "context": {
+        "missing_attribute": "gen_ai.embeddings.dimension.count",
+        "operation": "embeddings"
+      }
+    },
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'embeddings nomic-embed-text' (operation 'embeddings') is missing expected attribute 'gen_ai.request.encoding_formats'",
+      "signal_type": "span",
+      "signal_name": "embeddings nomic-embed-text",
+      "context": {
+        "missing_attribute": "gen_ai.request.encoding_formats",
+        "operation": "embeddings"
+      }
+    },
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'embeddings nomic-embed-text' (operation 'embeddings') is missing expected attribute 'gen_ai.response.model'",
+      "signal_type": "span",
+      "signal_name": "embeddings nomic-embed-text",
+      "context": {
+        "missing_attribute": "gen_ai.response.model",
+        "operation": "embeddings"
+      }
+    },
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'embeddings nomic-embed-text' (operation 'embeddings') is missing expected attribute 'gen_ai.usage.input_tokens'",
+      "signal_type": "span",
+      "signal_name": "embeddings nomic-embed-text",
+      "context": {
+        "missing_attribute": "gen_ai.usage.input_tokens",
+        "operation": "embeddings"
+      }
+    },
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'text_completion llama3.2' (operation 'text_completion') is missing expected attribute 'gen_ai.response.id'",
+      "signal_type": "span",
+      "signal_name": "text_completion llama3.2",
+      "context": {
+        "missing_attribute": "gen_ai.response.id",
+        "operation": "text_completion"
+      }
+    }
+  ]
+}

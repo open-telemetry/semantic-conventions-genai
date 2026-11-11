@@ -6,69 +6,69 @@
 
 | Attribute | Supporting Libraries |
 | --- | --- |
-| gen_ai.operation.name | [adk_a2a], [agent-framework], [anthropic], [aws-bedrock], [azure-ai-inference], [azure-openai], [claude-agent-sdk], [cohere], [google-genai], [groq], [litellm], [mistralai], [openai], [vertexai] |
-| gen_ai.provider.name | [agent-framework], [anthropic], [aws-bedrock], [azure-ai-inference], [azure-openai], [claude-agent-sdk], [cohere], [google-genai], [groq], [litellm], [mistralai], [openai], [vertexai] |
+| gen_ai.operation.name | [adk_a2a], [agent-framework], [anthropic], [aws-bedrock], [azure-ai-inference], [azure-openai], [claude-agent-sdk], [cohere], [google-genai], [groq], [litellm], [mistralai], [ollama], [openai], [vertexai] |
+| gen_ai.provider.name | [agent-framework], [anthropic], [aws-bedrock], [azure-ai-inference], [azure-openai], [claude-agent-sdk], [cohere], [google-genai], [groq], [litellm], [mistralai], [ollama], [openai], [vertexai] |
 
 ## Conditionally Required
 
 | Attribute | Supporting Libraries |
 | --- | --- |
 | gen_ai.conversation.id | [adk_a2a], [agent-framework] |
-| gen_ai.output.type | (none) |
+| gen_ai.output.type | [ollama] |
 | gen_ai.prompt.name | [aws-bedrock], [openai] |
 | gen_ai.prompt.version | [aws-bedrock], [openai] |
 | gen_ai.request.choice.count | [agent-framework], [openai] |
-| gen_ai.request.model | [adk_a2a], [agent-framework], [anthropic], [aws-bedrock], [azure-ai-inference], [azure-openai], [cohere], [google-genai], [groq], [litellm], [mistralai], [openai], [vertexai] |
-| gen_ai.request.seed | [openai] |
-| gen_ai.request.stream | [openai] |
-| gen_ai.request.top_k | (none) |
-| server.port | [anthropic], [aws-bedrock], [azure-ai-inference], [azure-openai], [cohere], [google-genai], [litellm], [mistralai], [openai] |
+| gen_ai.request.model | [adk_a2a], [agent-framework], [anthropic], [aws-bedrock], [azure-ai-inference], [azure-openai], [cohere], [google-genai], [groq], [litellm], [mistralai], [ollama], [openai], [vertexai] |
+| gen_ai.request.seed | [ollama], [openai] |
+| gen_ai.request.stream | [ollama], [openai] |
+| gen_ai.request.top_k | [ollama] |
+| server.port | [anthropic], [aws-bedrock], [azure-ai-inference], [azure-openai], [cohere], [google-genai], [litellm], [mistralai], [ollama], [openai] |
 
 ## Recommended
 
 | Attribute | Supporting Libraries |
 | --- | --- |
 | gen_ai.conversation.compacted | [anthropic], [openai] |
-| gen_ai.request.frequency_penalty | [openai] |
-| gen_ai.request.max_tokens | [anthropic], [openai] |
-| gen_ai.request.presence_penalty | [openai] |
+| gen_ai.request.frequency_penalty | [ollama], [openai] |
+| gen_ai.request.max_tokens | [anthropic], [ollama], [openai] |
+| gen_ai.request.presence_penalty | [ollama], [openai] |
 | gen_ai.request.previous_response.id | [google-genai], [openai] |
 | gen_ai.request.reasoning.level | [anthropic], [openai] |
-| gen_ai.request.stop_sequences | [openai] |
-| gen_ai.request.temperature | [openai] |
-| gen_ai.request.top_p | [openai] |
-| gen_ai.response.finish_reasons | [adk_a2a], [anthropic], [aws-bedrock], [azure-ai-inference], [azure-openai], [claude-agent-sdk], [cohere], [google-genai], [groq], [litellm], [mistralai], [openai], [vertexai] |
+| gen_ai.request.stop_sequences | [ollama], [openai] |
+| gen_ai.request.temperature | [ollama], [openai] |
+| gen_ai.request.top_p | [ollama], [openai] |
+| gen_ai.response.finish_reasons | [adk_a2a], [anthropic], [aws-bedrock], [azure-ai-inference], [azure-openai], [claude-agent-sdk], [cohere], [google-genai], [groq], [litellm], [mistralai], [ollama], [openai], [vertexai] |
 | gen_ai.response.id | [agent-framework], [anthropic], [azure-ai-inference], [azure-openai], [claude-agent-sdk], [cohere], [google-genai], [groq], [litellm], [mistralai], [openai], [vertexai] |
-| gen_ai.response.model | [agent-framework], [anthropic], [azure-ai-inference], [azure-openai], [claude-agent-sdk], [google-genai], [groq], [litellm], [mistralai], [openai], [vertexai] |
-| gen_ai.response.time_to_first_chunk | [openai] |
+| gen_ai.response.model | [agent-framework], [anthropic], [azure-ai-inference], [azure-openai], [claude-agent-sdk], [google-genai], [groq], [litellm], [mistralai], [ollama], [openai], [vertexai] |
+| gen_ai.response.time_to_first_chunk | [ollama], [openai] |
 | gen_ai.usage.audio.cache_read.input_tokens | [google-genai], [vertexai] |
 | gen_ai.usage.audio.input_tokens | [google-genai], [openai], [vertexai] |
 | gen_ai.usage.audio.output_tokens | [google-genai], [openai] |
-| gen_ai.usage.cache_read.input_tokens | [adk_a2a], [agent-framework], [anthropic], [google-genai], [openai], [vertexai] |
+| gen_ai.usage.cache_read.input_tokens | [adk_a2a], [agent-framework], [anthropic], [google-genai], [ollama], [openai], [vertexai] |
 | gen_ai.usage.cache_write.input_tokens | [anthropic], [openai] |
 | gen_ai.usage.image.cache_read.input_tokens | [google-genai], [vertexai] |
 | gen_ai.usage.image.input_tokens | [google-genai], [vertexai] |
 | gen_ai.usage.image.output_tokens | [google-genai] |
-| gen_ai.usage.input_tokens | [adk_a2a], [agent-framework], [anthropic], [aws-bedrock], [azure-ai-inference], [azure-openai], [claude-agent-sdk], [cohere], [google-genai], [groq], [litellm], [mistralai], [openai], [vertexai] |
-| gen_ai.usage.output_tokens | [adk_a2a], [agent-framework], [anthropic], [aws-bedrock], [azure-ai-inference], [azure-openai], [claude-agent-sdk], [cohere], [google-genai], [groq], [litellm], [mistralai], [openai], [vertexai] |
+| gen_ai.usage.input_tokens | [adk_a2a], [agent-framework], [anthropic], [aws-bedrock], [azure-ai-inference], [azure-openai], [claude-agent-sdk], [cohere], [google-genai], [groq], [litellm], [mistralai], [ollama], [openai], [vertexai] |
+| gen_ai.usage.output_tokens | [adk_a2a], [agent-framework], [anthropic], [aws-bedrock], [azure-ai-inference], [azure-openai], [claude-agent-sdk], [cohere], [google-genai], [groq], [litellm], [mistralai], [ollama], [openai], [vertexai] |
 | gen_ai.usage.reasoning.output_tokens | [adk_a2a], [agent-framework], [google-genai], [openai], [vertexai] |
 | gen_ai.usage.text.cache_read.input_tokens | [google-genai], [vertexai] |
 | gen_ai.usage.text.input_tokens | [google-genai], [vertexai] |
 | gen_ai.usage.text.output_tokens | [google-genai], [vertexai] |
-| server.address | [agent-framework], [anthropic], [aws-bedrock], [azure-ai-inference], [azure-openai], [cohere], [google-genai], [groq], [litellm], [mistralai], [openai], [vertexai] |
+| server.address | [agent-framework], [anthropic], [aws-bedrock], [azure-ai-inference], [azure-openai], [cohere], [google-genai], [groq], [litellm], [mistralai], [ollama], [openai], [vertexai] |
 
 ## Opt-In
 
 | Attribute | Supporting Libraries |
 | --- | --- |
-| gen_ai.input.messages | [agent-framework], [anthropic], [aws-bedrock], [claude-agent-sdk], [groq], [litellm], [mistralai], [openai] |
+| gen_ai.input.messages | [agent-framework], [anthropic], [aws-bedrock], [claude-agent-sdk], [groq], [litellm], [mistralai], [ollama], [openai] |
 | gen_ai.input.messages_ref | [anthropic] |
-| gen_ai.output.messages | [agent-framework], [anthropic], [aws-bedrock], [claude-agent-sdk], [litellm], [mistralai], [openai] |
+| gen_ai.output.messages | [agent-framework], [anthropic], [aws-bedrock], [claude-agent-sdk], [litellm], [mistralai], [ollama], [openai] |
 | gen_ai.output.messages_ref | [anthropic] |
 | gen_ai.prompt.variable | (none) |
 | gen_ai.system_instructions | [agent-framework], [anthropic] |
 | gen_ai.system_instructions_ref | [anthropic] |
-| gen_ai.tool.definitions | [anthropic], [aws-bedrock], [azure-ai-inference], [cohere], [google-genai], [groq], [litellm], [mistralai], [openai], [vertexai] |
+| gen_ai.tool.definitions | [anthropic], [aws-bedrock], [azure-ai-inference], [cohere], [google-genai], [groq], [litellm], [mistralai], [ollama], [openai], [vertexai] |
 | gen_ai.tool.definitions_ref | [anthropic] |
 
 [adk_a2a]: ../scenarios/adk_a2a/scenario.py
@@ -83,5 +83,6 @@
 [groq]: ../scenarios/groq/scenario.py
 [litellm]: ../scenarios/litellm/scenario.py
 [mistralai]: ../scenarios/mistralai/scenario.py
+[ollama]: ../scenarios/ollama/scenario.py
 [openai]: ../scenarios/openai/scenario.py
 [vertexai]: ../scenarios/vertexai/scenario.py

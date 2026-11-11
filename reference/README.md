@@ -32,10 +32,10 @@ Run `uv run update-reports` to regenerate.
 | [Invoke Agent Client](reports/invoke-agent-client-span.md) | aws-bedrock-agent, azure-ai-foundry, google-genai, openai-assistants |
 | [Invoke Agent Internal](reports/invoke-agent-internal-span.md) | adk_a2a, agent-framework, autogen, crewai, google-adk, langchain, openai-agents, pydantic-ai |
 | [Plan](reports/plan-span.md) | crewai, langchain |
-| [Inference](reports/inference-span.md) | adk_a2a, agent-framework, anthropic, aws-bedrock, azure-ai-inference, azure-openai, claude-agent-sdk, cohere, google-genai, groq, litellm, mistralai, openai, vertexai |
+| [Inference](reports/inference-span.md) | adk_a2a, agent-framework, anthropic, aws-bedrock, azure-ai-inference, azure-openai, claude-agent-sdk, cohere, google-genai, groq, litellm, mistralai, ollama, openai, vertexai |
 | [Realtime Inference](reports/realtime-inference-span.md) | google-genai, openai |
 | [User Speech](reports/user-speech-span.md) | google-genai, openai |
-| [Embeddings](reports/embeddings-span.md) | aws-bedrock, azure-ai-inference, azure-openai, cohere, google-genai, litellm, mistralai, openai |
+| [Embeddings](reports/embeddings-span.md) | aws-bedrock, azure-ai-inference, azure-openai, cohere, google-genai, litellm, mistralai, ollama, openai |
 | [Retrieval](reports/retrieval-span.md) | haystack, langchain, llamaindex |
 | [Fetch Response](reports/fetch-response-span.md) | openai |
 | [Memory](reports/memory-span.md) | aws-bedrock-agentcore, google-adk |
@@ -47,10 +47,10 @@ Run `uv run update-reports` to regenerate.
 | --- | --- |
 | [Realtime Session Started](reports/gen-ai-client-realtime-session-started-event.md) | google-genai, openai |
 | [Realtime Session Ended](reports/gen-ai-client-realtime-session-ended-event.md) | google-genai, openai |
-| [Client Embeddings Exception](reports/gen-ai-client-embeddings-exception-event.md) | openai |
+| [Client Embeddings Exception](reports/gen-ai-client-embeddings-exception-event.md) | ollama, openai |
 | [Client Fetch Response Exception](reports/gen-ai-client-fetch-response-exception-event.md) | openai |
-| [Client Inference Exception](reports/gen-ai-client-inference-exception-event.md) | openai |
-| [Inference Operation Details](reports/gen-ai-client-inference-operation-details-event.md) | anthropic, aws-bedrock, azure-ai-inference, cohere, google-genai, groq, litellm, mistralai, openai, vertexai |
+| [Client Inference Exception](reports/gen-ai-client-inference-exception-event.md) | ollama, openai |
+| [Inference Operation Details](reports/gen-ai-client-inference-operation-details-event.md) | anthropic, aws-bedrock, azure-ai-inference, cohere, google-genai, groq, litellm, mistralai, ollama, openai, vertexai |
 | [Client Invoke Agent Exception](reports/gen-ai-client-invoke-agent-exception-event.md) | aws-bedrock-agent, azure-ai-foundry |
 | [Evaluation Result](reports/gen-ai-evaluation-result-event.md) | azure-ai-evaluation, deepeval, dspy |
 | [Execute Tool Exception](reports/gen-ai-execute-tool-exception-event.md) | openai-agents |
@@ -66,17 +66,17 @@ Run `uv run update-reports` to regenerate.
 
 | Metric | Libraries |
 | --- | --- |
-| [Client Inference Usage Input Tokens](reports/gen-ai-client-inference-usage-input-tokens-metric.md) | anthropic, google-genai, openai |
-| [Client Inference Usage Output Tokens](reports/gen-ai-client-inference-usage-output-tokens-metric.md) | anthropic, google-genai, openai |
-| [Client Inference Cache Read Input Tokens](reports/gen-ai-client-inference-usage-cache-read-input-tokens-metric.md) | anthropic, google-genai, openai |
+| [Client Inference Usage Input Tokens](reports/gen-ai-client-inference-usage-input-tokens-metric.md) | anthropic, google-genai, ollama, openai |
+| [Client Inference Usage Output Tokens](reports/gen-ai-client-inference-usage-output-tokens-metric.md) | anthropic, google-genai, ollama, openai |
+| [Client Inference Cache Read Input Tokens](reports/gen-ai-client-inference-usage-cache-read-input-tokens-metric.md) | anthropic, google-genai, ollama, openai |
 | [Client Inference Cache Write Input Tokens](reports/gen-ai-client-inference-usage-cache-write-input-tokens-metric.md) | anthropic, openai |
 | [Client Inference Reasoning Output Tokens](reports/gen-ai-client-inference-usage-reasoning-output-tokens-metric.md) | google-genai, openai |
-| [Client Inference Operation Input Tokens](reports/gen-ai-client-inference-operation-input-tokens-metric.md) | anthropic, azure-openai, google-genai, openai |
-| [Client Inference Operation Output Tokens](reports/gen-ai-client-inference-operation-output-tokens-metric.md) | anthropic, azure-openai, google-genai, openai |
+| [Client Inference Operation Input Tokens](reports/gen-ai-client-inference-operation-input-tokens-metric.md) | anthropic, azure-openai, google-genai, ollama, openai |
+| [Client Inference Operation Output Tokens](reports/gen-ai-client-inference-operation-output-tokens-metric.md) | anthropic, azure-openai, google-genai, ollama, openai |
 | [Client Operation Duration](reports/gen-ai-client-operation-duration-metric.md) | adk_a2a |
-| [Client Inference Duration](reports/gen-ai-client-inference-duration-metric.md) | agent-framework, anthropic, groq |
-| [Client Embeddings Duration](reports/gen-ai-client-embeddings-duration-metric.md) | aws-bedrock, azure-ai-inference, azure-openai, cohere, google-genai, litellm, mistralai, openai |
-| [Client Embeddings Operation Input Tokens](reports/gen-ai-client-embeddings-operation-input-tokens-metric.md) | aws-bedrock, azure-ai-inference, azure-openai, cohere, litellm, mistralai, openai |
+| [Client Inference Duration](reports/gen-ai-client-inference-duration-metric.md) | agent-framework, anthropic, groq, ollama |
+| [Client Embeddings Duration](reports/gen-ai-client-embeddings-duration-metric.md) | aws-bedrock, azure-ai-inference, azure-openai, cohere, google-genai, litellm, mistralai, ollama, openai |
+| [Client Embeddings Operation Input Tokens](reports/gen-ai-client-embeddings-operation-input-tokens-metric.md) | aws-bedrock, azure-ai-inference, azure-openai, cohere, litellm, mistralai, ollama, openai |
 | [Execute Tool Duration](reports/gen-ai-execute-tool-duration-metric.md) | google-adk |
 | [Retrieval Duration](reports/gen-ai-retrieval-duration-metric.md) | haystack, langchain, llamaindex |
 | [Client Invoke Agent Duration](reports/gen-ai-client-invoke-agent-duration-metric.md) | aws-bedrock-agent, azure-ai-foundry, google-genai, openai-assistants |
