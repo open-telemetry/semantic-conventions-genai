@@ -128,6 +128,11 @@ _output_tokens = _reference_meter.create_counter(
     unit="{token}",
     description="The number of output (completion) tokens used, including reasoning tokens.",
 )
+_cache_read_input_tokens = _reference_meter.create_counter(
+    "gen_ai.client.inference.usage.cache_read.input_tokens",
+    unit="{token}",
+    description="The number of input tokens served from a provider-managed cache.",
+)
 _embeddings_duration = _reference_meter.create_histogram(
     "gen_ai.client.embeddings.duration",
     unit="s",
@@ -1721,6 +1726,10 @@ def run_chat_cached_prompt(seed=50):
     transport reads it from the raw response, as an instrumentation with raw
     API access would. Once an SDK release exposes the field, the transport is
     removed and the value is read from the parsed response.
+
+    The cached count is also recorded on the
+    gen_ai.client.inference.usage.cache_read.input_tokens counter, a subset
+    of the usage input-token counter, per the generic token metrics.
     """
     print("  [chat] cached prompt tokens (local /api/chat mock, raw-response capture)")
     mode = _capture_mode()
@@ -1818,6 +1827,13 @@ def run_chat_cached_prompt(seed=50):
                 _input_tokens.add(input_tokens, {**metric_attributes, "gen_ai.token.modality": "unknown"})
             if output_tokens:
                 _output_tokens.add(output_tokens, {**metric_attributes, "gen_ai.token.modality": "unknown"})
+
+            # The cached count is a subset of the input usage, so it is also
+            # counted by the cache-read usage counter, next to the total.
+            if transport.cached_prompt_tokens:
+                _cache_read_input_tokens.add(
+                    transport.cached_prompt_tokens, {**metric_attributes, "gen_ai.token.modality": "unknown"}
+                )
 
             content = resp.message.content
             if _record_span_messages(mode):

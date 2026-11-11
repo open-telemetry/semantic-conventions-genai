@@ -107,7 +107,10 @@ workaround: it skips streamed responses so the time-to-first-chunk timing is
 preserved, and it is removed once an SDK release exposes the field, which is tracked
 in [ollama/ollama-python#773](https://github.com/ollama/ollama-python/issues/773),
 with pull requests open to surface it. Like the other usage counts, the field appears
-on the final chunk of a streaming response.
+on the final chunk of a streaming response. The reference scenario also counts the cached
+tokens on the `gen_ai.client.inference.usage.cache_read.input_tokens`
+counter, a subset of the input-token usage counter, per the generic
+token metrics.
 
 The `total_duration` and `load_duration` response timings have no generic equivalent and
 are recorded with `ollama.response.total_duration` and `ollama.response.load_duration`.

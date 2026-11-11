@@ -71,7 +71,8 @@ the failure paths of chat and embeddings.
   explicit bucket boundaries recommended by the GenAI conventions
 - `gen_ai.client.inference.usage.input_tokens` and `gen_ai.client.inference.usage.output_tokens`
   counters, recorded under the `unknown` modality because Ollama reports no per-modality
-  token breakdown
+  token breakdown, plus the `gen_ai.client.inference.usage.cache_read.input_tokens` counter
+  for the cached prompt-token chat, a subset of the input-token usage counter
 - `gen_ai.client.inference.operation.input_tokens` and `gen_ai.client.inference.operation.output_tokens` histograms
 - `gen_ai.client.inference.time_to_first_chunk` and `gen_ai.client.inference.time_per_output_chunk` histograms
   for the streaming chat completions, recorded from the arrival times of the chunks
@@ -87,7 +88,9 @@ fields as `gen_ai.usage.input_tokens` and `gen_ai.usage.output_tokens`.
 
 The cached prompt-token chat additionally records the server's
 `prompt_eval_cached_count` as `gen_ai.usage.cache_read.input_tokens`, a subset of
-`gen_ai.usage.input_tokens`. Because `ollama-python` drops the field when parsing
+`gen_ai.usage.input_tokens`, and counts it on the
+`gen_ai.client.inference.usage.cache_read.input_tokens` counter, a subset
+of the input-token usage counter. Because `ollama-python` drops the field when parsing
 the response, the scenario reads it from the raw response through a capture
 transport injected into the SDK's httpx client — a workaround that is removed once
 an SDK release exposes the field; streamed responses are skipped so the
