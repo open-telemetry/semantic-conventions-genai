@@ -1,0 +1,12 @@
+{
+  "name": "acme-tools",
+  "owner": {
+    "name": "Example Team"
+  },
+  "plugins": [
+    {
+      "name": "deploy-tools",
+      "source": "./deploy-tools"
+    }
+  ]
+}
