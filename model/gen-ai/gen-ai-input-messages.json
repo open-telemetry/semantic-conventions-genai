@@ -35,16 +35,23 @@
                     "title": "Modality"
                 },
                 "content": {
-                    "description": "Raw bytes of the attached data. This field SHOULD be encoded as a base64 string when serialized to JSON.",
-                    "format": "binary",
-                    "title": "Content",
-                    "type": "string"
+                    "anyOf": [
+                        {
+                            "format": "binary",
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Raw bytes of the attached data.",
+                    "title": "Content"
                 }
             },
             "required": [
                 "type",
-                "modality",
-                "content"
+                "modality"
             ],
             "title": "BlobPart",
             "type": "object"
@@ -91,6 +98,9 @@
                             },
                             {
                                 "$ref": "#/$defs/UriPart"
+                            },
+                            {
+                                "$ref": "#/$defs/TranscriptionPart"
                             },
                             {
                                 "$ref": "#/$defs/ReasoningPart"
@@ -235,6 +245,7 @@
                             "blob",
                             "file",
                             "uri",
+                            "transcription",
                             "reasoning",
                             "compaction"
                         ]
@@ -497,6 +508,29 @@
                 "response"
             ],
             "title": "ToolCallResponsePart",
+            "type": "object"
+        },
+        "TranscriptionPart": {
+            "additionalProperties": true,
+            "description": "Represents a text transcript of spoken audio, captured as a standalone part.",
+            "properties": {
+                "type": {
+                    "const": "transcription",
+                    "description": "The type of the content captured in this part.",
+                    "title": "Type",
+                    "type": "string"
+                },
+                "content": {
+                    "description": "The text transcript of spoken audio. For input audio this is the transcription of the user's speech; for output audio it is the transcript of the model's spoken response.",
+                    "title": "Content",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "type",
+                "content"
+            ],
+            "title": "TranscriptionPart",
             "type": "object"
         },
         "UriPart": {

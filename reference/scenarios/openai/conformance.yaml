@@ -11,7 +11,37 @@ env:
 scenarios:
   reference:
     run: uv run --frozen --python 3.12 --project . python scenario.py
+    events:
+      - gen_ai.client.embeddings.exception
+      - gen_ai.client.fetch_response.exception
+      - gen_ai.client.inference.exception
+      - gen_ai.client.inference.operation.details
     expected_violations:
+      - id: genai_expected_attribute_missing
+        context:
+          missing_attribute: gen_ai.response.finish_reasons
+          operation: chat
+        reason: Error span has no response; the conformance policy does not skip response attributes on error spans.
+      - id: genai_expected_attribute_missing
+        context:
+          missing_attribute: gen_ai.response.id
+          operation: chat
+        reason: Error span has no response; the conformance policy does not skip response attributes on error spans.
+      - id: genai_expected_attribute_missing
+        context:
+          missing_attribute: gen_ai.response.model
+          operation: chat
+        reason: Error span has no response; the conformance policy does not skip response attributes on error spans.
+      - id: genai_expected_attribute_missing
+        context:
+          missing_attribute: gen_ai.usage.input_tokens
+          operation: chat
+        reason: Error span has no response; the conformance policy does not skip response attributes on error spans.
+      - id: genai_expected_attribute_missing
+        context:
+          missing_attribute: gen_ai.usage.output_tokens
+          operation: chat
+        reason: Error span has no response; the conformance policy does not skip response attributes on error spans.
       - id: genai_expected_attribute_missing
         context:
           missing_attribute: gen_ai.embeddings.dimension.count
