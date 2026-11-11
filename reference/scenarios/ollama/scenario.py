@@ -2,8 +2,9 @@
 
 Exercises: chat (basic, tool call, formatted, streaming, and the span content
 capture modes), embeddings, and text completion (against a scenario-local
-/api/generate mock), plus a streaming tool call and a mid-stream failure
-against scenario-local /api/chat mocks, with manual OTel spans and metrics.
+/api/generate mock), plus a cached prompt-token chat, a streaming tool call,
+and a mid-stream failure against scenario-local /api/chat mocks, with manual
+OTel spans and metrics.
 """
 
 import json
@@ -368,6 +369,81 @@ class _StreamingFailureMockHandler(BaseHTTPRequestHandler):
     def log_message(self, format, *args):
         # Silence per-request stderr output; the scenario prints its own lines.
         return
+
+
+class _CachedPromptChatMockHandler(BaseHTTPRequestHandler):
+    """Serve a canned non-streaming /api/chat response with cached prompt tokens.
+
+    The shared conformance mock server does not report the server-side
+    prompt_eval_cached_count field, so the cached prompt-token demonstration
+    serves /api/chat from this in-process HTTP server: 23 of the 100 prompt
+    tokens were served from the prompt cache, a subset relationship the
+    gen_ai.usage.cache_read.input_tokens mapping relies on.
+    """
+
+    def do_POST(self):
+        if self.path != "/api/chat":
+            self.send_error(404)
+            return
+        body = json.dumps(
+            {
+                "model": "llama3.2",
+                "created_at": "2026-01-01T00:00:00Z",
+                "message": {"role": "assistant", "content": "Hello!"},
+                "done": True,
+                "done_reason": "stop",
+                "total_duration": 1000000000,
+                "load_duration": 100000000,
+                "prompt_eval_count": 100,
+                "prompt_eval_cached_count": 23,
+                "eval_count": 17,
+            }
+        ).encode()
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def log_message(self, format, *args):
+        # Silence per-request stderr output; the scenario prints its own lines.
+        return
+
+
+class _CacheReadCaptureTransport(httpx.BaseTransport):
+    """Capture prompt_eval_cached_count from the raw /api/chat response.
+
+    ollama-python parses responses into models that do not declare the
+    server's prompt_eval_cached_count field, so the field is silently dropped
+    (ollama/ollama-python#773). This transport wraps the HTTP transport and
+    reads the field from the raw response, as an instrumentation with raw API
+    access would, for mapping to gen_ai.usage.cache_read.input_tokens. The
+    SDK forwards keyword arguments to its httpx client, so the transport is
+    injected through the supported transport argument. Streamed responses
+    are skipped: the SDK reads a non-streaming response into memory anyway,
+    but buffering a streamed response would delay every chunk and distort the
+    time-to-first-chunk timing. Once an SDK release exposes the field, the
+    transport is removed and the value is read from the parsed response.
+    """
+
+    def __init__(self, transport):
+        self._transport = transport
+        self.cached_prompt_tokens = None
+
+    def handle_request(self, request):
+        response = self._transport.handle_request(request)
+        if request.url.path != "/api/chat":
+            return response
+        payload = json.loads(request.content)
+        if payload.get("stream"):
+            # A buffered read would delay streamed chunks, so streamed
+            # responses are not captured.
+            return response
+        body = json.loads(response.read())
+        cached = body.get("prompt_eval_cached_count")
+        if cached:
+            self.cached_prompt_tokens = int(cached)
+        return response
 
 
 def run_chat(client, base_url, *, expect_error=False, capture_mode=None, seed=42):
@@ -1634,6 +1710,161 @@ def run_text_completion():
         print(f"    -> {content[:60]}")
 
 
+def run_chat_cached_prompt(seed=50):
+    """Scenario: chat completion with a cached prompt-token demonstration.
+
+    The Ollama server reports the number of prompt tokens served from the
+    prompt cache as prompt_eval_cached_count, a subset of prompt_eval_count,
+    which maps to gen_ai.usage.cache_read.input_tokens. ollama-python drops
+    the field when parsing the response (ollama/ollama-python#773), so the
+    scenario-local mock returns a non-zero cached count and the capture
+    transport reads it from the raw response, as an instrumentation with raw
+    API access would. Once an SDK release exposes the field, the transport is
+    removed and the value is read from the parsed response.
+    """
+    print("  [chat] cached prompt tokens (local /api/chat mock, raw-response capture)")
+    mode = _capture_mode()
+    server = ThreadingHTTPServer(("127.0.0.1", 0), _CachedPromptChatMockHandler)
+    port = server.server_address[1]
+    server_thread = threading.Thread(target=server.serve_forever, daemon=True)
+    server_thread.start()
+    try:
+        base_url = f"http://127.0.0.1:{port}"
+        # The SDK forwards keyword arguments to its httpx client, so the
+        # capture transport is injected through the supported transport
+        # argument.
+        transport = _CacheReadCaptureTransport(httpx.HTTPTransport())
+        client = ollama.Client(host=base_url, transport=transport)
+        request_model = "llama3.2"
+        # The same request options as the other chats, so the span carries the
+        # Ollama refinement attributes asserted once for all successful chats.
+        request_options = {
+            "seed": seed,
+            "num_ctx": 2048,
+            "num_batch": 512,
+            "num_gpu": 1,
+            "main_gpu": 0,
+        }
+        messages = [{"role": "user", "content": "Say hello."}]
+        span_attributes = {
+            "gen_ai.operation.name": "chat",
+            "gen_ai.provider.name": "ollama",
+            "gen_ai.request.model": request_model,
+            "gen_ai.request.seed": request_options["seed"],
+            "ollama.request.base_url": _sanitize_base_url(base_url),
+            "ollama.request.num_ctx": request_options["num_ctx"],
+            "ollama.request.num_batch": request_options["num_batch"],
+            "ollama.request.num_gpu": request_options["num_gpu"],
+            "ollama.request.main_gpu": request_options["main_gpu"],
+            "server.address": "127.0.0.1",
+            "server.port": port,
+        }
+        # Message content is recorded on the span when the SPAN_ONLY or
+        # SPAN_AND_EVENT capture mode is enabled, per the content capture
+        # configuration section of docs/gen-ai/gen-ai-spans.md.
+        if _record_span_messages(mode):
+            span_attributes["gen_ai.input.messages"] = [
+                {"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]} for m in messages
+            ]
+        input_tokens = None
+        output_tokens = None
+        response_model = None
+        content = None
+        with _reference_tracer.start_as_current_span(
+            "chat llama3.2", kind=SpanKind.CLIENT, attributes=span_attributes
+        ) as span:
+            started_at = perf_counter()
+            resp = client.chat(model=request_model, messages=messages, stream=False, options=request_options)
+            elapsed = perf_counter() - started_at
+            if resp.model:
+                span.set_attribute("gen_ai.response.model", resp.model)
+                response_model = resp.model
+            # A finish reason is expected for every generation; the registry
+            # fallback reports "error" when the response omits it.
+            span.set_attribute("gen_ai.response.finish_reasons", [resp.done_reason] if resp.done_reason else ["error"])
+            if resp.prompt_eval_count is not None:
+                input_tokens = int(resp.prompt_eval_count)
+                span.set_attribute("gen_ai.usage.input_tokens", input_tokens)
+            if resp.eval_count is not None:
+                output_tokens = int(resp.eval_count)
+                span.set_attribute("gen_ai.usage.output_tokens", output_tokens)
+            # The cached count is a subset of the prompt evaluation count, and
+            # the SDK drops the field, so the value comes from the raw-response
+            # capture and is only recorded when the server reports a non-zero
+            # value, per the requirement level of the generic attribute.
+            if transport.cached_prompt_tokens:
+                span.set_attribute("gen_ai.usage.cache_read.input_tokens", transport.cached_prompt_tokens)
+            if resp.total_duration is not None:
+                span.set_attribute("ollama.response.total_duration", int(resp.total_duration))
+            if resp.load_duration is not None:
+                span.set_attribute("ollama.response.load_duration", int(resp.load_duration))
+
+            metric_attributes = {
+                "gen_ai.operation.name": "chat",
+                "gen_ai.provider.name": "ollama",
+                "gen_ai.request.model": request_model,
+            }
+            if response_model:
+                metric_attributes["gen_ai.response.model"] = response_model
+            metric_attributes["server.address"] = "127.0.0.1"
+            metric_attributes["server.port"] = port
+            _inference_duration.record(elapsed, metric_attributes)
+            _operation_input_tokens.record(input_tokens if input_tokens is not None else 0, metric_attributes)
+            _operation_output_tokens.record(output_tokens if output_tokens is not None else 0, metric_attributes)
+            # Ollama reports no per-modality token breakdown, so every counter
+            # point goes to the unknown modality, and the usage counters are
+            # only incremented for known positive counts.
+            if input_tokens:
+                _input_tokens.add(input_tokens, {**metric_attributes, "gen_ai.token.modality": "unknown"})
+            if output_tokens:
+                _output_tokens.add(output_tokens, {**metric_attributes, "gen_ai.token.modality": "unknown"})
+
+            content = resp.message.content
+            if _record_span_messages(mode):
+                span.set_attribute(
+                    "gen_ai.output.messages",
+                    [{"role": "assistant", "parts": [{"type": "text", "content": content}]}],
+                )
+            event_attrs = {
+                "gen_ai.operation.name": "chat",
+                "gen_ai.provider.name": "ollama",
+                "gen_ai.request.model": request_model,
+                "gen_ai.request.seed": request_options["seed"],
+            }
+            if _record_event_messages(mode):
+                event_attrs["gen_ai.input.messages"] = [
+                    {"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]} for m in messages
+                ]
+                event_attrs["gen_ai.output.messages"] = [
+                    {
+                        "role": "assistant",
+                        "parts": [{"type": "text", "content": content}],
+                    }
+                ]
+            if resp.model:
+                event_attrs["gen_ai.response.model"] = resp.model
+            event_attrs["gen_ai.response.finish_reasons"] = [resp.done_reason] if resp.done_reason else ["error"]
+            if input_tokens is not None:
+                event_attrs["gen_ai.usage.input_tokens"] = input_tokens
+            if output_tokens is not None:
+                event_attrs["gen_ai.usage.output_tokens"] = output_tokens
+            if transport.cached_prompt_tokens:
+                event_attrs["gen_ai.usage.cache_read.input_tokens"] = transport.cached_prompt_tokens
+            event_attrs["server.address"] = "127.0.0.1"
+            event_attrs["server.port"] = port
+            reference_event_logger().emit(
+                event_name="gen_ai.client.inference.operation.details",
+                severity_number=SeverityNumber.DEBUG,
+                body="Inference operation details",
+                attributes=event_attrs,
+            )
+    finally:
+        server.shutdown()
+        server.server_close()
+    if content:
+        print(f"    -> {content[:60]}")
+
+
 def run_chat_streaming_tools():
     """Scenario: streaming chat completion offering a tool.
 
@@ -1718,6 +1949,7 @@ def main():
     run_chat(client, MOCK_BASE_URL, capture_mode="SPAN_AND_EVENT", seed=47)
     run_embed(client, MOCK_BASE_URL)
     run_text_completion()
+    run_chat_cached_prompt()
     run_chat_streaming_tools()
     run_chat_streaming_failure()
 

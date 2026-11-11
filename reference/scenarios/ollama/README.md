@@ -9,8 +9,10 @@ on the standard GenAI client spans, using the `ollama` SDK against the mock
 Ollama server. The scenarios cover a basic chat completion, a chat completion
 that offers a tool and receives a tool call, a formatted chat completion requesting
 JSON output, a streaming chat completion, a streaming tool call served by a
-scenario-local `/api/chat` mock, a streaming chat completion that fails mid-stream
-when a scenario-local mock drops the connection, chat completions exercising the
+scenario-local `/api/chat` mock, a cached prompt-token chat served by a scenario-local
+`/api/chat` mock with a raw-response capture workaround, a streaming chat completion
+that fails mid-stream when a scenario-local mock drops the connection, chat
+completions exercising the
 `SPAN_ONLY` and `SPAN_AND_EVENT` content capture modes on the span, an embedding
 generation, a text completion against a scenario-local `/api/generate` mock, and
 the failure paths of chat and embeddings.
@@ -41,6 +43,12 @@ the failure paths of chat and embeddings.
     `main_gpu` Ollama-specific request options, each read from the same
     `options` object handed to the SDK call
   - `ollama.response.total_duration` and `ollama.response.load_duration` from the native Ollama response timings
+  - `gen_ai.usage.cache_read.input_tokens` for the cached prompt-token chat: the
+    scenario-local mock reports a non-zero `prompt_eval_cached_count` that
+    `ollama-python` drops when parsing, so a capture transport injected into the
+    SDK's httpx client through the supported `transport` argument reads the field
+    from the raw response — a workaround that is removed once an SDK release
+    exposes the field
 - `gen_ai.client.inference` span for a text completion
   (`gen_ai.operation.name = "text_completion"`) from the `client.generate` call,
   served by a scenario-local `/api/generate` HTTP mock because the shared
@@ -54,8 +62,9 @@ the failure paths of chat and embeddings.
   and output messages — the event carries them when the `EVENT_ONLY` or
   `SPAN_AND_EVENT` capture mode is enabled via `OTEL_INSTRUMENTATION_GENAI_CAPTURE_CONTENT`,
   while the span carries them when the `SPAN_ONLY` or `SPAN_AND_EVENT` mode is
-  enabled — the server endpoint, the request options, and
-  `gen_ai.response.time_to_first_chunk` for the streaming requests
+  enabled — the server endpoint, the request options, the usage counts including
+  the captured cached prompt tokens, and `gen_ai.response.time_to_first_chunk` for
+  the streaming requests
 - `gen_ai.client.inference.exception` and `gen_ai.client.embeddings.exception` events
   (WARN severity) on the SDK failure paths
 - `gen_ai.client.inference.duration` around the SDK chat and generate calls, with the
@@ -75,6 +84,14 @@ Ollama's `num_predict` option is recorded as `gen_ai.request.max_tokens` only fo
 non-negative values (negative values are Ollama sentinels, for example `-1` for
 unlimited generation), and the native `prompt_eval_count` and `eval_count` response
 fields as `gen_ai.usage.input_tokens` and `gen_ai.usage.output_tokens`.
+
+The cached prompt-token chat additionally records the server's
+`prompt_eval_cached_count` as `gen_ai.usage.cache_read.input_tokens`, a subset of
+`gen_ai.usage.input_tokens`. Because `ollama-python` drops the field when parsing
+the response, the scenario reads it from the raw response through a capture
+transport injected into the SDK's httpx client — a workaround that is removed once
+an SDK release exposes the field; streamed responses are skipped so the
+time-to-first-chunk timing is preserved.
 
 When a response omits an expected finish reason, for example a stream that ends
 without a final chunk, the fallback required by the generic conventions records
@@ -101,6 +118,8 @@ events carry the input and output messages, and tool-definition capture
 definitions are recorded. The span content capture modes are exercised with per-call
 overrides, so the runs with `SPAN_ONLY` and `SPAN_AND_EVENT` record the input and
 output messages on the span.
+The cached prompt-token chat asserts the cached, total input, and output
+token counts of its span.
 
 ## Running
 

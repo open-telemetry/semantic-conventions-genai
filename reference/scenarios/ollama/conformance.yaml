@@ -62,9 +62,10 @@ scenarios:
     spans:
       # Every chat span that succeeds carries the same request options and the
       # same mock response timings, so the Ollama refinement attributes are
-      # asserted once for all seven scenarios (basic, tool call, formatted,
-      # streaming, streaming tool call, and the two span content capture
-      # modes); the successful finish reason keeps the mid-stream failure
+      # asserted once for all eight scenarios (basic, tool call, formatted,
+      # streaming, streaming tool call, the two span content capture modes,
+      # and the cached prompt-token chat); the successful finish reason keeps
+      # the mid-stream failure
       # span out, now that the stream identifies the model before the
       # connection drops.
       - match:
@@ -74,7 +75,7 @@ scenarios:
             gen_ai.response.finish_reasons: [stop]
           type: gen_ai.client.inference
         expect:
-          count: 7
+          count: 8
           attributes:
             ollama.request.num_ctx: 2048
             ollama.request.num_batch: 512
@@ -192,6 +193,23 @@ scenarios:
               present: true
             error.type:
               present: true
+      # The cached prompt-token chat is singled out by its seed: the
+      # scenario-local mock reports prompt_eval_cached_count, which the SDK
+      # drops when parsing, so the raw-response capture maps it to the cached
+      # input-token attribute, asserted next to the total input and output
+      # token counts it is a subset of.
+      - match:
+          attributes:
+            gen_ai.operation.name: chat
+            gen_ai.request.seed: 50
+          type: gen_ai.client.inference
+        expect:
+          count: 1
+          attributes:
+            gen_ai.response.finish_reasons: [stop]
+            gen_ai.usage.input_tokens: 100
+            gen_ai.usage.output_tokens: 17
+            gen_ai.usage.cache_read.input_tokens: 23
       # The text completion scenario calls client.generate against a
       # scenario-local /api/generate mock (the shared mock server implements
       # /api/chat and /api/embed only), so its span carries the Ollama

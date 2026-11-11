@@ -97,14 +97,17 @@ Ollama servers since 0.33.3 also report `prompt_eval_cached_count`, the number o
 tokens served from the prompt cache. It is a subset of `prompt_eval_count`, consistent
 with the generic convention that `gen_ai.usage.cache_read.input_tokens` is included in
 `gen_ai.usage.input_tokens`. `ollama-python` does not expose the field as of 0.6.3, so
-the reference scenario cannot demonstrate the mapping; instrumentations with access to
-the raw response SHOULD record it as `gen_ai.usage.cache_read.input_tokens` when the
-server reports a non-zero value, following the requirement level of the generic
-attribute. Like the other usage counts, the field appears on the final chunk of a
-streaming response. Exposing the field in `ollama-python` is tracked in
-[ollama/ollama-python#779](https://github.com/ollama/ollama-python/issues/779), with
-pull requests open to surface it; the reference scenario will demonstrate the mapping
-once an SDK release exposes the field.
+the reference scenario demonstrates the mapping on a cached prompt-token chat served
+by a scenario-local `/api/chat` mock: a capture transport injected into the SDK's
+httpx client through the supported `transport` argument reads the field from the raw
+response, as instrumentations with access to the raw response SHOULD record it as
+`gen_ai.usage.cache_read.input_tokens` when the server reports a non-zero value,
+following the requirement level of the generic attribute. The transport is a
+workaround: it skips streamed responses so the time-to-first-chunk timing is
+preserved, and it is removed once an SDK release exposes the field, which is tracked
+in [ollama/ollama-python#773](https://github.com/ollama/ollama-python/issues/773),
+with pull requests open to surface it. Like the other usage counts, the field appears
+on the final chunk of a streaming response.
 
 The `total_duration` and `load_duration` response timings have no generic equivalent and
 are recorded with `ollama.response.total_duration` and `ollama.response.load_duration`.
