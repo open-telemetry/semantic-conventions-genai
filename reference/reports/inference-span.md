@@ -44,7 +44,7 @@
 | gen_ai.usage.audio.cache_read.input_tokens | [google-genai], [vertexai] |
 | gen_ai.usage.audio.input_tokens | [google-genai], [openai], [vertexai] |
 | gen_ai.usage.audio.output_tokens | [google-genai], [openai] |
-| gen_ai.usage.cache_read.input_tokens | [adk_a2a], [agent-framework], [anthropic], [google-genai], [openai], [vertexai] |
+| gen_ai.usage.cache_read.input_tokens | [adk_a2a], [agent-framework], [anthropic], [google-genai], [ollama], [openai], [vertexai] |
 | gen_ai.usage.cache_write.input_tokens | [anthropic], [openai] |
 | gen_ai.usage.image.cache_read.input_tokens | [google-genai], [vertexai] |
 | gen_ai.usage.image.input_tokens | [google-genai], [vertexai] |
