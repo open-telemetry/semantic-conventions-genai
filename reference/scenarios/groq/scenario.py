@@ -3,7 +3,7 @@
 import os
 import time
 
-from opentelemetry.trace import SpanKind
+from opentelemetry.trace import SpanKind, StatusCode
 from reference_shared import (
     flush_and_shutdown,
     mock_server_host_port,
@@ -18,26 +18,28 @@ MOCK_BASE_URL = os.environ["MOCK_LLM_URL"]
 _reference_tracer = reference_tracer()
 _meter = reference_meter()
 # Bucket boundaries advised for each metric by docs/gen-ai/gen-ai-metrics.md.
-_token_usage = _meter.create_histogram(
-    "gen_ai.client.token.usage",
+_TOKEN_BUCKETS = [1, 4, 16, 64, 256, 1024, 4096, 16384, 65536, 262144, 1048576, 4194304, 16777216, 67108864]
+_input_tokens = _meter.create_histogram(
+    "gen_ai.client.inference.operation.input_tokens",
     unit="{token}",
-    description="Number of input and output tokens used.",
-    explicit_bucket_boundaries_advisory=[
-        1,
-        4,
-        16,
-        64,
-        256,
-        1024,
-        4096,
-        16384,
-        65536,
-        262144,
-        1048576,
-        4194304,
-        16777216,
-        67108864,
-    ],
+    description="The number of input (prompt) tokens used per inference operation.",
+    explicit_bucket_boundaries_advisory=_TOKEN_BUCKETS,
+)
+_output_tokens = _meter.create_histogram(
+    "gen_ai.client.inference.operation.output_tokens",
+    unit="{token}",
+    description="The number of output (completion) tokens used per inference operation.",
+    explicit_bucket_boundaries_advisory=_TOKEN_BUCKETS,
+)
+_input_token_usage = _meter.create_counter(
+    "gen_ai.client.inference.usage.input_tokens",
+    unit="{token}",
+    description="The number of input (prompt) tokens used, including cached tokens.",
+)
+_output_token_usage = _meter.create_counter(
+    "gen_ai.client.inference.usage.output_tokens",
+    unit="{token}",
+    description="The number of output (completion) tokens used, including reasoning tokens.",
 )
 _inference_duration = _meter.create_histogram(
     "gen_ai.client.inference.duration",
@@ -77,53 +79,43 @@ def run_chat_reference(client):
         "chat llama-3.1-8b-instant", kind=SpanKind.CLIENT, attributes=span_attributes
     ) as span:
         messages = [{"role": "user", "content": "Say hello."}]
+        metric_attributes = {
+            "gen_ai.operation.name": "chat",
+            "gen_ai.provider.name": "groq",
+            "gen_ai.request.model": request_model,
+            "server.address": _SERVER_ADDRESS,
+            "server.port": _SERVER_PORT,
+        }
+        input_tokens = output_tokens = 0
         start_time = time.perf_counter()
-        resp = client.chat.completions.create(
-            model=request_model,
-            messages=messages,
-        )
-        duration = time.perf_counter() - start_time
-        _inference_duration.record(
-            duration,
-            {
-                "gen_ai.operation.name": "chat",
-                "gen_ai.provider.name": "groq",
-                "gen_ai.request.model": request_model,
-                "gen_ai.response.model": resp.model,
-                "server.address": _SERVER_ADDRESS,
-                "server.port": _SERVER_PORT,
-            },
-        )
-        span.set_attribute("gen_ai.response.model", resp.model)
-        span.set_attribute("gen_ai.response.id", resp.id)
-        span.set_attribute("gen_ai.response.finish_reasons", [c.finish_reason for c in resp.choices])
-        if resp.usage:
-            span.set_attribute("gen_ai.usage.input_tokens", resp.usage.prompt_tokens)
-            span.set_attribute("gen_ai.usage.output_tokens", resp.usage.completion_tokens)
-            _token_usage.record(
-                resp.usage.prompt_tokens,
-                {
-                    "gen_ai.operation.name": "chat",
-                    "gen_ai.provider.name": "groq",
-                    "gen_ai.request.model": request_model,
-                    "gen_ai.response.model": resp.model,
-                    "gen_ai.token.type": "input",
-                    "server.address": _SERVER_ADDRESS,
-                    "server.port": _SERVER_PORT,
-                },
+        try:
+            resp = client.chat.completions.create(
+                model=request_model,
+                messages=messages,
             )
-            _token_usage.record(
-                resp.usage.completion_tokens,
-                {
-                    "gen_ai.operation.name": "chat",
-                    "gen_ai.provider.name": "groq",
-                    "gen_ai.request.model": request_model,
-                    "gen_ai.response.model": resp.model,
-                    "gen_ai.token.type": "output",
-                    "server.address": _SERVER_ADDRESS,
-                    "server.port": _SERVER_PORT,
-                },
-            )
+            metric_attributes["gen_ai.response.model"] = resp.model
+            span.set_attribute("gen_ai.response.model", resp.model)
+            span.set_attribute("gen_ai.response.id", resp.id)
+            span.set_attribute("gen_ai.response.finish_reasons", [c.finish_reason for c in resp.choices])
+            if resp.usage:
+                span.set_attribute("gen_ai.usage.input_tokens", resp.usage.prompt_tokens)
+                span.set_attribute("gen_ai.usage.output_tokens", resp.usage.completion_tokens)
+                input_tokens = resp.usage.prompt_tokens or 0
+                output_tokens = resp.usage.completion_tokens or 0
+        except Exception as exc:
+            metric_attributes["error.type"] = type(exc).__name__
+            span.set_attribute("error.type", type(exc).__name__)
+            span.set_status(StatusCode.ERROR)
+            raise
+        finally:
+            _inference_duration.record(time.perf_counter() - start_time, metric_attributes)
+            _input_tokens.record(input_tokens, metric_attributes)
+            _output_tokens.record(output_tokens, metric_attributes)
+            modality_attributes = {**metric_attributes, "gen_ai.token.modality": "unknown"}
+            if input_tokens > 0:
+                _input_token_usage.add(input_tokens, modality_attributes)
+            if output_tokens > 0:
+                _output_token_usage.add(output_tokens, modality_attributes)
 
         # Emit inference operation details event
         event_attrs = {
@@ -174,45 +166,63 @@ def run_chat_streaming_reference(client):
             "gen_ai.input.messages",
             [{"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]} for m in request_messages],
         )
+        metric_attributes = {
+            "gen_ai.operation.name": "chat",
+            "gen_ai.provider.name": "groq",
+            "gen_ai.request.model": request_model,
+            "server.address": _SERVER_ADDRESS,
+            "server.port": _SERVER_PORT,
+        }
+        input_tokens = output_tokens = 0
         start_time = time.perf_counter()
-        stream = client.chat.completions.create(
-            model=request_model,
-            messages=request_messages,
-            stream=True,
-        )
-        text = ""
-        model = None
-        response_id = None
-        finish_reasons = []
-        usage = None
-        for chunk in stream:
-            model = model or getattr(chunk, "model", None)
-            response_id = response_id or getattr(chunk, "id", None)
-            usage = chunk.usage or (chunk.x_groq and chunk.x_groq.usage) or usage
-            if chunk.choices and chunk.choices[0].delta.content:
-                text += chunk.choices[0].delta.content
-            if chunk.choices and chunk.choices[0].finish_reason:
-                finish_reasons.append(chunk.choices[0].finish_reason)
-        if model:
-            span.set_attribute("gen_ai.response.model", model)
-        if response_id:
-            span.set_attribute("gen_ai.response.id", response_id)
-        if finish_reasons:
-            span.set_attribute("gen_ai.response.finish_reasons", finish_reasons)
-        if usage:
-            span.set_attribute("gen_ai.usage.input_tokens", usage.prompt_tokens)
-            span.set_attribute("gen_ai.usage.output_tokens", usage.completion_tokens)
-        _inference_duration.record(
-            time.perf_counter() - start_time,
-            {
-                "gen_ai.operation.name": "chat",
-                "gen_ai.provider.name": "groq",
-                "gen_ai.request.model": request_model,
-                "gen_ai.response.model": model,
-                "server.address": _SERVER_ADDRESS,
-                "server.port": _SERVER_PORT,
-            },
-        )
+        try:
+            stream = client.chat.completions.create(
+                model=request_model,
+                messages=request_messages,
+                stream=True,
+            )
+            text = ""
+            model = None
+            response_id = None
+            finish_reasons = []
+            usage = None
+            with stream:
+                for chunk in stream:
+                    model = model or getattr(chunk, "model", None)
+                    response_id = response_id or getattr(chunk, "id", None)
+                    usage = chunk.usage or (chunk.x_groq and chunk.x_groq.usage) or usage
+                    if model:
+                        metric_attributes["gen_ai.response.model"] = model
+                    if usage:
+                        input_tokens = usage.prompt_tokens or 0
+                        output_tokens = usage.completion_tokens or 0
+                    if chunk.choices and chunk.choices[0].delta.content:
+                        text += chunk.choices[0].delta.content
+                    if chunk.choices and chunk.choices[0].finish_reason:
+                        finish_reasons.append(chunk.choices[0].finish_reason)
+            if model:
+                span.set_attribute("gen_ai.response.model", model)
+            if response_id:
+                span.set_attribute("gen_ai.response.id", response_id)
+            if finish_reasons:
+                span.set_attribute("gen_ai.response.finish_reasons", finish_reasons)
+            if usage:
+                span.set_attribute("gen_ai.usage.input_tokens", usage.prompt_tokens)
+                span.set_attribute("gen_ai.usage.output_tokens", usage.completion_tokens)
+        except Exception as exc:
+            metric_attributes["error.type"] = type(exc).__name__
+            span.set_attribute("error.type", type(exc).__name__)
+            span.set_status(StatusCode.ERROR)
+            raise
+        finally:
+            _inference_duration.record(time.perf_counter() - start_time, metric_attributes)
+            _input_tokens.record(input_tokens, metric_attributes)
+            _output_tokens.record(output_tokens, metric_attributes)
+            modality_attributes = {**metric_attributes, "gen_ai.token.modality": "unknown"}
+            if input_tokens > 0:
+                _input_token_usage.add(input_tokens, modality_attributes)
+            if output_tokens > 0:
+                _output_token_usage.add(output_tokens, modality_attributes)
         print(f"    -> {text[:60]}")
 
 
@@ -245,54 +255,44 @@ def run_chat_tool_call_reference(client):
         "chat llama-3.1-8b-instant", kind=SpanKind.CLIENT, attributes=span_attributes_3
     ) as span:
         span.set_attribute("gen_ai.tool.definitions", [{"type": t["type"], **t["function"]} for t in tools])
+        metric_attributes = {
+            "gen_ai.operation.name": "chat",
+            "gen_ai.provider.name": "groq",
+            "gen_ai.request.model": request_model,
+            "server.address": _SERVER_ADDRESS,
+            "server.port": _SERVER_PORT,
+        }
+        input_tokens = output_tokens = 0
         start_time = time.perf_counter()
-        resp = client.chat.completions.create(
-            model=request_model,
-            messages=[{"role": "user", "content": "What's the weather in Seattle?"}],
-            tools=tools,
-        )
-        duration = time.perf_counter() - start_time
-        _inference_duration.record(
-            duration,
-            {
-                "gen_ai.operation.name": "chat",
-                "gen_ai.provider.name": "groq",
-                "gen_ai.request.model": request_model,
-                "gen_ai.response.model": resp.model,
-                "server.address": _SERVER_ADDRESS,
-                "server.port": _SERVER_PORT,
-            },
-        )
-        span.set_attribute("gen_ai.response.model", resp.model)
-        span.set_attribute("gen_ai.response.id", resp.id)
-        span.set_attribute("gen_ai.response.finish_reasons", [c.finish_reason for c in resp.choices])
-        if resp.usage:
-            span.set_attribute("gen_ai.usage.input_tokens", resp.usage.prompt_tokens)
-            span.set_attribute("gen_ai.usage.output_tokens", resp.usage.completion_tokens)
-            _token_usage.record(
-                resp.usage.prompt_tokens,
-                {
-                    "gen_ai.operation.name": "chat",
-                    "gen_ai.provider.name": "groq",
-                    "gen_ai.request.model": request_model,
-                    "gen_ai.response.model": resp.model,
-                    "gen_ai.token.type": "input",
-                    "server.address": _SERVER_ADDRESS,
-                    "server.port": _SERVER_PORT,
-                },
+        try:
+            resp = client.chat.completions.create(
+                model=request_model,
+                messages=[{"role": "user", "content": "What's the weather in Seattle?"}],
+                tools=tools,
             )
-            _token_usage.record(
-                resp.usage.completion_tokens,
-                {
-                    "gen_ai.operation.name": "chat",
-                    "gen_ai.provider.name": "groq",
-                    "gen_ai.request.model": request_model,
-                    "gen_ai.response.model": resp.model,
-                    "gen_ai.token.type": "output",
-                    "server.address": _SERVER_ADDRESS,
-                    "server.port": _SERVER_PORT,
-                },
-            )
+            metric_attributes["gen_ai.response.model"] = resp.model
+            span.set_attribute("gen_ai.response.model", resp.model)
+            span.set_attribute("gen_ai.response.id", resp.id)
+            span.set_attribute("gen_ai.response.finish_reasons", [c.finish_reason for c in resp.choices])
+            if resp.usage:
+                span.set_attribute("gen_ai.usage.input_tokens", resp.usage.prompt_tokens)
+                span.set_attribute("gen_ai.usage.output_tokens", resp.usage.completion_tokens)
+                input_tokens = resp.usage.prompt_tokens or 0
+                output_tokens = resp.usage.completion_tokens or 0
+        except Exception as exc:
+            metric_attributes["error.type"] = type(exc).__name__
+            span.set_attribute("error.type", type(exc).__name__)
+            span.set_status(StatusCode.ERROR)
+            raise
+        finally:
+            _inference_duration.record(time.perf_counter() - start_time, metric_attributes)
+            _input_tokens.record(input_tokens, metric_attributes)
+            _output_tokens.record(output_tokens, metric_attributes)
+            modality_attributes = {**metric_attributes, "gen_ai.token.modality": "unknown"}
+            if input_tokens > 0:
+                _input_token_usage.add(input_tokens, modality_attributes)
+            if output_tokens > 0:
+                _output_token_usage.add(output_tokens, modality_attributes)
         choice = resp.choices[0]
         if choice.message.tool_calls:
             # The client returns the tool call; running it is app code the client
