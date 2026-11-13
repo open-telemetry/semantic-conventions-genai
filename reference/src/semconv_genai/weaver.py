@@ -95,9 +95,14 @@ def _download_file(url: str, destination: Path) -> None:
             if error.code not in {500, 502, 503, 504} or attempt == 2:
                 raise
             error.close()
-            delay = 2**attempt
-            logger.warning("Download failed with HTTP %s; retrying in %s seconds", error.code, delay)
-            time.sleep(delay)
+            reason = f"HTTP {error.code}"
+        except (urllib.error.URLError, TimeoutError, ConnectionError) as error:
+            if attempt == 2:
+                raise
+            reason = str(error)
+        delay = 2**attempt
+        logger.warning("Download failed (%s); retrying in %s seconds", reason, delay)
+        time.sleep(delay)
 
 
 def ensure_weaver() -> Path:

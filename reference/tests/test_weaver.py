@@ -48,3 +48,35 @@ def test_download_does_not_retry_missing_assets(tmp_path):
     assert caught.value is error
     assert open_url.call_count == 1
     sleep.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "error",
+    [
+        urllib.error.URLError("temporary failure in name resolution"),
+        TimeoutError("timed out"),
+        ConnectionResetError("connection reset by peer"),
+    ],
+)
+def test_download_retries_network_errors(tmp_path, error):
+    destination = tmp_path / "weaver.tar.xz"
+    with (
+        patch("semconv_genai.weaver.urllib.request.urlopen", side_effect=[error, io.BytesIO(b"archive")]) as open_url,
+        patch("time.sleep"),
+    ):
+        _download_file(URL, destination)
+    assert open_url.call_count == 2
+    assert destination.read_bytes() == b"archive"
+
+
+def test_download_stops_after_repeated_timeouts(tmp_path):
+    error = TimeoutError("timed out")
+    with (
+        patch("semconv_genai.weaver.urllib.request.urlopen", side_effect=error) as open_url,
+        patch("time.sleep") as sleep,
+        pytest.raises(TimeoutError) as caught,
+    ):
+        _download_file(URL, tmp_path / "weaver.tar.xz")
+    assert caught.value is error
+    assert open_url.call_count == 3
+    assert sleep.call_count == 2
