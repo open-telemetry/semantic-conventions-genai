@@ -11,3 +11,12 @@ env:
 scenarios:
   reference:
     run: uv run --frozen --python 3.12 --project . python scenario.py
+    spans:
+      - match:
+          attributes:
+            gen_ai.operation.name: execute_tool
+          type: gen_ai.execute_tool
+      - match:
+          attributes:
+            gen_ai.operation.name: retrieval
+          type: gen_ai.retrieval

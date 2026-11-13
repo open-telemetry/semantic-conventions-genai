@@ -1,6 +1,6 @@
 # Invoke Agent Client Span
 
-> **[Semantic Convention](../../docs/gen-ai/gen-ai-agent-spans.md#invoke-agent-client-span)**
+> **[Semantic Convention](../../docs/gen-ai/client-invoke-agent.md#span-gen_aiclientinvoke_agent)**
 
 ## Required
 
@@ -22,7 +22,8 @@
 | gen_ai.output.type | [azure-ai-foundry] |
 | gen_ai.request.choice.count | (none) |
 | gen_ai.request.seed | (none) |
-| server.port | [aws-bedrock-agent], [azure-ai-foundry], [openai-assistants] |
+| gen_ai.request.stream | [google-genai], [openai-assistants] |
+| server.port | [aws-bedrock-agent], [azure-ai-foundry], [google-genai], [openai-assistants] |
 
 ## Recommended
 
@@ -30,9 +31,9 @@
 | --- | --- |
 | gen_ai.request.frequency_penalty | (none) |
 | gen_ai.request.max_tokens | [azure-ai-foundry], [openai-assistants] |
-| gen_ai.request.model | [azure-ai-foundry], [google-genai], [openai-assistants] |
+| gen_ai.request.model | [azure-ai-foundry], [openai-assistants] |
 | gen_ai.request.presence_penalty | (none) |
-| gen_ai.request.previous_response.id | [google-genai] |
+| gen_ai.request.previous_response.id | (none) |
 | gen_ai.request.stop_sequences | (none) |
 | gen_ai.request.temperature | [azure-ai-foundry], [openai-assistants] |
 | gen_ai.request.top_p | [azure-ai-foundry], [openai-assistants] |
@@ -57,9 +58,13 @@
 | Attribute | Supporting Libraries |
 | --- | --- |
 | gen_ai.input.messages | [aws-bedrock-agent], [azure-ai-foundry], [openai-assistants] |
+| gen_ai.input.messages_ref | (none) |
 | gen_ai.output.messages | [aws-bedrock-agent], [azure-ai-foundry], [openai-assistants] |
+| gen_ai.output.messages_ref | (none) |
 | gen_ai.system_instructions | [azure-ai-foundry], [openai-assistants] |
+| gen_ai.system_instructions_ref | (none) |
 | gen_ai.tool.definitions | [azure-ai-foundry], [openai-assistants] |
+| gen_ai.tool.definitions_ref | (none) |
 
 [aws-bedrock-agent]: ../scenarios/aws-bedrock-agent/scenario.py
 [azure-ai-foundry]: ../scenarios/azure-ai-foundry/scenario.py

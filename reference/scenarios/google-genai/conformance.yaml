@@ -15,6 +15,26 @@ scenarios:
       - id: genai_expected_attribute_missing
         context:
           missing_attribute: gen_ai.response.finish_reasons
+          operation: chat
+        reason: The Interactions API exposes interaction status, not per-generation finish reasons.
+      - id: genai_expected_attribute_missing
+        context:
+          missing_attribute: gen_ai.request.encoding_formats
+          operation: embeddings
+        reason: The Gemini embedContent API has no encoding format parameter.
+      - id: genai_expected_attribute_missing
+        context:
+          missing_attribute: gen_ai.response.model
+          operation: embeddings
+        reason: The Gemini embedContent response does not include a model.
+      - id: genai_expected_attribute_missing
+        context:
+          missing_attribute: gen_ai.usage.input_tokens
+          operation: embeddings
+        reason: The SDK does not expose usage for embedContent.
+      - id: genai_expected_attribute_missing
+        context:
+          missing_attribute: gen_ai.response.finish_reasons
           operation: invoke_agent
         reason: The agent response exposes no per-generation finish reason; completion status alone does not supply one.
     spans:
@@ -34,3 +54,12 @@ scenarios:
           attributes:
             gen_ai.operation.name: embeddings
           type: gen_ai.client.embeddings
+      - match:
+          attributes:
+            gen_ai.operation.name: invoke_agent
+          kind: client
+          type: gen_ai.client.invoke_agent
+      - match:
+          attributes:
+            gen_ai.operation.name: execute_tool
+          type: gen_ai.execute_tool

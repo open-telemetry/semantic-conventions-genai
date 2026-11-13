@@ -7,8 +7,8 @@ the framework operations it performs directly: retrieval, planning, and tool
 execution.
 
 Retrieval records the returned `Document.page_content` and `Document.metadata`.
-The sample documents have neither an ID nor a relevance score; these fields are
-omitted rather than synthesized.
+It records the IDs supplied by the vector store. The retriever does not return
+relevance scores, so those are omitted rather than synthesized.
 
 | Operation | Should be instrumented here | Status |
 | --- | --- | --- |
@@ -19,3 +19,13 @@ omitted rather than synthesized.
 | plan | Yes — Plan-and-Execute planning phase | ✅ Implemented |
 | execute_tool | Yes — `BaseTool.invoke()` runs the tool | ✅ Implemented |
 | execute_tool (command) | Yes — `ShellToolMiddleware`'s `shell` tool runs a general command | ✅ Implemented |
+
+`gen_ai.retrieval.top_k` is read from `VectorStoreRetriever.search_kwargs["k"]`.
+Other retrievers have no common limit setting, and LangChain tracing metadata
+doesn't include it, so callback-based instrumentation can't capture it.
+
+The tool execution error handlers record a correlated
+`gen_ai.execute_tool.exception` WARN log. This scenario does not exercise those paths.
+
+The internal agent invocation error handler records a correlated
+`gen_ai.invoke_agent.exception` WARN log. This scenario does not exercise that path.

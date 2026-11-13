@@ -13,3 +13,6 @@ and the relevance score when the retriever supplies one.
 | retrieval | Yes — retriever / query engine | ✅ Implemented |
 | execute_tool | Yes — LlamaIndex runs the tool | ✅ Implemented |
 | invoke_workflow | Yes — `Workflow` / query pipeline execution | ❌ Not implemented |
+
+The tool execution error handler records a correlated
+`gen_ai.execute_tool.exception` WARN log. This scenario does not exercise that path.

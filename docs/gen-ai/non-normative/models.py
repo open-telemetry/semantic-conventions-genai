@@ -192,6 +192,19 @@ class CompactionPart(BaseModel):
     model_config = ConfigDict(extra="allow")
 
 
+class TranscriptionPart(BaseModel):
+    """Represents a text transcript of spoken audio, captured as a standalone part."""
+
+    type: Literal["transcription"] = Field(
+        description="The type of the content captured in this part."
+    )
+    content: str = Field(
+        description="The text transcript of spoken audio. For input audio this is the transcription of the user's speech; for output audio it is the transcript of the model's spoken response."
+    )
+
+    model_config = ConfigDict(extra="allow")
+
+
 class BlobPart(BaseModel):
     """Represents blob binary data sent inline to the model"""
 
@@ -204,10 +217,9 @@ class BlobPart(BaseModel):
     modality: Union[Modality, str] = Field(
         description="The general modality of the data if it is known. Instrumentations SHOULD also set the mimeType field if the specific type is known."
     )
-    content: bytes = Field(
-        description="Raw bytes of the attached data. This field SHOULD be encoded as a base64 string when serialized to JSON."
+    content: Optional[bytes] = Field(
+        default=None, description="Raw bytes of the attached data."
     )
-
 
 class FilePart(BaseModel):
     """Represents an external referenced file sent to the model by file id"""
@@ -272,6 +284,7 @@ KnownMessagePart = Union[
     BlobPart,
     FilePart,
     UriPart,
+    TranscriptionPart,
     ReasoningPart,
     CompactionPart,
     # Add other message part types here as needed,
@@ -450,23 +463,13 @@ class JsonSchemaDraft7:
 JsonSchemaDraft7Dict = Annotated[dict[str, Any], JsonSchemaDraft7]
 
 
-class GenericToolDefinition(BaseModel):
-    """
-    Represents a tool definition in any form.
-    """
-
-    type: str = Field(description="The type of the tool.")
-    name: str = Field(description="The name of the tool.")
-
-    model_config = ConfigDict(extra="allow")
-
-
-class FunctionToolDefinition(GenericToolDefinition):
+class FunctionToolDefinition(BaseModel):
     """
     Represents a tool definition in the form of a function.
     """
 
     type: Literal["function"] = Field(description="The type of the tool.")
+    name: str = Field(description="The name of the tool.")
     description: Optional[str] = Field(
         default=None,
         description=(
@@ -488,11 +491,37 @@ class FunctionToolDefinition(GenericToolDefinition):
     model_config = ConfigDict(extra="allow")
 
 
-ToolDefinition = Union[
+KnownToolDefinition = Union[
     FunctionToolDefinition,
-    GenericToolDefinition,  # Catch-all for any other type
     # Add other tool definition types here as needed,
     # e.g. file search, code interpreter, etc
+]
+
+
+class GenericToolDefinition(BaseModel):
+    """
+    Fallback for consumers when a tool definition has a `type` not defined by
+    this version of semantic conventions (such as a provider-specific built-in
+    tool or a tool type added in a newer version).
+    """
+
+    type: str = Field(
+        description=(
+            "The type of the tool. "
+            "When recording a provider-specific tool definition, it is RECOMMENDED to prefix "
+            "the value with `gen_ai.provider.name` (for example `anthropic.web_search_20250305`) "
+            "to avoid name collisions with current or future tool types defined by semantic conventions."
+        ),
+        json_schema_extra=_not_known_types(KnownToolDefinition),
+    )
+    name: str = Field(description="The name of the tool.")
+
+    model_config = ConfigDict(extra="allow")
+
+
+ToolDefinition = Union[
+    KnownToolDefinition,
+    GenericToolDefinition,  # Catch-all for any other type
 ]
 
 

@@ -10,4 +10,5 @@ the retrieval and pipeline (workflow) operations it runs directly.
 | retrieval | Yes — retriever component | ✅ Implemented |
 | invoke_workflow | Yes — pipeline (graph) execution | ❌ Not implemented |
 
-The retrieval scenario records the returned document content and metadata; the document ID and score may be absent.
+The retrieval scenario records each returned document's content, metadata, ID, and BM25 score.
+Haystack supplies content-derived IDs when none are provided; unavailable fields are omitted.

@@ -14,6 +14,17 @@
   },
   "events": {},
   "metrics": {},
-  "findings": [],
-  "entities": {}
+  "entities": {},
+  "findings": [
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'chat' (operation 'chat') is missing expected attribute 'server.address'",
+      "signal_type": "span",
+      "signal_name": "chat",
+      "context": {
+        "missing_attribute": "server.address",
+        "operation": "chat"
+      }
+    }
+  ]
 }

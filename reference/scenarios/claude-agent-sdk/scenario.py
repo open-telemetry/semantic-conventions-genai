@@ -1,6 +1,5 @@
 """Reference implementation for Claude Agent SDK."""
 
-import json
 import os
 
 from opentelemetry.trace import SpanKind
@@ -44,7 +43,7 @@ async def run_agent_query_reference():
     }
     with _reference_tracer.start_as_current_span("chat", kind=SpanKind.CLIENT, attributes=span_attributes) as span:
         span.set_attribute(
-            "gen_ai.input.messages", json.dumps([{"role": "user", "parts": [{"type": "text", "content": prompt_text}]}])
+            "gen_ai.input.messages", [{"role": "user", "parts": [{"type": "text", "content": prompt_text}]}]
         )
         output_text = ""
         response_model = None
@@ -85,14 +84,12 @@ async def run_agent_query_reference():
         if output_text:
             span.set_attribute(
                 "gen_ai.output.messages",
-                json.dumps(
-                    [
-                        {
-                            "role": "assistant",
-                            "parts": [{"type": "text", "content": output_text}],
-                        }
-                    ]
-                ),
+                [
+                    {
+                        "role": "assistant",
+                        "parts": [{"type": "text", "content": output_text}],
+                    }
+                ],
             )
 
 
