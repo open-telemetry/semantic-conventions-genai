@@ -148,7 +148,14 @@ def run_retrieval_reference():
             documents = retriever.invoke(query_text)
             span.set_attribute(
                 "gen_ai.retrieval.documents",
-                [{"id": document.id} for document in documents],
+                [
+                    {
+                        **({"id": document.id} if document.id is not None else {}),
+                        "content": document.page_content,
+                        "metadata": document.metadata,
+                    }
+                    for document in documents
+                ],
             )
             print(f"    -> {documents[0].page_content[:60]}")
         except Exception as e:

@@ -41,7 +41,7 @@ def run_retrieval():
     document_store = InMemoryDocumentStore()
     document_store.write_documents(
         [
-            Document(content="Seattle weather is rainy and cool."),
+            Document(content="Seattle weather is rainy and cool.", meta={"title": "Seattle Weather"}),
             Document(content="Paris weather is mild and breezy."),
             Document(content="London weather is cloudy and damp."),
         ]
@@ -62,7 +62,15 @@ def run_retrieval():
             documents = result["documents"]
             span.set_attribute(
                 "gen_ai.retrieval.documents",
-                [{"id": document.id, "score": document.score} for document in documents],
+                [
+                    {
+                        **({"id": document.id} if document.id is not None else {}),
+                        **({"score": document.score} if document.score is not None else {}),
+                        **({"content": document.content} if document.content is not None else {}),
+                        "metadata": document.meta,
+                    }
+                    for document in documents
+                ],
             )
             print(f"    -> {documents[0].content[:60]}")
         except Exception as e:

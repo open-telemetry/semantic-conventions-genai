@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=../case.schema.json
+description: Metadata must be an object when present
+schema: gen-ai-retrieval-documents.json
+document:
+  - metadata: provider-data
+  - metadata: [provider-data]
+# Regenerate with `uv run pytest --update-snapshots`, do not edit by hand.
+errors:
+  - path: $[0].metadata
+    keyword: type
+    message: "'provider-data' is not of type 'object'"
+  - path: $[1].metadata
+    keyword: type
+    message: "['provider-data'] is not of type 'object'"

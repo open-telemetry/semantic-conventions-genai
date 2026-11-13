@@ -113,7 +113,15 @@ def retrieve_reference(retriever, query_text):
             nodes = retriever.retrieve(query_text)
             span.set_attribute(
                 "gen_ai.retrieval.documents",
-                [{"id": node.node_id, "score": node.score} for node in nodes],
+                [
+                    {
+                        "id": node.node.node_id,
+                        **({"score": node.score} if node.score is not None else {}),
+                        "content": node.text,
+                        "metadata": node.metadata,
+                    }
+                    for node in nodes
+                ],
             )
             return nodes
         except Exception as e:

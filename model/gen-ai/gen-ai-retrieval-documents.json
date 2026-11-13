@@ -29,6 +29,25 @@
                     "default": null,
                     "description": "The relevance score of the document.",
                     "title": "Score"
+                },
+                "content": {
+                    "default": null,
+                    "description": "The content of the document.",
+                    "title": "Content"
+                },
+                "metadata": {
+                    "anyOf": [
+                        {
+                            "additionalProperties": true,
+                            "type": "object"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Provider-specific metadata associated with the document.",
+                    "title": "Metadata"
                 }
             },
             "title": "RetrievalDocument",
