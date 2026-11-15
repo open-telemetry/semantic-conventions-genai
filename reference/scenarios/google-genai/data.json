@@ -2,6 +2,7 @@
   "spans": {
     "gen_ai.client.embeddings": [
       "gen_ai.embeddings.dimension.count",
+      "gen_ai.embeddings.input_type",
       "gen_ai.operation.name",
       "gen_ai.provider.name",
       "gen_ai.request.model",
@@ -90,6 +91,7 @@
   },
   "metrics": {
     "gen_ai.client.embeddings.duration": [
+      "gen_ai.embeddings.input_type",
       "gen_ai.operation.name",
       "gen_ai.provider.name",
       "gen_ai.request.model",
