@@ -108,7 +108,8 @@ metrics:
       - ref_group: attributes.gen_ai.error
       - ref_group: attributes.gen_ai.invoked_agent.internal.common
       - ref: gen_ai.provider.name
-        requirement_level: required
+        requirement_level:
+          conditionally_required: If the agent is hosted by a named GenAI provider or service.
       - ref: gen_ai.operation.name
         annotations:
           markdown:

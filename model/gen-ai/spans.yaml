@@ -812,6 +812,8 @@ spans:
       AWS Bedrock Agents, Gemini Enterprise Agent Platform, Azure AI Foundry Agent
       Service, or an A2A endpoint.
 
+      `gen_ai.provider.name` identifies the provider hosting the agent.
+
       For local agent invocations, refer to the
       `gen_ai.invoke_agent.internal` span.
     stability: development
@@ -820,7 +822,8 @@ spans:
       - ref_group: attributes.gen_ai.usage.breakdown
       - ref_group: attributes.gen_ai.address_and_port
       - ref: gen_ai.provider.name
-        requirement_level: required
+        requirement_level:
+          conditionally_required: If the agent is hosted by a named GenAI provider or service.
         sampling_relevant: true
       - ref: gen_ai.operation.name
         annotations:
