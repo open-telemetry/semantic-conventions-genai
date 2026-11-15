@@ -823,7 +823,7 @@ spans:
       - ref_group: attributes.gen_ai.address_and_port
       - ref: gen_ai.provider.name
         requirement_level:
-          conditionally_required: If the agent is hosted by a named GenAI provider or service.
+          conditionally_required: If the provider hosting the agent is known to the instrumentation.
         sampling_relevant: true
       - ref: gen_ai.operation.name
         annotations:
