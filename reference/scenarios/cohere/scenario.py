@@ -193,8 +193,10 @@ def run_embeddings(client):
     print("  [embeddings] embedding generation (reference implementation)")
     request_model = "embed-v4.0"
     encoding_formats = ["float"]
+    input_type = "search_document"
     host, port = mock_server_host_port(MOCK_BASE_URL)
     span_attributes_3 = {
+        "gen_ai.embeddings.input_type": input_type,
         "gen_ai.operation.name": "embeddings",
         "gen_ai.provider.name": "cohere",
         "gen_ai.request.model": request_model,
@@ -217,7 +219,7 @@ def run_embeddings(client):
             resp = client.embed(
                 model=request_model,
                 texts=["Hello, world!"],
-                input_type="search_document",
+                input_type=input_type,
                 embedding_types=encoding_formats,
             )
             if hasattr(resp, "meta") and resp.meta and hasattr(resp.meta, "billed_units") and resp.meta.billed_units:

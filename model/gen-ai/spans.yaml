@@ -549,6 +549,9 @@ spans:
           instrumentations SHOULD report the billed count.
       - ref: gen_ai.embeddings.dimension.count
         requirement_level: recommended
+      - ref: gen_ai.embeddings.input_type
+        requirement_level:
+          recommended: When applicable.
       - ref: gen_ai.response.model
         requirement_level: recommended
         examples: ["text-embedding-3-small"]

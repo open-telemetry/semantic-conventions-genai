@@ -20,6 +20,7 @@
 
 | Attribute | Supporting Libraries |
 | --- | --- |
+| gen_ai.embeddings.input_type | [cohere] |
 | gen_ai.response.model | [azure-ai-inference], [azure-openai], [litellm], [mistralai], [openai] |
 | server.address | [aws-bedrock], [azure-ai-inference], [azure-openai], [cohere], [litellm], [mistralai], [openai] |
 

@@ -85,6 +85,9 @@ metrics:
         note: SHOULD be `embeddings`.
       - ref: gen_ai.request.model
         examples: ["text-embedding-3-small", "gemini-embedding-001"]
+      - ref: gen_ai.embeddings.input_type
+        requirement_level:
+          recommended: When applicable.
       - ref: gen_ai.response.model
         examples: ["text-embedding-3-small"]
   - name: gen_ai.client.invoke_agent.duration
