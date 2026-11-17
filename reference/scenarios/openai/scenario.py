@@ -26,6 +26,11 @@ _time_to_first_chunk = _reference_meter.create_histogram(
     unit="s",
     description="Time to receive the first output chunk of a streaming inference operation.",
 )
+_time_per_output_chunk = _reference_meter.create_histogram(
+    "gen_ai.client.inference.time_per_output_chunk",
+    unit="s",
+    description="Time between successive output chunks of a streaming inference operation.",
+)
 
 _embeddings_duration = _reference_meter.create_histogram(
     "gen_ai.client.embeddings.duration",
@@ -614,12 +619,12 @@ def run_chat_streaming_reference(client):
         finish_reasons_by_index = {}
         input_tokens = None
         output_tokens = None
-        first_chunk_received = False
+        previous_chunk_received_at = None
         for chunk in stream:
             received_at = perf_counter()
             model = model or getattr(chunk, "model", None)
             response_id = response_id or getattr(chunk, "id", None)
-            if not first_chunk_received and any(
+            if any(
                 choice.delta.content
                 or choice.delta.refusal
                 or (choice.delta.audio and (choice.delta.audio.data or choice.delta.audio.transcript))
@@ -633,10 +638,14 @@ def run_chat_streaming_reference(client):
                 )
                 for choice in chunk.choices
             ):
-                ttfc = received_at - request_started_at
-                span.set_attribute("gen_ai.response.time_to_first_chunk", ttfc)
-                _time_to_first_chunk.record(ttfc, usage_metric_attributes(request_model, model, host, port))
-                first_chunk_received = True
+                metric_attributes = usage_metric_attributes(request_model, model, host, port)
+                if previous_chunk_received_at is None:
+                    ttfc = received_at - request_started_at
+                    span.set_attribute("gen_ai.response.time_to_first_chunk", ttfc)
+                    _time_to_first_chunk.record(ttfc, metric_attributes)
+                else:
+                    _time_per_output_chunk.record(received_at - previous_chunk_received_at, metric_attributes)
+                previous_chunk_received_at = received_at
             for choice in chunk.choices:
                 seen_choice_indexes.add(choice.index)
                 if choice.index == 0 and choice.delta.content:
@@ -672,7 +681,7 @@ def run_chat_streaming_reference(client):
         print(f"    -> {text[:60]}")
 
 
-def run_chat_streaming_ttfc_checks():
+def run_chat_streaming_timing_checks():
     """Check streaming boundaries through the SDK with a controlled clock."""
     from math import isclose
     from unittest.mock import patch
@@ -695,7 +704,7 @@ def run_chat_streaming_ttfc_checks():
             "usage": {"prompt_tokens": 1, "completion_tokens": 0, "total_tokens": 1} if delta is None else None,
         }
 
-    def check_stream(output_deltas, expected_ttfc, *, retry=False):
+    def check_stream(stream_deltas, expected_ttfc, expected_intervals=(), *, retry=False):
         now = 0.0
         attempts = 0
 
@@ -718,7 +727,7 @@ def run_chat_streaming_ttfc_checks():
             ):
                 advance(0.01)
                 yield f"data: {json.dumps(chunk(delta))}\n\n".encode()
-            for delta in output_deltas:
+            for delta in stream_deltas:
                 advance(0.3)
                 yield f"data: {json.dumps(chunk(delta))}\n\n".encode()
             advance(0.4)
@@ -739,13 +748,17 @@ def run_chat_streaming_ttfc_checks():
         tracer_provider.add_span_processor(SimpleSpanProcessor(exporter))
         reader = InMemoryMetricReader()
         meter_provider = MeterProvider(metric_readers=[reader])
-        histogram = meter_provider.get_meter("gen_ai.reference").create_histogram(
+        ttfc_histogram = meter_provider.get_meter("gen_ai.reference").create_histogram(
             "gen_ai.client.inference.time_to_first_chunk", unit="s"
+        )
+        output_chunk_histogram = meter_provider.get_meter("gen_ai.reference").create_histogram(
+            "gen_ai.client.inference.time_per_output_chunk", unit="s"
         )
         try:
             with (
                 patch(f"{__name__}._reference_tracer", tracer_provider.get_tracer("gen_ai.reference")),
-                patch(f"{__name__}._time_to_first_chunk", histogram),
+                patch(f"{__name__}._time_to_first_chunk", ttfc_histogram),
+                patch(f"{__name__}._time_per_output_chunk", output_chunk_histogram),
                 patch(f"{__name__}.perf_counter", side_effect=lambda: now),
                 patch("openai._base_client.time.sleep", side_effect=advance) as sleep,
                 openai.OpenAI(
@@ -765,31 +778,56 @@ def run_chat_streaming_ttfc_checks():
             assert len(spans) == 1
             data = reader.get_metrics_data()
             points = (
-                []
+                {}
                 if data is None
-                else [
-                    point
+                else {
+                    metric.name: list(metric.data.data_points)
                     for resource in data.resource_metrics
                     for scope in resource.scope_metrics
                     for metric in scope.metrics
-                    for point in metric.data.data_points
-                ]
+                }
             )
             if expected_ttfc is None:
                 assert "gen_ai.response.time_to_first_chunk" not in spans[0].attributes
-                assert points == []
+                assert points == {}
             else:
                 ttfc = spans[0].attributes["gen_ai.response.time_to_first_chunk"]
-                assert isclose(ttfc, expected_ttfc, abs_tol=1e-9), (ttfc, expected_ttfc, output_deltas)
-                assert len(points) == 1
-                assert points[0].count == 1
-                assert points[0].sum == ttfc
-                assert points[0].attributes["gen_ai.response.model"] == "gpt-4o-mini"
+                assert isclose(ttfc, expected_ttfc, abs_tol=1e-9), (ttfc, expected_ttfc, stream_deltas)
+                ttfc_points = points.pop("gen_ai.client.inference.time_to_first_chunk")
+                assert len(ttfc_points) == 1
+                assert ttfc_points[0].count == 1
+                assert ttfc_points[0].sum == ttfc
+                assert ttfc_points[0].attributes["gen_ai.response.model"] == "gpt-4o-mini"
+            output_chunk_points = points.pop("gen_ai.client.inference.time_per_output_chunk", [])
+            if expected_intervals:
+                assert len(output_chunk_points) == 1
+                point = output_chunk_points[0]
+                assert point.count == len(expected_intervals)
+                assert isclose(point.sum, sum(expected_intervals), abs_tol=1e-9)
+                assert isclose(point.min, min(expected_intervals), abs_tol=1e-9)
+                assert isclose(point.max, max(expected_intervals), abs_tol=1e-9)
+                assert point.attributes == ttfc_points[0].attributes
+            else:
+                assert output_chunk_points == []
+            assert points == {}
         finally:
             tracer_provider.shutdown()
             meter_provider.shutdown()
 
-    check_stream([{"content": "Hello"}, {"content": " world"}], 0.5)
+    check_stream([{"content": "Hello"}, {"content": " world"}], 0.5, [0.3])
+    check_stream(
+        [
+            {"content": "Hello"},
+            {"role": "assistant", "content": ""},
+            None,
+            {"tool_calls": [{"index": 0, "function": {"name": "lookup", "arguments": "{}"}}]},
+            {},
+            {"refusal": "I cannot help with that."},
+            {"audio": {"data": "YQ==", "transcript": "Hello"}},
+        ],
+        0.5,
+        [0.9, 0.6, 0.3],
+    )
     for delta in (
         {"refusal": "I cannot help with that."},
         {"audio": {"data": "YQ=="}},
@@ -800,9 +838,9 @@ def run_chat_streaming_ttfc_checks():
     ):
         check_stream([delta], 0.5)
     # Failed attempt: 0.1 s auth + 0.05 s request + 0.2 s SDK backoff.
-    check_stream([{"content": "Hello"}], 0.85, retry=True)
+    check_stream([{"content": "Hello"}, {"content": " world"}], 0.85, [0.3], retry=True)
     check_stream([], None)
-    print("    -> TTFC boundary checks passed")
+    print("    -> Streaming timing boundary checks passed")
 
 
 def run_chat_tool_call_reference(client):
@@ -1490,7 +1528,7 @@ def main():
     print("=== Reference Implementation: OpenAI Reference Implementation ===")
 
     # Keep controlled-clock checks separate from the OTLP-exported reference run.
-    run_chat_streaming_ttfc_checks()
+    run_chat_streaming_timing_checks()
 
     tp, lp, mp = setup_otel()
 
