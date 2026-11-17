@@ -18,6 +18,9 @@ Streaming TTFC is recorded on the span and metric at the first non-empty text, r
 
 The scenario also checks metadata filtering, non-text output, authentication, retry backoff, and streams with no output using the real SDK, mock HTTP responses, and a controlled clock. These assertions run through the existing `run-scenario openai --strict` entry point.
 
+The scenario assumes content capture is enabled. Tool definitions include
+descriptions and parameter schemas from the SDK's `tools` argument.
+
 Embeddings exercises the SDK's `BadRequestError` from
 `client.embeddings.create` using a mock HTTP 400 response. The error handler
 records a correlated `gen_ai.client.embeddings.exception` WARN log and re-raises
