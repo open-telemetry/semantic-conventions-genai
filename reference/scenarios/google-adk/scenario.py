@@ -48,9 +48,8 @@ _invoke_duration = _reference_meter.create_histogram(
         3600,
         7200,
         18000,
-        36000,
-        72000,
-        180000,
+        43200,
+        86400,
     ],
 )
 _inference_calls = _reference_meter.create_histogram(
