@@ -168,9 +168,7 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 
 This attribute MAY be truncated.
 
-Instrumentations MUST follow [JSON schema](/model/gen-ai/gen-ai-guardrail-content.json).
-
-When the attribute is recorded on events, it MUST be recorded in structured form. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
+This attribute MUST be recorded as an [AnyValue](https://opentelemetry.io/docs/specs/otel/common/#anyvalue) conforming to its [JSON schema](/model/gen-ai/gen-ai-guardrail-content.json).
 
 **[17] `gen_ai.guardrail.content.output.value`:**
 
@@ -179,9 +177,7 @@ When the attribute is recorded on events, it MUST be recorded in structured form
 > SHOULD NOT capture this by default. Enable via opt-in configuration
 > only.
 
-Instrumentations MUST follow [JSON schema](/model/gen-ai/gen-ai-guardrail-content.json).
-
-When the attribute is recorded on events, it MUST be recorded in structured form. When recorded on spans, it MAY be recorded as a JSON string if structured format is not supported and SHOULD be recorded in structured form otherwise.
+This attribute MUST be recorded as an [AnyValue](https://opentelemetry.io/docs/specs/otel/common/#anyvalue) conforming to its [JSON schema](/model/gen-ai/gen-ai-guardrail-content.json).
 
 ---
 
@@ -211,6 +207,7 @@ When the attribute is recorded on events, it MUST be recorded in structured form
 | `ibm.watsonx.ai` | [IBM Watsonx AI](https://www.ibm.com/products/watsonx-ai) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `mistral` | [Mistral](https://mistral.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `moonshot_ai` | [Moonshot AI](https://www.moonshot.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
+| `ollama` | [Ollama](https://ollama.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `openai` | [OpenAI](https://openai.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `perplexity` | [Perplexity](https://www.perplexity.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `x_ai` | [xAI](https://x.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |

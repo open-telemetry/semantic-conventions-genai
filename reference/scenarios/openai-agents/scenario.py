@@ -230,6 +230,14 @@ async def run_agent():
     print("  [agent_run] agent with tool calling (reference implementation)")
     await _emit_agent_span(client, agent, input_text)
 
+    print("  [input_guardrail] blocked agent input (reference implementation)")
+    try:
+        await Runner.run(agent, "Email jane.doe@example.com with the forecast.")
+    except InputGuardrailTripwireTriggered:
+        print("    -> input guardrail tripwire triggered")
+    else:
+        raise RuntimeError("Expected the input guardrail to trigger.")
+
 
 async def run_tool_error_reference():
     """Exercise an SDK tool-argument validation exception."""
@@ -269,14 +277,6 @@ async def run_agent_error_reference():
         pass
     else:
         raise AssertionError("Expected the SDK to enforce the agent turn limit")
-
-    print("  [input_guardrail] blocked agent input (reference implementation)")
-    try:
-        await Runner.run(agent, "Email jane.doe@example.com with the forecast.")
-    except InputGuardrailTripwireTriggered:
-        print("    -> input guardrail tripwire triggered")
-    else:
-        raise RuntimeError("Expected the input guardrail to trigger.")
 
 
 async def run_agent_as_tool_delegation():

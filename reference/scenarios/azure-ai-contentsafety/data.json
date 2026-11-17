@@ -27,6 +27,6 @@
       "gen_ai.provider.name"
     ]
   },
-  "findings": [],
-  "entities": {}
+  "entities": {},
+  "findings": []
 }
