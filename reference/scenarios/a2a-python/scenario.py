@@ -99,6 +99,40 @@ def _a2a_error_reason(details: object) -> str | None:
     return None
 
 
+class _AsgiCallWrapper:
+    """Wrap a Starlette response so cleanup runs even when the body iterator is
+    never awaited.
+
+    If the client disconnects before the response starts, Starlette raises
+    `ClientDisconnect` while sending `http.response.start`, and the
+    `body_iterator` the dispatcher attached is never iterated, so its `finally`
+    does not run. Starlette calls a response as `await response(scope, receive,
+    send)`, so wrapping the response with an object that has `__call__` lets us
+    record the metric and end the span once the dispatch itself returns or
+    raises. The `_done` flag keeps it exactly once.
+    """
+
+    def __init__(self, response, on_done):
+        self._response = response
+        self._on_done = on_done
+        self._done = False
+
+    async def __call__(self, scope, receive, send):
+        try:
+            await self._response(scope, receive, send)
+        except BaseException as exc:
+            self._finish(exc)
+            raise
+        else:
+            self._finish(None)
+
+    def _finish(self, exc):
+        if self._done:
+            return
+        self._done = True
+        self._on_done(exc)
+
+
 class ReferenceJsonRpcDispatcher(JsonRpcDispatcher):
     """The A2A server-side instrumentation point.
 
@@ -196,7 +230,9 @@ class ReferenceJsonRpcDispatcher(JsonRpcDispatcher):
                 return response
 
             # A streaming call is not served until the client has drained the
-            # stream, so the span stays open until the last event is yielded.
+            # stream, so the span stays open until the last event is yielded,
+            # or until the dispatch itself ends (e.g. the client disconnects
+            # before the body iterator runs — see `_AsgiCallWrapper`).
             async def traced_events():
                 task_ids: set[str] = set()
                 task_states: set[str] = set()
@@ -235,14 +271,23 @@ class ReferenceJsonRpcDispatcher(JsonRpcDispatcher):
                         span.set_attribute("a2a.task.state", next(iter(task_states)))
                     if len(context_ids) == 1:
                         span.set_attribute("gen_ai.conversation.id", next(iter(context_ids)))
-                    if not self._enrich_transport_span:
-                        span.end()
-                    _server_duration.record(time.perf_counter() - start, duration_attrs)
-                    _server_active.add(-1, metric_attrs)
+
+            def _finish_streaming(exc):
+                # If the dispatch itself failed (e.g. `ClientDisconnect` before
+                # the body iterator ran), tag the metric with that error unless
+                # the stream already recorded one.
+                if exc is not None and "error.type" not in duration_attrs:
+                    span.set_status(StatusCode.ERROR)
+                    span.set_attribute("error.type", type(exc).__qualname__)
+                    duration_attrs["error.type"] = type(exc).__qualname__
+                if not self._enrich_transport_span:
+                    span.end()
+                _server_duration.record(time.perf_counter() - start, duration_attrs)
+                _server_active.add(-1, metric_attrs)
 
             response.body_iterator = traced_events()
             streaming = True
-            return response
+            return _AsgiCallWrapper(response, _finish_streaming)
         except Exception as exc:
             span.set_status(StatusCode.ERROR)
             span.set_attribute("error.type", type(exc).__qualname__)
