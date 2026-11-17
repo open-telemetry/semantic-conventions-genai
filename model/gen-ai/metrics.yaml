@@ -58,6 +58,8 @@ metrics:
     attributes:
       - ref_group: metric_attributes.gen_ai
       - ref_group: attributes.gen_ai.error
+      - ref: gen_ai.response.service_tier
+        requirement_level: recommended
   - name: gen_ai.client.embeddings.duration
     requirement_level: recommended
     instrument: histogram

@@ -1,0 +1,1 @@
+Add `gen_ai.request.service_tier` and `gen_ai.response.service_tier` to `gen_ai.client.inference` spans, and `gen_ai.response.service_tier` to `gen_ai.client.inference.duration` and the inference token metrics.

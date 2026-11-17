@@ -6,6 +6,8 @@ attribute_groups:
       - ref_group: metric_attributes.gen_ai
       - ref: gen_ai.operation.name
         examples: ["chat", "generate_content"]
+      - ref: gen_ai.response.service_tier
+        requirement_level: recommended
 
   - id: metric_attributes.gen_ai.inference_usage
     visibility: internal

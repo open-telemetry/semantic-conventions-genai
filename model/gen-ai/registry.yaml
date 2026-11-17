@@ -201,6 +201,13 @@ attributes:
       or `last_event_id` in the [Google GenAI Interactions API](https://ai.google.dev/api/interactions-api).
     examples: ['42', 'event-abc123']
     stability: development
+  - key: gen_ai.request.service_tier
+    type: string
+    brief: The service tier requested.
+    note: >
+      The value SHOULD be the exact string value sent to the provider.
+    examples: ['auto', 'flex']
+    stability: development
   - key: gen_ai.response.id
     type: string
     brief: The unique identifier for the completion.
@@ -273,6 +280,16 @@ attributes:
       Semantic conventions for individual GenAI providers SHOULD document how their status
       values map to this attribute.
     examples: ['completed', 'in_progress']
+    stability: development
+  - key: gen_ai.response.service_tier
+    type: string
+    brief: The service tier used for the response.
+    note: >
+      The value SHOULD be the exact string value returned by the provider.
+
+      For Vertex AI, the value SHOULD be
+      [`usageMetadata.trafficType`](https://docs.cloud.google.com/gemini-enterprise-agent-platform/reference/rest/v1/GenerateContentResponse#UsageMetadata.FIELDS.traffic_type).
+    examples: ['default', 'priority', 'ON_DEMAND']
     stability: development
   - key: gen_ai.response.time_to_first_chunk
     type: double

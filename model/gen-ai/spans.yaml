@@ -319,6 +319,9 @@ spans:
       - ref: gen_ai.request.reasoning.level
         requirement_level:
           recommended: When applicable.
+      - ref: gen_ai.request.service_tier
+        requirement_level:
+          conditionally_required: If the request includes a service tier.
       - ref: gen_ai.request.previous_response.id
         requirement_level:
           recommended: When available and if the request references a previous response.
@@ -330,6 +333,9 @@ spans:
         requirement_level: recommended
       - ref: gen_ai.response.finish_reasons
         requirement_level: recommended
+      - ref: gen_ai.response.service_tier
+        requirement_level:
+          conditionally_required: If the response was received and includes a service tier.
       - ref: gen_ai.response.time_to_first_chunk
         requirement_level:
           recommended: If the request was a streaming request.
