@@ -1322,9 +1322,10 @@ def _emit_fetch_response_span(client, response_id, starting_after=None, stream=F
       response has no finish reason. A fetched response whose original generation
       failed or is incomplete is NOT an error of this fetch, so `error.type`/span
       status are not set for it.
-    - `gen_ai.system_instructions` and `gen_ai.output.messages` are the content
-      carried by the fetched response. The original input messages are NOT part
-      of the fetched response object, so `gen_ai.input.messages` is not recorded.
+    - `gen_ai.system_instructions`, `gen_ai.output.messages`, and
+      `gen_ai.tool.definitions` are the content carried by the fetched response.
+      The original input messages are NOT part of the fetched response object,
+      so `gen_ai.input.messages` is not recorded.
     - `gen_ai.request.stream` is recorded when the request is made in streaming mode.
     - `gen_ai.request.stream_cursor` is the resume cursor (OpenAI `starting_after`),
       a request-side parameter available at the call boundary, recorded only when
@@ -1390,6 +1391,11 @@ def _emit_fetch_response_span(client, response_id, starting_after=None, stream=F
             output_messages = responses_output_messages(fetched)
             if output_messages:
                 span.set_attribute("gen_ai.output.messages", output_messages)
+            if fetched.tools:
+                span.set_attribute(
+                    "gen_ai.tool.definitions",
+                    json.dumps([tool.model_dump(exclude_none=True) for tool in fetched.tools]),
+                )
             # Token usage is intentionally NOT recorded on this span: no inference
             # happens on a fetch, and the fetched response's token counts belong to
             # the original generation (already accounted for on that operation).
@@ -1461,6 +1467,59 @@ def run_fetch_response_reference(client):
     _emit_fetch_response_span(client, "resp-failed-001")
 
 
+def run_fetch_response_with_tools_reference():
+    """Fetch tool definitions from a stored response through the real SDK."""
+    import httpx2
+    import openai
+
+    stored_responses = {}
+
+    def respond(request):
+        if request.method == "POST" and request.url.path == "/v1/responses":
+            body = json.loads(request.content)
+            response = {
+                "id": "resp-stored-tools-001",
+                "object": "response",
+                "created_at": 1700000000,
+                "status": "completed",
+                "model": body["model"],
+                "tools": body["tools"],
+                "output": [],
+            }
+            if body["store"]:
+                stored_responses[response["id"]] = response
+            return httpx2.Response(200, json=response)
+        if request.method == "GET" and request.url.path.startswith("/v1/responses/"):
+            response_id = request.url.path.rsplit("/", 1)[1]
+            return httpx2.Response(200, json=stored_responses[response_id])
+        raise AssertionError(f"Unexpected request: {request.method} {request.url}")
+
+    with openai.OpenAI(
+        base_url=MOCK_BASE_URL,
+        api_key="mock-key",
+        max_retries=0,
+        http_client=httpx2.Client(transport=httpx2.MockTransport(respond)),
+    ) as client:
+        created = client.responses.create(
+            model="gpt-4o-mini",
+            input="What is the weather in Seattle?",
+            tools=[
+                {
+                    "type": "function",
+                    "name": "get_weather",
+                    "description": "Get the current weather for a location.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {"location": {"type": "string"}},
+                        "required": ["location"],
+                    },
+                }
+            ],
+            store=True,
+        )
+        _emit_fetch_response_span(client, created.id)
+
+
 def run_fetch_response_error_reference():
     """Exercise a fetch exception raised by the SDK for a missing response."""
     import httpx2
@@ -1509,6 +1568,7 @@ def main():
     run_chat_audio_reference(client)
     run_responses_with_prompt_template_reference(client)
     run_fetch_response_reference(client)
+    run_fetch_response_with_tools_reference()
     run_fetch_response_error_reference()
     run_embeddings_reference(client)
     run_embeddings_error_reference()
