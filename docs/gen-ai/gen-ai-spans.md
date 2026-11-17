@@ -162,10 +162,6 @@ This attribute MUST be recorded as an [AnyValue](https://opentelemetry.io/docs/s
 > [!WARNING]
 > This attribute may contain sensitive information.
 
-Since this attribute could be large, it's NOT RECOMMENDED to populate
-non-required properties by default. Instrumentations MAY provide a way
-to enable populating optional properties.
-
 This attribute MUST be recorded as an [AnyValue](https://opentelemetry.io/docs/specs/otel/common/#anyvalue) conforming to its [JSON schema](/model/gen-ai/gen-ai-tool-definitions.json).
 
 The following attributes can be important for making sampling decisions
@@ -503,7 +499,7 @@ application needs and maturity:
 #### Recording content on attributes
 
 The content captured in `gen_ai.system_instructions`, `gen_ai.input.messages`,
-and `gen_ai.output.messages` attributes is likely to be large.
+`gen_ai.output.messages`, and `gen_ai.tool.definitions` attributes is likely to be large.
 
 It may contain media, and even in the text form, it may be larger than
 observability backend limits for telemetry envelopes or attribute values.
@@ -528,7 +524,7 @@ such as individual message contents, preserving JSON structure.
 
 ##### Content capture configuration
 
-Capturing model instructions, prompts, completions, retrieval queries, prompt template variables, and memory records is gated by an explicit user opt-in.
+Capturing model instructions, prompts, completions, tool definitions, retrieval queries, prompt template variables, and memory records is gated by an explicit user opt-in.
 Instrumentations that support capturing content MUST provide a configuration option to control
 whether content is captured and which telemetry signals receive it.
 
@@ -537,14 +533,13 @@ The content capture configuration governs the following attributes and their rep
 - [`gen_ai.input.messages`](/docs/registry/attributes/gen-ai.md#gen-ai-input-messages)
 - [`gen_ai.output.messages`](/docs/registry/attributes/gen-ai.md#gen-ai-output-messages)
 - [`gen_ai.system_instructions`](/docs/registry/attributes/gen-ai.md#gen-ai-system-instructions)
+- [`gen_ai.tool.definitions`](/docs/registry/attributes/gen-ai.md#gen-ai-tool-definitions)
 - [`gen_ai.tool.call.arguments`](/docs/registry/attributes/gen-ai.md#gen-ai-tool-call-arguments)
 - [`gen_ai.tool.call.result`](/docs/registry/attributes/gen-ai.md#gen-ai-tool-call-result)
 - [`gen_ai.retrieval.query.text`](/docs/registry/attributes/gen-ai.md#gen-ai-retrieval-query-text)
 - [`gen_ai.prompt.variable.*`](/docs/registry/attributes/gen-ai.md#gen-ai-prompt-variable)
 - [`gen_ai.memory.query.text`](/docs/registry/attributes/gen-ai.md#gen-ai-memory-query-text)
 - [`gen_ai.memory.records`](/docs/registry/attributes/gen-ai.md#gen-ai-memory-records)
-
-Attributes providing schemas rather than user/model payload content (such as [`gen_ai.tool.definitions`](/docs/registry/attributes/gen-ai.md#gen-ai-tool-definitions)) are not governed by this configuration.
 
 A content attribute MUST NOT be reported on a signal unless that signal's conventions
 reference the attribute or explicitly permit copying it from another signal.
