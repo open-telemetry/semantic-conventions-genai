@@ -71,11 +71,13 @@ def _usage():
     }
 
 
-async def _run_response(ws, behavior, barge_in_received=None):
+async def _run_response(ws, behavior, tools, barge_in_received=None):
     response_id = "resp_mock_realtime_001"
     item_id = "item_mock_assistant_001"
 
     if behavior == "function_call":
+        if not tools:
+            raise ValueError("A function-call generation requires a configured tool")
         # The generation resolves to a tool call and then ends. After the
         # application sends the tool result, a subsequent response.create
         # produces the spoken answer.
@@ -99,7 +101,7 @@ async def _run_response(ws, behavior, barge_in_received=None):
                     "object": "realtime.item",
                     "type": "function_call",
                     "status": "completed",
-                    "name": "get_weather",
+                    "name": tools[0]["name"],
                     "call_id": "call_mock_realtime_001",
                     "arguments": json.dumps({"location": "Seattle"}),
                 },
@@ -329,10 +331,11 @@ async def _handler(ws):
                     await _emit_user_vad(ws)
                 previous_audio = audio
             elif message_type == "response.create":
-                behavior = ((message.get("response") or {}).get("metadata") or {}).get("mock_behavior", "complete")
+                response = message["response"]
+                behavior = (response.get("metadata") or {}).get("mock_behavior", "complete")
                 if behavior == "interrupted":
                     barge_in_received = asyncio.Event()
-                response_tasks.create_task(_run_response(ws, behavior, barge_in_received))
+                response_tasks.create_task(_run_response(ws, behavior, response.get("tools", []), barge_in_received))
 
 
 class _HealthHandler(BaseHTTPRequestHandler):

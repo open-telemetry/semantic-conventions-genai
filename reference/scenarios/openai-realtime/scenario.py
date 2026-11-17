@@ -223,9 +223,27 @@ class _RealtimeDriver:
         self._start_generation(self._behaviors.popleft(), self._pending_user_inputs.popleft())
 
     def _start_generation(self, behavior, input_messages):
+        response = {
+            "metadata": {"mock_behavior": behavior},
+            "tools": [
+                {
+                    "type": "function",
+                    "name": "get_weather",
+                    "description": "Get the current weather for a location.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {"location": {"type": "string"}},
+                        "required": ["location"],
+                    },
+                }
+            ]
+            if behavior == "function_call"
+            else [],
+        }
         self._gen = {
             "span": None,
             "behavior": behavior,
+            "tools": response["tools"],
             "barge_in_sent": False,
             "input_messages": input_messages,
             "response_id": None,
@@ -233,7 +251,7 @@ class _RealtimeDriver:
             "audio_deltas": [],
             "final_transcript": None,
         }
-        self.conn.send({"type": "response.create", "response": {"metadata": {"mock_behavior": behavior}}})
+        self.conn.response.create(response=response)
 
     def _on_response_created(self, event):
         attributes = _live_attributes(
@@ -249,6 +267,7 @@ class _RealtimeDriver:
             f"realtime_inference {self.request_model}", kind=SpanKind.CLIENT, attributes=attributes
         )
         span.set_attribute("gen_ai.input.messages", self._gen["input_messages"])
+        span.set_attribute("gen_ai.tool.definitions", json.dumps(self._gen["tools"]))
         span.set_attribute("gen_ai.response.model", self.response_model)
         self._gen["span"] = span
         self._gen["response_id"] = event.response.id

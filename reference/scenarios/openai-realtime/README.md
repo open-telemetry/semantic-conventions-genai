@@ -11,6 +11,10 @@ through the `gen_ai.client.realtime_session.started` / `.ended` events. The
 scenario also records an SDK-visible connection failure on active speech,
 generation, and session signals.
 
+Each generation records `gen_ai.tool.definitions` from the tools passed to
+`conn.response.create`. The tool-calling generation offers `get_weather`;
+the other generations, including the answer after the tool result, offer no tools.
+
 | Operation | Should be instrumented here | Status |
 | --- | --- | --- |
 | realtime_inference | Yes — server-side generation within the Realtime session | ✅ Implemented |
