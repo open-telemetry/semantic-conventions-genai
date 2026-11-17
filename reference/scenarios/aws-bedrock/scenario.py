@@ -3,12 +3,12 @@
 import os
 import time
 
-from opentelemetry._logs import SeverityNumber
 from guardrail_mock_server import (
     GUARDRAIL_ID,
     GUARDRAIL_VERSION,
     guardrail_mock_server,
 )
+from opentelemetry._logs import SeverityNumber
 from opentelemetry.trace import SpanKind, StatusCode
 from reference_shared import (
     flush_and_shutdown,
