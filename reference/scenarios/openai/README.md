@@ -9,7 +9,7 @@ Assistants API is covered by the `openai-assistants` scenario).
 | --- | --- | --- |
 | inference (`chat`) | Yes — calls the model directly | ✅ Implemented, including streaming TTFC |
 | embeddings | Yes — calls the model directly | ✅ Implemented |
-| fetch_response | Yes — Responses API `client.responses.retrieve` | ✅ Implemented |
+| fetch_response | Yes — Responses API `client.responses.retrieve` | ✅ Implemented, including tool definitions |
 | execute_tool | No — the base client returns tool calls but doesn't execute them; the tool runs in app code | ➖ Not instrumentable |
 | retrieval | No - Vector Stores search is a search service call, not GenAI retrieval; `file_search` runs server-side | ✅ Correctly not emitted |
 | memory | Yes — Conversations API / stored responses | ❌ Not implemented |
@@ -33,8 +33,3 @@ Fetch response exercises the SDK's `NotFoundError` from
 `client.responses.retrieve` using a mock HTTP 404 response. The error handler
 records a correlated `gen_ai.client.fetch_response.exception` WARN log and
 re-raises the exception.
-
-A stateful HTTP mock stores the tools supplied to `client.responses.create`
-with `store=True` and returns them through `client.responses.retrieve`.
-The fetch span records `gen_ai.tool.definitions` from the retrieved SDK object's
-`tools` field, without access to the creation request.
