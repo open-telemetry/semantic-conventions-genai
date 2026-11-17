@@ -25,6 +25,20 @@ _time_to_first_chunk = _reference_meter.create_histogram(
     "gen_ai.client.inference.time_to_first_chunk",
     unit="s",
     description="Time to receive the first output chunk of a streaming inference operation.",
+    explicit_bucket_boundaries_advisory=[
+        0.01,
+        0.025,
+        0.05,
+        0.1,
+        0.25,
+        0.5,
+        1,
+        2.5,
+        5,
+        10,
+        30,
+        60,
+    ],
 )
 
 _embeddings_duration = _reference_meter.create_histogram(
