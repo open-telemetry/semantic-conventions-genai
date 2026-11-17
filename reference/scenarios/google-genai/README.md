@@ -7,7 +7,7 @@ tool execution is instrumentable here.
 
 | Operation | Should be instrumented here | Status |
 | --- | --- | --- |
-| inference (`generate_content`; `chat` for the Interactions API) | Yes — calls the model directly | ✅ Implemented |
+| inference (`generate_content`; `interactions.create` for the Interactions API) | Yes — calls the model directly | ✅ Implemented |
 | embeddings | Yes — calls the model directly | ✅ Implemented |
 | execute_tool | Yes — automatic function calling executes the tool | ✅ Implemented |
 | create_agent | Yes — `google.genai.Client.agents` supports remote agent creation | ✅ Implemented |

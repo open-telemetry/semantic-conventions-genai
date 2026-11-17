@@ -737,6 +737,10 @@ attributes:
           value: "text_completion"
           brief: 'Text completions operation such as [OpenAI Completions API (Legacy)](https://platform.openai.com/docs/api-reference/completions)'
           stability: development
+        - id: interactions_create
+          value: "interactions.create"
+          brief: 'Interaction creation operation such as [Gemini Interactions API](https://ai.google.dev/gemini-api/docs/interactions)'
+          stability: development
         - id: embeddings
           value: "embeddings"
           brief: 'Embeddings operation such as [OpenAI Create embeddings API](https://platform.openai.com/docs/api-reference/embeddings/create)'

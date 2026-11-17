@@ -14,11 +14,6 @@ scenarios:
     expected_violations:
       - id: genai_expected_attribute_missing
         context:
-          missing_attribute: gen_ai.response.finish_reasons
-          operation: chat
-        reason: The Interactions API exposes interaction status, not per-generation finish reasons.
-      - id: genai_expected_attribute_missing
-        context:
           missing_attribute: gen_ai.request.encoding_formats
           operation: embeddings
         reason: The Gemini embedContent API has no encoding format parameter.
@@ -45,6 +40,10 @@ scenarios:
       - match:
           attributes:
             gen_ai.operation.name: generate_content
+          type: gen_ai.client.inference
+      - match:
+          attributes:
+            gen_ai.operation.name: interactions.create
           type: gen_ai.client.inference
       - match:
           attributes:

@@ -369,7 +369,7 @@ def run_interactions_continuation():
 
     prompt_text = "Follow up prompt."
     span_attributes = {
-        "gen_ai.operation.name": "chat",
+        "gen_ai.operation.name": "interactions.create",
         "gen_ai.provider.name": "gcp.gemini",
         "gen_ai.request.model": request_model,
         "gen_ai.request.previous_response.id": previous_interaction_id,
@@ -377,7 +377,7 @@ def run_interactions_continuation():
         "server.port": _SERVER_PORT,
     }
     with _reference_tracer.start_as_current_span(
-        f"chat {request_model}", kind=SpanKind.CLIENT, attributes=span_attributes, record_exception=False
+        f"interactions.create {request_model}", kind=SpanKind.CLIENT, attributes=span_attributes, record_exception=False
     ) as span:
         try:
             interaction = client.interactions.create(
@@ -392,7 +392,7 @@ def run_interactions_continuation():
         if interaction.id:
             span.set_attribute("gen_ai.response.id", interaction.id)
         metric_attributes = {
-            "gen_ai.operation.name": "chat",
+            "gen_ai.operation.name": "interactions.create",
             "gen_ai.provider.name": "gcp.gemini",
             "gen_ai.request.model": request_model,
         }
@@ -410,7 +410,7 @@ def run_interactions_continuation():
         _record_inference_usage(usage, metric_attributes)
 
         event_attrs = {
-            "gen_ai.operation.name": "chat",
+            "gen_ai.operation.name": "interactions.create",
             "gen_ai.provider.name": "gcp.gemini",
             "gen_ai.request.model": request_model,
             "gen_ai.request.previous_response.id": previous_interaction_id,
