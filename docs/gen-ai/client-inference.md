@@ -783,13 +783,11 @@ This metric SHOULD be specified with [ExplicitBucketBoundaries] of [0.01, 0.02, 
 | -------- | --------------- | ----------- | -------------- | --------- | ------ |
 | `gen_ai.client.inference.time_per_output_chunk` | Histogram | `s` | Time per output chunk, recorded for each chunk received after the first one, measured as the time elapsed from the end of the previous chunk to the end of the current chunk. [1] | ![Development](https://img.shields.io/badge/-development-blue) | |
 
-**[1]:** Instrumentations SHOULD report this metric for streaming calls and SHOULD NOT report it for non-streaming calls.
+**[1]:** This metric SHOULD be reported for streaming calls and SHOULD NOT be reported otherwise.
 
 The chunk definition is the same as for [`gen_ai.response.time_to_first_chunk`](/docs/registry/attributes/gen-ai.md#gen-ai-response-time-to-first-chunk).
 
-For each chunk received after the first one, instrumentations SHOULD record one measurement of the time elapsed between the previous chunk being fully received and the current chunk being fully received by the client, before application processing. Events that do not qualify as chunks MUST NOT reset this interval.
-
-Instrumentations MUST NOT report this metric if fewer than two chunks are received.
+Chunk timestamps SHOULD be taken when each chunk is fully received by the client, before application processing.
 
 **Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/general/signal-requirement-level.md).
 
