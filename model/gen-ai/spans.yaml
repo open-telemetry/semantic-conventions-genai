@@ -125,7 +125,18 @@ attribute_groups:
       - ref_group: attributes.gen_ai.error
       - ref_group: attributes.gen_ai.invoked_agent.internal.common
       - ref: gen_ai.tool.definitions
-        brief: The set of tools associated with the agent.
+        brief: The list of tool definitions configured for the invoked agent, workflow, or framework entry point.
+        note: |
+          > [!WARNING]
+          > This attribute may contain sensitive information.
+
+          If there is no single configured list for the invocation, omit this attribute.
+          Do not combine tool lists across child agents, handoffs, or steps. Record the tools
+          supplied to each model call on its inference span instead.
+
+          Since this attribute could be large, it's NOT RECOMMENDED to populate
+          non-required properties by default. Instrumentations MAY provide a way
+          to enable populating optional properties.
       - ref: gen_ai.operation.name
         requirement_level: required
       - ref: gen_ai.request.max_tokens
