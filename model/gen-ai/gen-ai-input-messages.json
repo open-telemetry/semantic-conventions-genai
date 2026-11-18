@@ -49,7 +49,7 @@
                         }
                     ],
                     "default": null,
-                    "description": "Raw bytes of the attached data.",
+                    "description": "Raw bytes of the attached data. Instrumentations MAY omit it, for example to avoid recording large binary payloads inline.",
                     "title": "Content"
                 }
             },

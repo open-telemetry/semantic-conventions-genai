@@ -135,6 +135,9 @@ the model. Each message corresponds to exactly one generation
 (choice/candidate) and vice versa - one choice cannot be split across
 multiple messages or one message cannot contain parts from multiple choices.
 
+Instrumentations SHOULD populate fields when values are available,
+unless the field description says otherwise.
+
 Instrumentations MAY provide a way for users to filter or truncate
 output messages. `gen_ai.response.finish_reasons` remains aligned with the
 generations returned by the provider, not with a filtered or truncated
@@ -516,7 +519,8 @@ in [Python code](./non-normative/models.py).
 
 These attributes MUST be recorded as
 [AnyValue](https://opentelemetry.io/docs/specs/otel/common/#anyvalue) values
-conforming to their JSON schemas.
+conforming to their JSON schemas. Instrumentations SHOULD populate fields when
+values are available, unless the field description says otherwise.
 
 The JSON schemas describe the structure of these attribute values in the
 OpenTelemetry data model, not an export format or encoding. Producers SHOULD

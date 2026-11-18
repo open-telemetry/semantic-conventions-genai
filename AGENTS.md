@@ -46,10 +46,7 @@ GenAI clients, MCP, and provider-specific conventions. Attributes live in
     producers, prevents deprecating, replacing, or offloading fields without
     breaking older validators, and forces dummy values when redacting content.
     See
-    [.github/instructions/json-schemas.instructions.md](.github/instructions/json-schemas.instructions.md),
-    [Understanding JSON Schema Compatibility](https://yokota.blog/2021/03/29/understanding-json-schema-compatibility/),
-    Protobuf's [Required Is Forever](https://protobuf.dev/programming-guides/proto2/#required-deprecated),
-    and [Don't Add a Required Field](https://protobuf.dev/best-practices/dos-donts/#add-required).
+    [.github/instructions/json-schemas.instructions.md](.github/instructions/json-schemas.instructions.md).
 ## Workflow
 
 ```bash

@@ -243,6 +243,10 @@ value matches the units the customer is charged for.
 **[35] `server.address`:** When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent the server address behind any intermediaries, for example proxies, if it's available.
 
 **[36] `gen_ai.input.messages`:** Messages MUST be provided in the order they were sent to the model.
+
+Instrumentations SHOULD populate fields when values are available,
+unless the field description says otherwise.
+
 Instrumentations MAY provide a way for users to filter or truncate
 input messages.
 
@@ -269,6 +273,9 @@ secured by other means, for example by storage-level access control.
 the model. Each message corresponds to exactly one generation
 (choice/candidate) and vice versa - one choice cannot be split across
 multiple messages or one message cannot contain parts from multiple choices.
+
+Instrumentations SHOULD populate fields when values are available,
+unless the field description says otherwise.
 
 Instrumentations MAY provide a way for users to filter or truncate
 output messages. `gen_ai.response.finish_reasons` remains aligned with the
@@ -320,6 +327,9 @@ chat history.
 
 Instructions that are part of the chat history SHOULD be recorded in
 `gen_ai.input.messages` attribute instead.
+
+Instrumentations SHOULD populate fields when values are available,
+unless the field description says otherwise.
 
 Instrumentations MAY provide a way for users to filter or truncate
 system instructions.
@@ -531,6 +541,9 @@ Instrumentations SHOULD document the list of errors they report.
 the model. Each message corresponds to exactly one generation
 (choice/candidate) and vice versa - one choice cannot be split across
 multiple messages or one message cannot contain parts from multiple choices.
+
+Instrumentations SHOULD populate fields when values are available,
+unless the field description says otherwise.
 
 Instrumentations MAY provide a way for users to filter or truncate
 output messages. `gen_ai.response.finish_reasons` remains aligned with the

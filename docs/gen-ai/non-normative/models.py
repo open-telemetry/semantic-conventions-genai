@@ -230,7 +230,8 @@ class BlobPart(BaseModel):
         description="The general modality of the data if it is known. Instrumentations SHOULD also set the mimeType field if the specific type is known.",
     )
     content: Optional[bytes] = Field(
-        default=None, description="Raw bytes of the attached data."
+        default=None,
+        description="Raw bytes of the attached data. Instrumentations MAY omit it, for example to avoid recording large binary payloads inline.",
     )
 
 class FilePart(BaseModel):

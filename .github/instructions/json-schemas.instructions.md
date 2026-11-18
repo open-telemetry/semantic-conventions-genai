@@ -13,7 +13,7 @@ case file's `errors:` block (see `docs/gen-ai/non-normative/tests/README.md`).
 
 ## Schema compatibility rules
 
-Only structural union `type` discriminators may be required in `models.py`. Mark all other fields on messages, message parts, tool definitions, retrieval documents, and memory records optional with `Optional[...] = Field(default=None, ...)`, and put normative producer requirements in the specification docs. Never add a required field to an existing type. See [Understanding JSON Schema Compatibility](https://yokota.blog/2021/03/29/understanding-json-schema-compatibility/), Protobuf's [Required Is Forever](https://protobuf.dev/programming-guides/proto2/#required-deprecated), and [Don't Add a Required Field](https://protobuf.dev/best-practices/dos-donts/#add-required):
+Only structural union `type` discriminators may be required in `models.py`. Mark all other fields on messages, message parts, tool definitions, retrieval documents, and memory records optional with `Optional[...] = Field(default=None, ...)`, and put normative producer requirements in the specification docs. Never add a required field to an existing type:
 
 - **Backward compatibility.** Newer consumers reading older data will reject telemetry from older producers if a later version adds a `required` field to an existing type.
 - **Forward compatibility.** Older consumers reading newer data will reject payloads that omit a deprecated, replaced, or offloaded field if the earlier schema marked it `required`.
