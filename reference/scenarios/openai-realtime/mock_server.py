@@ -298,17 +298,19 @@ async def _run_failed_session(ws):
 
 async def _handler(ws):
     connection_number = next(_connection_counter)
+    session = {
+        "type": "realtime",
+        "id": f"sess_mock_realtime_{connection_number:03d}",
+        "model": "gpt-realtime",
+        "output_modalities": ["audio"],
+        "tools": [],
+    }
     await _send(
         ws,
         {
             "type": "session.created",
             "event_id": _event_id(),
-            "session": {
-                "type": "realtime",
-                "id": f"sess_mock_realtime_{connection_number:03d}",
-                "model": "gpt-realtime",
-                "output_modalities": ["audio"],
-            },
+            "session": session,
         },
     )
     if connection_number == 2:
@@ -321,7 +323,10 @@ async def _handler(ws):
         async for raw in ws:
             message = json.loads(raw)
             message_type = message.get("type")
-            if message_type == "input_audio_buffer.append":
+            if message_type == "session.update":
+                session.update(message["session"])
+                await _send(ws, {"type": "session.updated", "event_id": _event_id(), "session": session})
+            elif message_type == "input_audio_buffer.append":
                 audio = message.get("audio")
                 if barge_in_received is not None and not barge_in_received.is_set():
                     if audio == previous_audio:
@@ -335,7 +340,8 @@ async def _handler(ws):
                 behavior = (response.get("metadata") or {}).get("mock_behavior", "complete")
                 if behavior == "interrupted":
                     barge_in_received = asyncio.Event()
-                response_tasks.create_task(_run_response(ws, behavior, response.get("tools", []), barge_in_received))
+                tools = response.get("tools", session["tools"])
+                response_tasks.create_task(_run_response(ws, behavior, tools, barge_in_received))
 
 
 class _HealthHandler(BaseHTTPRequestHandler):

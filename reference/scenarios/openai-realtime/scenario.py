@@ -121,6 +121,18 @@ def _live_attributes(provider, request_model, session_id, host, port, operation,
     return attributes
 
 
+_WEATHER_TOOL = {
+    "type": "function",
+    "name": "get_weather",
+    "description": "Get the current weather for a location.",
+    "parameters": {
+        "type": "object",
+        "properties": {"location": {"type": "string"}},
+        "required": ["location"],
+    },
+}
+
+
 class _RealtimeDriver:
     """Continuous, event-driven dispatch for one realtime session.
 
@@ -136,7 +148,9 @@ class _RealtimeDriver:
     every span boundary is driven by the received events, not by the call order.
     """
 
-    def __init__(self, conn, provider, request_model, response_model, session_id, host, port, output_type):
+    def __init__(
+        self, conn, provider, request_model, response_model, session_id, host, port, output_type, session_tools
+    ):
         self.conn = conn
         self.provider = provider
         self.request_model = request_model
@@ -145,6 +159,7 @@ class _RealtimeDriver:
         self.host = host
         self.port = port
         self.output_type = output_type
+        self.session_tools = [tool.model_dump(exclude_none=True) for tool in session_tools or []]
         # What the mock should do for each committed user utterance, in order:
         # a normal answer, an interrupted answer, the interrupted turn's follow-up
         # answer, then a tool call.
@@ -220,30 +235,22 @@ class _RealtimeDriver:
 
     def _on_committed(self, event):
         # The user finished an utterance; ask the model to respond to it.
-        self._start_generation(self._behaviors.popleft(), self._pending_user_inputs.popleft())
+        behavior = self._behaviors.popleft()
+        # The tool-call turn inherits the session tools; the spoken turns disable them.
+        self._start_generation(
+            behavior,
+            self._pending_user_inputs.popleft(),
+            tools=None if behavior == "function_call" else [],
+        )
 
-    def _start_generation(self, behavior, input_messages):
-        response = {
-            "metadata": {"mock_behavior": behavior},
-            "tools": [
-                {
-                    "type": "function",
-                    "name": "get_weather",
-                    "description": "Get the current weather for a location.",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {"location": {"type": "string"}},
-                        "required": ["location"],
-                    },
-                }
-            ]
-            if behavior == "function_call"
-            else [],
-        }
+    def _start_generation(self, behavior, input_messages, *, tools):
+        response = {"metadata": {"mock_behavior": behavior}}
+        if tools is not None:
+            response["tools"] = tools
         self._gen = {
             "span": None,
             "behavior": behavior,
-            "tools": response["tools"],
+            "tools": response.get("tools", self.session_tools),
             "barge_in_sent": False,
             "input_messages": input_messages,
             "response_id": None,
@@ -267,7 +274,8 @@ class _RealtimeDriver:
             f"realtime_inference {self.request_model}", kind=SpanKind.CLIENT, attributes=attributes
         )
         span.set_attribute("gen_ai.input.messages", self._gen["input_messages"])
-        span.set_attribute("gen_ai.tool.definitions", json.dumps(self._gen["tools"]))
+        if self._gen["tools"]:
+            span.set_attribute("gen_ai.tool.definitions", json.dumps(self._gen["tools"]))
         span.set_attribute("gen_ai.response.model", self.response_model)
         self._gen["span"] = span
         self._gen["response_id"] = event.response.id
@@ -343,7 +351,7 @@ class _RealtimeDriver:
                 },
             }
         )
-        self._start_generation("complete", _tool_result_message(function_call, result))
+        self._start_generation("complete", _tool_result_message(function_call, result), tools=[])
 
     def _finish_spoken_generation(self, span, status, status_details, usage):
         gen = self._gen
@@ -488,6 +496,7 @@ def _run_failed_realtime_session(client, provider, request_model, host, port):
                 host,
                 port,
                 output_type,
+                session_event.session.tools,
             ).run()
     except Exception as error:
         session_error = error
@@ -532,6 +541,10 @@ def run_realtime_reference(client):
                 attributes=session_attributes,
             )
             session_started = True
+            conn.session.update(session={"type": "realtime", "tools": [_WEATHER_TOOL]})
+            session_updated = conn.recv()
+            if session_updated.type != "session.updated":
+                raise RuntimeError(f"Expected session.updated, got {session_updated.type}")
             _RealtimeDriver(
                 conn,
                 provider,
@@ -541,6 +554,7 @@ def run_realtime_reference(client):
                 host,
                 port,
                 output_type,
+                session_updated.session.tools,
             ).run()
     except Exception as error:
         session_error = error

@@ -13,6 +13,6 @@ generation, and session signals.
 
 | Operation | Should be instrumented here | Status |
 | --- | --- | --- |
-| realtime_inference | Yes — server-side generation within the Realtime session | ✅ Implemented, including tool definitions |
+| realtime_inference | Yes — server-side generation within the Realtime session | ✅ Implemented. Demonstrates session-level tools and per-generation overrides. |
 | user_speech | Yes — bounded by server voice-activity events (`input_audio_buffer.speech_started` / `speech_stopped`) | ✅ Implemented |
 | execute_tool | No — the tool runs in application code; captured as `tool_call` / `tool_call_response` parts on the generations | ➖ Not instrumentable |
