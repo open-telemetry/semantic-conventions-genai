@@ -4,6 +4,7 @@ import asyncio
 import contextlib
 import json
 import socket
+import time
 from collections.abc import AsyncIterator
 from typing import Any
 
@@ -20,11 +21,14 @@ from mcp.shared.exceptions import MCPError
 from mcp.shared.message import SessionMessage
 from mcp_types import INVALID_PARAMS, CallToolResult
 from opentelemetry import trace
+from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 from opentelemetry.trace import SpanKind, StatusCode
 from pydantic import ValidationError
 from reference_shared import (
     flush_and_shutdown,
     mock_server_host_port,
+    reference_meter,
     reference_tracer,
     setup_otel,
 )
@@ -34,10 +38,32 @@ from reference_shared import (
 _mcp_otel._tracer = trace.NoOpTracer()
 
 _reference_tracer = reference_tracer()
+_reference_meter = reference_meter()
+
+_MCP_DURATION_BUCKETS = [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30, 60, 120, 300]
+
+_client_operation_duration = _reference_meter.create_histogram(
+    "mcp.client.operation.duration",
+    unit="s",
+    description=(
+        "The duration of the MCP request or notification as observed on the sender "
+        "from the time it was sent until the response or ack is received."
+    ),
+    explicit_bucket_boundaries_advisory=_MCP_DURATION_BUCKETS,
+)
+_server_operation_duration = _reference_meter.create_histogram(
+    "mcp.server.operation.duration",
+    unit="s",
+    description=(
+        "MCP request or notification duration as observed on the receiver "
+        "from the time it was received until the result or ack is sent."
+    ),
+    explicit_bucket_boundaries_advisory=_MCP_DURATION_BUCKETS,
+)
 
 
 class ReferenceMCPServerMiddleware(ServerMiddleware[Any]):
-    """MCP server middleware that emits `mcp.server` spans."""
+    """MCP server middleware that emits `mcp.server` spans and `mcp.server.operation.duration`."""
 
     async def __call__(self, ctx: ServerRequestContext[Any, Any], call_next: CallNext) -> HandlerResult:
         if ctx.method in ("initialize", "notifications/initialized"):
@@ -48,92 +74,106 @@ class ReferenceMCPServerMiddleware(ServerMiddleware[Any]):
         target = name if isinstance(name, str) else None
         span_name = f"{ctx.method} {target}" if target else ctx.method
 
-        attributes: dict[str, Any] = {
+        metric_attrs: dict[str, Any] = {
             "mcp.method.name": ctx.method,
             "mcp.protocol.version": ctx.protocol_version,
             "network.transport": "tcp",
             "network.protocol.name": "http",
         }
-        if ctx.request_id is not None:
-            attributes["jsonrpc.request.id"] = str(ctx.request_id)
         if ctx.request is not None:
             http_version = ctx.request.scope.get("http_version")
             if http_version:
-                attributes["network.protocol.version"] = str(http_version)
-            session_id = ctx.request.headers.get("mcp-session-id")
-            if session_id:
-                attributes["mcp.session.id"] = session_id
-            if ctx.request.client:
-                attributes["client.address"] = ctx.request.client.host
-                attributes["client.port"] = ctx.request.client.port
+                metric_attrs["network.protocol.version"] = str(http_version)
 
         if ctx.method == "tools/call":
-            attributes["gen_ai.operation.name"] = "execute_tool"
+            metric_attrs["gen_ai.operation.name"] = "execute_tool"
             if target is not None:
-                attributes["gen_ai.tool.name"] = target
+                metric_attrs["gen_ai.tool.name"] = target
         elif ctx.method == "prompts/get" and target is not None:
-            attributes["gen_ai.prompt.name"] = target
+            metric_attrs["gen_ai.prompt.name"] = target
         elif ctx.method == "resources/read" and params.get("uri") is not None:
-            attributes["mcp.resource.uri"] = str(params["uri"])
+            metric_attrs["mcp.resource.uri"] = str(params["uri"])
 
+        span_attrs = dict(metric_attrs)
+        if ctx.request_id is not None:
+            span_attrs["jsonrpc.request.id"] = str(ctx.request_id)
+        if ctx.request is not None:
+            session_id = ctx.request.headers.get("mcp-session-id")
+            if session_id:
+                span_attrs["mcp.session.id"] = session_id
+            if ctx.request.client:
+                span_attrs["client.address"] = ctx.request.client.host
+                span_attrs["client.port"] = ctx.request.client.port
+
+        start_time = time.perf_counter()
         with _reference_tracer.start_as_current_span(
             span_name,
             kind=SpanKind.SERVER,
-            attributes=attributes,
+            attributes=span_attrs,
             context=extract_trace_context(ctx.meta),
             record_exception=False,
             set_status_on_exception=False,
         ) as span:
-            if ctx.method == "tools/call":
-                arguments = params.get("arguments")
-                if arguments is not None:
-                    span.set_attribute("gen_ai.tool.call.arguments", arguments)
-            elif ctx.method == "prompts/get":
-                prompt_args = params.get("arguments")
-                if isinstance(prompt_args, dict) and prompt_args:
-                    span.set_attribute("gen_ai.prompt.variables", prompt_args)
-
             try:
-                result = await call_next(ctx)
-            except MCPError as error:
-                code = str(error.error.code)
-                span.set_attribute("rpc.response.status_code", code)
-                # Per mcp.server.status.attributes, caller errors (-32700, -32600,
-                # -32601, -32602, -32002) are not server errors, while other codes are.
-                if error.error.code not in (-32700, -32600, -32601, -32602, -32002):
-                    span.set_attribute("error.type", code)
-                    span.set_status(StatusCode.ERROR, error.error.message)
-                raise
-            except ValidationError:
-                code = str(INVALID_PARAMS)
-                span.set_attribute("rpc.response.status_code", code)
-                raise
-            except Exception as error:
-                span.set_attribute("error.type", type(error).__qualname__)
-                span.set_status(StatusCode.ERROR, str(error))
-                raise
+                if ctx.method == "tools/call":
+                    arguments = params.get("arguments")
+                    if arguments is not None:
+                        span.set_attribute("gen_ai.tool.call.arguments", arguments)
+                elif ctx.method == "prompts/get":
+                    prompt_args = params.get("arguments")
+                    if isinstance(prompt_args, dict) and prompt_args:
+                        span.set_attribute("gen_ai.prompt.variables", prompt_args)
 
-            if ctx.method == "tools/call":
-                is_error = (
-                    result.is_error
-                    if isinstance(result, CallToolResult)
-                    else bool(result.get("isError"))
-                    if isinstance(result, dict)
-                    else False
-                )
-                structured_content = (
-                    result.structured_content
-                    if isinstance(result, CallToolResult)
-                    else result.get("structuredContent")
-                    if isinstance(result, dict)
-                    else None
-                )
-                if is_error:
-                    span.set_attribute("error.type", "tool_error")
-                    span.set_status(StatusCode.ERROR)
-                elif structured_content is not None:
-                    span.set_attribute("gen_ai.tool.call.result", structured_content)
-            return result
+                try:
+                    result = await call_next(ctx)
+                except MCPError as error:
+                    code = str(error.error.code)
+                    span.set_attribute("rpc.response.status_code", code)
+                    metric_attrs["rpc.response.status_code"] = code
+                    # Per mcp.server.status.attributes, caller errors (-32700, -32600,
+                    # -32601, -32602, -32002) are not server errors, while other codes are.
+                    if error.error.code not in (-32700, -32600, -32601, -32602, -32002):
+                        span.set_attribute("error.type", code)
+                        metric_attrs["error.type"] = code
+                        span.set_status(StatusCode.ERROR, error.error.message)
+                    raise
+                except ValidationError:
+                    code = str(INVALID_PARAMS)
+                    span.set_attribute("rpc.response.status_code", code)
+                    metric_attrs["rpc.response.status_code"] = code
+                    raise
+                except Exception as error:
+                    error_type = type(error).__qualname__
+                    span.set_attribute("error.type", error_type)
+                    metric_attrs["error.type"] = error_type
+                    span.set_status(StatusCode.ERROR, str(error))
+                    raise
+
+                if ctx.method == "tools/call":
+                    is_error = (
+                        result.is_error
+                        if isinstance(result, CallToolResult)
+                        else bool(result.get("isError"))
+                        if isinstance(result, dict)
+                        else False
+                    )
+                    structured_content = (
+                        result.structured_content
+                        if isinstance(result, CallToolResult)
+                        else result.get("structuredContent")
+                        if isinstance(result, dict)
+                        else None
+                    )
+                    if is_error:
+                        span.set_attribute("error.type", "tool_error")
+                        metric_attrs["error.type"] = "tool_error"
+                        span.set_status(StatusCode.ERROR)
+                    elif structured_content is not None:
+                        span.set_attribute("gen_ai.tool.call.result", structured_content)
+                return result
+            finally:
+                assert "gen_ai.prompt.variables" not in metric_attrs
+                _server_operation_duration.record(time.perf_counter() - start_time, metric_attrs)
 
 
 def _build_mcp_server() -> MCPServer:
@@ -171,6 +211,9 @@ async def _serve_mcp(mcp_server: MCPServer) -> AsyncIterator[str]:
     server = uvicorn.Server(uvicorn.Config(app, host="127.0.0.1", port=port, log_level="warning"))
     serving = asyncio.create_task(server.serve())
     while not server.started:
+        if serving.done():
+            await serving
+            raise RuntimeError("MCP server exited before starting")
         await asyncio.sleep(0.01)
     try:
         yield f"http://127.0.0.1:{port}/mcp"
@@ -216,30 +259,38 @@ async def _connect_session(url: str) -> AsyncIterator[tuple[ClientSession, Strea
                 tg.cancel_scope.cancel()
 
 
-def _client_common_attributes(
+def _client_metric_attributes(
     method: str,
     session: ClientSession,
-    transport: StreamableHTTPTransport,
     host: str | None,
     port: int | None,
 ) -> dict[str, Any]:
-    request_id = str(session._dispatcher._next_id)
     attributes: dict[str, Any] = {
         "mcp.method.name": method,
-        "jsonrpc.request.id": request_id,
         "network.transport": "tcp",
         "network.protocol.name": "http",
         "network.protocol.version": "1.1",
     }
     if session._negotiated_version:
         attributes["mcp.protocol.version"] = session._negotiated_version
-    if transport.session_id:
-        attributes["mcp.session.id"] = transport.session_id
     if host:
         attributes["server.address"] = host
     if port is not None:
         attributes["server.port"] = port
     return attributes
+
+
+def _client_span_attributes(
+    metric_attrs: dict[str, Any],
+    session: ClientSession,
+    transport: StreamableHTTPTransport,
+) -> dict[str, Any]:
+    span_attrs = dict(metric_attrs)
+    # JSONRPCDispatcher._allocate_id() increments _next_id before returning the wire id.
+    span_attrs["jsonrpc.request.id"] = str(session._dispatcher._next_id + 1)
+    if transport.session_id:
+        span_attrs["mcp.session.id"] = transport.session_id
+    return span_attrs
 
 
 async def run_tool_call_reference(
@@ -252,10 +303,12 @@ async def run_tool_call_reference(
     print("  [tools/call] MCP tool call")
     tool_name = "get_weather"
     arguments = {"location": "Seattle"}
-    span_attrs = _client_common_attributes("tools/call", session, transport, host, port)
-    span_attrs["gen_ai.operation.name"] = "execute_tool"
-    span_attrs["gen_ai.tool.name"] = tool_name
+    metric_attrs = _client_metric_attributes("tools/call", session, host, port)
+    metric_attrs["gen_ai.operation.name"] = "execute_tool"
+    metric_attrs["gen_ai.tool.name"] = tool_name
+    span_attrs = _client_span_attributes(metric_attrs, session, transport)
 
+    start_time = time.perf_counter()
     with _reference_tracer.start_as_current_span(
         f"tools/call {tool_name}",
         kind=SpanKind.CLIENT,
@@ -263,10 +316,13 @@ async def run_tool_call_reference(
         record_exception=False,
         set_status_on_exception=False,
     ) as span:
-        span.set_attribute("gen_ai.tool.call.arguments", arguments)
-        result = await session.call_tool(tool_name, arguments)
-        if result.structured_content is not None:
-            span.set_attribute("gen_ai.tool.call.result", result.structured_content)
+        try:
+            span.set_attribute("gen_ai.tool.call.arguments", arguments)
+            result = await session.call_tool(tool_name, arguments)
+            if result.structured_content is not None:
+                span.set_attribute("gen_ai.tool.call.result", result.structured_content)
+        finally:
+            _client_operation_duration.record(time.perf_counter() - start_time, metric_attrs)
     print(f"    -> {result.structured_content}")
 
 
@@ -280,9 +336,11 @@ async def run_prompt_get_reference(
     print("  [prompts/get] MCP prompt retrieval")
     prompt_name = "analyze_weather"
     prompt_arguments = {"user_name": "Alice", "language": "French"}
-    span_attrs = _client_common_attributes("prompts/get", session, transport, host, port)
-    span_attrs["gen_ai.prompt.name"] = prompt_name
+    metric_attrs = _client_metric_attributes("prompts/get", session, host, port)
+    metric_attrs["gen_ai.prompt.name"] = prompt_name
+    span_attrs = _client_span_attributes(metric_attrs, session, transport)
 
+    start_time = time.perf_counter()
     with _reference_tracer.start_as_current_span(
         f"prompts/get {prompt_name}",
         kind=SpanKind.CLIENT,
@@ -290,8 +348,12 @@ async def run_prompt_get_reference(
         record_exception=False,
         set_status_on_exception=False,
     ) as span:
-        span.set_attribute("gen_ai.prompt.variables", prompt_arguments)
-        prompt_result = await session.get_prompt(prompt_name, prompt_arguments)
+        try:
+            span.set_attribute("gen_ai.prompt.variables", prompt_arguments)
+            prompt_result = await session.get_prompt(prompt_name, prompt_arguments)
+        finally:
+            assert "gen_ai.prompt.variables" not in metric_attrs
+            _client_operation_duration.record(time.perf_counter() - start_time, metric_attrs)
     print(f"    -> {len(prompt_result.messages)} prompt message(s)")
 
 
@@ -304,9 +366,11 @@ async def run_resource_read_reference(
     """Scenario: MCP resources/read."""
     print("  [resources/read] MCP resource read")
     resource_uri = "file:///weather/seattle.json"
-    span_attrs = _client_common_attributes("resources/read", session, transport, host, port)
-    span_attrs["mcp.resource.uri"] = resource_uri
+    metric_attrs = _client_metric_attributes("resources/read", session, host, port)
+    metric_attrs["mcp.resource.uri"] = resource_uri
+    span_attrs = _client_span_attributes(metric_attrs, session, transport)
 
+    start_time = time.perf_counter()
     with _reference_tracer.start_as_current_span(
         "resources/read",
         kind=SpanKind.CLIENT,
@@ -314,7 +378,10 @@ async def run_resource_read_reference(
         record_exception=False,
         set_status_on_exception=False,
     ):
-        resource_result = await session.read_resource(resource_uri)
+        try:
+            resource_result = await session.read_resource(resource_uri)
+        finally:
+            _client_operation_duration.record(time.perf_counter() - start_time, metric_attrs)
     print(f"    -> {len(resource_result.contents)} resource content item(s)")
 
 
@@ -327,10 +394,12 @@ async def run_tool_call_error_reference(
     """Scenario: MCP tool call error (`isError=True`) and JSON-RPC resource error."""
     print("  [tools/call error] MCP unknown tool error")
     tool_name = "missing_tool"
-    span_attrs = _client_common_attributes("tools/call", session, transport, host, port)
-    span_attrs["gen_ai.operation.name"] = "execute_tool"
-    span_attrs["gen_ai.tool.name"] = tool_name
+    metric_attrs = _client_metric_attributes("tools/call", session, host, port)
+    metric_attrs["gen_ai.operation.name"] = "execute_tool"
+    metric_attrs["gen_ai.tool.name"] = tool_name
+    span_attrs = _client_span_attributes(metric_attrs, session, transport)
 
+    start_time = time.perf_counter()
     with _reference_tracer.start_as_current_span(
         f"tools/call {tool_name}",
         kind=SpanKind.CLIENT,
@@ -342,21 +411,29 @@ async def run_tool_call_error_reference(
             result = await session.call_tool(tool_name, {"location": "Seattle"})
             if result.is_error:
                 span.set_attribute("error.type", "tool_error")
+                metric_attrs["error.type"] = "tool_error"
                 span.set_status(StatusCode.ERROR)
                 print("    -> CallToolResult isError=True (error.type=tool_error)")
         except MCPError as error:
             code = str(error.error.code)
             span.set_attribute("error.type", code)
             span.set_attribute("rpc.response.status_code", code)
+            metric_attrs["error.type"] = code
+            metric_attrs["rpc.response.status_code"] = code
             span.set_status(StatusCode.ERROR, error.error.message)
+        finally:
+            _client_operation_duration.record(time.perf_counter() - start_time, metric_attrs)
 
     missing_uri = "file:///weather/missing.json"
-    res_attrs = _client_common_attributes("resources/read", session, transport, host, port)
-    res_attrs["mcp.resource.uri"] = missing_uri
+    res_metric_attrs = _client_metric_attributes("resources/read", session, host, port)
+    res_metric_attrs["mcp.resource.uri"] = missing_uri
+    res_span_attrs = _client_span_attributes(res_metric_attrs, session, transport)
+
+    res_start_time = time.perf_counter()
     with _reference_tracer.start_as_current_span(
         "resources/read",
         kind=SpanKind.CLIENT,
-        attributes=res_attrs,
+        attributes=res_span_attrs,
         record_exception=False,
         set_status_on_exception=False,
     ) as span:
@@ -366,8 +443,12 @@ async def run_tool_call_error_reference(
             code = str(error.error.code)
             span.set_attribute("error.type", code)
             span.set_attribute("rpc.response.status_code", code)
+            res_metric_attrs["error.type"] = code
+            res_metric_attrs["rpc.response.status_code"] = code
             span.set_status(StatusCode.ERROR, error.error.message)
             print(f"    -> JSON-RPC error {code}: {error.error.message}")
+        finally:
+            _client_operation_duration.record(time.perf_counter() - res_start_time, res_metric_attrs)
 
 
 async def run_scenarios() -> None:
@@ -384,7 +465,31 @@ async def run_scenarios() -> None:
 def main() -> None:
     print("=== Reference Implementation: MCP Python SDK ===")
     tp, lp, mp = setup_otel()
+    span_exporter = InMemorySpanExporter()
+    tp.add_span_processor(SimpleSpanProcessor(span_exporter))
     asyncio.run(run_scenarios())
+
+    finished_spans = span_exporter.get_finished_spans()
+    client_ids = {
+        (s.context.span_id, s.attributes["mcp.method.name"]): s.attributes["jsonrpc.request.id"]
+        for s in finished_spans
+        if s.kind == SpanKind.CLIENT and s.attributes
+    }
+    server_ids = {
+        (s.parent.span_id, s.attributes["mcp.method.name"]): s.attributes["jsonrpc.request.id"]
+        for s in finished_spans
+        if s.kind == SpanKind.SERVER
+        and s.parent
+        and s.attributes
+        and (s.parent.span_id, s.attributes["mcp.method.name"]) in client_ids
+    }
+    assert client_ids == server_ids, f"Mismatched client/server request IDs: {client_ids} != {server_ids}"
+
+    prompt_spans = [s for s in finished_spans if s.attributes and s.attributes.get("mcp.method.name") == "prompts/get"]
+    assert len(prompt_spans) == 2, f"Expected client and server prompts/get spans, got {len(prompt_spans)}"
+    for prompt_span in prompt_spans:
+        assert prompt_span.attributes and "gen_ai.prompt.variables" in prompt_span.attributes
+
     flush_and_shutdown(tp, lp, mp)
 
 

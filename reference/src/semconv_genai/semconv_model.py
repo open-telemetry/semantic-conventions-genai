@@ -83,6 +83,8 @@ _METRICS = {
     "gen_ai.client.invoke_agent.duration": "Client Invoke Agent Duration",
     "gen_ai.invoke_agent.inference_calls": "Invoke Agent Inference Calls",
     "gen_ai.invoke_agent.tool_calls": "Invoke Agent Tool Calls",
+    "mcp.client.operation.duration": "MCP Client Operation Duration",
+    "mcp.server.operation.duration": "MCP Server Operation Duration",
 }
 
 _ENTITIES = {

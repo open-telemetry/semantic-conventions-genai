@@ -84,4 +84,6 @@ Run `uv run update-reports` to regenerate.
 | [Client Invoke Agent Duration](reports/gen-ai-client-invoke-agent-duration-metric.md) | aws-bedrock-agent, azure-ai-foundry, google-genai, openai-assistants |
 | [Invoke Agent Inference Calls](reports/gen-ai-invoke-agent-inference-calls-metric.md) | adk_a2a, google-adk |
 | [Invoke Agent Tool Calls](reports/gen-ai-invoke-agent-tool-calls-metric.md) | adk_a2a, google-adk |
+| [MCP Client Operation Duration](reports/mcp-client-operation-duration-metric.md) | mcp |
+| [MCP Server Operation Duration](reports/mcp-server-operation-duration-metric.md) | mcp |
 <!-- status:end -->

@@ -42,9 +42,60 @@
     ]
   },
   "events": {},
-  "metrics": {},
+  "metrics": {
+    "mcp.client.operation.duration": [
+      "error.type",
+      "gen_ai.operation.name",
+      "gen_ai.prompt.name",
+      "gen_ai.tool.name",
+      "mcp.method.name",
+      "mcp.protocol.version",
+      "mcp.resource.uri",
+      "network.protocol.name",
+      "network.protocol.version",
+      "network.transport",
+      "rpc.response.status_code",
+      "server.address",
+      "server.port"
+    ],
+    "mcp.server.operation.duration": [
+      "error.type",
+      "gen_ai.operation.name",
+      "gen_ai.prompt.name",
+      "gen_ai.tool.name",
+      "mcp.method.name",
+      "mcp.protocol.version",
+      "mcp.resource.uri",
+      "network.protocol.name",
+      "network.protocol.version",
+      "network.transport",
+      "rpc.response.status_code"
+    ]
+  },
   "entities": {},
   "findings": [
+    {
+      "id": "deprecated",
+      "message": "Attribute 'rpc.response.status_code' is deprecated; reason = 'renamed', note = 'Replaced by `rpc.status_code`.'.",
+      "signal_type": "metric",
+      "signal_name": "mcp.client.operation.duration",
+      "context": {
+        "attribute_key": "rpc.response.status_code",
+        "deprecation_note": "Replaced by `rpc.status_code`.",
+        "deprecation_reason": "renamed"
+      }
+    },
+    {
+      "id": "deprecated",
+      "message": "Attribute 'rpc.response.status_code' is deprecated; reason = 'renamed', note = 'Replaced by `rpc.status_code`.'.",
+      "signal_type": "metric",
+      "signal_name": "mcp.server.operation.duration",
+      "context": {
+        "attribute_key": "rpc.response.status_code",
+        "deprecation_note": "Replaced by `rpc.status_code`.",
+        "deprecation_reason": "renamed"
+      }
+    },
     {
       "id": "deprecated",
       "message": "Attribute 'rpc.response.status_code' is deprecated; reason = 'renamed', note = 'Replaced by `rpc.status_code`.'.",
