@@ -170,7 +170,6 @@ class ReferenceJsonRpcDispatcher(JsonRpcDispatcher):
             "a2a.method.name": method,
             "a2a.protocol.version": interface.protocol_version,
         }
-        _server_active.add(1, metric_attrs)
         duration_attrs = dict(metric_attrs)
         return_immediately = method == "SendMessage" and (params.get("configuration") or {}).get("returnImmediately")
         if return_immediately:
@@ -209,6 +208,9 @@ class ReferenceJsonRpcDispatcher(JsonRpcDispatcher):
 
         # A streaming response is recorded when its stream ends, not here.
         streaming = False
+        # Incremented only once nothing can fail before the `finally` that
+        # decrements it.
+        _server_active.add(1, metric_attrs)
         try:
             with use_span(span, end_on_exit=False):
                 response = await super().handle_requests(request)
@@ -317,7 +319,6 @@ class ReferenceRestDispatcher(RestDispatcher):
             "a2a.method.name": "GetTask",
             "a2a.protocol.version": interface.protocol_version,
         }
-        _server_active.add(1, metric_attrs)
         duration_attrs = dict(metric_attrs)
         span = get_current_span()
         span.update_name("GetTask")
@@ -332,6 +333,7 @@ class ReferenceRestDispatcher(RestDispatcher):
                 "gen_ai.agent.version": self._card.version,
             }
         )
+        _server_active.add(1, metric_attrs)
         try:
             response = await super().on_get_task(request)
             if error := json.loads(response.body).get("error"):
