@@ -1391,10 +1391,18 @@ def _emit_fetch_response_span(client, response_id, starting_after=None, stream=F
                 span.set_attribute("gen_ai.output.messages", output_messages)
             tools = getattr(fetched, "tools", None)
             if tools is not None:
-                span.set_attribute(
-                    "gen_ai.tool.definitions",
-                    json.dumps([tool.model_dump(exclude_none=True) for tool in tools]),
-                )
+                tool_definitions = []
+                for tool in tools:
+                    if tool.type == "function":
+                        tool_definitions.append(tool.model_dump(exclude_none=True))
+                    else:
+                        tool_definitions.append(
+                            {
+                                "type": f"openai.{tool.type}",
+                                "name": getattr(tool, "name", None) or getattr(tool, "server_label", None) or tool.type,
+                            }
+                        )
+                span.set_attribute("gen_ai.tool.definitions", json.dumps(tool_definitions))
             # Token usage is intentionally NOT recorded on this span: no inference
             # happens on a fetch, and the fetched response's token counts belong to
             # the original generation (already accounted for on that operation).
@@ -1467,7 +1475,7 @@ def run_fetch_response_reference(client):
 
 
 def run_fetch_response_with_tools_reference():
-    """Fetch stored responses with a tool list, an empty list, or no tool field."""
+    """Fetch stored responses with function and built-in tools, an empty list, or no tool field."""
     import httpx2
     import openai
 
@@ -1510,7 +1518,7 @@ def run_fetch_response_with_tools_reference():
         max_retries=0,
         http_client=httpx2.Client(transport=httpx2.MockTransport(respond)),
     ) as client:
-        for tools in ([weather_tool], [], None):
+        for tools in ([weather_tool, {"type": "web_search"}], [], None):
             tool_args = {"tools": tools} if tools is not None else {}
             created = client.responses.create(
                 model="gpt-4o-mini",
