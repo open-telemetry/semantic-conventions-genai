@@ -40,6 +40,7 @@ Run `uv run update-reports` to regenerate.
 | [Fetch Response](reports/fetch-response-span.md) | openai |
 | [Memory](reports/memory-span.md) | aws-bedrock-agentcore, google-adk |
 | [Execute Tool](reports/execute-tool-span.md) | agent-framework, autogen, crewai, google-adk, google-genai, langchain, llamaindex, openai-agents, openai-assistants, pydantic-ai, vertexai |
+| [Apply Guardrail Client](reports/apply-guardrail-client-span.md) | aws-bedrock, azure-ai-contentsafety |
 
 ### Events
 
@@ -55,6 +56,7 @@ Run `uv run update-reports` to regenerate.
 | [Evaluation Result](reports/gen-ai-evaluation-result-event.md) | azure-ai-evaluation, deepeval, dspy |
 | [Execute Tool Exception](reports/gen-ai-execute-tool-exception-event.md) | openai-agents |
 | [Invoke Agent Exception](reports/gen-ai-invoke-agent-exception-event.md) | openai-agents |
+| [Guardrail Result](reports/gen-ai-guardrail-result-event.md) | aws-bedrock, azure-ai-contentsafety, openai-agents |
 
 ### Entities
 
@@ -74,6 +76,7 @@ Run `uv run update-reports` to regenerate.
 | [Client Inference Operation Input Tokens](reports/gen-ai-client-inference-operation-input-tokens-metric.md) | anthropic, azure-openai, google-genai, openai |
 | [Client Inference Operation Output Tokens](reports/gen-ai-client-inference-operation-output-tokens-metric.md) | anthropic, azure-openai, google-genai, openai |
 | [Client Operation Duration](reports/gen-ai-client-operation-duration-metric.md) | adk_a2a |
+| [Apply Guardrail Client Duration](reports/gen-ai-client-apply-guardrail-duration-metric.md) | aws-bedrock, azure-ai-contentsafety |
 | [Client Inference Duration](reports/gen-ai-client-inference-duration-metric.md) | agent-framework, anthropic, groq |
 | [Client Embeddings Duration](reports/gen-ai-client-embeddings-duration-metric.md) | aws-bedrock, azure-ai-inference, azure-openai, cohere, google-genai, litellm, mistralai, openai |
 | [Client Embeddings Operation Input Tokens](reports/gen-ai-client-embeddings-operation-input-tokens-metric.md) | aws-bedrock, azure-ai-inference, azure-openai, cohere, litellm, mistralai, openai |

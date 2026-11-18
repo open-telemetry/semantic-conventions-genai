@@ -1,0 +1,15 @@
+[project]
+name = "azure-ai-contentsafety-reference-test"
+version = "0.0.0"
+requires-python = ">=3.12"
+dependencies = [
+    "azure-ai-contentsafety==1.0.0",
+    "azure-core==1.41.0",
+    "genai-reference-shared",
+]
+
+[tool.uv.sources]
+genai-reference-shared = { path = "../../shared", editable = true }
+
+[tool.uv]
+package = false
