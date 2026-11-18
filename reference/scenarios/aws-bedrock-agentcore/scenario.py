@@ -1,6 +1,5 @@
 """Reference implementation: AWS Bedrock AgentCore memory APIs."""
 
-import json
 import os
 from datetime import UTC, datetime
 
@@ -117,15 +116,13 @@ def run_create_and_update_memory_reference(client, memory_id):
         if should_capture_content_on_spans():
             span.set_attribute(
                 "gen_ai.memory.records",
-                json.dumps(
-                    [
-                        {
-                            "content": create_records[0]["content"]["text"],
-                            "id": memory_record_id,
-                            "metadata": {"author": create_records[0]["metadata"]["author"]["stringValue"]},
-                        }
-                    ]
-                ),
+                [
+                    {
+                        "content": create_records[0]["content"]["text"],
+                        "id": memory_record_id,
+                        "metadata": {"author": create_records[0]["metadata"]["author"]["stringValue"]},
+                    }
+                ],
             )
 
     print("  [update_memory] Bedrock AgentCore BatchUpdateMemoryRecords")
@@ -160,15 +157,13 @@ def run_create_and_update_memory_reference(client, memory_id):
         if should_capture_content_on_spans():
             span.set_attribute(
                 "gen_ai.memory.records",
-                json.dumps(
-                    [
-                        {
-                            "content": update_records[0]["content"]["text"],
-                            "id": update_records[0]["memoryRecordId"],
-                            "metadata": {"author": update_records[0]["metadata"]["author"]["stringValue"]},
-                        }
-                    ]
-                ),
+                [
+                    {
+                        "content": update_records[0]["content"]["text"],
+                        "id": update_records[0]["memoryRecordId"],
+                        "metadata": {"author": update_records[0]["metadata"]["author"]["stringValue"]},
+                    }
+                ],
             )
     return memory_record_id
 
@@ -217,7 +212,7 @@ def run_search_memory_reference(client, memory_id):
             )
         span.set_attribute("gen_ai.memory.record.count", len(memory_records))
         if should_capture_content_on_spans():
-            span.set_attribute("gen_ai.memory.records", json.dumps(memory_records))
+            span.set_attribute("gen_ai.memory.records", memory_records)
 
 
 def run_delete_memory_reference(client, memory_id, memory_record_id):

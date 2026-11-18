@@ -4,6 +4,8 @@ attribute_groups:
     visibility: internal
     attributes:
       - ref: gen_ai.agent.name
+        brief: Human-readable name of the A2A agent, as declared in its Agent Card.
+        note: ""
         requirement_level:
           conditionally_required: When available from the Agent Card.
       - ref: gen_ai.agent.description

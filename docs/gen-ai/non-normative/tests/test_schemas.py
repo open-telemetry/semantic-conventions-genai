@@ -8,11 +8,12 @@ in ``errors``, and review the result. A later schema change that alters the
 errors fails the plain ``uv run pytest`` run with a diff.
 """
 
+import base64
 import io
 import json
 import re
 from pathlib import Path
-from typing import TypedDict
+from typing import Any, TypedDict
 
 import pytest
 from jsonschema import Draft202012Validator
@@ -87,6 +88,17 @@ def unwrap(error: ValidationError) -> list[ValidationError]:
     return [error]
 
 
+def to_json(value: Any) -> Any:
+    """Serialize like the AnyValue JSON mapping: bytes (YAML `!!binary`) become base64 strings."""
+    if isinstance(value, bytes):
+        return base64.b64encode(value).decode("ascii")
+    if isinstance(value, dict):
+        return {k: to_json(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [to_json(v) for v in value]
+    return value
+
+
 def snapshot(error: ValidationError) -> Error:
     return {"path": error.json_path, "keyword": str(error.validator), "message": error.message}
 
@@ -132,7 +144,7 @@ def test_schema(case_file: Path, request: pytest.FixtureRequest):
         f"{case_file}: expected keys description, schema, document (and optional {ERRORS_KEY})"
     )
 
-    raw_errors = VALIDATORS[case["schema"]].iter_errors(case["document"])
+    raw_errors = VALIDATORS[case["schema"]].iter_errors(to_json(case["document"]))
     errors = sorted((leaf for e in raw_errors for leaf in unwrap(e)), key=sort_key)
     actual = [snapshot(e) for e in errors]
 

@@ -7,11 +7,23 @@ manual span instrumentation.
 
 import json
 import os
+import time
+from io import BytesIO
+from unittest.mock import patch
 from urllib.parse import urlparse
 
 import boto3
+from botocore.awsrequest import AWSResponse
+from opentelemetry._logs import SeverityNumber
 from opentelemetry.trace import SpanKind, StatusCode
-from reference_shared import flush_and_shutdown, reference_tracer, setup_otel
+from reference_shared import (
+    flush_and_shutdown,
+    reference_event_logger,
+    reference_meter,
+    reference_tracer,
+    setup_otel,
+)
+from urllib3.response import HTTPResponse
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"]
 _parsed = urlparse(MOCK_BASE_URL)
@@ -19,6 +31,29 @@ _SERVER_ADDRESS = _parsed.hostname or "localhost"
 _SERVER_PORT = _parsed.port or 443
 
 tracer = reference_tracer("gen_ai.client.aws_bedrock")
+_reference_meter = reference_meter()
+
+_invoke_agent_duration = _reference_meter.create_histogram(
+    "gen_ai.client.invoke_agent.duration",
+    unit="s",
+    description="GenAI client invoke agent operation duration.",
+    explicit_bucket_boundaries_advisory=[
+        0.01,
+        0.02,
+        0.04,
+        0.08,
+        0.16,
+        0.32,
+        0.64,
+        1.28,
+        2.56,
+        5.12,
+        10.24,
+        20.48,
+        40.96,
+        81.92,
+    ],
+)
 
 AGENT_ALIAS_ID = "MOCK_ALIAS_ID"
 SESSION_ID = "mock-session-001"
@@ -49,7 +84,7 @@ def run_create_agent(client):
         f"create_agent {agent_name}", kind=SpanKind.CLIENT, attributes=span_attributes
     ) as span:
         span.set_attribute("gen_ai.agent.description", agent_description)
-        span.set_attribute("gen_ai.system_instructions", json.dumps([{"type": "text", "content": agent_instruction}]))
+        span.set_attribute("gen_ai.system_instructions", [{"type": "text", "content": agent_instruction}])
         try:
             agent = client.create_agent(
                 agentName=agent_name,
@@ -79,11 +114,15 @@ def run_invoke_agent(client, agent_id):
         "server.address": _SERVER_ADDRESS,
         "server.port": _SERVER_PORT,
     }
-    with tracer.start_as_current_span("invoke_agent", kind=SpanKind.CLIENT, attributes=span_attributes) as span:
+    metric_attributes = dict(span_attributes)
+    start_time = time.perf_counter()
+    with tracer.start_as_current_span(
+        "invoke_agent", kind=SpanKind.CLIENT, attributes=span_attributes, record_exception=False
+    ) as span:
         span.set_attribute("gen_ai.agent.id", agent_id)
         span.set_attribute("gen_ai.conversation.id", SESSION_ID)
         span.set_attribute(
-            "gen_ai.input.messages", json.dumps([{"role": "user", "parts": [{"type": "text", "content": USER_INPUT}]}])
+            "gen_ai.input.messages", [{"role": "user", "parts": [{"type": "text", "content": USER_INPUT}]}]
         )
         try:
             response = client.invoke_agent(
@@ -119,19 +158,46 @@ def run_invoke_agent(client, agent_id):
             if text:
                 span.set_attribute(
                     "gen_ai.output.messages",
-                    json.dumps(
-                        [
-                            {
-                                "role": "assistant",
-                                "parts": [{"type": "text", "content": text}],
-                            }
-                        ]
-                    ),
+                    [
+                        {
+                            "role": "assistant",
+                            "parts": [{"type": "text", "content": text}],
+                        }
+                    ],
                 )
             print(f"    -> {text[:60]}")
         except Exception as e:
             span.set_status(StatusCode.ERROR, str(e))
+            span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
+            metric_attributes["error.type"] = f"{type(e).__module__}.{type(e).__qualname__}"
+            reference_event_logger().emit(
+                event_name="gen_ai.client.invoke_agent.exception",
+                severity_number=SeverityNumber.WARN,
+                exception=e,
+            )
             raise
+        finally:
+            _invoke_agent_duration.record(time.perf_counter() - start_time, metric_attributes)
+
+
+def run_invoke_agent_error(client, agent_id):
+    """Exercise an invoke-agent exception raised by the SDK for an invalid request."""
+    response = AWSResponse(
+        url=f"{MOCK_BASE_URL}/agents/{agent_id}/agentAliases/{AGENT_ALIAS_ID}/sessions/{SESSION_ID}/text",
+        status_code=400,
+        headers={"content-type": "application/json", "x-amzn-errortype": "ValidationException"},
+        raw=HTTPResponse(
+            body=BytesIO(json.dumps({"message": "Invalid agent alias"}).encode("utf-8")),
+            preload_content=False,
+        ),
+    )
+    with patch.object(client._endpoint.http_session, "send", return_value=response):
+        try:
+            run_invoke_agent(client, agent_id)
+        except client.exceptions.ValidationException as e:
+            print(f"    -> expected SDK error: {e}")
+        else:
+            raise AssertionError("Expected the SDK to reject the agent invocation request")
 
 
 if __name__ == "__main__":
@@ -155,5 +221,6 @@ if __name__ == "__main__":
 
     agent_id = run_create_agent(control_client)
     run_invoke_agent(runtime_client, agent_id)
+    run_invoke_agent_error(runtime_client, agent_id)
 
     flush_and_shutdown(tp, lp, mp)

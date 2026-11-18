@@ -14,14 +14,9 @@ scenarios:
     expected_violations:
       - id: genai_expected_attribute_missing
         context:
-          missing_attribute: gen_ai.response.id
+          missing_attribute: gen_ai.response.finish_reasons
           operation: chat
-        reason: The conformance mock's Gemini stream chunks carry no responseId or modelVersion; real Gemini streams do.
-      - id: genai_expected_attribute_missing
-        context:
-          missing_attribute: gen_ai.response.model
-          operation: chat
-        reason: The conformance mock's Gemini stream chunks carry no responseId or modelVersion; real Gemini streams do.
+        reason: The Interactions API exposes interaction status, not per-generation finish reasons.
       - id: genai_expected_attribute_missing
         context:
           missing_attribute: gen_ai.request.encoding_formats
@@ -59,3 +54,12 @@ scenarios:
           attributes:
             gen_ai.operation.name: embeddings
           type: gen_ai.client.embeddings
+      - match:
+          attributes:
+            gen_ai.operation.name: invoke_agent
+          kind: client
+          type: gen_ai.client.invoke_agent
+      - match:
+          attributes:
+            gen_ai.operation.name: execute_tool
+          type: gen_ai.execute_tool

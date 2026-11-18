@@ -10,9 +10,21 @@ This document defines semantic conventions for recording exceptions on Generativ
 
 <!-- toc -->
 
+- [Operation-specific exception events](#operation-specific-exception-events)
 - [Generative AI client operation exception](#generative-ai-client-operation-exception)
 
 <!-- tocstop -->
+
+## Operation-specific exception events
+
+| Operation | Exception event |
+| --- | --- |
+| Client inference | [`gen_ai.client.inference.exception`](client-inference.md#event-gen_aiclientinferenceexception) |
+| Client embeddings | [`gen_ai.client.embeddings.exception`](client-embeddings.md#event-gen_aiclientembeddingsexception) |
+| Client agent invocation | [`gen_ai.client.invoke_agent.exception`](client-invoke-agent.md#event-gen_aiclientinvoke_agentexception) |
+| Client response fetching | [`gen_ai.client.fetch_response.exception`](gen-ai-spans.md#event-gen_aiclientfetch_responseexception) |
+| Internal agent invocation | [`gen_ai.invoke_agent.exception`](gen-ai-agent-spans.md#event-gen_aiinvoke_agentexception) |
+| Tool execution | [`gen_ai.execute_tool.exception`](execute-tool.md#event-gen_aiexecute_toolexception) |
 
 ## Generative AI client operation exception
 
@@ -25,9 +37,13 @@ This document defines semantic conventions for recording exceptions on Generativ
 
 The event name MUST be `gen_ai.client.operation.exception`.
 
-This event represents an exception that occurred during a Generative AI client operation, such as API errors, rate limiting, model errors, timeouts, or other errors that prevent the operation from completing successfully.
+This event represents an exception that occurred during a Generative AI client operation other than inference, embeddings, agent invocation, or response fetching, such as API errors, rate limiting, model errors, timeouts, or other errors that prevent the operation from completing successfully.
 
-This event SHOULD be recorded when an exception occurs during Generative AI client operations.
+This event SHOULD be recorded when an exception occurs during Generative AI client operations other than inference, embeddings, agent invocation, or response fetching.
+For inference operations, instrumentations SHOULD record `gen_ai.client.inference.exception` instead of this event.
+For embeddings operations, instrumentations SHOULD record `gen_ai.client.embeddings.exception` instead of this event.
+For client agent invocation operations, instrumentations SHOULD record `gen_ai.client.invoke_agent.exception` instead of this event.
+For fetch response operations, instrumentations SHOULD record `gen_ai.client.fetch_response.exception` instead of this event.
 Instrumentations SHOULD set the severity to WARN (severity number 13) when recording this event.
 Instrumentations MAY provide a configuration option to populate exception events with the attributes captured on the corresponding Generative AI client span.
 
