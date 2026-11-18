@@ -333,8 +333,10 @@ def run_converse_with_prompt_template_reference(client):
     prompt_name = "order-inquiry"
     prompt_version = "2.0.1"
     prompt_arn = f"arn:aws:bedrock:us-east-1:123456789012:prompt/{prompt_name}:{prompt_version}"
-    prompt_variables = {"customer_id": "C-12345", "order_id": "ORD-67890"}
-    bedrock_prompt_variables = {name: {"text": value} for name, value in prompt_variables.items()}
+    bedrock_prompt_variables = {
+        "customer_id": {"text": "C-12345"},
+        "order_id": {"text": "ORD-67890"},
+    }
 
     host, port = mock_server_host_port(MOCK_BASE_URL)
     span_attributes = {
@@ -348,7 +350,10 @@ def run_converse_with_prompt_template_reference(client):
     if port is not None:
         span_attributes["server.port"] = port
     with _reference_tracer.start_as_current_span("chat", kind=SpanKind.CLIENT, attributes=span_attributes) as span:
-        span.set_attribute("gen_ai.prompt.variables", prompt_variables)
+        span.set_attribute(
+            "gen_ai.prompt.variables",
+            {name: value["text"] for name, value in bedrock_prompt_variables.items()},
+        )
         response = client.converse(
             modelId=prompt_arn,
             promptVariables=bedrock_prompt_variables,
@@ -377,7 +382,7 @@ def run_converse_with_prompt_template_reference(client):
             "gen_ai.provider.name": "aws.bedrock",
             "gen_ai.prompt.name": prompt_name,
             "gen_ai.prompt.version": prompt_version,
-            "gen_ai.prompt.variables": prompt_variables,
+            "gen_ai.prompt.variables": {name: value["text"] for name, value in bedrock_prompt_variables.items()},
             "gen_ai.output.messages": [
                 {
                     "role": "assistant",

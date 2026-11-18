@@ -1227,10 +1227,6 @@ attributes:
       Prompt templates are parameterized with variables that are filled in
       at runtime. This attribute records the map of variable names to their
       values passed to the template.
-
-      It's expected to be an object - in case a serialized string is available
-      to the instrumentation, the instrumentation SHOULD do the best effort to
-      deserialize it to an object.
     examples:
       - |
         {

@@ -312,10 +312,6 @@ Prompt templates are parameterized with variables that are filled in
 at runtime. This attribute records the map of variable names to their
 values passed to the template.
 
-It's expected to be an object - in case a serialized string is available
-to the instrumentation, the instrumentation SHOULD do the best effort to
-deserialize it to an object.
-
 This attribute MUST be recorded as an [AnyValue](https://opentelemetry.io/docs/specs/otel/common/#anyvalue) conforming to its [JSON schema](/model/gen-ai/gen-ai-prompt-variables.json).
 
 **[40] `gen_ai.system_instructions`:** This attribute SHOULD be used when the corresponding provider or API
