@@ -1379,9 +1379,7 @@ def _emit_fetch_response_span(client, response_id, starting_after=None, stream=F
             service_tier = getattr(fetched, "service_tier", None)
             if service_tier is not None:
                 span.set_attribute("openai.response.service_tier", service_tier)
-            # Content carried on the fetched response: system instructions and output
-            # messages. The original input messages are NOT part of the fetched
-            # response, so `gen_ai.input.messages` is not set here.
+            # The fetched response does not carry the original input messages.
             instructions = getattr(fetched, "instructions", None)
             if instructions:
                 span.set_attribute(
@@ -1391,10 +1389,11 @@ def _emit_fetch_response_span(client, response_id, starting_after=None, stream=F
             output_messages = responses_output_messages(fetched)
             if output_messages:
                 span.set_attribute("gen_ai.output.messages", output_messages)
-            if fetched.tools:
+            tools = getattr(fetched, "tools", None)
+            if tools is not None:
                 span.set_attribute(
                     "gen_ai.tool.definitions",
-                    json.dumps([tool.model_dump(exclude_none=True) for tool in fetched.tools]),
+                    json.dumps([tool.model_dump(exclude_none=True) for tool in tools]),
                 )
             # Token usage is intentionally NOT recorded on this span: no inference
             # happens on a fetch, and the fetched response's token counts belong to
@@ -1468,7 +1467,7 @@ def run_fetch_response_reference(client):
 
 
 def run_fetch_response_with_tools_reference():
-    """Fetch tool definitions from a stored response through the real SDK."""
+    """Fetch stored responses with a tool list, an empty list, or no tool field."""
     import httpx2
     import openai
 
@@ -1478,14 +1477,15 @@ def run_fetch_response_with_tools_reference():
         if request.method == "POST" and request.url.path == "/v1/responses":
             body = json.loads(request.content)
             response = {
-                "id": "resp-stored-tools-001",
+                "id": f"resp-stored-tools-{len(stored_responses) + 1:03d}",
                 "object": "response",
                 "created_at": 1700000000,
                 "status": "completed",
                 "model": body["model"],
-                "tools": body["tools"],
                 "output": [],
             }
+            if "tools" in body:
+                response["tools"] = body["tools"]
             if body["store"]:
                 stored_responses[response["id"]] = response
             return httpx2.Response(200, json=response)
@@ -1494,30 +1494,31 @@ def run_fetch_response_with_tools_reference():
             return httpx2.Response(200, json=stored_responses[response_id])
         raise AssertionError(f"Unexpected request: {request.method} {request.url}")
 
+    weather_tool = {
+        "type": "function",
+        "name": "get_weather",
+        "description": "Get the current weather for a location.",
+        "parameters": {
+            "type": "object",
+            "properties": {"location": {"type": "string"}},
+            "required": ["location"],
+        },
+    }
     with openai.OpenAI(
         base_url=MOCK_BASE_URL,
         api_key="mock-key",
         max_retries=0,
         http_client=httpx2.Client(transport=httpx2.MockTransport(respond)),
     ) as client:
-        created = client.responses.create(
-            model="gpt-4o-mini",
-            input="What is the weather in Seattle?",
-            tools=[
-                {
-                    "type": "function",
-                    "name": "get_weather",
-                    "description": "Get the current weather for a location.",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {"location": {"type": "string"}},
-                        "required": ["location"],
-                    },
-                }
-            ],
-            store=True,
-        )
-        _emit_fetch_response_span(client, created.id)
+        for tools in ([weather_tool], [], None):
+            tool_args = {"tools": tools} if tools is not None else {}
+            created = client.responses.create(
+                model="gpt-4o-mini",
+                input="What is the weather in Seattle?",
+                store=True,
+                **tool_args,
+            )
+            _emit_fetch_response_span(client, created.id)
 
 
 def run_fetch_response_error_reference():

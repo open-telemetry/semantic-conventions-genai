@@ -29,6 +29,10 @@ Inference exercises the SDK's `RateLimitError` from
 records a correlated `gen_ai.client.inference.exception` WARN log and re-raises
 the exception.
 
+Fetch spans record `gen_ai.tool.definitions` as `[]` when the stored response
+includes an empty tool list. They omit the attribute when the response
+doesn't provide a list.
+
 Fetch response exercises the SDK's `NotFoundError` from
 `client.responses.retrieve` using a mock HTTP 404 response. The error handler
 records a correlated `gen_ai.client.fetch_response.exception` WARN log and
