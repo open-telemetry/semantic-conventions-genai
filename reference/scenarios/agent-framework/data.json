@@ -55,6 +55,18 @@
       "gen_ai.request.model",
       "gen_ai.response.model",
       "server.address"
+    ],
+    "gen_ai.execute_tool.duration": [
+      "gen_ai.agent.name",
+      "gen_ai.tool.name",
+      "gen_ai.tool.type"
+    ],
+    "gen_ai.invoke_agent.skill_loads": [
+      "gen_ai.agent.name"
+    ],
+    "gen_ai.invoke_agent.tool_calls": [
+      "gen_ai.agent.name",
+      "gen_ai.operation.name"
     ]
   },
   "entities": {},
@@ -430,15 +442,6 @@
         "attribute_key": "gen_ai.response.finish_reasons",
         "attribute_type": "string",
         "expected": "string[]"
-      }
-    },
-    {
-      "id": "missing_attribute",
-      "message": "Attribute 'gen_ai.usage.cache_creation.input_tokens' does not exist in the registry.",
-      "signal_type": "span",
-      "signal_name": "invoke_agent SkillAgent",
-      "context": {
-        "attribute_key": "gen_ai.usage.cache_creation.input_tokens"
       }
     },
     {

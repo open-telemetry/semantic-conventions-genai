@@ -6,18 +6,19 @@
 
 | Attribute | Supporting Libraries |
 | --- | --- |
-| gen_ai.tool.name | [google-adk] |
+| gen_ai.tool.name | [agent-framework], [google-adk] |
 
 ## Conditionally Required
 
 | Attribute | Supporting Libraries |
 | --- | --- |
-| gen_ai.agent.name | [google-adk] |
+| gen_ai.agent.name | [agent-framework], [google-adk] |
 
 ## Recommended
 
 | Attribute | Supporting Libraries |
 | --- | --- |
-| gen_ai.tool.type | [google-adk] |
+| gen_ai.tool.type | [agent-framework], [google-adk] |
 
+[agent-framework]: ../scenarios/agent-framework/scenario.py
 [google-adk]: ../scenarios/google-adk/scenario.py
