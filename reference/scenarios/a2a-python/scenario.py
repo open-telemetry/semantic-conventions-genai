@@ -84,6 +84,11 @@ def _jsonrpc_interface(card: a2a_types.AgentCard) -> a2a_types.AgentInterface:
     return next(i for i in card.supported_interfaces if i.protocol_binding == TransportProtocol.JSONRPC)
 
 
+def _as_dict(value: object) -> dict:
+    """A JSON object from an unvalidated request, or empty if it is not one."""
+    return value if isinstance(value, dict) else {}
+
+
 def _a2a_error_reason(details: object) -> str | None:
     if not isinstance(details, list):
         return None
@@ -160,17 +165,27 @@ class ReferenceJsonRpcDispatcher(JsonRpcDispatcher):
         self._enrich_transport_span = enrich_transport_span
 
     async def handle_requests(self, request: Request) -> Response:
-        body = await request.json()
-        method = body["method"]
-        params = body.get("params") or {}
-        message = params.get("message") or {}
+        # Instrumentation reads the request before the SDK validates it, so it
+        # must not fail on malformed input; the SDK reports that as a JSON-RPC
+        # error instead.
+        try:
+            body = await request.json()
+        except ValueError:
+            body = None
+        method = body.get("method") if isinstance(body, dict) else None
+        if not isinstance(method, str) or not method:
+            # Without a method there is no A2A operation to record.
+            return await super().handle_requests(request)
+        params = _as_dict(body.get("params"))
+        message = _as_dict(params.get("message"))
+        configuration = _as_dict(params.get("configuration"))
         interface = _jsonrpc_interface(self._card)
         metric_attrs = {
             "a2a.method.name": method,
             "a2a.protocol.version": interface.protocol_version,
         }
         duration_attrs = dict(metric_attrs)
-        return_immediately = method == "SendMessage" and (params.get("configuration") or {}).get("returnImmediately")
+        return_immediately = method == "SendMessage" and configuration.get("returnImmediately") is True
         if return_immediately:
             duration_attrs["a2a.operation.return_immediately"] = True
         span_attrs = {
@@ -182,16 +197,21 @@ class ReferenceJsonRpcDispatcher(JsonRpcDispatcher):
             "server.address": request.url.hostname,
             "server.port": request.url.port,
         }
-        if params.get("tenant"):
-            span_attrs["a2a.tenant"] = params["tenant"]
-        if message.get("messageId"):
-            span_attrs["a2a.message.id"] = message["messageId"]
-        if message.get("referenceTaskIds"):
-            span_attrs["a2a.message.reference_task_ids"] = message["referenceTaskIds"]
+        if isinstance(tenant := params.get("tenant"), str) and tenant:
+            span_attrs["a2a.tenant"] = tenant
+        if isinstance(message_id := message.get("messageId"), str) and message_id:
+            span_attrs["a2a.message.id"] = message_id
+        reference_task_ids = message.get("referenceTaskIds")
+        if (
+            isinstance(reference_task_ids, list)
+            and reference_task_ids
+            and all(isinstance(i, str) for i in reference_task_ids)
+        ):
+            span_attrs["a2a.message.reference_task_ids"] = reference_task_ids
         if return_immediately:
             span_attrs["a2a.operation.return_immediately"] = True
-        if params.get("id"):
-            span_attrs["a2a.task.id"] = params["id"]
+        if isinstance(task_id := params.get("id"), str) and task_id:
+            span_attrs["a2a.task.id"] = task_id
         if request.client:
             span_attrs["client.address"] = request.client.host
             span_attrs["client.port"] = request.client.port
