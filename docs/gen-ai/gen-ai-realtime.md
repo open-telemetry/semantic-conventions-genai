@@ -42,10 +42,6 @@ a tool and starts another generation after receiving the tool result, instrument
 SHOULD record two spans. If the provider keeps one generation active across the tool
 round trip, instrumentation SHOULD record one span covering the complete generation.
 
-When recording `gen_ai.tool.definitions`, use the tool definitions for the generation.
-For providers with session-level tools and per-generation overrides, use the session's
-tools unless the generation overrides them.
-
 Instrumentation SHOULD do the best effort to include information about the generation
 that may come after generation completing event, such as usage but SHOULD only
 wait for this information if there is a way to end the span reliably.
@@ -274,6 +270,9 @@ This attribute MUST be recorded as an [AnyValue](https://opentelemetry.io/docs/s
 
 > [!WARNING]
 > This attribute may contain sensitive information.
+
+For providers with session-level tools and per-generation overrides, record
+the generation's tools if set, otherwise the session's tools.
 
 Since this attribute could be large, it's NOT RECOMMENDED to populate
 non-required properties by default. Instrumentations MAY provide a way
