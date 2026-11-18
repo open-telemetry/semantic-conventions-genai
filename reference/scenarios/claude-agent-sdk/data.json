@@ -10,6 +10,17 @@
       "gen_ai.response.model",
       "gen_ai.usage.input_tokens",
       "gen_ai.usage.output_tokens"
+    ],
+    "gen_ai.execute_tool": [
+      "gen_ai.conversation.id",
+      "gen_ai.operation.name",
+      "gen_ai.plugin.id",
+      "gen_ai.plugin.name",
+      "gen_ai.plugin.version",
+      "gen_ai.tool.call.arguments",
+      "gen_ai.tool.call.id",
+      "gen_ai.tool.call.result",
+      "gen_ai.tool.name"
     ]
   },
   "events": {},
@@ -24,6 +35,17 @@
       "context": {
         "missing_attribute": "server.address",
         "operation": "chat"
+      }
+    },
+    {
+      "id": "genai_span_name_format",
+      "message": "execute_tool span name should be 'execute_tool Skill', got 'execute_tool Skill deploy-tools:release-notes'",
+      "signal_type": "span",
+      "signal_name": "execute_tool Skill deploy-tools:release-notes",
+      "context": {
+        "expected_form": "execute_tool Skill",
+        "keyed_attr": "gen_ai.tool.name",
+        "operation": "execute_tool"
       }
     }
   ]

@@ -1,0 +1,1 @@
+Add `gen_ai.plugin.name`, `gen_ai.plugin.id`, and `gen_ai.plugin.version` to the `execute_tool` span to identify the plugin that provides a tool, MCP server, or skill, so the same MCP server or skill shipped in different plugins can be told apart.
