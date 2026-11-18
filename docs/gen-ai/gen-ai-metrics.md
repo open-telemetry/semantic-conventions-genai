@@ -630,8 +630,8 @@ span, the metric value SHOULD be the same as the span duration.
 | --- | --- | --- | --- | --- | --- |
 | [`gen_ai.operation.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Required` | string | The name of the operation being performed. [1] | `chat`; `generate_content`; `realtime_inference` |
 | [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/error.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If the operation ended in an error. | string | Describes a class of error the operation ended with. [2] | `timeout`; `java.net.UnknownHostException`; `server_certificate_invalid`; `500` |
-| [`gen_ai.agent.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When available. | string | Human-readable name of the GenAI agent or workflow provided by the application. [3] | `Math Tutor`; `Fiction Writer` |
-| [`gen_ai.request.is_nested`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When the invocation is nested. | boolean | Whether the agent invocation runs within another invocation. [4] | `true`; `false` |
+| [`gen_ai.agent.invocation.root`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When the invocation is not nested. | boolean | Whether the invocation is not nested under another agent invocation. [3] | `true`; `false` |
+| [`gen_ai.agent.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When available. | string | Human-readable name of the GenAI agent or workflow provided by the application. [4] | `Math Tutor`; `Fiction Writer` |
 | [`gen_ai.request.model`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` [5] | string | The name of the GenAI model configured for the agent. [6] | `gpt-4` |
 
 **[1] `gen_ai.operation.name`:** If one of the predefined values applies, but specific system uses a different name it's RECOMMENDED to document it in the semantic conventions for specific GenAI system and use system-specific name in the instrumentation. If a different name is not documented, instrumentation libraries SHOULD use applicable predefined value.
@@ -640,16 +640,8 @@ span, the metric value SHOULD be the same as the span duration.
 the canonical name of exception that occurred, or another low-cardinality error identifier.
 Instrumentations SHOULD document the list of errors they report.
 
-**[3] `gen_ai.agent.name`:** This attribute MUST have low cardinality. It is NOT RECOMMENDED to use
-instrumentation-time constants, framework defaults, or type names such as "StateGraph". When no meaningful,
-low-cardinality name is available, this attribute MUST NOT be captured by default.
-
-Semantic conventions for individual Generative AI frameworks SHOULD document
-how `gen_ai.agent.name` is recorded in the context of that framework.
-
-**[4] `gen_ai.request.is_nested`:** `true` when the invocation runs within another `invoke_agent`,
-`invoke_workflow`, or `invoke_{framework_entrypoint}` invocation in the same
-process.
+**[3] `gen_ai.agent.invocation.root`:** `true` when the invocation is not nested under another
+`gen_ai.invoke_agent.internal` span in the same process; `false` when it is.
 
 Instrumentations SHOULD track active invocations (for example,
 in OpenTelemetry Context) independently of span recording.
@@ -659,8 +651,15 @@ other instrumentations in the same process.
 Instrumentations SHOULD store invocation state in context under keys
 that instrumentations from other packages and vendors can also read.
 
-Instrumentations SHOULD NOT set the attribute to `false` unless they can
-reliably determine that the invocation is top-level.
+Instrumentations SHOULD NOT set the attribute to `true` unless they can
+reliably determine that the invocation is not nested.
+
+**[4] `gen_ai.agent.name`:** This attribute MUST have low cardinality. It is NOT RECOMMENDED to use
+instrumentation-time constants, framework defaults, or type names such as "StateGraph". When no meaningful,
+low-cardinality name is available, this attribute MUST NOT be captured by default.
+
+Semantic conventions for individual Generative AI frameworks SHOULD document
+how `gen_ai.agent.name` is recorded in the context of that framework.
 
 **[5] `gen_ai.request.model`:** When `gen_ai.operation.name` is `invoke_agent`, if applicable.
 

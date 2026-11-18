@@ -13,12 +13,12 @@
 | Attribute | Supporting Libraries |
 | --- | --- |
 | gen_ai.agent.description | [adk_a2a], [agent-framework], [autogen], [google-adk] |
+| gen_ai.agent.invocation.root | [google-adk], [langchain], [openai-agents] |
 | gen_ai.agent.name | [adk_a2a], [agent-framework], [autogen], [crewai], [google-adk], [langchain], [openai-agents], [pydantic-ai] |
 | gen_ai.conversation.id | [adk_a2a], [google-adk] |
 | gen_ai.data_source.id | (none) |
 | gen_ai.output.type | (none) |
 | gen_ai.request.choice.count | [agent-framework], [crewai], [google-adk] |
-| gen_ai.request.is_nested | [google-adk], [langchain], [openai-agents] |
 | gen_ai.request.seed | [agent-framework], [autogen], [crewai], [pydantic-ai] |
 
 ## Recommended

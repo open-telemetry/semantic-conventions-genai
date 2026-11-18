@@ -233,12 +233,12 @@ span name format.
 | [`gen_ai.operation.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Required` | string | The name of the operation being performed. [1] | `chat`; `generate_content`; `realtime_inference` |
 | [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/error.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If the operation ended in an error. | string | Describes a class of error the operation ended with. [2] | `timeout`; `java.net.UnknownHostException`; `server_certificate_invalid`; `500` |
 | [`gen_ai.agent.description`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When available. | string | The free-form description of the invoked GenAI agent. | `Helps with math problems`; `Generates fiction stories` |
-| [`gen_ai.agent.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When available. | string | Human-readable name of the GenAI agent or workflow provided by the application. [3] | `Math Tutor`; `Fiction Writer` |
-| [`gen_ai.conversation.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [4] | string | The unique identifier for a conversation (session, thread), used to store and correlate messages within this conversation. [5] | `conv_5j66UpCpwteGg4YSxUnt7lPY` |
-| [`gen_ai.data_source.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If applicable. | string | The data source identifier. [6] | `H7STPQYOND` |
-| [`gen_ai.output.type`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [7] | string | Represents the content type requested by the client. [8] | `text`; `json`; `image` |
-| [`gen_ai.request.choice.count`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [9] | int | The target number of candidate completions to return. | `3` |
-| [`gen_ai.request.is_nested`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When the invocation is nested. | boolean | Whether the agent invocation runs within another invocation. [10] | `true`; `false` |
+| [`gen_ai.agent.invocation.root`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When the invocation is not nested. | boolean | Whether the invocation is not nested under another agent invocation. [3] | `true`; `false` |
+| [`gen_ai.agent.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When available. | string | Human-readable name of the GenAI agent or workflow provided by the application. [4] | `Math Tutor`; `Fiction Writer` |
+| [`gen_ai.conversation.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [5] | string | The unique identifier for a conversation (session, thread), used to store and correlate messages within this conversation. [6] | `conv_5j66UpCpwteGg4YSxUnt7lPY` |
+| [`gen_ai.data_source.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If applicable. | string | The data source identifier. [7] | `H7STPQYOND` |
+| [`gen_ai.output.type`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [8] | string | Represents the content type requested by the client. [9] | `text`; `json`; `image` |
+| [`gen_ai.request.choice.count`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [10] | int | The target number of candidate completions to return. | `3` |
 | [`gen_ai.request.seed`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [11] | int | Requests with same seed value more likely to return same result. | `100` |
 | [`gen_ai.request.frequency_penalty`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` When `gen_ai.operation.name` is `invoke_agent`. | double | The frequency penalty setting for the GenAI request. | `0.1` |
 | [`gen_ai.request.max_tokens`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` When `gen_ai.operation.name` is `invoke_agent`. | int | The maximum number of tokens the model generates for a request. | `100` |
@@ -265,16 +265,30 @@ span name format.
 the canonical name of exception that occurred, or another low-cardinality error identifier.
 Instrumentations SHOULD document the list of errors they report.
 
-**[3] `gen_ai.agent.name`:** This attribute MUST have low cardinality. It is NOT RECOMMENDED to use
+**[3] `gen_ai.agent.invocation.root`:** `true` when the invocation is not nested under another
+`gen_ai.invoke_agent.internal` span in the same process; `false` when it is.
+
+Instrumentations SHOULD track active invocations (for example,
+in OpenTelemetry Context) independently of span recording.
+They SHOULD make a best effort to detect invocations started by
+other instrumentations in the same process.
+
+Instrumentations SHOULD store invocation state in context under keys
+that instrumentations from other packages and vendors can also read.
+
+Instrumentations SHOULD NOT set the attribute to `true` unless they can
+reliably determine that the invocation is not nested.
+
+**[4] `gen_ai.agent.name`:** This attribute MUST have low cardinality. It is NOT RECOMMENDED to use
 instrumentation-time constants, framework defaults, or type names such as "StateGraph". When no meaningful,
 low-cardinality name is available, this attribute MUST NOT be captured by default.
 
 Semantic conventions for individual Generative AI frameworks SHOULD document
 how `gen_ai.agent.name` is recorded in the context of that framework.
 
-**[4] `gen_ai.conversation.id`:** If and only if the instrumented library has one readily available, or the user application provides one through OpenTelemetry context or library-specific mechanisms.
+**[5] `gen_ai.conversation.id`:** If and only if the instrumented library has one readily available, or the user application provides one through OpenTelemetry context or library-specific mechanisms.
 
-**[5] `gen_ai.conversation.id`:** Instrumentations SHOULD populate conversation id when they have an identifier
+**[6] `gen_ai.conversation.id`:** Instrumentations SHOULD populate conversation id when they have an identifier
 for the conversation readily available for a given operation, for example:
 
 - when the client framework being instrumented manages conversation history
@@ -293,30 +307,15 @@ Application developers that manage conversation history MAY add conversation id 
 spans or logs using custom span or log record processors or hooks provided by instrumentation
 libraries.
 
-**[6] `gen_ai.data_source.id`:** Data sources are used by AI agents and RAG applications to store grounding data. A data source may be an external database, object store, document collection, website, or any other storage system used by the GenAI agent or application. The `gen_ai.data_source.id` SHOULD match the identifier used by the GenAI system rather than a name specific to the external storage, such as a database or object store. Semantic conventions referencing `gen_ai.data_source.id` MAY also leverage additional attributes, such as `db.*`, to further identify and describe the data source.
+**[7] `gen_ai.data_source.id`:** Data sources are used by AI agents and RAG applications to store grounding data. A data source may be an external database, object store, document collection, website, or any other storage system used by the GenAI agent or application. The `gen_ai.data_source.id` SHOULD match the identifier used by the GenAI system rather than a name specific to the external storage, such as a database or object store. Semantic conventions referencing `gen_ai.data_source.id` MAY also leverage additional attributes, such as `db.*`, to further identify and describe the data source.
 
-**[7] `gen_ai.output.type`:** When `gen_ai.operation.name` is `invoke_agent`, when applicable and if the request includes an output format.
+**[8] `gen_ai.output.type`:** When `gen_ai.operation.name` is `invoke_agent`, when applicable and if the request includes an output format.
 
-**[8] `gen_ai.output.type`:** This attribute SHOULD be used when the client requests output of a specific type. The model may return zero or more outputs of this type.
+**[9] `gen_ai.output.type`:** This attribute SHOULD be used when the client requests output of a specific type. The model may return zero or more outputs of this type.
 This attribute specifies the output modality and not the actual output format. For example, if an image is requested, the actual output could be a URL pointing to an image file.
 Additional output format details may be recorded in the future in the `gen_ai.output.{type}.*` attributes.
 
-**[9] `gen_ai.request.choice.count`:** When `gen_ai.operation.name` is `invoke_agent`, if available, in the request, and !=1.
-
-**[10] `gen_ai.request.is_nested`:** `true` when the invocation runs within another `invoke_agent`,
-`invoke_workflow`, or `invoke_{framework_entrypoint}` invocation in the same
-process.
-
-Instrumentations SHOULD track active invocations (for example,
-in OpenTelemetry Context) independently of span recording.
-They SHOULD make a best effort to detect invocations started by
-other instrumentations in the same process.
-
-Instrumentations SHOULD store invocation state in context under keys
-that instrumentations from other packages and vendors can also read.
-
-Instrumentations SHOULD NOT set the attribute to `false` unless they can
-reliably determine that the invocation is top-level.
+**[10] `gen_ai.request.choice.count`:** When `gen_ai.operation.name` is `invoke_agent`, if available, in the request, and !=1.
 
 **[11] `gen_ai.request.seed`:** When `gen_ai.operation.name` is `invoke_agent`, if applicable and if the request includes a seed.
 

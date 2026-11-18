@@ -66,9 +66,9 @@ def invocation_scope():
         context.detach(token)
 
 
-def nested_invocation_attributes() -> dict:
-    """Return `gen_ai.request.is_nested` when another invocation is active; it is never set to `false`."""
-    return {"gen_ai.request.is_nested": True} if context.get_value(_INVOCATION_KEY) else {}
+def root_invocation_attributes() -> dict:
+    """Return `gen_ai.agent.invocation.root`: `true` unless another tracked invocation is active."""
+    return {"gen_ai.agent.invocation.root": not context.get_value(_INVOCATION_KEY)}
 
 
 def inference_duration_view() -> View:

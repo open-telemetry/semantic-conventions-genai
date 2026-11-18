@@ -24,9 +24,9 @@ from opentelemetry.trace import StatusCode
 from reference_shared import (
     flush_and_shutdown,
     invocation_scope,
-    nested_invocation_attributes,
     reference_event_logger,
     reference_tracer,
+    root_invocation_attributes,
     setup_otel,
 )
 
@@ -295,7 +295,7 @@ async def run_agent_as_tool_delegation():
     async def _traced_agent_run(runner, starting_agent, input, **kwargs):
         agent_span_attributes = {
             "gen_ai.operation.name": "invoke_agent",
-            **nested_invocation_attributes(),
+            **root_invocation_attributes(),
             "gen_ai.request.model": starting_agent.model.model,
             "gen_ai.agent.name": starting_agent.name,
         }
@@ -547,7 +547,7 @@ async def run_runner():
         agent = bindings.public_agent
         attributes = {
             "gen_ai.operation.name": "invoke_agent",
-            **nested_invocation_attributes(),
+            **root_invocation_attributes(),
             "gen_ai.agent.name": agent.name,
             "gen_ai.request.model": agent.model.model,
         }
@@ -599,6 +599,7 @@ async def run_runner():
     # `Runner` is not itself an agent or a workflow, so its invocation is `invoke_runner`.
     runner_span_attributes = {
         "gen_ai.operation.name": "invoke_runner",
+        **root_invocation_attributes(),
     }
     with (
         _reference_tracer.start_as_current_span("invoke_runner", attributes=runner_span_attributes) as runner_span,

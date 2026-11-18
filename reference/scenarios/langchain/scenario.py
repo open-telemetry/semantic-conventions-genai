@@ -11,10 +11,10 @@ from opentelemetry.trace import StatusCode
 from reference_shared import (
     flush_and_shutdown,
     invocation_scope,
-    nested_invocation_attributes,
     reference_event_logger,
     reference_meter,
     reference_tracer,
+    root_invocation_attributes,
     setup_otel,
 )
 
@@ -74,7 +74,7 @@ async def agent_node(state: GraphState) -> GraphState:
     input_text = state["messages"][-1]
     agent_span_attributes = {
         "gen_ai.operation.name": "invoke_agent",
-        **nested_invocation_attributes(),
+        **root_invocation_attributes(),
         "gen_ai.agent.name": AGENT_NAME,
         "gen_ai.request.model": AGENT_MODEL,
     }
@@ -347,6 +347,7 @@ async def run_workflow_reference():
     workflow_name = graph.name
     workflow_span_attributes = {
         "gen_ai.operation.name": "invoke_workflow",
+        **root_invocation_attributes(),
     }
     with (
         _reference_tracer.start_as_current_span(
