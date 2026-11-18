@@ -160,7 +160,6 @@ class ReferenceJsonRpcDispatcher(JsonRpcDispatcher):
         self._enrich_transport_span = enrich_transport_span
 
     async def handle_requests(self, request: Request) -> Response:
-        start = time.perf_counter()
         body = await request.json()
         method = body["method"]
         params = body.get("params") or {}
@@ -208,8 +207,9 @@ class ReferenceJsonRpcDispatcher(JsonRpcDispatcher):
 
         # A streaming response is recorded when its stream ends, not here.
         streaming = False
-        # Incremented only once nothing can fail before the `finally` that
-        # decrements it.
+        # Both metrics start here, once nothing can fail before the `finally`
+        # that records the duration and decrements the active count.
+        start = time.perf_counter()
         _server_active.add(1, metric_attrs)
         try:
             with use_span(span, end_on_exit=False):
@@ -311,7 +311,6 @@ class ReferenceRestDispatcher(RestDispatcher):
         self._card = card
 
     async def on_get_task(self, request: Request) -> Response:
-        start = time.perf_counter()
         interface = next(
             i for i in self._card.supported_interfaces if i.protocol_binding == TransportProtocol.HTTP_JSON
         )
@@ -333,6 +332,7 @@ class ReferenceRestDispatcher(RestDispatcher):
                 "gen_ai.agent.version": self._card.version,
             }
         )
+        start = time.perf_counter()
         _server_active.add(1, metric_attrs)
         try:
             response = await super().on_get_task(request)
