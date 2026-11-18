@@ -274,8 +274,7 @@ class _RealtimeDriver:
             f"realtime_inference {self.request_model}", kind=SpanKind.CLIENT, attributes=attributes
         )
         span.set_attribute("gen_ai.input.messages", self._gen["input_messages"])
-        if self._gen["tools"]:
-            span.set_attribute("gen_ai.tool.definitions", json.dumps(self._gen["tools"]))
+        span.set_attribute("gen_ai.tool.definitions", json.dumps(self._gen["tools"]))
         span.set_attribute("gen_ai.response.model", self.response_model)
         self._gen["span"] = span
         self._gen["response_id"] = event.response.id
