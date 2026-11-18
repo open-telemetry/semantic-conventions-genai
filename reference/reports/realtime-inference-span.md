@@ -49,7 +49,7 @@
 | gen_ai.input.messages | [google-genai][google-genai@gemini-live], [openai][openai@openai-realtime] |
 | gen_ai.output.messages | [google-genai][google-genai@gemini-live], [openai][openai@openai-realtime] |
 | gen_ai.system_instructions | (none) |
-| gen_ai.tool.definitions | (none) |
+| gen_ai.tool.definitions | [openai][openai@openai-realtime] |
 
 [google-genai@gemini-live]: ../scenarios/gemini-live/scenario.py
 [openai@openai-realtime]: ../scenarios/openai-realtime/scenario.py
