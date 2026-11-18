@@ -153,14 +153,6 @@ class ObservedStream:
             self.error = exc
             raise
 
-    def close(self):
-        self.closed_early = not self.exhausted
-        try:
-            self._stream.close()
-        except Exception as exc:
-            self.error = exc
-            raise
-
     def __exit__(self, exc_type, exc, tb):
         self.closed_early = not self.exhausted
         if exc is not None:
@@ -173,8 +165,8 @@ class ObservedStream:
 
     @property
     def finish_reason(self):
-        if self.error is not None:
+        if self.error is not None or self.exhausted:
             return "error"
-        if self.exhausted or self.closed_early:
+        if self.closed_early:
             return "interrupted"
         return None
