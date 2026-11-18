@@ -670,6 +670,14 @@ async def run_server_over_http_reference(card: a2a_types.AgentCard) -> None:
     async with await _create_a2a_client(card, streaming=False) as client:
         task = (await anext(client.send_message(send))).task
 
+    send_immediately = a2a_types.SendMessageRequest(
+        tenant=interface.tenant,
+        message=_message("Summarize my calendar.", message_id="msg-user-6"),
+        configuration=a2a_types.SendMessageConfiguration(return_immediately=True),
+    )
+    async with await _create_a2a_client(card, streaming=False) as client:
+        await anext(client.send_message(send_immediately))
+
     stream = a2a_types.SendMessageRequest(
         tenant=interface.tenant,
         message=_message("Track this task.", message_id="msg-user-4"),

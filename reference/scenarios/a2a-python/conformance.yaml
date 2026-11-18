@@ -80,6 +80,14 @@ scenarios:
           type: a2a.server
       - match:
           attributes:
+            a2a.method.name: SendMessage
+            a2a.tenant: billing-http
+            a2a.operation.return_immediately: true
+            http.request.method: POST
+          kind: server
+          type: a2a.server
+      - match:
+          attributes:
             a2a.method.name: SendStreamingMessage
             a2a.tenant: billing-http
             http.request.method: POST
