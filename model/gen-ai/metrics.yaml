@@ -7,12 +7,14 @@ attribute_groups:
       - ref_group: attributes.gen_ai.common
       - ref: gen_ai.response.model
         requirement_level: recommended
-      - ref: gen_ai.provider.name
-        requirement_level: required
 
   - id: metric_attributes.openai
     visibility: internal
     attributes:
+      - ref: gen_ai.provider.name
+        annotations:
+          markdown:
+            omit_enum_table: true
       - ref: openai.response.service_tier
         requirement_level: recommended
       - ref: openai.response.system_fingerprint
@@ -328,11 +330,7 @@ metric_refinements:
       when the provider is `openai`.
     stability: development
     attributes:
-      # - ref_group: metric_attributes.openai - does not work, https://github.com/open-telemetry/weaver/issues/1411
-      - ref: openai.response.service_tier
-        requirement_level: recommended
-      - ref: openai.response.system_fingerprint
-        requirement_level: recommended
+      - ref_group: metric_attributes.openai
   - id: openai.gen_ai.client.inference.duration
     ref: gen_ai.client.inference.duration
     brief: >
@@ -341,7 +339,4 @@ metric_refinements:
       when the provider is `openai`.
     stability: development
     attributes:
-      - ref: openai.response.service_tier
-        requirement_level: recommended
-      - ref: openai.response.system_fingerprint
-        requirement_level: recommended
+      - ref_group: metric_attributes.openai

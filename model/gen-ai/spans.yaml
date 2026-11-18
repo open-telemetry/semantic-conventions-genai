@@ -1,40 +1,5 @@
 file_format: definition/2
 attribute_groups:
-  - id: attributes.gen_ai.error
-    visibility: internal
-    attributes:
-      - ref: error.type
-        requirement_level:
-          conditionally_required: "If the operation ended in an error."
-        note: |
-          The `error.type` SHOULD match the error code returned by the Generative AI provider or the client library,
-          the canonical name of exception that occurred, or another low-cardinality error identifier.
-          Instrumentations SHOULD document the list of errors they report.
-
-  - id: attributes.gen_ai.common
-    visibility: internal
-    attributes:
-      - ref: gen_ai.request.model
-        requirement_level:
-          conditionally_required: If available.
-        note: >
-          The name of the GenAI model a request is being made to. If the model is supplied by a vendor,
-          then the value must be the exact name of the model requested. If the model is a fine-tuned
-          custom model, the value should have a more specific name than the base model that's been fine-tuned.
-      - ref: gen_ai.operation.name
-        requirement_level: required
-
-  - id: attributes.gen_ai.address_and_port
-    visibility: internal
-    attributes:
-      - ref: server.address
-        brief: GenAI server address.
-        requirement_level: recommended
-      - ref: server.port
-        brief: GenAI server port.
-        requirement_level:
-          conditionally_required: If `server.address` is set.
-
   - id: attributes.gen_ai.usage
     visibility: internal
     attributes:
@@ -80,43 +45,6 @@ attribute_groups:
         requirement_level:
           recommended: When available and non-zero.
 
-  - id: attributes.gen_ai.content
-    visibility: internal
-    attributes:
-      - ref: gen_ai.system_instructions
-        requirement_level: opt_in
-      - ref: gen_ai.input.messages
-        requirement_level: opt_in
-      - ref: gen_ai.output.messages
-        requirement_level: opt_in
-      - ref: gen_ai.tool.definitions
-        requirement_level: opt_in
-      - ref: gen_ai.system_instructions_ref
-        requirement_level: opt_in
-      - ref: gen_ai.input.messages_ref
-        requirement_level: opt_in
-      - ref: gen_ai.output.messages_ref
-        requirement_level: opt_in
-      - ref: gen_ai.tool.definitions_ref
-        requirement_level: opt_in
-
-  - id: attributes.gen_ai.invoked_agent.internal.common
-    visibility: internal
-    attributes:
-      - ref: gen_ai.agent.name
-        requirement_level:
-          conditionally_required: When available.
-      # not including agent description since this group is shared between
-      # spans and metrics and description is not needed on metrics
-      - ref: gen_ai.request.model
-        brief: The name of the GenAI model configured for the agent.
-        requirement_level:
-          recommended: If applicable.
-        note: >
-            This attribute SHOULD be populated if and only if the instrumented
-            library allows to set only a single model per agent. It SHOULD NOT
-            be populated for agents that support multiple models or dynamic selection.
-
   - id: attributes.gen_ai.invoke_agent.common
     visibility: internal
     attributes:
@@ -160,30 +88,24 @@ attribute_groups:
         requirement_level:
           conditionally_required: When available.
 
-
-  - id: attributes.gen_ai.execute_tool.common
+  - id: attributes.gen_ai.provider_refinement.output_type
     visibility: internal
     attributes:
-      - ref: gen_ai.tool.name
-        requirement_level: required
-      - ref: gen_ai.tool.type
-        requirement_level:
-          recommended: If available.
-      - ref: gen_ai.agent.name
-        brief: The human-readable name of the agent executing the tool.
-        requirement_level:
-          conditionally_required: When applicable.
+      - ref: gen_ai.output.type
+        note: |
+          This attribute SHOULD be set to the output type requested by the client:
 
-  - id: attributes.gen_ai.retrieval.common
-    visibility: internal
-    attributes:
-      - ref: gen_ai.operation.name
-        annotations:
-          markdown:
-            omit_enum_table: true
-        requirement_level: required
-        examples: ["retrieval"]
-        note: SHOULD be `retrieval`.
+          - `json` for structured outputs with defined or undefined schema
+          - `image` for image output
+          - `speech` for speech output
+          - `text` for plain text output
+
+          The attribute specifies the output modality and not the actual output format.
+          For example, if an image is requested, the actual output could be a
+          URL pointing to an image file.
+
+          Additional output format details may be recorded in the future in the
+          `gen_ai.output.{type}.*` attributes.
 
 spans:
   - type: gen_ai.client.inference
@@ -356,8 +278,6 @@ spans:
         requirement_level:
           recommended: when available
       - ref: gen_ai.provider.name
-        # TODO: Not adding to common attributes because of https://github.com/open-telemetry/weaver/issues/479
-        requirement_level: required
         sampling_relevant: true
       - ref: gen_ai.operation.name
         sampling_relevant: true
@@ -456,8 +376,6 @@ spans:
         requirement_level:
           conditionally_required: If the provider exposes a session identifier, or the instrumentation uses a client-created per-connection identifier.
       - ref: gen_ai.provider.name
-        # TODO: Not adding to common attributes because of https://github.com/open-telemetry/weaver/issues/479
-        requirement_level: required
         sampling_relevant: true
       - ref: gen_ai.operation.name
         sampling_relevant: true
@@ -521,7 +439,6 @@ spans:
       - ref_group: attributes.gen_ai.address_and_port
       - ref_group: attributes.gen_ai.error
       - ref: gen_ai.provider.name
-        requirement_level: required
         sampling_relevant: true
       - ref: gen_ai.operation.name
         annotations:
@@ -756,7 +673,6 @@ spans:
       - ref_group: attributes.gen_ai.address_and_port
       - ref_group: attributes.gen_ai.error
       - ref: gen_ai.provider.name
-        requirement_level: required
         sampling_relevant: true
       - ref: gen_ai.operation.name
         annotations:
@@ -1056,22 +972,11 @@ span_refinements:
       `gen_ai.provider.name` MUST be set to `"openai"` and SHOULD be provided **at span creation time**.
     stability: development
     attributes:
-      # TODO https://github.com/open-telemetry/weaver/pull/1407: use a shared ref_group again once note overrides are preserved.
-      - ref: gen_ai.output.type
-        note: |
-          This attribute SHOULD be set to the output type requested by the client:
-
-          - `json` for structured outputs with defined or undefined schema
-          - `image` for image output
-          - `speech` for speech output
-          - `text` for plain text output
-
-          The attribute specifies the output modality and not the actual output format.
-          For example, if an image is requested, the actual output could be a
-          URL pointing to an image file.
-
-          Additional output format details may be recorded in the future in the
-          `gen_ai.output.{type}.*` attributes.
+      - ref: gen_ai.provider.name
+        annotations:
+          markdown:
+            omit_enum_table: true
+      - ref_group: attributes.gen_ai.provider_refinement.output_type
       - ref: gen_ai.request.model
         requirement_level: required
       - ref: gen_ai.usage.input_tokens
@@ -1110,6 +1015,10 @@ span_refinements:
       `gen_ai.provider.name` MUST be set to `"openai"` and SHOULD be provided **at span creation time**.
     stability: development
     attributes:
+      - ref: gen_ai.provider.name
+        annotations:
+          markdown:
+            omit_enum_table: true
       - ref: openai.api.type
         annotations:
           markdown:
@@ -1142,22 +1051,11 @@ span_refinements:
       `gen_ai.provider.name` MUST be set to `"azure.ai.inference"` and SHOULD be provided **at span creation time**.
     stability: development
     attributes:
-      # TODO https://github.com/open-telemetry/weaver/pull/1407: use a shared ref_group again once note overrides are preserved.
-      - ref: gen_ai.output.type
-        note: |
-          This attribute SHOULD be set to the output type requested by the client:
-
-          - `json` for structured outputs with defined or undefined schema
-          - `image` for image output
-          - `speech` for speech output
-          - `text` for plain text output
-
-          The attribute specifies the output modality and not the actual output format.
-          For example, if an image is requested, the actual output could be a
-          URL pointing to an image file.
-
-          Additional output format details may be recorded in the future in the
-          `gen_ai.output.{type}.*` attributes.
+      - ref: gen_ai.provider.name
+        annotations:
+          markdown:
+            omit_enum_table: true
+      - ref_group: attributes.gen_ai.provider_refinement.output_type
       - ref: azure.resource_provider.namespace
         note: >
           When `azure.resource_provider.namespace` attribute is populated, it MUST
@@ -1182,6 +1080,10 @@ span_refinements:
       `gen_ai.provider.name` MUST be set to `"anthropic"` and SHOULD be provided **at span creation time**.
     stability: development
     attributes:
+      - ref: gen_ai.provider.name
+        annotations:
+          markdown:
+            omit_enum_table: true
       - ref: gen_ai.request.top_k
         requirement_level: recommended
       - ref: gen_ai.request.reasoning.level
@@ -1209,6 +1111,10 @@ span_refinements:
       `gen_ai.provider.name` MUST be set to `"aws.bedrock"` and SHOULD be provided **at span creation time**.
     stability: development
     attributes:
+      - ref: gen_ai.provider.name
+        annotations:
+          markdown:
+            omit_enum_table: true
       - ref: gen_ai.request.top_k
         requirement_level: recommended
       - ref: aws.bedrock.guardrail.id
