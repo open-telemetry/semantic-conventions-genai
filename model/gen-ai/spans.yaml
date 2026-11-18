@@ -125,7 +125,7 @@ attribute_groups:
       - ref_group: attributes.gen_ai.error
       - ref_group: attributes.gen_ai.invoked_agent.internal.common
       - ref: gen_ai.tool.definitions
-        brief: The list of tool definitions configured for the invoked agent, workflow, or framework entry point.
+        brief: The list of tool definitions configured for the invoked agent, workflow, or framework entrypoint.
         note: |
           > [!WARNING]
           > This attribute may contain sensitive information.
