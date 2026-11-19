@@ -1,0 +1,74 @@
+name: Prepare release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release, e.g. 0.2.0. Defaults to the version in model/manifest.yaml on main.'
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  prepare-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write # pushes the release branch
+      pull-requests: write # opens the PR when otelbot isn't configured
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          # zizmor: ignore[artipacked] Credentials are required by the branch push below.
+          persist-credentials: true
+
+      - name: Compute version
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          version="${INPUT_VERSION:-$(make -s print-version)}"
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "unexpected version: $version"
+            exit 1
+          fi
+          if git ls-remote --exit-code --tags origin "refs/tags/v$version" > /dev/null; then
+            echo "tag v$version already exists"
+            exit 1
+          fi
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+
+      - name: Set release schema_url
+        run: make set-schema-url-dev VERSION="$VERSION"
+
+      - name: Update changelog
+        run: |
+          PYTHONUTF8=1 uv run --project changelog.d --locked towncrier build \
+            --config changelog.d/towncrier.toml --yes --version "$VERSION"
+
+      - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        if: vars.OTELBOT_SEMANTIC_CONVENTIONS_GENAI_CLIENT_ID != ''
+        id: otelbot-token
+        with:
+          client-id: ${{ vars.OTELBOT_SEMANTIC_CONVENTIONS_GENAI_CLIENT_ID }}
+          private-key: ${{ secrets.OTELBOT_SEMANTIC_CONVENTIONS_GENAI_PRIVATE_KEY }}
+          permission-pull-requests: write
+
+      - name: Create pull request
+        env:
+          # PRs opened with the app token trigger CI; github.token is a fallback for forks.
+          GH_TOKEN: ${{ steps.otelbot-token.outputs.token || github.token }}
+        run: |
+          git config user.name otelbot
+          git config user.email 197425009+otelbot@users.noreply.github.com
+          branch="otelbot/prepare-release-v${VERSION}"
+          message="[chore] Prepare release v${VERSION}"
+          git checkout -b "$branch"
+          git add -A model CHANGELOG.md changelog.d
+          git commit -m "$message"
+          git push --set-upstream origin "$branch"
+          gh pr create --base main --head "$branch" --title "$message" \
+            --body "Merging this PR publishes release \`v${VERSION}\` with schema URL \`https://opentelemetry.io/schemas/semconv-genai-dev/${VERSION}-dev\`."

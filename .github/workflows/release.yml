@@ -1,0 +1,161 @@
+name: Release
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release, e.g. 0.2.0. Only to retry a failed release.'
+        required: true
+      commit:
+        description: 'Full commit SHA of the merged prepare-release PR'
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.pull_request.merged == true &&
+       github.event.pull_request.head.repo.full_name == github.repository &&
+       startsWith(github.event.pull_request.head.ref, 'otelbot/prepare-release-v'))
+    permissions:
+      contents: write # creates the tag and the release
+    outputs:
+      version: ${{ steps.inputs.outputs.version }}
+    env:
+      VERSION: ${{ inputs.version }}
+      RELEASE_COMMIT: ${{ inputs.commit || github.event.pull_request.merge_commit_sha }}
+    steps:
+      - name: Validate inputs
+        id: inputs
+        env:
+          RELEASE_BRANCH: ${{ github.event.pull_request.head.ref }}
+        run: |
+          if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
+            VERSION="${RELEASE_BRANCH#otelbot/prepare-release-v}"
+          fi
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "unexpected version: $VERSION"
+            exit 1
+          fi
+          if [[ ! "$RELEASE_COMMIT" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "expected a full commit SHA: $RELEASE_COMMIT"
+            exit 1
+          fi
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.RELEASE_COMMIT }}
+          persist-credentials: false
+
+      - name: Check schema_url
+        run: |
+          expected="https://opentelemetry.io/schemas/semconv-genai-dev/${VERSION}-dev"
+          if ! grep -qx "schema_url: $expected" model/manifest.yaml; then
+            echo "model/manifest.yaml schema_url is not $expected"
+            exit 1
+          fi
+
+      - name: Load shared version pins
+        id: versions
+        uses: $/.github/actions/load-version-pins
+
+      - name: Install Weaver
+        uses: open-telemetry/weaver/.github/actions/setup-weaver@f8e1b42fbd1e09df5263c26b7df6011eaafd454d
+        with:
+          version: '${{ steps.versions.outputs.weaver_version }}'
+
+      - name: Package registry
+        run: make package-dev
+
+      - name: Extract release notes
+        run: |
+          awk -v header="## $VERSION" '$0 == header { f = 1; next } f && /^## / { exit } f' CHANGELOG.md > "$RUNNER_TEMP/notes.md"
+          if [[ ! -s "$RUNNER_TEMP/notes.md" ]]; then
+            echo "no CHANGELOG.md section for $VERSION"
+            exit 1
+          fi
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "v$VERSION" \
+            .build/package/manifest-dev.yaml \
+            .build/package/registry-dev.yaml \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$RELEASE_COMMIT" \
+            --title "v$VERSION" \
+            --notes-file "$RUNNER_TEMP/notes.md" \
+            --latest
+
+  # Runs here rather than on `release: published`: releases created with
+  # github.token don't trigger other workflows.
+  bump-schema-url:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: release
+    permissions:
+      contents: write # pushes the bump branch
+      pull-requests: write # opens the PR when otelbot isn't configured
+    env:
+      VERSION: ${{ needs.release.outputs.version }}
+    steps:
+      - name: Compute next version
+        id: next
+        run: |
+          IFS=. read -r major minor patch <<< "$VERSION"
+          if [[ "$patch" != "0" ]]; then
+            echo "patch release, main is not bumped"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "NEXT_VERSION=$major.$((minor + 1)).0" >> "$GITHUB_ENV"
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: steps.next.outputs.skip != 'true'
+        with:
+          ref: main
+          # zizmor: ignore[artipacked] Credentials are required by the branch push below.
+          persist-credentials: true
+
+      - name: Bump schema_url
+        if: steps.next.outputs.skip != 'true'
+        run: make set-schema-url-unreleased VERSION="$NEXT_VERSION"
+
+      - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        if: steps.next.outputs.skip != 'true' && vars.OTELBOT_SEMANTIC_CONVENTIONS_GENAI_CLIENT_ID != ''
+        id: otelbot-token
+        with:
+          client-id: ${{ vars.OTELBOT_SEMANTIC_CONVENTIONS_GENAI_CLIENT_ID }}
+          private-key: ${{ secrets.OTELBOT_SEMANTIC_CONVENTIONS_GENAI_PRIVATE_KEY }}
+          permission-pull-requests: write
+
+      - name: Create pull request
+        if: steps.next.outputs.skip != 'true'
+        env:
+          # PRs opened with the app token trigger CI; github.token is a fallback for forks.
+          GH_TOKEN: ${{ steps.otelbot-token.outputs.token || github.token }}
+        run: |
+          if git diff --quiet; then
+            echo "schema_url already up to date"
+            exit 0
+          fi
+          git config user.name otelbot
+          git config user.email 197425009+otelbot@users.noreply.github.com
+          branch="otelbot/bump-schema-url-${NEXT_VERSION}"
+          message="[chore] Bump schema_url to ${NEXT_VERSION}-unreleased"
+          git checkout -b "$branch"
+          git commit -am "$message"
+          git push --set-upstream origin "$branch"
+          gh pr create --base main --head "$branch" --title "$message" \
+            --body "Post-release update for \`v${VERSION}\`."
