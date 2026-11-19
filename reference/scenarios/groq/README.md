@@ -11,3 +11,7 @@ code.
 | execute_tool | No — the client returns tool calls but doesn't execute them; the tool runs in app code | ➖ Not instrumentable |
 
 Groq gives no modality breakdown, so the usage counters use `unknown`.
+
+The streaming-only conformance cases use Groq SDK chunks with usage in
+`x_groq.usage`. A terminal `x_groq.error` chunk marks the span and operation
+histograms as failed, with any reported token counts preserved.

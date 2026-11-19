@@ -1,6 +1,7 @@
 {
   "spans": {
     "gen_ai.client.inference": [
+      "error.type",
       "gen_ai.input.messages",
       "gen_ai.operation.name",
       "gen_ai.provider.name",
@@ -30,6 +31,7 @@
   },
   "metrics": {
     "gen_ai.client.inference.duration": [
+      "error.type",
       "gen_ai.operation.name",
       "gen_ai.provider.name",
       "gen_ai.request.model",
@@ -38,6 +40,7 @@
       "server.port"
     ],
     "gen_ai.client.inference.operation.input_tokens": [
+      "error.type",
       "gen_ai.operation.name",
       "gen_ai.provider.name",
       "gen_ai.request.model",
@@ -46,6 +49,7 @@
       "server.port"
     ],
     "gen_ai.client.inference.operation.output_tokens": [
+      "error.type",
       "gen_ai.operation.name",
       "gen_ai.provider.name",
       "gen_ai.request.model",

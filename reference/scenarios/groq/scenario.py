@@ -1,5 +1,7 @@
 """Reference implementation for Groq."""
 
+import argparse
+import json
 import os
 import time
 
@@ -200,6 +202,15 @@ def run_chat_streaming_reference(client):
                         text += chunk.choices[0].delta.content
                     if chunk.choices and chunk.choices[0].finish_reason:
                         finish_reasons.append(chunk.choices[0].finish_reason)
+                    if chunk.x_groq and chunk.x_groq.error is not None:
+                        # The SDK yields the provider error as data and may finish normally.
+                        error_type = "groq.stream_error"
+                        metric_attributes["error.type"] = error_type
+                        span.set_attribute("error.type", error_type)
+                        span.set_status(StatusCode.ERROR)
+                        if not finish_reasons:
+                            finish_reasons.append("error")
+                        break
             if model:
                 span.set_attribute("gen_ai.response.model", model)
             if response_id:
@@ -219,6 +230,7 @@ def run_chat_streaming_reference(client):
             _input_tokens.record(input_tokens, metric_attributes)
             _output_tokens.record(output_tokens, metric_attributes)
             modality_attributes = {**metric_attributes, "gen_ai.token.modality": "unknown"}
+            modality_attributes.pop("error.type", None)
             if input_tokens > 0:
                 _input_token_usage.add(input_tokens, modality_attributes)
             if output_tokens > 0:
@@ -302,21 +314,67 @@ def run_chat_tool_call_reference(client):
             print(f"    -> {choice.message.content[:60]}")
 
 
-def main():
-    print("=== Reference Implementation: Groq ===")
+def _stream_fixture_response(request, *, early_stop):
+    """Serve Groq-shaped SSE through the regular SDK parser."""
+    import httpx
 
-    tp, lp, mp = setup_otel()
+    assert request.url.path.endswith("/chat/completions")
+    assert json.loads(request.content)["stream"] is True
+    chunk = {
+        "id": "groq-stream",
+        "object": "chat.completion.chunk",
+        "created": 0,
+        "model": "llama-3.1-8b-instant",
+    }
+    first = {
+        **chunk,
+        "choices": [{"index": 0, "delta": {"content": "Hello"}, "finish_reason": None}],
+    }
+    last = {
+        **chunk,
+        "choices": [],
+        "x_groq": {
+            "usage": {"prompt_tokens": 5, "completion_tokens": 2, "total_tokens": 7},
+        },
+    }
+    if early_stop:
+        last["x_groq"]["error"] = "stream stopped by Groq"
+    else:
+        last["choices"] = [{"index": 0, "delta": {}, "finish_reason": "stop"}]
+    body = "".join(f"data: {json.dumps(event)}\n\n" for event in (first, last))
+    return httpx.Response(200, headers={"content-type": "text/event-stream"}, text=body + "data: [DONE]\n\n")
+
+
+def main(*, stream_fixture=None):
+    print("=== Reference Implementation: Groq ===")
 
     import groq
 
-    client = groq.Groq(base_url=MOCK_BASE_URL, api_key="mock-key")
+    tp, lp, mp = setup_otel()
+    try:
+        if stream_fixture is not None:
+            from functools import partial
 
-    run_chat_reference(client)
-    run_chat_streaming_reference(client)
-    run_chat_tool_call_reference(client)
+            import httpx
 
-    flush_and_shutdown(tp, lp, mp)
+            respond = partial(_stream_fixture_response, early_stop=stream_fixture == "early-stop")
+            with groq.Groq(
+                base_url=MOCK_BASE_URL,
+                api_key="mock-key",
+                http_client=httpx.Client(transport=httpx.MockTransport(respond)),
+            ) as client:
+                run_chat_streaming_reference(client)
+            return
+
+        with groq.Groq(base_url=MOCK_BASE_URL, api_key="mock-key") as client:
+            run_chat_reference(client)
+            run_chat_streaming_reference(client)
+            run_chat_tool_call_reference(client)
+    finally:
+        flush_and_shutdown(tp, lp, mp)
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--stream-fixture", choices=["usage", "early-stop"])
+    main(stream_fixture=parser.parse_args().stream_fixture)

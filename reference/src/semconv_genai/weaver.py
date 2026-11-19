@@ -11,8 +11,6 @@ import subprocess
 import sys
 import tarfile
 import tempfile
-import time
-import urllib.error
 import urllib.parse
 import urllib.request
 import zipfile
@@ -86,23 +84,8 @@ def _download_file(url: str, destination: Path) -> None:
     parsed = urllib.parse.urlparse(url)
     if parsed.scheme != "https" or parsed.hostname != "github.com":
         raise RuntimeError(f"Refusing to download non-github.com URL: {url}")
-    for attempt in range(3):
-        try:
-            with urllib.request.urlopen(url, timeout=120) as response, destination.open("wb") as out:
-                shutil.copyfileobj(response, out)
-            return
-        except urllib.error.HTTPError as error:
-            if error.code not in {500, 502, 503, 504} or attempt == 2:
-                raise
-            error.close()
-            reason = f"HTTP {error.code}"
-        except (urllib.error.URLError, TimeoutError, ConnectionError) as error:
-            if attempt == 2:
-                raise
-            reason = str(error)
-        delay = 2**attempt
-        logger.warning("Download failed (%s); retrying in %s seconds", reason, delay)
-        time.sleep(delay)
+    with urllib.request.urlopen(url) as response, destination.open("wb") as out:
+        shutil.copyfileobj(response, out)
 
 
 def ensure_weaver() -> Path:

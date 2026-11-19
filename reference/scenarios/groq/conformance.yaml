@@ -30,3 +30,44 @@ scenarios:
       - gen_ai.client.inference.operation.output_tokens
       - gen_ai.client.inference.usage.input_tokens
       - gen_ai.client.inference.usage.output_tokens
+
+  streaming_usage:
+    run: uv run --frozen --python 3.12 --project . python scenario.py --stream-fixture usage
+    spans:
+      - match:
+          attributes:
+            gen_ai.operation.name: chat
+          type: gen_ai.client.inference
+        expect:
+          count: 1
+          attributes:
+            gen_ai.usage.input_tokens: 5
+            gen_ai.usage.output_tokens: 2
+            error.type:
+              present: false
+    metrics:
+      - gen_ai.client.inference.duration
+      - gen_ai.client.inference.operation.input_tokens
+      - gen_ai.client.inference.operation.output_tokens
+      - gen_ai.client.inference.usage.input_tokens
+      - gen_ai.client.inference.usage.output_tokens
+  streaming_early_stop:
+    run: uv run --frozen --python 3.12 --project . python scenario.py --stream-fixture early-stop
+    spans:
+      - match:
+          attributes:
+            gen_ai.operation.name: chat
+          type: gen_ai.client.inference
+        expect:
+          count: 1
+          attributes:
+            gen_ai.usage.input_tokens: 5
+            gen_ai.usage.output_tokens: 2
+            error.type: groq.stream_error
+            gen_ai.response.finish_reasons: [error]
+    metrics:
+      - gen_ai.client.inference.duration
+      - gen_ai.client.inference.operation.input_tokens
+      - gen_ai.client.inference.operation.output_tokens
+      - gen_ai.client.inference.usage.input_tokens
+      - gen_ai.client.inference.usage.output_tokens
