@@ -46,7 +46,6 @@ attribute_groups:
       - ref: mcp.method.name
         requirement_level: required
       - ref: mcp.protocol.version
-      - ref_group: mcp.network.protocol.attributes
 
   - id: mcp.client.status.attributes
     visibility: internal
