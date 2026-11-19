@@ -21,10 +21,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     if: >-
-      github.event_name == 'workflow_dispatch' ||
-      (github.event.pull_request.merged == true &&
-       github.event.pull_request.head.repo.full_name == github.repository &&
-       startsWith(github.event.pull_request.head.ref, 'otelbot/prepare-release-v'))
+      github.repository_owner == 'open-telemetry' &&
+      (github.event_name == 'workflow_dispatch' ||
+       (github.event.pull_request.merged == true &&
+        github.event.pull_request.head.repo.full_name == github.repository &&
+        startsWith(github.event.pull_request.head.ref, 'otelbot/prepare-release-v')))
     permissions:
       contents: write # creates the tag and the release
     outputs:
@@ -106,7 +107,6 @@ jobs:
     needs: release
     permissions:
       contents: write # pushes the bump branch
-      pull-requests: write # opens the PR when otelbot isn't configured
     env:
       VERSION: ${{ needs.release.outputs.version }}
     steps:
@@ -133,7 +133,7 @@ jobs:
         run: make set-schema-url-unreleased VERSION="$NEXT_VERSION"
 
       - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
-        if: steps.next.outputs.skip != 'true' && vars.OTELBOT_SEMANTIC_CONVENTIONS_GENAI_CLIENT_ID != ''
+        if: steps.next.outputs.skip != 'true'
         id: otelbot-token
         with:
           client-id: ${{ vars.OTELBOT_SEMANTIC_CONVENTIONS_GENAI_CLIENT_ID }}
@@ -143,8 +143,8 @@ jobs:
       - name: Create pull request
         if: steps.next.outputs.skip != 'true'
         env:
-          # PRs opened with the app token trigger CI; github.token is a fallback for forks.
-          GH_TOKEN: ${{ steps.otelbot-token.outputs.token || github.token }}
+          # PRs opened with the app token trigger CI.
+          GH_TOKEN: ${{ steps.otelbot-token.outputs.token }}
         run: |
           if git diff --quiet; then
             echo "schema_url already up to date"
