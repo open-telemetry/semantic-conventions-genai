@@ -14,19 +14,23 @@ Each release has these assets:
 - `manifest-dev.yaml` - publication manifest, served at the schema URL.
 - `registry-dev.yaml` - resolved registry, referenced from the manifest.
 
-## Making a release
+## Preparing a release
 
-1. Run the [Prepare release](.github/workflows/prepare-release.yml)
-   workflow. It uses the version from `model/manifest.yaml` unless one is provided.
-   It opens a pull request that sets the release `schema_url` and renders
-   [CHANGELOG.md](CHANGELOG.md) from [changelog.d/](changelog.d/).
+1. Run the [prepare release workflow](.github/workflows/prepare-release.yml)
+   with the version to release, e.g. `0.1.0`. It sets the release `schema_url`,
+   renders a `## v{version}` section in [CHANGELOG.md](CHANGELOG.md) from
+   [changelog.d/](changelog.d/), and opens a pull request labeled `release`.
 2. Review and merge the pull request.
 
-Merging runs the [Release](.github/workflows/release.yml)
-workflow. It tags the merge commit, publishes the GitHub release with the
-changelog section and the assets, and opens a pull request bumping `main` to the
-next minor `-unreleased` version. Review and merge it.
+## Making the release
 
-If the Release workflow fails, use **Re-run failed jobs**. If the fix needs a
-workflow change and the release isn't published yet, run the workflow manually
-with the version and the merge commit SHA.
+Merging the release pull request triggers the
+[release workflow](.github/workflows/release.yml). It reads the topmost version
+in `CHANGELOG.md`, creates the `v{version}` tag and publishes a GitHub release
+with that changelog section and the assets. It then opens a pull request that
+moves `main` to the next minor `-unreleased` version. Review and merge it.
+
+On merge, the workflow only runs for pull requests with the `release` label.
+It can also be run manually against `main` if the release pull request was
+merged without triggering it. If only the bump job failed, re-run the failed
+job.
