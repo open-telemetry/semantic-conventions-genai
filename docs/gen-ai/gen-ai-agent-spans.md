@@ -265,8 +265,9 @@ span name format.
 the canonical name of exception that occurred, or another low-cardinality error identifier.
 Instrumentations SHOULD document the list of errors they report.
 
-**[3] `gen_ai.agent.invocation.root`:** `true` when the invocation does not run within another `invoke_agent`,
-`invoke_workflow`, or `invoke_runner` invocation; `false` when it does.
+**[3] `gen_ai.agent.invocation.root`:** `true` when the invocation does not run within another invocation
+(described by `gen_ai.invoke_agent.internal`, whether or not its span is
+recorded); `false` when it does.
 
 Instrumentations SHOULD track active invocations in context (for example,
 OpenTelemetry Context) independently of span recording, using keys that
