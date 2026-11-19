@@ -65,3 +65,8 @@ scenarios:
             mcp.method.name: resources/read
           kind: server
           type: mcp.server
+    metrics:
+      - mcp.client.operation.active
+      - mcp.client.operation.duration
+      - mcp.server.operation.active
+      - mcp.server.operation.duration

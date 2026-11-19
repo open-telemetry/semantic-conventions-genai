@@ -119,6 +119,8 @@ SEMCONV_DOC_LINKS: dict[str, str] = {
     "gen_ai.invoke_agent.tool_calls": "../../docs/gen-ai/gen-ai-metrics.md#metric-gen_aiinvoke_agenttool_calls",
     "mcp.client.operation.duration": "../../docs/gen-ai/mcp.md#metric-mcpclientoperationduration",
     "mcp.server.operation.duration": "../../docs/gen-ai/mcp.md#metric-mcpserveroperationduration",
+    "mcp.client.operation.active": "../../docs/gen-ai/mcp.md#metric-mcpclientoperationactive",
+    "mcp.server.operation.active": "../../docs/gen-ai/mcp.md#metric-mcpserveroperationactive",
 }
 
 

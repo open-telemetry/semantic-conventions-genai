@@ -2,10 +2,12 @@
 
 import asyncio
 import contextlib
+import contextvars
 import json
 import socket
 import time
 from collections.abc import AsyncIterator
+from dataclasses import dataclass
 from typing import Any
 
 import anyio
@@ -61,38 +63,109 @@ _server_operation_duration = _reference_meter.create_histogram(
     ),
     explicit_bucket_boundaries_advisory=_MCP_DURATION_BUCKETS,
 )
+_client_operation_active = _reference_meter.create_up_down_counter(
+    "mcp.client.operation.active",
+    unit="{operation}",
+    description="The number of MCP requests in progress as observed on the sender.",
+)
+_server_operation_active = _reference_meter.create_up_down_counter(
+    "mcp.server.operation.active",
+    unit="{operation}",
+    description="The number of MCP requests in progress as observed on the receiver.",
+)
+
+
+@dataclass
+class _ServerActiveRequestSlot:
+    """Pairs `_server_operation_active` increment with ASGI response-send completion."""
+
+    active_attrs: dict[str, Any] | None = None
+    decremented: bool = False
+
+    def decrement_once(self) -> None:
+        if self.active_attrs is not None and not self.decremented:
+            self.decremented = True
+            _server_operation_active.add(-1, self.active_attrs)
+
+
+_current_server_slot: contextvars.ContextVar[_ServerActiveRequestSlot | None] = contextvars.ContextVar(
+    "_current_server_slot", default=None
+)
+
+
+class _ServerActiveASGIWrapper:
+    """Decrements `mcp.server.operation.active` once the HTTP response finishes sending."""
+
+    def __init__(self, app: Any) -> None:
+        self._app = app
+
+    async def __call__(self, scope: dict[str, Any], receive: Any, send: Any) -> None:
+        if scope.get("type") != "http" or scope.get("method") != "POST":
+            await self._app(scope, receive, send)
+            return
+
+        slot = _ServerActiveRequestSlot()
+
+        async def wrapped_send(message: dict[str, Any]) -> None:
+            await send(message)
+            if message.get("type") == "http.response.body" and not message.get("more_body", False):
+                slot.decrement_once()
+
+        token = _current_server_slot.set(slot)
+        try:
+            await self._app(scope, receive, wrapped_send)
+        finally:
+            slot.decrement_once()
+            _current_server_slot.reset(token)
 
 
 class ReferenceMCPServerMiddleware(ServerMiddleware[Any]):
-    """MCP server middleware that emits `mcp.server` spans and `mcp.server.operation.duration`."""
+    """MCP server middleware that emits `mcp.server` spans and server operation metrics."""
 
     async def __call__(self, ctx: ServerRequestContext[Any, Any], call_next: CallNext) -> HandlerResult:
-        if ctx.method in ("initialize", "notifications/initialized"):
+        if ctx.method == "notifications/initialized":
             return await call_next(ctx)
 
         params = ctx.params or {}
         name = params.get("name")
         target = name if isinstance(name, str) else None
-        span_name = f"{ctx.method} {target}" if target else ctx.method
 
-        metric_attrs: dict[str, Any] = {
+        active_attrs: dict[str, Any] = {
             "mcp.method.name": ctx.method,
-            "mcp.protocol.version": ctx.protocol_version,
             "network.transport": "tcp",
             "network.protocol.name": "http",
         }
+        protocol_version = ctx.protocol_version or params.get("protocolVersion")
+        if isinstance(protocol_version, str) and protocol_version:
+            active_attrs["mcp.protocol.version"] = protocol_version
         if ctx.request is not None:
             http_version = ctx.request.scope.get("http_version")
             if http_version:
-                metric_attrs["network.protocol.version"] = str(http_version)
+                active_attrs["network.protocol.version"] = str(http_version)
 
         if ctx.method == "tools/call":
-            metric_attrs["gen_ai.operation.name"] = "execute_tool"
+            active_attrs["gen_ai.operation.name"] = "execute_tool"
             if target is not None:
-                metric_attrs["gen_ai.tool.name"] = target
+                active_attrs["gen_ai.tool.name"] = target
         elif ctx.method == "prompts/get" and target is not None:
-            metric_attrs["gen_ai.prompt.name"] = target
-        elif ctx.method == "resources/read" and params.get("uri") is not None:
+            active_attrs["gen_ai.prompt.name"] = target
+
+        slot = _current_server_slot.get()
+        if ctx.request_id is not None:
+            _server_operation_active.add(1, active_attrs)
+            if slot is not None:
+                slot.active_attrs = active_attrs
+
+        if ctx.method == "initialize":
+            try:
+                return await call_next(ctx)
+            finally:
+                if ctx.request_id is not None and slot is None:
+                    _server_operation_active.add(-1, active_attrs)
+
+        span_name = f"{ctx.method} {target}" if target else ctx.method
+        metric_attrs = dict(active_attrs)
+        if ctx.method == "resources/read" and params.get("uri") is not None:
             metric_attrs["mcp.resource.uri"] = str(params["uri"])
 
         span_attrs = dict(metric_attrs)
@@ -174,6 +247,8 @@ class ReferenceMCPServerMiddleware(ServerMiddleware[Any]):
                 return result
             finally:
                 assert "gen_ai.prompt.variables" not in metric_attrs
+                if ctx.request_id is not None and slot is None:
+                    _server_operation_active.add(-1, active_attrs)
                 _server_operation_duration.record(time.perf_counter() - start_time, metric_attrs)
 
 
@@ -208,7 +283,7 @@ def _free_port() -> int:
 @contextlib.asynccontextmanager
 async def _serve_mcp(mcp_server: MCPServer) -> AsyncIterator[str]:
     port = _free_port()
-    app = mcp_server.streamable_http_app(json_response=True)
+    app = _ServerActiveASGIWrapper(mcp_server.streamable_http_app(json_response=True))
     server = uvicorn.Server(uvicorn.Config(app, host="127.0.0.1", port=port, log_level="warning"))
     serving = asyncio.create_task(server.serve())
     while not server.started:
@@ -224,7 +299,7 @@ async def _serve_mcp(mcp_server: MCPServer) -> AsyncIterator[str]:
 
 
 class ReferenceMCPClientSession(ClientSession):
-    """MCP client session that emits `mcp.client` spans and `mcp.client.operation.duration` per request."""
+    """MCP client session that emits `mcp.client` spans and client operation metrics per request."""
 
     def __init__(
         self,
@@ -250,40 +325,47 @@ class ReferenceMCPClientSession(ClientSession):
     ) -> Any:
         data = request.model_dump(by_alias=True, mode="json", exclude_none=True)
         method: str = data["method"]
-        if method == "initialize":
-            return await super().send_request(
-                request,
-                result_type,
-                request_read_timeout_seconds=request_read_timeout_seconds,
-                metadata=metadata,
-                progress_callback=progress_callback,
-            )
-
         params: dict[str, Any] = data.get("params") or {}
         name = params.get("name")
         target = name if isinstance(name, str) else None
-        span_name = f"{method} {target}" if target else method
 
-        metric_attrs: dict[str, Any] = {
+        active_attrs: dict[str, Any] = {
             "mcp.method.name": method,
             "network.transport": "tcp",
             "network.protocol.name": "http",
             "network.protocol.version": "1.1",
         }
-        if self._negotiated_version:
-            metric_attrs["mcp.protocol.version"] = self._negotiated_version
+        protocol_version = self._negotiated_version or params.get("protocolVersion")
+        if isinstance(protocol_version, str) and protocol_version:
+            active_attrs["mcp.protocol.version"] = protocol_version
         if self._host:
-            metric_attrs["server.address"] = self._host
+            active_attrs["server.address"] = self._host
         if self._port is not None:
-            metric_attrs["server.port"] = self._port
+            active_attrs["server.port"] = self._port
 
         if method == "tools/call":
-            metric_attrs["gen_ai.operation.name"] = "execute_tool"
+            active_attrs["gen_ai.operation.name"] = "execute_tool"
             if target is not None:
-                metric_attrs["gen_ai.tool.name"] = target
+                active_attrs["gen_ai.tool.name"] = target
         elif method == "prompts/get" and target is not None:
-            metric_attrs["gen_ai.prompt.name"] = target
-        elif method == "resources/read" and params.get("uri") is not None:
+            active_attrs["gen_ai.prompt.name"] = target
+
+        if method == "initialize":
+            _client_operation_active.add(1, active_attrs)
+            try:
+                return await super().send_request(
+                    request,
+                    result_type,
+                    request_read_timeout_seconds=request_read_timeout_seconds,
+                    metadata=metadata,
+                    progress_callback=progress_callback,
+                )
+            finally:
+                _client_operation_active.add(-1, active_attrs)
+
+        span_name = f"{method} {target}" if target else method
+        metric_attrs = dict(active_attrs)
+        if method == "resources/read" and params.get("uri") is not None:
             metric_attrs["mcp.resource.uri"] = str(params["uri"])
 
         span_attrs = dict(metric_attrs)
@@ -293,6 +375,7 @@ class ReferenceMCPClientSession(ClientSession):
         if self._transport.session_id:
             span_attrs["mcp.session.id"] = self._transport.session_id
 
+        _client_operation_active.add(1, active_attrs)
         start_time = time.perf_counter()
         with _reference_tracer.start_as_current_span(
             span_name,
@@ -344,6 +427,7 @@ class ReferenceMCPClientSession(ClientSession):
                 return result
             finally:
                 assert "gen_ai.prompt.variables" not in metric_attrs
+                _client_operation_active.add(-1, active_attrs)
                 _client_operation_duration.record(time.perf_counter() - start_time, metric_attrs)
 
 

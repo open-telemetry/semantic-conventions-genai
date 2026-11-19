@@ -86,4 +86,6 @@ Run `uv run update-reports` to regenerate.
 | [Invoke Agent Tool Calls](reports/gen-ai-invoke-agent-tool-calls-metric.md) | adk_a2a, google-adk |
 | [MCP Client Operation Duration](reports/mcp-client-operation-duration-metric.md) | mcp |
 | [MCP Server Operation Duration](reports/mcp-server-operation-duration-metric.md) | mcp |
+| [MCP Client Operation Active](reports/mcp-client-operation-active-metric.md) | mcp |
+| [MCP Server Operation Active](reports/mcp-server-operation-active-metric.md) | mcp |
 <!-- status:end -->

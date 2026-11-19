@@ -15,6 +15,8 @@ linkTitle: Model Context Protocol
 - [Metrics](#metrics)
   - [Metric: `mcp.client.operation.duration`](#metric-mcpclientoperationduration)
   - [Metric: `mcp.server.operation.duration`](#metric-mcpserveroperationduration)
+  - [Metric: `mcp.client.operation.active`](#metric-mcpclientoperationactive)
+  - [Metric: `mcp.server.operation.active`](#metric-mcpserveroperationactive)
   - [Metric: `mcp.client.session.duration`](#metric-mcpclientsessionduration)
   - [Metric: `mcp.server.session.duration`](#metric-mcpserversessionduration)
 - [Recording MCP transport](#recording-mcp-transport)
@@ -210,7 +212,7 @@ All JSON-RPC error codes SHOULD be considered errors.
 
 **[6] `gen_ai.operation.name`:** SHOULD be set to `execute_tool` when the operation describes a tool call and SHOULD NOT be set otherwise.
 
-**[7] `gen_ai.operation.name`:** Populating this attribute for tool calling along with `mcp.method.name` allows consumers to treat MCP tool calls spans similarly with other tool call types.
+**[7] `gen_ai.operation.name`:** Populating this attribute for tool calling along with `mcp.method.name` allows consumers to treat MCP tool calls similarly to other tool call types.
 
 **[8] `mcp.session.id`:** When the MCP request or notification is part of a session.
 
@@ -267,41 +269,6 @@ This attribute MUST be recorded as an [AnyValue](https://opentelemetry.io/docs/s
 | Value | Description | Stability |
 | --- | --- | --- |
 | `_OTHER` | A fallback error value to be used when the instrumentation doesn't define a custom value. | ![Stable](https://img.shields.io/badge/-stable-lightgreen) |
-
----
-
-`gen_ai.operation.name` has the following list of well-known values. If one of them applies, then the respective value MUST be used; otherwise, a custom value MAY be used.
-
-| Value | Description | Stability |
-| --- | --- | --- |
-| `chat` | Chat completion operation such as [OpenAI Chat API](https://platform.openai.com/docs/api-reference/chat) | ![Development](https://img.shields.io/badge/-development-blue) |
-| `create_agent` | Create GenAI agent | ![Development](https://img.shields.io/badge/-development-blue) |
-| `create_memory` | Create new memory records | ![Development](https://img.shields.io/badge/-development-blue) |
-| `create_memory_store` | Create or initialize a memory store | ![Development](https://img.shields.io/badge/-development-blue) |
-| `delete_memory` | Delete memory records | ![Development](https://img.shields.io/badge/-development-blue) |
-| `delete_memory_store` | Delete or deprovision a memory store | ![Development](https://img.shields.io/badge/-development-blue) |
-| `embeddings` | Embeddings operation such as [OpenAI Create embeddings API](https://platform.openai.com/docs/api-reference/embeddings/create) | ![Development](https://img.shields.io/badge/-development-blue) |
-| `execute_tool` | Execute a tool | ![Development](https://img.shields.io/badge/-development-blue) |
-| `fetch_response` | Fetch a previously generated model response by its identifier, without performing inference, such as [OpenAI Get a model response](https://platform.openai.com/docs/api-reference/responses/get) [16] | ![Development](https://img.shields.io/badge/-development-blue) |
-| `generate_content` | Multimodal content generation operation such as [Gemini Generate Content](https://ai.google.dev/api/generate-content) | ![Development](https://img.shields.io/badge/-development-blue) |
-| `invoke_agent` | Invoke GenAI agent | ![Development](https://img.shields.io/badge/-development-blue) |
-| `invoke_runner` | Invoke a framework runner that is not itself an agent or a workflow | ![Development](https://img.shields.io/badge/-development-blue) |
-| `invoke_workflow` | Invoke GenAI workflow | ![Development](https://img.shields.io/badge/-development-blue) |
-| `plan` | Agent planning or task decomposition phase | ![Development](https://img.shields.io/badge/-development-blue) |
-| `realtime_inference` | Server-side model generation within a realtime, bidirectional streaming session such as [OpenAI Realtime](https://platform.openai.com/docs/guides/realtime) or [Gemini Live](https://ai.google.dev/gemini-api/docs/live). | ![Development](https://img.shields.io/badge/-development-blue) |
-| `retrieval` | Execution of a retrieval pipeline that returns documents relevant to a query [17] | ![Development](https://img.shields.io/badge/-development-blue) |
-| `search_memory` | Search/query memories from a memory store | ![Development](https://img.shields.io/badge/-development-blue) |
-| `text_completion` | Text completions operation such as [OpenAI Completions API (Legacy)](https://platform.openai.com/docs/api-reference/completions) | ![Development](https://img.shields.io/badge/-development-blue) |
-| `update_memory` | Update existing memory records | ![Development](https://img.shields.io/badge/-development-blue) |
-| `upsert_memory` | Create or update memory records without the caller choosing which | ![Development](https://img.shields.io/badge/-development-blue) |
-| `user_speech` | Describes the process of recording user speech input. | ![Development](https://img.shields.io/badge/-development-blue) |
-
-**[16]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
-
-**[17]:** Examples include LangChain, LlamaIndex, and Haystack retrievers.
-A retrieval pipeline usually combines other operations such as embeddings,
-database queries, web search, or reranking. These operations SHOULD be
-reported following their own conventions.
 
 ---
 
@@ -455,7 +422,7 @@ Any other error code SHOULD be considered an error.
 
 **[8] `gen_ai.operation.name`:** SHOULD be set to `execute_tool` when the operation describes a tool call and SHOULD NOT be set otherwise.
 
-**[9] `gen_ai.operation.name`:** Populating this attribute for tool calling along with `mcp.method.name` allows consumers to treat MCP tool calls spans similarly with other tool call types.
+**[9] `gen_ai.operation.name`:** Populating this attribute for tool calling along with `mcp.method.name` allows consumers to treat MCP tool calls similarly to other tool call types.
 
 **[10] `mcp.session.id`:** When the MCP request or notification is part of a session.
 
@@ -508,41 +475,6 @@ This attribute MUST be recorded as an [AnyValue](https://opentelemetry.io/docs/s
 | Value | Description | Stability |
 | --- | --- | --- |
 | `_OTHER` | A fallback error value to be used when the instrumentation doesn't define a custom value. | ![Stable](https://img.shields.io/badge/-stable-lightgreen) |
-
----
-
-`gen_ai.operation.name` has the following list of well-known values. If one of them applies, then the respective value MUST be used; otherwise, a custom value MAY be used.
-
-| Value | Description | Stability |
-| --- | --- | --- |
-| `chat` | Chat completion operation such as [OpenAI Chat API](https://platform.openai.com/docs/api-reference/chat) | ![Development](https://img.shields.io/badge/-development-blue) |
-| `create_agent` | Create GenAI agent | ![Development](https://img.shields.io/badge/-development-blue) |
-| `create_memory` | Create new memory records | ![Development](https://img.shields.io/badge/-development-blue) |
-| `create_memory_store` | Create or initialize a memory store | ![Development](https://img.shields.io/badge/-development-blue) |
-| `delete_memory` | Delete memory records | ![Development](https://img.shields.io/badge/-development-blue) |
-| `delete_memory_store` | Delete or deprovision a memory store | ![Development](https://img.shields.io/badge/-development-blue) |
-| `embeddings` | Embeddings operation such as [OpenAI Create embeddings API](https://platform.openai.com/docs/api-reference/embeddings/create) | ![Development](https://img.shields.io/badge/-development-blue) |
-| `execute_tool` | Execute a tool | ![Development](https://img.shields.io/badge/-development-blue) |
-| `fetch_response` | Fetch a previously generated model response by its identifier, without performing inference, such as [OpenAI Get a model response](https://platform.openai.com/docs/api-reference/responses/get) [16] | ![Development](https://img.shields.io/badge/-development-blue) |
-| `generate_content` | Multimodal content generation operation such as [Gemini Generate Content](https://ai.google.dev/api/generate-content) | ![Development](https://img.shields.io/badge/-development-blue) |
-| `invoke_agent` | Invoke GenAI agent | ![Development](https://img.shields.io/badge/-development-blue) |
-| `invoke_runner` | Invoke a framework runner that is not itself an agent or a workflow | ![Development](https://img.shields.io/badge/-development-blue) |
-| `invoke_workflow` | Invoke GenAI workflow | ![Development](https://img.shields.io/badge/-development-blue) |
-| `plan` | Agent planning or task decomposition phase | ![Development](https://img.shields.io/badge/-development-blue) |
-| `realtime_inference` | Server-side model generation within a realtime, bidirectional streaming session such as [OpenAI Realtime](https://platform.openai.com/docs/guides/realtime) or [Gemini Live](https://ai.google.dev/gemini-api/docs/live). | ![Development](https://img.shields.io/badge/-development-blue) |
-| `retrieval` | Execution of a retrieval pipeline that returns documents relevant to a query [17] | ![Development](https://img.shields.io/badge/-development-blue) |
-| `search_memory` | Search/query memories from a memory store | ![Development](https://img.shields.io/badge/-development-blue) |
-| `text_completion` | Text completions operation such as [OpenAI Completions API (Legacy)](https://platform.openai.com/docs/api-reference/completions) | ![Development](https://img.shields.io/badge/-development-blue) |
-| `update_memory` | Update existing memory records | ![Development](https://img.shields.io/badge/-development-blue) |
-| `upsert_memory` | Create or update memory records without the caller choosing which | ![Development](https://img.shields.io/badge/-development-blue) |
-| `user_speech` | Describes the process of recording user speech input. | ![Development](https://img.shields.io/badge/-development-blue) |
-
-**[16]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
-
-**[17]:** Examples include LangChain, LlamaIndex, and Haystack retrievers.
-A retrieval pipeline usually combines other operations such as embeddings,
-database queries, web search, or reranking. These operations SHOULD be
-reported following their own conventions.
 
 ---
 
@@ -656,7 +588,7 @@ All JSON-RPC error codes SHOULD be considered errors.
 
 **[3] `gen_ai.operation.name`:** SHOULD be set to `execute_tool` when the operation describes a tool call and SHOULD NOT be set otherwise.
 
-**[4] `gen_ai.operation.name`:** Populating this attribute for tool calling along with `mcp.method.name` allows consumers to treat MCP tool calls spans similarly with other tool call types.
+**[4] `gen_ai.operation.name`:** Populating this attribute for tool calling along with `mcp.method.name` allows consumers to treat MCP tool calls similarly to other tool call types.
 
 **[5] `network.protocol.name`:** The value SHOULD be normalized to lowercase.
 
@@ -676,41 +608,6 @@ is HTTP. It SHOULD be set to `pipe` if the transport is stdio.
 | Value | Description | Stability |
 | --- | --- | --- |
 | `_OTHER` | A fallback error value to be used when the instrumentation doesn't define a custom value. | ![Stable](https://img.shields.io/badge/-stable-lightgreen) |
-
----
-
-`gen_ai.operation.name` has the following list of well-known values. If one of them applies, then the respective value MUST be used; otherwise, a custom value MAY be used.
-
-| Value | Description | Stability |
-| --- | --- | --- |
-| `chat` | Chat completion operation such as [OpenAI Chat API](https://platform.openai.com/docs/api-reference/chat) | ![Development](https://img.shields.io/badge/-development-blue) |
-| `create_agent` | Create GenAI agent | ![Development](https://img.shields.io/badge/-development-blue) |
-| `create_memory` | Create new memory records | ![Development](https://img.shields.io/badge/-development-blue) |
-| `create_memory_store` | Create or initialize a memory store | ![Development](https://img.shields.io/badge/-development-blue) |
-| `delete_memory` | Delete memory records | ![Development](https://img.shields.io/badge/-development-blue) |
-| `delete_memory_store` | Delete or deprovision a memory store | ![Development](https://img.shields.io/badge/-development-blue) |
-| `embeddings` | Embeddings operation such as [OpenAI Create embeddings API](https://platform.openai.com/docs/api-reference/embeddings/create) | ![Development](https://img.shields.io/badge/-development-blue) |
-| `execute_tool` | Execute a tool | ![Development](https://img.shields.io/badge/-development-blue) |
-| `fetch_response` | Fetch a previously generated model response by its identifier, without performing inference, such as [OpenAI Get a model response](https://platform.openai.com/docs/api-reference/responses/get) [10] | ![Development](https://img.shields.io/badge/-development-blue) |
-| `generate_content` | Multimodal content generation operation such as [Gemini Generate Content](https://ai.google.dev/api/generate-content) | ![Development](https://img.shields.io/badge/-development-blue) |
-| `invoke_agent` | Invoke GenAI agent | ![Development](https://img.shields.io/badge/-development-blue) |
-| `invoke_runner` | Invoke a framework runner that is not itself an agent or a workflow | ![Development](https://img.shields.io/badge/-development-blue) |
-| `invoke_workflow` | Invoke GenAI workflow | ![Development](https://img.shields.io/badge/-development-blue) |
-| `plan` | Agent planning or task decomposition phase | ![Development](https://img.shields.io/badge/-development-blue) |
-| `realtime_inference` | Server-side model generation within a realtime, bidirectional streaming session such as [OpenAI Realtime](https://platform.openai.com/docs/guides/realtime) or [Gemini Live](https://ai.google.dev/gemini-api/docs/live). | ![Development](https://img.shields.io/badge/-development-blue) |
-| `retrieval` | Execution of a retrieval pipeline that returns documents relevant to a query [11] | ![Development](https://img.shields.io/badge/-development-blue) |
-| `search_memory` | Search/query memories from a memory store | ![Development](https://img.shields.io/badge/-development-blue) |
-| `text_completion` | Text completions operation such as [OpenAI Completions API (Legacy)](https://platform.openai.com/docs/api-reference/completions) | ![Development](https://img.shields.io/badge/-development-blue) |
-| `update_memory` | Update existing memory records | ![Development](https://img.shields.io/badge/-development-blue) |
-| `upsert_memory` | Create or update memory records without the caller choosing which | ![Development](https://img.shields.io/badge/-development-blue) |
-| `user_speech` | Describes the process of recording user speech input. | ![Development](https://img.shields.io/badge/-development-blue) |
-
-**[10]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
-
-**[11]:** Examples include LangChain, LlamaIndex, and Haystack retrievers.
-A retrieval pipeline usually combines other operations such as embeddings,
-database queries, web search, or reranking. These operations SHOULD be
-reported following their own conventions.
 
 ---
 
@@ -830,7 +727,7 @@ Any other error code SHOULD be considered an error.
 
 **[3] `gen_ai.operation.name`:** SHOULD be set to `execute_tool` when the operation describes a tool call and SHOULD NOT be set otherwise.
 
-**[4] `gen_ai.operation.name`:** Populating this attribute for tool calling along with `mcp.method.name` allows consumers to treat MCP tool calls spans similarly with other tool call types.
+**[4] `gen_ai.operation.name`:** Populating this attribute for tool calling along with `mcp.method.name` allows consumers to treat MCP tool calls similarly to other tool call types.
 
 **[5] `network.protocol.name`:** The value SHOULD be normalized to lowercase.
 
@@ -849,38 +746,189 @@ is HTTP. It SHOULD be set to `pipe` if the transport is stdio.
 
 ---
 
-`gen_ai.operation.name` has the following list of well-known values. If one of them applies, then the respective value MUST be used; otherwise, a custom value MAY be used.
+`mcp.method.name` has the following list of well-known values. If one of them applies, then the respective value MUST be used; otherwise, a custom value MAY be used.
 
 | Value | Description | Stability |
 | --- | --- | --- |
-| `chat` | Chat completion operation such as [OpenAI Chat API](https://platform.openai.com/docs/api-reference/chat) | ![Development](https://img.shields.io/badge/-development-blue) |
-| `create_agent` | Create GenAI agent | ![Development](https://img.shields.io/badge/-development-blue) |
-| `create_memory` | Create new memory records | ![Development](https://img.shields.io/badge/-development-blue) |
-| `create_memory_store` | Create or initialize a memory store | ![Development](https://img.shields.io/badge/-development-blue) |
-| `delete_memory` | Delete memory records | ![Development](https://img.shields.io/badge/-development-blue) |
-| `delete_memory_store` | Delete or deprovision a memory store | ![Development](https://img.shields.io/badge/-development-blue) |
-| `embeddings` | Embeddings operation such as [OpenAI Create embeddings API](https://platform.openai.com/docs/api-reference/embeddings/create) | ![Development](https://img.shields.io/badge/-development-blue) |
-| `execute_tool` | Execute a tool | ![Development](https://img.shields.io/badge/-development-blue) |
-| `fetch_response` | Fetch a previously generated model response by its identifier, without performing inference, such as [OpenAI Get a model response](https://platform.openai.com/docs/api-reference/responses/get) [8] | ![Development](https://img.shields.io/badge/-development-blue) |
-| `generate_content` | Multimodal content generation operation such as [Gemini Generate Content](https://ai.google.dev/api/generate-content) | ![Development](https://img.shields.io/badge/-development-blue) |
-| `invoke_agent` | Invoke GenAI agent | ![Development](https://img.shields.io/badge/-development-blue) |
-| `invoke_runner` | Invoke a framework runner that is not itself an agent or a workflow | ![Development](https://img.shields.io/badge/-development-blue) |
-| `invoke_workflow` | Invoke GenAI workflow | ![Development](https://img.shields.io/badge/-development-blue) |
-| `plan` | Agent planning or task decomposition phase | ![Development](https://img.shields.io/badge/-development-blue) |
-| `realtime_inference` | Server-side model generation within a realtime, bidirectional streaming session such as [OpenAI Realtime](https://platform.openai.com/docs/guides/realtime) or [Gemini Live](https://ai.google.dev/gemini-api/docs/live). | ![Development](https://img.shields.io/badge/-development-blue) |
-| `retrieval` | Execution of a retrieval pipeline that returns documents relevant to a query [9] | ![Development](https://img.shields.io/badge/-development-blue) |
-| `search_memory` | Search/query memories from a memory store | ![Development](https://img.shields.io/badge/-development-blue) |
-| `text_completion` | Text completions operation such as [OpenAI Completions API (Legacy)](https://platform.openai.com/docs/api-reference/completions) | ![Development](https://img.shields.io/badge/-development-blue) |
-| `update_memory` | Update existing memory records | ![Development](https://img.shields.io/badge/-development-blue) |
-| `upsert_memory` | Create or update memory records without the caller choosing which | ![Development](https://img.shields.io/badge/-development-blue) |
-| `user_speech` | Describes the process of recording user speech input. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `completion/complete` | Request to complete a prompt. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `elicitation/create` | Request from the server to elicit additional information from the user via the client | ![Development](https://img.shields.io/badge/-development-blue) |
+| `initialize` | Request to initialize the MCP client. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `logging/setLevel` | Request to set the logging level. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `notifications/cancelled` | Notification cancelling a previously-issued request. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `notifications/initialized` | Notification indicating that the MCP client has been initialized. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `notifications/message` | Notification indicating that a message has been received. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `notifications/progress` | Notification indicating the progress for a long-running operation. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `notifications/prompts/list_changed` | Notification indicating that the list of prompts has changed. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `notifications/resources/list_changed` | Notification indicating that the list of resources has changed. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `notifications/resources/updated` | Notification indicating that a resource has been updated. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `notifications/roots/list_changed` | Notification indicating that the list of roots has changed. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `notifications/tools/list_changed` | Notification indicating that the list of tools has changed. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `ping` | Request to check that the other party is still alive. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `prompts/get` | Request to get a prompt. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `prompts/list` | Request to list prompts available on server. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `resources/list` | Request to list resources available on server. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `resources/read` | Request to read a resource. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `resources/subscribe` | Request to subscribe to a resource. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `resources/templates/list` | Request to list resource templates available on server. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `resources/unsubscribe` | Request to unsubscribe from resource updates. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `roots/list` | Request to list roots available on server. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `sampling/createMessage` | Request to create a sampling message. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `tools/call` | Request to call a tool. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `tools/list` | Request to list tools available on server. | ![Development](https://img.shields.io/badge/-development-blue) |
 
-**[8]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
+---
 
-**[9]:** Examples include LangChain, LlamaIndex, and Haystack retrievers.
-A retrieval pipeline usually combines other operations such as embeddings,
-database queries, web search, or reranking. These operations SHOULD be
-reported following their own conventions.
+`network.transport` has the following list of well-known values. If one of them applies, then the respective value MUST be used; otherwise, a custom value MAY be used.
+
+| Value | Description | Stability |
+| --- | --- | --- |
+| `pipe` | Named or anonymous pipe. | ![Stable](https://img.shields.io/badge/-stable-lightgreen) |
+| `quic` | QUIC | ![Stable](https://img.shields.io/badge/-stable-lightgreen) |
+| `tcp` | TCP | ![Stable](https://img.shields.io/badge/-stable-lightgreen) |
+| `udp` | UDP | ![Stable](https://img.shields.io/badge/-stable-lightgreen) |
+| `unix` | UNIX domain socket | ![Stable](https://img.shields.io/badge/-stable-lightgreen) |
+
+<!-- prettier-ignore-end -->
+<!-- END AUTOGENERATED TEXT -->
+<!-- endweaver -->
+
+### Metric: `mcp.client.operation.active`
+
+<!-- weaver .registry.metrics[] | select(.name == "mcp.client.operation.active") -->
+<!-- NOTE: THIS TEXT IS AUTOGENERATED. DO NOT EDIT BY HAND. -->
+<!-- see templates/registry/markdown/snippet.md.j2 -->
+<!-- prettier-ignore-start -->
+
+| Name | Instrument Type | Unit (UCUM) | Description | Stability | Entity Associations |
+| -------- | --------------- | ----------- | -------------- | --------- | ------ |
+| `mcp.client.operation.active` | UpDownCounter | `{operation}` | The number of MCP requests in progress as observed on the sender. [1] | ![Development](https://img.shields.io/badge/-development-blue) | |
+
+**[1]:** Incremented when the sender starts sending the request and decremented when
+the response is received, or when the request is cancelled, times out, or
+is still pending when the connection closes.
+
+This metric SHOULD NOT be recorded for notifications.
+
+**Requirement level:** [Opt-In](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/general/signal-requirement-level.md).
+
+**Attributes:**
+
+| Key | Stability | [Requirement Level](https://opentelemetry.io/docs/specs/semconv/general/attribute-requirement-level/) | Value Type | Description | Example Values |
+| --- | --- | --- | --- | --- | --- |
+| [`mcp.method.name`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Required` | string | The name of the request or notification method. | `notifications/cancelled`; `initialize`; `notifications/initialized` |
+| [`gen_ai.prompt.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When operation is related to a specific prompt. | string | The name of the prompt or prompt template provided in the request or response. | `analyze-code` |
+| [`gen_ai.tool.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When operation is related to a specific tool. | string | Name of the tool utilized by the agent. | `Flights` |
+| [`gen_ai.operation.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` [1] | string | The name of the GenAI operation being performed. [2] | `execute_tool` |
+| [`jsonrpc.protocol.version`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/jsonrpc.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` When it's not `2.0`. | string | Protocol version, as specified in the `jsonrpc` property of the request and its corresponding response. | `2.0`; `1.0` |
+| [`mcp.protocol.version`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The [version](https://modelcontextprotocol.io/specification/versioning) of the Model Context Protocol used. | `2025-06-18` |
+| [`network.protocol.name`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When applicable. | string | [OSI application layer](https://wikipedia.org/wiki/Application_layer) or non-OSI equivalent. [3] | `http`; `websocket` |
+| [`network.protocol.version`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When applicable. | string | The actual version of the protocol used for network communication. | `1.1`; `2` |
+| [`network.transport`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | The transport protocol used for the observed MCP operation. [4] | `tcp`; `quic`; `pipe` |
+| [`server.address`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` If applicable. | string | Server domain name if available without reverse DNS lookup; otherwise, IP address or UNIX domain socket name. [5] | `example.com`; `10.1.2.80`; `/tmp/my.sock` |
+| [`server.port`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When `server.address` is set. | int | Server port number. [6] | `80`; `8080`; `443` |
+
+**[1] `gen_ai.operation.name`:** SHOULD be set to `execute_tool` when the operation describes a tool call and SHOULD NOT be set otherwise.
+
+**[2] `gen_ai.operation.name`:** Populating this attribute for tool calling along with `mcp.method.name` allows consumers to treat MCP tool calls similarly to other tool call types.
+
+**[3] `network.protocol.name`:** The value SHOULD be normalized to lowercase.
+
+**[4] `network.transport`:** This attribute SHOULD be set to `tcp` or `quic` if the transport protocol
+is HTTP. It SHOULD be set to `pipe` if the transport is stdio.
+
+**[5] `server.address`:** When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent the server address behind any intermediaries, for example proxies, if it's available.
+
+**[6] `server.port`:** When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries, for example proxies, if it's available.
+
+---
+
+`mcp.method.name` has the following list of well-known values. If one of them applies, then the respective value MUST be used; otherwise, a custom value MAY be used.
+
+| Value | Description | Stability |
+| --- | --- | --- |
+| `completion/complete` | Request to complete a prompt. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `elicitation/create` | Request from the server to elicit additional information from the user via the client | ![Development](https://img.shields.io/badge/-development-blue) |
+| `initialize` | Request to initialize the MCP client. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `logging/setLevel` | Request to set the logging level. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `notifications/cancelled` | Notification cancelling a previously-issued request. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `notifications/initialized` | Notification indicating that the MCP client has been initialized. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `notifications/message` | Notification indicating that a message has been received. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `notifications/progress` | Notification indicating the progress for a long-running operation. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `notifications/prompts/list_changed` | Notification indicating that the list of prompts has changed. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `notifications/resources/list_changed` | Notification indicating that the list of resources has changed. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `notifications/resources/updated` | Notification indicating that a resource has been updated. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `notifications/roots/list_changed` | Notification indicating that the list of roots has changed. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `notifications/tools/list_changed` | Notification indicating that the list of tools has changed. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `ping` | Request to check that the other party is still alive. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `prompts/get` | Request to get a prompt. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `prompts/list` | Request to list prompts available on server. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `resources/list` | Request to list resources available on server. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `resources/read` | Request to read a resource. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `resources/subscribe` | Request to subscribe to a resource. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `resources/templates/list` | Request to list resource templates available on server. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `resources/unsubscribe` | Request to unsubscribe from resource updates. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `roots/list` | Request to list roots available on server. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `sampling/createMessage` | Request to create a sampling message. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `tools/call` | Request to call a tool. | ![Development](https://img.shields.io/badge/-development-blue) |
+| `tools/list` | Request to list tools available on server. | ![Development](https://img.shields.io/badge/-development-blue) |
+
+---
+
+`network.transport` has the following list of well-known values. If one of them applies, then the respective value MUST be used; otherwise, a custom value MAY be used.
+
+| Value | Description | Stability |
+| --- | --- | --- |
+| `pipe` | Named or anonymous pipe. | ![Stable](https://img.shields.io/badge/-stable-lightgreen) |
+| `quic` | QUIC | ![Stable](https://img.shields.io/badge/-stable-lightgreen) |
+| `tcp` | TCP | ![Stable](https://img.shields.io/badge/-stable-lightgreen) |
+| `udp` | UDP | ![Stable](https://img.shields.io/badge/-stable-lightgreen) |
+| `unix` | UNIX domain socket | ![Stable](https://img.shields.io/badge/-stable-lightgreen) |
+
+<!-- prettier-ignore-end -->
+<!-- END AUTOGENERATED TEXT -->
+<!-- endweaver -->
+
+### Metric: `mcp.server.operation.active`
+
+<!-- weaver .registry.metrics[] | select(.name == "mcp.server.operation.active") -->
+<!-- NOTE: THIS TEXT IS AUTOGENERATED. DO NOT EDIT BY HAND. -->
+<!-- see templates/registry/markdown/snippet.md.j2 -->
+<!-- prettier-ignore-start -->
+
+| Name | Instrument Type | Unit (UCUM) | Description | Stability | Entity Associations |
+| -------- | --------------- | ----------- | -------------- | --------- | ------ |
+| `mcp.server.operation.active` | UpDownCounter | `{operation}` | The number of MCP requests in progress as observed on the receiver. [1] | ![Development](https://img.shields.io/badge/-development-blue) | |
+
+**[1]:** Incremented when the receiver receives the request and decremented when
+the response is sent, or when the request is cancelled or is still pending
+when the connection closes.
+
+This metric SHOULD NOT be recorded for notifications.
+
+**Requirement level:** [Opt-In](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/general/signal-requirement-level.md).
+
+**Attributes:**
+
+| Key | Stability | [Requirement Level](https://opentelemetry.io/docs/specs/semconv/general/attribute-requirement-level/) | Value Type | Description | Example Values |
+| --- | --- | --- | --- | --- | --- |
+| [`mcp.method.name`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Required` | string | The name of the request or notification method. | `notifications/cancelled`; `initialize`; `notifications/initialized` |
+| [`gen_ai.prompt.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When operation is related to a specific prompt. | string | The name of the prompt or prompt template provided in the request or response. | `analyze-code` |
+| [`gen_ai.tool.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When operation is related to a specific tool. | string | Name of the tool utilized by the agent. | `Flights` |
+| [`gen_ai.operation.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` [1] | string | The name of the GenAI operation being performed. [2] | `execute_tool` |
+| [`jsonrpc.protocol.version`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/jsonrpc.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` When it's not `2.0`. | string | Protocol version, as specified in the `jsonrpc` property of the request and its corresponding response. | `2.0`; `1.0` |
+| [`mcp.protocol.version`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The [version](https://modelcontextprotocol.io/specification/versioning) of the Model Context Protocol used. | `2025-06-18` |
+| [`network.protocol.name`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When applicable. | string | [OSI application layer](https://wikipedia.org/wiki/Application_layer) or non-OSI equivalent. [3] | `http`; `websocket` |
+| [`network.protocol.version`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When applicable. | string | The actual version of the protocol used for network communication. | `1.1`; `2` |
+| [`network.transport`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | The transport protocol used for the observed MCP operation. [4] | `tcp`; `quic`; `pipe` |
+
+**[1] `gen_ai.operation.name`:** SHOULD be set to `execute_tool` when the operation describes a tool call and SHOULD NOT be set otherwise.
+
+**[2] `gen_ai.operation.name`:** Populating this attribute for tool calling along with `mcp.method.name` allows consumers to treat MCP tool calls similarly to other tool call types.
+
+**[3] `network.protocol.name`:** The value SHOULD be normalized to lowercase.
+
+**[4] `network.transport`:** This attribute SHOULD be set to `tcp` or `quic` if the transport protocol
+is HTTP. It SHOULD be set to `pipe` if the transport is stdio.
 
 ---
 

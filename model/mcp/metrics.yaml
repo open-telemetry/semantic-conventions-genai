@@ -68,3 +68,42 @@ metrics:
     stability: development
     attributes:
       - ref_group: mcp.session.metrics.attributes
+
+  - name: mcp.client.operation.active
+    requirement_level: opt_in
+    instrument: updowncounter
+    unit: "{operation}"
+    brief: >
+      The number of MCP requests in progress as observed on the sender.
+    note: |
+      Incremented when the sender starts sending the request and decremented when
+      the response is received, or when the request is cancelled, times out, or
+      is still pending when the connection closes.
+
+      This metric SHOULD NOT be recorded for notifications.
+    stability: development
+    annotations:
+      code_generation:
+        metric_value_type: int
+    attributes:
+      - ref_group: mcp.request.attributes
+      - ref_group: mcp.client.address_and_port.attributes
+
+  - name: mcp.server.operation.active
+    requirement_level: opt_in
+    instrument: updowncounter
+    unit: "{operation}"
+    brief: >
+      The number of MCP requests in progress as observed on the receiver.
+    note: |
+      Incremented when the receiver receives the request and decremented when
+      the response is sent, or when the request is cancelled or is still pending
+      when the connection closes.
+
+      This metric SHOULD NOT be recorded for notifications.
+    stability: development
+    annotations:
+      code_generation:
+        metric_value_type: int
+    attributes:
+      - ref_group: mcp.request.attributes
