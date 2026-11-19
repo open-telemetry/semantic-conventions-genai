@@ -1211,7 +1211,7 @@ def run_chat_with_document_input_reference(client):
       content block. The `file_data` value is a data-URI a native
       instrumentation can parse without a separate Files-API roundtrip.
     - `mime_type` comes from the data-URI prefix (`application/pdf`).
-    - `content` is the base64 payload of the data-URI.
+    - `content` is the data-URI's base64 payload, decoded to bytes.
     - `modality: "document"` is the classification of `application/pdf`
       under the new enum value -- the whole point of this PR.
     """
@@ -1237,7 +1237,7 @@ def run_chat_with_document_input_reference(client):
     # Canonical OTel parts: TextPart + BlobPart(modality="document"). Each
     # field on the BlobPart traces back to the SDK arg above:
     #   - mime_type: parsed from the data-URI prefix
-    #   - content:   the base64 portion of the data-URI
+    #   - content:   the base64 portion of the data-URI, decoded to bytes
     #   - modality:  derived classification of mime_type "application/pdf"
     input_parts = [
         {"type": "text", "content": instruction},
@@ -1245,7 +1245,7 @@ def run_chat_with_document_input_reference(client):
             "type": "blob",
             "modality": "document",
             "mime_type": mime_type,
-            "content": pdf_b64,
+            "content": pdf_bytes,
         },
     ]
     input_messages = [{"role": "user", "parts": input_parts}]
@@ -1321,7 +1321,7 @@ def run_chat_image_reference(client):
             "type": "blob",
             "modality": "image",
             "mime_type": mime_type,
-            "content": image_b64,
+            "content": image_bytes,
         },
     ]
     input_messages = [{"role": "user", "parts": input_parts}]
@@ -1379,7 +1379,8 @@ def run_chat_audio_reference(client):
 
     print("  [chat_audio] audio chat completion (reference implementation)")
     request_model = "gpt-4o-audio-preview"
-    audio_b64 = base64.b64encode(b"\x00" * 16).decode()
+    audio_bytes = b"\x00" * 16
+    audio_b64 = base64.b64encode(audio_bytes).decode()
     messages = [
         {
             "role": "user",
@@ -1404,7 +1405,7 @@ def run_chat_audio_reference(client):
             "role": "user",
             "parts": [
                 {"type": "text", "content": "Respond to this audio clip."},
-                {"type": "blob", "mime_type": "audio/wav", "modality": "audio", "content": audio_b64},
+                {"type": "blob", "mime_type": "audio/wav", "modality": "audio", "content": audio_bytes},
             ],
         }
     ]
