@@ -203,10 +203,14 @@ attributes:
     stability: development
   - key: gen_ai.request.service_tier
     type: string
-    brief: The service tier requested.
-    note: >
-      The value SHOULD be the exact string value sent to the provider.
-    examples: ['auto', 'flex']
+    brief: The service tier requested for the inference operation.
+    note: |
+      The service tier affects processing priority, latency, and price of the operation.
+      The value SHOULD be the one passed to the provider.
+      For example, `service_tier` in [OpenAI](https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create)
+      and [Anthropic](https://platform.claude.com/docs/en/api/service-tiers),
+      or `serviceTier.type` in [Amazon Bedrock](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_runtime_Converse.html).
+    examples: ['auto', 'flex', 'priority']
     stability: development
   - key: gen_ai.response.id
     type: string
