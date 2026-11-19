@@ -1,0 +1,133 @@
+{
+  "spans": {
+    "mcp.client": [
+      "error.type",
+      "gen_ai.operation.name",
+      "gen_ai.prompt.name",
+      "gen_ai.prompt.variables",
+      "gen_ai.tool.call.arguments",
+      "gen_ai.tool.call.result",
+      "gen_ai.tool.name",
+      "jsonrpc.request.id",
+      "mcp.method.name",
+      "mcp.protocol.version",
+      "mcp.resource.uri",
+      "mcp.session.id",
+      "network.protocol.name",
+      "network.protocol.version",
+      "network.transport",
+      "rpc.response.status_code",
+      "server.address",
+      "server.port"
+    ],
+    "mcp.server": [
+      "client.address",
+      "client.port",
+      "error.type",
+      "gen_ai.operation.name",
+      "gen_ai.prompt.name",
+      "gen_ai.prompt.variables",
+      "gen_ai.tool.call.arguments",
+      "gen_ai.tool.call.result",
+      "gen_ai.tool.name",
+      "jsonrpc.request.id",
+      "mcp.method.name",
+      "mcp.protocol.version",
+      "mcp.resource.uri",
+      "mcp.session.id",
+      "network.protocol.name",
+      "network.protocol.version",
+      "network.transport",
+      "rpc.response.status_code"
+    ]
+  },
+  "events": {},
+  "metrics": {
+    "mcp.client.operation.duration": [
+      "error.type",
+      "gen_ai.operation.name",
+      "gen_ai.prompt.name",
+      "gen_ai.tool.name",
+      "mcp.method.name",
+      "mcp.protocol.version",
+      "mcp.resource.uri",
+      "network.protocol.name",
+      "network.protocol.version",
+      "network.transport",
+      "rpc.response.status_code",
+      "server.address",
+      "server.port"
+    ],
+    "mcp.server.operation.duration": [
+      "error.type",
+      "gen_ai.operation.name",
+      "gen_ai.prompt.name",
+      "gen_ai.tool.name",
+      "mcp.method.name",
+      "mcp.protocol.version",
+      "mcp.resource.uri",
+      "network.protocol.name",
+      "network.protocol.version",
+      "network.transport",
+      "rpc.response.status_code"
+    ]
+  },
+  "entities": {},
+  "findings": [
+    {
+      "id": "deprecated",
+      "message": "Attribute 'rpc.response.status_code' is deprecated; reason = 'renamed', note = 'Replaced by `rpc.status_code`.'.",
+      "signal_type": "metric",
+      "signal_name": "mcp.client.operation.duration",
+      "context": {
+        "attribute_key": "rpc.response.status_code",
+        "deprecation_note": "Replaced by `rpc.status_code`.",
+        "deprecation_reason": "renamed"
+      }
+    },
+    {
+      "id": "deprecated",
+      "message": "Attribute 'rpc.response.status_code' is deprecated; reason = 'renamed', note = 'Replaced by `rpc.status_code`.'.",
+      "signal_type": "metric",
+      "signal_name": "mcp.server.operation.duration",
+      "context": {
+        "attribute_key": "rpc.response.status_code",
+        "deprecation_note": "Replaced by `rpc.status_code`.",
+        "deprecation_reason": "renamed"
+      }
+    },
+    {
+      "id": "deprecated",
+      "message": "Attribute 'rpc.response.status_code' is deprecated; reason = 'renamed', note = 'Replaced by `rpc.status_code`.'.",
+      "signal_type": "span",
+      "signal_name": "resources/read",
+      "context": {
+        "attribute_key": "rpc.response.status_code",
+        "deprecation_note": "Replaced by `rpc.status_code`.",
+        "deprecation_reason": "renamed"
+      }
+    },
+    {
+      "id": "genai_span_name_format",
+      "message": "execute_tool span name should be 'execute_tool get_weather', got 'tools/call get_weather'",
+      "signal_type": "span",
+      "signal_name": "tools/call get_weather",
+      "context": {
+        "expected_form": "execute_tool get_weather",
+        "keyed_attr": "gen_ai.tool.name",
+        "operation": "execute_tool"
+      }
+    },
+    {
+      "id": "genai_span_name_format",
+      "message": "execute_tool span name should be 'execute_tool missing_tool', got 'tools/call missing_tool'",
+      "signal_type": "span",
+      "signal_name": "tools/call missing_tool",
+      "context": {
+        "expected_form": "execute_tool missing_tool",
+        "keyed_attr": "gen_ai.tool.name",
+        "operation": "execute_tool"
+      }
+    }
+  ]
+}
