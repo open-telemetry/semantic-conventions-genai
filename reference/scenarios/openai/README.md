@@ -9,7 +9,7 @@ Assistants API is covered by the `openai-assistants` scenario).
 | --- | --- | --- |
 | inference (`chat`) | Yes — calls the model directly | ✅ Implemented, including streaming TTFC |
 | embeddings | Yes — calls the model directly | ✅ Implemented |
-| fetch_response | Yes — Responses API `client.responses.retrieve` | ✅ Implemented |
+| fetch_response | Yes — Responses API `client.responses.retrieve` | ✅ Implemented, including function and built-in tool definitions |
 | execute_tool | No — the base client returns tool calls but doesn't execute them; the tool runs in app code | ➖ Not instrumentable |
 | retrieval | No - Vector Stores search is a search service call, not GenAI retrieval; `file_search` runs server-side | ✅ Correctly not emitted |
 | memory | Yes — Conversations API / stored responses | ❌ Not implemented |
@@ -28,6 +28,11 @@ Inference exercises the SDK's `RateLimitError` from
 `client.chat.completions.create` using a mock HTTP 429 response. The error handler
 records a correlated `gen_ai.client.inference.exception` WARN log and re-raises
 the exception.
+
+Fetch spans record the built-in `web_search` tool with type `openai.web_search`
+and name `web_search`. They record `gen_ai.tool.definitions` as `[]` when the
+stored response includes an empty tool list and omit the attribute when the
+response doesn't provide a list.
 
 Fetch response exercises the SDK's `NotFoundError` from
 `client.responses.retrieve` using a mock HTTP 404 response. The error handler
