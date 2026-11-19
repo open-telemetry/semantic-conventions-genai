@@ -1,6 +1,6 @@
-# MCP Server Request Size Metric
+# MCP Client Request Message Size Metric
 
-> **[Semantic Convention](../../docs/gen-ai/mcp.md#metric-mcpserverrequestsize)**
+> **[Semantic Convention](../../docs/gen-ai/mcp.md#metric-mcpclientrequestmessagesize)**
 
 ## Required
 
@@ -14,7 +14,6 @@
 | --- | --- |
 | gen_ai.prompt.name | [mcp] |
 | gen_ai.tool.name | [mcp] |
-| rpc.response.status_code | [mcp] |
 
 ## Recommended
 
@@ -23,15 +22,16 @@
 | gen_ai.operation.name | [mcp] |
 | jsonrpc.protocol.version | (none) |
 | mcp.protocol.version | [mcp] |
-| network.protocol.name | (none) |
-| network.protocol.version | (none) |
+| network.protocol.name | [mcp] |
+| network.protocol.version | [mcp] |
 | network.transport | [mcp] |
+| server.address | [mcp] |
+| server.port | [mcp] |
 
 ## Opt-In
 
 | Attribute | Supporting Libraries |
 | --- | --- |
-| gen_ai.prompt.variable | (none) |
 | mcp.resource.uri | [mcp] |
 
 [mcp]: ../scenarios/mcp/scenario.py

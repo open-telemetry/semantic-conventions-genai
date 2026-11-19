@@ -24,3 +24,7 @@ scenarios:
           attributes:
             gen_ai.operation.name: text_completion
           type: gen_ai.client.inference
+      - match:
+          attributes:
+            gen_ai.operation.name: embeddings
+          type: gen_ai.client.embeddings

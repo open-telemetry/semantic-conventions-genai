@@ -23,15 +23,14 @@
 | gen_ai.operation.name | [mcp] |
 | jsonrpc.protocol.version | (none) |
 | mcp.protocol.version | [mcp] |
-| network.protocol.name | (none) |
-| network.protocol.version | (none) |
+| network.protocol.name | [mcp] |
+| network.protocol.version | [mcp] |
 | network.transport | [mcp] |
 
 ## Opt-In
 
 | Attribute | Supporting Libraries |
 | --- | --- |
-| gen_ai.prompt.variable | (none) |
 | mcp.resource.uri | [mcp] |
 
 [mcp]: ../scenarios/mcp/scenario.py

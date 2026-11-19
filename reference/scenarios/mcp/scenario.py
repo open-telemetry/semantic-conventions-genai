@@ -1,358 +1,714 @@
-"""Reference implementation for the MCP Python SDK (`mcp`).
+"""Reference implementation for the Model Context Protocol (MCP) Python SDK."""
 
-The client below launches `server.py` -- an MCP server built with the same SDK --
-over the stdio transport. Both processes record the MCP operation metrics with
-`instrument_streams`, which observes every JSON-RPC message where the SDK hands
-it to, or takes it from, the transport: the `SessionMessage` streams that
-`stdio_client()` and `stdio_server()` return.
-"""
-
-import os
-import sys
+import asyncio
+import contextlib
+import contextvars
+import json
+import socket
 import time
+from collections.abc import AsyncIterator, Callable
 from dataclasses import dataclass, field
-from pathlib import Path
+from typing import Any
 
 import anyio
-from mcp import ClientSession, MCPError, StdioServerParameters, types
-from mcp.client.stdio import stdio_client
-from mcp.shared import _otel as sdk_otel
+import httpx2
+import mcp.shared._otel as _mcp_otel
+import uvicorn
+from mcp.client.session import ClientSession
+from mcp.client.streamable_http import StreamableHTTPTransport, create_mcp_http_client
+from mcp.server import MCPServer
+from mcp.server.context import CallNext, HandlerResult, ServerMiddleware, ServerRequestContext
+from mcp.shared._context_streams import create_context_streams
+from mcp.shared._otel import extract_trace_context
+from mcp.shared.exceptions import MCPError
+from mcp.shared.jsonrpc_dispatcher import JSONRPCDispatcher
 from mcp.shared.message import SessionMessage
-from opentelemetry import metrics, trace
-from reference_shared import flush_and_shutdown, reference_meter, setup_otel
-
-SERVER_SCRIPT = Path(__file__).with_name("server.py")
-
-_meter = reference_meter()
-# Bucket boundaries advised for the duration and size metrics by docs/gen-ai/mcp.md.
-_DURATION_BUCKETS = [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30, 60, 120, 300]
-_SIZE_BUCKETS = [64, 256, 1024, 4096, 16384, 65536, 262144, 1048576, 4194304, 16777216]
-
-
-@dataclass(frozen=True)
-class _Instruments:
-    """The metrics of one side of an MCP operation."""
-
-    duration: metrics.Histogram
-    active: metrics.UpDownCounter
-    request_size: metrics.Histogram
-    response_size: metrics.Histogram
-    # JSON-RPC error codes that do not make the operation fail on this side.
-    non_error_codes: frozenset[int]
-
-
-# Recorded by whoever sends the request or notification.
-_CLIENT = _Instruments(
-    duration=_meter.create_histogram(
-        "mcp.client.operation.duration",
-        unit="s",
-        description="The duration of the MCP request or notification as observed on the sender "
-        "from the time it was sent until the response or ack is received.",
-        explicit_bucket_boundaries_advisory=_DURATION_BUCKETS,
-    ),
-    active=_meter.create_up_down_counter(
-        "mcp.client.operation.active",
-        unit="{operation}",
-        description="The number of MCP requests and notifications in progress as observed on the sender.",
-    ),
-    request_size=_meter.create_histogram(
-        "mcp.client.request.size",
-        unit="By",
-        description="The size of the MCP request or notification as observed on the sender.",
-        explicit_bucket_boundaries_advisory=_SIZE_BUCKETS,
-    ),
-    response_size=_meter.create_histogram(
-        "mcp.client.response.size",
-        unit="By",
-        description="The size of the MCP response as observed on the sender.",
-        explicit_bucket_boundaries_advisory=_SIZE_BUCKETS,
-    ),
-    # Every error code the sender receives is an error.
-    non_error_codes=frozenset(),
+from mcp_types import INVALID_PARAMS, CallToolResult
+from opentelemetry import trace
+from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
+from opentelemetry.trace import SpanKind, StatusCode
+from pydantic import ValidationError
+from reference_shared import (
+    flush_and_shutdown,
+    mock_server_host_port,
+    reference_meter,
+    reference_tracer,
+    setup_otel,
 )
 
-# Recorded by whoever receives the request or notification.
-_SERVER = _Instruments(
-    duration=_meter.create_histogram(
-        "mcp.server.operation.duration",
-        unit="s",
-        description="MCP request or notification duration as observed on the receiver "
-        "from the time it was received until the result or ack is sent.",
-        explicit_bucket_boundaries_advisory=_DURATION_BUCKETS,
+# Suppress the SDK's built-in non-semconv spans ("MCP send ...") so the
+# scenario validates the MCP semantic convention spans directly.
+_mcp_otel._tracer = trace.NoOpTracer()
+
+_reference_tracer = reference_tracer()
+_reference_meter = reference_meter()
+
+_MCP_DURATION_BUCKETS = [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30, 60, 120, 300]
+_MCP_SIZE_BUCKETS = [64, 256, 1024, 4096, 16384, 65536, 262144, 1048576, 4194304, 16777216]
+
+_client_operation_duration = _reference_meter.create_histogram(
+    "mcp.client.operation.duration",
+    unit="s",
+    description=(
+        "The duration of the MCP request or notification as observed on the sender "
+        "from the time it was sent until the response or ack is received."
     ),
-    active=_meter.create_up_down_counter(
-        "mcp.server.operation.active",
-        unit="{operation}",
-        description="The number of MCP requests and notifications in progress as observed on the receiver.",
-    ),
-    request_size=_meter.create_histogram(
-        "mcp.server.request.size",
-        unit="By",
-        description="The size of the MCP request or notification as observed on the receiver.",
-        explicit_bucket_boundaries_advisory=_SIZE_BUCKETS,
-    ),
-    response_size=_meter.create_histogram(
-        "mcp.server.response.size",
-        unit="By",
-        description="The size of the MCP response as observed on the receiver.",
-        explicit_bucket_boundaries_advisory=_SIZE_BUCKETS,
-    ),
-    # The caller sent a request the receiver could not serve: parse error, invalid
-    # request, method not found, invalid params (also an unknown tool), resource not found.
-    non_error_codes=frozenset(
-        {types.PARSE_ERROR, types.INVALID_REQUEST, types.METHOD_NOT_FOUND, types.INVALID_PARAMS, -32002}
-    ),
+    explicit_bucket_boundaries_advisory=_MCP_DURATION_BUCKETS,
 )
-
-
-def suppress_sdk_spans() -> None:
-    """Drop the spans the SDK emits on its own `mcp-python-sdk` tracer.
-
-    They would otherwise be validated alongside the metrics this scenario
-    demonstrates; the server spans carry `gen_ai.operation.name=execute_tool`,
-    so they would also be counted as GenAI `execute_tool` spans. The client
-    spans have no public opt-out, so the tracer both sides share is replaced.
-    """
-    sdk_otel._tracer = trace.NoOpTracer()
-
-
-def _message_size(message: types.JSONRPCMessage) -> int:
-    """Size of the message as compact UTF-8 JSON, without the newline delimiter.
-
-    For a sent message these are exactly the bytes the SDK's stdio transports
-    write. A received message reaches this code already parsed, so this is the
-    re-serialized size the conventions allow when the received bytes are not
-    available.
-    """
-    return len(message.model_dump_json(by_alias=True, exclude_unset=True).encode("utf-8"))
+_server_operation_duration = _reference_meter.create_histogram(
+    "mcp.server.operation.duration",
+    unit="s",
+    description=(
+        "MCP request or notification duration as observed on the receiver "
+        "from the time it was received until the result or ack is sent."
+    ),
+    explicit_bucket_boundaries_advisory=_MCP_DURATION_BUCKETS,
+)
+_client_operation_active = _reference_meter.create_up_down_counter(
+    "mcp.client.operation.active",
+    unit="{operation}",
+    description="The number of MCP requests in progress as observed on the sender.",
+)
+_server_operation_active = _reference_meter.create_up_down_counter(
+    "mcp.server.operation.active",
+    unit="{operation}",
+    description="The number of MCP requests in progress as observed on the receiver.",
+)
+_client_request_message_size = _reference_meter.create_histogram(
+    "mcp.client.request.message.size",
+    unit="By",
+    description="The size of the MCP request or notification message as observed on the sender.",
+    explicit_bucket_boundaries_advisory=_MCP_SIZE_BUCKETS,
+)
+_client_response_message_size = _reference_meter.create_histogram(
+    "mcp.client.response.message.size",
+    unit="By",
+    description="The size of the MCP response message as observed on the sender.",
+    explicit_bucket_boundaries_advisory=_MCP_SIZE_BUCKETS,
+)
+_server_request_message_size = _reference_meter.create_histogram(
+    "mcp.server.request.message.size",
+    unit="By",
+    description="The size of the MCP request or notification message as observed on the receiver.",
+    explicit_bucket_boundaries_advisory=_MCP_SIZE_BUCKETS,
+)
+_server_response_message_size = _reference_meter.create_histogram(
+    "mcp.server.response.message.size",
+    unit="By",
+    description="The size of the MCP response message as observed on the receiver.",
+    explicit_bucket_boundaries_advisory=_MCP_SIZE_BUCKETS,
+)
 
 
 @dataclass
-class _Operation:
-    """A request or notification in progress."""
+class _ServerHTTPExchange:
+    """Tracks raw transported JSON-RPC request/response byte counts across one HTTP POST."""
 
-    instruments: _Instruments
-    # Known when the operation starts; the active counter is updated with exactly these.
-    attributes: dict[str, str]
-    request_size: int
-    # Opt-in on the duration and size metrics, which the active counter does not share.
-    resource_uri: str | None = None
-    start: float = field(default_factory=time.perf_counter)
+    request_size: int = 0
+    response_metric_attrs: dict[str, Any] | None = None
 
 
-class _MessageMetrics:
-    """Records the MCP operation metrics of one connection from the JSON-RPC messages it carries.
-
-    A request or notification this side sends is a client operation, one it
-    receives a server operation -- an MCP server may send requests too.
-    """
-
-    def __init__(self, network_transport: str):
-        self._network_transport = network_transport
-        self._protocol_version: str | None = None
-        self._sent: dict[types.RequestId, _Operation] = {}
-        self._received: dict[types.RequestId, _Operation] = {}
-
-    def _start(
-        self, instruments: _Instruments, message: types.JSONRPCRequest | types.JSONRPCNotification, size: int
-    ) -> _Operation:
-        attributes = {"mcp.method.name": message.method, "network.transport": self._network_transport}
-        if self._protocol_version is not None:
-            attributes["mcp.protocol.version"] = self._protocol_version
-        params = message.params or {}
-        name, uri = params.get("name"), params.get("uri")
-        if message.method == "tools/call":
-            attributes["gen_ai.operation.name"] = "execute_tool"
-            if isinstance(name, str):
-                attributes["gen_ai.tool.name"] = name
-        elif message.method == "prompts/get" and isinstance(name, str):
-            attributes["gen_ai.prompt.name"] = name
-        instruments.active.add(1, attributes)
-        # Only the resource requests and notifications carry a top-level `uri`.
-        return _Operation(instruments, attributes, size, resource_uri=uri if isinstance(uri, str) else None)
-
-    def _end(
-        self,
-        operation: _Operation,
-        response: types.JSONRPCMessage | None = None,
-        size: int | None = None,
-        error_type: str | None = None,
-    ):
-        instruments = operation.instruments
-        duration = time.perf_counter() - operation.start
-        instruments.active.add(-1, operation.attributes)
-        attributes = dict(operation.attributes)
-        if operation.resource_uri is not None:
-            attributes["mcp.resource.uri"] = operation.resource_uri
-        if isinstance(response, types.JSONRPCResponse) and attributes["mcp.method.name"] == "initialize":
-            # The version the server picked; every later operation on this connection uses it.
-            self._protocol_version = response.result["protocolVersion"]
-            attributes["mcp.protocol.version"] = self._protocol_version
-        elif isinstance(response, types.JSONRPCError):
-            code = response.error.code
-            attributes["rpc.response.status_code"] = str(code)
-            if code not in instruments.non_error_codes:
-                attributes["error.type"] = str(code)
-        if error_type is not None:
-            attributes["error.type"] = error_type
-        instruments.duration.record(duration, attributes)
-        instruments.request_size.record(operation.request_size, attributes)
-        # Only an answered request has a response to measure.
-        if size is not None:
-            instruments.response_size.record(size, attributes)
-
-    def _cancel(self, pending: dict[types.RequestId, _Operation], notification: types.JSONRPCNotification) -> None:
-        """End the request a `notifications/cancelled` names: MCP never answers a cancelled request."""
-        request_id = (notification.params or {}).get("requestId")
-        if isinstance(request_id, int | str) and request_id in pending:
-            self._end(pending.pop(request_id), error_type="cancelled")
-
-    def close(self) -> None:
-        """End every request the connection leaves unanswered."""
-        for pending in (self._sent, self._received):
-            while pending:
-                # The code the SDK fails a pending request with when the connection closes.
-                self._end(pending.popitem()[1], error_type=str(types.CONNECTION_CLOSED))
-
-    async def send(self, write_stream, item: SessionMessage) -> None:
-        """Hand `item` to the transport, recording the operation it starts or ends."""
-        message = item.message
-        size = _message_size(message)
-        if isinstance(message, types.JSONRPCRequest):
-            self._sent[message.id] = self._start(_CLIENT, message, size)
-            await write_stream.send(item)
-        elif isinstance(message, types.JSONRPCNotification):
-            # Nothing acknowledges a notification on stdio: it is done once the transport has it.
-            operation = self._start(_CLIENT, message, size)
-            await write_stream.send(item)
-            self._end(operation)
-            if message.method == "notifications/cancelled":
-                self._cancel(self._sent, message)
-        else:
-            await write_stream.send(item)
-            if message.id in self._received:
-                self._end(self._received.pop(message.id), message, size)
-
-    def received(self, message: types.JSONRPCMessage) -> None:
-        """Record the operation a message the transport delivered starts or ends."""
-        size = _message_size(message)
-        if isinstance(message, types.JSONRPCRequest):
-            self._received[message.id] = self._start(_SERVER, message, size)
-        elif isinstance(message, types.JSONRPCResponse | types.JSONRPCError) and message.id in self._sent:
-            self._end(self._sent.pop(message.id), message, size)
-        elif isinstance(message, types.JSONRPCNotification) and message.method == "notifications/cancelled":
-            self._cancel(self._received, message)
-        # Nothing acknowledges a received notification on stdio, and its processing
-        # isn't visible from the transport, so the receiver does not record it.
+_current_server_exchange: contextvars.ContextVar[_ServerHTTPExchange | None] = contextvars.ContextVar(
+    "_current_server_exchange", default=None
+)
 
 
-class _ReadStream:
-    def __init__(self, inner, recorder: _MessageMetrics):
-        self._inner = inner
-        self._recorder = recorder
+class _ServerMessageSizeASGIWrapper:
+    """ASGI wrapper measuring raw transported JSON-RPC request and response body sizes."""
 
-    async def receive(self):
+    def __init__(self, app: Any) -> None:
+        self._app = app
+
+    async def __call__(self, scope: dict[str, Any], receive: Any, send: Any) -> None:
+        if scope.get("type") != "http" or scope.get("method") != "POST":
+            await self._app(scope, receive, send)
+            return
+
+        exchange = _ServerHTTPExchange()
+        resp_size = 0
+
+        async def wrapped_receive() -> dict[str, Any]:
+            message = await receive()
+            if message.get("type") == "http.request":
+                exchange.request_size += len(message.get("body", b""))
+            return message
+
+        async def wrapped_send(message: dict[str, Any]) -> None:
+            nonlocal resp_size
+            if message.get("type") == "http.response.body":
+                resp_size += len(message.get("body", b""))
+                await send(message)
+                if not message.get("more_body", False) and resp_size > 0 and exchange.response_metric_attrs is not None:
+                    _server_response_message_size.record(resp_size, exchange.response_metric_attrs)
+                return
+            await send(message)
+
+        token = _current_server_exchange.set(exchange)
         try:
-            item = await self._inner.receive()
-        except anyio.EndOfStream:
-            self._recorder.close()
-            raise
-        if isinstance(item, SessionMessage):
-            self._recorder.received(item.message)
-        return item
-
-    @property
-    def last_context(self):
-        # The sender's contextvars, which the SDK reads off context-aware streams.
-        return getattr(self._inner, "last_context", None)
-
-    def __aiter__(self):
-        return self
-
-    async def __anext__(self):
-        try:
-            return await self.receive()
-        except anyio.EndOfStream:
-            raise StopAsyncIteration from None
-
-    async def aclose(self):
-        self._recorder.close()
-        await self._inner.aclose()
-
-    async def __aenter__(self):
-        return self
-
-    async def __aexit__(self, *exc_info):
-        await self.aclose()
+            await self._app(scope, wrapped_receive, wrapped_send)
+        finally:
+            _current_server_exchange.reset(token)
 
 
-class _WriteStream:
-    def __init__(self, inner, recorder: _MessageMetrics):
-        self._inner = inner
-        self._recorder = recorder
+class ReferenceMCPServerMiddleware(ServerMiddleware[Any]):
+    """MCP server middleware that emits `mcp.server` spans and server operation metrics."""
 
-    async def send(self, item: SessionMessage):
-        await self._recorder.send(self._inner, item)
+    async def __call__(self, ctx: ServerRequestContext[Any, Any], call_next: CallNext) -> HandlerResult:
+        if ctx.method == "initialize":
+            return await call_next(ctx)
 
-    async def aclose(self):
-        await self._inner.aclose()
+        exchange = _current_server_exchange.get()
+        params = ctx.params or {}
+        name = params.get("name")
+        target = name if isinstance(name, str) else None
 
-    async def __aenter__(self):
-        return self
+        active_attrs: dict[str, Any] = {
+            "mcp.method.name": ctx.method,
+            "mcp.protocol.version": ctx.protocol_version,
+            "network.transport": "tcp",
+            "network.protocol.name": "http",
+        }
+        if ctx.request is not None:
+            http_version = ctx.request.scope.get("http_version")
+            if http_version:
+                active_attrs["network.protocol.version"] = str(http_version)
 
-    async def __aexit__(self, *exc_info):
-        await self.aclose()
+        if ctx.method == "tools/call":
+            active_attrs["gen_ai.operation.name"] = "execute_tool"
+            if target is not None:
+                active_attrs["gen_ai.tool.name"] = target
+        elif ctx.method == "prompts/get" and target is not None:
+            active_attrs["gen_ai.prompt.name"] = target
 
+        request_metric_attrs = dict(active_attrs)
+        if ctx.method == "resources/read" and params.get("uri") is not None:
+            request_metric_attrs["mcp.resource.uri"] = str(params["uri"])
 
-def instrument_streams(read_stream, write_stream, *, network_transport: str):
-    """Wrap a transport's `SessionMessage` streams to record the MCP operation metrics."""
-    recorder = _MessageMetrics(network_transport)
-    return _ReadStream(read_stream, recorder), _WriteStream(write_stream, recorder)
+        if exchange is not None and exchange.request_size > 0:
+            _server_request_message_size.record(exchange.request_size, request_metric_attrs)
 
+        if ctx.method == "notifications/initialized":
+            return await call_next(ctx)
 
-async def run_client():
-    server = StdioServerParameters(
-        command=sys.executable,
-        args=[str(SERVER_SCRIPT)],
-        # stdio_client passes the server a minimal environment; it exports its own telemetry.
-        env={"OTEL_EXPORTER_OTLP_ENDPOINT": os.environ["OTEL_EXPORTER_OTLP_ENDPOINT"]},
-    )
-    async with stdio_client(server) as (read_stream, write_stream):
-        # stdio talks to the server over its stdin and stdout pipes.
-        read_stream, write_stream = instrument_streams(read_stream, write_stream, network_transport="pipe")
-        async with ClientSession(read_stream, write_stream) as session:
-            print("  [initialize]")
-            result = await session.initialize()
-            print(f"    -> protocol version {result.protocol_version}")
+        span_name = f"{ctx.method} {target}" if target else ctx.method
+        metric_attrs = dict(request_metric_attrs)
 
-            print("  [tools/list]")
-            tools = await session.list_tools()
-            print(f"    -> {[tool.name for tool in tools.tools]}")
+        span_attrs = dict(metric_attrs)
+        if ctx.request_id is not None:
+            span_attrs["jsonrpc.request.id"] = str(ctx.request_id)
+        if ctx.request is not None:
+            session_id = ctx.request.headers.get("mcp-session-id")
+            if session_id:
+                span_attrs["mcp.session.id"] = session_id
+            if ctx.request.client:
+                span_attrs["client.address"] = ctx.request.client.host
+                span_attrs["client.port"] = ctx.request.client.port
 
-            print("  [tools/call] get_weather")
-            call = await session.call_tool("get_weather", {"city": "Paris"})
-            print(f"    -> {call.content[0].text}")
+        is_request = ctx.request_id is not None
+        if is_request:
+            _server_operation_active.add(1, active_attrs)
 
-            print("  [tools/call] unknown tool")
+        start_time = time.perf_counter()
+        with _reference_tracer.start_as_current_span(
+            span_name,
+            kind=SpanKind.SERVER,
+            attributes=span_attrs,
+            context=extract_trace_context(ctx.meta),
+            record_exception=False,
+            set_status_on_exception=False,
+        ) as span:
             try:
-                await session.call_tool("get_forecast", {"city": "Paris"})
-            except MCPError as error:
-                print(f"    -> JSON-RPC error {error.code}: {error.message}")
+                if ctx.method == "tools/call":
+                    arguments = params.get("arguments")
+                    if arguments is not None:
+                        span.set_attribute("gen_ai.tool.call.arguments", arguments)
+                elif ctx.method == "prompts/get":
+                    prompt_args = params.get("arguments")
+                    if isinstance(prompt_args, dict) and prompt_args:
+                        span.set_attribute("gen_ai.prompt.variables", prompt_args)
 
-            print("  [prompts/get] weather_report")
-            prompt = await session.get_prompt("weather_report", {"city": "Paris"})
-            print(f"    -> {prompt.messages[0].content.text}")
+                try:
+                    result = await call_next(ctx)
+                except MCPError as error:
+                    code = str(error.error.code)
+                    span.set_attribute("rpc.response.status_code", code)
+                    metric_attrs["rpc.response.status_code"] = code
+                    # Per mcp.server.status.attributes, caller errors (-32700, -32600,
+                    # -32601, -32602, -32002) are not server errors, while other codes are.
+                    if error.error.code not in (-32700, -32600, -32601, -32602, -32002):
+                        span.set_attribute("error.type", code)
+                        metric_attrs["error.type"] = code
+                        span.set_status(StatusCode.ERROR, error.error.message)
+                    raise
+                except ValidationError:
+                    code = str(INVALID_PARAMS)
+                    span.set_attribute("rpc.response.status_code", code)
+                    metric_attrs["rpc.response.status_code"] = code
+                    raise
+                except Exception as error:
+                    error_type = type(error).__qualname__
+                    span.set_attribute("error.type", error_type)
+                    metric_attrs["error.type"] = error_type
+                    span.set_status(StatusCode.ERROR, str(error))
+                    raise
 
-            print("  [resources/read] weather://paris")
-            resource = await session.read_resource("weather://paris")
-            print(f"    -> {resource.contents[0].text}")
+                if ctx.method == "tools/call":
+                    is_error = (
+                        result.is_error
+                        if isinstance(result, CallToolResult)
+                        else bool(result.get("isError"))
+                        if isinstance(result, dict)
+                        else False
+                    )
+                    structured_content = (
+                        result.structured_content
+                        if isinstance(result, CallToolResult)
+                        else result.get("structuredContent")
+                        if isinstance(result, dict)
+                        else None
+                    )
+                    if is_error:
+                        span.set_attribute("error.type", "tool_error")
+                        metric_attrs["error.type"] = "tool_error"
+                        span.set_status(StatusCode.ERROR)
+                    elif structured_content is not None:
+                        span.set_attribute("gen_ai.tool.call.result", structured_content)
+                return result
+            finally:
+                assert "gen_ai.prompt.variables" not in metric_attrs
+                if is_request:
+                    _server_operation_active.add(-1, active_attrs)
+                    if exchange is not None:
+                        exchange.response_metric_attrs = dict(metric_attrs)
+                _server_operation_duration.record(time.perf_counter() - start_time, metric_attrs)
 
 
-def main():
-    print("=== MCP Python SDK: stdio client and server ===")
+def _build_mcp_server() -> MCPServer:
+    mcp_server = MCPServer("weather-mcp")
+    mcp_server._lowlevel_server.middleware[:] = [ReferenceMCPServerMiddleware()]
+
+    @mcp_server.tool()
+    def get_weather(location: str) -> dict[str, object]:
+        """Get the current weather for a location."""
+        return {"location": location, "temperature_f": 72, "conditions": "sunny"}
+
+    @mcp_server.prompt()
+    def analyze_weather(user_name: str, language: str) -> str:
+        """Build a localized weather analysis prompt."""
+        return f"Summarize the weather forecast for {user_name} in {language}."
+
+    @mcp_server.resource("file:///weather/seattle.json")
+    def seattle_weather() -> str:
+        """Current weather snapshot for Seattle."""
+        return json.dumps({"location": "Seattle", "temperature_f": 72, "conditions": "sunny"})
+
+    return mcp_server
+
+
+def _free_port() -> int:
+    with socket.socket() as probe:
+        probe.bind(("127.0.0.1", 0))
+        return probe.getsockname()[1]
+
+
+@contextlib.asynccontextmanager
+async def _serve_mcp(mcp_server: MCPServer) -> AsyncIterator[str]:
+    port = _free_port()
+    app = _ServerMessageSizeASGIWrapper(mcp_server.streamable_http_app(json_response=True))
+    server = uvicorn.Server(uvicorn.Config(app, host="127.0.0.1", port=port, log_level="warning"))
+    serving = asyncio.create_task(server.serve())
+    while not server.started:
+        if serving.done():
+            await serving
+            raise RuntimeError("MCP server exited before starting")
+        await asyncio.sleep(0.01)
+    try:
+        yield f"http://127.0.0.1:{port}/mcp"
+    finally:
+        server.should_exit = True
+        await serving
+
+
+@dataclass
+class _PendingClientRequest:
+    """Tracks transport-level size and active-counter state for one in-flight client request."""
+
+    active_attrs: dict[str, Any]
+    request_metric_attrs: dict[str, Any]
+    active_incremented: bool = False
+    response_size: int | None = None
+
+
+@dataclass
+class _ClientTransportMetricsState:
+    host: str | None
+    port: int | None
+    negotiated_version: str | None = None
+    pending: dict[int | str, _PendingClientRequest] = field(default_factory=dict)
+
+    def notification_attrs(self, method: str) -> dict[str, Any]:
+        attrs: dict[str, Any] = {
+            "mcp.method.name": method,
+            "network.transport": "tcp",
+            "network.protocol.name": "http",
+            "network.protocol.version": "1.1",
+        }
+        if self.negotiated_version:
+            attrs["mcp.protocol.version"] = self.negotiated_version
+        if self.host:
+            attrs["server.address"] = self.host
+        if self.port is not None:
+            attrs["server.port"] = self.port
+        return attrs
+
+
+class _MeasuredAsyncByteStream(httpx2.AsyncByteStream):
+    """Counts raw HTTP response body bytes yielded by the transport stream."""
+
+    def __init__(self, inner: httpx2.AsyncByteStream, on_done: Callable[[int], None]) -> None:
+        self._inner = inner
+        self._on_done = on_done
+        self._total = 0
+
+    async def __aiter__(self) -> AsyncIterator[bytes]:
+        async for chunk in self._inner:
+            self._total += len(chunk)
+            yield chunk
+        self._on_done(self._total)
+
+    async def aclose(self) -> None:
+        await self._inner.aclose()
+
+
+class _ClientMessageSizeHTTPTransport(httpx2.AsyncBaseTransport):
+    """HTTP transport wrapper observing exact serialized JSON-RPC request/response sizes."""
+
+    def __init__(self, inner: httpx2.AsyncBaseTransport, state: _ClientTransportMetricsState) -> None:
+        self._inner = inner
+        self._state = state
+
+    async def handle_async_request(self, request: httpx2.Request) -> httpx2.Response:
+        if request.method != "POST":
+            return await self._inner.handle_async_request(request)
+
+        raw_request = request.content
+        header_version = request.headers.get("mcp-protocol-version")
+        if header_version:
+            self._state.negotiated_version = header_version
+
+        # Decode metadata only to identify the JSON-RPC id/method; `len(raw_request)` is the wire size.
+        payload = json.loads(raw_request)
+        method = payload.get("method")
+        req_id = payload.get("id")
+        pending_req = self._state.pending.get(req_id) if req_id is not None else None
+
+        if pending_req is not None:
+            _client_operation_active.add(1, pending_req.active_attrs)
+            pending_req.active_incremented = True
+            _client_request_message_size.record(len(raw_request), pending_req.request_metric_attrs)
+        elif req_id is None and isinstance(method, str):
+            _client_request_message_size.record(len(raw_request), self._state.notification_attrs(method))
+
+        response = await self._inner.handle_async_request(request)
+        if pending_req is not None and response.status_code != 202:
+
+            def set_response_size(size: int) -> None:
+                if size > 0:
+                    pending_req.response_size = size
+
+            response.stream = _MeasuredAsyncByteStream(response.stream, set_response_size)
+        return response
+
+    async def aclose(self) -> None:
+        await self._inner.aclose()
+
+
+class ReferenceMCPClientSession(ClientSession):
+    """MCP client session that emits `mcp.client` spans and client operation metrics per request."""
+
+    def __init__(
+        self,
+        read_stream: Any,
+        write_stream: Any,
+        *,
+        transport: StreamableHTTPTransport,
+        host: str | None,
+        port: int | None,
+        size_state: _ClientTransportMetricsState,
+    ) -> None:
+        super().__init__(read_stream, write_stream)
+        self._transport = transport
+        self._host = host
+        self._port = port
+        self._size_state = size_state
+
+    async def send_request(
+        self,
+        request: Any,
+        result_type: Any,
+        request_read_timeout_seconds: float | None = None,
+        metadata: Any = None,
+        progress_callback: Any = None,
+    ) -> Any:
+        data = request.model_dump(by_alias=True, mode="json", exclude_none=True)
+        method: str = data["method"]
+        if method == "initialize":
+            result = await super().send_request(
+                request,
+                result_type,
+                request_read_timeout_seconds=request_read_timeout_seconds,
+                metadata=metadata,
+                progress_callback=progress_callback,
+            )
+            self._size_state.negotiated_version = getattr(result, "protocol_version", None)
+            return result
+
+        params: dict[str, Any] = data.get("params") or {}
+        name = params.get("name")
+        target = name if isinstance(name, str) else None
+        span_name = f"{method} {target}" if target else method
+
+        active_attrs: dict[str, Any] = {
+            "mcp.method.name": method,
+            "network.transport": "tcp",
+            "network.protocol.name": "http",
+            "network.protocol.version": "1.1",
+        }
+        if self._negotiated_version:
+            active_attrs["mcp.protocol.version"] = self._negotiated_version
+        if self._host:
+            active_attrs["server.address"] = self._host
+        if self._port is not None:
+            active_attrs["server.port"] = self._port
+
+        if method == "tools/call":
+            active_attrs["gen_ai.operation.name"] = "execute_tool"
+            if target is not None:
+                active_attrs["gen_ai.tool.name"] = target
+        elif method == "prompts/get" and target is not None:
+            active_attrs["gen_ai.prompt.name"] = target
+
+        request_metric_attrs = dict(active_attrs)
+        if method == "resources/read" and params.get("uri") is not None:
+            request_metric_attrs["mcp.resource.uri"] = str(params["uri"])
+
+        metric_attrs = dict(request_metric_attrs)
+        span_attrs = dict(metric_attrs)
+        # JSONRPCDispatcher._allocate_id() increments _next_id before returning the wire id.
+        wire_id: int | str | None = None
+        if isinstance(self._dispatcher, JSONRPCDispatcher):
+            wire_id = self._dispatcher._next_id + 1
+            span_attrs["jsonrpc.request.id"] = str(wire_id)
+        if self._transport.session_id:
+            span_attrs["mcp.session.id"] = self._transport.session_id
+
+        pending_req: _PendingClientRequest | None = None
+        if wire_id is not None:
+            pending_req = _PendingClientRequest(
+                active_attrs=active_attrs,
+                request_metric_attrs=request_metric_attrs,
+            )
+            self._size_state.pending[wire_id] = pending_req
+
+        start_time = time.perf_counter()
+        with _reference_tracer.start_as_current_span(
+            span_name,
+            kind=SpanKind.CLIENT,
+            attributes=span_attrs,
+            record_exception=False,
+            set_status_on_exception=False,
+        ) as span:
+            try:
+                if method == "tools/call":
+                    arguments = params.get("arguments")
+                    if arguments is not None:
+                        span.set_attribute("gen_ai.tool.call.arguments", arguments)
+                elif method == "prompts/get":
+                    prompt_args = params.get("arguments")
+                    if isinstance(prompt_args, dict) and prompt_args:
+                        span.set_attribute("gen_ai.prompt.variables", prompt_args)
+
+                try:
+                    result = await super().send_request(
+                        request,
+                        result_type,
+                        request_read_timeout_seconds=request_read_timeout_seconds,
+                        metadata=metadata,
+                        progress_callback=progress_callback,
+                    )
+                except MCPError as error:
+                    code = str(error.error.code)
+                    span.set_attribute("error.type", code)
+                    span.set_attribute("rpc.response.status_code", code)
+                    metric_attrs["error.type"] = code
+                    metric_attrs["rpc.response.status_code"] = code
+                    span.set_status(StatusCode.ERROR, error.error.message)
+                    raise
+                except Exception as error:
+                    error_type = type(error).__qualname__
+                    span.set_attribute("error.type", error_type)
+                    metric_attrs["error.type"] = error_type
+                    span.set_status(StatusCode.ERROR, str(error))
+                    raise
+
+                if method == "tools/call" and isinstance(result, CallToolResult):
+                    if result.is_error:
+                        span.set_attribute("error.type", "tool_error")
+                        metric_attrs["error.type"] = "tool_error"
+                        span.set_status(StatusCode.ERROR)
+                    elif result.structured_content is not None:
+                        span.set_attribute("gen_ai.tool.call.result", result.structured_content)
+                return result
+            finally:
+                assert "gen_ai.prompt.variables" not in metric_attrs
+                if wire_id is not None:
+                    self._size_state.pending.pop(wire_id, None)
+                if pending_req is not None and pending_req.active_incremented:
+                    _client_operation_active.add(-1, pending_req.active_attrs)
+                _client_operation_duration.record(time.perf_counter() - start_time, metric_attrs)
+                if pending_req is not None and pending_req.response_size is not None:
+                    _client_response_message_size.record(pending_req.response_size, metric_attrs)
+
+
+@contextlib.asynccontextmanager
+async def _connect_session(
+    url: str,
+    host: str | None,
+    port: int | None,
+) -> AsyncIterator[ReferenceMCPClientSession]:
+    size_state = _ClientTransportMetricsState(host=host, port=port)
+    http_client = create_mcp_http_client()
+    http_client._transport = _ClientMessageSizeHTTPTransport(http_client._transport, size_state)
+    transport = StreamableHTTPTransport(url)
+    async with http_client:
+        read_stream_writer, read_stream = create_context_streams[SessionMessage | Exception](0)
+        write_stream, write_stream_reader = create_context_streams[SessionMessage](0)
+        async with (
+            read_stream_writer,
+            read_stream,
+            write_stream,
+            write_stream_reader,
+            anyio.create_task_group() as tg,
+        ):
+
+            def start_get_stream() -> None:
+                tg.start_soon(transport.handle_get_stream, http_client, read_stream_writer)
+
+            tg.start_soon(
+                transport.post_writer,
+                http_client,
+                write_stream_reader,
+                read_stream_writer,
+                write_stream,
+                start_get_stream,
+                tg,
+            )
+            try:
+                async with ReferenceMCPClientSession(
+                    read_stream,
+                    write_stream,
+                    transport=transport,
+                    host=host,
+                    port=port,
+                    size_state=size_state,
+                ) as session:
+                    await session.initialize()
+                    yield session
+            finally:
+                if transport.session_id:
+                    await transport.terminate_session(http_client)
+                tg.cancel_scope.cancel()
+
+
+async def run_tool_list_reference(session: ReferenceMCPClientSession) -> None:
+    """Scenario: MCP tools/list (populates client output-schema cache before tools/call)."""
+    print("  [tools/list] MCP tool listing")
+    result = await session.list_tools()
+    print(f"    -> {len(result.tools)} tool(s)")
+
+
+async def run_tool_call_reference(session: ReferenceMCPClientSession) -> None:
+    """Scenario: MCP tools/call."""
+    print("  [tools/call] MCP tool call")
+    result = await session.call_tool("get_weather", {"location": "Seattle"})
+    print(f"    -> {result.structured_content}")
+
+
+async def run_prompt_get_reference(session: ReferenceMCPClientSession) -> None:
+    """Scenario: MCP prompts/get with prompt variables."""
+    print("  [prompts/get] MCP prompt retrieval")
+    prompt_result = await session.get_prompt("analyze_weather", {"user_name": "Alice", "language": "French"})
+    print(f"    -> {len(prompt_result.messages)} prompt message(s)")
+
+
+async def run_resource_read_reference(session: ReferenceMCPClientSession) -> None:
+    """Scenario: MCP resources/read."""
+    print("  [resources/read] MCP resource read")
+    resource_result = await session.read_resource("file:///weather/seattle.json")
+    print(f"    -> {len(resource_result.contents)} resource content item(s)")
+
+
+async def run_tool_call_error_reference(session: ReferenceMCPClientSession) -> None:
+    """Scenario: MCP tool call error (`isError=True`) and JSON-RPC resource error."""
+    print("  [tools/call error] MCP unknown tool error")
+    result = await session.call_tool("missing_tool", {"location": "Seattle"})
+    assert result.is_error
+    print("    -> CallToolResult isError=True (error.type=tool_error)")
+
+    missing_uri = "file:///weather/missing.json"
+    try:
+        await session.read_resource(missing_uri)
+    except MCPError as error:
+        print(f"    -> JSON-RPC error {error.error.code}: {error.error.message}")
+    else:
+        raise AssertionError(f"Expected MCPError for {missing_uri}")
+
+
+async def run_scenarios() -> None:
+    mcp_server = _build_mcp_server()
+    async with _serve_mcp(mcp_server) as url:
+        host, port = mock_server_host_port(url)
+        async with _connect_session(url, host, port) as session:
+            await run_tool_list_reference(session)
+            await run_tool_call_reference(session)
+            await run_prompt_get_reference(session)
+            await run_resource_read_reference(session)
+            await run_tool_call_error_reference(session)
+
+
+def main() -> None:
+    print("=== Reference Implementation: MCP Python SDK ===")
     tp, lp, mp = setup_otel()
-    suppress_sdk_spans()
-    anyio.run(run_client)
+    span_exporter = InMemorySpanExporter()
+    tp.add_span_processor(SimpleSpanProcessor(span_exporter))
+    asyncio.run(run_scenarios())
+
+    finished_spans = span_exporter.get_finished_spans()
+    client_spans = [s for s in finished_spans if s.kind == SpanKind.CLIENT and s.attributes]
+    server_spans = [s for s in finished_spans if s.kind == SpanKind.SERVER and s.attributes]
+    assert len(client_spans) == len(server_spans), (
+        f"Expected 1:1 client/server spans, got {len(client_spans)} client and {len(server_spans)} server"
+    )
+    client_span_ids = {s.context.span_id for s in client_spans}
+    assert all(s.parent is None or s.parent.span_id not in client_span_ids for s in client_spans), (
+        "Client MCP spans should not nest one JSON-RPC request inside another"
+    )
+    client_ids = {
+        (s.context.span_id, s.attributes["mcp.method.name"]): s.attributes["jsonrpc.request.id"] for s in client_spans
+    }
+    server_ids = {
+        (s.parent.span_id, s.attributes["mcp.method.name"]): s.attributes["jsonrpc.request.id"]
+        for s in server_spans
+        if s.parent
+    }
+    assert client_ids == server_ids, f"Mismatched client/server request IDs: {client_ids} != {server_ids}"
+
+    prompt_spans = [s for s in finished_spans if s.attributes and s.attributes.get("mcp.method.name") == "prompts/get"]
+    assert len(prompt_spans) == 2, f"Expected client and server prompts/get spans, got {len(prompt_spans)}"
+    for prompt_span in prompt_spans:
+        assert prompt_span.attributes and "gen_ai.prompt.variables" in prompt_span.attributes
+
     flush_and_shutdown(tp, lp, mp)
 
 

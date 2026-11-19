@@ -1,5 +1,12 @@
 file_format: definition/2
 attribute_groups:
+  - id: mcp.request.metrics.attributes
+    visibility: internal
+    attributes:
+      - ref_group: mcp.request.attributes
+      - ref: mcp.resource.uri
+        requirement_level: opt_in
+
   - id: mcp.operation.metrics.attributes
     visibility: internal
     attributes:
@@ -74,16 +81,13 @@ metrics:
     instrument: updowncounter
     unit: "{operation}"
     brief: >
-      The number of MCP requests and notifications in progress as observed on the sender.
+      The number of MCP requests in progress as observed on the sender.
     note: |
-      An operation is in progress from the time the request or notification is sent
-      until the response or ack is received, which is the interval measured by
-      `mcp.client.operation.duration`. A notification that is not acknowledged, such
-      as one sent over stdio, ends once it is sent. A request that is cancelled, times
-      out, or is still pending when the connection closes ends at that point.
+      Incremented when the sender starts sending the request and decremented when
+      the response is received, or when the request is cancelled, times out, or
+      is still pending when the connection closes.
 
-      The counter SHOULD be incremented and decremented with the same attributes,
-      which are the ones known when the operation starts.
+      This metric SHOULD NOT be recorded for notifications.
     stability: development
     annotations:
       code_generation:
@@ -97,18 +101,13 @@ metrics:
     instrument: updowncounter
     unit: "{operation}"
     brief: >
-      The number of MCP requests and notifications in progress as observed on the receiver.
+      The number of MCP requests in progress as observed on the receiver.
     note: |
-      An operation is in progress from the time the request or notification is received
-      until the result or ack is sent, which is the interval measured by
-      `mcp.server.operation.duration`. A request that is cancelled, or is still pending
-      when the connection closes, ends at that point. A notification that is not
-      acknowledged, such as one received over stdio, ends when the receiver finishes
-      processing it. Instrumentation that cannot observe when processing finishes
-      SHOULD NOT count such notifications.
+      Incremented when the receiver receives the request and decremented when
+      the response is sent, or when the request is cancelled or is still pending
+      when the connection closes.
 
-      The counter SHOULD be incremented and decremented with the same attributes,
-      which are the ones known when the operation starts.
+      This metric SHOULD NOT be recorded for notifications.
     stability: development
     annotations:
       code_generation:
@@ -116,19 +115,37 @@ metrics:
     attributes:
       - ref_group: mcp.request.attributes
 
-  - name: mcp.client.request.size
+  - name: mcp.client.request.message.size
     requirement_level: opt_in
     instrument: histogram
     unit: By
-    brief: The size of the MCP request or notification as observed on the sender.
+    brief: The size of the MCP request or notification message as observed on the sender.
     note: |
-      The size, in bytes, of the UTF-8 encoded JSON-RPC request or notification
-      message as serialized by the sender, excluding transport framing such as HTTP
-      headers, server-sent event fields, or stdio message delimiters. When the
-      transport compresses the message, the uncompressed size SHOULD be recorded.
+      The transported size of the serialized JSON-RPC request or notification
+      message, recorded when the sender starts sending the message.
 
-      This metric SHOULD be recorded when the operation ends, with the same
-      attributes as `mcp.client.operation.duration`.
+      Instrumentations that do not have access to the serialized JSON-RPC
+      message SHOULD NOT record this metric.
+    stability: development
+    annotations:
+      code_generation:
+        metric_value_type: int
+    attributes:
+      - ref_group: mcp.request.metrics.attributes
+      - ref_group: mcp.client.address_and_port.attributes
+
+  - name: mcp.client.response.message.size
+    requirement_level: opt_in
+    instrument: histogram
+    unit: By
+    brief: The size of the MCP response message as observed on the sender.
+    note: |
+      The transported size of the serialized JSON-RPC response message (result
+      or error) received for the request.
+
+      Instrumentations that do not have access to the serialized JSON-RPC
+      message SHOULD NOT record this metric. This metric SHOULD NOT be recorded
+      for notifications or when no response is received.
     stability: development
     annotations:
       code_generation:
@@ -138,69 +155,36 @@ metrics:
       - ref_group: mcp.client.status.attributes
       - ref_group: mcp.client.address_and_port.attributes
 
-  - name: mcp.client.response.size
+  - name: mcp.server.request.message.size
     requirement_level: opt_in
     instrument: histogram
     unit: By
-    brief: The size of the MCP response as observed on the sender.
+    brief: The size of the MCP request or notification message as observed on the receiver.
     note: |
-      The size, in bytes, of the UTF-8 encoded JSON-RPC response message (result or
-      error) received for the request, excluding transport framing such as HTTP
-      headers, server-sent event fields, or stdio message delimiters. When the
-      transport compresses the message, the uncompressed size SHOULD be recorded.
-      Instrumentation that does not have access to the received bytes MAY record the
-      size of the message re-serialized as compact JSON. Other messages received
-      while the request is in progress, such as progress notifications, are not
-      included.
+      The transported size of the serialized JSON-RPC request or notification
+      message, recorded when the message is received.
 
-      This metric SHOULD NOT be recorded for notifications or when no response
-      is received.
+      Instrumentations that do not have access to the serialized JSON-RPC
+      message SHOULD NOT record this metric.
     stability: development
     annotations:
       code_generation:
         metric_value_type: int
     attributes:
-      - ref_group: mcp.operation.metrics.attributes
-      - ref_group: mcp.client.status.attributes
-      - ref_group: mcp.client.address_and_port.attributes
+      - ref_group: mcp.request.metrics.attributes
 
-  - name: mcp.server.request.size
+  - name: mcp.server.response.message.size
     requirement_level: opt_in
     instrument: histogram
     unit: By
-    brief: The size of the MCP request or notification as observed on the receiver.
+    brief: The size of the MCP response message as observed on the receiver.
     note: |
-      The size, in bytes, of the UTF-8 encoded JSON-RPC request or notification
-      message as received, excluding transport framing such as HTTP headers,
-      server-sent event fields, or stdio message delimiters. When the transport
-      compresses the message, the uncompressed size SHOULD be recorded.
-      Instrumentation that does not have access to the received bytes MAY record the
-      size of the message re-serialized as compact JSON.
+      The transported size of the serialized JSON-RPC response message (result
+      or error) sent for the request.
 
-      This metric SHOULD be recorded when the operation ends, with the same
-      attributes as `mcp.server.operation.duration`.
-    stability: development
-    annotations:
-      code_generation:
-        metric_value_type: int
-    attributes:
-      - ref_group: mcp.operation.metrics.attributes
-      - ref_group: mcp.server.status.attributes
-
-  - name: mcp.server.response.size
-    requirement_level: opt_in
-    instrument: histogram
-    unit: By
-    brief: The size of the MCP response as observed on the receiver.
-    note: |
-      The size, in bytes, of the UTF-8 encoded JSON-RPC response message (result or
-      error) sent for the request, excluding transport framing such as HTTP headers,
-      server-sent event fields, or stdio message delimiters. When the transport
-      compresses the message, the uncompressed size SHOULD be recorded. Other
-      messages sent while the request is in progress, such as progress
-      notifications, are not included.
-
-      This metric SHOULD NOT be recorded for notifications.
+      Instrumentations that do not have access to the serialized JSON-RPC
+      message SHOULD NOT record this metric. This metric SHOULD NOT be recorded
+      for notifications.
     stability: development
     annotations:
       code_generation:

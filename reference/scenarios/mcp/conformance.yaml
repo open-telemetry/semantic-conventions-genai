@@ -4,14 +4,73 @@ instrumentation_library: reference
 
 scenarios:
   reference:
-    # scenario.py starts server.py over stdio itself; no mock LLM server is involved.
     run: uv run --frozen --python 3.12 --project . python scenario.py
+    expected_violations:
+      - id: deprecated
+        context:
+          attribute_key: rpc.response.status_code
+          deprecation_note: Replaced by `rpc.status_code`.
+          deprecation_reason: renamed
+        reason: MCP status attribute groups still reference rpc.response.status_code from the pinned upstream registry.
+      - id: genai_span_name_format
+        context:
+          expected_form: execute_tool get_weather
+          keyed_attr: gen_ai.tool.name
+          operation: execute_tool
+        reason: MCP spans use the '{mcp.method.name} {target}' span name format ('tools/call get_weather').
+      - id: genai_span_name_format
+        context:
+          expected_form: execute_tool missing_tool
+          keyed_attr: gen_ai.tool.name
+          operation: execute_tool
+        reason: MCP spans use the '{mcp.method.name} {target}' span name format ('tools/call missing_tool').
+    spans:
+      - match:
+          attributes:
+            mcp.method.name: tools/list
+          kind: client
+          type: mcp.client
+      - match:
+          attributes:
+            mcp.method.name: tools/call
+          kind: client
+          type: mcp.client
+      - match:
+          attributes:
+            mcp.method.name: prompts/get
+          kind: client
+          type: mcp.client
+      - match:
+          attributes:
+            mcp.method.name: resources/read
+          kind: client
+          type: mcp.client
+      - match:
+          attributes:
+            mcp.method.name: tools/list
+          kind: server
+          type: mcp.server
+      - match:
+          attributes:
+            mcp.method.name: tools/call
+          kind: server
+          type: mcp.server
+      - match:
+          attributes:
+            mcp.method.name: prompts/get
+          kind: server
+          type: mcp.server
+      - match:
+          attributes:
+            mcp.method.name: resources/read
+          kind: server
+          type: mcp.server
     metrics:
       - mcp.client.operation.active
       - mcp.client.operation.duration
-      - mcp.client.request.size
-      - mcp.client.response.size
+      - mcp.client.request.message.size
+      - mcp.client.response.message.size
       - mcp.server.operation.active
       - mcp.server.operation.duration
-      - mcp.server.request.size
-      - mcp.server.response.size
+      - mcp.server.request.message.size
+      - mcp.server.response.message.size

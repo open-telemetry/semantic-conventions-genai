@@ -16,7 +16,9 @@
 {%- if filter(espec) == "True" -%}
 | `{{ espec.value }}` | {{ (espec.brief or espec.id) | trim }}{{ notes.add({"note": espec.note}) }} | {{ stability.badge(espec.stability, espec.deprecated, espec.brief) }} |
 {% endif %}{% endfor %}{{ notes.render() }}{% endmacro %}
+{#- `omit_enum_table` drops the table where the signal pins the attribute to one value. -#}
 {% macro tables(enums, notes) -%}
 {% for enum in enums | sort(attribute="key") -%}
-{{ table(enum, notes) -}}
+{%- set omit = enum.annotations is defined and enum.annotations.markdown is defined and enum.annotations.markdown.omit_enum_table -%}
+{%- if not omit -%}{{ table(enum, notes) -}}{%- endif -%}
 {% endfor %}{% endmacro %}

@@ -51,10 +51,15 @@
         },
         "GenericToolDefinition": {
             "additionalProperties": true,
-            "description": "Represents a tool definition in any form.",
+            "description": "Fallback for consumers when a tool definition has a `type` not defined by\nthis version of semantic conventions (such as a provider-specific built-in\ntool or a tool type added in a newer version).",
             "properties": {
                 "type": {
-                    "description": "The type of the tool.",
+                    "description": "The type of the tool. When recording a provider-specific tool definition, it is RECOMMENDED to prefix the value with `gen_ai.provider.name` (for example `anthropic.web_search_20250305`) to avoid name collisions with current or future tool types defined by semantic conventions.",
+                    "not": {
+                        "enum": [
+                            "function"
+                        ]
+                    },
                     "title": "Type",
                     "type": "string"
                 },

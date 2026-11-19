@@ -8,5 +8,5 @@ schema_url: https://opentelemetry.io/schemas/gen-ai-dev/1.42.0-dev
 stability: development
 dependencies:
   # renovate: datasource=github-tags depName=open-telemetry/semantic-conventions versioning=semver-coerced
-  - schema_url: https://opentelemetry.io/schemas/1.44.0
-    registry_path: https://github.com/open-telemetry/semantic-conventions.git@v1.44.0[model]
+  - schema_url: https://opentelemetry.io/schemas/1.45.0
+    registry_path: https://github.com/open-telemetry/semantic-conventions.git@v1.45.0[model]
