@@ -55,7 +55,7 @@ SEMCONV_VERSION := $(shell grep -oE 'semantic-conventions\.git@v[0-9]+\.[0-9]+\.
 UPSTREAM_DOCS_BASE := https://github.com/open-telemetry/semantic-conventions/blob/$(SEMCONV_VERSION)
 
 # X.Y.Z from the schema_url in model/manifest.yaml. main has
-# semconv-genai-unreleased/X.Y.Z-unreleased, release commits have
+# semconv-genai-dev/X.Y.Z-unreleased, release commits have
 # semconv-genai-dev/X.Y.Z-dev. Pass VERSION to target another release.
 SCHEMA_URL_BASE := https://opentelemetry.io/schemas
 VERSION := $(shell awk '/^schema_url:/ { n = split($$2, parts, "/"); print parts[n]; exit }' model/manifest.yaml | sed -E 's/-(unreleased|dev)$$//')
@@ -136,7 +136,7 @@ set-schema-url-dev:
 	$(call set_schema_url,$(SCHEMA_URL_BASE)/semconv-genai-dev/$(VERSION)-dev)
 
 set-schema-url-unreleased:
-	$(call set_schema_url,$(SCHEMA_URL_BASE)/semconv-genai-unreleased/$(VERSION)-unreleased)
+	$(call set_schema_url,$(SCHEMA_URL_BASE)/semconv-genai-dev/$(VERSION)-unreleased)
 
 # Build the release assets for the development registry, which includes
 # items at every stability level:
