@@ -27,6 +27,11 @@ scenarios:
     spans:
       - match:
           attributes:
+            mcp.method.name: tools/list
+          kind: client
+          type: mcp.client
+      - match:
+          attributes:
             mcp.method.name: tools/call
           kind: client
           type: mcp.client
@@ -40,6 +45,11 @@ scenarios:
             mcp.method.name: resources/read
           kind: client
           type: mcp.client
+      - match:
+          attributes:
+            mcp.method.name: tools/list
+          kind: server
+          type: mcp.server
       - match:
           attributes:
             mcp.method.name: tools/call
