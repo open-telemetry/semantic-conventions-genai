@@ -9,7 +9,7 @@
 | --- | --- | --- | --- | --- |
 | <a id="gen-ai-agent-description" href="#gen-ai-agent-description">`gen_ai.agent.description`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | Free-form description of the GenAI agent provided by the application. | `Helps with math problems`; `Generates fiction stories` |
 | <a id="gen-ai-agent-id" href="#gen-ai-agent-id">`gen_ai.agent.id`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The unique and stable identifier of the GenAI hosted agent resource. [1] | `asst_5j66UpCpwteGg4YSxUnt7lPY`; `arn:aws:bedrock:us-east-1:123:agent/42`; `urn:agent:projects-123:projects:123:locations:us-east1:aiplatform:reasoningEngines:456` |
-| <a id="gen-ai-agent-invocation-root" href="#gen-ai-agent-invocation-root">`gen_ai.agent.invocation.root`</a> | ![Development](https://img.shields.io/badge/-development-blue) | boolean | Whether the invocation is not nested under another agent invocation. [2] | `true`; `false` |
+| <a id="gen-ai-agent-invocation-root" href="#gen-ai-agent-invocation-root">`gen_ai.agent.invocation.root`</a> | ![Development](https://img.shields.io/badge/-development-blue) | boolean | Whether this is the outermost agent invocation. [2] | `true`; `false` |
 | <a id="gen-ai-agent-name" href="#gen-ai-agent-name">`gen_ai.agent.name`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | Human-readable name of the GenAI agent or workflow provided by the application. [3] | `Math Tutor`; `Fiction Writer` |
 | <a id="gen-ai-agent-version" href="#gen-ai-agent-version">`gen_ai.agent.version`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The version of the GenAI agent. | `1.0.0`; `2025-05-01` |
 | <a id="gen-ai-conversation-compacted" href="#gen-ai-conversation-compacted">`gen_ai.conversation.compacted`</a> | ![Development](https://img.shields.io/badge/-development-blue) | boolean | Indicates whether the effective conversation context used for this operation is a compacted view of a prior conversation. [4] | `true` |
@@ -98,16 +98,14 @@
 **[1] `gen_ai.agent.id`:** For hosted agents, this SHOULD be the provider-assigned stable identifier of the agent resource such as [AWS Bedrock agent ARN](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_Agent.html) or [GCP Agent Registry identifier](https://docs.cloud.google.com/agent-registry/concepts#agent-identifier).
 It's NOT RECOMMENDED to record in-memory agent instance ids on this attribute due to their transient nature.
 
-**[2] `gen_ai.agent.invocation.root`:** `true` when the invocation is not nested under another
-`gen_ai.invoke_agent.internal` span in the same process; `false` when it is.
+**[2] `gen_ai.agent.invocation.root`:** `true` when the invocation does not run within another `invoke_agent`,
+`invoke_workflow`, or `invoke_runner` invocation; `false` when it does.
 
-Instrumentations SHOULD track active invocations (for example,
-in OpenTelemetry Context) independently of span recording.
+Instrumentations SHOULD track active invocations in context (for example,
+OpenTelemetry Context) independently of span recording, using keys that
+other instrumentations can read.
 They SHOULD make a best effort to detect invocations started by
-other instrumentations in the same process.
-
-Instrumentations SHOULD store invocation state in context under keys
-that instrumentations from other packages and vendors can also read.
+other instrumentations.
 
 Instrumentations SHOULD NOT set the attribute to `true` unless they can
 reliably determine that the invocation is not nested.

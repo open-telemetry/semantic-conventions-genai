@@ -208,7 +208,7 @@ metrics:
         requirement_level: required
       - ref: gen_ai.agent.invocation.root
         requirement_level:
-          conditionally_required: When the invocation is not nested.
+          conditionally_required: If and only if the invocation is not nested.
       - ref_group: attributes.gen_ai.invoked_agent.internal.common
       - ref: gen_ai.request.model
         requirement_level:

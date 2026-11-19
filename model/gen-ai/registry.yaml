@@ -531,18 +531,16 @@ attributes:
     stability: development
   - key: gen_ai.agent.invocation.root
     type: boolean
-    brief: Whether the invocation is not nested under another agent invocation.
+    brief: Whether this is the outermost agent invocation.
     note: |
-      `true` when the invocation is not nested under another
-      `gen_ai.invoke_agent.internal` span in the same process; `false` when it is.
+      `true` when the invocation does not run within another `invoke_agent`,
+      `invoke_workflow`, or `invoke_runner` invocation; `false` when it does.
 
-      Instrumentations SHOULD track active invocations (for example,
-      in OpenTelemetry Context) independently of span recording.
+      Instrumentations SHOULD track active invocations in context (for example,
+      OpenTelemetry Context) independently of span recording, using keys that
+      other instrumentations can read.
       They SHOULD make a best effort to detect invocations started by
-      other instrumentations in the same process.
-
-      Instrumentations SHOULD store invocation state in context under keys
-      that instrumentations from other packages and vendors can also read.
+      other instrumentations.
 
       Instrumentations SHOULD NOT set the attribute to `true` unless they can
       reliably determine that the invocation is not nested.
