@@ -71,11 +71,13 @@ def _usage():
     }
 
 
-async def _run_response(ws, behavior, barge_in_received=None):
+async def _run_response(ws, behavior, tools, barge_in_received=None):
     response_id = "resp_mock_realtime_001"
     item_id = "item_mock_assistant_001"
 
     if behavior == "function_call":
+        if not tools:
+            raise ValueError("A function-call generation requires a configured tool")
         # The generation resolves to a tool call and then ends. After the
         # application sends the tool result, a subsequent response.create
         # produces the spoken answer.
@@ -99,7 +101,7 @@ async def _run_response(ws, behavior, barge_in_received=None):
                     "object": "realtime.item",
                     "type": "function_call",
                     "status": "completed",
-                    "name": "get_weather",
+                    "name": tools[0]["name"],
                     "call_id": "call_mock_realtime_001",
                     "arguments": json.dumps({"location": "Seattle"}),
                 },
@@ -296,17 +298,19 @@ async def _run_failed_session(ws):
 
 async def _handler(ws):
     connection_number = next(_connection_counter)
+    session = {
+        "type": "realtime",
+        "id": f"sess_mock_realtime_{connection_number:03d}",
+        "model": "gpt-realtime",
+        "output_modalities": ["audio"],
+        "tools": [],
+    }
     await _send(
         ws,
         {
             "type": "session.created",
             "event_id": _event_id(),
-            "session": {
-                "type": "realtime",
-                "id": f"sess_mock_realtime_{connection_number:03d}",
-                "model": "gpt-realtime",
-                "output_modalities": ["audio"],
-            },
+            "session": session,
         },
     )
     if connection_number == 2:
@@ -319,7 +323,10 @@ async def _handler(ws):
         async for raw in ws:
             message = json.loads(raw)
             message_type = message.get("type")
-            if message_type == "input_audio_buffer.append":
+            if message_type == "session.update":
+                session.update(message["session"])
+                await _send(ws, {"type": "session.updated", "event_id": _event_id(), "session": session})
+            elif message_type == "input_audio_buffer.append":
                 audio = message.get("audio")
                 if barge_in_received is not None and not barge_in_received.is_set():
                     if audio == previous_audio:
@@ -329,10 +336,12 @@ async def _handler(ws):
                     await _emit_user_vad(ws)
                 previous_audio = audio
             elif message_type == "response.create":
-                behavior = ((message.get("response") or {}).get("metadata") or {}).get("mock_behavior", "complete")
+                response = message["response"]
+                behavior = (response.get("metadata") or {}).get("mock_behavior", "complete")
                 if behavior == "interrupted":
                     barge_in_received = asyncio.Event()
-                response_tasks.create_task(_run_response(ws, behavior, barge_in_received))
+                tools = response.get("tools", session["tools"])
+                response_tasks.create_task(_run_response(ws, behavior, tools, barge_in_received))
 
 
 class _HealthHandler(BaseHTTPRequestHandler):
