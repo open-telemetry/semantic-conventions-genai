@@ -68,7 +68,7 @@ events:
       Instrumentations SHOULD set the severity to DEBUG (severity number 5) when recording this event.
     stability: development
     attributes:
-      - ref_group: span.gen_ai.client.inference
+      - ref_group: attributes.gen_ai.client.inference.common
   - name: gen_ai.evaluation.result
     requirement_level: recommended
     brief: >

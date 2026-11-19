@@ -107,31 +107,8 @@ attribute_groups:
           Additional output format details may be recorded in the future in the
           `gen_ai.output.{type}.*` attributes.
 
-spans:
-  - type: gen_ai.client.inference
-    requirement_level: recommended
-    kind: client
-    name:
-      note: |
-        **Span name** SHOULD be `{gen_ai.operation.name} {gen_ai.request.model}`.
-        Semantic conventions for individual GenAI systems and frameworks MAY specify different span name format
-        and MUST follow the overall [guidelines for span names](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.56.0/specification/trace/api.md#span).
-    brief: >
-      This span represents a logical client call to Generative AI model or
-      service that generates a response or requests a tool call based on the input prompt.
-    note: |
-      **Span kind** SHOULD be `CLIENT` and MAY be set to `INTERNAL` on spans representing
-      call to models running in the same process. It's RECOMMENDED to use `CLIENT` kind
-      when the GenAI system being instrumented usually runs in a different process than its
-      client or when the GenAI call happens over instrumented protocol such as HTTP.
-
-      One client request may involve multiple server-side inference operations.
-      The model provider or server, when instrumented, may record those operations
-      as nested inference spans.
-
-      Telemetry consumers should group inference spans by [`service.name`](https://opentelemetry.io/docs/specs/semconv/registry/entities/service/)
-      when counting operations or tokens.
-    stability: development
+  - id: attributes.gen_ai.client.inference.common
+    visibility: internal
     attributes:
       - ref_group: attributes.gen_ai.common
       - ref_group: attributes.gen_ai.address_and_port
@@ -211,6 +188,8 @@ spans:
           recommended: When available and non-zero.
       - ref_group: attributes.gen_ai.content
       - ref_group: attributes.gen_ai.error
+      - ref: gen_ai.tool.definitions
+        brief: The list of tool definitions supplied to the model for this inference operation.
       - ref: gen_ai.request.max_tokens
         requirement_level: recommended
       - ref: gen_ai.request.choice.count
@@ -277,6 +256,34 @@ spans:
       - ref: gen_ai.conversation.compacted
         requirement_level:
           recommended: when available
+
+spans:
+  - type: gen_ai.client.inference
+    requirement_level: recommended
+    kind: client
+    name:
+      note: |
+        **Span name** SHOULD be `{gen_ai.operation.name} {gen_ai.request.model}`.
+        Semantic conventions for individual GenAI systems and frameworks MAY specify different span name format
+        and MUST follow the overall [guidelines for span names](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.56.0/specification/trace/api.md#span).
+    brief: >
+      This span represents a logical client call to Generative AI model or
+      service that generates a response or requests a tool call based on the input prompt.
+    note: |
+      **Span kind** SHOULD be `CLIENT` and MAY be set to `INTERNAL` on spans representing
+      call to models running in the same process. It's RECOMMENDED to use `CLIENT` kind
+      when the GenAI system being instrumented usually runs in a different process than its
+      client or when the GenAI call happens over instrumented protocol such as HTTP.
+
+      One client request may involve multiple server-side inference operations.
+      The model provider or server, when instrumented, may record those operations
+      as nested inference spans.
+
+      Telemetry consumers should group inference spans by [`service.name`](https://opentelemetry.io/docs/specs/semconv/registry/entities/service/)
+      when counting operations or tokens.
+    stability: development
+    attributes:
+      - ref_group: attributes.gen_ai.client.inference.common
       - ref: gen_ai.provider.name
         sampling_relevant: true
       - ref: gen_ai.operation.name
@@ -349,6 +356,17 @@ spans:
           in [#633](https://github.com/open-telemetry/semantic-conventions-genai/issues/633).
       - ref: gen_ai.tool.definitions
         requirement_level: opt_in
+        brief: The list of tool definitions supplied to the model for this inference operation.
+        note: |
+          > [!WARNING]
+          > This attribute may contain sensitive information.
+
+          For providers with session-level tools and per-generation overrides, record
+          the generation's tools if set, otherwise the session's tools.
+
+          Since this attribute could be large, it's NOT RECOMMENDED to populate
+          non-required properties by default. Instrumentations MAY provide a way
+          to enable populating optional properties.
       - ref: gen_ai.request.max_tokens
         requirement_level: recommended
       - ref: gen_ai.request.reasoning.level
@@ -587,6 +605,7 @@ spans:
         requirement_level: opt_in
       - ref: gen_ai.tool.definitions
         requirement_level: opt_in
+        brief: The list of tool definitions supplied to the model request that generated the fetched response.
       - ref: gen_ai.response.model
         requirement_level: recommended
       - ref: gen_ai.response.status
@@ -735,6 +754,8 @@ spans:
       - ref_group: attributes.gen_ai.invoke_agent.common
       - ref_group: attributes.gen_ai.usage.breakdown
       - ref_group: attributes.gen_ai.address_and_port
+      - ref: gen_ai.tool.definitions
+        brief: The list of tool definitions configured for the invoked remote agent.
       - ref: gen_ai.provider.name
         requirement_level: required
         sampling_relevant: true
@@ -817,6 +838,19 @@ spans:
       - "gen_ai.main_agent"
     attributes:
       - ref_group: attributes.gen_ai.invoke_agent.common
+      - ref: gen_ai.tool.definitions
+        brief: The list of tool definitions configured for the invoked agent, workflow, or framework entrypoint.
+        note: |
+          > [!WARNING]
+          > This attribute may contain sensitive information.
+
+          If there is no single configured list for the invocation, omit this attribute.
+          Do not combine tool lists across child agents, handoffs, or steps. Record the tools
+          supplied to each model call on its inference span instead.
+
+          Since this attribute could be large, it's NOT RECOMMENDED to populate
+          non-required properties by default. Instrumentations MAY provide a way
+          to enable populating optional properties.
       - ref: gen_ai.operation.name
         annotations:
           markdown:
