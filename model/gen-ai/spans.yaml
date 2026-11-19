@@ -321,7 +321,7 @@ spans:
           recommended: When applicable.
       - ref: gen_ai.request.service_tier
         requirement_level:
-          conditionally_required: If the request includes a service tier.
+          conditionally_required: If and only if provided in the request.
       - ref: gen_ai.request.previous_response.id
         requirement_level:
           recommended: When available and if the request references a previous response.
