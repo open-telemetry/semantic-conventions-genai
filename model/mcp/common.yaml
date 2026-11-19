@@ -27,7 +27,7 @@ attribute_groups:
         note: |
           When the response carries a JSON-RPC error code that classifies as an error,
           `error.type` SHOULD be set to the string representation of that code. See
-          `rpc.response.status_code` for which codes classify as errors. When an HTTP
+          `rpc.status_code` for which codes classify as errors. When an HTTP
           response ends the operation in error without a JSON-RPC error code,
           `error.type` SHOULD be set to the string representation of the HTTP status
           code. Otherwise (for example on timeouts or other transport errors), it SHOULD be
@@ -40,8 +40,8 @@ attribute_groups:
           is returned with `isError` set to `true`, this attribute SHOULD be set to
           `tool_error`.
 
-          `rpc.response.status_code` carries the same string representation of
-          the JSON-RPC error code. Unlike `rpc.response.status_code`,
+          `rpc.status_code` carries the same string representation of
+          the JSON-RPC error code. Unlike `rpc.status_code`,
           `error.type` is also set when no JSON-RPC error response is available.
       - ref: mcp.method.name
         requirement_level: required
@@ -51,7 +51,7 @@ attribute_groups:
   - id: mcp.client.status.attributes
     visibility: internal
     attributes:
-      - ref: rpc.response.status_code
+      - ref: rpc.status_code
         brief: The error code from the JSON-RPC response.
         requirement_level:
           conditionally_required: If response contains an error code.
@@ -64,7 +64,7 @@ attribute_groups:
   - id: mcp.server.status.attributes
     visibility: internal
     attributes:
-      - ref: rpc.response.status_code
+      - ref: rpc.status_code
         brief: The error code from the JSON-RPC response.
         requirement_level:
           conditionally_required: If response contains an error code.
