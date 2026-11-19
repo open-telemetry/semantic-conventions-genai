@@ -4,6 +4,9 @@ attribute_groups:
     visibility: internal
     attributes:
       - ref_group: mcp.common.attributes
+      - ref: gen_ai.prompt.variable
+        brief: The variables supplied to the prompt template in the request.
+        requirement_level: opt_in
       - ref: mcp.session.id
         requirement_level:
           recommended: When the MCP request or notification is part of a session.
