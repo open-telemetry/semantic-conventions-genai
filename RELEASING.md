@@ -16,13 +16,13 @@ Each release has these assets:
 
 ## Making a release
 
-1. Run the [Prepare release](https://github.com/open-telemetry/semantic-conventions-genai/actions/workflows/prepare-release.yml)
+1. Run the [Prepare release](.github/workflows/prepare-release.yml)
    workflow. It uses the version from `model/manifest.yaml` unless one is provided.
    It opens a pull request that sets the release `schema_url` and renders
    [CHANGELOG.md](CHANGELOG.md) from [changelog.d/](changelog.d/).
 2. Review and merge the pull request.
 
-Merging runs the [Release](https://github.com/open-telemetry/semantic-conventions-genai/actions/workflows/release.yml)
+Merging runs the [Release](.github/workflows/release.yml)
 workflow. It tags the merge commit, publishes the GitHub release with the
 changelog section and the assets, and opens a pull request bumping `main` to the
 next minor `-unreleased` version. Review and merge it.
