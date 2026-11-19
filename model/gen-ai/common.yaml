@@ -24,7 +24,7 @@ attribute_groups:
       - ref: gen_ai.operation.name
         requirement_level: required
       - ref: gen_ai.provider.name
-        # overriden by some signals that use this group, but don't have provider always available.
+        # overridden by some signals that use this group, but don't have provider always available.
         requirement_level: required
 
   - id: attributes.gen_ai.address_and_port
