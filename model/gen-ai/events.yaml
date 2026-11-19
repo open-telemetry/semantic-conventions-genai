@@ -24,6 +24,7 @@ events:
       this event.
     stability: development
     attributes:
+      - ref_group: attributes.gen_ai.address_and_port
       - ref: gen_ai.provider.name
         requirement_level: required
       - ref: gen_ai.request.model
@@ -32,11 +33,6 @@ events:
       - ref: gen_ai.realtime_session.id
         requirement_level:
           conditionally_required: If the provider exposes a session identifier, or the instrumentation uses a client-created per-connection identifier.
-      - ref: server.address
-        requirement_level: recommended
-      - ref: server.port
-        requirement_level:
-          conditionally_required: If `server.address` is set.
   - name: gen_ai.client.realtime_session.ended
     requirement_level: recommended
     brief: >
@@ -48,6 +44,7 @@ events:
       session closes normally and WARN (severity number 13) when `error.type` is set.
     stability: development
     attributes:
+      - ref_group: attributes.gen_ai.address_and_port
       - ref: gen_ai.provider.name
         requirement_level: required
       - ref: gen_ai.request.model
@@ -59,11 +56,6 @@ events:
       - ref: error.type
         requirement_level:
           conditionally_required: If the session ended because of an error.
-      - ref: server.address
-        requirement_level: recommended
-      - ref: server.port
-        requirement_level:
-          conditionally_required: If `server.address` is set.
   - name: gen_ai.client.inference.operation.details
     requirement_level: recommended
     brief: >
