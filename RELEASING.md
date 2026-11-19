@@ -6,7 +6,7 @@ Release `vX.Y.Z` publishes the development registry with schema URL
 `https://opentelemetry.io/schemas/semconv-genai-dev/X.Y.Z-dev`.
 
 `model/manifest.yaml` on `main` carries
-`https://opentelemetry.io/schemas/semconv-genai-unreleased/X.Y.Z-unreleased`,
+`https://opentelemetry.io/schemas/semconv-genai-dev/X.Y.Z-unreleased`,
 where `X.Y.Z` is the next release.
 
 Each release has these assets:
