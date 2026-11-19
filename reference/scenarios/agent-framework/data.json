@@ -514,6 +514,33 @@
     },
     {
       "id": "missing_attribute",
+      "message": "Attribute 'gen_ai.workflow.name' does not exist in the registry.",
+      "signal_type": "span",
+      "signal_name": "invoke_workflow slogan_review_workflow",
+      "context": {
+        "attribute_key": "gen_ai.workflow.name"
+      }
+    },
+    {
+      "id": "missing_attribute",
+      "message": "Attribute 'workflow.description' does not exist in the registry.",
+      "signal_type": "span",
+      "signal_name": "invoke_workflow slogan_review_workflow",
+      "context": {
+        "attribute_key": "workflow.description"
+      }
+    },
+    {
+      "id": "missing_attribute",
+      "message": "Attribute 'workflow.id' does not exist in the registry.",
+      "signal_type": "span",
+      "signal_name": "invoke_workflow slogan_review_workflow",
+      "context": {
+        "attribute_key": "workflow.id"
+      }
+    },
+    {
+      "id": "missing_attribute",
       "message": "Attribute 'message.type' does not exist in the registry.",
       "signal_type": "span",
       "signal_name": "message.send",
@@ -555,33 +582,6 @@
       "signal_name": "workflow.build",
       "context": {
         "attribute_key": "workflow_builder.name"
-      }
-    },
-    {
-      "id": "missing_attribute",
-      "message": "Attribute 'workflow.description' does not exist in the registry.",
-      "signal_type": "span",
-      "signal_name": "workflow.run",
-      "context": {
-        "attribute_key": "workflow.description"
-      }
-    },
-    {
-      "id": "missing_attribute",
-      "message": "Attribute 'workflow.id' does not exist in the registry.",
-      "signal_type": "span",
-      "signal_name": "workflow.run",
-      "context": {
-        "attribute_key": "workflow.id"
-      }
-    },
-    {
-      "id": "missing_attribute",
-      "message": "Attribute 'workflow.name' does not exist in the registry.",
-      "signal_type": "span",
-      "signal_name": "workflow.run",
-      "context": {
-        "attribute_key": "workflow.name"
       }
     }
   ]
