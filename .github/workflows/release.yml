@@ -132,7 +132,8 @@ jobs:
 
           git checkout -b "$branch"
           git commit -a -m "$message"
-          git push --set-upstream origin "$branch"
+          # --force lets a re-run replace the branch left by a failed attempt.
+          git push --force --set-upstream origin "$branch"
           gh pr create --title "$message" \
                        --body "Post-release update for \`v${VERSION}\`." \
                        --head "$branch" \

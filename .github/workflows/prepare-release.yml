@@ -62,7 +62,8 @@ jobs:
           git checkout -b "$branch"
           git add -A model CHANGELOG.md changelog.d
           git commit -m "$message"
-          git push --set-upstream origin "$branch"
+          # --force lets a re-run replace the branch left by a failed attempt.
+          git push --force --set-upstream origin "$branch"
 
           # The release workflow only runs for merged pull requests with this label.
           gh label create release --description "Triggers the release workflow when merged" --color 0e8a16 || true
