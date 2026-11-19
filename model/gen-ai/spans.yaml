@@ -335,7 +335,7 @@ spans:
         requirement_level: recommended
       - ref: gen_ai.response.service_tier
         requirement_level:
-          conditionally_required: If the response was received and includes a service tier.
+          conditionally_required: If and only of returned by the provider.
       - ref: gen_ai.response.time_to_first_chunk
         requirement_level:
           recommended: If the request was a streaming request.
