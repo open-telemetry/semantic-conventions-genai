@@ -105,16 +105,8 @@ def _a2a_error_reason(details: object) -> str | None:
 
 
 class _AsgiCallWrapper:
-    """Wrap a Starlette response so cleanup runs even when the body iterator is
-    never awaited.
-
-    If the client disconnects before the response starts, Starlette raises
-    `ClientDisconnect` while sending `http.response.start`, and the
-    `body_iterator` the dispatcher attached is never iterated, so its `finally`
-    does not run. Starlette calls a response as `await response(scope, receive,
-    send)`, so wrapping the response with an object that has `__call__` lets us
-    record the metric and end the span once the dispatch itself returns or
-    raises. The `_done` flag keeps it exactly once.
+    """Record the metric and end the span once the response is sent, even if
+    the client disconnects before the body iterator runs.
     """
 
     def __init__(self, response, on_done):
@@ -187,7 +179,7 @@ class ReferenceJsonRpcDispatcher(JsonRpcDispatcher):
         duration_attrs = dict(metric_attrs)
         return_immediately = method == "SendMessage" and configuration.get("returnImmediately") is True
         if return_immediately:
-            duration_attrs["a2a.operation.return_immediately"] = True
+            duration_attrs["a2a.request.return_immediately"] = True
         span_attrs = {
             "a2a.method.name": method,
             "a2a.protocol.version": interface.protocol_version,
@@ -209,7 +201,7 @@ class ReferenceJsonRpcDispatcher(JsonRpcDispatcher):
         ):
             span_attrs["a2a.message.reference_task_ids"] = reference_task_ids
         if return_immediately:
-            span_attrs["a2a.operation.return_immediately"] = True
+            span_attrs["a2a.request.return_immediately"] = True
         if isinstance(task_id := params.get("id"), str) and task_id:
             span_attrs["a2a.task.id"] = task_id
         if request.client:
@@ -474,7 +466,7 @@ async def run_message_send_reference(
     if port is not None:
         span_attrs["server.port"] = port
     if request.configuration.return_immediately:
-        span_attrs["a2a.operation.return_immediately"] = True
+        span_attrs["a2a.request.return_immediately"] = True
     metric_attrs = {
         "a2a.method.name": method,
         "a2a.protocol.version": interface.protocol_version,
@@ -485,7 +477,7 @@ async def run_message_send_reference(
         with _reference_tracer.start_as_current_span(method, kind=SpanKind.CLIENT, attributes=span_attrs) as span:
             duration_attrs = dict(metric_attrs)
             if request.configuration.return_immediately:
-                duration_attrs["a2a.operation.return_immediately"] = True
+                duration_attrs["a2a.request.return_immediately"] = True
             _client_active.add(1, metric_attrs)
             start = time.perf_counter()
             try:

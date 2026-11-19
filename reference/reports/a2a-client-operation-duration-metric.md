@@ -12,7 +12,7 @@
 
 | Attribute | Supporting Libraries |
 | --- | --- |
-| a2a.operation.return_immediately | [a2a-python] |
+| a2a.request.return_immediately | [a2a-python] |
 
 ## Recommended
 

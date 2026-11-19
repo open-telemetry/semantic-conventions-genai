@@ -4,8 +4,8 @@
       "a2a.message.id",
       "a2a.message.reference_task_ids",
       "a2a.method.name",
-      "a2a.operation.return_immediately",
       "a2a.protocol.version",
+      "a2a.request.return_immediately",
       "a2a.task.id",
       "a2a.task.state",
       "a2a.tenant",
@@ -21,8 +21,8 @@
       "a2a.message.id",
       "a2a.message.reference_task_ids",
       "a2a.method.name",
-      "a2a.operation.return_immediately",
       "a2a.protocol.version",
+      "a2a.request.return_immediately",
       "a2a.task.id",
       "a2a.task.state",
       "a2a.tenant",
@@ -47,8 +47,8 @@
     ],
     "a2a.client.operation.duration": [
       "a2a.method.name",
-      "a2a.operation.return_immediately",
       "a2a.protocol.version",
+      "a2a.request.return_immediately",
       "error.type",
       "server.address",
       "server.port"
@@ -59,8 +59,8 @@
     ],
     "a2a.server.operation.duration": [
       "a2a.method.name",
-      "a2a.operation.return_immediately",
       "a2a.protocol.version",
+      "a2a.request.return_immediately",
       "error.type"
     ]
   },

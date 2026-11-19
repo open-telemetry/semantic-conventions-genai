@@ -78,12 +78,11 @@ attributes:
       [versioning](https://a2a-protocol.org/latest/specification/#36-versioning).
     examples: ["1.0"]
     stability: development
-  - key: a2a.operation.return_immediately
+  - key: a2a.request.return_immediately
     type: boolean
     brief: >
-      Whether the client requested the `SendMessage` operation to return
-      immediately instead of waiting for the task to reach a terminal or
-      interrupted state.
+      Whether `SendMessage` was requested to return before the task reaches
+      a terminal or interrupted state.
     note: >
       Corresponds to the `returnImmediately` field of the A2A request
       `SendMessageConfiguration`.

@@ -68,7 +68,7 @@ higher level GenAI agent operations.
 | --- | --- | --- | --- | --- | --- |
 | [`a2a.method.name`](/docs/registry/attributes/a2a.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Required` | string | The name of the A2A request method. [1] | `SendMessage`; `SendStreamingMessage`; `GetTask` |
 | [`a2a.message.id`](/docs/registry/attributes/a2a.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When the A2A request contains a message. | string | The unique identifier of the A2A message. [2] | `msg-user-1234` |
-| [`a2a.operation.return_immediately`](/docs/registry/attributes/a2a.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [3] | boolean | Whether the client requested the `SendMessage` operation to return immediately instead of waiting for the task to reach a terminal or interrupted state. [4] | `true` |
+| [`a2a.request.return_immediately`](/docs/registry/attributes/a2a.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [3] | boolean | Whether `SendMessage` was requested to return before the task reaches a terminal or interrupted state. [4] | `true` |
 | [`a2a.task.id`](/docs/registry/attributes/a2a.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [5] | string | The unique identifier of an A2A task. [6] | `task-5f2a7c7d9f8e4d2a` |
 | [`a2a.task.state`](/docs/registry/attributes/a2a.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [7] | string | The state of an A2A task. [8] | `TASK_STATE_SUBMITTED`; `TASK_STATE_WORKING`; `TASK_STATE_INPUT_REQUIRED` |
 | [`a2a.tenant`](/docs/registry/attributes/a2a.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When the A2A request `tenant` field is set. | string | The opaque routing identifier of the target [A2A tenant](https://github.com/a2aproject/A2A/blob/main/docs/topics/multi-tenancy.md). | `billing` |
@@ -86,9 +86,9 @@ higher level GenAI agent operations.
 
 **[2] `a2a.message.id`:** See the A2A specification for the [Message](https://a2a-protocol.org/latest/specification/#414-message) object.
 
-**[3] `a2a.operation.return_immediately`:** If `SendMessage` is requested to return immediately (value is `true`). When missing, the value is assumed to be `false`.
+**[3] `a2a.request.return_immediately`:** If and only if the value is `true`. When missing, the value is assumed to be `false`.
 
-**[4] `a2a.operation.return_immediately`:** Corresponds to the `returnImmediately` field of the A2A request `SendMessageConfiguration`. See the A2A specification for [SendMessageConfiguration](https://a2a-protocol.org/latest/specification/#322-sendmessageconfiguration).
+**[4] `a2a.request.return_immediately`:** Corresponds to the `returnImmediately` field of the A2A request `SendMessageConfiguration`. See the A2A specification for [SendMessageConfiguration](https://a2a-protocol.org/latest/specification/#322-sendmessageconfiguration).
 
 **[5] `a2a.task.id`:** When the A2A request or response contains a single task ID.
 
@@ -207,7 +207,7 @@ SHOULD enrich the transport server span instead - see A2A
 | --- | --- | --- | --- | --- | --- |
 | [`a2a.method.name`](/docs/registry/attributes/a2a.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Required` | string | The name of the A2A request method. [1] | `SendMessage`; `SendStreamingMessage`; `GetTask` |
 | [`a2a.message.id`](/docs/registry/attributes/a2a.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When the A2A request contains a message. | string | The unique identifier of the A2A message. [2] | `msg-user-1234` |
-| [`a2a.operation.return_immediately`](/docs/registry/attributes/a2a.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [3] | boolean | Whether the client requested the `SendMessage` operation to return immediately instead of waiting for the task to reach a terminal or interrupted state. [4] | `true` |
+| [`a2a.request.return_immediately`](/docs/registry/attributes/a2a.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [3] | boolean | Whether `SendMessage` was requested to return before the task reaches a terminal or interrupted state. [4] | `true` |
 | [`a2a.task.id`](/docs/registry/attributes/a2a.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [5] | string | The unique identifier of an A2A task. [6] | `task-5f2a7c7d9f8e4d2a` |
 | [`a2a.task.state`](/docs/registry/attributes/a2a.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [7] | string | The state of an A2A task. [8] | `TASK_STATE_SUBMITTED`; `TASK_STATE_WORKING`; `TASK_STATE_INPUT_REQUIRED` |
 | [`a2a.tenant`](/docs/registry/attributes/a2a.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When the A2A request `tenant` field is set. | string | The opaque routing identifier of the target [A2A tenant](https://github.com/a2aproject/A2A/blob/main/docs/topics/multi-tenancy.md). | `billing` |
@@ -227,9 +227,9 @@ SHOULD enrich the transport server span instead - see A2A
 
 **[2] `a2a.message.id`:** See the A2A specification for the [Message](https://a2a-protocol.org/latest/specification/#414-message) object.
 
-**[3] `a2a.operation.return_immediately`:** If `SendMessage` is requested to return immediately (value is `true`). When missing, the value is assumed to be `false`.
+**[3] `a2a.request.return_immediately`:** If and only if the value is `true`. When missing, the value is assumed to be `false`.
 
-**[4] `a2a.operation.return_immediately`:** Corresponds to the `returnImmediately` field of the A2A request `SendMessageConfiguration`. See the A2A specification for [SendMessageConfiguration](https://a2a-protocol.org/latest/specification/#322-sendmessageconfiguration).
+**[4] `a2a.request.return_immediately`:** Corresponds to the `returnImmediately` field of the A2A request `SendMessageConfiguration`. See the A2A specification for [SendMessageConfiguration](https://a2a-protocol.org/latest/specification/#322-sendmessageconfiguration).
 
 **[5] `a2a.task.id`:** When the A2A request or response contains a single task ID.
 
@@ -371,7 +371,7 @@ the status code, so the A2A error classification is preserved.
 | [`url.path`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/url.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Required` | string | The [URI path](https://www.rfc-editor.org/rfc/rfc3986#section-3.3) component [3] | `/search` |
 | [`url.scheme`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/url.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Required` | string | The [URI scheme](https://www.rfc-editor.org/rfc/rfc3986#section-3.1) component identifying the used protocol. [4] | `http`; `https` |
 | [`a2a.message.id`](/docs/registry/attributes/a2a.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When the A2A request contains a message. | string | The unique identifier of the A2A message. [5] | `msg-user-1234` |
-| [`a2a.operation.return_immediately`](/docs/registry/attributes/a2a.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [6] | boolean | Whether the client requested the `SendMessage` operation to return immediately instead of waiting for the task to reach a terminal or interrupted state. [7] | `true` |
+| [`a2a.request.return_immediately`](/docs/registry/attributes/a2a.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [6] | boolean | Whether `SendMessage` was requested to return before the task reaches a terminal or interrupted state. [7] | `true` |
 | [`a2a.task.id`](/docs/registry/attributes/a2a.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [8] | string | The unique identifier of an A2A task. [9] | `task-5f2a7c7d9f8e4d2a` |
 | [`a2a.task.state`](/docs/registry/attributes/a2a.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [10] | string | The state of an A2A task. [11] | `TASK_STATE_SUBMITTED`; `TASK_STATE_WORKING`; `TASK_STATE_INPUT_REQUIRED` |
 | [`a2a.tenant`](/docs/registry/attributes/a2a.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When the A2A request `tenant` field is set. | string | The opaque routing identifier of the target [A2A tenant](https://github.com/a2aproject/A2A/blob/main/docs/topics/multi-tenancy.md). | `billing` |
@@ -439,9 +439,9 @@ Tracing instrumentations that do so, MUST also set `http.request.method_original
 
 **[5] `a2a.message.id`:** See the A2A specification for the [Message](https://a2a-protocol.org/latest/specification/#414-message) object.
 
-**[6] `a2a.operation.return_immediately`:** If `SendMessage` is requested to return immediately (value is `true`). When missing, the value is assumed to be `false`.
+**[6] `a2a.request.return_immediately`:** If and only if the value is `true`. When missing, the value is assumed to be `false`.
 
-**[7] `a2a.operation.return_immediately`:** Corresponds to the `returnImmediately` field of the A2A request `SendMessageConfiguration`. See the A2A specification for [SendMessageConfiguration](https://a2a-protocol.org/latest/specification/#322-sendmessageconfiguration).
+**[7] `a2a.request.return_immediately`:** Corresponds to the `returnImmediately` field of the A2A request `SendMessageConfiguration`. See the A2A specification for [SendMessageConfiguration](https://a2a-protocol.org/latest/specification/#322-sendmessageconfiguration).
 
 **[8] `a2a.task.id`:** When the A2A request or response contains a single task ID.
 
@@ -761,7 +761,7 @@ identifies the A2A method, so A2A instrumentation SHOULD NOT change it.
 | [`rpc.status_code`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/rpc.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Required` | string | The string representation of the [status code](https://github.com/grpc/grpc/blob/v1.75.0/doc/statuscodes.md) returned by the server. [2] | `OK`; `DEADLINE_EXCEEDED`; `UNAVAILABLE` |
 | [`rpc.system.name`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/rpc.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Required` | string | The Remote Procedure Call (RPC) system. [3] | `grpc` |
 | [`a2a.message.id`](/docs/registry/attributes/a2a.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When the A2A request contains a message. | string | The unique identifier of the A2A message. [4] | `msg-user-1234` |
-| [`a2a.operation.return_immediately`](/docs/registry/attributes/a2a.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [5] | boolean | Whether the client requested the `SendMessage` operation to return immediately instead of waiting for the task to reach a terminal or interrupted state. [6] | `true` |
+| [`a2a.request.return_immediately`](/docs/registry/attributes/a2a.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [5] | boolean | Whether `SendMessage` was requested to return before the task reaches a terminal or interrupted state. [6] | `true` |
 | [`a2a.task.id`](/docs/registry/attributes/a2a.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [7] | string | The unique identifier of an A2A task. [8] | `task-5f2a7c7d9f8e4d2a` |
 | [`a2a.task.state`](/docs/registry/attributes/a2a.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [9] | string | The state of an A2A task. [10] | `TASK_STATE_SUBMITTED`; `TASK_STATE_WORKING`; `TASK_STATE_INPUT_REQUIRED` |
 | [`a2a.tenant`](/docs/registry/attributes/a2a.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When the A2A request `tenant` field is set. | string | The opaque routing identifier of the target [A2A tenant](https://github.com/a2aproject/A2A/blob/main/docs/topics/multi-tenancy.md). | `billing` |
@@ -800,9 +800,9 @@ which status codes are considered errors.
 
 **[4] `a2a.message.id`:** See the A2A specification for the [Message](https://a2a-protocol.org/latest/specification/#414-message) object.
 
-**[5] `a2a.operation.return_immediately`:** If `SendMessage` is requested to return immediately (value is `true`). When missing, the value is assumed to be `false`.
+**[5] `a2a.request.return_immediately`:** If and only if the value is `true`. When missing, the value is assumed to be `false`.
 
-**[6] `a2a.operation.return_immediately`:** Corresponds to the `returnImmediately` field of the A2A request `SendMessageConfiguration`. See the A2A specification for [SendMessageConfiguration](https://a2a-protocol.org/latest/specification/#322-sendmessageconfiguration).
+**[6] `a2a.request.return_immediately`:** Corresponds to the `returnImmediately` field of the A2A request `SendMessageConfiguration`. See the A2A specification for [SendMessageConfiguration](https://a2a-protocol.org/latest/specification/#322-sendmessageconfiguration).
 
 **[7] `a2a.task.id`:** When the A2A request or response contains a single task ID.
 
@@ -1008,7 +1008,7 @@ value SHOULD be the same as the span duration.
 | Key | Stability | [Requirement Level](https://opentelemetry.io/docs/specs/semconv/general/attribute-requirement-level/) | Value Type | Description | Example Values |
 | --- | --- | --- | --- | --- | --- |
 | [`a2a.method.name`](/docs/registry/attributes/a2a.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Required` | string | The name of the A2A request method. [1] | `SendMessage`; `SendStreamingMessage`; `GetTask` |
-| [`a2a.operation.return_immediately`](/docs/registry/attributes/a2a.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [2] | boolean | Whether the client requested the `SendMessage` operation to return immediately instead of waiting for the task to reach a terminal or interrupted state. [3] | `true` |
+| [`a2a.request.return_immediately`](/docs/registry/attributes/a2a.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [2] | boolean | Whether `SendMessage` was requested to return before the task reaches a terminal or interrupted state. [3] | `true` |
 | [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/error.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If and only if the operation fails. | string | Describes a class of error the operation ended with. [4] | `timeout`; `java.net.UnknownHostException`; `server_certificate_invalid`; `500` |
 | [`a2a.protocol.version`](/docs/registry/attributes/a2a.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The version of the A2A protocol used. [5] | `1.0` |
 | [`server.address`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` If applicable. | string | Host component of the selected Agent Card interface URL. [6] | `example.com`; `10.1.2.80`; `/tmp/my.sock` |
@@ -1016,9 +1016,9 @@ value SHOULD be the same as the span duration.
 
 **[1] `a2a.method.name`:** This attribute records the logical A2A operation name defined by the protocol. For example, `SendMessage` is the A2A operation name, while HTTP+JSON maps it to `POST /message:send`. See the A2A specification for [core operations](https://a2a-protocol.org/latest/specification/#31-core-operations) and [method mappings](https://a2a-protocol.org/latest/specification/#53-method-mapping-reference).
 
-**[2] `a2a.operation.return_immediately`:** If `SendMessage` is requested to return immediately (value is `true`). When missing, the value is assumed to be `false`.
+**[2] `a2a.request.return_immediately`:** If and only if the value is `true`. When missing, the value is assumed to be `false`.
 
-**[3] `a2a.operation.return_immediately`:** Corresponds to the `returnImmediately` field of the A2A request `SendMessageConfiguration`. See the A2A specification for [SendMessageConfiguration](https://a2a-protocol.org/latest/specification/#322-sendmessageconfiguration).
+**[3] `a2a.request.return_immediately`:** Corresponds to the `returnImmediately` field of the A2A request `SendMessageConfiguration`. See the A2A specification for [SendMessageConfiguration](https://a2a-protocol.org/latest/specification/#322-sendmessageconfiguration).
 
 **[4] `error.type`:** This attribute SHOULD be set to the protocol-provided A2A error reason
 when available. Use `google.rpc.ErrorInfo.reason` with domain
@@ -1089,7 +1089,7 @@ of `[ 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10, 30, 60, 120, 300 ]`.
 | `a2a.server.operation.duration` | Histogram | `s` | Duration of an A2A operation as observed by the server. [1] | ![Development](https://img.shields.io/badge/-development-blue) | |
 
 **[1]:** Measured from when the server starts handling the request until the
-response is produced for non-streaming calls, until the last event of
+response is sent for non-streaming calls, until the last event of
 the response stream is sent for streaming calls, or until the operation
 ends with an error.
 
@@ -1100,15 +1100,15 @@ ends with an error.
 | Key | Stability | [Requirement Level](https://opentelemetry.io/docs/specs/semconv/general/attribute-requirement-level/) | Value Type | Description | Example Values |
 | --- | --- | --- | --- | --- | --- |
 | [`a2a.method.name`](/docs/registry/attributes/a2a.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Required` | string | The name of the A2A request method. [1] | `SendMessage`; `SendStreamingMessage`; `GetTask` |
-| [`a2a.operation.return_immediately`](/docs/registry/attributes/a2a.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [2] | boolean | Whether the client requested the `SendMessage` operation to return immediately instead of waiting for the task to reach a terminal or interrupted state. [3] | `true` |
+| [`a2a.request.return_immediately`](/docs/registry/attributes/a2a.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [2] | boolean | Whether `SendMessage` was requested to return before the task reaches a terminal or interrupted state. [3] | `true` |
 | [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/error.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If and only if the operation fails. | string | Describes a class of error the operation ended with. [4] | `timeout`; `java.net.UnknownHostException`; `server_certificate_invalid`; `500` |
 | [`a2a.protocol.version`](/docs/registry/attributes/a2a.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The version of the A2A protocol used. [5] | `1.0` |
 
 **[1] `a2a.method.name`:** This attribute records the logical A2A operation name defined by the protocol. For example, `SendMessage` is the A2A operation name, while HTTP+JSON maps it to `POST /message:send`. See the A2A specification for [core operations](https://a2a-protocol.org/latest/specification/#31-core-operations) and [method mappings](https://a2a-protocol.org/latest/specification/#53-method-mapping-reference).
 
-**[2] `a2a.operation.return_immediately`:** If `SendMessage` is requested to return immediately (value is `true`). When missing, the value is assumed to be `false`.
+**[2] `a2a.request.return_immediately`:** If and only if the value is `true`. When missing, the value is assumed to be `false`.
 
-**[3] `a2a.operation.return_immediately`:** Corresponds to the `returnImmediately` field of the A2A request `SendMessageConfiguration`. See the A2A specification for [SendMessageConfiguration](https://a2a-protocol.org/latest/specification/#322-sendmessageconfiguration).
+**[3] `a2a.request.return_immediately`:** Corresponds to the `returnImmediately` field of the A2A request `SendMessageConfiguration`. See the A2A specification for [SendMessageConfiguration](https://a2a-protocol.org/latest/specification/#322-sendmessageconfiguration).
 
 **[4] `error.type`:** This attribute SHOULD be set to the protocol-provided A2A error reason
 when available. Use `google.rpc.ErrorInfo.reason` with domain
@@ -1170,9 +1170,7 @@ and
 | -------- | --------------- | ----------- | -------------- | --------- | ------ |
 | `a2a.client.operation.active` | UpDownCounter | `{operation}` | Number of A2A operations in progress on the client. [1] | ![Development](https://img.shields.io/badge/-development-blue) | |
 
-**[1]:** Incremented when the client sends the request and decremented when the
-operation ends, following the same boundaries as
-`a2a.client.operation.duration`.
+**[1]:** Follows the same boundaries as `a2a.client.operation.duration`.
 
 **Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/general/signal-requirement-level.md).
 
@@ -1226,9 +1224,7 @@ operation ends, following the same boundaries as
 | -------- | --------------- | ----------- | -------------- | --------- | ------ |
 | `a2a.server.operation.active` | UpDownCounter | `{operation}` | Number of A2A operations being processed by the server. [1] | ![Development](https://img.shields.io/badge/-development-blue) | |
 
-**[1]:** Incremented when the server starts handling the request and decremented
-when the operation ends, following the same boundaries as
-`a2a.server.operation.duration`.
+**[1]:** Follows the same boundaries as `a2a.server.operation.duration`.
 
 **Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/general/signal-requirement-level.md).
 
