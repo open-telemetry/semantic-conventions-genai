@@ -138,8 +138,12 @@ set-schema-url-dev:
 set-schema-url-unreleased:
 	$(call set_schema_url,$(SCHEMA_URL_BASE)/semconv-genai-unreleased/$(VERSION)-unreleased)
 
-# Build the release assets. The -dev suffix leaves room for stable assets in
-# the same release.
+# Build the release assets for the development registry, which includes
+# items at every stability level:
+#   manifest-dev.yaml  publication manifest, served at the schema URL
+#   registry-dev.yaml  resolved registry that the manifest points to
+# The -dev suffix keeps these names distinct from a future stable
+# registry's assets, which can be attached to the same GitHub release.
 package-dev:
 	rm -rf $(PACKAGE_OUTPUT)
 	@mkdir -p $(PACKAGE_OUTPUT)
