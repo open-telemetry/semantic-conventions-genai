@@ -87,10 +87,6 @@ _METRICS = {
     "mcp.server.operation.duration": "MCP Server Operation Duration",
     "mcp.client.operation.active": "MCP Client Operation Active",
     "mcp.server.operation.active": "MCP Server Operation Active",
-    "mcp.client.request.message.size": "MCP Client Request Message Size",
-    "mcp.client.response.message.size": "MCP Client Response Message Size",
-    "mcp.server.request.message.size": "MCP Server Request Message Size",
-    "mcp.server.response.message.size": "MCP Server Response Message Size",
 }
 
 _ENTITIES = {

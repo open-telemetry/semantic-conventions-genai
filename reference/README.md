@@ -88,8 +88,4 @@ Run `uv run update-reports` to regenerate.
 | [MCP Server Operation Duration](reports/mcp-server-operation-duration-metric.md) | mcp |
 | [MCP Client Operation Active](reports/mcp-client-operation-active-metric.md) | mcp |
 | [MCP Server Operation Active](reports/mcp-server-operation-active-metric.md) | mcp |
-| [MCP Client Request Message Size](reports/mcp-client-request-message-size-metric.md) | mcp |
-| [MCP Client Response Message Size](reports/mcp-client-response-message-size-metric.md) | mcp |
-| [MCP Server Request Message Size](reports/mcp-server-request-message-size-metric.md) | mcp |
-| [MCP Server Response Message Size](reports/mcp-server-response-message-size-metric.md) | mcp |
 <!-- status:end -->

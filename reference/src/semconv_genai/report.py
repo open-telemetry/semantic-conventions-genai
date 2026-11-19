@@ -121,10 +121,6 @@ SEMCONV_DOC_LINKS: dict[str, str] = {
     "mcp.server.operation.duration": "../../docs/gen-ai/mcp.md#metric-mcpserveroperationduration",
     "mcp.client.operation.active": "../../docs/gen-ai/mcp.md#metric-mcpclientoperationactive",
     "mcp.server.operation.active": "../../docs/gen-ai/mcp.md#metric-mcpserveroperationactive",
-    "mcp.client.request.message.size": "../../docs/gen-ai/mcp.md#metric-mcpclientrequestmessagesize",
-    "mcp.client.response.message.size": "../../docs/gen-ai/mcp.md#metric-mcpclientresponsemessagesize",
-    "mcp.server.request.message.size": "../../docs/gen-ai/mcp.md#metric-mcpserverrequestmessagesize",
-    "mcp.server.response.message.size": "../../docs/gen-ai/mcp.md#metric-mcpserverresponsemessagesize",
 }
 
 

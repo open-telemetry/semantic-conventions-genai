@@ -6,12 +6,11 @@ import contextvars
 import json
 import socket
 import time
-from collections.abc import AsyncIterator, Callable
-from dataclasses import dataclass, field
+from collections.abc import AsyncIterator
+from dataclasses import dataclass
 from typing import Any
 
 import anyio
-import httpx2
 import mcp.shared._otel as _mcp_otel
 import uvicorn
 from mcp.client.session import ClientSession
@@ -45,7 +44,6 @@ _reference_tracer = reference_tracer()
 _reference_meter = reference_meter()
 
 _MCP_DURATION_BUCKETS = [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30, 60, 120, 300]
-_MCP_SIZE_BUCKETS = [64, 256, 1024, 4096, 16384, 65536, 262144, 1048576, 4194304, 16777216]
 
 _client_operation_duration = _reference_meter.create_histogram(
     "mcp.client.operation.duration",
@@ -75,47 +73,28 @@ _server_operation_active = _reference_meter.create_up_down_counter(
     unit="{operation}",
     description="The number of MCP requests in progress as observed on the receiver.",
 )
-_client_request_message_size = _reference_meter.create_histogram(
-    "mcp.client.request.message.size",
-    unit="By",
-    description="The size of the MCP request or notification message as observed on the sender.",
-    explicit_bucket_boundaries_advisory=_MCP_SIZE_BUCKETS,
-)
-_client_response_message_size = _reference_meter.create_histogram(
-    "mcp.client.response.message.size",
-    unit="By",
-    description="The size of the MCP response message as observed on the sender.",
-    explicit_bucket_boundaries_advisory=_MCP_SIZE_BUCKETS,
-)
-_server_request_message_size = _reference_meter.create_histogram(
-    "mcp.server.request.message.size",
-    unit="By",
-    description="The size of the MCP request or notification message as observed on the receiver.",
-    explicit_bucket_boundaries_advisory=_MCP_SIZE_BUCKETS,
-)
-_server_response_message_size = _reference_meter.create_histogram(
-    "mcp.server.response.message.size",
-    unit="By",
-    description="The size of the MCP response message as observed on the receiver.",
-    explicit_bucket_boundaries_advisory=_MCP_SIZE_BUCKETS,
-)
 
 
 @dataclass
-class _ServerHTTPExchange:
-    """Tracks raw transported JSON-RPC request/response byte counts across one HTTP POST."""
+class _ServerActiveRequestSlot:
+    """Pairs `_server_operation_active` increment with ASGI response-send completion."""
 
-    request_size: int = 0
-    response_metric_attrs: dict[str, Any] | None = None
+    active_attrs: dict[str, Any] | None = None
+    decremented: bool = False
+
+    def decrement_once(self) -> None:
+        if self.active_attrs is not None and not self.decremented:
+            self.decremented = True
+            _server_operation_active.add(-1, self.active_attrs)
 
 
-_current_server_exchange: contextvars.ContextVar[_ServerHTTPExchange | None] = contextvars.ContextVar(
-    "_current_server_exchange", default=None
+_current_server_slot: contextvars.ContextVar[_ServerActiveRequestSlot | None] = contextvars.ContextVar(
+    "_current_server_slot", default=None
 )
 
 
-class _ServerMessageSizeASGIWrapper:
-    """ASGI wrapper measuring raw transported JSON-RPC request and response body sizes."""
+class _ServerActiveASGIWrapper:
+    """Decrements `mcp.server.operation.active` once the HTTP response finishes sending."""
 
     def __init__(self, app: Any) -> None:
         self._app = app
@@ -125,50 +104,40 @@ class _ServerMessageSizeASGIWrapper:
             await self._app(scope, receive, send)
             return
 
-        exchange = _ServerHTTPExchange()
-        resp_size = 0
-
-        async def wrapped_receive() -> dict[str, Any]:
-            message = await receive()
-            if message.get("type") == "http.request":
-                exchange.request_size += len(message.get("body", b""))
-            return message
+        slot = _ServerActiveRequestSlot()
 
         async def wrapped_send(message: dict[str, Any]) -> None:
-            nonlocal resp_size
-            if message.get("type") == "http.response.body":
-                resp_size += len(message.get("body", b""))
-                await send(message)
-                if not message.get("more_body", False) and resp_size > 0 and exchange.response_metric_attrs is not None:
-                    _server_response_message_size.record(resp_size, exchange.response_metric_attrs)
-                return
             await send(message)
+            if message.get("type") == "http.response.body" and not message.get("more_body", False):
+                slot.decrement_once()
 
-        token = _current_server_exchange.set(exchange)
+        token = _current_server_slot.set(slot)
         try:
-            await self._app(scope, wrapped_receive, wrapped_send)
+            await self._app(scope, receive, wrapped_send)
         finally:
-            _current_server_exchange.reset(token)
+            slot.decrement_once()
+            _current_server_slot.reset(token)
 
 
 class ReferenceMCPServerMiddleware(ServerMiddleware[Any]):
     """MCP server middleware that emits `mcp.server` spans and server operation metrics."""
 
     async def __call__(self, ctx: ServerRequestContext[Any, Any], call_next: CallNext) -> HandlerResult:
-        if ctx.method == "initialize":
+        if ctx.method == "notifications/initialized":
             return await call_next(ctx)
 
-        exchange = _current_server_exchange.get()
         params = ctx.params or {}
         name = params.get("name")
         target = name if isinstance(name, str) else None
 
         active_attrs: dict[str, Any] = {
             "mcp.method.name": ctx.method,
-            "mcp.protocol.version": ctx.protocol_version,
             "network.transport": "tcp",
             "network.protocol.name": "http",
         }
+        protocol_version = ctx.protocol_version or params.get("protocolVersion")
+        if isinstance(protocol_version, str) and protocol_version:
+            active_attrs["mcp.protocol.version"] = protocol_version
         if ctx.request is not None:
             http_version = ctx.request.scope.get("http_version")
             if http_version:
@@ -181,18 +150,23 @@ class ReferenceMCPServerMiddleware(ServerMiddleware[Any]):
         elif ctx.method == "prompts/get" and target is not None:
             active_attrs["gen_ai.prompt.name"] = target
 
-        request_metric_attrs = dict(active_attrs)
-        if ctx.method == "resources/read" and params.get("uri") is not None:
-            request_metric_attrs["mcp.resource.uri"] = str(params["uri"])
+        slot = _current_server_slot.get()
+        if ctx.request_id is not None:
+            _server_operation_active.add(1, active_attrs)
+            if slot is not None:
+                slot.active_attrs = active_attrs
 
-        if exchange is not None and exchange.request_size > 0:
-            _server_request_message_size.record(exchange.request_size, request_metric_attrs)
-
-        if ctx.method == "notifications/initialized":
-            return await call_next(ctx)
+        if ctx.method == "initialize":
+            try:
+                return await call_next(ctx)
+            finally:
+                if ctx.request_id is not None and slot is None:
+                    _server_operation_active.add(-1, active_attrs)
 
         span_name = f"{ctx.method} {target}" if target else ctx.method
-        metric_attrs = dict(request_metric_attrs)
+        metric_attrs = dict(active_attrs)
+        if ctx.method == "resources/read" and params.get("uri") is not None:
+            metric_attrs["mcp.resource.uri"] = str(params["uri"])
 
         span_attrs = dict(metric_attrs)
         if ctx.request_id is not None:
@@ -204,10 +178,6 @@ class ReferenceMCPServerMiddleware(ServerMiddleware[Any]):
             if ctx.request.client:
                 span_attrs["client.address"] = ctx.request.client.host
                 span_attrs["client.port"] = ctx.request.client.port
-
-        is_request = ctx.request_id is not None
-        if is_request:
-            _server_operation_active.add(1, active_attrs)
 
         start_time = time.perf_counter()
         with _reference_tracer.start_as_current_span(
@@ -277,10 +247,8 @@ class ReferenceMCPServerMiddleware(ServerMiddleware[Any]):
                 return result
             finally:
                 assert "gen_ai.prompt.variables" not in metric_attrs
-                if is_request:
+                if ctx.request_id is not None and slot is None:
                     _server_operation_active.add(-1, active_attrs)
-                    if exchange is not None:
-                        exchange.response_metric_attrs = dict(metric_attrs)
                 _server_operation_duration.record(time.perf_counter() - start_time, metric_attrs)
 
 
@@ -315,7 +283,7 @@ def _free_port() -> int:
 @contextlib.asynccontextmanager
 async def _serve_mcp(mcp_server: MCPServer) -> AsyncIterator[str]:
     port = _free_port()
-    app = _ServerMessageSizeASGIWrapper(mcp_server.streamable_http_app(json_response=True))
+    app = _ServerActiveASGIWrapper(mcp_server.streamable_http_app(json_response=True))
     server = uvicorn.Server(uvicorn.Config(app, host="127.0.0.1", port=port, log_level="warning"))
     serving = asyncio.create_task(server.serve())
     while not server.started:
@@ -330,100 +298,6 @@ async def _serve_mcp(mcp_server: MCPServer) -> AsyncIterator[str]:
         await serving
 
 
-@dataclass
-class _PendingClientRequest:
-    """Tracks transport-level size and active-counter state for one in-flight client request."""
-
-    active_attrs: dict[str, Any]
-    request_metric_attrs: dict[str, Any]
-    active_incremented: bool = False
-    response_size: int | None = None
-
-
-@dataclass
-class _ClientTransportMetricsState:
-    host: str | None
-    port: int | None
-    negotiated_version: str | None = None
-    pending: dict[int | str, _PendingClientRequest] = field(default_factory=dict)
-
-    def notification_attrs(self, method: str) -> dict[str, Any]:
-        attrs: dict[str, Any] = {
-            "mcp.method.name": method,
-            "network.transport": "tcp",
-            "network.protocol.name": "http",
-            "network.protocol.version": "1.1",
-        }
-        if self.negotiated_version:
-            attrs["mcp.protocol.version"] = self.negotiated_version
-        if self.host:
-            attrs["server.address"] = self.host
-        if self.port is not None:
-            attrs["server.port"] = self.port
-        return attrs
-
-
-class _MeasuredAsyncByteStream(httpx2.AsyncByteStream):
-    """Counts raw HTTP response body bytes yielded by the transport stream."""
-
-    def __init__(self, inner: httpx2.AsyncByteStream, on_done: Callable[[int], None]) -> None:
-        self._inner = inner
-        self._on_done = on_done
-        self._total = 0
-
-    async def __aiter__(self) -> AsyncIterator[bytes]:
-        async for chunk in self._inner:
-            self._total += len(chunk)
-            yield chunk
-        self._on_done(self._total)
-
-    async def aclose(self) -> None:
-        await self._inner.aclose()
-
-
-class _ClientMessageSizeHTTPTransport(httpx2.AsyncBaseTransport):
-    """HTTP transport wrapper observing exact serialized JSON-RPC request/response sizes."""
-
-    def __init__(self, inner: httpx2.AsyncBaseTransport, state: _ClientTransportMetricsState) -> None:
-        self._inner = inner
-        self._state = state
-
-    async def handle_async_request(self, request: httpx2.Request) -> httpx2.Response:
-        if request.method != "POST":
-            return await self._inner.handle_async_request(request)
-
-        raw_request = request.content
-        header_version = request.headers.get("mcp-protocol-version")
-        if header_version:
-            self._state.negotiated_version = header_version
-
-        # Decode metadata only to identify the JSON-RPC id/method; `len(raw_request)` is the wire size.
-        payload = json.loads(raw_request)
-        method = payload.get("method")
-        req_id = payload.get("id")
-        pending_req = self._state.pending.get(req_id) if req_id is not None else None
-
-        if pending_req is not None:
-            _client_operation_active.add(1, pending_req.active_attrs)
-            pending_req.active_incremented = True
-            _client_request_message_size.record(len(raw_request), pending_req.request_metric_attrs)
-        elif req_id is None and isinstance(method, str):
-            _client_request_message_size.record(len(raw_request), self._state.notification_attrs(method))
-
-        response = await self._inner.handle_async_request(request)
-        if pending_req is not None and response.status_code != 202:
-
-            def set_response_size(size: int) -> None:
-                if size > 0:
-                    pending_req.response_size = size
-
-            response.stream = _MeasuredAsyncByteStream(response.stream, set_response_size)
-        return response
-
-    async def aclose(self) -> None:
-        await self._inner.aclose()
-
-
 class ReferenceMCPClientSession(ClientSession):
     """MCP client session that emits `mcp.client` spans and client operation metrics per request."""
 
@@ -435,13 +309,11 @@ class ReferenceMCPClientSession(ClientSession):
         transport: StreamableHTTPTransport,
         host: str | None,
         port: int | None,
-        size_state: _ClientTransportMetricsState,
     ) -> None:
         super().__init__(read_stream, write_stream)
         self._transport = transport
         self._host = host
         self._port = port
-        self._size_state = size_state
 
     async def send_request(
         self,
@@ -453,21 +325,9 @@ class ReferenceMCPClientSession(ClientSession):
     ) -> Any:
         data = request.model_dump(by_alias=True, mode="json", exclude_none=True)
         method: str = data["method"]
-        if method == "initialize":
-            result = await super().send_request(
-                request,
-                result_type,
-                request_read_timeout_seconds=request_read_timeout_seconds,
-                metadata=metadata,
-                progress_callback=progress_callback,
-            )
-            self._size_state.negotiated_version = getattr(result, "protocol_version", None)
-            return result
-
         params: dict[str, Any] = data.get("params") or {}
         name = params.get("name")
         target = name if isinstance(name, str) else None
-        span_name = f"{method} {target}" if target else method
 
         active_attrs: dict[str, Any] = {
             "mcp.method.name": method,
@@ -475,8 +335,9 @@ class ReferenceMCPClientSession(ClientSession):
             "network.protocol.name": "http",
             "network.protocol.version": "1.1",
         }
-        if self._negotiated_version:
-            active_attrs["mcp.protocol.version"] = self._negotiated_version
+        protocol_version = self._negotiated_version or params.get("protocolVersion")
+        if isinstance(protocol_version, str) and protocol_version:
+            active_attrs["mcp.protocol.version"] = protocol_version
         if self._host:
             active_attrs["server.address"] = self._host
         if self._port is not None:
@@ -489,28 +350,32 @@ class ReferenceMCPClientSession(ClientSession):
         elif method == "prompts/get" and target is not None:
             active_attrs["gen_ai.prompt.name"] = target
 
-        request_metric_attrs = dict(active_attrs)
-        if method == "resources/read" and params.get("uri") is not None:
-            request_metric_attrs["mcp.resource.uri"] = str(params["uri"])
+        if method == "initialize":
+            _client_operation_active.add(1, active_attrs)
+            try:
+                return await super().send_request(
+                    request,
+                    result_type,
+                    request_read_timeout_seconds=request_read_timeout_seconds,
+                    metadata=metadata,
+                    progress_callback=progress_callback,
+                )
+            finally:
+                _client_operation_active.add(-1, active_attrs)
 
-        metric_attrs = dict(request_metric_attrs)
+        span_name = f"{method} {target}" if target else method
+        metric_attrs = dict(active_attrs)
+        if method == "resources/read" and params.get("uri") is not None:
+            metric_attrs["mcp.resource.uri"] = str(params["uri"])
+
         span_attrs = dict(metric_attrs)
         # JSONRPCDispatcher._allocate_id() increments _next_id before returning the wire id.
-        wire_id: int | str | None = None
         if isinstance(self._dispatcher, JSONRPCDispatcher):
-            wire_id = self._dispatcher._next_id + 1
-            span_attrs["jsonrpc.request.id"] = str(wire_id)
+            span_attrs["jsonrpc.request.id"] = str(self._dispatcher._next_id + 1)
         if self._transport.session_id:
             span_attrs["mcp.session.id"] = self._transport.session_id
 
-        pending_req: _PendingClientRequest | None = None
-        if wire_id is not None:
-            pending_req = _PendingClientRequest(
-                active_attrs=active_attrs,
-                request_metric_attrs=request_metric_attrs,
-            )
-            self._size_state.pending[wire_id] = pending_req
-
+        _client_operation_active.add(1, active_attrs)
         start_time = time.perf_counter()
         with _reference_tracer.start_as_current_span(
             span_name,
@@ -562,13 +427,8 @@ class ReferenceMCPClientSession(ClientSession):
                 return result
             finally:
                 assert "gen_ai.prompt.variables" not in metric_attrs
-                if wire_id is not None:
-                    self._size_state.pending.pop(wire_id, None)
-                if pending_req is not None and pending_req.active_incremented:
-                    _client_operation_active.add(-1, pending_req.active_attrs)
+                _client_operation_active.add(-1, active_attrs)
                 _client_operation_duration.record(time.perf_counter() - start_time, metric_attrs)
-                if pending_req is not None and pending_req.response_size is not None:
-                    _client_response_message_size.record(pending_req.response_size, metric_attrs)
 
 
 @contextlib.asynccontextmanager
@@ -577,9 +437,7 @@ async def _connect_session(
     host: str | None,
     port: int | None,
 ) -> AsyncIterator[ReferenceMCPClientSession]:
-    size_state = _ClientTransportMetricsState(host=host, port=port)
     http_client = create_mcp_http_client()
-    http_client._transport = _ClientMessageSizeHTTPTransport(http_client._transport, size_state)
     transport = StreamableHTTPTransport(url)
     async with http_client:
         read_stream_writer, read_stream = create_context_streams[SessionMessage | Exception](0)
@@ -611,7 +469,6 @@ async def _connect_session(
                     transport=transport,
                     host=host,
                     port=port,
-                    size_state=size_state,
                 ) as session:
                     await session.initialize()
                     yield session
