@@ -27,5 +27,6 @@ workflow. It tags the merge commit, publishes the GitHub release with the
 changelog section and the assets, and opens a pull request bumping `main` to the
 next minor `-unreleased` version. Review and merge it.
 
-If the Release workflow fails, fix the cause and re-run it manually with the
-version and the merge commit SHA.
+If the Release workflow fails, use **Re-run failed jobs**. If the fix needs a
+workflow change and the release isn't published yet, run the workflow manually
+with the version and the merge commit SHA.
