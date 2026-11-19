@@ -82,6 +82,10 @@ scenarios:
         reason: Library emits the removed cache_creation attribute; use gen_ai.usage.cache_write.input_tokens.
       - id: missing_attribute
         context:
+          attribute_key: gen_ai.workflow.name
+        reason: Library emits the removed gen_ai.workflow.name attribute; fix in library.
+      - id: missing_attribute
+        context:
           attribute_key: message.payload_type
         reason: Library uses proprietary namespaces not in the registry; fix in library.
       - id: missing_attribute
@@ -107,10 +111,6 @@ scenarios:
       - id: missing_attribute
         context:
           attribute_key: workflow.id
-        reason: Library uses proprietary namespaces not in the registry; fix in library.
-      - id: missing_attribute
-        context:
-          attribute_key: workflow.name
         reason: Library uses proprietary namespaces not in the registry; fix in library.
       - id: missing_attribute
         context:

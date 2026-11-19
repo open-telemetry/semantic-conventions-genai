@@ -47,7 +47,7 @@
 | <a id="gen-ai-request-previous-response-id" href="#gen-ai-request-previous-response-id">`gen_ai.request.previous_response.id`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The unique identifier of a previous response or interaction used to provide context for the current operation. [25] | `resp_0123456789aBCdef`; `interaction-123` |
 | <a id="gen-ai-request-reasoning-level" href="#gen-ai-request-reasoning-level">`gen_ai.request.reasoning.level`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The reasoning or thinking effort level requested for a GenAI model. [26] | `low`; `medium`; `high` |
 | <a id="gen-ai-request-seed" href="#gen-ai-request-seed">`gen_ai.request.seed`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | Requests with same seed value more likely to return same result. | `100` |
-| <a id="gen-ai-request-service-tier" href="#gen-ai-request-service-tier">`gen_ai.request.service_tier`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The service tier requested. [27] | `auto`; `flex` |
+| <a id="gen-ai-request-service-tier" href="#gen-ai-request-service-tier">`gen_ai.request.service_tier`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The service tier requested for the inference operation. [27] | `auto`; `flex`; `priority` |
 | <a id="gen-ai-request-stop-sequences" href="#gen-ai-request-stop-sequences">`gen_ai.request.stop_sequences`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string[] | List of sequences that the model will use to stop generating further tokens. | `["forest", "lived"]` |
 | <a id="gen-ai-request-stream" href="#gen-ai-request-stream">`gen_ai.request.stream`</a> | ![Development](https://img.shields.io/badge/-development-blue) | boolean | Indicates whether the GenAI request was made in streaming mode. | |
 | <a id="gen-ai-request-stream-cursor" href="#gen-ai-request-stream-cursor">`gen_ai.request.stream_cursor`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The cursor identifying the last streamed event already received, used to resume a streamed response from that position. [28] | `42`; `event-abc123` |
@@ -57,7 +57,7 @@
 | <a id="gen-ai-response-finish-reasons" href="#gen-ai-response-finish-reasons">`gen_ai.response.finish_reasons`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string[] | Array of reasons the model stopped generating tokens, corresponding to each generation received. [30] | `["stop"]`; `["stop", "length"]`; `["stop", "length", "error"]` |
 | <a id="gen-ai-response-id" href="#gen-ai-response-id">`gen_ai.response.id`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The unique identifier for the completion. | `chatcmpl-123` |
 | <a id="gen-ai-response-model" href="#gen-ai-response-model">`gen_ai.response.model`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The name of the model that generated the response. | `gpt-4-0613` |
-| <a id="gen-ai-response-service-tier" href="#gen-ai-response-service-tier">`gen_ai.response.service_tier`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The service tier used for the response. [31] | `default`; `priority`; `ON_DEMAND` |
+| <a id="gen-ai-response-service-tier" href="#gen-ai-response-service-tier">`gen_ai.response.service_tier`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The service tier that processed the inference operation. [31] | `default`; `priority`; `ON_DEMAND` |
 | <a id="gen-ai-response-status" href="#gen-ai-response-status">`gen_ai.response.status`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The lifecycle status of a generated response, as reported by the provider when the response is fetched or polled. [32] | `completed`; `in_progress` |
 | <a id="gen-ai-response-time-to-first-chunk" href="#gen-ai-response-time-to-first-chunk">`gen_ai.response.time_to_first_chunk`</a> | ![Development](https://img.shields.io/badge/-development-blue) | double | Time from the start of a logical inference operation to the first chunk in its streaming response, in seconds. [33] | `0.5`; `1.2` |
 | <a id="gen-ai-retrieval-documents" href="#gen-ai-retrieval-documents">`gen_ai.retrieval.documents`</a> | ![Development](https://img.shields.io/badge/-development-blue) | any | The documents retrieved. [34] | [<br>&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;"id": "doc_123",<br>&nbsp;&nbsp;&nbsp;&nbsp;"score": 0.95<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;"id": "doc_456",<br>&nbsp;&nbsp;&nbsp;&nbsp;"score": 0.87<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;"id": "doc_789",<br>&nbsp;&nbsp;&nbsp;&nbsp;"score": 0.82<br>&nbsp;&nbsp;}<br>] |
@@ -285,7 +285,11 @@ or `previous_interaction_id` in [Google GenAI Interactions API](https://ai.googl
 **[26] `gen_ai.request.reasoning.level`:** The value SHOULD be the exact string value sent to the provider.
 Semantic conventions for individual providers SHOULD document which input parameter maps to this attribute.
 
-**[27] `gen_ai.request.service_tier`:** The value SHOULD be the exact string value sent to the provider.
+**[27] `gen_ai.request.service_tier`:** The service tier affects processing priority, latency, and price of the operation.
+The value SHOULD be the one passed to the provider.
+For example, `service_tier` in [OpenAI](https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create)
+and [Anthropic](https://platform.claude.com/docs/en/api/service-tiers),
+or `serviceTier.type` in [Amazon Bedrock](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_runtime_Converse.html).
 
 **[28] `gen_ai.request.stream_cursor`:** Instrumentations SHOULD populate this attribute when a request resumes a streamed response from a prior position, for example when fetching a stored response with streaming enabled.
 For example, `starting_after` in the [OpenAI Responses API](https://developers.openai.com/api/docs/guides/background#streaming-a-background-response)
@@ -308,8 +312,11 @@ instead of omitting it.
 `error` indicates that the generation ended abnormally, whether reported
 by the provider or inferred by the instrumentation.
 
-**[31] `gen_ai.response.service_tier`:** The value SHOULD be the exact string value returned by the provider.
-For Vertex AI, the value SHOULD be [`usageMetadata.trafficType`](https://docs.cloud.google.com/gemini-enterprise-agent-platform/reference/rest/v1/GenerateContentResponse#UsageMetadata.FIELDS.traffic_type).
+**[31] `gen_ai.response.service_tier`:** The value SHOULD be the one returned by the provider. It can differ from
+`gen_ai.request.service_tier` when `auto` is requested.
+For example, `service_tier` in [OpenAI](https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create),
+`usage.service_tier` in [Anthropic](https://platform.claude.com/docs/en/api/service-tiers),
+or [`usageMetadata.trafficType`](https://docs.cloud.google.com/gemini-enterprise-agent-platform/reference/rest/v1/GenerateContentResponse#UsageMetadata.FIELDS.traffic_type) in Vertex AI.
 
 **[32] `gen_ai.response.status`:** This attribute captures the lifecycle state of a (possibly background or long-running) generation, such as whether it is queued, still running, or has reached a terminal state. It is distinct from `gen_ai.response.finish_reasons`, which describes why the model stopped once it began producing output.
 The value SHOULD be the provider's response status mapped onto the closest member of this enum or a provider-specific value when none of these apply. Semantic conventions for individual GenAI providers SHOULD document how their status values map to this attribute.

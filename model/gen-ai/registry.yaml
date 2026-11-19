@@ -287,12 +287,13 @@ attributes:
     stability: development
   - key: gen_ai.response.service_tier
     type: string
-    brief: The service tier used for the response.
-    note: >
-      The value SHOULD be the exact string value returned by the provider.
-
-      For Vertex AI, the value SHOULD be
-      [`usageMetadata.trafficType`](https://docs.cloud.google.com/gemini-enterprise-agent-platform/reference/rest/v1/GenerateContentResponse#UsageMetadata.FIELDS.traffic_type).
+    brief: The service tier that processed the inference operation.
+    note: |
+      The value SHOULD be the one returned by the provider. It can differ from
+      `gen_ai.request.service_tier` when `auto` is requested.
+      For example, `service_tier` in [OpenAI](https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create),
+      `usage.service_tier` in [Anthropic](https://platform.claude.com/docs/en/api/service-tiers),
+      or [`usageMetadata.trafficType`](https://docs.cloud.google.com/gemini-enterprise-agent-platform/reference/rest/v1/GenerateContentResponse#UsageMetadata.FIELDS.traffic_type) in Vertex AI.
     examples: ['default', 'priority', 'ON_DEMAND']
     stability: development
   - key: gen_ai.response.time_to_first_chunk
