@@ -1213,7 +1213,7 @@ def run_responses_with_prompt_template_reference(client):
     The Responses API accepts a `prompt` parameter that references a stored
     prompt template by id, with optional version and variables. The
     instrumentation extracts gen_ai.prompt.name, gen_ai.prompt.version,
-    and gen_ai.prompt.variable.* from the request.
+    and gen_ai.prompt.variables from the request.
     """
     print("  [responses_prompt_template] Responses API with prompt template (reference implementation)")
     request_model = "gpt-4o-mini"
@@ -1235,8 +1235,7 @@ def run_responses_with_prompt_template_reference(client):
     with _reference_tracer.start_as_current_span(
         "chat gpt-4o-mini", kind=SpanKind.CLIENT, attributes=span_attributes
     ) as span:
-        for var_name, var_value in prompt_variables.items():
-            span.set_attribute(f"gen_ai.prompt.variable.{var_name}", var_value)
+        span.set_attribute("gen_ai.prompt.variables", prompt_variables)
         resp = client.responses.create(
             model=request_model,
             input="Help me with my order.",
@@ -1282,13 +1281,12 @@ def run_responses_with_prompt_template_reference(client):
             "gen_ai.request.model": request_model,
             "gen_ai.prompt.name": prompt_id,
             "gen_ai.prompt.version": prompt_version,
+            "gen_ai.prompt.variables": prompt_variables,
             "gen_ai.response.id": resp.id,
             "gen_ai.response.model": resp.model,
         }
         if finish_reason is not None:
             event_attrs["gen_ai.response.finish_reasons"] = [finish_reason]
-        for var_name, var_value in prompt_variables.items():
-            event_attrs[f"gen_ai.prompt.variable.{var_name}"] = var_value
         if output_text:
             event_attrs["gen_ai.output.messages"] = [
                 {"role": "assistant", "parts": [{"type": "text", "content": output_text}]}
@@ -1322,9 +1320,10 @@ def _emit_fetch_response_span(client, response_id, starting_after=None, stream=F
       response has no finish reason. A fetched response whose original generation
       failed or is incomplete is NOT an error of this fetch, so `error.type`/span
       status are not set for it.
-    - `gen_ai.system_instructions` and `gen_ai.output.messages` are the content
-      carried by the fetched response. The original input messages are NOT part
-      of the fetched response object, so `gen_ai.input.messages` is not recorded.
+    - `gen_ai.system_instructions`, `gen_ai.output.messages`, and
+      `gen_ai.tool.definitions` are the content carried by the fetched response.
+      The original input messages are NOT part of the fetched response object,
+      so `gen_ai.input.messages` is not recorded.
     - `gen_ai.request.stream` is recorded when the request is made in streaming mode.
     - `gen_ai.request.stream_cursor` is the resume cursor (OpenAI `starting_after`),
       a request-side parameter available at the call boundary, recorded only when
@@ -1378,9 +1377,7 @@ def _emit_fetch_response_span(client, response_id, starting_after=None, stream=F
             service_tier = getattr(fetched, "service_tier", None)
             if service_tier is not None:
                 span.set_attribute("openai.response.service_tier", service_tier)
-            # Content carried on the fetched response: system instructions and output
-            # messages. The original input messages are NOT part of the fetched
-            # response, so `gen_ai.input.messages` is not set here.
+            # The fetched response does not carry the original input messages.
             instructions = getattr(fetched, "instructions", None)
             if instructions:
                 span.set_attribute(
@@ -1390,6 +1387,20 @@ def _emit_fetch_response_span(client, response_id, starting_after=None, stream=F
             output_messages = responses_output_messages(fetched)
             if output_messages:
                 span.set_attribute("gen_ai.output.messages", output_messages)
+            tools = getattr(fetched, "tools", None)
+            if tools is not None:
+                tool_definitions = []
+                for tool in tools:
+                    if tool.type == "function":
+                        tool_definitions.append(tool.model_dump(exclude_none=True))
+                    else:
+                        tool_definitions.append(
+                            {
+                                "type": f"openai.{tool.type}",
+                                "name": getattr(tool, "name", None) or getattr(tool, "server_label", None) or tool.type,
+                            }
+                        )
+                span.set_attribute("gen_ai.tool.definitions", json.dumps(tool_definitions))
             # Token usage is intentionally NOT recorded on this span: no inference
             # happens on a fetch, and the fetched response's token counts belong to
             # the original generation (already accounted for on that operation).
@@ -1461,6 +1472,61 @@ def run_fetch_response_reference(client):
     _emit_fetch_response_span(client, "resp-failed-001")
 
 
+def run_fetch_response_with_tools_reference():
+    """Fetch stored responses with function and built-in tools, an empty list, or no tool field."""
+    import httpx2
+    import openai
+
+    stored_responses = {}
+
+    def respond(request):
+        if request.method == "POST" and request.url.path == "/v1/responses":
+            body = json.loads(request.content)
+            response = {
+                "id": f"resp-stored-tools-{len(stored_responses) + 1:03d}",
+                "object": "response",
+                "created_at": 1700000000,
+                "status": "completed",
+                "model": body["model"],
+                "output": [],
+            }
+            if "tools" in body:
+                response["tools"] = body["tools"]
+            if body["store"]:
+                stored_responses[response["id"]] = response
+            return httpx2.Response(200, json=response)
+        if request.method == "GET" and request.url.path.startswith("/v1/responses/"):
+            response_id = request.url.path.rsplit("/", 1)[1]
+            return httpx2.Response(200, json=stored_responses[response_id])
+        raise AssertionError(f"Unexpected request: {request.method} {request.url}")
+
+    weather_tool = {
+        "type": "function",
+        "name": "get_weather",
+        "description": "Get the current weather for a location.",
+        "parameters": {
+            "type": "object",
+            "properties": {"location": {"type": "string"}},
+            "required": ["location"],
+        },
+    }
+    with openai.OpenAI(
+        base_url=MOCK_BASE_URL,
+        api_key="mock-key",
+        max_retries=0,
+        http_client=httpx2.Client(transport=httpx2.MockTransport(respond)),
+    ) as client:
+        for tools in ([weather_tool, {"type": "web_search"}], [], None):
+            tool_args = {"tools": tools} if tools is not None else {}
+            created = client.responses.create(
+                model="gpt-4o-mini",
+                input="What is the weather in Seattle?",
+                store=True,
+                **tool_args,
+            )
+            _emit_fetch_response_span(client, created.id)
+
+
 def run_fetch_response_error_reference():
     """Exercise a fetch exception raised by the SDK for a missing response."""
     import httpx2
@@ -1509,6 +1575,7 @@ def main():
     run_chat_audio_reference(client)
     run_responses_with_prompt_template_reference(client)
     run_fetch_response_reference(client)
+    run_fetch_response_with_tools_reference()
     run_fetch_response_error_reference()
     run_embeddings_reference(client)
     run_embeddings_error_reference()
