@@ -214,6 +214,12 @@ def run_chat_streaming_reference(client):
             "server.port": _SERVER_PORT,
         }
         input_tokens = output_tokens = cache_read_tokens = reasoning_tokens = 0
+        text = ""
+        model = None
+        response_id = None
+        finish_reasons = []
+        usage = None
+        streaming = False
         start_time = time.perf_counter()
         try:
             stream = client.chat.completions.create(
@@ -221,11 +227,7 @@ def run_chat_streaming_reference(client):
                 messages=request_messages,
                 stream=True,
             )
-            text = ""
-            model = None
-            response_id = None
-            finish_reasons = []
-            usage = None
+            streaming = True
             with stream:
                 for chunk in stream:
                     model = model or getattr(chunk, "model", None)
@@ -250,6 +252,15 @@ def run_chat_streaming_reference(client):
                         if not finish_reasons:
                             finish_reasons.append("error")
                         break
+        except Exception as exc:
+            metric_attributes["error.type"] = type(exc).__name__
+            span.set_attribute("error.type", type(exc).__name__)
+            span.set_status(StatusCode.ERROR)
+            if streaming and not finish_reasons:
+                # The stream broke before the final chunk.
+                finish_reasons.append("error")
+            raise
+        finally:
             if model:
                 span.set_attribute("gen_ai.response.model", model)
             if response_id:
@@ -260,12 +271,6 @@ def run_chat_streaming_reference(client):
                 span.set_attribute("gen_ai.usage.input_tokens", usage.prompt_tokens)
                 span.set_attribute("gen_ai.usage.output_tokens", usage.completion_tokens)
                 _set_usage_details(span, cache_read_tokens, reasoning_tokens)
-        except Exception as exc:
-            metric_attributes["error.type"] = type(exc).__name__
-            span.set_attribute("error.type", type(exc).__name__)
-            span.set_status(StatusCode.ERROR)
-            raise
-        finally:
             _inference_duration.record(time.perf_counter() - start_time, metric_attributes)
             _input_tokens.record(input_tokens, metric_attributes)
             _output_tokens.record(output_tokens, metric_attributes)
