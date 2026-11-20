@@ -3,7 +3,6 @@ attribute_groups:
   - id: trace.mcp.common.attributes
     visibility: internal
     attributes:
-      - ref_group: mcp.common.attributes
       - ref: mcp.session.id
         requirement_level:
           recommended: When the MCP request or notification is part of a session.
@@ -13,6 +12,24 @@ attribute_groups:
       - ref: jsonrpc.request.id
         requirement_level:
           conditionally_required: When the client executes a request.
+      - ref: gen_ai.tool.call.arguments
+        requirement_level: opt_in
+      - ref: gen_ai.tool.call.result
+        requirement_level: opt_in
+      - ref: gen_ai.prompt.variables
+        brief: The variables supplied to the prompt template in the request.
+        requirement_level: opt_in
+        note: |
+          > [!WARNING]
+          > This attribute may contain sensitive information.
+
+          Prompt templates are parameterized with variables that are filled in
+          at runtime. This attribute records the map of variable names to their
+          values passed to the template.
+
+          In MCP, [prompt arguments](https://modelcontextprotocol.io/specification/2025-11-25/schema#prompt)
+          supplied in `prompts/get` requests SHOULD be recorded as the
+          `gen_ai.prompt.variables` attribute.
 
 spans:
   - type: mcp.client
@@ -50,27 +67,11 @@ spans:
       option to enable it.
     stability: development
     attributes:
+      - ref_group: mcp.common.attributes
+      - ref_group: mcp.network.protocol.attributes
       - ref_group: trace.mcp.common.attributes
       - ref_group: mcp.client.address_and_port.attributes
       - ref_group: mcp.client.status.attributes
-      - ref: gen_ai.tool.call.arguments
-        requirement_level: opt_in
-      - ref: gen_ai.tool.call.result
-        requirement_level: opt_in
-      - ref: gen_ai.prompt.variables
-        brief: The variables supplied to the prompt template in the request.
-        requirement_level: opt_in
-        note: |
-          > [!WARNING]
-          > This attribute may contain sensitive information.
-
-          Prompt templates are parameterized with variables that are filled in
-          at runtime. This attribute records the map of variable names to their
-          values passed to the template.
-
-          In MCP, [prompt arguments](https://modelcontextprotocol.io/specification/2025-11-25/schema#prompt)
-          supplied in `prompts/get` requests SHOULD be recorded as the
-          `gen_ai.prompt.variables` attribute.
 
   - type: mcp.server
     requirement_level: recommended
@@ -97,6 +98,8 @@ spans:
       If the span status is set to `ERROR`, the status description SHOULD match the `JSONRPCError.message` if the message is available.
     stability: development
     attributes:
+      - ref_group: mcp.common.attributes
+      - ref_group: mcp.network.protocol.attributes
       - ref_group: trace.mcp.common.attributes
       - ref_group: mcp.server.status.attributes
       - ref: client.address
@@ -106,22 +109,3 @@ spans:
       - ref: client.port
         requirement_level:
           recommended: When `client.address` is set.
-
-      - ref: gen_ai.tool.call.arguments
-        requirement_level: opt_in
-      - ref: gen_ai.tool.call.result
-        requirement_level: opt_in
-      - ref: gen_ai.prompt.variables
-        brief: The variables supplied to the prompt template in the request.
-        requirement_level: opt_in
-        note: |
-          > [!WARNING]
-          > This attribute may contain sensitive information.
-
-          Prompt templates are parameterized with variables that are filled in
-          at runtime. This attribute records the map of variable names to their
-          values passed to the template.
-
-          In MCP, [prompt arguments](https://modelcontextprotocol.io/specification/2025-11-25/schema#prompt)
-          supplied in `prompts/get` requests SHOULD be recorded as the
-          `gen_ai.prompt.variables` attribute.
