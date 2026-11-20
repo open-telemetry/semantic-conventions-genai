@@ -202,11 +202,31 @@ Metric changes:
 | `gen_ai.client.inference.operation.output_tokens` | Histogram | `gen_ai.client.token.usage` with `gen_ai.token.type="output"` for inference |
 | `gen_ai.client.embeddings.operation.input_tokens` | Histogram | `gen_ai.client.token.usage` with `gen_ai.operation.name="embeddings"` |
 
+Histograms are recorded for every operation, including failed ones, with
+`error.type` and `0` when no usage was received
+([#536](https://github.com/open-telemetry/semantic-conventions-genai/pull/536)).
+Counters record only known, positive values
+([#602](https://github.com/open-telemetry/semantic-conventions-genai/pull/602)).
+Use histogram `_count` for per-operation averages, not counters.
+
 References:
 
 - [Metric `gen_ai.client.token.usage` v1.41.0](https://github.com/open-telemetry/semantic-conventions/blob/v1.41.0/docs/gen-ai/gen-ai-metrics.md#metric-gen_aiclienttokenusage)
 - [Inference token metrics (latest)](/docs/gen-ai/gen-ai-token-metrics.md)
 - [Client embeddings (latest)](/docs/gen-ai/client-embeddings.md)
+
+### MCP spans and metrics
+
+| Change | PR | Comments |
+| --- | --- | --- |
+| `rpc.response.status_code` &rarr; `rpc.status_code` | [#732](https://github.com/open-telemetry/semantic-conventions-genai/pull/732) | JSON-RPC error code on spans and metrics. |
+| Server error reporting | [#389](https://github.com/open-telemetry/semantic-conventions-genai/pull/389) | Server telemetry no longer treats caller errors (`-32700`, `-32600`, `-32601`, `-32602`, `-32002`) as errors. Client telemetry treats all JSON-RPC error codes as errors. |
+| `mcp.client.session.duration`, `mcp.server.session.duration` | [#453](https://github.com/open-telemetry/semantic-conventions-genai/pull/453) | `network.transport` and `network.protocol.version` removed. |
+
+References:
+
+- [MCP v1.41.0](https://github.com/open-telemetry/semantic-conventions/blob/v1.41.0/docs/gen-ai/mcp.md)
+- [MCP (latest)](/docs/gen-ai/mcp.md)
 
 ### New agent and tool metrics
 
@@ -237,6 +257,10 @@ Additions with no v1.41.0 equivalent. No migration needed.
 | Realtime sessions: `realtime_inference` client and `user_speech` internal spans, `gen_ai.client.realtime_session.started` and `gen_ai.client.realtime_session.ended` events | [#394](https://github.com/open-telemetry/semantic-conventions-genai/pull/394) |
 | External content references: `gen_ai.system_instructions_ref`, `gen_ai.input.messages_ref`, `gen_ai.output.messages_ref`, `gen_ai.tool.definitions_ref` | [#490](https://github.com/open-telemetry/semantic-conventions-genai/pull/490) |
 | A2A protocol client and server spans | [#195](https://github.com/open-telemetry/semantic-conventions-genai/pull/195) |
+| Prompt template attributes: `gen_ai.prompt.version`, `gen_ai.prompt.variables` | [#179](https://github.com/open-telemetry/semantic-conventions-genai/pull/179), [#696](https://github.com/open-telemetry/semantic-conventions-genai/pull/696) |
+| `gen_ai.request.reasoning.level` | [#258](https://github.com/open-telemetry/semantic-conventions-genai/pull/258) |
+| Per-modality token usage attributes: `gen_ai.usage.{text,image,audio}.*` | [#440](https://github.com/open-telemetry/semantic-conventions-genai/pull/440) |
+| `gen_ai.main_agent` entity and resource attributes | [#270](https://github.com/open-telemetry/semantic-conventions-genai/pull/270) |
 
 References:
 
