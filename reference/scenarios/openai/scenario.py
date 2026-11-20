@@ -188,6 +188,33 @@ def responses_finish_reason(response):
     return "error"
 
 
+def responses_usage_attributes(response):
+    """Map `usage` on a Responses API object to `gen_ai.usage.*` attributes.
+
+    Input and output counts are always set when `usage` is present; cache and
+    reasoning counts only when non-zero. Returns an empty dict without `usage`.
+    """
+    usage = getattr(response, "usage", None)
+    if not usage:
+        return {}
+    attributes = {
+        "gen_ai.usage.input_tokens": usage.input_tokens,
+        "gen_ai.usage.output_tokens": usage.output_tokens,
+    }
+    itd = getattr(usage, "input_tokens_details", None)
+    otd = getattr(usage, "output_tokens_details", None)
+    cached_tokens = getattr(itd, "cached_tokens", None) if itd else None
+    cache_write_tokens = getattr(itd, "cache_write_tokens", None) if itd else None
+    reasoning_tokens = getattr(otd, "reasoning_tokens", None) if otd else None
+    if cached_tokens:
+        attributes["gen_ai.usage.cache_read.input_tokens"] = cached_tokens
+    if cache_write_tokens:
+        attributes["gen_ai.usage.cache_write.input_tokens"] = cache_write_tokens
+    if reasoning_tokens:
+        attributes["gen_ai.usage.reasoning.output_tokens"] = reasoning_tokens
+    return attributes
+
+
 def response_has_compaction_item(response):
     """Return whether the Responses API output includes a ResponseCompactionItem."""
     for item in getattr(response, "output", []) or []:
@@ -436,21 +463,7 @@ def run_responses_compaction_reference(client):
         if output_messages:
             span.set_attribute("gen_ai.output.messages", output_messages)
         # Build usage attributes once so the span and the event stay identical.
-        usage = {}
-        if response.usage:
-            usage["gen_ai.usage.input_tokens"] = response.usage.input_tokens
-            usage["gen_ai.usage.output_tokens"] = response.usage.output_tokens
-            itd = response.usage.input_tokens_details
-            otd = response.usage.output_tokens_details
-            cached_tokens = getattr(itd, "cached_tokens", None) if itd else None
-            cache_write_tokens = getattr(itd, "cache_write_tokens", None) if itd else None
-            reasoning_tokens = getattr(otd, "reasoning_tokens", None) if otd else None
-            if cached_tokens:
-                usage["gen_ai.usage.cache_read.input_tokens"] = cached_tokens
-            if cache_write_tokens:
-                usage["gen_ai.usage.cache_write.input_tokens"] = cache_write_tokens
-            if reasoning_tokens:
-                usage["gen_ai.usage.reasoning.output_tokens"] = reasoning_tokens
+        usage = responses_usage_attributes(response)
         for attr, value in usage.items():
             span.set_attribute(attr, value)
         record_inference_usage(usage, usage_metric_attributes(request_model, response.model, host, port))
@@ -1330,10 +1343,9 @@ def _emit_fetch_response_span(client, response_id, starting_after=None, stream=F
       the fetch resumes a streamed response from a prior position.
     - `gen_ai.usage.input_tokens`, `gen_ai.usage.output_tokens` and the cache
       and reasoning details come from `usage` on the fetched response object when
-      present, read the same way as on the Responses inference span. They
-      describe the original generation identified by `gen_ai.response.id`, a
-      snapshot that is not additive across spans. A `failed` response without
-      usage sets none of them.
+      present, through `responses_usage_attributes`, shared with the Responses
+      inference span. They describe the original generation identified by
+      `gen_ai.response.id`. A `failed` response without usage sets none of them.
     - `openai.api.type` is `responses`; `openai.response.service_tier` comes from
       the fetched object.
     """
@@ -1403,21 +1415,7 @@ def _emit_fetch_response_span(client, response_id, starting_after=None, stream=F
                             }
                         )
                 span.set_attribute("gen_ai.tool.definitions", json.dumps(tool_definitions))
-            usage = getattr(fetched, "usage", None)
-            if usage is not None:
-                span.set_attribute("gen_ai.usage.input_tokens", usage.input_tokens)
-                span.set_attribute("gen_ai.usage.output_tokens", usage.output_tokens)
-                itd = getattr(usage, "input_tokens_details", None)
-                otd = getattr(usage, "output_tokens_details", None)
-                cached_tokens = getattr(itd, "cached_tokens", None) if itd else None
-                cache_write_tokens = getattr(itd, "cache_write_tokens", None) if itd else None
-                reasoning_tokens = getattr(otd, "reasoning_tokens", None) if otd else None
-                if cached_tokens:
-                    span.set_attribute("gen_ai.usage.cache_read.input_tokens", cached_tokens)
-                if cache_write_tokens:
-                    span.set_attribute("gen_ai.usage.cache_write.input_tokens", cache_write_tokens)
-                if reasoning_tokens:
-                    span.set_attribute("gen_ai.usage.reasoning.output_tokens", reasoning_tokens)
+            span.set_attributes(responses_usage_attributes(fetched))
             print(f"    -> fetched {fetched.id} (status={getattr(fetched, 'status', None)})")
         except Exception as e:
             span.set_status(StatusCode.ERROR, str(e))
