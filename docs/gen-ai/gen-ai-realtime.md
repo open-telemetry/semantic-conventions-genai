@@ -255,6 +255,9 @@ chat history.
 Instructions that are part of the chat history SHOULD be recorded in
 `gen_ai.input.messages` attribute instead.
 
+Instrumentations SHOULD populate fields when values are available,
+unless the field description says otherwise.
+
 Instrumentations MAY provide a way for users to filter or truncate
 system instructions.
 
@@ -275,8 +278,9 @@ For providers with session-level tools and per-generation overrides, record
 the generation's tools if set, otherwise the session's tools.
 
 Since this attribute could be large, it's NOT RECOMMENDED to populate
-non-required properties by default. Instrumentations MAY provide a way
-to enable populating optional properties.
+properties other than `type` and `name` (such as `description` and
+`parameters`) by default. Instrumentations MAY provide a way to enable
+populating additional properties.
 
 This attribute MUST be recorded as an [AnyValue](https://opentelemetry.io/docs/specs/otel/common/#anyvalue) conforming to its [JSON schema](/model/gen-ai/gen-ai-tool-definitions.json).
 

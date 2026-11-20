@@ -671,8 +671,9 @@ attributes:
       > This attribute may contain sensitive information.
 
       Since this attribute could be large, it's NOT RECOMMENDED to populate
-      non-required properties by default. Instrumentations MAY provide a way
-      to enable populating optional properties.
+      properties other than `type` and `name` (such as `description` and
+      `parameters`) by default. Instrumentations MAY provide a way to enable
+      populating additional properties.
     examples:
       - |
         [
@@ -981,6 +982,9 @@ attributes:
       Instructions that are part of the chat history SHOULD be recorded in
       `gen_ai.input.messages` attribute instead.
 
+      Instrumentations SHOULD populate fields when values are available,
+      unless the field description says otherwise.
+
       Instrumentations MAY provide a way for users to filter or truncate
       system instructions.
 
@@ -1036,6 +1040,10 @@ attributes:
         unbounded_size: true
     note: |
       Messages MUST be provided in the order they were sent to the model.
+
+      Instrumentations SHOULD populate fields when values are available,
+      unless the field description says otherwise.
+
       Instrumentations MAY provide a way for users to filter or truncate
       input messages.
 
@@ -1110,6 +1118,9 @@ attributes:
       the model. Each message corresponds to exactly one generation
       (choice/candidate) and vice versa - one choice cannot be split across
       multiple messages or one message cannot contain parts from multiple choices.
+
+      Instrumentations SHOULD populate fields when values are available,
+      unless the field description says otherwise.
 
       Instrumentations MAY provide a way for users to filter or truncate
       output messages. `gen_ai.response.finish_reasons` remains aligned with the

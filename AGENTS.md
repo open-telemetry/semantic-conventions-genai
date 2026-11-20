@@ -37,6 +37,16 @@ GenAI clients, MCP, and provider-specific conventions. Attributes live in
 9. **Stay in the GenAI domain.** This repo holds GenAI-related conventions. If a
    proposal is broader than GenAI, take it to
    [open-telemetry/semantic-conventions](https://github.com/open-telemetry/semantic-conventions).
+10. **Only require structural discriminators in JSON schemas.** In
+    `docs/gen-ai/non-normative/models.py`, only union `type` discriminators
+    may be required. Mark all other fields optional with
+    `Optional[...] = Field(default=None, ...)` and put normative producer
+    requirements in the specification docs. Never add a required field to an
+    existing type. Doing so breaks newer validators reading telemetry from older
+    producers, prevents deprecating, replacing, or offloading fields without
+    breaking older validators, and forces dummy values when redacting content.
+    See
+    [.github/instructions/json-schemas.instructions.md](.github/instructions/json-schemas.instructions.md).
 ## Workflow
 
 ```bash
