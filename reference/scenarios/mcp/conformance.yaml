@@ -5,19 +5,6 @@ instrumentation_library: reference
 scenarios:
   reference:
     run: uv run --frozen --python 3.12 --project . python scenario.py
-    expected_violations:
-      - id: genai_span_name_format
-        context:
-          expected_form: execute_tool get_weather
-          keyed_attr: gen_ai.tool.name
-          operation: execute_tool
-        reason: MCP spans use the '{mcp.method.name} {target}' span name format ('tools/call get_weather').
-      - id: genai_span_name_format
-        context:
-          expected_form: execute_tool missing_tool
-          keyed_attr: gen_ai.tool.name
-          operation: execute_tool
-        reason: MCP spans use the '{mcp.method.name} {target}' span name format ('tools/call missing_tool').
     spans:
       - match:
           attributes:
