@@ -32,7 +32,8 @@ spans:
       higher level GenAI agent operations.
     stability: development
     attributes:
-      - ref_group: a2a.common.attributes
+      - ref_group: a2a.protocol.attributes
+      - ref_group: a2a.error.attributes
       - ref_group: a2a.agent.attributes
       - ref_group: a2a.client.address_and_port.attributes
 
@@ -53,7 +54,8 @@ spans:
       [gRPC](/docs/gen-ai/a2a.md#server-over-grpc) server spans.
     stability: development
     attributes:
-      - ref_group: a2a.common.attributes
+      - ref_group: a2a.protocol.attributes
+      - ref_group: a2a.error.attributes
       - ref_group: a2a.agent.attributes
       - ref_group: a2a.server.address_and_port.attributes
 

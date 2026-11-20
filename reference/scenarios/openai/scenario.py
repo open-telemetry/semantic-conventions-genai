@@ -630,11 +630,13 @@ def run_chat_streaming_reference(client):
         finish_reasons_by_index = {}
         input_tokens = None
         output_tokens = None
+        service_tier = None
         first_chunk_received = False
         for chunk in stream:
             received_at = perf_counter()
             model = model or getattr(chunk, "model", None)
             response_id = response_id or getattr(chunk, "id", None)
+            service_tier = service_tier or chunk.service_tier
             if not first_chunk_received and any(
                 choice.delta.content
                 or choice.delta.refusal
@@ -651,7 +653,10 @@ def run_chat_streaming_reference(client):
             ):
                 ttfc = received_at - request_started_at
                 span.set_attribute("gen_ai.response.time_to_first_chunk", ttfc)
-                _time_to_first_chunk.record(ttfc, usage_metric_attributes(request_model, model, host, port))
+                ttfc_attributes = usage_metric_attributes(request_model, model, host, port)
+                if service_tier is not None:
+                    ttfc_attributes["gen_ai.response.service_tier"] = service_tier
+                _time_to_first_chunk.record(ttfc, ttfc_attributes)
                 first_chunk_received = True
             for choice in chunk.choices:
                 seen_choice_indexes.add(choice.index)
@@ -684,7 +689,11 @@ def run_chat_streaming_reference(client):
             usage["gen_ai.usage.output_tokens"] = output_tokens
         for attr, value in usage.items():
             span.set_attribute(attr, value)
-        record_inference_usage(usage, usage_metric_attributes(request_model, model, host, port))
+        metric_attributes = usage_metric_attributes(request_model, model, host, port)
+        if service_tier is not None:
+            span.set_attribute("gen_ai.response.service_tier", service_tier)
+            metric_attributes["gen_ai.response.service_tier"] = service_tier
+        record_inference_usage(usage, metric_attributes)
         print(f"    -> {text[:60]}")
 
 
@@ -1229,7 +1238,7 @@ def run_responses_with_prompt_template_reference(client):
     The Responses API accepts a `prompt` parameter that references a stored
     prompt template by id, with optional version and variables. The
     instrumentation extracts gen_ai.prompt.name, gen_ai.prompt.version,
-    and gen_ai.prompt.variable.* from the request.
+    and gen_ai.prompt.variables from the request.
     """
     print("  [responses_prompt_template] Responses API with prompt template (reference implementation)")
     request_model = "gpt-4o-mini"
@@ -1251,8 +1260,7 @@ def run_responses_with_prompt_template_reference(client):
     with _reference_tracer.start_as_current_span(
         "chat gpt-4o-mini", kind=SpanKind.CLIENT, attributes=span_attributes
     ) as span:
-        for var_name, var_value in prompt_variables.items():
-            span.set_attribute(f"gen_ai.prompt.variable.{var_name}", var_value)
+        span.set_attribute("gen_ai.prompt.variables", prompt_variables)
         resp = client.responses.create(
             model=request_model,
             input="Help me with my order.",
@@ -1298,13 +1306,12 @@ def run_responses_with_prompt_template_reference(client):
             "gen_ai.request.model": request_model,
             "gen_ai.prompt.name": prompt_id,
             "gen_ai.prompt.version": prompt_version,
+            "gen_ai.prompt.variables": prompt_variables,
             "gen_ai.response.id": resp.id,
             "gen_ai.response.model": resp.model,
         }
         if finish_reason is not None:
             event_attrs["gen_ai.response.finish_reasons"] = [finish_reason]
-        for var_name, var_value in prompt_variables.items():
-            event_attrs[f"gen_ai.prompt.variable.{var_name}"] = var_value
         if output_text:
             event_attrs["gen_ai.output.messages"] = [
                 {"role": "assistant", "parts": [{"type": "text", "content": output_text}]}
