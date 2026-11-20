@@ -40,7 +40,7 @@ https://github.com/open-telemetry/opentelemetry-specification/pull/5378 -->
 sum(gen_ai.usage.input_tokens)
   where trace_id == "<trace id>"
     and gen_ai.operation.name in (chat, generate_content, text_completion, realtime_inference)
-  group by service.name
+  group by service.namespace, service.name
 ```
 
 > [!WARNING]
