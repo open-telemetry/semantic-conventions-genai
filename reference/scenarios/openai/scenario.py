@@ -1345,7 +1345,8 @@ def _emit_fetch_response_span(client, response_id, starting_after=None, stream=F
       and reasoning details come from `usage` on the fetched response object when
       present, through `responses_usage_attributes`, shared with the Responses
       inference span. They describe the original generation identified by
-      `gen_ai.response.id`. A `failed` response without usage sets none of them.
+      `gen_ai.response.id`. A response fetched while still `in_progress`, or a
+      `failed` response without usage, sets none of them.
     - `openai.api.type` is `responses`; `openai.response.service_tier` comes from
       the fetched object.
     """
@@ -1433,9 +1434,10 @@ def run_fetch_response_reference(client):
 
     Emits the `gen_ai.fetch_response.client` span (OpenAI `openai.fetch_response.client`
     refinement) around `client.responses.retrieve(...)`. This operation performs
-    no inference: a response is first created with `store=True`, then fetched by
-    id. A background streaming response is then created, consumed until the
-    caller disconnects, and resumed from the last event's cursor to show
+    no inference: a background response is first created with `store=True`, then
+    fetched by id three times: while it is still running, once it has completed,
+    and again later. A background streaming response is then created, consumed
+    until the caller disconnects, and resumed from the last event's cursor to show
     `gen_ai.request.stream_cursor` being recorded. A final fetch retrieves a
     response whose original generation failed, to show that the fetch still
     succeeds and the failure is conveyed through `gen_ai.response.finish_reasons`
@@ -1444,16 +1446,20 @@ def run_fetch_response_reference(client):
     print("  [fetch_response] fetch a stored Responses API result by id (reference implementation)")
     request_model = "gpt-4o-mini"
 
-    # Create a stored response first so there is a real id to fetch. This
+    # Create a background response first so there is a real id to poll. This
     # create call is a separate inference operation and not part of the
-    # fetch_response span below.
+    # fetch_response spans below. The first fetch finds the response
+    # `in_progress`, without usage; the second finds it `completed`, and the
+    # third gets the same response and usage again.
     created = client.responses.create(
         model=request_model,
         instructions="You are a helpful assistant.",
         input="Say hello.",
+        background=True,
         store=True,
     )
-    _emit_fetch_response_span(client, created.id)
+    for _ in range(3):
+        _emit_fetch_response_span(client, created.id)
 
     # Resume a streamed fetch from a real cursor. Only a background response
     # created with streaming can be resumed by id, so create one, consume it
