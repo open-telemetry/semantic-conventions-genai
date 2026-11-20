@@ -1,0 +1,16 @@
+[project]
+name = "oci-generative-ai-reference-test"
+version = "0.0.0"
+requires-python = ">=3.12"
+dependencies = [
+    "openai==3.29.0",
+    # imported directly for the transport that hands requests to the mock server
+    "httpx2",
+    "genai-reference-shared",
+]
+
+[tool.uv.sources]
+genai-reference-shared = { path = "../../shared", editable = true }
+
+[tool.uv]
+package = false
