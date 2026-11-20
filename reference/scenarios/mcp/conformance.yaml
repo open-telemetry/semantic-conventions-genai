@@ -6,12 +6,6 @@ scenarios:
   reference:
     run: uv run --frozen --python 3.12 --project . python scenario.py
     expected_violations:
-      - id: deprecated
-        context:
-          attribute_key: rpc.response.status_code
-          deprecation_note: Replaced by `rpc.status_code`.
-          deprecation_reason: renamed
-        reason: MCP status attribute groups still reference rpc.response.status_code from the pinned upstream registry.
       - id: genai_span_name_format
         context:
           expected_form: execute_tool get_weather

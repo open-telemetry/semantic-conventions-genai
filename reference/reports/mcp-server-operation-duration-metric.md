@@ -14,7 +14,7 @@
 | --- | --- |
 | gen_ai.prompt.name | [mcp] |
 | gen_ai.tool.name | [mcp] |
-| rpc.response.status_code | [mcp] |
+| rpc.status_code | [mcp] |
 
 ## Recommended
 
