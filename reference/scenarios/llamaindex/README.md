@@ -4,6 +4,9 @@ LlamaIndex is a data framework for RAG and agents. It calls models through LLM
 integrations, so it **delegates inference**. It owns the retrieval, tool, and
 workflow operations it runs directly.
 
+Retrieval records content and metadata from each returned node, its node ID,
+and the relevance score when the retriever supplies one.
+
 | Operation | Should be instrumented here | Status |
 | --- | --- | --- |
 | inference (`chat`) | No — delegates to the model provider (e.g. `openai`) | ✅ Correctly not emitted |
