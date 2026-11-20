@@ -224,7 +224,7 @@ if a request has 100 text tokens (40 cached) and 200 image tokens:
 - `gen_ai.usage.image.input_tokens`: 200
 
 The same tokens can be reported on multiple types of spans. See
-[how to aggregate token usage](/docs/gen-ai/client-inference.md#how-to-aggregate-token-usage).
+[how to aggregate token usage](/docs/gen-ai/gen-ai-token-metrics.md#how-to-aggregate-token-usage).
 
 **[23] `gen_ai.usage.output_tokens`:** This value SHOULD include reasoning tokens and tokens of all modalities.
 
@@ -234,7 +234,7 @@ token counts (for example, Cohere exposes both `usage.billed_units` and
 value matches the units the customer is charged for.
 
 The same tokens can be reported on multiple types of spans. See
-[how to aggregate token usage](/docs/gen-ai/client-inference.md#how-to-aggregate-token-usage).
+[how to aggregate token usage](/docs/gen-ai/gen-ai-token-metrics.md#how-to-aggregate-token-usage).
 
 **[24] `gen_ai.usage.reasoning.output_tokens`:** The value SHOULD be included in `gen_ai.usage.output_tokens`.
 

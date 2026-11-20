@@ -9,6 +9,7 @@ linkTitle: Token Metrics
 <!-- toc -->
 
 - [Semantic conventions for generative AI inference token metrics](#semantic-conventions-for-generative-ai-inference-token-metrics)
+  - [How to aggregate token usage](#how-to-aggregate-token-usage)
   - [Inference token metrics](#inference-token-metrics)
     - [Metric: `gen_ai.client.inference.usage.input_tokens`](#metric-gen_aiclientinferenceusageinput_tokens)
     - [Metric: `gen_ai.client.inference.usage.output_tokens`](#metric-gen_aiclientinferenceusageoutput_tokens)
@@ -18,6 +19,35 @@ linkTitle: Token Metrics
     - [Metric: `gen_ai.client.inference.operation.input_tokens`](#metric-gen_aiclientinferenceoperationinput_tokens)
     - [Metric: `gen_ai.client.inference.operation.output_tokens`](#metric-gen_aiclientinferenceoperationoutput_tokens)
 <!-- tocstop -->
+
+## How to aggregate token usage
+
+> [!NOTE]
+> Use [inference token metrics](#inference-token-metrics) (or corresponding
+> [embeddings](client-embeddings.md#metrics) or other metrics, depending on the
+> operation) whenever possible. They aren't affected by trace sampling. Filter
+> or group by `service.name` if multiple services report the same operations.
+
+To see token usage in an individual trace, filter by `gen_ai.operation.name`
+and break down by `service.name` if multiple services report the same type of
+spans. For example (pseudocode):
+
+<!-- TODO: replace the gen_ai.operation.name filter with
+span.type, see
+https://github.com/open-telemetry/opentelemetry-specification/pull/5378 -->
+
+```text
+sum(gen_ai.usage.input_tokens)
+  where trace_id == "<trace id>"
+    and gen_ai.operation.name in (chat, generate_content, text_completion, realtime_inference)
+  group by service.name
+```
+
+> [!WARNING]
+> Don't sum `gen_ai.usage.*` over all spans without filtering by operation name
+> (or span type, if available). The same tokens can be reported on multiple
+> types of spans: agent and inference spans, or inference spans from gateways
+> and different layers of the inference infrastructure.
 
 ## Inference token metrics
 

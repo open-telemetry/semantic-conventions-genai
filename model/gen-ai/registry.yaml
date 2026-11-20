@@ -309,7 +309,7 @@ attributes:
       - `gen_ai.usage.image.input_tokens`: 200
 
       The same tokens can be reported on multiple types of spans. See
-      [how to aggregate token usage](/docs/gen-ai/client-inference.md#how-to-aggregate-token-usage).
+      [how to aggregate token usage](/docs/gen-ai/gen-ai-token-metrics.md#how-to-aggregate-token-usage).
     examples: [100]
     stability: development
   - key: gen_ai.usage.cache_read.input_tokens
@@ -359,7 +359,7 @@ attributes:
       value matches the units the customer is charged for.
 
       The same tokens can be reported on multiple types of spans. See
-      [how to aggregate token usage](/docs/gen-ai/client-inference.md#how-to-aggregate-token-usage).
+      [how to aggregate token usage](/docs/gen-ai/gen-ai-token-metrics.md#how-to-aggregate-token-usage).
     examples: [180]
     stability: development
   - key: gen_ai.usage.reasoning.output_tokens
