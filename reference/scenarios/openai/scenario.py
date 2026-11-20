@@ -1213,7 +1213,7 @@ def run_responses_with_prompt_template_reference(client):
     The Responses API accepts a `prompt` parameter that references a stored
     prompt template by id, with optional version and variables. The
     instrumentation extracts gen_ai.prompt.name, gen_ai.prompt.version,
-    and gen_ai.prompt.variable.* from the request.
+    and gen_ai.prompt.variables from the request.
     """
     print("  [responses_prompt_template] Responses API with prompt template (reference implementation)")
     request_model = "gpt-4o-mini"
@@ -1235,8 +1235,7 @@ def run_responses_with_prompt_template_reference(client):
     with _reference_tracer.start_as_current_span(
         "chat gpt-4o-mini", kind=SpanKind.CLIENT, attributes=span_attributes
     ) as span:
-        for var_name, var_value in prompt_variables.items():
-            span.set_attribute(f"gen_ai.prompt.variable.{var_name}", var_value)
+        span.set_attribute("gen_ai.prompt.variables", prompt_variables)
         resp = client.responses.create(
             model=request_model,
             input="Help me with my order.",
@@ -1282,13 +1281,12 @@ def run_responses_with_prompt_template_reference(client):
             "gen_ai.request.model": request_model,
             "gen_ai.prompt.name": prompt_id,
             "gen_ai.prompt.version": prompt_version,
+            "gen_ai.prompt.variables": prompt_variables,
             "gen_ai.response.id": resp.id,
             "gen_ai.response.model": resp.model,
         }
         if finish_reason is not None:
             event_attrs["gen_ai.response.finish_reasons"] = [finish_reason]
-        for var_name, var_value in prompt_variables.items():
-            event_attrs[f"gen_ai.prompt.variable.{var_name}"] = var_value
         if output_text:
             event_attrs["gen_ai.output.messages"] = [
                 {"role": "assistant", "parts": [{"type": "text", "content": output_text}]}
