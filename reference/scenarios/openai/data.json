@@ -19,6 +19,7 @@
       "gen_ai.operation.name",
       "gen_ai.output.messages",
       "gen_ai.prompt.name",
+      "gen_ai.prompt.variables",
       "gen_ai.prompt.version",
       "gen_ai.provider.name",
       "gen_ai.request.choice.count",
@@ -60,6 +61,7 @@
       "gen_ai.response.model",
       "gen_ai.response.status",
       "gen_ai.system_instructions",
+      "gen_ai.tool.definitions",
       "server.address",
       "server.port"
     ]
@@ -86,6 +88,7 @@
       "gen_ai.operation.name",
       "gen_ai.output.messages",
       "gen_ai.prompt.name",
+      "gen_ai.prompt.variables",
       "gen_ai.prompt.version",
       "gen_ai.provider.name",
       "gen_ai.request.model",
