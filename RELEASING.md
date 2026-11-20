@@ -20,7 +20,9 @@ Each release has these assets:
    with the version to release, e.g. `0.1.0`. It sets the release `schema_url`,
    renders a `## v{version}` section in [CHANGELOG.md](CHANGELOG.md) from
    [changelog.d/](changelog.d/), and opens a pull request labeled `release`.
-2. Review and merge the pull request.
+2. Review and merge the pull request. If a non-chore pull request merges to
+   `main` while it's open, close the release pull request and run the workflow
+   again.
 
 ## Making the release
 

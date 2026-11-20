@@ -105,6 +105,11 @@ jobs:
         env:
           VERSION: ${{ needs.release.outputs.version }}
         run: |
+          # A late re-run must not roll back a main that has already moved on.
+          if ! grep -q "^schema_url: .*/semconv-genai-dev/${VERSION}-dev$" model/manifest.yaml; then
+            echo "main no longer has the v${VERSION} schema_url, skipping"
+            exit 0
+          fi
           IFS=. read -r major minor _ <<< "$VERSION"
           next_version="$major.$((minor + 1)).0"
           echo "NEXT_VERSION=$next_version" >> "$GITHUB_ENV"
