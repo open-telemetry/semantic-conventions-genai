@@ -29,7 +29,9 @@
 | Attribute | Supporting Libraries |
 | --- | --- |
 | gen_ai.tool.call.arguments | [agent-framework], [autogen], [crewai], [google-adk], [google-genai], [langchain], [llamaindex], [openai-agents], [openai-assistants], [pydantic-ai], [vertexai] |
+| gen_ai.tool.call.arguments_ref | [langchain] |
 | gen_ai.tool.call.result | [agent-framework], [autogen], [crewai], [google-adk], [google-genai], [langchain], [llamaindex], [openai-agents], [openai-assistants], [pydantic-ai], [vertexai] |
+| gen_ai.tool.call.result_ref | [langchain] |
 
 [agent-framework]: ../scenarios/agent-framework/scenario.py
 [autogen]: ../scenarios/autogen/scenario.py

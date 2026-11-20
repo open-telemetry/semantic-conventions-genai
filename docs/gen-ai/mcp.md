@@ -174,8 +174,11 @@ to avoid high cardinality span names.
 | [`server.address`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` If applicable. | string | Server domain name if available without reverse DNS lookup; otherwise, IP address or UNIX domain socket name. [11] | `example.com`; `10.1.2.80`; `/tmp/my.sock` |
 | [`server.port`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When `server.address` is set. | int | Server port number. [12] | `80`; `8080`; `443` |
 | [`gen_ai.prompt.variables`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | The variables supplied to the prompt template in the request. [13] | {<br>&nbsp;&nbsp;"user_name": "Alice",<br>&nbsp;&nbsp;"language": "French"<br>} |
-| [`gen_ai.tool.call.arguments`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | Parameters passed to the tool call. [14] | {<br>&nbsp;&nbsp;&nbsp;&nbsp;"location": "San Francisco?",<br>&nbsp;&nbsp;&nbsp;&nbsp;"date": "2025-10-01"<br>} |
-| [`gen_ai.tool.call.result`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | The result returned by the tool call (if any and if execution was successful). [15] | {<br>&nbsp;&nbsp;"temperature_range": {<br>&nbsp;&nbsp;&nbsp;&nbsp;"high": 75,<br>&nbsp;&nbsp;&nbsp;&nbsp;"low": 60<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;"conditions": "sunny"<br>} |
+| [`gen_ai.prompt.variables_ref`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | string | An absolute URI identifying the prompt template variables in external storage. [14] | `s3://example-bucket/gen-ai/674f35f4-e3f6-41f5-b104-864b3964f6d3_prompt.variables.json` |
+| [`gen_ai.tool.call.arguments`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | Parameters passed to the tool call. [15] | {<br>&nbsp;&nbsp;&nbsp;&nbsp;"location": "San Francisco?",<br>&nbsp;&nbsp;&nbsp;&nbsp;"date": "2025-10-01"<br>} |
+| [`gen_ai.tool.call.arguments_ref`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | string | An absolute URI identifying the tool call arguments in external storage. [16] | `s3://example-bucket/gen-ai/674f35f4-e3f6-41f5-b104-864b3964f6d3_tool.call.arguments.json` |
+| [`gen_ai.tool.call.result`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | The result returned by the tool call (if any and if execution was successful). [17] | {<br>&nbsp;&nbsp;"temperature_range": {<br>&nbsp;&nbsp;&nbsp;&nbsp;"high": 75,<br>&nbsp;&nbsp;&nbsp;&nbsp;"low": 60<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;"conditions": "sunny"<br>} |
+| [`gen_ai.tool.call.result_ref`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | string | An absolute URI identifying the tool call result in external storage. [18] | `s3://example-bucket/gen-ai/674f35f4-e3f6-41f5-b104-864b3964f6d3_tool.call.result.json` |
 
 **[1] `error.type`:** When the response carries a JSON-RPC error code that classifies as an error,
 `error.type` SHOULD be set to the string representation of that code. See
@@ -238,7 +241,18 @@ supplied in `prompts/get` requests SHOULD be recorded as the
 
 This attribute MUST be recorded as an [AnyValue](https://opentelemetry.io/docs/specs/otel/common/#anyvalue) conforming to its [JSON schema](/model/gen-ai/gen-ai-prompt-variables.json).
 
-**[14] `gen_ai.tool.call.arguments`:**
+**[14] `gen_ai.prompt.variables_ref`:** The presence of this attribute does not indicate whether storing the
+content succeeded or whether the content remains available.
+
+It is NOT RECOMMENDED to embed credentials, such as signed URL
+query parameters, in the URI. Access to the stored content SHOULD be
+secured by other means, for example by storage-level access control.
+
+> [!Warning]
+> The URI may expose sensitive storage metadata, such as storage provider,
+> bucket or container names, tenant or object identifiers.
+
+**[15] `gen_ai.tool.call.arguments`:**
 
 > [!WARNING]
 > This attribute may contain sensitive information.
@@ -249,7 +263,18 @@ deserialize it to an object.
 
 This attribute MUST be recorded as an [AnyValue](https://opentelemetry.io/docs/specs/otel/common/#anyvalue) conforming to its [JSON schema](/model/gen-ai/gen-ai-tool-call-arguments.json).
 
-**[15] `gen_ai.tool.call.result`:**
+**[16] `gen_ai.tool.call.arguments_ref`:** The presence of this attribute does not indicate whether storing the
+content succeeded or whether the content remains available.
+
+It is NOT RECOMMENDED to embed credentials, such as signed URL
+query parameters, in the URI. Access to the stored content SHOULD be
+secured by other means, for example by storage-level access control.
+
+> [!Warning]
+> The URI may expose sensitive storage metadata, such as storage provider,
+> bucket or container names, tenant or object identifiers.
+
+**[17] `gen_ai.tool.call.result`:**
 
 > [!WARNING]
 > This attribute may contain sensitive information.
@@ -259,6 +284,17 @@ to the instrumentation, the instrumentation SHOULD do the best effort to
 deserialize it to an object.
 
 This attribute MUST be recorded as an [AnyValue](https://opentelemetry.io/docs/specs/otel/common/#anyvalue) conforming to its [JSON schema](/model/gen-ai/gen-ai-tool-call-result.json).
+
+**[18] `gen_ai.tool.call.result_ref`:** The presence of this attribute does not indicate whether storing the
+content succeeded or whether the content remains available.
+
+It is NOT RECOMMENDED to embed credentials, such as signed URL
+query parameters, in the URI. Access to the stored content SHOULD be
+secured by other means, for example by storage-level access control.
+
+> [!Warning]
+> The URI may expose sensitive storage metadata, such as storage provider,
+> bucket or container names, tenant or object identifiers.
 
 ---
 
@@ -282,23 +318,23 @@ This attribute MUST be recorded as an [AnyValue](https://opentelemetry.io/docs/s
 | `delete_memory_store` | Delete or deprovision a memory store | ![Development](https://img.shields.io/badge/-development-blue) |
 | `embeddings` | Embeddings operation such as [OpenAI Create embeddings API](https://platform.openai.com/docs/api-reference/embeddings/create) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `execute_tool` | Execute a tool | ![Development](https://img.shields.io/badge/-development-blue) |
-| `fetch_response` | Fetch a previously generated model response by its identifier, without performing inference, such as [OpenAI Get a model response](https://platform.openai.com/docs/api-reference/responses/get) [16] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `fetch_response` | Fetch a previously generated model response by its identifier, without performing inference, such as [OpenAI Get a model response](https://platform.openai.com/docs/api-reference/responses/get) [19] | ![Development](https://img.shields.io/badge/-development-blue) |
 | `generate_content` | Multimodal content generation operation such as [Gemini Generate Content](https://ai.google.dev/api/generate-content) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `invoke_agent` | Invoke GenAI agent | ![Development](https://img.shields.io/badge/-development-blue) |
 | `invoke_runner` | Invoke a framework runner that is not itself an agent or a workflow | ![Development](https://img.shields.io/badge/-development-blue) |
 | `invoke_workflow` | Invoke GenAI workflow | ![Development](https://img.shields.io/badge/-development-blue) |
 | `plan` | Agent planning or task decomposition phase | ![Development](https://img.shields.io/badge/-development-blue) |
 | `realtime_inference` | Server-side model generation within a realtime, bidirectional streaming session such as [OpenAI Realtime](https://platform.openai.com/docs/guides/realtime) or [Gemini Live](https://ai.google.dev/gemini-api/docs/live). | ![Development](https://img.shields.io/badge/-development-blue) |
-| `retrieval` | Execution of a retrieval pipeline that returns documents relevant to a query [17] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `retrieval` | Execution of a retrieval pipeline that returns documents relevant to a query [20] | ![Development](https://img.shields.io/badge/-development-blue) |
 | `search_memory` | Search/query memories from a memory store | ![Development](https://img.shields.io/badge/-development-blue) |
 | `text_completion` | Text completions operation such as [OpenAI Completions API (Legacy)](https://platform.openai.com/docs/api-reference/completions) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `update_memory` | Update existing memory records | ![Development](https://img.shields.io/badge/-development-blue) |
 | `upsert_memory` | Create or update memory records without the caller choosing which | ![Development](https://img.shields.io/badge/-development-blue) |
 | `user_speech` | Describes the process of recording user speech input. | ![Development](https://img.shields.io/badge/-development-blue) |
 
-**[16]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
+**[19]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
 
-**[17]:** Examples include LangChain, LlamaIndex, and Haystack retrievers.
+**[20]:** Examples include LangChain, LlamaIndex, and Haystack retrievers.
 A retrieval pipeline usually combines other operations such as embeddings,
 database queries, web search, or reranking. These operations SHOULD be
 reported following their own conventions.
@@ -405,8 +441,11 @@ to avoid high cardinality span names.
 | [`network.protocol.version`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When applicable. | string | The actual version of the protocol used for network communication. | `1.1`; `2` |
 | [`network.transport`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | The transport protocol used for the observed MCP operation. [12] | `tcp`; `quic`; `pipe` |
 | [`gen_ai.prompt.variables`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | The variables supplied to the prompt template in the request. [13] | {<br>&nbsp;&nbsp;"user_name": "Alice",<br>&nbsp;&nbsp;"language": "French"<br>} |
-| [`gen_ai.tool.call.arguments`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | Parameters passed to the tool call. [14] | {<br>&nbsp;&nbsp;&nbsp;&nbsp;"location": "San Francisco?",<br>&nbsp;&nbsp;&nbsp;&nbsp;"date": "2025-10-01"<br>} |
-| [`gen_ai.tool.call.result`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | The result returned by the tool call (if any and if execution was successful). [15] | {<br>&nbsp;&nbsp;"temperature_range": {<br>&nbsp;&nbsp;&nbsp;&nbsp;"high": 75,<br>&nbsp;&nbsp;&nbsp;&nbsp;"low": 60<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;"conditions": "sunny"<br>} |
+| [`gen_ai.prompt.variables_ref`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | string | An absolute URI identifying the prompt template variables in external storage. [14] | `s3://example-bucket/gen-ai/674f35f4-e3f6-41f5-b104-864b3964f6d3_prompt.variables.json` |
+| [`gen_ai.tool.call.arguments`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | Parameters passed to the tool call. [15] | {<br>&nbsp;&nbsp;&nbsp;&nbsp;"location": "San Francisco?",<br>&nbsp;&nbsp;&nbsp;&nbsp;"date": "2025-10-01"<br>} |
+| [`gen_ai.tool.call.arguments_ref`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | string | An absolute URI identifying the tool call arguments in external storage. [16] | `s3://example-bucket/gen-ai/674f35f4-e3f6-41f5-b104-864b3964f6d3_tool.call.arguments.json` |
+| [`gen_ai.tool.call.result`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | The result returned by the tool call (if any and if execution was successful). [17] | {<br>&nbsp;&nbsp;"temperature_range": {<br>&nbsp;&nbsp;&nbsp;&nbsp;"high": 75,<br>&nbsp;&nbsp;&nbsp;&nbsp;"low": 60<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;"conditions": "sunny"<br>} |
+| [`gen_ai.tool.call.result_ref`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | string | An absolute URI identifying the tool call result in external storage. [18] | `s3://example-bucket/gen-ai/674f35f4-e3f6-41f5-b104-864b3964f6d3_tool.call.result.json` |
 
 **[1] `error.type`:** When the response carries a JSON-RPC error code that classifies as an error,
 `error.type` SHOULD be set to the string representation of that code. See
@@ -479,7 +518,18 @@ supplied in `prompts/get` requests SHOULD be recorded as the
 
 This attribute MUST be recorded as an [AnyValue](https://opentelemetry.io/docs/specs/otel/common/#anyvalue) conforming to its [JSON schema](/model/gen-ai/gen-ai-prompt-variables.json).
 
-**[14] `gen_ai.tool.call.arguments`:**
+**[14] `gen_ai.prompt.variables_ref`:** The presence of this attribute does not indicate whether storing the
+content succeeded or whether the content remains available.
+
+It is NOT RECOMMENDED to embed credentials, such as signed URL
+query parameters, in the URI. Access to the stored content SHOULD be
+secured by other means, for example by storage-level access control.
+
+> [!Warning]
+> The URI may expose sensitive storage metadata, such as storage provider,
+> bucket or container names, tenant or object identifiers.
+
+**[15] `gen_ai.tool.call.arguments`:**
 
 > [!WARNING]
 > This attribute may contain sensitive information.
@@ -490,7 +540,18 @@ deserialize it to an object.
 
 This attribute MUST be recorded as an [AnyValue](https://opentelemetry.io/docs/specs/otel/common/#anyvalue) conforming to its [JSON schema](/model/gen-ai/gen-ai-tool-call-arguments.json).
 
-**[15] `gen_ai.tool.call.result`:**
+**[16] `gen_ai.tool.call.arguments_ref`:** The presence of this attribute does not indicate whether storing the
+content succeeded or whether the content remains available.
+
+It is NOT RECOMMENDED to embed credentials, such as signed URL
+query parameters, in the URI. Access to the stored content SHOULD be
+secured by other means, for example by storage-level access control.
+
+> [!Warning]
+> The URI may expose sensitive storage metadata, such as storage provider,
+> bucket or container names, tenant or object identifiers.
+
+**[17] `gen_ai.tool.call.result`:**
 
 > [!WARNING]
 > This attribute may contain sensitive information.
@@ -500,6 +561,17 @@ to the instrumentation, the instrumentation SHOULD do the best effort to
 deserialize it to an object.
 
 This attribute MUST be recorded as an [AnyValue](https://opentelemetry.io/docs/specs/otel/common/#anyvalue) conforming to its [JSON schema](/model/gen-ai/gen-ai-tool-call-result.json).
+
+**[18] `gen_ai.tool.call.result_ref`:** The presence of this attribute does not indicate whether storing the
+content succeeded or whether the content remains available.
+
+It is NOT RECOMMENDED to embed credentials, such as signed URL
+query parameters, in the URI. Access to the stored content SHOULD be
+secured by other means, for example by storage-level access control.
+
+> [!Warning]
+> The URI may expose sensitive storage metadata, such as storage provider,
+> bucket or container names, tenant or object identifiers.
 
 ---
 
@@ -523,23 +595,23 @@ This attribute MUST be recorded as an [AnyValue](https://opentelemetry.io/docs/s
 | `delete_memory_store` | Delete or deprovision a memory store | ![Development](https://img.shields.io/badge/-development-blue) |
 | `embeddings` | Embeddings operation such as [OpenAI Create embeddings API](https://platform.openai.com/docs/api-reference/embeddings/create) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `execute_tool` | Execute a tool | ![Development](https://img.shields.io/badge/-development-blue) |
-| `fetch_response` | Fetch a previously generated model response by its identifier, without performing inference, such as [OpenAI Get a model response](https://platform.openai.com/docs/api-reference/responses/get) [16] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `fetch_response` | Fetch a previously generated model response by its identifier, without performing inference, such as [OpenAI Get a model response](https://platform.openai.com/docs/api-reference/responses/get) [19] | ![Development](https://img.shields.io/badge/-development-blue) |
 | `generate_content` | Multimodal content generation operation such as [Gemini Generate Content](https://ai.google.dev/api/generate-content) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `invoke_agent` | Invoke GenAI agent | ![Development](https://img.shields.io/badge/-development-blue) |
 | `invoke_runner` | Invoke a framework runner that is not itself an agent or a workflow | ![Development](https://img.shields.io/badge/-development-blue) |
 | `invoke_workflow` | Invoke GenAI workflow | ![Development](https://img.shields.io/badge/-development-blue) |
 | `plan` | Agent planning or task decomposition phase | ![Development](https://img.shields.io/badge/-development-blue) |
 | `realtime_inference` | Server-side model generation within a realtime, bidirectional streaming session such as [OpenAI Realtime](https://platform.openai.com/docs/guides/realtime) or [Gemini Live](https://ai.google.dev/gemini-api/docs/live). | ![Development](https://img.shields.io/badge/-development-blue) |
-| `retrieval` | Execution of a retrieval pipeline that returns documents relevant to a query [17] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `retrieval` | Execution of a retrieval pipeline that returns documents relevant to a query [20] | ![Development](https://img.shields.io/badge/-development-blue) |
 | `search_memory` | Search/query memories from a memory store | ![Development](https://img.shields.io/badge/-development-blue) |
 | `text_completion` | Text completions operation such as [OpenAI Completions API (Legacy)](https://platform.openai.com/docs/api-reference/completions) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `update_memory` | Update existing memory records | ![Development](https://img.shields.io/badge/-development-blue) |
 | `upsert_memory` | Create or update memory records without the caller choosing which | ![Development](https://img.shields.io/badge/-development-blue) |
 | `user_speech` | Describes the process of recording user speech input. | ![Development](https://img.shields.io/badge/-development-blue) |
 
-**[16]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
+**[19]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
 
-**[17]:** Examples include LangChain, LlamaIndex, and Haystack retrievers.
+**[20]:** Examples include LangChain, LlamaIndex, and Haystack retrievers.
 A retrieval pipeline usually combines other operations such as embeddings,
 database queries, web search, or reranking. These operations SHOULD be
 reported following their own conventions.
