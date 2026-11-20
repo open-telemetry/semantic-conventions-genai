@@ -37,10 +37,13 @@ scope: turn boundaries cannot be detected reliably across providers.
 """
 
 import base64
+import itertools
 import json
 import os
 from collections import deque
 from contextlib import suppress
+from pathlib import Path
+from tempfile import mkdtemp
 
 from opentelemetry._logs import SeverityNumber
 from opentelemetry.trace import SpanKind, Status, StatusCode
@@ -54,8 +57,17 @@ from reference_shared import (
 from websockets.exceptions import ConnectionClosedError
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"] + "/v1"
+_UPLOAD_DIR = Path(mkdtemp())
+_upload_counter = itertools.count(1)
 
 _reference_tracer = reference_tracer()
+
+
+def _upload_json(name: str, payload: object) -> str:
+    path = _UPLOAD_DIR / f"{next(_upload_counter):03d}_{name}"
+    path.write_text(json.dumps(payload), encoding="utf-8")
+    return path.as_uri()
+
 
 # Tiny base64 stand-in for the PCM16 audio the user "speaks". The mock does not
 # decode it; it only needs to be a valid base64 audio payload.
@@ -76,21 +88,19 @@ def _realtime_ws_url(http_base_url):
 
 def _user_audio_message(audio):
     """The user's spoken input as an audio-modality input message."""
-    return json.dumps(
-        [
-            {
-                "role": "user",
-                "parts": [
-                    {
-                        "type": "blob",
-                        "modality": "audio",
-                        "mime_type": "audio/pcm",
-                        "content": audio,
-                    }
-                ],
-            }
-        ]
-    )
+    return [
+        {
+            "role": "user",
+            "parts": [
+                {
+                    "type": "blob",
+                    "modality": "audio",
+                    "mime_type": "audio/pcm",
+                    "content": audio,
+                }
+            ],
+        }
+    ]
 
 
 def _output_type(output_modalities):
@@ -149,7 +159,17 @@ class _RealtimeDriver:
     """
 
     def __init__(
-        self, conn, provider, request_model, response_model, session_id, host, port, output_type, session_tools
+        self,
+        conn,
+        provider,
+        request_model,
+        response_model,
+        session_id,
+        host,
+        port,
+        output_type,
+        session_tools,
+        session_instructions=None,
     ):
         self.conn = conn
         self.provider = provider
@@ -160,6 +180,7 @@ class _RealtimeDriver:
         self.port = port
         self.output_type = output_type
         self.session_tools = [tool.model_dump(exclude_none=True) for tool in session_tools or []]
+        self.session_instructions = session_instructions
         # What the mock should do for each committed user utterance, in order:
         # a normal answer, an interrupted answer, the interrupted turn's follow-up
         # answer, then a tool call.
@@ -273,11 +294,27 @@ class _RealtimeDriver:
         span = _reference_tracer.start_span(
             f"realtime_inference {self.request_model}", kind=SpanKind.CLIENT, attributes=attributes
         )
+        response_id = event.response.id
         span.set_attribute("gen_ai.input.messages", self._gen["input_messages"])
-        span.set_attribute("gen_ai.tool.definitions", json.dumps(self._gen["tools"]))
+        span.set_attribute(
+            "gen_ai.input.messages_ref",
+            _upload_json(f"{response_id}_input.messages.json", self._gen["input_messages"]),
+        )
+        if self.session_instructions:
+            system_instructions = [{"type": "text", "content": self.session_instructions}]
+            span.set_attribute("gen_ai.system_instructions", system_instructions)
+            span.set_attribute(
+                "gen_ai.system_instructions_ref",
+                _upload_json(f"{response_id}_system_instructions.json", system_instructions),
+            )
+        span.set_attribute("gen_ai.tool.definitions", self._gen["tools"])
+        span.set_attribute(
+            "gen_ai.tool.definitions_ref",
+            _upload_json(f"{response_id}_tool.definitions.json", self._gen["tools"]),
+        )
         span.set_attribute("gen_ai.response.model", self.response_model)
         self._gen["span"] = span
-        self._gen["response_id"] = event.response.id
+        self._gen["response_id"] = response_id
 
     def _on_transcript_delta(self, event):
         self._gen["transcript_deltas"].append(event.delta)
@@ -331,7 +368,11 @@ class _RealtimeDriver:
             }
         ]
         span.set_attribute("gen_ai.response.finish_reasons", ["tool_call"])
-        span.set_attribute("gen_ai.output.messages", json.dumps(output_messages))
+        span.set_attribute("gen_ai.output.messages", output_messages)
+        span.set_attribute(
+            "gen_ai.output.messages_ref",
+            _upload_json(f"{self._gen['response_id']}_output.messages.json", output_messages),
+        )
         self._set_usage(span, usage)
         span.end()
         self._gen = None
@@ -369,7 +410,11 @@ class _RealtimeDriver:
             }
         ]
         span.set_attribute("gen_ai.response.finish_reasons", [finish_reason])
-        span.set_attribute("gen_ai.output.messages", json.dumps(output_messages))
+        span.set_attribute("gen_ai.output.messages", output_messages)
+        span.set_attribute(
+            "gen_ai.output.messages_ref",
+            _upload_json(f"{gen['response_id']}_output.messages.json", output_messages),
+        )
         self._set_usage(span, usage)
         span.end()
         self._gen = None
@@ -429,20 +474,18 @@ def _execute_tool(function_call):
 
 def _tool_result_message(function_call, result):
     """The tool result as the input message for the answer generation."""
-    return json.dumps(
-        [
-            {
-                "role": "tool",
-                "parts": [
-                    {
-                        "type": "tool_call_response",
-                        "id": function_call["call_id"],
-                        "response": result,
-                    }
-                ],
-            }
-        ]
-    )
+    return [
+        {
+            "role": "tool",
+            "parts": [
+                {
+                    "type": "tool_call_response",
+                    "id": function_call["call_id"],
+                    "response": result,
+                }
+            ],
+        }
+    ]
 
 
 def _emit_session_ended(session_attributes, error):
@@ -540,7 +583,13 @@ def run_realtime_reference(client):
                 attributes=session_attributes,
             )
             session_started = True
-            conn.session.update(session={"type": "realtime", "tools": [_WEATHER_TOOL]})
+            conn.session.update(
+                session={
+                    "type": "realtime",
+                    "instructions": "You are a helpful voice assistant.",
+                    "tools": [_WEATHER_TOOL],
+                }
+            )
             session_updated = conn.recv()
             if session_updated.type != "session.updated":
                 raise RuntimeError(f"Expected session.updated, got {session_updated.type}")
@@ -554,6 +603,7 @@ def run_realtime_reference(client):
                 port,
                 output_type,
                 session_updated.session.tools,
+                session_instructions=getattr(session_updated.session, "instructions", None),
             ).run()
     except Exception as error:
         session_error = error

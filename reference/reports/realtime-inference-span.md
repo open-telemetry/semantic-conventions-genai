@@ -47,9 +47,13 @@
 | Attribute | Supporting Libraries |
 | --- | --- |
 | gen_ai.input.messages | [google-genai][google-genai@gemini-live], [openai][openai@openai-realtime] |
+| gen_ai.input.messages_ref | [openai][openai@openai-realtime] |
 | gen_ai.output.messages | [google-genai][google-genai@gemini-live], [openai][openai@openai-realtime] |
-| gen_ai.system_instructions | (none) |
+| gen_ai.output.messages_ref | [openai][openai@openai-realtime] |
+| gen_ai.system_instructions | [openai][openai@openai-realtime] |
+| gen_ai.system_instructions_ref | [openai][openai@openai-realtime] |
 | gen_ai.tool.definitions | [openai][openai@openai-realtime] |
+| gen_ai.tool.definitions_ref | [openai][openai@openai-realtime] |
 
 [google-genai@gemini-live]: ../scenarios/gemini-live/scenario.py
 [openai@openai-realtime]: ../scenarios/openai-realtime/scenario.py
