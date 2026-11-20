@@ -9,6 +9,7 @@ linkTitle: Client Inference
 <!-- toc -->
 
 - [Span: `gen_ai.client.inference`](#span-gen_aiclientinference)
+- [How to aggregate token usage](#how-to-aggregate-token-usage)
 - [Metrics](#metrics)
   - [Metric: `gen_ai.client.inference.duration`](#metric-gen_aiclientinferenceduration)
   - [Metric: `gen_ai.client.inference.time_to_first_chunk`](#metric-gen_aiclientinferencetime_to_first_chunk)
@@ -260,12 +261,18 @@ if a request has 100 text tokens (40 cached) and 200 image tokens:
 - `gen_ai.usage.text.cache_read.input_tokens`: 40
 - `gen_ai.usage.image.input_tokens`: 200
 
+The same tokens can be reported on multiple types of spans. See
+[how to aggregate token usage](/docs/gen-ai/client-inference.md#how-to-aggregate-token-usage).
+
 **[29] `gen_ai.usage.output_tokens`:** This value SHOULD include reasoning tokens and tokens of all modalities.
 
 When the provider reports both billed token counts and model-consumed
 token counts (for example, Cohere exposes both `usage.billed_units` and
 `usage.tokens`), instrumentations SHOULD report the billed count so the
 value matches the units the customer is charged for.
+
+The same tokens can be reported on multiple types of spans. See
+[how to aggregate token usage](/docs/gen-ai/client-inference.md#how-to-aggregate-token-usage).
 
 **[30] `gen_ai.usage.reasoning.output_tokens`:** The value SHOULD be included in `gen_ai.usage.output_tokens`.
 
@@ -495,6 +502,34 @@ reported following their own conventions.
 
 For conventions on capturing instructions, inputs, and outputs on inference spans,
 see [Capturing instructions, inputs, and outputs](gen-ai-spans.md#capturing-instructions-inputs-and-outputs).
+
+## How to aggregate token usage
+
+> [!NOTE]
+> Use the [`gen_ai.client.inference.usage.*`](#metric-gen_aiclientinferenceusageinput_tokens)
+> counters whenever possible. They aren't affected by trace sampling. Filter or
+> group by `service.name` if multiple services report inference.
+
+To see token usage in an individual trace, filter by `gen_ai.operation.name`
+and break down by `service.name` if multiple services report the same type of
+spans. For example (pseudocode):
+
+<!-- TODO: replace the gen_ai.operation.name filter with
+span.type, see
+https://github.com/open-telemetry/opentelemetry-specification/pull/5378 -->
+
+```text
+sum(gen_ai.usage.input_tokens)
+  where trace_id == "<trace id>"
+    and gen_ai.operation.name in (chat, generate_content, text_completion, realtime_inference)
+  group by service.name
+```
+
+> [!WARNING]
+> Don't sum `gen_ai.usage.*` over all spans without filtering by operation name
+> (or span type, if available). The same tokens can be reported on multiple
+> types of spans: agent and inference spans, or inference spans from gateways
+> and different layers of the inference infrastructure.
 
 ## Metrics
 
@@ -1130,12 +1165,18 @@ if a request has 100 text tokens (40 cached) and 200 image tokens:
 - `gen_ai.usage.text.cache_read.input_tokens`: 40
 - `gen_ai.usage.image.input_tokens`: 200
 
+The same tokens can be reported on multiple types of spans. See
+[how to aggregate token usage](/docs/gen-ai/client-inference.md#how-to-aggregate-token-usage).
+
 **[29] `gen_ai.usage.output_tokens`:** This value SHOULD include reasoning tokens and tokens of all modalities.
 
 When the provider reports both billed token counts and model-consumed
 token counts (for example, Cohere exposes both `usage.billed_units` and
 `usage.tokens`), instrumentations SHOULD report the billed count so the
 value matches the units the customer is charged for.
+
+The same tokens can be reported on multiple types of spans. See
+[how to aggregate token usage](/docs/gen-ai/client-inference.md#how-to-aggregate-token-usage).
 
 **[30] `gen_ai.usage.reasoning.output_tokens`:** The value SHOULD be included in `gen_ai.usage.output_tokens`.
 
