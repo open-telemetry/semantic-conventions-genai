@@ -1075,13 +1075,12 @@ it's RECOMMENDED to:
 The following table shows how to capture MCP transport and can be used be telemetry
 consumers to deduce transport type.
 
-| MCP transport      | `network.transport` attribute          | `network.protocol.*` attributes                                             | `mcp.protocol.version` attribute | Comments                                                         |
-| :----------------- | :------------------------------------- | :-------------------------------------------------------------------------- | :------------------------------- | :--------------------------------------------------------------- |
-| stdio              | `pipe`                                 |                                                                             | any                              |                                                                  |
-| Streamable HTTP    | `tcp` (or `quic`)                      | `network.protocol.name = http` <br> `network.protocol.version = 1.1` (or 2) | `2025-03-26` or newer            | Not distinguishable from HTTP with SSE by these attributes       |
-| HTTP with SSE      | `tcp` (or `quic`)                      | `network.protocol.name = http` <br> `network.protocol.version = 1.1` (or 2) | `2024-11-05` or newer            | Deprecated since MCP `2025-03-26`. Not distinguishable from streamable HTTP by these attributes |
-| Custom: websockets | `tcp` (or another applicable protocol) | `network.protocol.name = websocket`                                         | any                              |                                                                  |
-| Custom: gRPC       | `tcp` (or another applicable protocol) | `network.protocol.name = http` <br> `network.protocol.version = 2`          | any                              | See [gRPC conventions](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/rpc/grpc.md) for additional details |
+| MCP transport                                 | `network.transport` attribute          | `network.protocol.name` attribute | Comments                                                         |
+| :-------------------------------------------- | :------------------------------------- | :-------------------------------- | :--------------------------------------------------------------- |
+| stdio                                         | `pipe`                                 |                                   |                                                                  |
+| Streamable HTTP or HTTP with SSE (deprecated) | `tcp` (or `quic`)                      | `http`                            | These attributes don't distinguish Streamable HTTP from HTTP with SSE |
+| Custom: websockets                            | `tcp` (or another applicable protocol) | `websocket`                       |                                                                  |
+| Custom: gRPC                                  | `tcp` (or another applicable protocol) | `http`                            | See [gRPC conventions](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/rpc/grpc.md) for additional details |
 
 Note: Applications may enable instrumentation for the underlying application protocol
 like HTTP (when applicable) alongside MCP instrumentation to capture additional
