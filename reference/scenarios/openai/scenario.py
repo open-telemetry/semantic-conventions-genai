@@ -1422,10 +1422,11 @@ def _emit_fetch_response_span(client, response_id, starting_after=None, stream=F
                             }
                         )
                 span.set_attribute("gen_ai.tool.definitions", tool_definitions)
-                span.set_attribute(
-                    "gen_ai.tool.definitions_ref",
-                    _upload_json(f"{fetched.id}_tool.definitions.json", tool_definitions),
-                )
+                if tool_definitions:
+                    span.set_attribute(
+                        "gen_ai.tool.definitions_ref",
+                        _upload_json(f"{fetched.id}_tool.definitions.json", tool_definitions),
+                    )
             # Token usage is intentionally NOT recorded on this span: no inference
             # happens on a fetch, and the fetched response's token counts belong to
             # the original generation (already accounted for on that operation).

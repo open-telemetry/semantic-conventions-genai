@@ -308,10 +308,11 @@ class _RealtimeDriver:
                 _upload_json(f"{response_id}_system_instructions.json", system_instructions),
             )
         span.set_attribute("gen_ai.tool.definitions", self._gen["tools"])
-        span.set_attribute(
-            "gen_ai.tool.definitions_ref",
-            _upload_json(f"{response_id}_tool.definitions.json", self._gen["tools"]),
-        )
+        if self._gen["tools"]:
+            span.set_attribute(
+                "gen_ai.tool.definitions_ref",
+                _upload_json(f"{response_id}_tool.definitions.json", self._gen["tools"]),
+            )
         span.set_attribute("gen_ai.response.model", self.response_model)
         self._gen["span"] = span
         self._gen["response_id"] = response_id
