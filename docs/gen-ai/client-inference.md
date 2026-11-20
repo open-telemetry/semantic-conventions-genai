@@ -781,6 +781,10 @@ This metric SHOULD be specified with [ExplicitBucketBoundaries] of [0.01, 0.02, 
 
 **[1]:** This metric SHOULD be reported for streaming calls and SHOULD NOT be reported otherwise.
 
+The chunk definition is the same as for [`gen_ai.response.time_to_first_chunk`](/docs/registry/attributes/gen-ai.md#gen-ai-response-time-to-first-chunk).
+
+Chunk timestamps SHOULD be taken when each chunk is fully received by the client, before application processing.
+
 **Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/general/signal-requirement-level.md).
 
 **Attributes:**

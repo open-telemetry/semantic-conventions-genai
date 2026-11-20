@@ -7,7 +7,7 @@ Assistants API is covered by the `openai-assistants` scenario).
 
 | Operation | Should be instrumented here | Status |
 | --- | --- | --- |
-| inference (`chat`) | Yes — calls the model directly | ✅ Implemented, including streaming TTFC |
+| inference (`chat`) | Yes — calls the model directly | ✅ Implemented, including streaming TTFC and output-chunk intervals |
 | embeddings | Yes — calls the model directly | ✅ Implemented |
 | fetch_response | Yes — Responses API `client.responses.retrieve` | ✅ Implemented, including function and built-in tool definitions |
 | execute_tool | No — the base client returns tool calls but doesn't execute them; the tool runs in app code | ➖ Not instrumentable |
@@ -16,7 +16,9 @@ Assistants API is covered by the `openai-assistants` scenario).
 
 Streaming TTFC is recorded on the span and metric at the first non-empty text, refusal, audio data/transcript, or function-call name/argument delta. Role, ID, usage, and empty deltas do not stop the timer.
 
-The scenario also checks metadata filtering, non-text output, authentication, retry backoff, and streams with no output using the real SDK, mock HTTP responses, and a controlled clock. These assertions run through the existing `run-scenario openai --strict` entry point.
+The output-chunk interval metric records the time between successive qualifying SDK events. Metadata-only events do not reset the interval, and streams with fewer than two qualifying events produce no interval measurements.
+
+The scenario also checks metadata filtering, non-text output, authentication, retry backoff, output-chunk intervals, and streams with zero or one output event using the real SDK, mock HTTP responses, and a controlled clock. These assertions run through the existing `run-scenario openai --strict` entry point.
 
 Embeddings exercises the SDK's `BadRequestError` from
 `client.embeddings.create` using a mock HTTP 400 response. The error handler
