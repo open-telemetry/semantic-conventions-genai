@@ -11,11 +11,17 @@ Towncrier; add fragments under changelog.d/ instead.
 
 ## v0.1.0
 
+First standalone release of the GenAI semantic conventions. Lists changes since
+[semantic-conventions v1.41.0](https://github.com/open-telemetry/semantic-conventions/blob/v1.41.0/docs/gen-ai/README.md),
+the last release before GenAI conventions moved to this repository. Depends on
+semantic-conventions v1.45.0.
+
 ### 🛑 Breaking changes 🛑
 
 - Change `gen_ai.request.top_k` type from `double` to `int` and scope it to
-  decoding only. Retrieval spans now use the new `gen_ai.retrieval.top_k`
-  attribute instead of `gen_ai.request.top_k`.
+  the top-K sampling/decoding parameter (e.g., Anthropic `top_k`, Cohere `k`),
+  not OpenAI's `top_logprobs`. Retrieval spans now use the new
+  `gen_ai.retrieval.top_k` attribute instead of `gen_ai.request.top_k`.
   ([#217](https://github.com/open-telemetry/semantic-conventions-genai/pull/217))
 - Clarify `gen_ai.agent.id` stability expectations and scope; remove it from
   internal agent spans.
@@ -27,12 +33,13 @@ Towncrier; add fragments under changelog.d/ instead.
   ([#289](https://github.com/open-telemetry/semantic-conventions-genai/pull/289))
 - Align `invoke_agent` and `execute_tool` semantic attributes across spans and
   duration metrics; remove `gen_ai.agent.version` from `invoke_agent` internal
-  span; mark `execute_tool` sampling-relevant attributes
+  span; mark `execute_tool` sampling-relevant attributes.
   ([#322](https://github.com/open-telemetry/semantic-conventions-genai/pull/322))
 - Replace the `gen_ai.client.token.usage` histogram (and the
-  `gen_ai.token.type` attribute it relied on) with separate per-direction,
-  per-operation token usage histograms, so token distributions can be
-  aggregated correctly.
+  `gen_ai.token.type` attribute it relied on) with
+  `gen_ai.client.inference.operation.input_tokens` and
+  `gen_ai.client.inference.operation.output_tokens` histograms, so token
+  distributions can be aggregated correctly.
   ([#374](https://github.com/open-telemetry/semantic-conventions-genai/pull/374))
 - Rename `gen_ai.usage.cache_creation.input_tokens` to
   `gen_ai.usage.cache_write.input_tokens`.
@@ -41,8 +48,11 @@ Towncrier; add fragments under changelog.d/ instead.
   `gen_ai.usage.cache_write.input_tokens` from the internal `invoke_agent`
   span. Cache breakdowns on that span aggregate across models and inference
   calls, which makes them misleading; consumers should aggregate them from
-  `gen_ai.inference.client` spans instead.
+  `gen_ai.client.inference` spans instead.
   ([#469](https://github.com/open-telemetry/semantic-conventions-genai/pull/469))
+- Rename the `gen_ai.provider.name` value `mistral_ai` to `mistral` to match
+  Mistral's brand name.
+  ([#506](https://github.com/open-telemetry/semantic-conventions-genai/pull/506))
 - Add `gen_ai.client.inference.duration` metric, consolidate inference client
   span, events and metrics in `client-inference.md`.
 
@@ -52,10 +62,45 @@ Towncrier; add fragments under changelog.d/ instead.
 
   Clarify that `gen_ai.client.operation.duration` is not for inference.
   ([#521](https://github.com/open-telemetry/semantic-conventions-genai/pull/521))
-- Merge the `invoke_workflow` span and metric into
-  `gen_ai.invoke_agent.internal` and `gen_ai.invoke_agent.duration`. Replace
-  `gen_ai.workflow.name` with `gen_ai.agent.name`.
+- Merge the `invoke_workflow` span into `gen_ai.invoke_agent.internal` and
+  record workflows on `gen_ai.invoke_agent.duration`; `gen_ai.operation.name`
+  stays `invoke_workflow`. Replace `gen_ai.workflow.name` with
+  `gen_ai.agent.name`.
+  ([#126](https://github.com/open-telemetry/semantic-conventions-genai/pull/126))
+  ([#354](https://github.com/open-telemetry/semantic-conventions-genai/pull/354))
+  ([#410](https://github.com/open-telemetry/semantic-conventions-genai/pull/410))
   ([#571](https://github.com/open-telemetry/semantic-conventions-genai/pull/571))
+- Add `gen_ai.client.embeddings.duration` and
+  `gen_ai.client.embeddings.operation.input_tokens` metrics, consolidate
+  embeddings client span and metrics in `client-embeddings.md`.
+
+  Embeddings operations are no longer reported on
+  `gen_ai.client.operation.duration` - use `gen_ai.client.embeddings.duration`
+  instead. Embeddings token usage previously reported on
+  `gen_ai.client.token.usage` is now reported on
+  `gen_ai.client.embeddings.operation.input_tokens`.
+
+  The embeddings input-token histogram includes failed operations and records
+  zero when usage is unavailable, with `error.type` on failures.
+  ([#578](https://github.com/open-telemetry/semantic-conventions-genai/pull/578))
+- Require structured values for JSON-schema-defined attributes on spans and
+  events, removing the JSON-string fallback for spans.
+  ([#634](https://github.com/open-telemetry/semantic-conventions-genai/pull/634))
+- Add `gen_ai.client.invoke_agent.duration` metric.
+
+  Invoke agent client operations are no longer reported on
+  `gen_ai.client.operation.duration` - use
+  `gen_ai.client.invoke_agent.duration` instead.
+  ([#635](https://github.com/open-telemetry/semantic-conventions-genai/pull/635))
+- Execute tool operations are no longer reported on
+  `gen_ai.client.operation.duration` - use `gen_ai.execute_tool.duration`
+  instead. Consolidate execute tool span, specialized tool call span, and
+  duration metric conventions in `execute-tool.md`.
+  ([#636](https://github.com/open-telemetry/semantic-conventions-genai/pull/636))
+- Retrieval operations are no longer reported on
+  `gen_ai.client.operation.duration`.
+  ([#637](https://github.com/open-telemetry/semantic-conventions-genai/issues/637))
+  ([#643](https://github.com/open-telemetry/semantic-conventions-genai/pull/643))
 - Use `gen_ai.client.inference.exception` instead of
   `gen_ai.client.operation.exception` for exceptions that cause client
   inference operations to fail.
@@ -76,38 +121,10 @@ Towncrier; add fragments under changelog.d/ instead.
   `gen_ai.client.inference.usage.reasoning.output_tokens`. Record the reasoning
   token count without a modality breakdown.
   ([#679](https://github.com/open-telemetry/semantic-conventions-genai/pull/679))
-- Replace `gen_ai.prompt.variable` (`template[string]`) with
-  `gen_ai.prompt.variables` (`any` object) to support structured and non-string
-  prompt template variables, and remove prompt variables from MCP operation
-  metrics.
-  ([#677](https://github.com/open-telemetry/semantic-conventions-genai/issues/677))
-  ([#696](https://github.com/open-telemetry/semantic-conventions-genai/pull/696))
-- Add `gen_ai.client.embeddings.duration` and
-  `gen_ai.client.embeddings.operation.input_tokens` metrics, consolidate
-  embeddings client span and metrics in `client-embeddings.md`.
-
-  Embeddings operations are no longer reported on
-  `gen_ai.client.operation.duration` - use `gen_ai.client.embeddings.duration`
-  instead. Embeddings token usage previously reported on
-  `gen_ai.client.token.usage` is now reported on
-  `gen_ai.client.embeddings.operation.input_tokens`.
-
-  The embeddings input-token histogram includes failed operations and records
-  zero when usage is unavailable, with `error.type` on failures.
-- Add `gen_ai.client.invoke_agent.duration` metric.
-
-  Invoke agent client operations are no longer reported on
-  `gen_ai.client.operation.duration` - use
-  `gen_ai.client.invoke_agent.duration` instead.
 - Record the JSON-RPC error code on MCP spans and metrics with
   `rpc.status_code` instead of the deprecated `rpc.response.status_code`.
-- Rename the `gen_ai.provider.name` value `mistral_ai` to `mistral` to match
-  Mistral's brand name.
-- Require structured values for JSON-schema-defined attributes on spans and
-  events, removing the JSON-string fallback for spans.
-- Retrieval operations are no longer reported on
-  `gen_ai.client.operation.duration`.
-  ([#637](https://github.com/open-telemetry/semantic-conventions-genai/issues/637))
+  ([#452](https://github.com/open-telemetry/semantic-conventions-genai/pull/452))
+  ([#732](https://github.com/open-telemetry/semantic-conventions-genai/pull/732))
 
 ### 🚩 Deprecations 🚩
 
@@ -119,21 +136,19 @@ Towncrier; add fragments under changelog.d/ instead.
   conventions; retrieval performed by GenAI frameworks and applications should
   use the `gen_ai.retrieval` span.
   ([#637](https://github.com/open-telemetry/semantic-conventions-genai/issues/637))
+  ([#645](https://github.com/open-telemetry/semantic-conventions-genai/pull/645))
 
 ### 🚀 New components 🚀
 
 - Add A2A protocol semantic conventions for client/server spans, covering
-  protocol, message,
-  task, conversation, tenant, and Agent Card metadata attributes.
-  Define A2A protocol error handling on HTTP and gRPC server spans, with
-  transport
-  errors taking precedence for independent transport failures. Prefer an
-  available
-  A2A error reason consistently across JSON-RPC, HTTP+JSON, and gRPC bindings,
-  falling back to binding-specific error codes when the reason is unavailable.
-  Omit task and conversation attributes when the operation has multiple
-  distinct
-  values, including task states observed across streaming events.
+  protocol, message, task, conversation, tenant, and Agent Card metadata
+  attributes. Define A2A protocol error handling on HTTP and gRPC server spans,
+  with transport errors taking precedence for independent transport failures.
+  Prefer an available A2A error reason consistently across JSON-RPC,
+  HTTP+JSON, and gRPC bindings, falling back to binding-specific error codes
+  when the reason is unavailable. Omit task and conversation attributes when
+  the operation has multiple distinct values, including task states observed
+  across streaming events.
   ([#195](https://github.com/open-telemetry/semantic-conventions-genai/pull/195))
 
 ### 💡 Enhancements 💡
@@ -145,8 +160,6 @@ Towncrier; add fragments under changelog.d/ instead.
 - Mark `gen_ai.agent.name` as sampling-relevant on `create_agent`,
   `invoke_agent` client, and `invoke_agent` internal spans.
   ([#107](https://github.com/open-telemetry/semantic-conventions-genai/pull/107))
-- Add `gen_ai.invoke_workflow.duration` metric to track duration of a workflow.
-  ([#126](https://github.com/open-telemetry/semantic-conventions-genai/pull/126))
 - Add GenAI memory operation span and attributes for memory store lifecycle
   (create/delete), memory record create/update/upsert/search/delete operations,
   and record counts.
@@ -163,27 +176,25 @@ Towncrier; add fragments under changelog.d/ instead.
   `CompactionPart` message schema support for reporting compacted GenAI
   conversation context.
   ([#162](https://github.com/open-telemetry/semantic-conventions-genai/pull/162))
-- Add `gen_ai.prompt.version` and `gen_ai.prompt.variable` attributes to
-  enhance prompt tracking with version support and template variable recording.
+- Add `gen_ai.prompt.version` and `gen_ai.prompt.variables` attributes to
+  record the prompt template version and variables.
   ([#137](https://github.com/open-telemetry/semantic-conventions-genai/issues/137))
   ([#179](https://github.com/open-telemetry/semantic-conventions-genai/pull/179))
+  ([#677](https://github.com/open-telemetry/semantic-conventions-genai/issues/677))
+  ([#696](https://github.com/open-telemetry/semantic-conventions-genai/pull/696))
 - Add `gen_ai.invoke_agent.duration` metric to track the end-to-end duration of
-  a single agent invocation, and `gen_ai.execute_tool.duration` metric to track
-  the duration of a single tool execution.
+  a single in-process agent invocation, and
+  `gen_ai.execute_tool.duration` metric to track the duration of a single tool
+  execution.
   ([#201](https://github.com/open-telemetry/semantic-conventions-genai/pull/201))
+  ([#321](https://github.com/open-telemetry/semantic-conventions-genai/pull/321))
 - Add `gen_ai.request.reasoning.level` attribute to record the requested
   reasoning/thinking effort level for inference spans.
   ([#189](https://github.com/open-telemetry/semantic-conventions-genai/issues/189))
   ([#258](https://github.com/open-telemetry/semantic-conventions-genai/pull/258))
-- Add `gen_ai.main_agent` entity definition and resource attributes, and update
-  generator templates to support entity documentation.
+- Add `gen_ai.main_agent` entity definition and resource attributes.
   ([#270](https://github.com/open-telemetry/semantic-conventions-genai/pull/270))
-- Clarify that `gen_ai.invoke_agent.duration` is about in-proc / internal span
-  ([#321](https://github.com/open-telemetry/semantic-conventions-genai/pull/321))
-- Move complex-attribute JSON serialization guidance into shared Jinja
-  rendering templates and define JSON schema/type metadata via attribute
-  annotations so it is discoverable by Weaver. Require every complex attribute
-  to have schema defined.
+- Require every complex attribute to define a JSON schema.
   ([#330](https://github.com/open-telemetry/semantic-conventions-genai/pull/330))
 - Add `gen_ai.invoke_agent.inference_calls` and
   `gen_ai.invoke_agent.tool_calls` metrics to track how many inference (model)
@@ -212,13 +223,11 @@ Towncrier; add fragments under changelog.d/ instead.
   for realtime, bidirectional streaming sessions such as OpenAI Realtime and
   Gemini Live.
   ([#394](https://github.com/open-telemetry/semantic-conventions-genai/pull/394))
-- Allow `gen_ai.conversation.id` on invoke workflow spans when available.
-  ([#410](https://github.com/open-telemetry/semantic-conventions-genai/pull/410))
 - Add per-modality token usage attributes:
   `gen_ai.usage.{text,image,audio}.{input_tokens,output_tokens}` and
   `gen_ai.usage.{text,image,audio}.cache_read.input_tokens`.
   ([#440](https://github.com/open-telemetry/semantic-conventions-genai/pull/440))
-- Define `gen_ai.execute_tool.transfer.internal` for agent tool transfers with
+- Define `gen_ai.execute_tool.transfer` for agent tool transfers with
   `gen_ai.transfer.mode` and `gen_ai.transfer.target.name`.
   ([#447](https://github.com/open-telemetry/semantic-conventions-genai/pull/447))
 - Add `gen_ai.system_instructions_ref`, `gen_ai.input.messages_ref`,
@@ -229,16 +238,23 @@ Towncrier; add fragments under changelog.d/ instead.
   `plan` spans.
   ([#495](https://github.com/open-telemetry/semantic-conventions-genai/pull/495))
 - Add `gen_ai.skill.*` attributes recorded on the `execute_tool` span, so an
-  agent's use of [Agent Skills](https://agentskills.io) — loading a skill's
-  instructions, reading a bundled resource, running a bundled script — is
-  described where the framework already exposes it, as a tool execution.
+  agent's use of [Agent Skills](https://agentskills.io) - loading a skill's
+  instructions, reading a bundled resource, running a bundled script - is
+  described where the framework already exposes it, as a tool execution. Add
+  `load_skill`, `read_skill_resource`, and `command` `execute_tool` span
+  refinements; `command` records `process.*` attributes.
   ([#498](https://github.com/open-telemetry/semantic-conventions-genai/pull/498))
 - Add `gen_ai.request.stream` to `gen_ai.fetch_response.client` and
-  `gen_ai.invoke_agent.client` spans.
+  `gen_ai.client.invoke_agent` spans.
   ([#513](https://github.com/open-telemetry/semantic-conventions-genai/pull/513))
-- Record the token usage histograms and usage counters for every inference
-  operation, including failed ones, with `error.type` on the histograms and `0`
-  when no usage was received.
+- Allow `gen_ai.conversation.id` on `execute_tool` spans when available.
+  ([#518](https://github.com/open-telemetry/semantic-conventions-genai/pull/518))
+- Make `gen_ai.tool.call.id` conditionally required on `execute_tool` if and
+  only if the model or provider supplied an identifier.
+  ([#489](https://github.com/open-telemetry/semantic-conventions-genai/issues/489))
+  ([#525](https://github.com/open-telemetry/semantic-conventions-genai/pull/525))
+- Record the token usage histograms for every inference operation, including
+  failed ones (with `error.type`). Record `0` when no usage was received.
   ([#536](https://github.com/open-telemetry/semantic-conventions-genai/pull/536))
 - Define and formalize GenAI content capture and external storage upload
   configuration options.
@@ -250,6 +266,10 @@ Towncrier; add fragments under changelog.d/ instead.
 - Make `gen_ai.client.inference.operation.details` event recommended instead of
   opt-in.
   ([#579](https://github.com/open-telemetry/semantic-conventions-genai/pull/579))
+- Add the `gen_ai.retrieval` internal span and `gen_ai.retrieval.duration`
+  metric for retrieval performed by GenAI frameworks and applications.
+  ([#637](https://github.com/open-telemetry/semantic-conventions-genai/issues/637))
+  ([#644](https://github.com/open-telemetry/semantic-conventions-genai/pull/644))
 - Add `ollama` to `gen_ai.provider.name` well-known values.
   ([#663](https://github.com/open-telemetry/semantic-conventions-genai/pull/663))
 - Add `gen_ai.execute_tool.exception` for exceptions that cause tool execution
@@ -258,10 +278,6 @@ Towncrier; add fragments under changelog.d/ instead.
 - Add `gen_ai.invoke_agent.exception` for exceptions that cause internal agent
   invocation operations to fail.
   ([#670](https://github.com/open-telemetry/semantic-conventions-genai/pull/670))
-- Add the `gen_ai.retrieval` internal span and `gen_ai.retrieval.duration`
-  metric for retrieval performed by GenAI frameworks and applications.
-  ([#637](https://github.com/open-telemetry/semantic-conventions-genai/issues/637))
-- Allow `gen_ai.conversation.id` on `execute_tool` spans when available.
 
 ### 🧰 Bug fixes 🧰
 
@@ -273,40 +289,44 @@ Towncrier; add fragments under changelog.d/ instead.
   `gen_ai.memory.client` spans which already allow omitting
   `gen_ai.provider.name`.
   ([#214](https://github.com/open-telemetry/semantic-conventions-genai/pull/214))
+- Make retrieval document `id` and `score` optional so instrumentations can
+  omit values that are unavailable at runtime.
+  ([#396](https://github.com/open-telemetry/semantic-conventions-genai/pull/396))
 - Clarify MCP error reporting: MCP server telemetry no longer reports
   client-side errors as failures, while MCP client telemetry reports all
   JSON-RPC error codes as errors.
-  ([#389](https://github.com/open-telemetry/semantic-conventions-genai/pull/389))
+  ([#389](https://github.com/open-telemetry/semantic-conventions-genai/issues/389))
+  ([#404](https://github.com/open-telemetry/semantic-conventions-genai/pull/404))
+- Remove per-operation transport details from MCP session-duration metrics.
+  ([#453](https://github.com/open-telemetry/semantic-conventions-genai/pull/453))
 - Reject malformed known message parts in JSON schemas and recommend prefixing
   custom part types with `gen_ai.provider.name`.
 
   - Exclude defined part `type` values from `GenericPart` in the
-  `gen_ai.input.messages`, `gen_ai.output.messages`, and
-  `gen_ai.system_instructions` JSON schemas so parts with a known `type` must
-  match that part's schema.
+    `gen_ai.input.messages`, `gen_ai.output.messages`, and
+    `gen_ai.system_instructions` JSON schemas so parts with a known `type` must
+    match that part's schema.
   - Recommend prefixing provider-specific part `type` values in
-  `gen_ai.input.messages`, `gen_ai.output.messages`, and
-  `gen_ai.system_instructions` with `gen_ai.provider.name` (for example
-  `anthropic.search_result`).
+    `gen_ai.input.messages`, `gen_ai.output.messages`, and
+    `gen_ai.system_instructions` with `gen_ai.provider.name` (for example
+    `anthropic.search_result`).
 
-([#584](https://github.com/open-telemetry/semantic-conventions-genai/pull/584))
+  ([#584](https://github.com/open-telemetry/semantic-conventions-genai/pull/584))
+- Record only known, strictly positive contributions on all five
+  `gen_ai.client.inference.usage.*` counters, including usage from failed
+  operations. Do not record zero-valued measurements or unavailable counts.
+  ([#602](https://github.com/open-telemetry/semantic-conventions-genai/pull/602))
 - Reject malformed `function` tool definitions in `gen_ai.tool.definitions`
   JSON schema and recommend prefixing custom tool definition types with
   `gen_ai.provider.name`.
 
   - Exclude defined tool definition `type` values (`function`) from
-  `GenericToolDefinition` so tool definitions with a known `type` must match
-  that tool definition's schema.
+    `GenericToolDefinition` so tool definitions with a known `type` must match
+    that tool definition's schema.
   - Recommend prefixing provider-specific tool definition `type` values with
-  `gen_ai.provider.name` (for example `anthropic.web_search_20250305`).
+    `gen_ai.provider.name` (for example `anthropic.web_search_20250305`).
 
-([#608](https://github.com/open-telemetry/semantic-conventions-genai/pull/608))
-- Make retrieval document `id` and `score` optional so instrumentations can
-  omit values that are unavailable at runtime.
-- Record only known, strictly positive contributions on all five
-  `gen_ai.client.inference.usage.*` counters, including usage from failed
-  operations. Do not record zero-valued measurements or unavailable counts.
-- Remove per-operation transport details from MCP session-duration metrics.
+  ([#608](https://github.com/open-telemetry/semantic-conventions-genai/pull/608))
 
 ### 📚 Clarifications 📚
 
@@ -321,10 +341,6 @@ Towncrier; add fragments under changelog.d/ instead.
 - Clarify that a GenAI span SHOULD cover the duration of the operation as
   observed by the caller, including any retries.
   ([#216](https://github.com/open-telemetry/semantic-conventions-genai/pull/216))
-- Clarify that `gen_ai.request.top_k` is the top-K sampling/decoding parameter
-  (e.g., Anthropic `top_k`, Cohere `k`) and not OpenAI's `top_logprobs`
-  output-shaping parameter.
-  ([#217](https://github.com/open-telemetry/semantic-conventions-genai/pull/217))
 - Clarify that `gen_ai.conversation.id` should only be populated from an
   available conversation identifier, and that instrumentations should not use
   fallback values such as generated UUIDs, trace IDs, or request-content
@@ -333,29 +349,21 @@ Towncrier; add fragments under changelog.d/ instead.
 - Clarify MCP context propagation now that SEP-414 defines `traceparent`,
   `tracestate`, and `baggage` as unprefixed `params._meta` keys.
   ([#220](https://github.com/open-telemetry/semantic-conventions-genai/pull/220))
-- Clarify when instrumentations should report `gen_ai.invoke_workflow` spans,
-  add per-framework examples, and tighten the guidance on what
-  `gen_ai.workflow.name` should contain.
-  ([#354](https://github.com/open-telemetry/semantic-conventions-genai/pull/354))
-- Fix reference scenarios to use schema-compatible `gen_ai.system_instructions`
-  values and keep message-channel system instructions in
-  `gen_ai.input.messages`.
-  ([#361](https://github.com/open-telemetry/semantic-conventions-genai/pull/361))
 - Clarify positional correspondence in `gen_ai.response.finish_reasons` and use
   `error` when an expected finish reason is not received.
   ([#363](https://github.com/open-telemetry/semantic-conventions-genai/pull/363))
-- Clarify how MCP records JSON-RPC error codes with `error.type` and
-  `rpc.response.status_code`.
-  ([#452](https://github.com/open-telemetry/semantic-conventions-genai/pull/452))
+- Warn that `gen_ai.tool.description` and `gen_ai.tool.definitions` may contain
+  sensitive information.
+  ([#431](https://github.com/open-telemetry/semantic-conventions-genai/pull/431))
+- Clarify how MCP instrumentation records HTTP failures without JSON-RPC error
+  codes.
+  ([#458](https://github.com/open-telemetry/semantic-conventions-genai/pull/458))
 - Clarify content-upload hook behavior for failed GenAI operations.
   ([#459](https://github.com/open-telemetry/semantic-conventions-genai/pull/459))
-- Make `gen_ai.tool.call.id` conditionally required on `execute_tool` if and
-  only if the model or provider supplied an identifier.
-  ([#489](https://github.com/open-telemetry/semantic-conventions-genai/pull/489))
 - Add guidance that `gen_ai.client.inference.operation.details` event severity
   should be set to DEBUG (severity number 5).
   ([#520](https://github.com/open-telemetry/semantic-conventions-genai/pull/520))
-- Clarify that `gen_ai.invoke_agent.client` SHOULD be emitted for
+- Clarify that `gen_ai.client.invoke_agent` SHOULD be emitted for
   out-of-process agent invocations and `gen_ai.invoke_agent.internal` SHOULD be
   emitted for in-process agent execution.
   ([#524](https://github.com/open-telemetry/semantic-conventions-genai/pull/524))
@@ -376,6 +384,10 @@ Towncrier; add fragments under changelog.d/ instead.
   and usage attributes reflect what the model provider returns for this
   inference operation.
   ([#562](https://github.com/open-telemetry/semantic-conventions-genai/pull/562))
+- Mark `gen_ai.tool.call.arguments`, `gen_ai.tool.call.result`,
+  `gen_ai.retrieval.documents`, and `gen_ai.memory.records` as unbounded in
+  size.
+  ([#606](https://github.com/open-telemetry/semantic-conventions-genai/pull/606))
 - Clarify the first response chunk and measurement boundaries, including
   authentication and retries, for the GenAI time-to-first-chunk metric and span
   attribute.
@@ -389,13 +401,3 @@ Towncrier; add fragments under changelog.d/ instead.
 - Clarify that `gen_ai.usage.*` span attributes are not additive across spans
   of different types; token usage metrics should be used whenever possible.
   ([#736](https://github.com/open-telemetry/semantic-conventions-genai/pull/736))
-- Clarify how MCP instrumentation records HTTP failures without JSON-RPC error
-  codes.
-- Consolidate execute tool span, specialized tool call span, and duration
-  metric conventions, and clarify that execute tool operations use
-  `gen_ai.execute_tool.duration` instead of `gen_ai.client.operation.duration`.
-- Mark `gen_ai.tool.call.arguments`, `gen_ai.tool.call.result`,
-  `gen_ai.retrieval.documents`, and `gen_ai.memory.records` as unbounded in
-  size.
-- Warn that `gen_ai.tool.description` and `gen_ai.tool.definitions` may contain
-  sensitive information.
