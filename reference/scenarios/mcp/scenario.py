@@ -2,10 +2,13 @@
 
 import asyncio
 import contextlib
+import itertools
 import json
 import socket
 import time
 from collections.abc import AsyncIterator
+from pathlib import Path
+from tempfile import mkdtemp
 from typing import Any
 
 import anyio
@@ -40,6 +43,16 @@ _mcp_otel._tracer = trace.NoOpTracer()
 
 _reference_tracer = reference_tracer()
 _reference_meter = reference_meter()
+
+_UPLOAD_DIR = Path(mkdtemp())
+_upload_counter = itertools.count(1)
+
+
+def _upload_json(name: str, payload: object) -> str:
+    path = _UPLOAD_DIR / f"{next(_upload_counter):03d}_{name}"
+    path.write_text(json.dumps(payload), encoding="utf-8")
+    return path.as_uri()
+
 
 _MCP_DURATION_BUCKETS = [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30, 60, 120, 300]
 
@@ -120,10 +133,18 @@ class ReferenceMCPServerMiddleware(ServerMiddleware[Any]):
                     arguments = params.get("arguments")
                     if arguments is not None:
                         span.set_attribute("gen_ai.tool.call.arguments", arguments)
+                        span.set_attribute(
+                            "gen_ai.tool.call.arguments_ref",
+                            _upload_json("server_tool.call.arguments.json", arguments),
+                        )
                 elif ctx.method == "prompts/get":
                     prompt_args = params.get("arguments")
                     if isinstance(prompt_args, dict) and prompt_args:
                         span.set_attribute("gen_ai.prompt.variables", prompt_args)
+                        span.set_attribute(
+                            "gen_ai.prompt.variables_ref",
+                            _upload_json("server_prompt.variables.json", prompt_args),
+                        )
 
                 try:
                     result = await call_next(ctx)
@@ -171,9 +192,14 @@ class ReferenceMCPServerMiddleware(ServerMiddleware[Any]):
                         span.set_status(StatusCode.ERROR)
                     elif structured_content is not None:
                         span.set_attribute("gen_ai.tool.call.result", structured_content)
+                        span.set_attribute(
+                            "gen_ai.tool.call.result_ref",
+                            _upload_json("server_tool.call.result.json", structured_content),
+                        )
                 return result
             finally:
                 assert "gen_ai.prompt.variables" not in metric_attrs
+                assert "gen_ai.prompt.variables_ref" not in metric_attrs
                 _server_operation_duration.record(time.perf_counter() - start_time, metric_attrs)
 
 
@@ -306,10 +332,18 @@ class ReferenceMCPClientSession(ClientSession):
                     arguments = params.get("arguments")
                     if arguments is not None:
                         span.set_attribute("gen_ai.tool.call.arguments", arguments)
+                        span.set_attribute(
+                            "gen_ai.tool.call.arguments_ref",
+                            _upload_json("client_tool.call.arguments.json", arguments),
+                        )
                 elif method == "prompts/get":
                     prompt_args = params.get("arguments")
                     if isinstance(prompt_args, dict) and prompt_args:
                         span.set_attribute("gen_ai.prompt.variables", prompt_args)
+                        span.set_attribute(
+                            "gen_ai.prompt.variables_ref",
+                            _upload_json("client_prompt.variables.json", prompt_args),
+                        )
 
                 try:
                     result = await super().send_request(
@@ -341,9 +375,14 @@ class ReferenceMCPClientSession(ClientSession):
                         span.set_status(StatusCode.ERROR)
                     elif result.structured_content is not None:
                         span.set_attribute("gen_ai.tool.call.result", result.structured_content)
+                        span.set_attribute(
+                            "gen_ai.tool.call.result_ref",
+                            _upload_json("client_tool.call.result.json", result.structured_content),
+                        )
                 return result
             finally:
                 assert "gen_ai.prompt.variables" not in metric_attrs
+                assert "gen_ai.prompt.variables_ref" not in metric_attrs
                 _client_operation_duration.record(time.perf_counter() - start_time, metric_attrs)
 
 
@@ -481,6 +520,7 @@ def main() -> None:
     assert len(prompt_spans) == 2, f"Expected client and server prompts/get spans, got {len(prompt_spans)}"
     for prompt_span in prompt_spans:
         assert prompt_span.attributes and "gen_ai.prompt.variables" in prompt_span.attributes
+        assert "gen_ai.prompt.variables_ref" in prompt_span.attributes
 
     flush_and_shutdown(tp, lp, mp)
 

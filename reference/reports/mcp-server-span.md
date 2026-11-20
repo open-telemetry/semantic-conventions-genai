@@ -37,7 +37,10 @@
 | Attribute | Supporting Libraries |
 | --- | --- |
 | gen_ai.prompt.variables | [mcp] |
+| gen_ai.prompt.variables_ref | [mcp] |
 | gen_ai.tool.call.arguments | [mcp] |
+| gen_ai.tool.call.arguments_ref | [mcp] |
 | gen_ai.tool.call.result | [mcp] |
+| gen_ai.tool.call.result_ref | [mcp] |
 
 [mcp]: ../scenarios/mcp/scenario.py

@@ -34,6 +34,7 @@
       "gen_ai.provider.name",
       "gen_ai.request.model",
       "gen_ai.system_instructions",
+      "gen_ai.system_instructions_ref",
       "server.address",
       "server.port"
     ]

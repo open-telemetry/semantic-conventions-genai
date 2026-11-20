@@ -1,13 +1,24 @@
 """Reference implementation: AWS Bedrock AgentCore memory APIs."""
 
+import json
 import os
 from datetime import UTC, datetime
+from pathlib import Path
+from tempfile import mkdtemp
 
 import boto3
 from opentelemetry.trace import SpanKind
 from reference_shared import flush_and_shutdown, mock_server_host_port, reference_tracer, setup_otel
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"]
+_UPLOAD_DIR = Path(mkdtemp())
+
+
+def _upload_json(filename: str, payload: object) -> str:
+    path = _UPLOAD_DIR / filename
+    path.write_text(json.dumps(payload), encoding="utf-8")
+    return path.as_uri()
+
 
 _reference_tracer = reference_tracer()
 
@@ -114,15 +125,17 @@ def run_create_and_update_memory_reference(client, memory_id):
         memory_record_id = response["successfulRecords"][0]["memoryRecordId"]
         span.set_attribute("gen_ai.memory.record.count", len(create_records))
         if should_capture_content_on_spans():
+            created_records = [
+                {
+                    "content": create_records[0]["content"]["text"],
+                    "id": memory_record_id,
+                    "metadata": {"author": create_records[0]["metadata"]["author"]["stringValue"]},
+                }
+            ]
+            span.set_attribute("gen_ai.memory.records", created_records)
             span.set_attribute(
-                "gen_ai.memory.records",
-                [
-                    {
-                        "content": create_records[0]["content"]["text"],
-                        "id": memory_record_id,
-                        "metadata": {"author": create_records[0]["metadata"]["author"]["stringValue"]},
-                    }
-                ],
+                "gen_ai.memory.records_ref",
+                _upload_json("create_memory.records.json", created_records),
             )
 
     print("  [update_memory] Bedrock AgentCore BatchUpdateMemoryRecords")
@@ -155,15 +168,17 @@ def run_create_and_update_memory_reference(client, memory_id):
         )
         span.set_attribute("gen_ai.memory.record.count", len(update_records))
         if should_capture_content_on_spans():
+            updated_records = [
+                {
+                    "content": update_records[0]["content"]["text"],
+                    "id": update_records[0]["memoryRecordId"],
+                    "metadata": {"author": update_records[0]["metadata"]["author"]["stringValue"]},
+                }
+            ]
+            span.set_attribute("gen_ai.memory.records", updated_records)
             span.set_attribute(
-                "gen_ai.memory.records",
-                [
-                    {
-                        "content": update_records[0]["content"]["text"],
-                        "id": update_records[0]["memoryRecordId"],
-                        "metadata": {"author": update_records[0]["metadata"]["author"]["stringValue"]},
-                    }
-                ],
+                "gen_ai.memory.records_ref",
+                _upload_json("update_memory.records.json", updated_records),
             )
     return memory_record_id
 
@@ -192,6 +207,10 @@ def run_search_memory_reference(client, memory_id):
     ) as span:
         if should_capture_content_on_spans():
             span.set_attribute("gen_ai.memory.query.text", search_criteria["searchQuery"])
+            span.set_attribute(
+                "gen_ai.memory.query.text_ref",
+                _upload_json("search_memory.query.text.json", search_criteria["searchQuery"]),
+            )
         response = client.retrieve_memory_records(
             memoryId=memory_id,
             namespace=NAMESPACE,
@@ -213,6 +232,10 @@ def run_search_memory_reference(client, memory_id):
         span.set_attribute("gen_ai.memory.record.count", len(memory_records))
         if should_capture_content_on_spans():
             span.set_attribute("gen_ai.memory.records", memory_records)
+            span.set_attribute(
+                "gen_ai.memory.records_ref",
+                _upload_json("search_memory.records.json", memory_records),
+            )
 
 
 def run_delete_memory_reference(client, memory_id, memory_record_id):

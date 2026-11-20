@@ -555,7 +555,7 @@ def run_chat_with_search_result_input(handler):
     print(f"    -> {resp.content[0].type}")
 
 
-def run_create_agent():
+def run_create_agent(completion_hook):
     """Scenario: create a remote agent via the Managed Agents API (`beta.agents.create`).
 
     The agent runs server-side, so only the client operation is instrumentable here.
@@ -592,6 +592,12 @@ def run_create_agent():
             )
             span.set_attribute("gen_ai.agent.id", agent.id)
             span.set_attribute("gen_ai.agent.version", str(agent.version))
+            completion_hook.on_completion(
+                inputs=[],
+                outputs=[],
+                system_instruction=[Text(content=getattr(agent, "system", None) or agent_system)],
+                span=span,
+            )
             print(f"    -> {agent.id}")
         except Exception as e:
             span.set_status(StatusCode.ERROR, str(e))
@@ -608,11 +614,12 @@ def main():
     tp, lp, mp = setup_otel(metric_views=(inference_duration_view(),))
     os.environ["OTEL_INSTRUMENTATION_GENAI_COMPLETION_HOOK"] = "upload"
     os.environ["OTEL_INSTRUMENTATION_GENAI_UPLOAD_BASE_PATH"] = mkdtemp()
+    completion_hook = load_completion_hook()
     handler = get_telemetry_handler(
         tracer_provider=tp,
         meter_provider=mp,
         logger_provider=lp,
-        completion_hook=load_completion_hook(),
+        completion_hook=completion_hook,
     )
 
     run_chat(handler)
@@ -620,7 +627,7 @@ def main():
     run_chat_with_document_input(handler)
     run_chat_with_image_input(handler)
     run_chat_with_search_result_input(handler)
-    run_create_agent()
+    run_create_agent(completion_hook)
 
     flush_and_shutdown(tp, lp, mp)
 

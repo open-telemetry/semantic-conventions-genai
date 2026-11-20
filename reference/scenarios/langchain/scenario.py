@@ -1,8 +1,11 @@
 """Reference implementation for LangChain retrieval, planning, tool and workflow (LangGraph) runs."""
 
 import asyncio
+import json
 import os
 import time
+from pathlib import Path
+from tempfile import mkdtemp
 from typing import TypedDict
 
 from langchain_core.tools import tool
@@ -11,6 +14,14 @@ from opentelemetry.trace import StatusCode
 from reference_shared import flush_and_shutdown, reference_event_logger, reference_meter, reference_tracer, setup_otel
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"] + "/v1"
+_UPLOAD_DIR = Path(mkdtemp())
+
+
+def _upload_json(filename: str, payload: object) -> str:
+    path = _UPLOAD_DIR / filename
+    path.write_text(json.dumps(payload), encoding="utf-8")
+    return path.as_uri()
+
 
 AGENT_MODEL = "gpt-4o-mini"
 AGENT_NAME = "weather-agent"
@@ -145,10 +156,16 @@ def run_retrieval_reference():
         try:
             span.set_attribute("gen_ai.retrieval.top_k", retriever.search_kwargs["k"])
             span.set_attribute("gen_ai.retrieval.query.text", query_text)
-            documents = retriever.invoke(query_text)
             span.set_attribute(
-                "gen_ai.retrieval.documents",
-                [{"id": document.id} for document in documents],
+                "gen_ai.retrieval.query.text_ref",
+                _upload_json("retrieval.query.text.json", query_text),
+            )
+            documents = retriever.invoke(query_text)
+            retrieved_documents = [{"id": document.id} for document in documents]
+            span.set_attribute("gen_ai.retrieval.documents", retrieved_documents)
+            span.set_attribute(
+                "gen_ai.retrieval.documents_ref",
+                _upload_json("retrieval.documents.json", retrieved_documents),
             )
             print(f"    -> {documents[0].page_content[:60]}")
         except Exception as e:
@@ -237,9 +254,17 @@ def run_execute_tool_reference():
         try:
             tool_span.set_attribute("gen_ai.tool.call.id", tool_call["id"])
             tool_span.set_attribute("gen_ai.tool.call.arguments", tool_call["args"])
+            tool_span.set_attribute(
+                "gen_ai.tool.call.arguments_ref",
+                _upload_json(f"{tool_call['id']}_tool.call.arguments.json", tool_call["args"]),
+            )
             tool_message = get_weather.invoke(tool_call)
             # TODO: Determine how to represent this string result in the object-only schema.
             tool_span.set_attribute("gen_ai.tool.call.result", tool_message.content)
+            tool_span.set_attribute(
+                "gen_ai.tool.call.result_ref",
+                _upload_json(f"{tool_call['id']}_tool.call.result.json", tool_message.content),
+            )
         except Exception as e:
             tool_span.set_status(StatusCode.ERROR, str(e))
             tool_span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
