@@ -453,6 +453,7 @@ This metric SHOULD be specified with [ExplicitBucketBoundaries] of [0.01, 0.02, 
 
 **[1]:** Represents the end-to-end duration of a remote agent invocation, measured from when the client issues the invocation request to when the final response is fully received or the operation ends with an error or cancellation.
 When this metric is reported alongside a `gen_ai.client.invoke_agent` span, the metric value SHOULD be the same as the span duration.
+`gen_ai.provider.name` identifies the GenAI provider of the agent service, for example `openai` or `aws.bedrock`. Instrumentation SHOULD NOT set it to a protocol or framework name, such as `a2a`, or to the platform that runs a self-hosted agent.
 
 **Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/general/signal-requirement-level.md).
 

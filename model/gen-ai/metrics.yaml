@@ -102,6 +102,11 @@ metrics:
 
       When this metric is reported alongside a `gen_ai.client.invoke_agent`
       span, the metric value SHOULD be the same as the span duration.
+
+      `gen_ai.provider.name` identifies the GenAI provider of the agent service,
+      for example `openai` or `aws.bedrock`. Instrumentation SHOULD NOT set it
+      to a protocol or framework name, such as `a2a`, or to the platform that
+      runs a self-hosted agent.
     stability: development
     annotations:
       code_generation:
