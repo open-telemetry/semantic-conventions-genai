@@ -2,6 +2,10 @@ package after_resolution
 
 import rego.v1
 
+is_deprecated(obj) if {
+    object.get(obj, "deprecated", null) != null
+}
+
 is_unbounded(attr) if {
     annotations := object.get(attr, "annotations", {})
     val_annotations := object.get(annotations, "value", {})
@@ -19,9 +23,10 @@ attribute_exists(key) if {
     attr.key == key
 }
 
-# Every attribute marked unbounded_size: true must have a corresponding *_ref attribute in the registry.
+# Every non-deprecated attribute marked unbounded_size: true must have a corresponding *_ref attribute in the registry.
 deny contains finding if {
     some attr in input.registry.attributes
+    not is_deprecated(attr)
     is_unbounded(attr)
     ref_key := concat("", [attr.key, "_ref"])
     not attribute_exists(ref_key)
@@ -37,9 +42,10 @@ deny contains finding if {
     }
 }
 
-# Every *_ref attribute must have a base attribute marked unbounded_size: true.
+# Every *_ref attribute with a counterpart in the registry must have that base attribute marked unbounded_size: true.
 deny contains finding if {
     some attr in input.registry.attributes
+    not is_deprecated(attr)
     endswith(attr.key, "_ref")
     base_key := substring(attr.key, 0, count(attr.key) - 4)
     attribute_exists(base_key)
@@ -56,10 +62,12 @@ deny contains finding if {
     }
 }
 
-# Every span or event that includes an unbounded attribute must also include its *_ref attribute.
+# Every non-deprecated span or event that includes a local unbounded attribute must also include its *_ref attribute.
 deny contains finding if {
     some signal in signals
     some attr in signal.attributes
+    not is_deprecated(attr)
+    attribute_exists(attr.key)
     is_unbounded(attr)
     ref_key := concat("", [attr.key, "_ref"])
     not signal_has_attribute(signal, ref_key)
@@ -77,12 +85,15 @@ deny contains finding if {
     }
 }
 
-# Every span or event that includes a *_ref attribute must also include its base attribute.
+# Every non-deprecated span or event that includes a local *_ref attribute must also include its base attribute.
 deny contains finding if {
     some signal in signals
     some attr in signal.attributes
+    not is_deprecated(attr)
+    attribute_exists(attr.key)
     endswith(attr.key, "_ref")
     base_key := substring(attr.key, 0, count(attr.key) - 4)
+    attribute_exists(base_key)
     not signal_has_attribute(signal, base_key)
 
     finding := {
@@ -105,10 +116,12 @@ signal_has_attribute(signal, key) if {
 
 signals contains entry if {
     some span in input.registry.spans
+    not is_deprecated(span)
     entry := {"signal_type": "Span", "signal_name": span.type, "attributes": span.attributes}
 }
 
 signals contains entry if {
     some event in input.registry.events
+    not is_deprecated(event)
     entry := {"signal_type": "Event", "signal_name": event.name, "attributes": event.attributes}
 }
