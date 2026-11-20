@@ -1,0 +1,282 @@
+runner: genai-conformance
+instrumented_library: ollama
+instrumentation_library: reference
+
+server:
+  run: genai-mock-server --host 127.0.0.1 --port ${PORT}
+
+env:
+  MOCK_LLM_URL: ${MOCK_SERVER_URL}
+  OTEL_INSTRUMENTATION_GENAI_CAPTURE_CONTENT: EVENT_ONLY
+  OTEL_INSTRUMENTATION_GENAI_CAPTURE_TOOL_DEFINITIONS: "true"
+
+scenarios:
+  reference:
+    run: uv run --frozen --python 3.12 --project . python scenario.py
+    expected_violations:
+      - id: genai_expected_attribute_missing
+        context:
+          operation: chat
+          missing_attribute: gen_ai.response.id
+        reason: Ollama's API does not return a response id, so the reference implementation cannot set gen_ai.response.id.
+      - id: genai_expected_attribute_missing
+        context:
+          operation: chat
+          missing_attribute: gen_ai.response.model
+        reason: The failure-path chat operation points the SDK at a server that accepts no connections, so the operation fails before a response exists and the span cannot carry gen_ai.response.model.
+      - id: genai_expected_attribute_missing
+        context:
+          operation: chat
+          missing_attribute: gen_ai.usage.input_tokens
+        reason: The failure-path chat operations point the SDK at a server that accepts no connections or drop the connection mid-stream, so no token usage is returned and the span cannot carry gen_ai.usage.input_tokens.
+      - id: genai_expected_attribute_missing
+        context:
+          operation: chat
+          missing_attribute: gen_ai.usage.output_tokens
+        reason: The failure-path chat operations point the SDK at a server that accepts no connections or drop the connection mid-stream, so no token usage is returned and the span cannot carry gen_ai.usage.output_tokens.
+      - id: genai_expected_attribute_missing
+        context:
+          operation: embeddings
+          missing_attribute: gen_ai.request.encoding_formats
+        reason: Ollama's embed API does not accept an encoding format parameter and always returns float32 embeddings, so the reference implementation cannot set gen_ai.request.encoding_formats.
+      - id: genai_expected_attribute_missing
+        context:
+          operation: embeddings
+          missing_attribute: gen_ai.embeddings.dimension.count
+        reason: The failure-path embeddings operation points the SDK at a server that accepts no connections, so the operation fails before any embedding vector exists and the span cannot carry gen_ai.embeddings.dimension.count.
+      - id: genai_expected_attribute_missing
+        context:
+          operation: embeddings
+          missing_attribute: gen_ai.response.model
+        reason: The failure-path embeddings operation points the SDK at a server that accepts no connections, so the operation fails before any response exists and the span cannot carry gen_ai.response.model.
+      - id: genai_expected_attribute_missing
+        context:
+          operation: embeddings
+          missing_attribute: gen_ai.usage.input_tokens
+        reason: The failure-path embeddings operation points the SDK at a server that accepts no connections, so no token usage is returned and the span cannot carry gen_ai.usage.input_tokens.
+      - id: genai_expected_attribute_missing
+        context:
+          operation: text_completion
+          missing_attribute: gen_ai.response.id
+        reason: Ollama's API does not return a response id, so the reference implementation cannot set gen_ai.response.id.
+    spans:
+      # Every chat span that succeeds carries the same request options and the
+      # same mock response timings, so the Ollama refinement attributes are
+      # asserted once for all eight scenarios (basic, tool call, formatted,
+      # streaming, streaming tool call, the two span content capture modes,
+      # and the cached prompt-token chat); the successful finish reason keeps
+      # the mid-stream failure
+      # span out, now that the stream identifies the model before the
+      # connection drops.
+      - match:
+          attributes:
+            gen_ai.operation.name: chat
+            gen_ai.response.model: llama3.2
+            gen_ai.response.finish_reasons: [stop]
+          type: gen_ai.client.inference
+        expect:
+          count: 8
+          attributes:
+            ollama.request.num_ctx: 2048
+            ollama.request.num_batch: 512
+            ollama.request.num_gpu: 1
+            ollama.request.main_gpu: 0
+            ollama.response.total_duration: 1000000000
+            ollama.response.load_duration: 100000000
+      # The tool-call scenario is singled out by its seed and must record the
+      # offered tool definitions and the provider-reported finish reason.
+      - match:
+          attributes:
+            gen_ai.operation.name: chat
+            gen_ai.request.seed: 43
+          type: gen_ai.client.inference
+        expect:
+          count: 1
+          attributes:
+            gen_ai.tool.definitions:
+              present: true
+            gen_ai.response.finish_reasons: [stop]
+      # The formatted scenario is singled out by its seed; the request passes
+      # format="json", so the conditionally required gen_ai.output.type must
+      # be recorded along with the provider-reported finish reason.
+      - match:
+          attributes:
+            gen_ai.operation.name: chat
+            gen_ai.request.seed: 45
+          type: gen_ai.client.inference
+        expect:
+          count: 1
+          attributes:
+            gen_ai.output.type: json
+            gen_ai.response.finish_reasons: [stop]
+      # The streaming scenario is singled out by its seed and must report the
+      # streaming request flag and the time to the first chunk with output.
+      - match:
+          attributes:
+            gen_ai.operation.name: chat
+            gen_ai.request.seed: 44
+          type: gen_ai.client.inference
+        expect:
+          count: 1
+          attributes:
+            gen_ai.request.stream: true
+            gen_ai.response.time_to_first_chunk:
+              present: true
+      # The span content capture modes are singled out by their seeds: the
+      # SPAN_ONLY and SPAN_AND_EVENT runs record the input and output
+      # messages on the span, per the content capture configuration of the
+      # generic conventions.
+      - match:
+          attributes:
+            gen_ai.operation.name: chat
+            gen_ai.request.seed: 46
+          type: gen_ai.client.inference
+        expect:
+          count: 1
+          attributes:
+            gen_ai.input.messages:
+              present: true
+            gen_ai.output.messages:
+              present: true
+      - match:
+          attributes:
+            gen_ai.operation.name: chat
+            gen_ai.request.seed: 47
+          type: gen_ai.client.inference
+        expect:
+          count: 1
+          attributes:
+            gen_ai.input.messages:
+              present: true
+            gen_ai.output.messages:
+              present: true
+      # The streaming tool-call scenario is singled out by its seed: the
+      # request offers the weather tool, so the span carries the tool
+      # definitions, and the first chunk with output carries the tool-call
+      # payload, so the time to it is recorded.
+      - match:
+          attributes:
+            gen_ai.operation.name: chat
+            gen_ai.request.seed: 48
+          type: gen_ai.client.inference
+        expect:
+          count: 1
+          attributes:
+            gen_ai.request.stream: true
+            gen_ai.response.time_to_first_chunk:
+              present: true
+            gen_ai.response.finish_reasons: [stop]
+            gen_ai.tool.definitions:
+              present: true
+      # The streaming failure scenario is singled out by its seed: a chunk
+      # arrived before the connection dropped, so the time to it and the
+      # model the stream identified are preserved, and the finish reason
+      # falls back to "error". The run uses the SPAN_AND_EVENT capture mode,
+      # so the input messages and the partial output delivered before the
+      # failure are also preserved on the span.
+      - match:
+          attributes:
+            gen_ai.operation.name: chat
+            gen_ai.request.seed: 49
+          type: gen_ai.client.inference
+        expect:
+          count: 1
+          attributes:
+            gen_ai.request.stream: true
+            gen_ai.response.time_to_first_chunk:
+              present: true
+            gen_ai.response.model: llama3.2
+            gen_ai.response.finish_reasons: [error]
+            gen_ai.input.messages:
+              present: true
+            gen_ai.output.messages:
+              present: true
+            error.type:
+              present: true
+      # The cached prompt-token chat is singled out by its seed: the
+      # scenario-local mock reports prompt_eval_cached_count, which the SDK
+      # drops when parsing, so the raw-response capture maps it to the cached
+      # input-token attribute, asserted next to the total input and output
+      # token counts it is a subset of.
+      - match:
+          attributes:
+            gen_ai.operation.name: chat
+            gen_ai.request.seed: 50
+          type: gen_ai.client.inference
+        expect:
+          count: 1
+          attributes:
+            gen_ai.response.finish_reasons: [stop]
+            gen_ai.usage.input_tokens: 100
+            gen_ai.usage.output_tokens: 17
+            gen_ai.usage.cache_read.input_tokens: 23
+      # The text completion scenario calls client.generate against a
+      # scenario-local /api/generate mock (the shared mock server implements
+      # /api/chat and /api/embed only), so its span carries the Ollama
+      # refinement attributes from the request options and the canned
+      # response timings.
+      - match:
+          attributes:
+            gen_ai.operation.name: text_completion
+          type: gen_ai.client.inference
+        expect:
+          count: 1
+          attributes:
+            gen_ai.request.model: llama3.2
+            gen_ai.response.model: llama3.2
+            gen_ai.response.finish_reasons: [stop]
+            gen_ai.usage.input_tokens: 42
+            gen_ai.usage.output_tokens: 17
+            ollama.request.num_ctx: 2048
+            ollama.request.num_batch: 512
+            ollama.request.num_gpu: 1
+            ollama.request.main_gpu: 0
+            ollama.response.total_duration: 1000000000
+            ollama.response.load_duration: 100000000
+      # The failure-path chat span points at a server that accepts no
+      # connections: the sanitized base URL, an error type, and the "error"
+      # finish reason required when the operation fails before any
+      # generation exists.
+      - match:
+          attributes:
+            gen_ai.operation.name: chat
+            server.port: 1
+          type: gen_ai.client.inference
+        expect:
+          count: 1
+          attributes:
+            ollama.request.base_url: 'http://127.0.0.1:1'
+            gen_ai.response.finish_reasons: [error]
+            error.type:
+              present: true
+      # The successful embeddings span carries the num_ctx, num_batch,
+      # num_gpu, and main_gpu request options and the native Ollama
+      # response timings.
+      - match:
+          attributes:
+            gen_ai.operation.name: embeddings
+            gen_ai.response.model: nomic-embed-text
+          type: gen_ai.client.embeddings
+        expect:
+          count: 1
+          attributes:
+            ollama.request.num_ctx: 2048
+            ollama.request.num_batch: 512
+            ollama.request.num_gpu: 1
+            ollama.request.main_gpu: 0
+            ollama.response.total_duration: 1000000000
+            ollama.response.load_duration: 100000000
+      # The failure-path embeddings span points at a server that accepts no
+      # connections: the sanitized base URL and an error type.
+      - match:
+          attributes:
+            gen_ai.operation.name: embeddings
+            server.port: 1
+          type: gen_ai.client.embeddings
+        expect:
+          count: 1
+          attributes:
+            ollama.request.base_url: 'http://127.0.0.1:1'
+            error.type:
+              present: true
+

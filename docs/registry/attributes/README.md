@@ -29,6 +29,7 @@ Currently, the following namespaces exist:
 - [AWS](aws.md)
 - [Gen AI](gen-ai.md)
 - [MCP](mcp.md)
+- [Ollama](ollama.md)
 - [OpenAI](openai.md)
 
 [developers recommendations]: https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/general/naming.md#recommendations-for-application-developers
