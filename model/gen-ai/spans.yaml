@@ -506,9 +506,8 @@ spans:
     note: |
       The `gen_ai.operation.name` SHOULD be `fetch_response`.
 
-      The fetch consumes no tokens, and token usage metrics are not reported for this operation.
-      Token usage carried on the fetched response describes the generation identified by
-      `gen_ai.response.id`.
+      The fetch consumes no tokens. Token usage carried on the fetched response describes the
+      generation identified by `gen_ai.response.id`.
 
     stability: development
     attributes:
