@@ -48,33 +48,8 @@ attribute_groups:
   - id: attributes.gen_ai.invoke_agent.common
     visibility: internal
     attributes:
-      - ref_group: attributes.gen_ai.usage
-      - ref_group: attributes.gen_ai.content
-      - ref_group: attributes.gen_ai.error
-      - ref_group: attributes.gen_ai.invoked_agent.internal.common
       - ref: gen_ai.operation.name
         requirement_level: required
-      - ref: gen_ai.request.max_tokens
-        requirement_level: recommended
-      - ref: gen_ai.request.choice.count
-        requirement_level:
-          conditionally_required: If available, in the request, and !=1.
-      - ref: gen_ai.request.temperature
-        requirement_level: recommended
-      - ref: gen_ai.request.top_p
-        requirement_level: recommended
-      - ref: gen_ai.request.stop_sequences
-        requirement_level: recommended
-      - ref: gen_ai.request.frequency_penalty
-        requirement_level: recommended
-      - ref: gen_ai.request.presence_penalty
-        requirement_level: recommended
-      - ref: gen_ai.request.seed
-        requirement_level:
-          conditionally_required: If applicable and if the request includes a seed.
-      - ref: gen_ai.output.type
-        requirement_level:
-          conditionally_required: When applicable and if the request includes an output format.
       - ref: gen_ai.response.finish_reasons
         requirement_level: recommended
       - ref: gen_ai.conversation.id
@@ -110,8 +85,6 @@ attribute_groups:
   - id: attributes.gen_ai.client.inference.common
     visibility: internal
     attributes:
-      - ref_group: attributes.gen_ai.common
-      - ref_group: attributes.gen_ai.address_and_port
       - ref: gen_ai.usage.input_tokens
         brief: >
           The number of input tokens reported by the provider for this inference operation.
@@ -186,34 +159,9 @@ attribute_groups:
           as reported by the provider for this inference operation.
         requirement_level:
           recommended: When available and non-zero.
-      - ref_group: attributes.gen_ai.content
-      - ref_group: attributes.gen_ai.error
-      - ref: gen_ai.tool.definitions
-        brief: The list of tool definitions supplied to the model for this inference operation.
-      - ref: gen_ai.request.max_tokens
-        requirement_level: recommended
-      - ref: gen_ai.request.choice.count
-        requirement_level:
-          conditionally_required: If available, in the request, and !=1.
-      - ref: gen_ai.request.temperature
-        requirement_level: recommended
       - ref: gen_ai.request.top_k
         requirement_level:
           conditionally_required: If applicable.
-      - ref: gen_ai.request.top_p
-        requirement_level: recommended
-      - ref: gen_ai.request.stop_sequences
-        requirement_level: recommended
-      - ref: gen_ai.request.frequency_penalty
-        requirement_level: recommended
-      - ref: gen_ai.request.presence_penalty
-        requirement_level: recommended
-      - ref: gen_ai.request.seed
-        requirement_level:
-          conditionally_required: If applicable and if the request includes a seed.
-      - ref: gen_ai.output.type
-        requirement_level:
-          conditionally_required: When applicable and if the request includes an output format.
       - ref: gen_ai.request.stream
         requirement_level:
           conditionally_required: If and only if the request is streaming. If unset, the request is assumed to be non-streaming.
@@ -283,7 +231,14 @@ spans:
       when counting operations or tokens.
     stability: development
     attributes:
+      - ref_group: attributes.gen_ai.common
+      - ref_group: attributes.gen_ai.address_and_port
+      - ref_group: attributes.gen_ai.request.params
+      - ref_group: attributes.gen_ai.content
+      - ref_group: attributes.gen_ai.error
       - ref_group: attributes.gen_ai.client.inference.common
+      - ref: gen_ai.tool.definitions
+        brief: The list of tool definitions supplied to the model for this inference operation.
       - ref: gen_ai.provider.name
         sampling_relevant: true
       - ref: gen_ai.operation.name
@@ -338,6 +293,7 @@ spans:
       - ref_group: attributes.gen_ai.usage
       - ref_group: attributes.gen_ai.usage.breakdown
       - ref_group: attributes.gen_ai.error
+      - ref_group: attributes.gen_ai.realtime_session
       - ref: gen_ai.system_instructions
         requirement_level: opt_in
       - ref: gen_ai.input.messages
@@ -390,9 +346,6 @@ spans:
       - ref: gen_ai.conversation.id
         requirement_level:
           conditionally_required: If and only if the instrumented library has one readily available.
-      - ref: gen_ai.realtime_session.id
-        requirement_level:
-          conditionally_required: If the provider exposes a session identifier, or the instrumentation uses a client-created per-connection identifier.
       - ref: gen_ai.provider.name
         sampling_relevant: true
       - ref: gen_ai.operation.name
@@ -431,9 +384,7 @@ spans:
     stability: development
     attributes:
       - ref_group: attributes.gen_ai.error
-      - ref: gen_ai.realtime_session.id
-        requirement_level:
-          conditionally_required: If the provider exposes a session identifier, or the instrumentation uses a client-created per-connection identifier.
+      - ref_group: attributes.gen_ai.realtime_session
       - ref: gen_ai.provider.name
         requirement_level:
           recommended: If the start and end of user speech are determined from events in the model response.
@@ -453,25 +404,19 @@ spans:
       that returns embeddings for one or more inputs.
     stability: development
     attributes:
-      - ref_group: attributes.gen_ai.common
+      - ref_group: attributes.gen_ai.embeddings
       - ref_group: attributes.gen_ai.address_and_port
       - ref_group: attributes.gen_ai.error
       - ref: gen_ai.provider.name
         sampling_relevant: true
       - ref: gen_ai.operation.name
-        annotations:
-          markdown:
-            omit_enum_table: true
         sampling_relevant: true
-        examples: ["embeddings"]
-        note: SHOULD be `embeddings`.
       - ref: server.address
         sampling_relevant: true
       - ref: server.port
         sampling_relevant: true
       - ref: gen_ai.request.model
         sampling_relevant: true
-        examples: ["text-embedding-3-small", "gemini-embedding-001"]
       - ref: gen_ai.request.encoding_formats
         requirement_level: recommended
       - ref: gen_ai.usage.input_tokens
@@ -484,12 +429,6 @@ spans:
           instrumentations SHOULD report the billed count.
       - ref: gen_ai.embeddings.dimension.count
         requirement_level: recommended
-      - ref: gen_ai.embeddings.input_type
-        requirement_level:
-          recommended: When applicable.
-      - ref: gen_ai.response.model
-        requirement_level: recommended
-        examples: ["text-embedding-3-small"]
 
   - type: gen_ai.retrieval.client
     requirement_level: recommended
@@ -755,7 +694,12 @@ spans:
     stability: development
     attributes:
       - ref_group: attributes.gen_ai.invoke_agent.common
+      - ref_group: attributes.gen_ai.invoked_agent
+      - ref_group: attributes.gen_ai.request.params
+      - ref_group: attributes.gen_ai.usage
       - ref_group: attributes.gen_ai.usage.breakdown
+      - ref_group: attributes.gen_ai.content
+      - ref_group: attributes.gen_ai.error
       - ref_group: attributes.gen_ai.address_and_port
       - ref: gen_ai.tool.definitions
         brief: The list of tool definitions configured for the invoked remote agent.
@@ -841,6 +785,11 @@ spans:
       - "gen_ai.main_agent"
     attributes:
       - ref_group: attributes.gen_ai.invoke_agent.common
+      - ref_group: attributes.gen_ai.invoked_agent
+      - ref_group: attributes.gen_ai.request.params
+      - ref_group: attributes.gen_ai.usage
+      - ref_group: attributes.gen_ai.content
+      - ref_group: attributes.gen_ai.error
       - ref: gen_ai.tool.definitions
         brief: The list of tool definitions configured for the invoked agent, workflow, or framework entrypoint.
         note: |

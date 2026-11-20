@@ -44,7 +44,7 @@ endif
 BASELINE_REGISTRY := https://github.com/trask/semantic-conventions-genai.git[model]
 
 .PHONY: check-policies generate-registry generate-docs generate-json-schemas test-json-schemas generate-all clean package-dev \
-	generate-reference-reports update-upstream-links
+	generate-reference-reports update-upstream-links print-version set-schema-url-dev set-schema-url-unreleased
 
 # Upstream semantic-conventions version, derived from the pinned git tag in the
 # model/manifest.yaml dependency (the single source of truth for that version).
@@ -54,11 +54,19 @@ SEMCONV_VERSION := $(shell grep -oE 'semantic-conventions\.git@v[0-9]+\.[0-9]+\.
 # so cross-registry links to upstream pages resolve to the pinned version.
 UPSTREAM_DOCS_BASE := https://github.com/open-telemetry/semantic-conventions/blob/$(SEMCONV_VERSION)
 
-# Release version = last path segment of the top-level schema_url in
-# model/manifest.yaml. E.g. `gen-ai-dev/1.42.0-dev` -> `1.42.0-dev`.
-VERSION := $(shell awk '/^schema_url:/ { n = split($$2, parts, "/"); print parts[n]; exit }' model/manifest.yaml)
-RESOLVED_SCHEMA_URI := https://github.com/open-telemetry/semantic-conventions-genai/releases/download/v$(VERSION)/resolved.yaml
+# X.Y.Z from the schema_url in model/manifest.yaml. main has
+# semconv-genai-dev/X.Y.Z-unreleased, release commits have
+# semconv-genai-dev/X.Y.Z-dev. Pass VERSION to target another release.
+SCHEMA_URL_BASE := https://opentelemetry.io/schemas
+VERSION := $(shell awk '/^schema_url:/ { n = split($$2, parts, "/"); print parts[n]; exit }' model/manifest.yaml | sed -E 's/-(unreleased|dev)$$//')
+GITHUB_REPOSITORY ?= open-telemetry/semantic-conventions-genai
+RELEASE_DOWNLOAD_URL := https://github.com/$(GITHUB_REPOSITORY)/releases/download/v$(VERSION)
 PACKAGE_OUTPUT := .build/package
+
+define set_schema_url
+	sed -E 's|^schema_url: .*|schema_url: $(1)|' model/manifest.yaml > model/manifest.yaml.tmp
+	mv model/manifest.yaml.tmp model/manifest.yaml
+endef
 
 # Validate the model and run shared policies from otel-weaver-packages.
 check-policies:
@@ -121,16 +129,32 @@ generate-all: update-upstream-links generate-registry generate-docs generate-jso
 	# text whose links are root-relative to the upstream repo.
 	$(MAKE) update-upstream-links
 
-# Package the registry into a publication artifact. The version comes from
-# model/manifest.yaml's schema_url; bump it there to cut a new release.
+print-version:
+	@echo $(VERSION)
+
+set-schema-url-dev:
+	$(call set_schema_url,$(SCHEMA_URL_BASE)/semconv-genai-dev/$(VERSION)-dev)
+
+set-schema-url-unreleased:
+	$(call set_schema_url,$(SCHEMA_URL_BASE)/semconv-genai-dev/$(VERSION)-unreleased)
+
+# Build the release assets for the development registry, which includes
+# items at every stability level:
+#   manifest-dev.yaml  publication manifest, served at the schema URL
+#   registry-dev.yaml  resolved registry that the manifest points to
+# The -dev suffix keeps these names distinct from a future stable
+# registry's assets, which can be attached to the same GitHub release.
 package-dev:
-	@mkdir -p .build
 	rm -rf $(PACKAGE_OUTPUT)
+	@mkdir -p $(PACKAGE_OUTPUT)
 	$(WEAVER) registry package \
 		-r ./model \
 		--v2 \
-		--resolved-schema-uri '$(RESOLVED_SCHEMA_URI)' \
-		-o ./$(PACKAGE_OUTPUT)
+		--resolved-registry-uri '$(RELEASE_DOWNLOAD_URL)/registry-dev.yaml' \
+		-o ./$(PACKAGE_OUTPUT)/weaver
+	mv $(PACKAGE_OUTPUT)/weaver/manifest.yaml $(PACKAGE_OUTPUT)/manifest-dev.yaml
+	mv $(PACKAGE_OUTPUT)/weaver/resolved.yaml $(PACKAGE_OUTPUT)/registry-dev.yaml
+	rm -rf $(PACKAGE_OUTPUT)/weaver
 	@echo "Packaged version $(VERSION) -> $(PACKAGE_OUTPUT)"
 
 # Remove generated docs, the local .build/ tree (Weaver-fetched templates/policies
