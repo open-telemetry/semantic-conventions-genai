@@ -166,9 +166,10 @@ For interrupted generations, instrumentations SHOULD report the
 provider-reported interruption reason when available and `interrupted` otherwise.
 
 Each position SHOULD contain the finish reason for the corresponding
-choice/candidate. If none was received, instrumentations SHOULD report
-`interrupted` when the caller closes or disposes of the stream without an error and
-`error` if generation fails or the stream ends unexpectedly.
+choice/candidate. If an expected finish reason is missing, instrumentations
+SHOULD report `interrupted` when the caller closes or disposes of the
+stream without an error, and `error` if generation fails or the stream
+ends unexpectedly.
 
 `error` indicates that the generation ended abnormally, whether reported
 by the provider or inferred by the instrumentation.
