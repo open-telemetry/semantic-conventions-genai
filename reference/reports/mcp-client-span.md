@@ -16,7 +16,7 @@
 | gen_ai.tool.name | [mcp] |
 | jsonrpc.request.id | [mcp] |
 | mcp.resource.uri | [mcp] |
-| rpc.response.status_code | [mcp] |
+| rpc.status_code | [mcp] |
 
 ## Recommended
 

@@ -150,8 +150,8 @@ class ReferenceMCPServerMiddleware(ServerMiddleware[Any]):
                     result = await call_next(ctx)
                 except MCPError as error:
                     code = str(error.error.code)
-                    span.set_attribute("rpc.response.status_code", code)
-                    metric_attrs["rpc.response.status_code"] = code
+                    span.set_attribute("rpc.status_code", code)
+                    metric_attrs["rpc.status_code"] = code
                     # Per mcp.server.status.attributes, caller errors (-32700, -32600,
                     # -32601, -32602, -32002) are not server errors, while other codes are.
                     if error.error.code not in (-32700, -32600, -32601, -32602, -32002):
@@ -161,8 +161,8 @@ class ReferenceMCPServerMiddleware(ServerMiddleware[Any]):
                     raise
                 except ValidationError:
                     code = str(INVALID_PARAMS)
-                    span.set_attribute("rpc.response.status_code", code)
-                    metric_attrs["rpc.response.status_code"] = code
+                    span.set_attribute("rpc.status_code", code)
+                    metric_attrs["rpc.status_code"] = code
                     raise
                 except Exception as error:
                     error_type = type(error).__qualname__
@@ -356,9 +356,9 @@ class ReferenceMCPClientSession(ClientSession):
                 except MCPError as error:
                     code = str(error.error.code)
                     span.set_attribute("error.type", code)
-                    span.set_attribute("rpc.response.status_code", code)
+                    span.set_attribute("rpc.status_code", code)
                     metric_attrs["error.type"] = code
-                    metric_attrs["rpc.response.status_code"] = code
+                    metric_attrs["rpc.status_code"] = code
                     span.set_status(StatusCode.ERROR, error.error.message)
                     raise
                 except Exception as error:
