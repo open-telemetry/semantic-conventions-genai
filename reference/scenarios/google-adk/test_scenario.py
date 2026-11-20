@@ -8,6 +8,7 @@ import httpx
 from google.adk.models.google_llm import Gemini
 from google.adk.models.llm_response import LlmResponse
 from google.genai import types
+from opentelemetry import trace
 from opentelemetry.sdk.metrics import MeterProvider
 from opentelemetry.sdk.metrics.export import InMemoryMetricReader
 from opentelemetry.sdk.trace import TracerProvider
@@ -140,6 +141,54 @@ class NativeTransferTests(unittest.TestCase):
             self.assertEqual(agent.attributes["gen_ai.usage.input_tokens"], 12)
             self.assertEqual(agent.attributes["gen_ai.usage.output_tokens"], 4)
         provider.shutdown()
+
+
+class InvocationRootTests(unittest.TestCase):
+    ROOT = "gen_ai.agent.invocation.root"
+
+    def _run(self, tracer):
+        reader = InMemoryMetricReader()
+        meter_provider = MeterProvider(metric_readers=[reader])
+        self.addCleanup(meter_provider.shutdown)
+        histogram = meter_provider.get_meter("test").create_histogram("gen_ai.invoke_agent.duration", unit="s")
+
+        async def respond(model, llm_request, stream=False):
+            yield LlmResponse(content=types.Content(role="model", parts=[types.Part(text="Hello.")]))
+
+        with (
+            patch.object(scenario, "_reference_tracer", tracer),
+            patch.object(scenario, "_invoke_duration", histogram),
+            patch.object(Gemini, "generate_content_async", respond),
+        ):
+            scenario.run_agent_reference()
+        return {
+            point.attributes["gen_ai.operation.name"]: point.attributes[self.ROOT]
+            for resource in reader.get_metrics_data().resource_metrics
+            for scope in resource.scope_metrics
+            for metric in scope.metrics
+            for point in metric.data.data_points
+        }
+
+    def test_runner_is_root_and_its_agent_is_not(self):
+        exporter = InMemorySpanExporter()
+        tracer_provider = TracerProvider()
+        tracer_provider.add_span_processor(SimpleSpanProcessor(exporter))
+        self.addCleanup(tracer_provider.shutdown)
+
+        points = self._run(tracer_provider.get_tracer("test"))
+
+        expected = {"invoke_runner": True, "invoke_agent": False}
+        spans = {
+            span.attributes["gen_ai.operation.name"]: span.attributes[self.ROOT]
+            for span in exporter.get_finished_spans()
+            if self.ROOT in span.attributes
+        }
+        self.assertEqual(spans, expected)
+        self.assertEqual(points, expected)
+
+    def test_tracking_does_not_depend_on_span_recording(self):
+        points = self._run(trace.NoOpTracer())
+        self.assertEqual(points, {"invoke_runner": True, "invoke_agent": False})
 
 
 if __name__ == "__main__":

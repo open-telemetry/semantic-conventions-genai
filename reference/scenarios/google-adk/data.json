@@ -14,6 +14,7 @@
     ],
     "gen_ai.invoke_agent.internal": [
       "gen_ai.agent.description",
+      "gen_ai.agent.invocation.root",
       "gen_ai.agent.name",
       "gen_ai.conversation.id",
       "gen_ai.input.messages",
@@ -50,6 +51,7 @@
       "gen_ai.tool.type"
     ],
     "gen_ai.invoke_agent.duration": [
+      "gen_ai.agent.invocation.root",
       "gen_ai.agent.name",
       "gen_ai.operation.name",
       "gen_ai.request.model"

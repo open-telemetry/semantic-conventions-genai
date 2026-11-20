@@ -13,6 +13,7 @@
     ],
     "gen_ai.invoke_agent.internal": [
       "error.type",
+      "gen_ai.agent.invocation.root",
       "gen_ai.agent.name",
       "gen_ai.input.messages",
       "gen_ai.operation.name",
