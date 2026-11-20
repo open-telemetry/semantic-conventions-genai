@@ -46,6 +46,7 @@
       "gen_ai.usage.input_tokens",
       "gen_ai.usage.output_tokens",
       "gen_ai.usage.reasoning.output_tokens",
+      "openai.api.type",
       "server.address",
       "server.port"
     ],
@@ -62,6 +63,13 @@
       "gen_ai.response.status",
       "gen_ai.system_instructions",
       "gen_ai.tool.definitions",
+      "gen_ai.usage.cache_read.input_tokens",
+      "gen_ai.usage.cache_write.input_tokens",
+      "gen_ai.usage.input_tokens",
+      "gen_ai.usage.output_tokens",
+      "gen_ai.usage.reasoning.output_tokens",
+      "openai.api.type",
+      "openai.response.service_tier",
       "server.address",
       "server.port"
     ]

@@ -296,7 +296,7 @@ This attribute MUST be recorded as an [AnyValue](https://opentelemetry.io/docs/s
 | `upsert_memory` | Create or update memory records without the caller choosing which | ![Development](https://img.shields.io/badge/-development-blue) |
 | `user_speech` | Describes the process of recording user speech input. | ![Development](https://img.shields.io/badge/-development-blue) |
 
-**[16]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
+**[16]:** Token usage carried on the fetched response describes the original generation. The `fetch_response` span defines how it is recorded.
 
 **[17]:** Examples include LangChain, LlamaIndex, and Haystack retrievers.
 A retrieval pipeline usually combines other operations such as embeddings,
@@ -537,7 +537,7 @@ This attribute MUST be recorded as an [AnyValue](https://opentelemetry.io/docs/s
 | `upsert_memory` | Create or update memory records without the caller choosing which | ![Development](https://img.shields.io/badge/-development-blue) |
 | `user_speech` | Describes the process of recording user speech input. | ![Development](https://img.shields.io/badge/-development-blue) |
 
-**[16]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
+**[16]:** Token usage carried on the fetched response describes the original generation. The `fetch_response` span defines how it is recorded.
 
 **[17]:** Examples include LangChain, LlamaIndex, and Haystack retrievers.
 A retrieval pipeline usually combines other operations such as embeddings,
@@ -705,7 +705,7 @@ is HTTP. It SHOULD be set to `pipe` if the transport is stdio.
 | `upsert_memory` | Create or update memory records without the caller choosing which | ![Development](https://img.shields.io/badge/-development-blue) |
 | `user_speech` | Describes the process of recording user speech input. | ![Development](https://img.shields.io/badge/-development-blue) |
 
-**[10]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
+**[10]:** Token usage carried on the fetched response describes the original generation. The `fetch_response` span defines how it is recorded.
 
 **[11]:** Examples include LangChain, LlamaIndex, and Haystack retrievers.
 A retrieval pipeline usually combines other operations such as embeddings,
@@ -875,7 +875,7 @@ is HTTP. It SHOULD be set to `pipe` if the transport is stdio.
 | `upsert_memory` | Create or update memory records without the caller choosing which | ![Development](https://img.shields.io/badge/-development-blue) |
 | `user_speech` | Describes the process of recording user speech input. | ![Development](https://img.shields.io/badge/-development-blue) |
 
-**[8]:** Instrumentations SHOULD NOT report token usage (as attributes or metrics) for this operation.
+**[8]:** Token usage carried on the fetched response describes the original generation. The `fetch_response` span defines how it is recorded.
 
 **[9]:** Examples include LangChain, LlamaIndex, and Haystack retrievers.
 A retrieval pipeline usually combines other operations such as embeddings,

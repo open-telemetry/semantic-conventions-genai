@@ -7,7 +7,8 @@
       "gen_ai.tool.call.result",
       "gen_ai.tool.description",
       "gen_ai.tool.name",
-      "gen_ai.tool.type"
+      "gen_ai.tool.type",
+      "process.exit.code"
     ],
     "gen_ai.invoke_agent.internal": [
       "gen_ai.agent.name",
