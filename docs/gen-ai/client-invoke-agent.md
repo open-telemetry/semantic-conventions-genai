@@ -167,7 +167,7 @@ libraries.
 This attribute specifies the output modality and not the actual output format. For example, if an image is requested, the actual output could be a URL pointing to an image file.
 Additional output format details may be recorded in the future in the `gen_ai.output.{type}.*` attributes.
 
-**[10] `gen_ai.provider.name`:** If the provider hosting the agent is known to the instrumentation.
+**[10] `gen_ai.provider.name`:** If the GenAI provider of the agent service is known to the instrumentation.
 
 **[11] `gen_ai.provider.name`:** Semantic conventions for individual GenAI operations SHOULD clarify which
 kinds of providers (e.g. inference, embeddings, retrieval, memory, hosted
@@ -481,7 +481,7 @@ low-cardinality name is available, this attribute MUST NOT be captured by defaul
 Semantic conventions for individual Generative AI frameworks SHOULD document
 how `gen_ai.agent.name` is recorded in the context of that framework.
 
-**[4] `gen_ai.provider.name`:** If the provider hosting the agent is known to the instrumentation.
+**[4] `gen_ai.provider.name`:** If the GenAI provider of the agent service is known to the instrumentation.
 
 **[5] `gen_ai.provider.name`:** Semantic conventions for individual GenAI operations SHOULD clarify which
 kinds of providers (e.g. inference, embeddings, retrieval, memory, hosted

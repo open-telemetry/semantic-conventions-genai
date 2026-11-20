@@ -710,7 +710,7 @@ spans:
         brief: The list of tool definitions configured for the invoked remote agent.
       - ref: gen_ai.provider.name
         requirement_level:
-          conditionally_required: If the provider hosting the agent is known to the instrumentation.
+          conditionally_required: If the GenAI provider of the agent service is known to the instrumentation.
         sampling_relevant: true
       - ref: gen_ai.operation.name
         annotations:
