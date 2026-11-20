@@ -11,6 +11,9 @@ code.
 | execute_tool | No — the client returns tool calls but doesn't execute them; the tool runs in app code | ➖ Not instrumentable |
 
 Groq gives no modality breakdown, so the usage counters use `unknown`.
+Cached input and reasoning output counts from `prompt_tokens_details` and
+`completion_tokens_details` feed the cache-read and reasoning counters when
+Groq reports them.
 
 The streaming-only conformance cases use Groq SDK chunks with usage in
 `x_groq.usage`. A terminal `x_groq.error` chunk marks the span and operation

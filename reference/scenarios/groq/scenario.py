@@ -43,6 +43,16 @@ _output_token_usage = _meter.create_counter(
     unit="{token}",
     description="The number of output (completion) tokens used, including reasoning tokens.",
 )
+_cache_read_input_token_usage = _meter.create_counter(
+    "gen_ai.client.inference.usage.cache_read.input_tokens",
+    unit="{token}",
+    description="The number of input tokens served from a provider-managed cache.",
+)
+_reasoning_output_token_usage = _meter.create_counter(
+    "gen_ai.client.inference.usage.reasoning.output_tokens",
+    unit="{token}",
+    description="The number of output tokens used for reasoning (e.g. chain-of-thought, extended thinking).",
+)
 _inference_duration = _meter.create_histogram(
     "gen_ai.client.inference.duration",
     unit="s",
@@ -67,6 +77,31 @@ _inference_duration = _meter.create_histogram(
 _SERVER_ADDRESS, _SERVER_PORT = mock_server_host_port(MOCK_BASE_URL)
 
 
+def _usage_details(usage):
+    """Return the cached input and reasoning output counts Groq reported, or 0."""
+    prompt_details = usage.prompt_tokens_details if usage else None
+    completion_details = usage.completion_tokens_details if usage else None
+    return (
+        prompt_details.cached_tokens if prompt_details else 0,
+        completion_details.reasoning_tokens if completion_details else 0,
+    )
+
+
+def _set_usage_details(span, cache_read_tokens, reasoning_tokens):
+    if cache_read_tokens > 0:
+        span.set_attribute("gen_ai.usage.cache_read.input_tokens", cache_read_tokens)
+    if reasoning_tokens > 0:
+        span.set_attribute("gen_ai.usage.reasoning.output_tokens", reasoning_tokens)
+
+
+def _add_usage_details(cache_read_tokens, reasoning_tokens, modality_attributes):
+    if cache_read_tokens > 0:
+        _cache_read_input_token_usage.add(cache_read_tokens, modality_attributes)
+    if reasoning_tokens > 0:
+        reasoning_attributes = {k: v for k, v in modality_attributes.items() if k != "gen_ai.token.modality"}
+        _reasoning_output_token_usage.add(reasoning_tokens, reasoning_attributes)
+
+
 def run_chat_reference(client):
     """Scenario: basic chat completion with reference implementation."""
     print("  [chat] basic chat completion (reference implementation)")
@@ -88,7 +123,7 @@ def run_chat_reference(client):
             "server.address": _SERVER_ADDRESS,
             "server.port": _SERVER_PORT,
         }
-        input_tokens = output_tokens = 0
+        input_tokens = output_tokens = cache_read_tokens = reasoning_tokens = 0
         start_time = time.perf_counter()
         try:
             resp = client.chat.completions.create(
@@ -104,6 +139,8 @@ def run_chat_reference(client):
                 span.set_attribute("gen_ai.usage.output_tokens", resp.usage.completion_tokens)
                 input_tokens = resp.usage.prompt_tokens or 0
                 output_tokens = resp.usage.completion_tokens or 0
+                cache_read_tokens, reasoning_tokens = _usage_details(resp.usage)
+                _set_usage_details(span, cache_read_tokens, reasoning_tokens)
         except Exception as exc:
             metric_attributes["error.type"] = type(exc).__name__
             span.set_attribute("error.type", type(exc).__name__)
@@ -118,6 +155,7 @@ def run_chat_reference(client):
                 _input_token_usage.add(input_tokens, modality_attributes)
             if output_tokens > 0:
                 _output_token_usage.add(output_tokens, modality_attributes)
+            _add_usage_details(cache_read_tokens, reasoning_tokens, modality_attributes)
 
         # Emit inference operation details event
         event_attrs = {
@@ -175,7 +213,7 @@ def run_chat_streaming_reference(client):
             "server.address": _SERVER_ADDRESS,
             "server.port": _SERVER_PORT,
         }
-        input_tokens = output_tokens = 0
+        input_tokens = output_tokens = cache_read_tokens = reasoning_tokens = 0
         start_time = time.perf_counter()
         try:
             stream = client.chat.completions.create(
@@ -198,6 +236,7 @@ def run_chat_streaming_reference(client):
                     if usage:
                         input_tokens = usage.prompt_tokens or 0
                         output_tokens = usage.completion_tokens or 0
+                        cache_read_tokens, reasoning_tokens = _usage_details(usage)
                     if chunk.choices and chunk.choices[0].delta.content:
                         text += chunk.choices[0].delta.content
                     if chunk.choices and chunk.choices[0].finish_reason:
@@ -220,6 +259,7 @@ def run_chat_streaming_reference(client):
             if usage:
                 span.set_attribute("gen_ai.usage.input_tokens", usage.prompt_tokens)
                 span.set_attribute("gen_ai.usage.output_tokens", usage.completion_tokens)
+                _set_usage_details(span, cache_read_tokens, reasoning_tokens)
         except Exception as exc:
             metric_attributes["error.type"] = type(exc).__name__
             span.set_attribute("error.type", type(exc).__name__)
@@ -235,6 +275,7 @@ def run_chat_streaming_reference(client):
                 _input_token_usage.add(input_tokens, modality_attributes)
             if output_tokens > 0:
                 _output_token_usage.add(output_tokens, modality_attributes)
+            _add_usage_details(cache_read_tokens, reasoning_tokens, modality_attributes)
         print(f"    -> {text[:60]}")
 
 
@@ -274,7 +315,7 @@ def run_chat_tool_call_reference(client):
             "server.address": _SERVER_ADDRESS,
             "server.port": _SERVER_PORT,
         }
-        input_tokens = output_tokens = 0
+        input_tokens = output_tokens = cache_read_tokens = reasoning_tokens = 0
         start_time = time.perf_counter()
         try:
             resp = client.chat.completions.create(
@@ -291,6 +332,8 @@ def run_chat_tool_call_reference(client):
                 span.set_attribute("gen_ai.usage.output_tokens", resp.usage.completion_tokens)
                 input_tokens = resp.usage.prompt_tokens or 0
                 output_tokens = resp.usage.completion_tokens or 0
+                cache_read_tokens, reasoning_tokens = _usage_details(resp.usage)
+                _set_usage_details(span, cache_read_tokens, reasoning_tokens)
         except Exception as exc:
             metric_attributes["error.type"] = type(exc).__name__
             span.set_attribute("error.type", type(exc).__name__)
@@ -305,6 +348,7 @@ def run_chat_tool_call_reference(client):
                 _input_token_usage.add(input_tokens, modality_attributes)
             if output_tokens > 0:
                 _output_token_usage.add(output_tokens, modality_attributes)
+            _add_usage_details(cache_read_tokens, reasoning_tokens, modality_attributes)
         choice = resp.choices[0]
         if choice.message.tool_calls:
             # The client returns the tool call; running it is app code the client
@@ -334,7 +378,13 @@ def _stream_fixture_response(request, *, early_stop):
         **chunk,
         "choices": [],
         "x_groq": {
-            "usage": {"prompt_tokens": 5, "completion_tokens": 2, "total_tokens": 7},
+            "usage": {
+                "prompt_tokens": 5,
+                "completion_tokens": 2,
+                "total_tokens": 7,
+                "prompt_tokens_details": {"cached_tokens": 3},
+                "completion_tokens_details": {"reasoning_tokens": 1},
+            },
         },
     }
     if early_stop:
