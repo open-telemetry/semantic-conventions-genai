@@ -44,10 +44,10 @@ sum(gen_ai.usage.input_tokens)
 ```
 
 > [!WARNING]
-> Don't sum `gen_ai.usage.*` over all spans without filtering by operation name
-> (or span type, if available). The same tokens can be reported on multiple
-> types of spans: agent and inference spans, or inference spans from gateways
-> and different layers of the inference infrastructure.
+> Don't sum `gen_ai.usage.*` over all spans without filtering by operation name.
+> The same tokens can be reported on multiple types of spans: agent and
+> inference spans, or inference spans from gateways and different layers of
+> the inference infrastructure.
 
 ## Inference token metrics
 
