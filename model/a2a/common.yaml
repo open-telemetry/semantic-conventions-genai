@@ -33,10 +33,9 @@ attribute_groups:
         note: >
           Set from the A2A `contextId` field. Omit when the operation contains
           multiple distinct context IDs, for example in a `ListTasks` response.
-  - id: a2a.common.attributes
+  - id: a2a.error.attributes
     visibility: internal
     attributes:
-      - ref_group: a2a.protocol.attributes
       - ref: error.type
         requirement_level:
           conditionally_required: If and only if the operation fails.
