@@ -54,7 +54,10 @@ Examples include remote agent services accessed through the OpenAI Assistants AP
 AWS Bedrock Agents, Gemini Enterprise Agent Platform, Azure AI Foundry Agent
 Service, or an A2A endpoint.
 
-`gen_ai.provider.name` identifies the provider hosting the agent.
+`gen_ai.provider.name` identifies the GenAI provider of the agent service,
+for example `openai` or `aws.bedrock`. Instrumentation SHOULD NOT set it
+to a protocol or framework name, such as `a2a`, or to the platform that
+runs a self-hosted agent.
 
 For local agent invocations, refer to the
 `gen_ai.invoke_agent.internal` span.
