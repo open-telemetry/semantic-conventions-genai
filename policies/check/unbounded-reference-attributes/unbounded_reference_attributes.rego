@@ -125,3 +125,17 @@ signals contains entry if {
     not is_deprecated(event)
     entry := {"signal_type": "Event", "signal_name": event.name, "attributes": event.attributes}
 }
+
+signals contains entry if {
+    some span in object.get(object.get(input, "refinements", {}), "spans", [])
+    span.id != span.type
+    not is_deprecated(span)
+    entry := {"signal_type": "Span refinement", "signal_name": span.id, "attributes": span.attributes}
+}
+
+signals contains entry if {
+    some event in object.get(object.get(input, "refinements", {}), "events", [])
+    event.id != event.name
+    not is_deprecated(event)
+    entry := {"signal_type": "Event refinement", "signal_name": event.id, "attributes": event.attributes}
+}
