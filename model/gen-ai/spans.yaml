@@ -168,6 +168,9 @@ attribute_groups:
       - ref: gen_ai.request.reasoning.level
         requirement_level:
           recommended: When applicable.
+      - ref: gen_ai.request.service_tier
+        requirement_level:
+          conditionally_required: If and only if provided in the request.
       - ref: gen_ai.request.previous_response.id
         requirement_level:
           recommended: When available and if the request references a previous response.
@@ -179,6 +182,9 @@ attribute_groups:
         requirement_level: recommended
       - ref: gen_ai.response.finish_reasons
         requirement_level: recommended
+      - ref: gen_ai.response.service_tier
+        requirement_level:
+          conditionally_required: If and only if returned by the provider.
       - ref: gen_ai.response.time_to_first_chunk
         requirement_level:
           recommended: If the request was a streaming request.
@@ -977,12 +983,6 @@ span_refinements:
       - ref: gen_ai.request.reasoning.level
         note: >
           Corresponds to the [`reasoning.effort`](https://platform.openai.com/docs/guides/reasoning#reasoning-effort) request parameter.
-      - ref: openai.request.service_tier
-        requirement_level:
-          conditionally_required: If the request includes a service_tier and the value is not 'auto'.
-      - ref: openai.response.service_tier
-        requirement_level:
-          conditionally_required: If the response was received and includes a service_tier.
       - ref: openai.response.system_fingerprint
         requirement_level: recommended
       - ref: openai.api.type
@@ -1024,9 +1024,9 @@ span_refinements:
           reason, a `failed` or `cancelled` response to `error`, and an `incomplete` response to
           its `incomplete_details.reason` (for example `max_output_tokens` maps to `length` and
           `content_filter` to `content_filter`).
-      - ref: openai.response.service_tier
+      - ref: gen_ai.response.service_tier
         requirement_level:
-          conditionally_required: If the response was received and includes a service_tier.
+          conditionally_required: If and only if returned by the provider.
 
   - id: azure.ai.gen_ai.client.inference
     ref: gen_ai.client.inference
