@@ -21,7 +21,7 @@ attribute_groups:
         annotations:
           markdown:
             omit_enum_table: true
-      - ref: openai.response.service_tier
+      - ref: gen_ai.response.service_tier
         requirement_level: recommended
       - ref: openai.response.system_fingerprint
         requirement_level: recommended
@@ -328,7 +328,7 @@ metric_refinements:
     ref: gen_ai.client.operation.duration
     brief: >
       OpenAI-specific extension to `gen_ai.client.operation.duration`. Adds
-      `openai.response.service_tier` and `openai.response.system_fingerprint`
+      `gen_ai.response.service_tier` and `openai.response.system_fingerprint`
       when the provider is `openai`.
     stability: development
     attributes:
@@ -337,8 +337,7 @@ metric_refinements:
     ref: gen_ai.client.inference.duration
     brief: >
       OpenAI-specific extension to `gen_ai.client.inference.duration`. Adds
-      `openai.response.service_tier` and `openai.response.system_fingerprint`
-      when the provider is `openai`.
+      `openai.response.system_fingerprint` when the provider is `openai`.
     stability: development
     attributes:
       - ref_group: metric_attributes.openai

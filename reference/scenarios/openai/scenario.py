@@ -1357,7 +1357,7 @@ def _emit_fetch_response_span(client, response_id, starting_after=None, stream=F
       the fetched response's token counts belong to the original generation.
       Recording them would double-count tokens when summing spans in a
       multi-step run.
-    - `openai.api.type` is `responses`; `openai.response.service_tier` comes from
+    - `openai.api.type` is `responses`; `gen_ai.response.service_tier` comes from
       the fetched object.
     """
     host, port = mock_server_host_port(MOCK_BASE_URL)
@@ -1401,7 +1401,7 @@ def _emit_fetch_response_span(client, response_id, starting_after=None, stream=F
                 span.set_attribute("gen_ai.response.finish_reasons", [finish_reason])
             service_tier = getattr(fetched, "service_tier", None)
             if service_tier is not None:
-                span.set_attribute("openai.response.service_tier", service_tier)
+                span.set_attribute("gen_ai.response.service_tier", service_tier)
             # The fetched response does not carry the original input messages.
             instructions = getattr(fetched, "instructions", None)
             if instructions:

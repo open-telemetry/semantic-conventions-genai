@@ -983,12 +983,6 @@ span_refinements:
       - ref: gen_ai.request.reasoning.level
         note: >
           Corresponds to the [`reasoning.effort`](https://platform.openai.com/docs/guides/reasoning#reasoning-effort) request parameter.
-      - ref: openai.request.service_tier
-        requirement_level:
-          conditionally_required: If the request includes a service_tier and the value is not 'auto'.
-      - ref: openai.response.service_tier
-        requirement_level:
-          conditionally_required: If the response was received and includes a service_tier.
       - ref: openai.response.system_fingerprint
         requirement_level: recommended
       - ref: openai.api.type
@@ -1030,9 +1024,9 @@ span_refinements:
           reason, a `failed` or `cancelled` response to `error`, and an `incomplete` response to
           its `incomplete_details.reason` (for example `max_output_tokens` maps to `length` and
           `content_filter` to `content_filter`).
-      - ref: openai.response.service_tier
+      - ref: gen_ai.response.service_tier
         requirement_level:
-          conditionally_required: If the response was received and includes a service_tier.
+          conditionally_required: If and only if returned by the provider.
 
   - id: azure.ai.gen_ai.client.inference
     ref: gen_ai.client.inference
