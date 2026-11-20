@@ -1,0 +1,14 @@
+{
+  "spans": {
+    "gen_ai.memory.client": [
+      "gen_ai.memory.query.text",
+      "gen_ai.memory.record.count",
+      "gen_ai.memory.records",
+      "gen_ai.operation.name"
+    ]
+  },
+  "events": {},
+  "metrics": {},
+  "findings": [],
+  "entities": {}
+}
