@@ -853,6 +853,15 @@ attributes:
     brief: The number of dimensions the resulting output embeddings should have.
     examples: [512, 1024]
     stability: development
+  - key: gen_ai.embeddings.input_type
+    type: string
+    brief: The provider-specific input type or purpose hint describing how the embeddings will be used.
+    note: |
+      The value SHOULD be the provider-specific value sent to the provider as-is, without cross-provider mapping.
+
+      When a batch request contains multiple inputs with different input types, instrumentations SHOULD NOT set this attribute.
+    examples: ['query', 'document', 'search_document', 'RETRIEVAL_QUERY']
+    stability: development
   - key: gen_ai.retrieval.documents
     type: any
     brief: The documents retrieved.

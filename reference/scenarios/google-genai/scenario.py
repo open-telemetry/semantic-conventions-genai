@@ -801,7 +801,9 @@ def run_embeddings():
         ),
     )
     request_model = "text-embedding-004"
+    task_type = "RETRIEVAL_DOCUMENT"
     span_attributes_4 = {
+        "gen_ai.embeddings.input_type": task_type,
         "gen_ai.operation.name": "embeddings",
         "gen_ai.provider.name": "gcp.gemini",
         "gen_ai.request.model": request_model,
@@ -820,6 +822,7 @@ def run_embeddings():
             response = client.models.embed_content(
                 model=request_model,
                 contents="Hello, world!",
+                config=types.EmbedContentConfig(task_type=task_type),
             )
             if response.embeddings and response.embeddings[0].values is not None:
                 span.set_attribute("gen_ai.embeddings.dimension.count", len(response.embeddings[0].values))

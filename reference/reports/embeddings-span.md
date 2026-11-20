@@ -21,6 +21,7 @@
 | Attribute | Supporting Libraries |
 | --- | --- |
 | gen_ai.embeddings.dimension.count | [aws-bedrock], [azure-ai-inference], [azure-openai], [cohere], [google-genai], [litellm], [mistralai], [openai] |
+| gen_ai.embeddings.input_type | [azure-ai-inference], [cohere], [google-genai] |
 | gen_ai.request.encoding_formats | [aws-bedrock], [azure-ai-inference], [azure-openai], [cohere], [litellm], [mistralai], [openai] |
 | gen_ai.response.model | [azure-ai-inference], [azure-openai], [litellm], [mistralai], [openai] |
 | gen_ai.usage.input_tokens | [aws-bedrock], [azure-ai-inference], [azure-openai], [cohere], [litellm], [mistralai], [openai] |

@@ -127,6 +127,9 @@ attribute_groups:
       - ref: gen_ai.response.model
         requirement_level: recommended
         examples: ["text-embedding-3-small"]
+      - ref: gen_ai.embeddings.input_type
+        requirement_level:
+          recommended: When applicable.
 
   - id: attributes.gen_ai.realtime_session
     visibility: internal

@@ -110,7 +110,7 @@ update-upstream-links:
 # Regenerate the JSON schemas under model/gen-ai/ from the pydantic models in
 # docs/gen-ai/non-normative/models.py.
 generate-json-schemas:
-	cd docs/gen-ai/non-normative && uv run models.py $(CURDIR)/model/gen-ai
+	cd docs/gen-ai/non-normative && uv run models.py "$(CURDIR)/model/gen-ai"
 
 # Validate the sample documents under docs/gen-ai/non-normative/tests/cases/
 # against the committed JSON schemas and compare with their snapshotted errors.
