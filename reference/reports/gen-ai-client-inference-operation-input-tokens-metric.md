@@ -6,24 +6,25 @@
 
 | Attribute | Supporting Libraries |
 | --- | --- |
-| gen_ai.operation.name | [anthropic], [azure-openai], [google-genai], [openai] |
-| gen_ai.provider.name | [anthropic], [azure-openai], [google-genai], [openai] |
+| gen_ai.operation.name | [anthropic], [azure-openai], [google-genai], [oci-generative-ai], [openai] |
+| gen_ai.provider.name | [anthropic], [azure-openai], [google-genai], [oci-generative-ai], [openai] |
 
 ## Conditionally Required
 
 | Attribute | Supporting Libraries |
 | --- | --- |
-| gen_ai.request.model | [anthropic], [azure-openai], [google-genai], [openai] |
-| server.port | [anthropic], [azure-openai], [openai] |
+| gen_ai.request.model | [anthropic], [azure-openai], [google-genai], [oci-generative-ai], [openai] |
+| server.port | [anthropic], [azure-openai], [oci-generative-ai], [openai] |
 
 ## Recommended
 
 | Attribute | Supporting Libraries |
 | --- | --- |
-| gen_ai.response.model | [anthropic], [azure-openai], [google-genai], [openai] |
-| server.address | [anthropic], [azure-openai], [openai] |
+| gen_ai.response.model | [anthropic], [azure-openai], [google-genai], [oci-generative-ai], [openai] |
+| server.address | [anthropic], [azure-openai], [oci-generative-ai], [openai] |
 
 [anthropic]: ../scenarios/anthropic/scenario.py
 [azure-openai]: ../scenarios/azure-openai/scenario.py
 [google-genai]: ../scenarios/google-genai/scenario.py
+[oci-generative-ai]: ../scenarios/oci-generative-ai/scenario.py
 [openai]: ../scenarios/openai/scenario.py
