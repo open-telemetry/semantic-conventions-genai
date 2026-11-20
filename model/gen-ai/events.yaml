@@ -24,19 +24,13 @@ events:
       this event.
     stability: development
     attributes:
+      - ref_group: attributes.gen_ai.address_and_port
+      - ref_group: attributes.gen_ai.realtime_session
       - ref: gen_ai.provider.name
         requirement_level: required
       - ref: gen_ai.request.model
         requirement_level:
           conditionally_required: If available.
-      - ref: gen_ai.realtime_session.id
-        requirement_level:
-          conditionally_required: If the provider exposes a session identifier, or the instrumentation uses a client-created per-connection identifier.
-      - ref: server.address
-        requirement_level: recommended
-      - ref: server.port
-        requirement_level:
-          conditionally_required: If `server.address` is set.
   - name: gen_ai.client.realtime_session.ended
     requirement_level: recommended
     brief: >
@@ -48,22 +42,16 @@ events:
       session closes normally and WARN (severity number 13) when `error.type` is set.
     stability: development
     attributes:
+      - ref_group: attributes.gen_ai.address_and_port
+      - ref_group: attributes.gen_ai.realtime_session
       - ref: gen_ai.provider.name
         requirement_level: required
       - ref: gen_ai.request.model
         requirement_level:
           conditionally_required: If available.
-      - ref: gen_ai.realtime_session.id
-        requirement_level:
-          conditionally_required: If the provider exposes a session identifier, or the instrumentation uses a client-created per-connection identifier.
       - ref: error.type
         requirement_level:
           conditionally_required: If the session ended because of an error.
-      - ref: server.address
-        requirement_level: recommended
-      - ref: server.port
-        requirement_level:
-          conditionally_required: If `server.address` is set.
   - name: gen_ai.client.inference.operation.details
     requirement_level: recommended
     brief: >
@@ -76,7 +64,14 @@ events:
       Instrumentations SHOULD set the severity to DEBUG (severity number 5) when recording this event.
     stability: development
     attributes:
-      - ref_group: span.gen_ai.client.inference
+      - ref_group: attributes.gen_ai.common
+      - ref_group: attributes.gen_ai.address_and_port
+      - ref_group: attributes.gen_ai.request.params
+      - ref_group: attributes.gen_ai.content
+      - ref_group: attributes.gen_ai.error
+      - ref_group: attributes.gen_ai.client.inference.common
+      - ref: gen_ai.tool.definitions
+        brief: The list of tool definitions supplied to the model for this inference operation.
   - name: gen_ai.evaluation.result
     requirement_level: recommended
     brief: >

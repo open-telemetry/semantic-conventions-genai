@@ -7,16 +7,28 @@ attribute_groups:
       - ref_group: attributes.gen_ai.common
       - ref: gen_ai.response.model
         requirement_level: recommended
-      - ref: gen_ai.provider.name
-        requirement_level: required
 
   - id: metric_attributes.openai
     visibility: internal
     attributes:
+      - ref: gen_ai.provider.name
+        annotations:
+          markdown:
+            omit_enum_table: true
       - ref: openai.response.service_tier
         requirement_level: recommended
       - ref: openai.response.system_fingerprint
         requirement_level: recommended
+
+  - id: metric_attributes.gen_ai.invoke_agent.calls
+    visibility: internal
+    attributes:
+      - ref: gen_ai.operation.name
+        requirement_level: required
+      - ref: gen_ai.agent.name
+        requirement_level:
+          conditionally_required: When available.
+
 metrics:
   - name: gen_ai.client.operation.duration
     requirement_level: recommended
@@ -75,18 +87,9 @@ metrics:
       code_generation:
         metric_value_type: double
     attributes:
-      - ref_group: metric_attributes.gen_ai
+      - ref_group: attributes.gen_ai.embeddings
+      - ref_group: attributes.gen_ai.address_and_port
       - ref_group: attributes.gen_ai.error
-      - ref: gen_ai.operation.name
-        annotations:
-          markdown:
-            omit_enum_table: true
-        examples: ["embeddings"]
-        note: SHOULD be `embeddings`.
-      - ref: gen_ai.request.model
-        examples: ["text-embedding-3-small", "gemini-embedding-001"]
-      - ref: gen_ai.response.model
-        examples: ["text-embedding-3-small"]
   - name: gen_ai.client.invoke_agent.duration
     requirement_level: recommended
     instrument: histogram
@@ -106,7 +109,7 @@ metrics:
     attributes:
       - ref_group: attributes.gen_ai.address_and_port
       - ref_group: attributes.gen_ai.error
-      - ref_group: attributes.gen_ai.invoked_agent.internal.common
+      - ref_group: attributes.gen_ai.invoked_agent
       - ref: gen_ai.provider.name
         requirement_level: required
       - ref: gen_ai.operation.name
@@ -206,7 +209,7 @@ metrics:
       - ref_group: attributes.gen_ai.error
       - ref: gen_ai.operation.name
         requirement_level: required
-      - ref_group: attributes.gen_ai.invoked_agent.internal.common
+      - ref_group: attributes.gen_ai.invoked_agent
       - ref: gen_ai.request.model
         requirement_level:
           recommended: When `gen_ai.operation.name` is `invoke_agent`, if applicable.
@@ -239,11 +242,7 @@ metrics:
     unit: "{inference_call}"
     stability: development
     attributes:
-      - ref: gen_ai.operation.name
-        requirement_level: required
-      - ref: gen_ai.agent.name
-        requirement_level:
-          conditionally_required: When available.
+      - ref_group: metric_attributes.gen_ai.invoke_agent.calls
   - name: gen_ai.invoke_agent.tool_calls
     annotations:
       code_generation:
@@ -274,11 +273,7 @@ metrics:
     unit: "{tool_call}"
     stability: development
     attributes:
-      - ref: gen_ai.operation.name
-        requirement_level: required
-      - ref: gen_ai.agent.name
-        requirement_level:
-          conditionally_required: When available.
+      - ref_group: metric_attributes.gen_ai.invoke_agent.calls
   - name: gen_ai.execute_tool.duration
     requirement_level: recommended
     annotations:
@@ -328,11 +323,7 @@ metric_refinements:
       when the provider is `openai`.
     stability: development
     attributes:
-      # - ref_group: metric_attributes.openai - does not work, https://github.com/open-telemetry/weaver/issues/1411
-      - ref: openai.response.service_tier
-        requirement_level: recommended
-      - ref: openai.response.system_fingerprint
-        requirement_level: recommended
+      - ref_group: metric_attributes.openai
   - id: openai.gen_ai.client.inference.duration
     ref: gen_ai.client.inference.duration
     brief: >
@@ -341,7 +332,4 @@ metric_refinements:
       when the provider is `openai`.
     stability: development
     attributes:
-      - ref: openai.response.service_tier
-        requirement_level: recommended
-      - ref: openai.response.system_fingerprint
-        requirement_level: recommended
+      - ref_group: metric_attributes.openai

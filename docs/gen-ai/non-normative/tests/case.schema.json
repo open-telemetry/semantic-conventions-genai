@@ -16,6 +16,7 @@
                 "gen-ai-input-messages.json",
                 "gen-ai-memory-records.json",
                 "gen-ai-output-messages.json",
+                "gen-ai-prompt-variables.json",
                 "gen-ai-retrieval-documents.json",
                 "gen-ai-system-instructions.json",
                 "gen-ai-tool-call-arguments.json",
@@ -44,6 +45,10 @@
         {
             "if": { "properties": { "schema": { "const": "gen-ai-output-messages.json" } } },
             "then": { "properties": { "document": { "$ref": "../../../../model/gen-ai/gen-ai-output-messages.json" } } }
+        },
+        {
+            "if": { "properties": { "schema": { "const": "gen-ai-prompt-variables.json" } } },
+            "then": { "properties": { "document": { "$ref": "../../../../model/gen-ai/gen-ai-prompt-variables.json" } } }
         },
         {
             "if": { "properties": { "schema": { "const": "gen-ai-retrieval-documents.json" } } },
