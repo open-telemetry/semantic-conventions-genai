@@ -692,6 +692,10 @@ spans:
       AWS Bedrock Agents, Gemini Enterprise Agent Platform, Azure AI Foundry Agent
       Service, or an A2A endpoint.
 
+      `gen_ai.provider.name` identifies the GenAI provider of the agent service,
+      for example `openai` or `aws.bedrock`. Instrumentation SHOULD NOT set it
+      to a protocol or framework name, such as `a2a`.
+
       For local agent invocations, refer to the
       `gen_ai.invoke_agent.internal` span.
     stability: development
@@ -707,7 +711,8 @@ spans:
       - ref: gen_ai.tool.definitions
         brief: The list of tool definitions configured for the invoked remote agent.
       - ref: gen_ai.provider.name
-        requirement_level: required
+        requirement_level:
+          conditionally_required: If the GenAI provider of the agent service is known to the instrumentation.
         sampling_relevant: true
       - ref: gen_ai.operation.name
         annotations:
