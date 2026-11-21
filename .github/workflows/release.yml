@@ -1,0 +1,145 @@
+name: Release
+
+on:
+  pull_request:
+    types:
+      - closed
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    # Runs for merged pull requests labeled `release`. `workflow_dispatch`
+    # bypasses these checks and is the manual escape hatch when a release pull
+    # request was merged without triggering a release.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.pull_request.merged == true &&
+       contains(github.event.pull_request.labels.*.name, 'release'))
+    permissions:
+      contents: write # required for creating the tag and the GitHub release
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # The merge commit on main, not the pull request head.
+          ref: ${{ github.event.pull_request.merge_commit_sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Find the latest version in the change log
+        id: version
+        run: |
+          version=$(grep -m1 '^## v' CHANGELOG.md | sed 's/^## v//' || true)
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "no version section found in CHANGELOG.md, see RELEASING.md"
+            exit 1
+          fi
+          if git rev-parse -q --verify "refs/tags/v${version}" > /dev/null; then
+            echo "v${version} is already tagged, the change log was not updated for this release"
+            exit 1
+          fi
+          if [[ "$(make -s print-version)" != "$version" ]] || ! grep -q '^schema_url: .*/semconv-genai-dev/.*-dev$' model/manifest.yaml; then
+            echo "model/manifest.yaml schema_url doesn't match v${version}, see RELEASING.md"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Generate release notes
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          awk -v heading="## v${VERSION}" '$0 == heading { found = 1; next } /^## / { found = 0 } found' CHANGELOG.md > /tmp/release-notes.md
+          cat /tmp/release-notes.md
+
+      - name: Load shared version pins
+        id: versions
+        uses: $/.github/actions/load-version-pins
+
+      - name: Install Weaver
+        uses: open-telemetry/weaver/.github/actions/setup-weaver@f8e1b42fbd1e09df5263c26b7df6011eaafd454d
+        with:
+          version: '${{ steps.versions.outputs.weaver_version }}'
+
+      - name: Package registry
+        run: make package-dev
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+          TARGET: ${{ github.event.pull_request.merge_commit_sha || github.sha }}
+        run: |
+          gh release create "v${VERSION}" \
+            .build/package/manifest-dev.yaml \
+            .build/package/registry-dev.yaml \
+            --target "$TARGET" \
+            --title "v${VERSION}" \
+            --notes-file /tmp/release-notes.md
+
+  # Runs here rather than on `release: published` because releases created
+  # with github.token don't trigger other workflows.
+  bump-schema-url:
+    needs: release
+    permissions:
+      contents: write # required for pushing the bump branch
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          # zizmor: ignore[artipacked] Credentials are required by the branch push below.
+          persist-credentials: true
+
+      - name: Use CLA approved github bot
+        run: .github/scripts/use-cla-approved-github-bot.sh
+
+      # Releases are cut from main, so main always moves to the next minor.
+      - name: Bump schema_url
+        env:
+          VERSION: ${{ needs.release.outputs.version }}
+        run: |
+          # A late re-run must not roll back a main that has already moved on.
+          if ! grep -q "^schema_url: .*/semconv-genai-dev/${VERSION}-dev$" model/manifest.yaml; then
+            echo "main no longer has the v${VERSION} schema_url, skipping"
+            exit 0
+          fi
+          IFS=. read -r major minor _ <<< "$VERSION"
+          next_version="$major.$((minor + 1)).0"
+          echo "NEXT_VERSION=$next_version" >> "$GITHUB_ENV"
+          make set-schema-url-unreleased VERSION="$next_version"
+
+      - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        id: otelbot-token
+        with:
+          client-id: ${{ vars.OTELBOT_SEMANTIC_CONVENTIONS_GENAI_CLIENT_ID }}
+          private-key: ${{ secrets.OTELBOT_SEMANTIC_CONVENTIONS_GENAI_PRIVATE_KEY }}
+          permission-pull-requests: write
+
+      - name: Create pull request
+        env:
+          # Use the App token for PR creation so the pull request runs workflows.
+          GH_TOKEN: ${{ steps.otelbot-token.outputs.token }}
+          VERSION: ${{ needs.release.outputs.version }}
+        run: |
+          if git diff --quiet; then
+            echo "schema_url already up to date"
+            exit 0
+          fi
+          message="[chore] Bump schema_url to ${NEXT_VERSION}-unreleased"
+          branch="otelbot/bump-schema-url-${NEXT_VERSION}"
+
+          git checkout -b "$branch"
+          git commit -a -m "$message"
+          # --force lets a re-run replace the branch left by a failed attempt.
+          git push --force --set-upstream origin "$branch"
+          gh pr create --title "$message" \
+                       --body "Post-release update for \`v${VERSION}\`." \
+                       --head "$branch" \
+                       --base main

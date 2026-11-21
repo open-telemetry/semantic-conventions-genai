@@ -3,7 +3,7 @@ name = "cohere-reference-test"
 version = "0.0.0"
 requires-python = ">=3.12"
 dependencies = [
-    "cohere==7.2.0",
+    "cohere==7.3.2",
     "genai-reference-shared",
 ]
 
