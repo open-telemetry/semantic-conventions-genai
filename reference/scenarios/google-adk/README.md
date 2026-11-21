@@ -28,6 +28,9 @@ tool executes. The transfer records `pass_control`; the target's separate
 | memory | Yes — memory service upsert / search | ✅ Implemented |
 | skills | Yes — `SkillToolset` runs the skill tools | ✅ Implemented |
 
+Agent and runner invocations use the recommended `gen_ai.invoke_agent.duration`
+boundaries, including the 6-hour boundary at 21600 seconds.
+
 The tool execution error handlers record a correlated
 `gen_ai.execute_tool.exception` WARN log. This scenario does not exercise those paths.
 
