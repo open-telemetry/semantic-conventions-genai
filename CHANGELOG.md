@@ -72,8 +72,8 @@ semantic-conventions v1.45.0.
 - Rename the `gen_ai.provider.name` value `mistral_ai` to `mistral` to match
   Mistral's brand name.
   ([#506](https://github.com/open-telemetry/semantic-conventions-genai/pull/506))
-- Add `gen_ai.client.inference.duration` metric, consolidate inference client
-  span, events and metrics in `client-inference.md`.
+- Add the `gen_ai.client.inference.duration` metric. Rename the registry span
+  type from `gen_ai.inference.client` to `gen_ai.client.inference`.
 
   Inference operations are no longer reported on
   `gen_ai.client.operation.duration`; use `gen_ai.client.inference.duration`
@@ -83,8 +83,9 @@ semantic-conventions v1.45.0.
   `gen_ai.client.inference.time_per_output_chunk`.
   ([#521](https://github.com/open-telemetry/semantic-conventions-genai/pull/521))
 - Add `gen_ai.client.embeddings.duration` and
-  `gen_ai.client.embeddings.operation.input_tokens` metrics, consolidate
-  embeddings client span and metrics in `client-embeddings.md`.
+  `gen_ai.client.embeddings.operation.input_tokens` metrics. Rename the
+  registry span type from `gen_ai.embeddings.client` to
+  `gen_ai.client.embeddings`.
 
   Embeddings operations are no longer reported on
   `gen_ai.client.operation.duration`; use `gen_ai.client.embeddings.duration`
@@ -105,7 +106,8 @@ semantic-conventions v1.45.0.
 - Require structured values for JSON-schema-defined attributes on spans and
   events, removing the JSON-string fallback for spans.
   ([#634](https://github.com/open-telemetry/semantic-conventions-genai/pull/634))
-- Add `gen_ai.client.invoke_agent.duration` metric.
+- Add the `gen_ai.client.invoke_agent.duration` metric. Rename the registry
+  span type from `gen_ai.invoke_agent.client` to `gen_ai.client.invoke_agent`.
 
   Invoke agent client operations are no longer reported on
   `gen_ai.client.operation.duration`; use
@@ -113,8 +115,8 @@ semantic-conventions v1.45.0.
   ([#635](https://github.com/open-telemetry/semantic-conventions-genai/pull/635))
 - Execute tool operations are no longer reported on
   `gen_ai.client.operation.duration`; use `gen_ai.execute_tool.duration`
-  instead. Consolidate execute tool span, specialized tool call span, and
-  duration metric conventions in `execute-tool.md`.
+  instead. Rename the registry span type from `gen_ai.execute_tool.internal`
+  to `gen_ai.execute_tool`.
   ([#636](https://github.com/open-telemetry/semantic-conventions-genai/pull/636))
 - Retrieval operations are no longer reported on
   `gen_ai.client.operation.duration`.
@@ -257,8 +259,10 @@ semantic-conventions v1.45.0.
   only if the model or provider supplied an identifier.
   ([#489](https://github.com/open-telemetry/semantic-conventions-genai/issues/489))
   ([#525](https://github.com/open-telemetry/semantic-conventions-genai/pull/525))
-- Define and formalize GenAI content capture and external storage upload
-  configuration options.
+- Standardize GenAI content capture and external storage upload configuration.
+  `OTEL_INSTRUMENTATION_GENAI_CAPTURE_CONTENT` defaults to `NO_CONTENT`. Use
+  `SPAN_ONLY`, `EVENT_ONLY`, or `SPAN_AND_EVENT` to opt in to content capture.
+  Configure external storage uploads separately.
   ([#543](https://github.com/open-telemetry/semantic-conventions-genai/pull/543))
 - Add the `invoke_runner` operation name and the
   `invoke_{framework_entrypoint}` operation name pattern, and extend the
