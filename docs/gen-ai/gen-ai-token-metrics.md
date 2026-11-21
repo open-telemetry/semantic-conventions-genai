@@ -113,7 +113,7 @@ histogram, and total token usage can be computed from it.
 **[1]:** This metric SHOULD be reported when an operation involves the usage of tokens and the count is readily available.
 When systems report both used tokens and billable tokens, instrumentation MUST report billable tokens.
 See `gen_ai.token.modality` attribute for how to split tokens by modality.
-Instrumentation SHOULD record contributions from successful and failed inference operations. Each measurement MUST be a known, strictly positive modality contribution.
+Instrumentation SHOULD record contributions from successful and failed inference operations when each operation ends, not as stream updates arrive. Each measurement MUST be a known, strictly positive modality contribution.
 When a contribution's modality cannot reliably be determined, instrumentation MUST set `gen_ai.token.modality` to `unknown`.
 
 **Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/general/signal-requirement-level.md).
@@ -260,7 +260,7 @@ reported following their own conventions.
 **[1]:** This metric SHOULD be reported when an operation involves the usage of tokens and the count is readily available.
 When systems report both used tokens and billable tokens, instrumentation MUST report billable tokens.
 See `gen_ai.token.modality` attribute for how to split tokens by modality.
-Instrumentation SHOULD record contributions from successful and failed inference operations. Each measurement MUST be a known, strictly positive modality contribution.
+Instrumentation SHOULD record contributions from successful and failed inference operations when each operation ends, not as stream updates arrive. Each measurement MUST be a known, strictly positive modality contribution.
 When a contribution's modality cannot reliably be determined, instrumentation MUST set `gen_ai.token.modality` to `unknown`.
 
 **Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/general/signal-requirement-level.md).
@@ -405,7 +405,7 @@ reported following their own conventions.
 | `gen_ai.client.inference.usage.cache_read.input_tokens` | Counter | `{token}` | The number of input tokens served from a provider-managed cache. [1] | ![Development](https://img.shields.io/badge/-development-blue) | |
 
 **[1]:** This value is a subset of `gen_ai.client.inference.usage.input_tokens`.
-Instrumentation SHOULD record contributions from successful and failed inference operations. Each measurement MUST be a known, strictly positive modality contribution.
+Instrumentation SHOULD record contributions from successful and failed inference operations when each operation ends, not as stream updates arrive. Each measurement MUST be a known, strictly positive modality contribution.
 When a contribution's modality cannot reliably be determined, instrumentation MUST set `gen_ai.token.modality` to `unknown`.
 
 **Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/general/signal-requirement-level.md).
@@ -550,7 +550,7 @@ reported following their own conventions.
 | `gen_ai.client.inference.usage.cache_write.input_tokens` | Counter | `{token}` | The number of input tokens written to a provider-managed cache. [1] | ![Development](https://img.shields.io/badge/-development-blue) | |
 
 **[1]:** This value is a subset of `gen_ai.client.inference.usage.input_tokens`.
-Instrumentation SHOULD record contributions from successful and failed inference operations. Each measurement MUST be a known, strictly positive modality contribution.
+Instrumentation SHOULD record contributions from successful and failed inference operations when each operation ends, not as stream updates arrive. Each measurement MUST be a known, strictly positive modality contribution.
 When a contribution's modality cannot reliably be determined, instrumentation MUST set `gen_ai.token.modality` to `unknown`.
 
 **Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/general/signal-requirement-level.md).
@@ -695,7 +695,7 @@ reported following their own conventions.
 | `gen_ai.client.inference.usage.reasoning.output_tokens` | Counter | `{token}` | The number of output tokens used for reasoning (e.g. chain-of-thought, extended thinking). [1] | ![Development](https://img.shields.io/badge/-development-blue) | |
 
 **[1]:** This value is a subset of `gen_ai.client.inference.usage.output_tokens`.
-Instrumentation SHOULD record contributions from successful and failed inference operations. Each measurement MUST be a known, strictly positive reasoning token count.
+Instrumentation SHOULD record contributions from successful and failed inference operations when each operation ends, not as stream updates arrive. Each measurement MUST be a known, strictly positive reasoning token count.
 
 **Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/general/signal-requirement-level.md).
 
@@ -822,7 +822,7 @@ This metric SHOULD be specified with [ExplicitBucketBoundaries] of [1, 4, 16, 64
 For example, if GenAI system returns usage information in the streaming response, it SHOULD be used. Or if GenAI system returns each token independently, instrumentation SHOULD count number of output tokens and record the result.
 If instrumentation cannot efficiently obtain number of input and/or output tokens, it MAY allow users to enable offline token counting. Otherwise it MUST NOT report usage metrics.
 When systems report both used tokens and billable tokens, instrumentation MUST report billable tokens.
-Instrumentations SHOULD record this metric for each inference operation, including failed ones. The recorded value SHOULD match the token count returned by the provider, or `0` if the response was not received or did not contain token usage.
+Instrumentations SHOULD record this metric once for each inference operation, including failed ones, when the operation ends. The recorded value SHOULD match the token count returned by the provider, including a partial count from a stream that ended early, or `0` if the response was not received or did not contain token usage.
 
 **Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/general/signal-requirement-level.md).
 
@@ -963,7 +963,7 @@ This metric SHOULD be specified with [ExplicitBucketBoundaries] of [1, 4, 16, 64
 For example, if GenAI system returns usage information in the streaming response, it SHOULD be used. Or if GenAI system returns each token independently, instrumentation SHOULD count number of output tokens and record the result.
 If instrumentation cannot efficiently obtain number of input and/or output tokens, it MAY allow users to enable offline token counting. Otherwise it MUST NOT report usage metrics.
 When systems report both used tokens and billable tokens, instrumentation MUST report billable tokens.
-Instrumentations SHOULD record this metric for each inference operation, including failed ones. The recorded value SHOULD match the token count returned by the provider, or `0` if the response was not received or did not contain token usage.
+Instrumentations SHOULD record this metric once for each inference operation, including failed ones, when the operation ends. The recorded value SHOULD match the token count returned by the provider, including a partial count from a stream that ended early, or `0` if the response was not received or did not contain token usage.
 
 **Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/general/signal-requirement-level.md).
 

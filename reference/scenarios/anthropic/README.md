@@ -11,6 +11,9 @@ input messages, output messages, and tool definitions.
 The scenario publishes inference durations from `opentelemetry-util-genai`
 under `gen_ai.client.inference.duration` using an OTel SDK view.
 
+A streaming scenario closes the stream after the first text and keeps the token
+usage reported in `message_start`.
+
 The same client also drives the **Managed Agents** service (`beta.agents`,
 `beta.sessions`, `beta.memory_stores`), where agents run server-side. The client
 owns the create-agent and invoke-agent client operations; the agent's reasoning,

@@ -15,7 +15,8 @@ metrics:
       See `gen_ai.token.modality` attribute for how to split tokens by modality.
 
       Instrumentation SHOULD record contributions from successful and failed
-      inference operations. Each measurement MUST be a known, strictly positive
+      inference operations when each operation ends, not as stream updates
+      arrive. Each measurement MUST be a known, strictly positive
       modality contribution.
 
       When a contribution's modality cannot reliably be determined,
@@ -55,7 +56,8 @@ metrics:
       This value is a subset of `gen_ai.client.inference.usage.input_tokens`.
 
       Instrumentation SHOULD record contributions from successful and failed
-      inference operations. Each measurement MUST be a known, strictly positive
+      inference operations when each operation ends, not as stream updates
+      arrive. Each measurement MUST be a known, strictly positive
       modality contribution.
 
       When a contribution's modality cannot reliably be determined,
@@ -79,7 +81,8 @@ metrics:
       This value is a subset of `gen_ai.client.inference.usage.input_tokens`.
 
       Instrumentation SHOULD record contributions from successful and failed
-      inference operations. Each measurement MUST be a known, strictly positive
+      inference operations when each operation ends, not as stream updates
+      arrive. Each measurement MUST be a known, strictly positive
       modality contribution.
 
       When a contribution's modality cannot reliably be determined,
@@ -103,7 +106,8 @@ metrics:
       This value is a subset of `gen_ai.client.inference.usage.output_tokens`.
 
       Instrumentation SHOULD record contributions from successful and failed
-      inference operations. Each measurement MUST be a known, strictly positive
+      inference operations when each operation ends, not as stream updates
+      arrive. Each measurement MUST be a known, strictly positive
       reasoning token count.
     stability: development
     annotations:
@@ -132,10 +136,11 @@ metrics:
 
       When systems report both used tokens and billable tokens, instrumentation MUST report billable tokens.
 
-      Instrumentations SHOULD record this metric for each inference operation,
-      including failed ones. The recorded value SHOULD match the token count
-      returned by the provider, or `0` if the response was not received or
-      did not contain token usage.
+      Instrumentations SHOULD record this metric once for each inference
+      operation, including failed ones, when the operation ends. The recorded
+      value SHOULD match the token count returned by the provider, including a
+      partial count from a stream that ended early, or `0` if the response was
+      not received or did not contain token usage.
     stability: development
     annotations:
       code_generation:

@@ -203,6 +203,60 @@ def run_chat(handler):
         print(f"    -> {first_block.type}")
 
 
+def run_chat_streaming_closed_early(handler):
+    """Scenario: streamed chat that the caller closes before the final usage event."""
+    print("  [chat_streaming] streamed chat closed early (util-genai handler)")
+    request_model = "claude-sonnet-4-20250514"
+    request_max_tokens = 100
+    messages = [{"role": "user", "content": "Say hello."}]
+    client = anthropic.Anthropic(base_url=MOCK_BASE_URL, api_key="mock-key")
+
+    host, port = mock_server_host_port(MOCK_BASE_URL)
+    with handler.inference(
+        provider="anthropic",
+        request_model=request_model,
+        server_address=host,
+        server_port=port,
+    ) as inv:
+        inv.max_tokens = request_max_tokens  # -> gen_ai.request.max_tokens
+        inv.attributes["gen_ai.request.stream"] = True  # -> gen_ai.request.stream
+
+        text = ""
+        with client.messages.create(
+            model=request_model,
+            max_tokens=request_max_tokens,
+            messages=messages,
+            stream=True,
+        ) as stream:
+            for event in stream:
+                if event.type == "message_start":
+                    inv.response_model_name = event.message.model  # -> gen_ai.response.model
+                    inv.response_id = event.message.id  # -> gen_ai.response.id
+                    usage = event.message.usage
+                    cache_creation = usage.cache_creation_input_tokens or 0
+                    cache_read = usage.cache_read_input_tokens or 0
+                    inv.input_tokens = usage.input_tokens + cache_creation + cache_read  # -> gen_ai.usage.input_tokens
+                    inv.output_tokens = usage.output_tokens  # -> gen_ai.usage.output_tokens
+                    if cache_creation:
+                        inv.attributes["gen_ai.usage.cache_write.input_tokens"] = (
+                            cache_creation  # -> gen_ai.usage.cache_write.input_tokens
+                        )
+                    if cache_read:
+                        inv.cache_read_input_tokens = cache_read  # -> gen_ai.usage.cache_read.input_tokens
+                elif event.type == "content_block_delta" and event.delta.type == "text_delta":
+                    text = event.delta.text
+                    # The caller stops reading here, before `message_delta` reports the final output usage.
+                    break
+
+        if text:
+            inv.output_messages = [  # -> gen_ai.output.messages
+                OutputMessage(role="assistant", parts=[Text(content=text)])
+            ]
+        record_inference_usage(inv, request_model, host, port)
+
+    print(f"    -> {text[:60]}")
+
+
 def _has_compaction_block_in_input(messages):
     """Return True if any input message contains a compaction content block."""
     for message in messages:
@@ -616,6 +670,7 @@ def main():
     )
 
     run_chat(handler)
+    run_chat_streaming_closed_early(handler)
     run_compaction(handler)
     run_chat_with_document_input(handler)
     run_chat_with_image_input(handler)
