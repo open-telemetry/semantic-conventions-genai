@@ -53,7 +53,7 @@
 | <a id="gen-ai-request-temperature" href="#gen-ai-request-temperature">`gen_ai.request.temperature`</a> | ![Development](https://img.shields.io/badge/-development-blue) | double | The temperature setting for the GenAI request. | `0.0` |
 | <a id="gen-ai-request-top-k" href="#gen-ai-request-top-k">`gen_ai.request.top_k`</a> | ![Development](https://img.shields.io/badge/-development-blue) | int | The top-K sampling setting for the GenAI request: restricts token generation at each step to the K most likely next tokens. [28] | `40` |
 | <a id="gen-ai-request-top-p" href="#gen-ai-request-top-p">`gen_ai.request.top_p`</a> | ![Development](https://img.shields.io/badge/-development-blue) | double | The top_p sampling setting for the GenAI request. | `1.0` |
-| <a id="gen-ai-response-finish-reasons" href="#gen-ai-response-finish-reasons">`gen_ai.response.finish_reasons`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string[] | Array of reasons the model stopped generating tokens, corresponding to each generation received. [29] | `["stop"]`; `["stop", "length"]`; `["stop", "length", "error"]` |
+| <a id="gen-ai-response-finish-reasons" href="#gen-ai-response-finish-reasons">`gen_ai.response.finish_reasons`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string[] | Array of reasons the model stopped generating tokens, corresponding to each generation received. [29] | `["stop"]`; `["stop", "length"]`; `["stop", "length", "error"]`; `["interrupted"]` |
 | <a id="gen-ai-response-id" href="#gen-ai-response-id">`gen_ai.response.id`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The unique identifier for the completion. | `chatcmpl-123` |
 | <a id="gen-ai-response-model" href="#gen-ai-response-model">`gen_ai.response.model`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The name of the model that generated the response. | `gpt-4-0613` |
 | <a id="gen-ai-response-status" href="#gen-ai-response-status">`gen_ai.response.status`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The lifecycle status of a generated response, as reported by the provider when the response is fetched or polled. [30] | `completed`; `in_progress` |
@@ -292,10 +292,9 @@ For interrupted generations, instrumentations SHOULD report the
 provider-reported interruption reason when available and `interrupted` otherwise.
 
 Each position SHOULD contain the finish reason for the corresponding
-choice/candidate. If a finish reason was expected but not received, for
-example because generation failed, was cancelled, or a stream ended before
-the final event, instrumentations SHOULD report `error` for that position
-instead of omitting it.
+choice/candidate. If none was received, instrumentations SHOULD report
+`interrupted` when the caller closes or disposes of the stream without an error and
+`error` if generation fails or the stream ends unexpectedly.
 
 `error` indicates that the generation ended abnormally, whether reported
 by the provider or inferred by the instrumentation.

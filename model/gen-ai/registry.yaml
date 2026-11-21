@@ -222,10 +222,9 @@ attributes:
       provider-reported interruption reason when available and `interrupted` otherwise.
 
       Each position SHOULD contain the finish reason for the corresponding
-      choice/candidate. If a finish reason was expected but not received, for
-      example because generation failed, was cancelled, or a stream ended before
-      the final event, instrumentations SHOULD report `error` for that position
-      instead of omitting it.
+      choice/candidate. If none was received, instrumentations SHOULD report
+      `interrupted` when the caller closes or disposes of the stream without an error and
+      `error` if generation fails or the stream ends unexpectedly.
 
       `error` indicates that the generation ended abnormally, whether reported
       by the provider or inferred by the instrumentation.
@@ -233,6 +232,7 @@ attributes:
       - [stop]
       - [stop, length]
       - [stop, length, error]
+      - [interrupted]
     stability: development
   - key: gen_ai.response.status
     type:
