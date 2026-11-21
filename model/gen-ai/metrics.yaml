@@ -315,15 +315,6 @@ metrics:
       - ref_group: attributes.gen_ai.retrieval.common
 
 metric_refinements:
-  - id: openai.client.operation.duration
-    ref: gen_ai.client.operation.duration
-    brief: >
-      OpenAI-specific extension to `gen_ai.client.operation.duration`. Adds
-      `openai.response.service_tier` and `openai.response.system_fingerprint`
-      when the provider is `openai`.
-    stability: development
-    attributes:
-      - ref_group: metric_attributes.openai
   - id: openai.gen_ai.client.inference.duration
     ref: gen_ai.client.inference.duration
     brief: >
