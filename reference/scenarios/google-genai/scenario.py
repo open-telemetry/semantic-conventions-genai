@@ -227,7 +227,7 @@ def _usage_attributes(um):
 def _usage_metric_attributes(request_model, response):
     """Build the attributes shared by every inference usage instrument."""
     attributes = {
-        "gen_ai.operation.name": "chat",
+        "gen_ai.operation.name": "generate_content",
         "gen_ai.provider.name": "gcp.gemini",
         "gen_ai.request.model": request_model,
     }
@@ -276,7 +276,7 @@ def _record_inference_usage(usage, metric_attributes):
 def _emit_inference_event(request_model, input_messages, output_messages, response, usage):
     """Emit an inference-details event carrying the same usage attributes as the span."""
     event_attrs = {
-        "gen_ai.operation.name": "chat",
+        "gen_ai.operation.name": "generate_content",
         "gen_ai.provider.name": "gcp.gemini",
         "gen_ai.request.model": request_model,
         "gen_ai.input.messages": input_messages,
@@ -309,13 +309,13 @@ def run_chat():
     )
     request_model = "gemini-2.0-flash"
     span_attributes = {
-        "gen_ai.operation.name": "chat",
+        "gen_ai.operation.name": "generate_content",
         "gen_ai.provider.name": "gcp.gemini",
         "gen_ai.request.model": request_model,
         "server.address": _SERVER_ADDRESS,
     }
     with _reference_tracer.start_as_current_span(
-        "chat gemini-2.0-flash", kind=SpanKind.CLIENT, attributes=span_attributes
+        "generate_content gemini-2.0-flash", kind=SpanKind.CLIENT, attributes=span_attributes
     ) as span:
         prompt_text = "Say hello."
         response = client.models.generate_content(
@@ -537,7 +537,7 @@ def run_chat_tool_call():
 
     tools = [get_weather]
     span_attributes_2 = {
-        "gen_ai.operation.name": "chat",
+        "gen_ai.operation.name": "generate_content",
         "gen_ai.provider.name": "gcp.gemini",
         "gen_ai.request.model": request_model,
         "server.address": _SERVER_ADDRESS,
@@ -545,7 +545,7 @@ def run_chat_tool_call():
     with (
         _patch_automatic_function_calling(),
         _reference_tracer.start_as_current_span(
-            "chat gemini-2.0-flash", kind=SpanKind.CLIENT, attributes=span_attributes_2
+            "generate_content gemini-2.0-flash", kind=SpanKind.CLIENT, attributes=span_attributes_2
         ) as span,
     ):
         span.set_attribute(
@@ -615,13 +615,13 @@ def run_chat_multimodal():
     # Payload bytes are ignored by the mock, which only inspects the MIME type.
     blob = b"\x00" * 16
     span_attributes = {
-        "gen_ai.operation.name": "chat",
+        "gen_ai.operation.name": "generate_content",
         "gen_ai.provider.name": "gcp.gemini",
         "gen_ai.request.model": request_model,
         "server.address": _SERVER_ADDRESS,
     }
     with _reference_tracer.start_as_current_span(
-        "chat gemini-2.0-flash", kind=SpanKind.CLIENT, attributes=span_attributes
+        "generate_content gemini-2.0-flash", kind=SpanKind.CLIENT, attributes=span_attributes
     ) as span:
         response = client.models.generate_content(
             model=request_model,
@@ -678,13 +678,13 @@ def run_generate_media():
     # (label, requested output modalities) -> exercises image and audio output token counts.
     for label, modalities in (("image", ["TEXT", "IMAGE"]), ("audio", ["AUDIO"])):
         span_attributes = {
-            "gen_ai.operation.name": "chat",
+            "gen_ai.operation.name": "generate_content",
             "gen_ai.provider.name": "gcp.gemini",
             "gen_ai.request.model": request_model,
             "server.address": _SERVER_ADDRESS,
         }
         with _reference_tracer.start_as_current_span(
-            "chat gemini-2.0-flash", kind=SpanKind.CLIENT, attributes=span_attributes
+            "generate_content gemini-2.0-flash", kind=SpanKind.CLIENT, attributes=span_attributes
         ) as span:
             response = client.models.generate_content(
                 model=request_model,
@@ -745,13 +745,13 @@ def run_chat_streaming():
     )
     request_model = "gemini-2.0-flash"
     span_attributes_3 = {
-        "gen_ai.operation.name": "chat",
+        "gen_ai.operation.name": "generate_content",
         "gen_ai.provider.name": "gcp.gemini",
         "gen_ai.request.model": request_model,
         "server.address": _SERVER_ADDRESS,
     }
     with _reference_tracer.start_as_current_span(
-        "chat gemini-2.0-flash", kind=SpanKind.CLIENT, attributes=span_attributes_3
+        "generate_content gemini-2.0-flash", kind=SpanKind.CLIENT, attributes=span_attributes_3
     ) as span:
         text = ""
         model_version = None
