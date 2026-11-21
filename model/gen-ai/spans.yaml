@@ -694,8 +694,7 @@ spans:
 
       `gen_ai.provider.name` identifies the GenAI provider of the agent service,
       for example `openai` or `aws.bedrock`. Instrumentation SHOULD NOT set it
-      to a protocol or framework name, such as `a2a`, or to the platform that
-      runs a self-hosted agent.
+      to a protocol or framework name, such as `a2a`.
 
       For local agent invocations, refer to the
       `gen_ai.invoke_agent.internal` span.
