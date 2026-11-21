@@ -19,6 +19,10 @@
     ],
     "gen_ai.execute_tool": [
       "gen_ai.operation.name",
+      "gen_ai.skill.description",
+      "gen_ai.skill.name",
+      "gen_ai.skill.resource.name",
+      "gen_ai.skill.source.uri",
       "gen_ai.tool.call.arguments",
       "gen_ai.tool.call.id",
       "gen_ai.tool.call.result",

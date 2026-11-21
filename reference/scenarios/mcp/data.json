@@ -73,28 +73,5 @@
     ]
   },
   "entities": {},
-  "findings": [
-    {
-      "id": "genai_span_name_format",
-      "message": "execute_tool span name should be 'execute_tool get_weather', got 'tools/call get_weather'",
-      "signal_type": "span",
-      "signal_name": "tools/call get_weather",
-      "context": {
-        "expected_form": "execute_tool get_weather",
-        "keyed_attr": "gen_ai.tool.name",
-        "operation": "execute_tool"
-      }
-    },
-    {
-      "id": "genai_span_name_format",
-      "message": "execute_tool span name should be 'execute_tool missing_tool', got 'tools/call missing_tool'",
-      "signal_type": "span",
-      "signal_name": "tools/call missing_tool",
-      "context": {
-        "expected_form": "execute_tool missing_tool",
-        "keyed_attr": "gen_ai.tool.name",
-        "operation": "execute_tool"
-      }
-    }
-  ]
+  "findings": []
 }
