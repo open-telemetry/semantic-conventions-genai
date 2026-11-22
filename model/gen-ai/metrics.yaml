@@ -8,6 +8,22 @@ attribute_groups:
       - ref: gen_ai.response.model
         requirement_level: recommended
 
+  - id: metric_attributes.gen_ai.inference
+    visibility: internal
+    attributes:
+      - ref_group: attributes.gen_ai.address_and_port
+      - ref_group: attributes.gen_ai.common
+      - ref: gen_ai.operation.name
+        annotations:
+          markdown:
+            omit_enum_table: true
+        requirement_level: required
+        examples: ["chat", "generate_content", "text_completion"]
+        note: >
+          SHOULD be one of `chat`, `generate_content`, or `text_completion`, or a custom non-realtime inference operation name.
+      - ref: gen_ai.response.model
+        requirement_level: recommended
+
   - id: metric_attributes.openai
     visibility: internal
     attributes:
@@ -24,7 +40,13 @@ attribute_groups:
     visibility: internal
     attributes:
       - ref: gen_ai.operation.name
+        annotations:
+          markdown:
+            omit_enum_table: true
         requirement_level: required
+        examples: ["invoke_agent", "invoke_workflow", "invoke_runner"]
+        note: >
+          SHOULD be `invoke_agent`, `invoke_workflow`, or `invoke_{framework_entrypoint}` (for example, `invoke_runner`), matching the corresponding `gen_ai.invoke_agent.internal` span.
       - ref: gen_ai.agent.name
         requirement_level:
           conditionally_required: When available.
@@ -36,11 +58,17 @@ metrics:
     unit: "s"
     brief: 'GenAI operation duration.'
     note: >
-      This metric SHOULD NOT be reported for inference, embeddings, execute tool, or invoke agent client
-      operations; use `gen_ai.client.inference.duration`, `gen_ai.client.embeddings.duration`,
-      `gen_ai.execute_tool.duration`, or `gen_ai.client.invoke_agent.duration` instead.
+      Applies only to client operations that do not have a dedicated duration metric:
+      `create_agent`, `fetch_response`, `create_memory_store`, `search_memory`,
+      `create_memory`, `update_memory`, `upsert_memory`, `delete_memory`, and
+      `delete_memory_store`.
 
-      This metric SHOULD NOT be reported for retrieval operations.
+      Instrumentations SHOULD NOT report this metric for other operations (for
+      example, `realtime_inference` or `user_speech`), and SHOULD use dedicated
+      metrics for inference (`gen_ai.client.inference.duration`), embeddings
+      (`gen_ai.client.embeddings.duration`), execute tool
+      (`gen_ai.execute_tool.duration`), retrieval (`gen_ai.retrieval.duration`),
+      and client invoke agent (`gen_ai.client.invoke_agent.duration`).
     stability: development
     annotations:
       code_generation:
@@ -48,6 +76,17 @@ metrics:
     attributes:
       - ref_group: metric_attributes.gen_ai
       - ref_group: attributes.gen_ai.error
+      - ref: gen_ai.operation.name
+        annotations:
+          markdown:
+            omit_enum_table: true
+        requirement_level: required
+        examples: ["create_agent", "fetch_response", "search_memory"]
+        note: >
+          SHOULD be one of `create_agent`, `fetch_response`, `create_memory_store`,
+          `search_memory`, `create_memory`, `update_memory`, `upsert_memory`,
+          `delete_memory`, or `delete_memory_store`, or a custom operation name that
+          does not have a dedicated duration metric.
       - ref: gen_ai.provider.name
         requirement_level:
           conditionally_required: If the operation involves a call to a GenAI provider.
@@ -57,6 +96,10 @@ metrics:
     unit: "s"
     brief: 'GenAI client inference operation duration.'
     note: >
+      Applies only to non-realtime client inference operations (`chat`,
+      `generate_content`, `text_completion`) and SHOULD NOT be reported for
+      `realtime_inference` or other operations.
+
       Represents the end-to-end duration of a model inference operation,
       measured from when the client issues the inference request to when the
       response is fully received or the operation ends with an error or cancellation.
@@ -68,7 +111,7 @@ metrics:
       code_generation:
         metric_value_type: double
     attributes:
-      - ref_group: metric_attributes.gen_ai
+      - ref_group: metric_attributes.gen_ai.inference
       - ref_group: attributes.gen_ai.error
   - name: gen_ai.client.embeddings.duration
     requirement_level: recommended
@@ -130,6 +173,8 @@ metrics:
     unit: "s"
     brief: 'Time from the start of a logical inference operation to the first chunk in its streaming response.'
     note: |
+      Applies only to streaming non-realtime client inference operations (`chat`, `generate_content`, `text_completion`).
+
       Instrumentations SHOULD report this metric for streaming calls when the first chunk is received, SHOULD NOT report it for non-streaming calls, and MUST NOT report it if no chunk is received.
 
       The chunk definition and measurement boundaries are the same as for [`gen_ai.response.time_to_first_chunk`](/docs/registry/attributes/gen-ai.md#gen-ai-response-time-to-first-chunk).
@@ -138,7 +183,7 @@ metrics:
       code_generation:
         metric_value_type: double
     attributes:
-      - ref_group: metric_attributes.gen_ai
+      - ref_group: metric_attributes.gen_ai.inference
   - name: gen_ai.client.inference.time_per_output_chunk
     requirement_level: recommended
     instrument: histogram
@@ -146,18 +191,25 @@ metrics:
     brief: >
       Time per output chunk, recorded for each chunk received after the first one, measured as the time elapsed from the end of the previous chunk to the end of the current chunk.
     note: >
+      Applies only to streaming non-realtime client inference operations (`chat`,
+      `generate_content`, `text_completion`).
+
       This metric SHOULD be reported for streaming calls and SHOULD NOT be reported otherwise.
     stability: development
     annotations:
       code_generation:
         metric_value_type: double
     attributes:
-      - ref_group: metric_attributes.gen_ai
+      - ref_group: metric_attributes.gen_ai.inference
   - name: gen_ai.server.request.duration
     requirement_level: recommended
     instrument: histogram
     unit: "s"
     brief: 'Generative AI server request duration such as time-to-last byte or last output token.'
+    note: >
+      Applies only to model-serving operations (`chat`, `generate_content`,
+      `text_completion`, `embeddings`) and SHOULD NOT be reported for other
+      operations.
     stability: development
     annotations:
       code_generation:
@@ -165,28 +217,60 @@ metrics:
     attributes:
       - ref_group: metric_attributes.gen_ai
       - ref_group: attributes.gen_ai.error
+      - ref: gen_ai.operation.name
+        annotations:
+          markdown:
+            omit_enum_table: true
+        requirement_level: required
+        examples: ["chat", "generate_content", "text_completion", "embeddings"]
+        note: >
+          SHOULD be one of `chat`, `generate_content`, `text_completion`, or `embeddings`, or a custom model-serving operation name.
   - name: gen_ai.server.time_per_output_token
     requirement_level: recommended
     instrument: histogram
     unit: "s"
     brief: 'Time per output token generated after the first token for successful responses.'
+    note: >
+      Applies only to server-side LLM inference operations (`chat`,
+      `generate_content`, `text_completion`) and SHOULD NOT be reported for
+      other operations.
     stability: development
     annotations:
       code_generation:
         metric_value_type: double
     attributes:
       - ref_group: metric_attributes.gen_ai
+      - ref: gen_ai.operation.name
+        annotations:
+          markdown:
+            omit_enum_table: true
+        requirement_level: required
+        examples: ["chat", "generate_content", "text_completion"]
+        note: >
+          SHOULD be one of `chat`, `generate_content`, or `text_completion`, or a custom LLM inference operation name.
   - name: gen_ai.server.time_to_first_token
     requirement_level: recommended
     instrument: histogram
     unit: "s"
     brief: 'Time to generate first token for successful responses.'
+    note: >
+      Applies only to server-side LLM inference operations (`chat`,
+      `generate_content`, `text_completion`) and SHOULD NOT be reported for
+      other operations.
     stability: development
     annotations:
       code_generation:
         metric_value_type: double
     attributes:
       - ref_group: metric_attributes.gen_ai
+      - ref: gen_ai.operation.name
+        annotations:
+          markdown:
+            omit_enum_table: true
+        requirement_level: required
+        examples: ["chat", "generate_content", "text_completion"]
+        note: >
+          SHOULD be one of `chat`, `generate_content`, or `text_completion`, or a custom LLM inference operation name.
   - name: gen_ai.invoke_agent.duration
     requirement_level: recommended
     annotations:
@@ -197,6 +281,11 @@ metrics:
       framework entrypoint invocation, from the moment the invocation starts until
       it emits the last chunk of its final response or terminates with an error.
     note: |
+      Applies only to in-process agent, workflow, and framework entrypoint
+      invocations (`invoke_agent`, `invoke_workflow`, or
+      `invoke_{framework_entrypoint}`, for example `invoke_runner`), and
+      SHOULD NOT be reported for other operations.
+
       Intended for instrumentations of agent frameworks (for example, ADK,
       LangChain agents, CrewAI agents) that can reliably bound a single
       agent, workflow, or framework entrypoint invocation.
@@ -213,7 +302,13 @@ metrics:
     attributes:
       - ref_group: attributes.gen_ai.error
       - ref: gen_ai.operation.name
+        annotations:
+          markdown:
+            omit_enum_table: true
         requirement_level: required
+        examples: ["invoke_agent", "invoke_workflow", "invoke_runner"]
+        note: >
+          SHOULD be `invoke_agent`, `invoke_workflow`, or `invoke_{framework_entrypoint}` (for example, `invoke_runner`), matching the corresponding `gen_ai.invoke_agent.internal` span.
       - ref_group: attributes.gen_ai.invoked_agent
       - ref: gen_ai.request.model
         requirement_level:
