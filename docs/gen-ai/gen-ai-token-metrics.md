@@ -48,6 +48,8 @@ sum(gen_ai.usage.input_tokens)
 > The same tokens can be reported on multiple types of spans: agent and
 > inference spans, or inference spans from gateways and different layers of
 > the inference infrastructure.
+>
+> Don't sum token usage across repeated fetches of the same response or add it to inference usage for the same generation.
 
 ## Inference token metrics
 

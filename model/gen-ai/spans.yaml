@@ -572,10 +572,10 @@ spans:
           cancelled generation to `error`.
       - ref: gen_ai.usage.input_tokens
         requirement_level:
-          recommended: If the fetched response carries token usage.
+          recommended: If the fetched response carries input token usage.
       - ref: gen_ai.usage.output_tokens
         requirement_level:
-          recommended: If the fetched response carries token usage.
+          recommended: If the fetched response carries output token usage.
       - ref: gen_ai.usage.cache_read.input_tokens
         requirement_level:
           recommended: When available and non-zero.
