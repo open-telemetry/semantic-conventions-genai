@@ -477,7 +477,7 @@
         },
         "ToolCallResponsePart": {
             "additionalProperties": true,
-            "description": "Represents a tool call result sent to the model or a built-in tool call outcome and details.",
+            "description": "Represents a tool call result sent to the model.",
             "properties": {
                 "type": {
                     "const": "tool_call_response",

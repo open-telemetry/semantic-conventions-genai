@@ -74,7 +74,7 @@ class ToolCallRequestPart(BaseModel):
 
 class ToolCallResponsePart(BaseModel):
     """
-    Represents a tool call result sent to the model or a built-in tool call outcome and details.
+    Represents a tool call result sent to the model.
     """
 
     type: Literal["tool_call_response"] = Field(
