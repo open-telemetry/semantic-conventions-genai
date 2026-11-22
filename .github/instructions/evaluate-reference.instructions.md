@@ -35,6 +35,9 @@ string was emitted.
 
 ## Also flag
 
+- a standalone test suite for a reference scenario. Keep checks in the
+  conformance run as described in the
+  [reference authoring instructions](../../reference/AGENTS.md).
 - a scenario that does not apply to a specific library
 - a scenario that instruments an arbitrary group of methods (i.e. span boundaries don't match specific library API)
 - a scenario that could emit an attribute or a signal but does not
