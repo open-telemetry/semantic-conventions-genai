@@ -20,7 +20,7 @@ attribute_groups:
         requirement_level: required
         examples: ["chat", "generate_content", "text_completion"]
         note: >
-          SHOULD be one of `chat`, `generate_content`, or `text_completion`, or a custom non-realtime inference operation name.
+          SHOULD be one of `chat`, `generate_content`, or `text_completion`.
       - ref: gen_ai.response.model
         requirement_level: recommended
 
@@ -85,8 +85,7 @@ metrics:
         note: >
           SHOULD be one of `create_agent`, `fetch_response`, `create_memory_store`,
           `search_memory`, `create_memory`, `update_memory`, `upsert_memory`,
-          `delete_memory`, or `delete_memory_store`, or a custom operation name that
-          does not have a dedicated duration metric.
+          `delete_memory`, or `delete_memory_store`.
       - ref: gen_ai.provider.name
         requirement_level:
           conditionally_required: If the operation involves a call to a GenAI provider.
@@ -224,7 +223,7 @@ metrics:
         requirement_level: required
         examples: ["chat", "generate_content", "text_completion", "embeddings"]
         note: >
-          SHOULD be one of `chat`, `generate_content`, `text_completion`, or `embeddings`, or a custom model-serving operation name.
+          SHOULD be one of `chat`, `generate_content`, `text_completion`, or `embeddings`.
   - name: gen_ai.server.time_per_output_token
     requirement_level: recommended
     instrument: histogram
@@ -247,7 +246,7 @@ metrics:
         requirement_level: required
         examples: ["chat", "generate_content", "text_completion"]
         note: >
-          SHOULD be one of `chat`, `generate_content`, or `text_completion`, or a custom LLM inference operation name.
+          SHOULD be one of `chat`, `generate_content`, or `text_completion`.
   - name: gen_ai.server.time_to_first_token
     requirement_level: recommended
     instrument: histogram
@@ -270,7 +269,7 @@ metrics:
         requirement_level: required
         examples: ["chat", "generate_content", "text_completion"]
         note: >
-          SHOULD be one of `chat`, `generate_content`, or `text_completion`, or a custom LLM inference operation name.
+          SHOULD be one of `chat`, `generate_content`, or `text_completion`.
   - name: gen_ai.invoke_agent.duration
     requirement_level: recommended
     annotations:
