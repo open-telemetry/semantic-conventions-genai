@@ -21,8 +21,6 @@ attribute_groups:
         annotations:
           markdown:
             omit_enum_table: true
-      - ref: gen_ai.response.service_tier
-        requirement_level: recommended
       - ref: openai.response.system_fingerprint
         requirement_level: recommended
 
