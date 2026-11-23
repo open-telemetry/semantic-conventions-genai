@@ -9,7 +9,12 @@
       "gen_ai.tool.call.result",
       "gen_ai.tool.description",
       "gen_ai.tool.name",
-      "gen_ai.tool.type"
+      "gen_ai.tool.type",
+      "gen_ai.transfer.mode",
+      "gen_ai.transfer.target.name",
+      "process.executable.name",
+      "process.executable.path",
+      "process.exit.code"
     ],
     "gen_ai.invoke_agent.internal": [
       "error.type",
