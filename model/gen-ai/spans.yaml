@@ -433,6 +433,9 @@ spans:
 
           When the provider reports both billed and model-consumed token counts,
           instrumentations SHOULD report the billed count.
+
+          The same tokens can be reported on multiple types of spans. See
+          [how to aggregate token usage](/docs/gen-ai/gen-ai-token-metrics.md#how-to-aggregate-token-usage).
       - ref: gen_ai.embeddings.dimension.count
         requirement_level: recommended
 
@@ -695,6 +698,10 @@ spans:
       AWS Bedrock Agents, Gemini Enterprise Agent Platform, Azure AI Foundry Agent
       Service, or an A2A endpoint.
 
+      `gen_ai.provider.name` identifies the GenAI provider of the agent service,
+      for example `openai` or `aws.bedrock`. Instrumentation SHOULD NOT set it
+      to a protocol or framework name, such as `a2a`.
+
       For local agent invocations, refer to the
       `gen_ai.invoke_agent.internal` span.
     stability: development
@@ -710,7 +717,8 @@ spans:
       - ref: gen_ai.tool.definitions
         brief: The list of tool definitions configured for the invoked remote agent.
       - ref: gen_ai.provider.name
-        requirement_level: required
+        requirement_level:
+          conditionally_required: If the GenAI provider of the agent service is known to the instrumentation.
         sampling_relevant: true
       - ref: gen_ai.operation.name
         annotations:
@@ -972,8 +980,11 @@ span_refinements:
       - ref: gen_ai.request.model
         requirement_level: required
       - ref: gen_ai.usage.input_tokens
-        note: >
+        note: |
           The total input token count is returned by `usage.input_tokens` or a similar property in the model response.
+
+          The same tokens can be reported on multiple types of spans. See
+          [how to aggregate token usage](/docs/gen-ai/gen-ai-token-metrics.md#how-to-aggregate-token-usage).
       - ref: gen_ai.usage.cache_read.input_tokens
         note: >
           Corresponds to `usage.input_tokens_details.cached_tokens` or a similar property in the model response.
@@ -1076,9 +1087,12 @@ span_refinements:
         note: >
           Corresponds to the [`output_config.effort`](https://docs.anthropic.com/en/docs/build-with-claude/effort) request parameter.
       - ref: gen_ai.usage.input_tokens
-        note: >
+        note: |
           Anthropic `input_tokens` excludes cached tokens. Compute:
           `gen_ai.usage.input_tokens = input_tokens + cache_read_input_tokens + cache_write_input_tokens`
+
+          The same tokens can be reported on multiple types of spans. See
+          [how to aggregate token usage](/docs/gen-ai/gen-ai-token-metrics.md#how-to-aggregate-token-usage).
       - ref: gen_ai.usage.cache_read.input_tokens
         note: >
           Anthropic reports this separately from `input_tokens`.

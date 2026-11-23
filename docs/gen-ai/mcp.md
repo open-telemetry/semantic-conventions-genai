@@ -126,7 +126,7 @@ or notification or by the MCP server when server initiates the operation.
 It covers the time to receive the response or ack from the peer.
 
 **Span status**: refer to the [Recording Errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/general/recording-errors.md)
-document for details on how to record span status. See also `rpc.response.status_code` attribute
+document for details on how to record span status. See also `rpc.status_code` attribute
 for the details on which values classify as errors.
 
 If the span status is set to `ERROR`, the status description SHOULD match the `JSONRPCError.message` if the message is available.
@@ -163,7 +163,7 @@ to avoid high cardinality span names.
 | [`gen_ai.tool.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When operation is related to a specific tool. | string | Name of the tool utilized by the agent. | `Flights` |
 | [`jsonrpc.request.id`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/jsonrpc.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When the client executes a request. | string | A string representation of the `id` property of the request and its corresponding response. [2] | `10`; `request-7` |
 | [`mcp.resource.uri`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [3] | string | The value of the resource uri. [4] | `postgres://database/customers/schema`; `file:///home/user/documents/report.pdf` |
-| [`rpc.response.status_code`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/rpc.md) | ![Deprecated](https://img.shields.io/badge/-deprecated-red)<br>Replaced by `rpc.status_code`. | `Conditionally Required` If response contains an error code. | string | The error code from the JSON-RPC response. [5] | `OK`; `DEADLINE_EXCEEDED`; `-32602` |
+| [`rpc.status_code`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/rpc.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If response contains an error code. | string | The error code from the JSON-RPC response. [5] | `OK`; `DEADLINE_EXCEEDED`; `-32602` |
 | [`gen_ai.operation.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` [6] | string | The name of the GenAI operation being performed. [7] | `execute_tool` |
 | [`jsonrpc.protocol.version`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/jsonrpc.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` When it's not `2.0`. | string | Protocol version, as specified in the `jsonrpc` property of the request and its corresponding response. | `2.0`; `1.0` |
 | [`mcp.protocol.version`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The [version](https://modelcontextprotocol.io/specification/versioning) of the Model Context Protocol used. | `2025-06-18` |
@@ -179,7 +179,7 @@ to avoid high cardinality span names.
 
 **[1] `error.type`:** When the response carries a JSON-RPC error code that classifies as an error,
 `error.type` SHOULD be set to the string representation of that code. See
-`rpc.response.status_code` for which codes classify as errors. When an HTTP
+`rpc.status_code` for which codes classify as errors. When an HTTP
 response ends the operation in error without a JSON-RPC error code,
 `error.type` SHOULD be set to the string representation of the HTTP status
 code. Otherwise (for example on timeouts or other transport errors), it SHOULD be
@@ -192,8 +192,8 @@ string representation of the error. When
 is returned with `isError` set to `true`, this attribute SHOULD be set to
 `tool_error`.
 
-`rpc.response.status_code` carries the same string representation of
-the JSON-RPC error code. Unlike `rpc.response.status_code`,
+`rpc.status_code` carries the same string representation of
+the JSON-RPC error code. Unlike `rpc.status_code`,
 `error.type` is also set when no JSON-RPC error response is available.
 
 **[2] `jsonrpc.request.id`:** Under the [JSON-RPC specification](https://www.jsonrpc.org/specification), the `id` property may be a string, number, null, or omitted entirely. When omitted, the request is treated as a notification. Using `null` is not equivalent to omitting the `id`, but it is discouraged.
@@ -203,7 +203,7 @@ Instrumentations SHOULD NOT capture this attribute when the `id` is `null` or om
 
 **[4] `mcp.resource.uri`:** This is a URI of the resource provided in the following requests or notifications: `resources/read`, `resources/subscribe`, `resources/unsubscribe`, or `notifications/resources/updated`.
 
-**[5] `rpc.response.status_code`:** This attribute records the [JSON-RPC error code](https://www.jsonrpc.org/specification#error_object)
+**[5] `rpc.status_code`:** This attribute records the [JSON-RPC error code](https://www.jsonrpc.org/specification#error_object)
 returned in the error response.
 
 All JSON-RPC error codes SHOULD be considered errors.
@@ -366,7 +366,7 @@ It's reported by the MCP server when client initiates the request
 (or notification) or by the MCP client when server initiates the operation.
 
 **Span status**: refer to the [Recording Errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/general/recording-errors.md)
-document for details on how to record span status. See also `rpc.response.status_code` attribute
+document for details on how to record span status. See also `rpc.status_code` attribute
 for the details on which values classify as errors.
 
 If the span status is set to `ERROR`, the status description SHOULD match the `JSONRPCError.message` if the message is available.
@@ -394,7 +394,7 @@ to avoid high cardinality span names.
 | [`gen_ai.tool.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When operation is related to a specific tool. | string | Name of the tool utilized by the agent. | `Flights` |
 | [`jsonrpc.request.id`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/jsonrpc.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When the client executes a request. | string | A string representation of the `id` property of the request and its corresponding response. [2] | `10`; `request-7` |
 | [`mcp.resource.uri`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [3] | string | The value of the resource uri. [4] | `postgres://database/customers/schema`; `file:///home/user/documents/report.pdf` |
-| [`rpc.response.status_code`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/rpc.md) | ![Deprecated](https://img.shields.io/badge/-deprecated-red)<br>Replaced by `rpc.status_code`. | `Conditionally Required` If response contains an error code. | string | The error code from the JSON-RPC response. [5] | `OK`; `DEADLINE_EXCEEDED`; `-32602` |
+| [`rpc.status_code`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/rpc.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If response contains an error code. | string | The error code from the JSON-RPC response. [5] | `OK`; `DEADLINE_EXCEEDED`; `-32602` |
 | [`client.address`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/client.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` If applicable. | string | Client address - domain name if available without reverse DNS lookup; otherwise, IP address or UNIX domain socket name. [6] | `client.example.com`; `10.1.2.80`; `/tmp/my.sock` |
 | [`client.port`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/client.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When `client.address` is set. | int | Client port number. [7] | `65123` |
 | [`gen_ai.operation.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` [8] | string | The name of the GenAI operation being performed. [9] | `execute_tool` |
@@ -410,7 +410,7 @@ to avoid high cardinality span names.
 
 **[1] `error.type`:** When the response carries a JSON-RPC error code that classifies as an error,
 `error.type` SHOULD be set to the string representation of that code. See
-`rpc.response.status_code` for which codes classify as errors. When an HTTP
+`rpc.status_code` for which codes classify as errors. When an HTTP
 response ends the operation in error without a JSON-RPC error code,
 `error.type` SHOULD be set to the string representation of the HTTP status
 code. Otherwise (for example on timeouts or other transport errors), it SHOULD be
@@ -423,8 +423,8 @@ string representation of the error. When
 is returned with `isError` set to `true`, this attribute SHOULD be set to
 `tool_error`.
 
-`rpc.response.status_code` carries the same string representation of
-the JSON-RPC error code. Unlike `rpc.response.status_code`,
+`rpc.status_code` carries the same string representation of
+the JSON-RPC error code. Unlike `rpc.status_code`,
 `error.type` is also set when no JSON-RPC error response is available.
 
 **[2] `jsonrpc.request.id`:** Under the [JSON-RPC specification](https://www.jsonrpc.org/specification), the `id` property may be a string, number, null, or omitted entirely. When omitted, the request is treated as a notification. Using `null` is not equivalent to omitting the `id`, but it is discouraged.
@@ -434,7 +434,7 @@ Instrumentations SHOULD NOT capture this attribute when the `id` is `null` or om
 
 **[4] `mcp.resource.uri`:** This is a URI of the resource provided in the following requests or notifications: `resources/read`, `resources/subscribe`, `resources/unsubscribe`, or `notifications/resources/updated`.
 
-**[5] `rpc.response.status_code`:** This attribute records the [JSON-RPC error code](https://www.jsonrpc.org/specification#error_object)
+**[5] `rpc.status_code`:** This attribute records the [JSON-RPC error code](https://www.jsonrpc.org/specification#error_object)
 returned in the error response.
 
 The following error codes indicate that the caller sent a request the
@@ -619,7 +619,7 @@ of `[ 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30, 60, 120, 300 ]`.
 | [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/error.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If and only if the operation fails. | string | Describes a class of error the operation ended with. [1] | `timeout`; `java.net.UnknownHostException`; `server_certificate_invalid`; `500` |
 | [`gen_ai.prompt.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When operation is related to a specific prompt. | string | The name of the prompt or prompt template provided in the request or response. | `analyze-code` |
 | [`gen_ai.tool.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When operation is related to a specific tool. | string | Name of the tool utilized by the agent. | `Flights` |
-| [`rpc.response.status_code`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/rpc.md) | ![Deprecated](https://img.shields.io/badge/-deprecated-red)<br>Replaced by `rpc.status_code`. | `Conditionally Required` If response contains an error code. | string | The error code from the JSON-RPC response. [2] | `OK`; `DEADLINE_EXCEEDED`; `-32602` |
+| [`rpc.status_code`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/rpc.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If response contains an error code. | string | The error code from the JSON-RPC response. [2] | `OK`; `DEADLINE_EXCEEDED`; `-32602` |
 | [`gen_ai.operation.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` [3] | string | The name of the GenAI operation being performed. [4] | `execute_tool` |
 | [`jsonrpc.protocol.version`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/jsonrpc.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` When it's not `2.0`. | string | Protocol version, as specified in the `jsonrpc` property of the request and its corresponding response. | `2.0`; `1.0` |
 | [`mcp.protocol.version`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The [version](https://modelcontextprotocol.io/specification/versioning) of the Model Context Protocol used. | `2025-06-18` |
@@ -632,7 +632,7 @@ of `[ 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30, 60, 120, 300 ]`.
 
 **[1] `error.type`:** When the response carries a JSON-RPC error code that classifies as an error,
 `error.type` SHOULD be set to the string representation of that code. See
-`rpc.response.status_code` for which codes classify as errors. When an HTTP
+`rpc.status_code` for which codes classify as errors. When an HTTP
 response ends the operation in error without a JSON-RPC error code,
 `error.type` SHOULD be set to the string representation of the HTTP status
 code. Otherwise (for example on timeouts or other transport errors), it SHOULD be
@@ -645,11 +645,11 @@ string representation of the error. When
 is returned with `isError` set to `true`, this attribute SHOULD be set to
 `tool_error`.
 
-`rpc.response.status_code` carries the same string representation of
-the JSON-RPC error code. Unlike `rpc.response.status_code`,
+`rpc.status_code` carries the same string representation of
+the JSON-RPC error code. Unlike `rpc.status_code`,
 `error.type` is also set when no JSON-RPC error response is available.
 
-**[2] `rpc.response.status_code`:** This attribute records the [JSON-RPC error code](https://www.jsonrpc.org/specification#error_object)
+**[2] `rpc.status_code`:** This attribute records the [JSON-RPC error code](https://www.jsonrpc.org/specification#error_object)
 returned in the error response.
 
 All JSON-RPC error codes SHOULD be considered errors.
@@ -785,7 +785,7 @@ of `[ 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30, 60, 120, 300 ]`.
 | [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/error.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If and only if the operation fails. | string | Describes a class of error the operation ended with. [1] | `timeout`; `java.net.UnknownHostException`; `server_certificate_invalid`; `500` |
 | [`gen_ai.prompt.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When operation is related to a specific prompt. | string | The name of the prompt or prompt template provided in the request or response. | `analyze-code` |
 | [`gen_ai.tool.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When operation is related to a specific tool. | string | Name of the tool utilized by the agent. | `Flights` |
-| [`rpc.response.status_code`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/rpc.md) | ![Deprecated](https://img.shields.io/badge/-deprecated-red)<br>Replaced by `rpc.status_code`. | `Conditionally Required` If response contains an error code. | string | The error code from the JSON-RPC response. [2] | `OK`; `DEADLINE_EXCEEDED`; `-32602` |
+| [`rpc.status_code`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/rpc.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If response contains an error code. | string | The error code from the JSON-RPC response. [2] | `OK`; `DEADLINE_EXCEEDED`; `-32602` |
 | [`gen_ai.operation.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` [3] | string | The name of the GenAI operation being performed. [4] | `execute_tool` |
 | [`jsonrpc.protocol.version`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/jsonrpc.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` When it's not `2.0`. | string | Protocol version, as specified in the `jsonrpc` property of the request and its corresponding response. | `2.0`; `1.0` |
 | [`mcp.protocol.version`](/docs/registry/attributes/mcp.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The [version](https://modelcontextprotocol.io/specification/versioning) of the Model Context Protocol used. | `2025-06-18` |
@@ -796,7 +796,7 @@ of `[ 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30, 60, 120, 300 ]`.
 
 **[1] `error.type`:** When the response carries a JSON-RPC error code that classifies as an error,
 `error.type` SHOULD be set to the string representation of that code. See
-`rpc.response.status_code` for which codes classify as errors. When an HTTP
+`rpc.status_code` for which codes classify as errors. When an HTTP
 response ends the operation in error without a JSON-RPC error code,
 `error.type` SHOULD be set to the string representation of the HTTP status
 code. Otherwise (for example on timeouts or other transport errors), it SHOULD be
@@ -809,11 +809,11 @@ string representation of the error. When
 is returned with `isError` set to `true`, this attribute SHOULD be set to
 `tool_error`.
 
-`rpc.response.status_code` carries the same string representation of
-the JSON-RPC error code. Unlike `rpc.response.status_code`,
+`rpc.status_code` carries the same string representation of
+the JSON-RPC error code. Unlike `rpc.status_code`,
 `error.type` is also set when no JSON-RPC error response is available.
 
-**[2] `rpc.response.status_code`:** This attribute records the [JSON-RPC error code](https://www.jsonrpc.org/specification#error_object)
+**[2] `rpc.status_code`:** This attribute records the [JSON-RPC error code](https://www.jsonrpc.org/specification#error_object)
 returned in the error response.
 
 The following error codes indicate that the caller sent a request the

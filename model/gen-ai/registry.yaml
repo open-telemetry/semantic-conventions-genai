@@ -329,6 +329,9 @@ attributes:
       - `gen_ai.usage.text.input_tokens`: 100
       - `gen_ai.usage.text.cache_read.input_tokens`: 40
       - `gen_ai.usage.image.input_tokens`: 200
+
+      The same tokens can be reported on multiple types of spans. See
+      [how to aggregate token usage](/docs/gen-ai/gen-ai-token-metrics.md#how-to-aggregate-token-usage).
     examples: [100]
     stability: development
   - key: gen_ai.usage.cache_read.input_tokens
@@ -376,6 +379,9 @@ attributes:
       token counts (for example, Cohere exposes both `usage.billed_units` and
       `usage.tokens`), instrumentations SHOULD report the billed count so the
       value matches the units the customer is charged for.
+
+      The same tokens can be reported on multiple types of spans. See
+      [how to aggregate token usage](/docs/gen-ai/gen-ai-token-metrics.md#how-to-aggregate-token-usage).
     examples: [180]
     stability: development
   - key: gen_ai.usage.reasoning.output_tokens
