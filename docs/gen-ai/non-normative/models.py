@@ -215,7 +215,7 @@ class BlobPart(BaseModel):
         default=None, description="The IANA MIME type of the attached data."
     )
     modality: Union[Modality, str] = Field(
-        description="The general modality of the data if it is known. Instrumentations SHOULD also set the mimeType field if the specific type is known."
+        description="The general modality of the data if it is known. Instrumentations SHOULD also set the `mime_type` field if the specific type is known."
     )
     content: Optional[bytes] = Field(
         default=None, description="Raw bytes of the attached data."
@@ -231,7 +231,7 @@ class FilePart(BaseModel):
         default=None, description="The IANA MIME type of the attached data."
     )
     modality: Union[Modality, str] = Field(
-        description="The general modality of the data if it is known. Instrumentations SHOULD also set the mimeType field if the specific type is known."
+        description="The general modality of the data if it is known. Instrumentations SHOULD also set the `mime_type` field if the specific type is known."
     )
     file_id: str = Field(
         description="An identifier referencing a file that was pre-uploaded to the provider."
@@ -250,7 +250,7 @@ class UriPart(BaseModel):
         default=None, description="The IANA MIME type of the attached data."
     )
     modality: Union[Modality, str] = Field(
-        description="The general modality of the data if it is known. Instrumentations SHOULD also set the mimeType field if the specific type is known."
+        description="The general modality of the data if it is known. Instrumentations SHOULD also set the `mime_type` field if the specific type is known."
     )
     uri: str = Field(
         description=(
@@ -619,6 +619,19 @@ class ToolCallResult(RootModel[dict[str, Any]]):
 
 
 # --------------------------------------------------------------------------
+# `gen_ai.prompt.variables` model
+# --------------------------------------------------------------------------
+
+
+class PromptVariables(RootModel[dict[str, Any]]):
+    """
+    Represents object-like variables passed to a prompt template.
+    """
+
+    pass
+
+
+# --------------------------------------------------------------------------
 # Schema generation entry point
 # --------------------------------------------------------------------------
 
@@ -626,6 +639,7 @@ class ToolCallResult(RootModel[dict[str, Any]]):
 SCHEMAS: dict[str, type[BaseModel]] = {
     "gen-ai-input-messages.json": InputMessages,
     "gen-ai-output-messages.json": OutputMessages,
+    "gen-ai-prompt-variables.json": PromptVariables,
     "gen-ai-system-instructions.json": SystemInstructions,
     "gen-ai-tool-definitions.json": ToolDefinitions,
     "gen-ai-tool-call-arguments.json": ToolCallArguments,
