@@ -577,6 +577,78 @@ def run_responses_continuation_reference(client):
         print(f"    -> previous_response_id: {previous_response_id}")
 
 
+def run_responses_roleless_tool_items_reference(client):
+    """Scenario: Responses API function_call and function_call_output input items have no role."""
+    print("  [responses_roleless_tool_items] responses with role-less tool items (reference implementation)")
+    request_model = "gpt-4o-mini"
+    conversation = [
+        {"type": "message", "role": "user", "content": "What's the weather in Seattle?"},
+        {
+            "type": "function_call",
+            "call_id": "call_weather_1",
+            "name": "get_weather",
+            "arguments": json.dumps({"location": "Seattle"}),
+        },
+        {"type": "function_call_output", "call_id": "call_weather_1", "output": "Rainy, 14 C"},
+    ]
+    input_messages = []
+    for item in conversation:
+        if item["type"] == "message":
+            input_messages.append({"role": item["role"], "parts": [{"type": "text", "content": item["content"]}]})
+        elif item["type"] == "function_call":
+            input_messages.append(
+                {
+                    "parts": [
+                        {
+                            "type": "tool_call",
+                            "id": item["call_id"],
+                            "name": item["name"],
+                            "arguments": json.loads(item["arguments"]),
+                        }
+                    ]
+                }
+            )
+        elif item["type"] == "function_call_output":
+            input_messages.append(
+                {"parts": [{"type": "tool_call_response", "id": item["call_id"], "response": item["output"]}]}
+            )
+
+    host, port = mock_server_host_port(MOCK_BASE_URL)
+    span_attributes = {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "openai",
+        "gen_ai.request.model": request_model,
+        "openai.api.type": "responses",
+    }
+    if host:
+        span_attributes["server.address"] = host
+    if port is not None:
+        span_attributes["server.port"] = port
+
+    with _reference_tracer.start_as_current_span(
+        "chat gpt-4o-mini", kind=SpanKind.CLIENT, attributes=span_attributes
+    ) as span:
+        span.set_attribute("gen_ai.input.messages", input_messages)
+        response = client.responses.create(model=request_model, input=conversation)
+
+        span.set_attribute("gen_ai.response.model", response.model)
+        span.set_attribute("gen_ai.response.id", response.id)
+        finish_reason = responses_finish_reason(response)
+        if finish_reason is not None:
+            span.set_attribute("gen_ai.response.finish_reasons", [finish_reason])
+        output_messages = responses_output_messages(response)
+        if output_messages:
+            span.set_attribute("gen_ai.output.messages", output_messages)
+        usage = {}
+        if response.usage:
+            usage["gen_ai.usage.input_tokens"] = response.usage.input_tokens
+            usage["gen_ai.usage.output_tokens"] = response.usage.output_tokens
+        for attr, value in usage.items():
+            span.set_attribute(attr, value)
+        record_inference_usage(usage, usage_metric_attributes(request_model, response.model, host, port))
+        print(f"    -> {response.output_text[:60]}")
+
+
 def run_chat_streaming_reference(client):
     """Scenario: streaming chat completion with reference implementation."""
     print("  [chat_streaming] streaming chat completion (reference implementation)")
@@ -1568,6 +1640,7 @@ def main():
     run_chat_error_reference()
     run_responses_compaction_reference(client)
     run_responses_continuation_reference(client)
+    run_responses_roleless_tool_items_reference(client)
     run_chat_streaming_reference(client)
     run_chat_tool_call_reference(client)
     run_chat_with_document_input_reference(client)
