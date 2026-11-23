@@ -11,7 +11,7 @@ execution.
 | inference (`chat`) | No — delegates to the LLM client (`openai`) | ✅ Correctly not emitted |
 | invoke_workflow | Yes — chain/graph execution | ✅ Implemented |
 | invoke_agent (internal) | Yes — `create_agent` agent run | ✅ Implemented |
-| retrieval | Yes — retriever runs the retrieval | ✅ Implemented |
+| retrieval | Yes — retriever runs the retrieval | ✅ Implemented with a [duration histogram](../../../docs/gen-ai/retrieval.md#metric-gen_airetrievalduration) |
 | plan | Yes — Plan-and-Execute planning phase | ✅ Implemented |
 | execute_tool | Yes — `BaseTool.invoke()` runs the tool | ✅ Implemented |
 | execute_tool (command) | Yes — `ShellToolMiddleware`'s `shell` tool runs a general command | ✅ Implemented |
