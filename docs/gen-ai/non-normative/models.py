@@ -361,8 +361,7 @@ class ChatMessage(BaseModel):
             "Role of the entity that created the message. "
             "Instrumentations SHOULD record the role supplied by the application or provider API, "
             "including on messages that contain tool call responses, "
-            "and SHOULD NOT set a role when the API does not supply one. "
-            "Consumers can use part types to tell where content in a message without a role came from."
+            "and SHOULD NOT set a role when the API does not supply one."
         )
     )
     parts: List[MessagePart] = Field(
