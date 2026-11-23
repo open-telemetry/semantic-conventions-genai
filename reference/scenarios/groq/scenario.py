@@ -82,8 +82,8 @@ def _usage_details(usage):
     prompt_details = usage.prompt_tokens_details if usage else None
     completion_details = usage.completion_tokens_details if usage else None
     return (
-        prompt_details.cached_tokens if prompt_details else 0,
-        completion_details.reasoning_tokens if completion_details else 0,
+        getattr(prompt_details, "cached_tokens", None) or 0,
+        getattr(completion_details, "reasoning_tokens", None) or 0,
     )
 
 
@@ -213,7 +213,6 @@ def run_chat_streaming_reference(client):
             "server.address": _SERVER_ADDRESS,
             "server.port": _SERVER_PORT,
         }
-        input_tokens = output_tokens = cache_read_tokens = reasoning_tokens = 0
         text = ""
         model = None
         response_id = None
@@ -233,12 +232,6 @@ def run_chat_streaming_reference(client):
                     model = model or getattr(chunk, "model", None)
                     response_id = response_id or getattr(chunk, "id", None)
                     usage = chunk.usage or (chunk.x_groq and chunk.x_groq.usage) or usage
-                    if model:
-                        metric_attributes["gen_ai.response.model"] = model
-                    if usage:
-                        input_tokens = usage.prompt_tokens or 0
-                        output_tokens = usage.completion_tokens or 0
-                        cache_read_tokens, reasoning_tokens = _usage_details(usage)
                     if chunk.choices and chunk.choices[0].delta.content:
                         text += chunk.choices[0].delta.content
                     if chunk.choices and chunk.choices[0].finish_reason:
@@ -262,12 +255,17 @@ def run_chat_streaming_reference(client):
             raise
         finally:
             if model:
+                metric_attributes["gen_ai.response.model"] = model
                 span.set_attribute("gen_ai.response.model", model)
             if response_id:
                 span.set_attribute("gen_ai.response.id", response_id)
             if finish_reasons:
                 span.set_attribute("gen_ai.response.finish_reasons", finish_reasons)
+            input_tokens = output_tokens = cache_read_tokens = reasoning_tokens = 0
             if usage:
+                input_tokens = usage.prompt_tokens or 0
+                output_tokens = usage.completion_tokens or 0
+                cache_read_tokens, reasoning_tokens = _usage_details(usage)
                 span.set_attribute("gen_ai.usage.input_tokens", usage.prompt_tokens)
                 span.set_attribute("gen_ai.usage.output_tokens", usage.completion_tokens)
                 _set_usage_details(span, cache_read_tokens, reasoning_tokens)
