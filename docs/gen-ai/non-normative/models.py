@@ -220,6 +220,14 @@ class BlobPart(BaseModel):
     content: Optional[bytes] = Field(
         default=None, description="Raw bytes of the attached data."
     )
+    filename: Optional[str] = Field(
+        default=None,
+        description=(
+            "The name of the file the data came from, without directory components, "
+            "as given in the request (for example OpenAI `file.filename`) or supplied by the application. "
+            "Instrumentations SHOULD NOT set it when no name is available."
+        ),
+    )
 
 class FilePart(BaseModel):
     """Represents an external referenced file sent to the model by file id"""
@@ -235,6 +243,14 @@ class FilePart(BaseModel):
     )
     file_id: str = Field(
         description="An identifier referencing a file that was pre-uploaded to the provider."
+    )
+    filename: Optional[str] = Field(
+        default=None,
+        description=(
+            "The name of the file the data came from, without directory components, "
+            "as given in the request (for example OpenAI `file.filename`) or supplied by the application. "
+            "Instrumentations SHOULD NOT set it when no name is available."
+        ),
     )
 
     model_config = ConfigDict(extra="allow")
@@ -258,6 +274,14 @@ class UriPart(BaseModel):
             "which should use the `blob` part instead. The URI may use a scheme known to "
             "the provider api (e.g. `gs://bucket/object.png`), or be a publicly accessible location."
         )
+    )
+    filename: Optional[str] = Field(
+        default=None,
+        description=(
+            "The name of the file the data came from, without directory components, "
+            "as given in the request (for example OpenAI `file.filename`) or supplied by the application. "
+            "Instrumentations SHOULD NOT set it when no name is available."
+        ),
     )
 
     model_config = ConfigDict(extra="allow")

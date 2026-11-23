@@ -880,6 +880,7 @@ def run_chat_with_document_input_reference(client):
     - `content` is the base64 payload of the data-URI.
     - `modality: "document"` is the classification of `application/pdf`
       under the new enum value -- the whole point of this PR.
+    - `filename` is the `file.filename` field of the same content block.
     """
     import base64
 
@@ -905,6 +906,7 @@ def run_chat_with_document_input_reference(client):
     #   - mime_type: parsed from the data-URI prefix
     #   - content:   the base64 portion of the data-URI
     #   - modality:  derived classification of mime_type "application/pdf"
+    #   - filename:  the `file.filename` field of the content block
     input_parts = [
         {"type": "text", "content": instruction},
         {
@@ -912,6 +914,7 @@ def run_chat_with_document_input_reference(client):
             "modality": "document",
             "mime_type": mime_type,
             "content": pdf_b64,
+            "filename": filename,
         },
     ]
     input_messages = [{"role": "user", "parts": input_parts}]

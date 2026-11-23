@@ -1,0 +1,17 @@
+# yaml-language-server: $schema=../case.schema.json
+description: >
+  Blob, file and uri parts carry the optional `filename` of the attached file.
+schema: gen-ai-input-messages.json
+document: [
+  {
+    "role": "user",
+    "parts": [
+      { "type": "text", "content": "Compare contract_2025.pdf with contract_2026.pdf." },
+      { "type": "blob", "modality": "document", "mime_type": "application/pdf", "content": !!binary "JVBERi0xLjQ=", "filename": "contract_2025.pdf" },
+      { "type": "file", "modality": "document", "mime_type": "application/pdf", "file_id": "file-abc123", "filename": "contract_2026.pdf" },
+      { "type": "uri", "modality": "image", "mime_type": "image/png", "uri": "gs://bucket/3fa9c1.png", "filename": "screenshot.png" }
+    ]
+  }
+]
+# Regenerate with `uv run pytest --update-snapshots`, do not edit by hand.
+errors: []
