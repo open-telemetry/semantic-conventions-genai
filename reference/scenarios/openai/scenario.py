@@ -1428,7 +1428,7 @@ def run_responses_with_prompt_template_reference(client):
         print(f"    -> {(output_text or '')[:60]}")
 
 
-def _emit_fetch_response_span(client, response_id, starting_after=None, stream=False):
+def _emit_fetch_response_span(client, response_id, starting_after=None, stream=False, *, close_early=False):
     """Fetch a response by id and emit the `gen_ai.fetch_response.client` span.
 
     Owns its own span boundary, so all attributes are set inline here. Every
@@ -1439,8 +1439,8 @@ def _emit_fetch_response_span(client, response_id, starting_after=None, stream=F
       (for example `completed` or `failed`), taken from the fetched `status` field.
     - `gen_ai.response.finish_reasons` comes from the fetched status and incomplete
       details. A non-streaming `queued` or `in_progress` response has no finish reason.
-      This scenario reads the full stream and records `error` if it runs out of events
-      before a final status. A failed or incomplete generation leaves the fetch
+      Before a final status, a caller close records `interrupted` and an unexpected
+      ending records `error`. A failed or incomplete generation leaves the fetch
       span's status and `error.type` unset.
     - `gen_ai.system_instructions`, `gen_ai.output.messages`, and
       `gen_ai.tool.definitions` are the content carried by the fetched response.
@@ -1475,31 +1475,34 @@ def _emit_fetch_response_span(client, response_id, starting_after=None, stream=F
     with _reference_tracer.start_as_current_span(
         "fetch_response", attributes=span_attributes, record_exception=False
     ) as span:
+        finish_reason = None
         try:
             if stream:
-                # The terminal `response.completed` event carries the full response object.
                 fetched = None
                 retrieve_kwargs = {"stream": True}
                 if starting_after is not None:
                     retrieve_kwargs["starting_after"] = starting_after
-                with client.responses.retrieve(response_id, **retrieve_kwargs) as fetched_stream:
+                fetched_stream = ObservedStream(client.responses.retrieve(response_id, **retrieve_kwargs))
+                with fetched_stream:
                     for event in fetched_stream:
                         candidate = getattr(event, "response", None)
                         if candidate is not None:
                             fetched = candidate
+                            finish_reason = responses_finish_reason(candidate) or finish_reason
+                        if close_early:
+                            break
+                finish_reason = finish_reason or fetched_stream.finish_reason
                 if fetched is None:
-                    span.set_attribute("gen_ai.response.finish_reasons", ["error"])
+                    span.set_attribute("gen_ai.response.finish_reasons", [finish_reason])
                     return
             else:
                 fetched = client.responses.retrieve(response_id)
+                finish_reason = responses_finish_reason(fetched)
             span.set_attribute("gen_ai.response.id", fetched.id)
             span.set_attribute("gen_ai.response.model", fetched.model)
             status = getattr(fetched, "status", None)
             if status is not None:
                 span.set_attribute("gen_ai.response.status", status)
-            finish_reason = responses_finish_reason(fetched)
-            if finish_reason is None and stream:
-                finish_reason = "error"
             if finish_reason is not None:
                 span.set_attribute("gen_ai.response.finish_reasons", [finish_reason])
             service_tier = getattr(fetched, "service_tier", None)
@@ -1534,6 +1537,8 @@ def _emit_fetch_response_span(client, response_id, starting_after=None, stream=F
             # the original generation (already accounted for on that operation).
             print(f"    -> fetched {fetched.id} (status={getattr(fetched, 'status', None)})")
         except Exception as e:
+            if stream:
+                span.set_attribute("gen_ai.response.finish_reasons", [finish_reason or "error"])
             span.set_status(StatusCode.ERROR, str(e))
             span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
             reference_event_logger().emit(
@@ -1694,7 +1699,7 @@ def run_fetch_response_checks():
     tracer_provider = TracerProvider()
     tracer_provider.add_span_processor(SimpleSpanProcessor(exporter))
 
-    def check_fetch(status, expected, *, stream=True, stream_error=False):
+    def check_fetch(status, expected, *, stream=True, stream_error=False, close_early=False):
         response = {
             "id": "resp-check",
             "object": "response",
@@ -1705,10 +1710,15 @@ def run_fetch_response_checks():
             "usage": {"input_tokens": 1, "output_tokens": 0, "total_tokens": 1},
             "incomplete_details": {"reason": "max_output_tokens"} if status == "incomplete" else None,
         }
-        payload = {"type": f"response.{status}", "response": response, "sequence_number": 0}
+        payloads = []
+        if status:
+            payloads.append({"type": f"response.{status}", "response": response, "sequence_number": 0})
+        if close_early:
+            terminal = {**response, "status": "completed"}
+            payloads.append({"type": "response.completed", "response": terminal, "sequence_number": 1})
         if stream_error:
-            payload = {"error": {"message": "stream failed", "type": "server_error"}}
-        body = f"data: {json.dumps(payload)}\n\n" if status or stream_error else ""
+            payloads.append({"error": {"message": "stream failed", "type": "server_error"}})
+        body = "".join(f"data: {json.dumps(payload)}\n\n" for payload in payloads)
         body += "data: [DONE]\n\n"
         responses = []
 
@@ -1731,7 +1741,7 @@ def run_fetch_response_checks():
             http_client=httpx2.Client(transport=httpx2.MockTransport(respond)),
         ) as client:
             try:
-                _emit_fetch_response_span(client, response["id"], stream=stream)
+                _emit_fetch_response_span(client, response["id"], stream=stream, close_early=close_early)
             except openai.APIError:
                 if not stream_error:
                     raise
@@ -1742,7 +1752,8 @@ def run_fetch_response_checks():
         (http_response,) = responses
         assert http_response.is_closed
         assert span.attributes.get("gen_ai.request.stream") == (True if stream else None)
-        assert span.attributes.get("gen_ai.response.status") == status
+        if not stream_error:
+            assert span.attributes.get("gen_ai.response.status") == status
         assert span.attributes.get("gen_ai.response.finish_reasons") == ((expected,) if expected else None)
         assert span.status.status_code == (StatusCode.ERROR if stream_error else StatusCode.UNSET)
         assert ("error.type" in span.attributes) == stream_error
@@ -1758,7 +1769,9 @@ def run_fetch_response_checks():
                 ("failed", "error"),
             ):
                 check_fetch(status, finish_reason)
-            check_fetch(None, None, stream_error=True)
+            check_fetch(None, "error", stream_error=True)
+            check_fetch("completed", "stop", stream_error=True)
+            check_fetch("in_progress", "interrupted", close_early=True)
             check_fetch("cancelled", "interrupted", stream=False)
     finally:
         tracer_provider.shutdown()

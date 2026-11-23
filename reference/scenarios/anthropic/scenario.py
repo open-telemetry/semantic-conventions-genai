@@ -94,7 +94,7 @@ def usage_metric_attributes(inv, request_model, server_address, server_port):
     return attributes
 
 
-def record_inference_usage(inv, request_model, server_address, server_port):
+def record_inference_usage(inv, request_model, server_address, server_port, *, error=None):
     """Record the usage instruments from the same values the span carries.
 
     The Messages API reports no per-modality token breakdown - not even for the
@@ -104,12 +104,16 @@ def record_inference_usage(inv, request_model, server_address, server_port):
     """
     metric_attributes = usage_metric_attributes(inv, request_model, server_address, server_port)
     modality_attributes = {**metric_attributes, "gen_ai.token.modality": "unknown"}
+    histogram_attributes = metric_attributes
+    if error is not None:
+        error_type = f"{type(error).__module__}.{type(error).__qualname__}"
+        histogram_attributes = {**metric_attributes, "error.type": error_type}
     if inv.input_tokens is not None:
-        _operation_input_tokens.record(inv.input_tokens, metric_attributes)
+        _operation_input_tokens.record(inv.input_tokens, histogram_attributes)
         if inv.input_tokens > 0:
             _input_tokens.add(inv.input_tokens, modality_attributes)
     if inv.output_tokens is not None:
-        _operation_output_tokens.record(inv.output_tokens, metric_attributes)
+        _operation_output_tokens.record(inv.output_tokens, histogram_attributes)
         if inv.output_tokens > 0:
             _output_tokens.add(inv.output_tokens, modality_attributes)
     if inv.cache_read_input_tokens is not None and inv.cache_read_input_tokens > 0:
@@ -265,7 +269,7 @@ def run_chat_streaming_close(handler, client, *, close_early=True):
                 inv.finish_reasons = [stream.finish_reason]
             if text:
                 inv.output_messages = [OutputMessage(role="assistant", parts=[Text(content=text)])]
-            record_inference_usage(inv, request_model, host, port)
+            record_inference_usage(inv, request_model, host, port, error=stream.error)
             print(f"    -> {inv.finish_reasons[0]}, input tokens: {inv.input_tokens}")
 
 
@@ -353,7 +357,10 @@ def run_chat_streaming_checks():
                 patch(f"{__name__}.ObservedStream", side_effect=observe),
                 patch(f"{__name__}.perf_counter", side_effect=lambda: now),
                 patch(f"{__name__}._time_to_first_chunk") as histogram,
-                patch(f"{__name__}.record_inference_usage", wraps=record_inference_usage) as record_usage,
+                patch(f"{__name__}._operation_input_tokens") as input_histogram,
+                patch(f"{__name__}._operation_output_tokens") as output_histogram,
+                patch(f"{__name__}._input_tokens") as input_counter,
+                patch(f"{__name__}._output_tokens") as output_counter,
                 anthropic.Anthropic(
                     api_key="mock-key",
                     base_url=MOCK_BASE_URL,
@@ -397,9 +404,25 @@ def run_chat_streaming_checks():
                 histogram.record.assert_not_called()
             assert span.attributes["gen_ai.usage.input_tokens"] == 12
             assert span.attributes["gen_ai.usage.output_tokens"] == (1 if close_early else 3)
-            record_usage.assert_called_once()
             assert span.status.status_code == (StatusCode.ERROR if stream_error else StatusCode.UNSET)
             assert ("error.type" in span.attributes) == stream_error
+            host, port = mock_server_host_port(MOCK_BASE_URL)
+            attributes = {
+                "gen_ai.operation.name": "chat",
+                "gen_ai.provider.name": "anthropic",
+                "gen_ai.request.model": "claude-sonnet-4-20250514",
+                "gen_ai.response.model": "claude-sonnet-4-20250514",
+                "server.address": host,
+                "server.port": port,
+            }
+            histogram_attributes = dict(attributes)
+            if stream_error:
+                histogram_attributes["error.type"] = span.attributes["error.type"]
+            counter_attributes = {**attributes, "gen_ai.token.modality": "unknown"}
+            input_histogram.record.assert_called_once_with(12, histogram_attributes)
+            output_histogram.record.assert_called_once_with(1 if close_early else 3, histogram_attributes)
+            input_counter.add.assert_called_once_with(12, counter_attributes)
+            output_counter.add.assert_called_once_with(1 if close_early else 3, counter_attributes)
         finally:
             tracer_provider.shutdown()
             meter_provider.shutdown()
