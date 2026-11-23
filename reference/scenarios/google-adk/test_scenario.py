@@ -162,7 +162,7 @@ class InvocationRootTests(unittest.TestCase):
         ):
             scenario.run_agent_reference()
         return {
-            point.attributes["gen_ai.operation.name"]: point.attributes[self.ROOT]
+            point.attributes["gen_ai.operation.name"]: point.attributes.get(self.ROOT)
             for resource in reader.get_metrics_data().resource_metrics
             for scope in resource.scope_metrics
             for metric in scope.metrics
@@ -177,18 +177,18 @@ class InvocationRootTests(unittest.TestCase):
 
         points = self._run(tracer_provider.get_tracer("test"))
 
-        expected = {"invoke_runner": True, "invoke_agent": False}
+        expected = {"invoke_runner": True, "invoke_agent": None}
         spans = {
-            span.attributes["gen_ai.operation.name"]: span.attributes[self.ROOT]
+            span.attributes["gen_ai.operation.name"]: span.attributes.get(self.ROOT)
             for span in exporter.get_finished_spans()
-            if self.ROOT in span.attributes
+            if span.attributes.get("gen_ai.operation.name") in expected
         }
         self.assertEqual(spans, expected)
         self.assertEqual(points, expected)
 
     def test_tracking_does_not_depend_on_span_recording(self):
         points = self._run(trace.NoOpTracer())
-        self.assertEqual(points, {"invoke_runner": True, "invoke_agent": False})
+        self.assertEqual(points, {"invoke_runner": True, "invoke_agent": None})
 
 
 if __name__ == "__main__":

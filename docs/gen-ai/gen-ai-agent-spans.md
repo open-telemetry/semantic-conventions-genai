@@ -233,7 +233,7 @@ span name format.
 | [`gen_ai.operation.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Required` | string | The name of the operation being performed. [1] | `chat`; `generate_content`; `realtime_inference` |
 | [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/error.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If the operation ended in an error. | string | Describes a class of error the operation ended with. [2] | `timeout`; `java.net.UnknownHostException`; `server_certificate_invalid`; `500` |
 | [`gen_ai.agent.description`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When available. | string | The free-form description of the invoked GenAI agent. | `Helps with math problems`; `Generates fiction stories` |
-| [`gen_ai.agent.invocation.root`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If and only if the invocation is not nested. | boolean | Whether this is the outermost agent invocation. [3] | `true`; `false` |
+| [`gen_ai.agent.invocation.root`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If and only if the invocation is not nested. | boolean | Whether this is the outermost agent invocation. [3] | `true` |
 | [`gen_ai.agent.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When available. | string | Human-readable name of the GenAI agent or workflow provided by the application. [4] | `Math Tutor`; `Fiction Writer` |
 | [`gen_ai.conversation.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [5] | string | The unique identifier for a conversation (session, thread), used to store and correlate messages within this conversation. [6] | `conv_5j66UpCpwteGg4YSxUnt7lPY` |
 | [`gen_ai.data_source.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If applicable. | string | The data source identifier. [7] | `H7STPQYOND` |
@@ -267,7 +267,7 @@ Instrumentations SHOULD document the list of errors they report.
 
 **[3] `gen_ai.agent.invocation.root`:** `true` when the invocation does not run within another invocation
 (described by `gen_ai.invoke_agent.internal`, whether or not its span is
-recorded); `false` when it does.
+recorded).
 
 Instrumentations SHOULD track active invocations in context (for example,
 OpenTelemetry Context) independently of span recording, using keys that
@@ -275,8 +275,9 @@ other instrumentations can read.
 They SHOULD make a best effort to detect invocations started by
 other instrumentations.
 
-Instrumentations SHOULD NOT set the attribute to `true` unless they can
-reliably determine that the invocation is not nested.
+Instrumentations SHOULD NOT set the attribute to `false`. They SHOULD
+leave it unset when the invocation is nested or when they cannot reliably
+determine whether it is nested.
 
 **[4] `gen_ai.agent.name`:** This attribute MUST have low cardinality. It is NOT RECOMMENDED to use
 instrumentation-time constants, framework defaults, or type names such as "StateGraph". When no meaningful,
@@ -477,6 +478,7 @@ secured by other means, for example by storage-level access control.
 The following attributes can be important for making sampling decisions
 and SHOULD be provided **at span creation time** (if provided at all):
 
+* [`gen_ai.agent.invocation.root`](/docs/registry/attributes/gen-ai.md)
 * [`gen_ai.agent.name`](/docs/registry/attributes/gen-ai.md)
 * [`gen_ai.operation.name`](/docs/registry/attributes/gen-ai.md)
 * [`gen_ai.request.model`](/docs/registry/attributes/gen-ai.md)

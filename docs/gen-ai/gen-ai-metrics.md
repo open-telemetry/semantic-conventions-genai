@@ -630,7 +630,7 @@ span, the metric value SHOULD be the same as the span duration.
 | --- | --- | --- | --- | --- | --- |
 | [`gen_ai.operation.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Required` | string | The name of the operation being performed. [1] | `chat`; `generate_content`; `realtime_inference` |
 | [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/error.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If the operation ended in an error. | string | Describes a class of error the operation ended with. [2] | `timeout`; `java.net.UnknownHostException`; `server_certificate_invalid`; `500` |
-| [`gen_ai.agent.invocation.root`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If and only if the invocation is not nested. | boolean | Whether this is the outermost agent invocation. [3] | `true`; `false` |
+| [`gen_ai.agent.invocation.root`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If and only if the invocation is not nested. | boolean | Whether this is the outermost agent invocation. [3] | `true` |
 | [`gen_ai.agent.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When available. | string | Human-readable name of the GenAI agent or workflow provided by the application. [4] | `Math Tutor`; `Fiction Writer` |
 | [`gen_ai.request.model`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` [5] | string | The name of the GenAI model configured for the agent. [6] | `gpt-4` |
 
@@ -642,7 +642,7 @@ Instrumentations SHOULD document the list of errors they report.
 
 **[3] `gen_ai.agent.invocation.root`:** `true` when the invocation does not run within another invocation
 (described by `gen_ai.invoke_agent.internal`, whether or not its span is
-recorded); `false` when it does.
+recorded).
 
 Instrumentations SHOULD track active invocations in context (for example,
 OpenTelemetry Context) independently of span recording, using keys that
@@ -650,8 +650,9 @@ other instrumentations can read.
 They SHOULD make a best effort to detect invocations started by
 other instrumentations.
 
-Instrumentations SHOULD NOT set the attribute to `true` unless they can
-reliably determine that the invocation is not nested.
+Instrumentations SHOULD NOT set the attribute to `false`. They SHOULD
+leave it unset when the invocation is nested or when they cannot reliably
+determine whether it is nested.
 
 **[4] `gen_ai.agent.name`:** This attribute MUST have low cardinality. It is NOT RECOMMENDED to use
 instrumentation-time constants, framework defaults, or type names such as "StateGraph". When no meaningful,

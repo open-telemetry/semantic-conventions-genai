@@ -817,6 +817,7 @@ spans:
       - ref: gen_ai.agent.invocation.root
         requirement_level:
           conditionally_required: If and only if the invocation is not nested.
+        sampling_relevant: true
       - ref: gen_ai.request.max_tokens
         requirement_level:
           recommended: When `gen_ai.operation.name` is `invoke_agent`.

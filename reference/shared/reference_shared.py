@@ -67,8 +67,8 @@ def invocation_scope():
 
 
 def root_invocation_attributes() -> dict:
-    """Return `gen_ai.agent.invocation.root`: `true` unless another tracked invocation is active."""
-    return {"gen_ai.agent.invocation.root": not context.get_value(_INVOCATION_KEY)}
+    """Return `gen_ai.agent.invocation.root`: `true` if no tracked invocation is active, else empty."""
+    return {} if context.get_value(_INVOCATION_KEY) else {"gen_ai.agent.invocation.root": True}
 
 
 def inference_duration_view() -> View:
