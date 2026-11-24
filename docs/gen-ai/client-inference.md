@@ -737,11 +737,8 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 
 **[4] `server.port`:** When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries, for example proxies, if it's available.
 
-**[5] `gen_ai.response.service_tier`:** The value SHOULD be the one returned by the provider. It can differ from
-`gen_ai.request.service_tier` when `auto` is requested.
-For example, `service_tier` in [OpenAI](https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create),
-`usage.service_tier` in [Anthropic](https://platform.claude.com/docs/en/api/service-tiers),
-or [`usageMetadata.trafficType`](https://docs.cloud.google.com/gemini-enterprise-agent-platform/reference/rest/v1/GenerateContentResponse#UsageMetadata.FIELDS.traffic_type) in Vertex AI.
+**[5] `gen_ai.response.service_tier`:** SHOULD be set only if the provider reports it before the first chunk is received.
+When set, it SHOULD be the same on all measurements from a streaming response.
 
 **[6] `server.address`:** When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent the server address behind any intermediaries, for example proxies, if it's available.
 
@@ -867,11 +864,8 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 
 **[4] `server.port`:** When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries, for example proxies, if it's available.
 
-**[5] `gen_ai.response.service_tier`:** The value SHOULD be the one returned by the provider. It can differ from
-`gen_ai.request.service_tier` when `auto` is requested.
-For example, `service_tier` in [OpenAI](https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create),
-`usage.service_tier` in [Anthropic](https://platform.claude.com/docs/en/api/service-tiers),
-or [`usageMetadata.trafficType`](https://docs.cloud.google.com/gemini-enterprise-agent-platform/reference/rest/v1/GenerateContentResponse#UsageMetadata.FIELDS.traffic_type) in Vertex AI.
+**[5] `gen_ai.response.service_tier`:** SHOULD be set only if the provider reports it before the first chunk is received.
+When set, it SHOULD be the same on all measurements from a streaming response.
 
 **[6] `server.address`:** When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent the server address behind any intermediaries, for example proxies, if it's available.
 
