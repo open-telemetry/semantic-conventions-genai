@@ -739,6 +739,9 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 
 **[5] `gen_ai.response.service_tier`:** The value SHOULD be the one returned by the provider. It can differ from
 `gen_ai.request.service_tier` when `auto` is requested.
+For example, `service_tier` in [OpenAI](https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create),
+`usage.service_tier` in [Anthropic](https://platform.claude.com/docs/en/api/service-tiers),
+or [`usageMetadata.trafficType`](https://docs.cloud.google.com/gemini-enterprise-agent-platform/reference/rest/v1/GenerateContentResponse#UsageMetadata.FIELDS.traffic_type) in Vertex AI.
 
 Instrumentation SHOULD set this attribute only if the provider reports it by the time the first chunk is received.
 When set, it SHOULD be the same on all measurements from a streaming response.
@@ -869,6 +872,9 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 
 **[5] `gen_ai.response.service_tier`:** The value SHOULD be the one returned by the provider. It can differ from
 `gen_ai.request.service_tier` when `auto` is requested.
+For example, `service_tier` in [OpenAI](https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create),
+`usage.service_tier` in [Anthropic](https://platform.claude.com/docs/en/api/service-tiers),
+or [`usageMetadata.trafficType`](https://docs.cloud.google.com/gemini-enterprise-agent-platform/reference/rest/v1/GenerateContentResponse#UsageMetadata.FIELDS.traffic_type) in Vertex AI.
 
 Instrumentation SHOULD set this attribute only if the provider reports it by the time the first chunk is received.
 When set, it SHOULD be the same on all measurements from a streaming response.
