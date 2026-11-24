@@ -27,6 +27,12 @@ SKILLS_DIR = pathlib.Path(__file__).parent / "skills"
 _reference_tracer = reference_tracer()
 _reference_meter = reference_meter()
 
+_tool_execution_duration = _reference_meter.create_histogram(
+    "gen_ai.execute_tool.duration",
+    unit="s",
+    description="Duration of tool executions.",
+    explicit_bucket_boundaries_advisory=[0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10, 30, 60],
+)
 _invoke_duration = _reference_meter.create_histogram(
     "gen_ai.invoke_agent.duration",
     unit="s",
@@ -1140,14 +1146,17 @@ def main():
 
     tp, lp, mp = setup_otel()
 
+    from google.adk.telemetry import _metrics as adk_metrics
+
     span_counter = SpanCounter()
     tp.add_span_processor(span_counter)
 
-    run_agent_reference()
-    run_multi_agent_delegation_reference()
-    run_multi_agent_handoff_reference()
-    run_memory_reference()
-    run_skills_reference()
+    with patch.object(adk_metrics, "_tool_execution_duration", _tool_execution_duration):
+        run_agent_reference()
+        run_multi_agent_delegation_reference()
+        run_multi_agent_handoff_reference()
+        run_memory_reference()
+        run_skills_reference()
 
     print(f"\n  [diagnostic] Spans generated: {span_counter.count}")
 
