@@ -283,6 +283,9 @@ This attribute MUST be recorded as an [AnyValue](https://opentelemetry.io/docs/s
 For providers with session-level tools and per-generation overrides, record
 the generation's tools if set, otherwise the session's tools.
 
+Instrumentations SHOULD populate fields when values are available,
+unless the field description says otherwise.
+
 Since this attribute could be large, it's NOT RECOMMENDED to populate
 properties other than `type` and `name` (such as `description` and
 `parameters`) by default. Instrumentations MAY provide a way to enable

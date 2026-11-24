@@ -334,6 +334,9 @@ secured by other means, for example by storage-level access control.
 > [!WARNING]
 > This attribute may contain sensitive information.
 
+Instrumentations SHOULD populate fields when values are available,
+unless the field description says otherwise.
+
 Since this attribute could be large, it's NOT RECOMMENDED to populate
 properties other than `type` and `name` (such as `description` and
 `parameters`) by default. Instrumentations MAY provide a way to enable

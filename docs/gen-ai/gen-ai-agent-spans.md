@@ -459,6 +459,9 @@ If there is no single configured list for the invocation, omit this attribute.
 Do not combine tool lists across child agents, handoffs, or steps. Record the tools
 supplied to each model call on its inference span instead.
 
+Instrumentations SHOULD populate fields when values are available,
+unless the field description says otherwise.
+
 Since this attribute could be large, it's NOT RECOMMENDED to populate
 properties other than `type` and `name` (such as `description` and
 `parameters`) by default. Instrumentations MAY provide a way to enable

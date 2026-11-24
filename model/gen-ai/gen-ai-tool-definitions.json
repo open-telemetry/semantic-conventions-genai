@@ -2,7 +2,7 @@
     "$defs": {
         "FunctionToolDefinition": {
             "additionalProperties": true,
-            "description": "Represents a tool definition in the form of a function. When recorded,\n`name`, `description`, and `parameters` MUST be top-level properties,\nnot nested in a provider-specific wrapper or renamed (for example,\n`input_schema` or `inputSchema`).",
+            "description": "Represents a tool definition in the form of a function.",
             "properties": {
                 "type": {
                     "const": "function",

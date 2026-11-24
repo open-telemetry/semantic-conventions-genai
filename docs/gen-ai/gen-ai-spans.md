@@ -165,6 +165,9 @@ This attribute MUST be recorded as an [AnyValue](https://opentelemetry.io/docs/s
 > [!WARNING]
 > This attribute may contain sensitive information.
 
+Instrumentations SHOULD populate fields when values are available,
+unless the field description says otherwise.
+
 Since this attribute could be large, it's NOT RECOMMENDED to populate
 properties other than `type` and `name` (such as `description` and
 `parameters`) by default. Instrumentations MAY provide a way to enable
@@ -380,6 +383,9 @@ by an explicit user opt-in via [content capture configuration](/docs/gen-ai/gen-
 
 **[12] `gen_ai.memory.records`:** Instrumentations SHOULD NOT capture this attribute by default. Capture SHOULD be gated
 by an explicit user opt-in via [content capture configuration](/docs/gen-ai/gen-ai-spans.md#content-capture-configuration).
+
+Instrumentations SHOULD populate fields when values are available,
+unless the field description says otherwise.
 
 > [!Warning]
 > This attribute may contain sensitive information including user/PII data.

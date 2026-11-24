@@ -483,10 +483,7 @@ JsonSchemaDraft7Dict = Annotated[dict[str, Any], JsonSchemaDraft7]
 
 class FunctionToolDefinition(BaseModel):
     """
-    Represents a tool definition in the form of a function. When recorded,
-    `name`, `description`, and `parameters` MUST be top-level properties,
-    not nested in a provider-specific wrapper or renamed (for example,
-    `input_schema` or `inputSchema`).
+    Represents a tool definition in the form of a function.
     """
 
     type: Literal["function"] = Field(description="The type of the tool.")

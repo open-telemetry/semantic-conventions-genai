@@ -40,12 +40,11 @@ GenAI clients, MCP, and provider-specific conventions. Attributes live in
 10. **Only require structural discriminators in JSON schemas.** In
     `docs/gen-ai/non-normative/models.py`, only union `type` discriminators
     may be required. Mark all other fields optional with
-    `Optional[...] = Field(default=None, ...)` and put normative producer
-    requirements in the specification docs. Never add a required field to an
-    existing type. Doing so breaks newer validators reading telemetry from older
-    producers, prevents deprecating, replacing, or offloading fields without
-    breaking older validators, and forces dummy values when redacting content.
-    See
+    `Optional[...] = Field(default=None, ...)`. Put attribute-level producer
+    rules in the specification docs, and type- or field-specific producer
+    requirements in `models.py` descriptions (generated into
+    `model/gen-ai/*.json`) rather than JSON Schema `required`. Never add a
+    required field to an existing type. See
     [.github/instructions/json-schemas.instructions.md](.github/instructions/json-schemas.instructions.md).
 ## Workflow
 
