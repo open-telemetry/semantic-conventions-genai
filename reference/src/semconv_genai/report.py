@@ -110,8 +110,12 @@ SEMCONV_DOC_LINKS: dict[str, str] = {
     "gen_ai.client.inference.operation.output_tokens": "../../docs/gen-ai/gen-ai-token-metrics.md#metric-gen_aiclientinferenceoperationoutput_tokens",
     "gen_ai.client.operation.duration": "../../docs/gen-ai/gen-ai-metrics.md#metric-gen_aiclientoperationduration",
     "gen_ai.client.inference.duration": "../../docs/gen-ai/client-inference.md#metric-gen_aiclientinferenceduration",
+    "gen_ai.client.inference.time_per_output_chunk": "../../docs/gen-ai/client-inference.md#metric-gen_aiclientinferencetime_per_output_chunk",
     "gen_ai.client.embeddings.duration": "../../docs/gen-ai/client-embeddings.md#metric-gen_aiclientembeddingsduration",
     "gen_ai.client.embeddings.operation.input_tokens": "../../docs/gen-ai/client-embeddings.md#metric-gen_aiclientembeddingsoperationinput_tokens",
+    "gen_ai.server.request.duration": "../../docs/gen-ai/gen-ai-metrics.md#metric-gen_aiserverrequestduration",
+    "gen_ai.server.time_to_first_token": "../../docs/gen-ai/gen-ai-metrics.md#metric-gen_aiservertime_to_first_token",
+    "gen_ai.server.time_per_output_token": "../../docs/gen-ai/gen-ai-metrics.md#metric-gen_aiservertime_per_output_token",
     "gen_ai.execute_tool.duration": "../../docs/gen-ai/execute-tool.md#metric-gen_aiexecute_toolduration",
     "gen_ai.retrieval.duration": "../../docs/gen-ai/retrieval.md#metric-gen_airetrievalduration",
     "gen_ai.client.invoke_agent.duration": "../../docs/gen-ai/client-invoke-agent.md#metric-gen_aiclientinvoke_agentduration",
@@ -119,6 +123,8 @@ SEMCONV_DOC_LINKS: dict[str, str] = {
     "gen_ai.invoke_agent.tool_calls": "../../docs/gen-ai/gen-ai-metrics.md#metric-gen_aiinvoke_agenttool_calls",
     "mcp.client.operation.duration": "../../docs/gen-ai/mcp.md#metric-mcpclientoperationduration",
     "mcp.server.operation.duration": "../../docs/gen-ai/mcp.md#metric-mcpserveroperationduration",
+    "mcp.client.session.duration": "../../docs/gen-ai/mcp.md#metric-mcpclientsessionduration",
+    "mcp.server.session.duration": "../../docs/gen-ai/mcp.md#metric-mcpserversessionduration",
 }
 
 
