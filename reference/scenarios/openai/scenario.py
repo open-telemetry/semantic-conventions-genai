@@ -716,12 +716,11 @@ def run_chat_streaming_timing_checks():
             ):
                 advance(0.01)
                 yield f"data: {json.dumps(chunk(delta))}\n\n".encode()
-            for index, delta in enumerate(output_deltas):
+            for delta in output_deltas:
                 advance(0.3)
                 yield f"data: {json.dumps(chunk(delta))}\n\n".encode()
-                if index + 1 < len(output_deltas):
-                    advance(0.1)
-                    yield f"data: {json.dumps(chunk({}))}\n\n".encode()
+                advance(0.1)
+                yield f"data: {json.dumps(chunk({}))}\n\n".encode()
             advance(0.4)
             yield f"data: {json.dumps(chunk({}, 'stop'))}\n\ndata: [DONE]\n\n".encode()
 
