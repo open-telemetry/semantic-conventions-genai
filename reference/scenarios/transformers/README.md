@@ -9,3 +9,5 @@ Transformers Serve owns model loading, request handling, and token generation fo
 | `gen_ai.server.time_per_output_token` | Yes - server request time after the first token, divided by the remaining generated tokens | ✅ Implemented |
 
 `DirectStreamer` counts model output tokens before decoding them to text. The scenario doesn't use SSE chunks to count tokens or measure time to first token. A request that fails before streaming or has a failed or interrupted stream records request duration with `error.type`, but neither token histogram.
+
+The streaming response records the canonical model ID that Transformers Serve puts in completion events, and the server address and port from the ASGI scope.

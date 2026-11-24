@@ -14,13 +14,13 @@
 | Attribute | Supporting Libraries |
 | --- | --- |
 | gen_ai.request.model | [transformers] |
-| server.port | (none) |
+| server.port | [transformers] |
 
 ## Recommended
 
 | Attribute | Supporting Libraries |
 | --- | --- |
-| gen_ai.response.model | (none) |
-| server.address | (none) |
+| gen_ai.response.model | [transformers] |
+| server.address | [transformers] |
 
 [transformers]: ../scenarios/transformers/scenario.py

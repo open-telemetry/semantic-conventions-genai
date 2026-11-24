@@ -6,17 +6,26 @@
       "error.type",
       "gen_ai.operation.name",
       "gen_ai.provider.name",
-      "gen_ai.request.model"
+      "gen_ai.request.model",
+      "gen_ai.response.model",
+      "server.address",
+      "server.port"
     ],
     "gen_ai.server.time_per_output_token": [
       "gen_ai.operation.name",
       "gen_ai.provider.name",
-      "gen_ai.request.model"
+      "gen_ai.request.model",
+      "gen_ai.response.model",
+      "server.address",
+      "server.port"
     ],
     "gen_ai.server.time_to_first_token": [
       "gen_ai.operation.name",
       "gen_ai.provider.name",
-      "gen_ai.request.model"
+      "gen_ai.request.model",
+      "gen_ai.response.model",
+      "server.address",
+      "server.port"
     ]
   },
   "entities": {},

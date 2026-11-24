@@ -18,7 +18,7 @@ from starlette.types import Message, Receive, Scope, Send
 from tokenizers import Tokenizer
 from tokenizers.models import WordLevel
 from tokenizers.pre_tokenizers import Whitespace
-from transformers import GPT2Config, GPT2LMHeadModel, PreTrainedTokenizerFast
+from transformers import GPT2Config, GPT2LMHeadModel, PreTrainedModel, PreTrainedTokenizerFast, ProcessorMixin
 from transformers.cli.serving import server
 from transformers.cli.serving import utils as serving_utils
 from transformers.cli.serving.chat_completion import ChatCompletionHandler
@@ -55,6 +55,7 @@ class TokenTiming:
     first_token_at: float | None = None
     output_tokens: int = 0
     completed: bool = False
+    response_model: str | None = None
 
 
 _token_timing = ContextVar[TokenTiming | None]("token_timing", default=None)
@@ -82,7 +83,7 @@ class ReferenceStreamer(DirectStreamer):
 
 class ReferenceStreamingResponse(StreamingResponse):
     def __init__(
-        self, response: StreamingResponse, started_at: float, timing: TokenTiming, attributes: dict[str, str]
+        self, response: StreamingResponse, started_at: float, timing: TokenTiming, attributes: dict[str, str | int]
     ) -> None:
         super().__init__(
             response.body_iterator,
@@ -105,6 +106,12 @@ class ReferenceStreamingResponse(StreamingResponse):
                 response_finished = True
 
         attributes = self.metric_attributes
+        if self.timing.response_model is not None:
+            attributes["gen_ai.response.model"] = self.timing.response_model
+        endpoint = scope.get("server")
+        if endpoint is not None and endpoint[1] is not None:
+            attributes["server.address"], attributes["server.port"] = endpoint
+
         error_type: str | None = None
         try:
             await super().__call__(scope, receive, send_body)
@@ -129,10 +136,20 @@ class ReferenceStreamingResponse(StreamingResponse):
 
 
 class ReferenceCompletionHandler(CompletionHandler):
+    def _resolve_model(self, body: dict) -> tuple[str, PreTrainedModel, ProcessorMixin | PreTrainedTokenizerFast]:
+        model_id, model, processor = super()._resolve_model(body)
+        timing = _token_timing.get()
+        if timing is not None:
+            timing.response_model = model_id
+        return model_id, model, processor
+
     async def handle_request(self, body: dict, request_id: str) -> StreamingResponse | JSONResponse:
         started_at = perf_counter()
         timing = TokenTiming()
-        attributes = {"gen_ai.operation.name": "text_completion", "gen_ai.provider.name": "transformers"}
+        attributes: dict[str, str | int] = {
+            "gen_ai.operation.name": "text_completion",
+            "gen_ai.provider.name": "transformers",
+        }
         error_type: str | None = None
         context = _token_timing.set(timing)
         try:
@@ -190,7 +207,7 @@ async def run_completion(model_path: Path) -> None:
     with patch.object(serving_utils, "DirectStreamer", ReferenceStreamer):
         async with (
             app.router.lifespan_context(app),
-            httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://localhost") as client,
+            httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://localhost:8000") as client,
         ):
             response = await client.post(
                 "/v1/completions",
