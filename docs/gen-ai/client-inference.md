@@ -737,7 +737,11 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 
 **[4] `server.port`:** When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries, for example proxies, if it's available.
 
-**[5] `gen_ai.response.service_tier`:** SHOULD be set only if the provider reports it before the first chunk is received.
+**[5] `gen_ai.response.service_tier`:** The value SHOULD be the one returned by the provider. It can differ from
+`gen_ai.request.service_tier` when `auto` is requested.
+See [`gen_ai.response.service_tier`](/docs/registry/attributes/gen-ai.md#gen-ai-response-service-tier) for provider field mappings.
+
+SHOULD be set only if the provider reports it by the time the first chunk is received.
 When set, it SHOULD be the same on all measurements from a streaming response.
 
 **[6] `server.address`:** When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent the server address behind any intermediaries, for example proxies, if it's available.
@@ -864,7 +868,11 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 
 **[4] `server.port`:** When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries, for example proxies, if it's available.
 
-**[5] `gen_ai.response.service_tier`:** SHOULD be set only if the provider reports it before the first chunk is received.
+**[5] `gen_ai.response.service_tier`:** The value SHOULD be the one returned by the provider. It can differ from
+`gen_ai.request.service_tier` when `auto` is requested.
+See [`gen_ai.response.service_tier`](/docs/registry/attributes/gen-ai.md#gen-ai-response-service-tier) for provider field mappings.
+
+SHOULD be set only if the provider reports it by the time the first chunk is received.
 When set, it SHOULD be the same on all measurements from a streaming response.
 
 **[6] `server.address`:** When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent the server address behind any intermediaries, for example proxies, if it's available.

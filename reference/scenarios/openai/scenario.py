@@ -784,7 +784,11 @@ def run_chat_streaming_ttfc_checks():
                 yield f"data: {json.dumps(chunk(delta, service_tier=tier))}\n\n".encode()
             for index, delta in enumerate(output_deltas):
                 advance(0.3)
-                tier = "priority" if service_tier_at == "late" and index == 1 else None
+                tier = (
+                    "priority"
+                    if (service_tier_at == "first_chunk" and index == 0) or (service_tier_at == "late" and index == 1)
+                    else None
+                )
                 yield f"data: {json.dumps(chunk(delta, service_tier=tier))}\n\n".encode()
             advance(0.4)
             yield f"data: {json.dumps(chunk({}, 'stop'))}\n\ndata: [DONE]\n\n".encode()
@@ -849,7 +853,7 @@ def run_chat_streaming_ttfc_checks():
                 assert points[0].count == 1
                 assert points[0].sum == ttfc
                 assert points[0].attributes["gen_ai.response.model"] == "gpt-4o-mini"
-                expected_tier = "priority" if service_tier_at == "start" else None
+                expected_tier = "priority" if service_tier_at in ("start", "first_chunk") else None
                 assert points[0].attributes.get("gen_ai.response.service_tier") == expected_tier
                 if service_tier_at is not None:
                     assert spans[0].attributes["gen_ai.response.service_tier"] == "priority"
@@ -878,9 +882,10 @@ def run_chat_streaming_ttfc_checks():
     # Failed attempt: 0.1 s auth + 0.05 s request + 0.2 s SDK backoff.
     check_stream([{"content": "Hello"}], 0.85, retry=True)
     check_stream([], None)
-    # A tier reported before the first chunk labels every sample; one reported later labels none.
+    # A tier known by the first chunk labels every sample; one reported later labels none.
     three_chunks = [{"content": "Hello"}, {"content": " big"}, {"content": " world"}]
     check_stream(three_chunks, 0.5, service_tier_at="start")
+    check_stream(three_chunks, 0.5, service_tier_at="first_chunk")
     check_stream(three_chunks, 0.5, service_tier_at="late")
     print("    -> TTFC boundary checks passed")
 
