@@ -21,7 +21,7 @@ from mcp.shared._otel import extract_trace_context
 from mcp.shared.exceptions import MCPError
 from mcp.shared.jsonrpc_dispatcher import JSONRPCDispatcher
 from mcp.shared.message import SessionMessage
-from mcp_types import INVALID_PARAMS, CallToolResult, ImageContent, TextContent
+from mcp_types import INVALID_PARAMS, CallToolResult, EmbeddedResource, ImageContent, TextContent, TextResourceContents
 from opentelemetry import trace
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
@@ -48,41 +48,25 @@ _WEATHER_MAP_PNG = base64.b64decode(
 )
 
 
-def _to_message_part(block: dict[str, Any]) -> dict[str, Any] | None:
+_KNOWN_BLOCK_TYPES = ("text", "image", "audio")
+
+
+def _to_message_part(block: dict[str, Any]) -> dict[str, Any]:
     if block["type"] == "text":
         return {"type": "text", "content": block["text"]}
-    if block["type"] in ("image", "audio"):
-        return {"type": "blob", "modality": block["type"], "mime_type": block["mimeType"], "content": block["data"]}
-    return None
+    return {"type": "blob", "modality": block["type"], "mime_type": block["mimeType"], "content": block["data"]}
 
 
 def _tool_call_result(structured_content: Any, content: list[dict[str, Any]]) -> dict[str, Any] | None:
     """Maps a `CallToolResult` in wire form to `gen_ai.tool.call.result`."""
-    only_text = len(content) == 1 and content[0]["type"] == "text"
-    if structured_content is None and only_text:
-        # The SDK gives no sign that the text holds serialized JSON, so it stays a string.
-        return {"value": content[0]["text"]}
     tool_result: dict[str, Any] = {}
     if structured_content is not None:
         tool_result["value"] = structured_content
-        # MCP servers SHOULD repeat structured content in a text block; that block is equivalent to `value`.
-        content = [block for block in content if not _repeats(block, structured_content)]
-    if content:
-        parts = [_to_message_part(block) for block in content]
-        if None in parts:
-            # A block without a matching message part type: keep the blocks together in `value`.
-            return {"value": content} if structured_content is None else {"value": structured_content}
+    # Blocks without a matching part type (for example `resource`) are not recorded.
+    parts = [_to_message_part(block) for block in content if block["type"] in _KNOWN_BLOCK_TYPES]
+    if parts:
         tool_result["parts"] = parts
     return tool_result or None
-
-
-def _repeats(block: dict[str, Any], structured_content: Any) -> bool:
-    if block["type"] != "text":
-        return False
-    try:
-        return json.loads(block["text"]) == structured_content
-    except ValueError:
-        return False
 
 
 _MCP_DURATION_BUCKETS = [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30, 60, 120, 300]
@@ -246,6 +230,23 @@ def _build_mcp_server() -> MCPServer:
     def get_weather_summary(location: str) -> str:
         """Get the current weather as plain text."""
         return f"72 degrees and sunny in {location}"
+
+    @mcp_server.tool()
+    def get_weather_report(location: str) -> CallToolResult:
+        """Get the weather report as text and an embedded resource."""
+        return CallToolResult(
+            content=[
+                TextContent(type="text", text=f"Weather report for {location}"),
+                EmbeddedResource(
+                    type="resource",
+                    resource=TextResourceContents(
+                        uri=f"file:///weather/{location.lower()}.md",
+                        mime_type="text/markdown",
+                        text=f"# {location}\n72 degrees and sunny",
+                    ),
+                )
+            ]
+        )
 
     @mcp_server.prompt()
     def analyze_weather(user_name: str, language: str) -> str:
@@ -468,7 +469,7 @@ async def run_tool_list_reference(session: ReferenceMCPClientSession) -> None:
 async def run_tool_call_reference(session: ReferenceMCPClientSession) -> None:
     """Scenario: MCP tools/call."""
     print("  [tools/call] MCP tool call")
-    for tool_name in ("get_weather", "get_weather_map", "get_weather_summary"):
+    for tool_name in ("get_weather", "get_weather_map", "get_weather_summary", "get_weather_report"):
         result = await session.call_tool(tool_name, {"location": "Seattle"})
         print(f"    -> {tool_name}: {[block.type for block in result.content]}")
 

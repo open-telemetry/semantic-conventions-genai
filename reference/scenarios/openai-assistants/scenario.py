@@ -51,6 +51,15 @@ _invoke_agent_duration = _reference_meter.create_histogram(
 )
 
 
+def _deserialize(value):
+    if not isinstance(value, str):
+        return value
+    try:
+        return json.loads(value)
+    except ValueError:
+        return value
+
+
 def run_invoke_agent(client):
     """Exercise OpenAI Assistants API with manual OTel spans.
 
@@ -199,7 +208,8 @@ def run_invoke_agent(client):
                             tool_span.set_attribute("gen_ai.tool.call.id", tool_call_id)
                         tool_span.set_attribute("gen_ai.tool.call.arguments", arguments)
                         result = get_weather(arguments["location"])
-                        tool_span.set_attribute("gen_ai.tool.call.result", {"value": result})
+                        # Tool outputs are strings, so structured data arrives serialized.
+                        tool_span.set_attribute("gen_ai.tool.call.result", {"value": _deserialize(result)})
 
                     tool_outputs.append(
                         {

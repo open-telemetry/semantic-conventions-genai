@@ -650,22 +650,11 @@ attributes:
       > [!WARNING]
       > This attribute may contain sensitive information.
 
-      It's an object with the following fields, at least one of which MUST be
-      set:
+      It's an object with the result recorded in `value`, as message parts in
+      `parts`, or both. See [examples](/docs/gen-ai/non-normative/examples-llm-calls.md#tool-call-results).
 
-      - `value`: the result as any JSON value, for example an object, an array,
-        or a string. In case a serialized JSON string is available to the
-        instrumentation, the instrumentation SHOULD do the best effort to
-        deserialize it. A result that is a single text block is recorded here as
-        a string, or as the deserialized value if it holds serialized JSON.
-      - `parts`: content blocks that `value` cannot represent, such as images,
-        files, or several ordered blocks, recorded as message parts rather than
-        in a provider-specific format.
-
-      Instrumentations SHOULD NOT record `parts` when they are equivalent to
-      `value`, for example when the only part is text. Both fields are recorded
-      when the result has structured data and the parts carry other content,
-      such as an image.
+      Instrumentations SHOULD NOT set this attribute when the tool returns no
+      value.
     examples:
       - |
         {

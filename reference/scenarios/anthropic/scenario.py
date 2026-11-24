@@ -4,6 +4,7 @@
 """
 
 import base64
+import json
 import os
 from tempfile import mkdtemp
 
@@ -599,14 +600,30 @@ def run_create_agent():
             raise
 
 
+def _tool_result_block_to_part(block):
+    if block["type"] == "text":
+        return {"type": "text", "content": block["text"]}
+    return {"type": "uri", "modality": "image", "uri": block["source"]["url"]}
+
+
+def _deserialize(value):
+    if not isinstance(value, str):
+        return value
+    try:
+        return json.loads(value)
+    except ValueError:
+        return value
+
+
 def run_tool_runner():
     """Scenario: the SDK tool runner executes tools that return serialized JSON and content blocks."""
-    print("  [execute_tool] Anthropic tool runner: tools returning JSON text and content blocks")
+    print("  [execute_tool] Anthropic tool runner: tools returning serialized JSON and content blocks")
 
+    # Tool results are strings or content blocks, so structured data is returned serialized.
     @anthropic.beta_tool
     def get_weather(location: str):
         """Get the current weather for a location."""
-        return [{"type": "text", "text": json.dumps({"location": location, "temperature": 57})}]
+        return json.dumps({"location": location, "temperature": 57, "conditions": "rainy"})
 
     @anthropic.beta_tool
     def get_weather_map(location: str):
@@ -630,34 +647,18 @@ def run_tool_runner():
             },
         ) as tool_span:
             tool_span.set_attribute("gen_ai.tool.description", tool.description)
-            tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps(tool_use.input))
+            tool_span.set_attribute("gen_ai.tool.call.arguments", tool_use.input)
             tool_result = original_run_tool(runner, tool, tool_use)
             if tool_result.get("is_error"):
                 tool_span.set_status(StatusCode.ERROR)
                 tool_span.set_attribute("error.type", "tool_error")
                 return tool_result
             content = tool_result["content"]
-            if not isinstance(content, str) and len(content) == 1 and content[0]["type"] == "text":
-                content = content[0]["text"]
             if isinstance(content, str):
-                try:
-                    tool_span.set_attribute("gen_ai.tool.call.result", json.dumps({"value": json.loads(content)}))
-                except ValueError:
-                    tool_span.set_attribute("gen_ai.tool.call.result", json.dumps({"value": content}))
+                tool_span.set_attribute("gen_ai.tool.call.result", {"value": _deserialize(content)})
             else:
-                tool_span.set_attribute(
-                    "gen_ai.tool.call.result",
-                    json.dumps(
-                        {
-                            "parts": [
-                                {"type": "text", "content": block["text"]}
-                                if block["type"] == "text"
-                                else {"type": "uri", "modality": "image", "uri": block["source"]["url"]}
-                                for block in content
-                            ]
-                        }
-                    ),
-                )
+                parts = [_tool_result_block_to_part(block) for block in content]
+                tool_span.set_attribute("gen_ai.tool.call.result", {"parts": parts})
             return tool_result
 
     BetaToolRunner._run_tool = traced_run_tool

@@ -16,7 +16,8 @@ The `tools/call` spans cover these tool results:
 
 | Tool | `CallToolResult` | Recorded in `gen_ai.tool.call.result` |
 | --- | --- | --- |
-| `get_weather` | `structuredContent` and a text block that repeats it | `value` |
-| `get_weather_map` | `structuredContent`, a text block that repeats it, and an image block | `value` and `parts` (image) |
-| `get_weather_summary` | One text block | `value` as a string |
+| `get_weather` | `structuredContent` and a text block that repeats it | `value` and `parts` (text) |
+| `get_weather_map` | `structuredContent`, a text block that repeats it, and an image block | `value` and `parts` (text, image) |
+| `get_weather_summary` | One text block | `parts` (text) |
+| `get_weather_report` | A text block and an embedded `resource` block | `parts` (text); the `resource` block has no matching part type and isn't recorded |
 | `missing_tool` (not on the server) | `isError` | Nothing; `error.type` = `tool_error` |

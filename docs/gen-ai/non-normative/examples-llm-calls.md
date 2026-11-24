@@ -12,6 +12,12 @@
 - [Tool calls (functions)](#tool-calls-functions)
   - [GenAI client spans when content capturing is disabled](#genai-client-spans-when-content-capturing-is-disabled)
   - [GenAI client spans when content capturing is enabled on span attributes](#genai-client-spans-when-content-capturing-is-enabled-on-span-attributes)
+- [Tool call results](#tool-call-results)
+  - [Object](#object)
+  - [Serialized JSON](#serialized-json)
+  - [Content blocks](#content-blocks)
+  - [Structured content and content blocks](#structured-content-and-content-blocks)
+  - [Unrecognized content blocks](#unrecognized-content-blocks)
 - [System instructions along with chat history (content enabled)](#system-instructions-along-with-chat-history-content-enabled)
 - [Chat completion with reasoning (content enabled)](#chat-completion-with-reasoning-content-enabled)
 - [Tool calls (built-in)](#tool-calls-built-in)
@@ -582,6 +588,150 @@ If tool call is [instrumented according to execute-tool span definition](/docs/g
     ]
   }
 ]
+```
+
+## Tool call results
+
+These examples show how the result a tool returns is recorded in the
+`gen_ai.tool.call.result` attribute on the
+[execute tool span](/docs/gen-ai/execute-tool.md#span-gen_aiexecute_tool).
+
+### Object
+
+An OpenAI Agents SDK function tool can return any value. It returns a
+dictionary, which is recorded as is. A string it returns would be recorded as a
+string, without deserializing.
+
+```py
+@function_tool
+def get_weather(location: str) -> dict:
+    return {"temperature": 57, "conditions": "rainy"}
+```
+
+```json
+{
+  "value": {
+    "temperature": 57,
+    "conditions": "rainy"
+  }
+}
+```
+
+### Serialized JSON
+
+An Anthropic tool runner tool can return only a string or content blocks, so it
+returns structured data serialized. The instrumentation deserializes the
+string. A string that isn't valid JSON is recorded as is.
+
+```py
+@beta_tool
+def get_weather(location: str):
+    return json.dumps({"temperature": 57, "conditions": "rainy"})
+```
+
+```json
+{
+  "value": {
+    "temperature": 57,
+    "conditions": "rainy"
+  }
+}
+```
+
+### Content blocks
+
+An Anthropic tool runner tool returns a list of content blocks. The SDK sends
+them to the model as `tool_result` content. The blocks are recorded as message
+parts.
+
+```py
+@beta_tool
+def get_weather_map(location: str):
+    return [
+        {"type": "text", "text": "Weather map for Seattle"},
+        {"type": "image", "source": {"type": "url", "url": "https://example.com/weather-map.png"}},
+    ]
+```
+
+```json
+{
+  "parts": [
+    {
+      "type": "text",
+      "content": "Weather map for Seattle"
+    },
+    {
+      "type": "uri",
+      "modality": "image",
+      "uri": "https://example.com/weather-map.png"
+    }
+  ]
+}
+```
+
+### Structured content and content blocks
+
+An MCP tool returns a `CallToolResult` with `structuredContent` and `content`
+blocks. The protocol sends both to the client, so both are recorded.
+
+```json
+{
+  "structuredContent": {"temperature": 57, "conditions": "rainy"},
+  "content": [
+    {"type": "text", "text": "{\"temperature\": 57, \"conditions\": \"rainy\"}"},
+    {"type": "image", "data": "iVBORw0KGgo...", "mimeType": "image/png"}
+  ]
+}
+```
+
+```json
+{
+  "value": {
+    "temperature": 57,
+    "conditions": "rainy"
+  },
+  "parts": [
+    {
+      "type": "text",
+      "content": "{\"temperature\": 57, \"conditions\": \"rainy\"}"
+    },
+    {
+      "type": "blob",
+      "modality": "image",
+      "mime_type": "image/png",
+      "content": "iVBORw0KGgo..."
+    }
+  ]
+}
+```
+
+### Unrecognized content blocks
+
+An MCP tool returns a `CallToolResult` with a text block and an embedded
+`resource` block. The `resource` block has no matching part type, so it isn't
+recorded.
+
+```json
+{
+  "content": [
+    {"type": "text", "text": "Weather report for Seattle"},
+    {
+      "type": "resource",
+      "resource": {"uri": "file:///weather/seattle.md", "mimeType": "text/markdown", "text": "# Seattle\n57 degrees and rainy"}
+    }
+  ]
+}
+```
+
+```json
+{
+  "parts": [
+    {
+      "type": "text",
+      "content": "Weather report for Seattle"
+    }
+  ]
+}
 ```
 
 ## System instructions along with chat history (content enabled)

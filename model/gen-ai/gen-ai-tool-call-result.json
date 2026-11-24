@@ -1,5 +1,9 @@
 {
     "$defs": {
+        "AnyValue": {
+            "description": "A value convertible to [OpenTelemetry AnyValue](https://opentelemetry.io/docs/specs/otel/common/#anyvalue).",
+            "title": "AnyValue"
+        },
         "BlobPart": {
             "description": "Represents blob binary data sent inline to the model",
             "properties": {
@@ -31,20 +35,27 @@
                             "type": "string"
                         }
                     ],
-                    "description": "The general modality of the data if it is known. Instrumentations SHOULD also set the mimeType field if the specific type is known.",
+                    "description": "The general modality of the data if it is known. Instrumentations SHOULD also set the `mime_type` field if the specific type is known.",
                     "title": "Modality"
                 },
                 "content": {
-                    "description": "Raw bytes of the attached data. This field SHOULD be encoded as a base64 string when serialized to JSON.",
-                    "format": "binary",
-                    "title": "Content",
-                    "type": "string"
+                    "anyOf": [
+                        {
+                            "format": "binary",
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Raw bytes of the attached data.",
+                    "title": "Content"
                 }
             },
             "required": [
                 "type",
-                "modality",
-                "content"
+                "modality"
             ],
             "title": "BlobPart",
             "type": "object"
@@ -124,7 +135,7 @@
                             "type": "string"
                         }
                     ],
-                    "description": "The general modality of the data if it is known. Instrumentations SHOULD also set the mimeType field if the specific type is known.",
+                    "description": "The general modality of the data if it is known. Instrumentations SHOULD also set the `mime_type` field if the specific type is known.",
                     "title": "Modality"
                 },
                 "file_id": {
@@ -157,6 +168,7 @@
                             "blob",
                             "file",
                             "uri",
+                            "transcription",
                             "reasoning",
                             "compaction"
                         ]
@@ -411,6 +423,29 @@
             "title": "ToolCallResponsePart",
             "type": "object"
         },
+        "TranscriptionPart": {
+            "additionalProperties": true,
+            "description": "Represents a text transcript of spoken audio, captured as a standalone part.",
+            "properties": {
+                "type": {
+                    "const": "transcription",
+                    "description": "The type of the content captured in this part.",
+                    "title": "Type",
+                    "type": "string"
+                },
+                "content": {
+                    "description": "The text transcript of spoken audio. For input audio this is the transcription of the user's speech; for output audio it is the transcript of the model's spoken response.",
+                    "title": "Content",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "type",
+                "content"
+            ],
+            "title": "TranscriptionPart",
+            "type": "object"
+        },
         "UriPart": {
             "additionalProperties": true,
             "description": "Represents an external referenced file sent to the model by URI",
@@ -443,7 +478,7 @@
                             "type": "string"
                         }
                     ],
-                    "description": "The general modality of the data if it is known. Instrumentations SHOULD also set the mimeType field if the specific type is known.",
+                    "description": "The general modality of the data if it is known. Instrumentations SHOULD also set the `mime_type` field if the specific type is known.",
                     "title": "Modality"
                 },
                 "uri": {
@@ -479,12 +514,12 @@
             ]
         }
     ],
-    "description": "Represents the result returned by a tool call. At least one field must be set.",
+    "description": "The result returned by a tool call. At least one field must be set.",
     "properties": {
         "value": {
+            "$ref": "#/$defs/AnyValue",
             "default": null,
-            "description": "The result as any JSON value, for example an object, an array, or a string.",
-            "title": "Value"
+            "description": "The whole tool call result, or the structured data returned alongside `parts`. When the instrumented library doesn't accept objects as a tool call result, for example it accepts only strings or content blocks, instrumentations SHOULD try to deserialize a string portion of the result and record it as is when it's not valid JSON. Otherwise, instrumentations SHOULD NOT deserialize string results."
         },
         "parts": {
             "anyOf": [
@@ -516,6 +551,9 @@
                                 "$ref": "#/$defs/UriPart"
                             },
                             {
+                                "$ref": "#/$defs/TranscriptionPart"
+                            },
+                            {
                                 "$ref": "#/$defs/ReasoningPart"
                             },
                             {
@@ -533,7 +571,7 @@
                 }
             ],
             "default": null,
-            "description": "Content blocks that `value` cannot represent, such as images or files, as message parts.",
+            "description": "The whole tool call result, or the content returned alongside `value`, as message parts. Instrumentations SHOULD set it only when the instrumented library supports content blocks as a (part of) tool call result, and SHOULD NOT parse other results into parts. Instrumentations SHOULD NOT record content blocks that don't have a defined part type.",
             "title": "Parts"
         }
     },

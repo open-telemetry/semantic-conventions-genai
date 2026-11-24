@@ -30,6 +30,15 @@ SANDBOX_SHELL = "/bin/bash"
 _reference_tracer = reference_tracer()
 
 
+def _deserialize(value):
+    if not isinstance(value, str):
+        return value
+    try:
+        return json.loads(value)
+    except ValueError:
+        return value
+
+
 def instrument_function_tool(tool: FunctionTool) -> FunctionTool:
     original_on_invoke_tool = tool.on_invoke_tool
 
@@ -515,7 +524,7 @@ async def run_runner():
                     span.set_attribute("gen_ai.transfer.target.name", target.name)
                     span.set_attribute(
                         "gen_ai.tool.call.result",
-                        {"value": json.loads(selected.handoff.get_transfer_message(target))},
+                        {"value": _deserialize(selected.handoff.get_transfer_message(target))},
                     )
                     return target
                 except Exception as e:

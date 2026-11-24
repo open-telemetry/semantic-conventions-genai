@@ -610,18 +610,37 @@ class ToolCallArguments(RootModel[dict[str, Any]]):
     pass
 
 
-class ToolCallResult(BaseModel):
+class AnyValue(RootModel[Any]):
     """
-    Represents the result returned by a tool call. At least one field must be set.
+    A value convertible to [OpenTelemetry AnyValue](https://opentelemetry.io/docs/specs/otel/common/#anyvalue).
     """
 
-    value: Any = Field(
+    pass
+
+
+class ToolCallResult(BaseModel):
+    """
+    The result returned by a tool call. At least one field must be set.
+    """
+
+    value: AnyValue = Field(
         default=None,
-        description="The result as any JSON value, for example an object, an array, or a string.",
+        description=(
+            "The whole tool call result, or the structured data returned alongside `parts`. "
+            "When the instrumented library doesn't accept objects as a tool call result, for example it "
+            "accepts only strings or content blocks, instrumentations SHOULD try to deserialize a string "
+            "portion of the result and record it as is when it's not valid JSON. Otherwise, instrumentations SHOULD NOT "
+            "deserialize string results."
+        ),
     )
     parts: Optional[List[MessagePart]] = Field(
         default=None,
-        description="Content blocks that `value` cannot represent, such as images or files, as message parts.",
+        description=(
+            "The whole tool call result, or the content returned alongside `value`, as message parts. "
+            "Instrumentations SHOULD set it only when the instrumented library supports content blocks "
+            "as a (part of) tool call result, and SHOULD NOT parse other results into parts. "
+            "Instrumentations SHOULD NOT record content blocks that don't have a defined part type."
+        ),
     )
 
     model_config = ConfigDict(
