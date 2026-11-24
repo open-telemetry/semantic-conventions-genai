@@ -35,7 +35,7 @@
                         }
                     ],
                     "default": null,
-                    "description": "The general modality of the data if it is known. Instrumentations SHOULD also set the mimeType field if the specific type is known.",
+                    "description": "The general modality of the data if it is known. Instrumentations SHOULD also set the `mime_type` field if the specific type is known.",
                     "title": "Modality"
                 },
                 "content": {
@@ -227,7 +227,7 @@
                         }
                     ],
                     "default": null,
-                    "description": "The general modality of the data if it is known. Instrumentations SHOULD also set the mimeType field if the specific type is known.",
+                    "description": "The general modality of the data if it is known. Instrumentations SHOULD also set the `mime_type` field if the specific type is known.",
                     "title": "Modality"
                 },
                 "file_id": {
@@ -639,7 +639,7 @@
                         }
                     ],
                     "default": null,
-                    "description": "The general modality of the data if it is known. Instrumentations SHOULD also set the mimeType field if the specific type is known.",
+                    "description": "The general modality of the data if it is known. Instrumentations SHOULD also set the `mime_type` field if the specific type is known.",
                     "title": "Modality"
                 },
                 "uri": {
