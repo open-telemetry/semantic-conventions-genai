@@ -887,7 +887,7 @@ spans:
       [Agent Skills](/docs/gen-ai/execute-tool.md#agent-skills).
 
       **Span status** SHOULD follow the [Recording Errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/general/recording-errors.md)
-      document. When the tool result reports an error, instrumentation SHOULD
+      document. When the tool result indicates an error, instrumentation SHOULD
       set the span status to `Error`.
     stability: development
     entity_associations:

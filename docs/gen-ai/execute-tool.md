@@ -56,7 +56,7 @@ span. Available refinements include
 [Agent Skills](/docs/gen-ai/execute-tool.md#agent-skills).
 
 **Span status** SHOULD follow the [Recording Errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/general/recording-errors.md)
-document. When the tool result reports an error, instrumentation SHOULD
+document. When the tool result indicates an error, instrumentation SHOULD
 set the span status to `Error`.
 
 **Span name** SHOULD be `execute_tool {gen_ai.tool.name}`.
@@ -86,13 +86,13 @@ set the span status to `Error`.
 
 **[1] `gen_ai.operation.name`:** If one of the predefined values applies, but specific system uses a different name it's RECOMMENDED to document it in the semantic conventions for specific GenAI system and use system-specific name in the instrumentation. If a different name is not documented, instrumentation libraries SHOULD use applicable predefined value.
 
-**[2] `error.type`:** If the tool call failed or its result object reports an error.
+**[2] `error.type`:** If the tool call failed or its result object indicates an error.
 
 **[3] `error.type`:** If the tool call resulted in an exception, `error.type` SHOULD match
 the error code obtained from the exception, the canonical name of the
 exception, or another low-cardinality error identifier.
 
-If the tool returned a result object that reports an error, instrumentation
+If the tool returned a result object that indicates an error, instrumentation
 SHOULD detect it using the library's convention. For example (field names and
 types vary by language and SDK):
 
@@ -250,13 +250,13 @@ Semantic conventions for individual frameworks MAY specify different span name f
 
 **[1] `gen_ai.operation.name`:** If one of the predefined values applies, but specific system uses a different name it's RECOMMENDED to document it in the semantic conventions for specific GenAI system and use system-specific name in the instrumentation. If a different name is not documented, instrumentation libraries SHOULD use applicable predefined value.
 
-**[2] `error.type`:** If the tool call failed or its result object reports an error.
+**[2] `error.type`:** If the tool call failed or its result object indicates an error.
 
 **[3] `error.type`:** If the tool call resulted in an exception, `error.type` SHOULD match
 the error code obtained from the exception, the canonical name of the
 exception, or another low-cardinality error identifier.
 
-If the tool returned a result object that reports an error, instrumentation
+If the tool returned a result object that indicates an error, instrumentation
 SHOULD detect it using the library's convention. For example (field names and
 types vary by language and SDK):
 
@@ -430,13 +430,13 @@ otherwise.
 
 **[1] `gen_ai.operation.name`:** If one of the predefined values applies, but specific system uses a different name it's RECOMMENDED to document it in the semantic conventions for specific GenAI system and use system-specific name in the instrumentation. If a different name is not documented, instrumentation libraries SHOULD use applicable predefined value.
 
-**[2] `error.type`:** If the tool call failed or its result object reports an error.
+**[2] `error.type`:** If the tool call failed or its result object indicates an error.
 
 **[3] `error.type`:** If the tool call resulted in an exception, `error.type` SHOULD match
 the error code obtained from the exception, the canonical name of the
 exception, or another low-cardinality error identifier.
 
-If the tool returned a result object that reports an error, instrumentation
+If the tool returned a result object that indicates an error, instrumentation
 SHOULD detect it using the library's convention. For example (field names and
 types vary by language and SDK):
 
@@ -606,13 +606,13 @@ The skill name SHOULD NOT be appended by itself.
 
 **[1] `gen_ai.operation.name`:** If one of the predefined values applies, but specific system uses a different name it's RECOMMENDED to document it in the semantic conventions for specific GenAI system and use system-specific name in the instrumentation. If a different name is not documented, instrumentation libraries SHOULD use applicable predefined value.
 
-**[2] `error.type`:** If the tool call failed or its result object reports an error.
+**[2] `error.type`:** If the tool call failed or its result object indicates an error.
 
 **[3] `error.type`:** If the tool call resulted in an exception, `error.type` SHOULD match
 the error code obtained from the exception, the canonical name of the
 exception, or another low-cardinality error identifier.
 
-If the tool returned a result object that reports an error, instrumentation
+If the tool returned a result object that indicates an error, instrumentation
 SHOULD detect it using the library's convention. For example (field names and
 types vary by language and SDK):
 
@@ -804,13 +804,13 @@ The skill name SHOULD NOT be appended without the resource name.
 
 **[1] `gen_ai.operation.name`:** If one of the predefined values applies, but specific system uses a different name it's RECOMMENDED to document it in the semantic conventions for specific GenAI system and use system-specific name in the instrumentation. If a different name is not documented, instrumentation libraries SHOULD use applicable predefined value.
 
-**[2] `error.type`:** If the tool call failed or its result object reports an error.
+**[2] `error.type`:** If the tool call failed or its result object indicates an error.
 
 **[3] `error.type`:** If the tool call resulted in an exception, `error.type` SHOULD match
 the error code obtained from the exception, the canonical name of the
 exception, or another low-cardinality error identifier.
 
-If the tool returned a result object that reports an error, instrumentation
+If the tool returned a result object that indicates an error, instrumentation
 SHOULD detect it using the library's convention. For example (field names and
 types vary by language and SDK):
 
@@ -1020,13 +1020,13 @@ the metric value SHOULD be the same as the span duration.
 | [`gen_ai.agent.name`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` When applicable. | string | The human-readable name of the agent executing the tool. [3] | `Math Tutor`; `Fiction Writer` |
 | [`gen_ai.tool.type`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` If available. | string | Type of the tool utilized by the agent [4] | `function`; `extension`; `datastore` |
 
-**[1] `error.type`:** If the tool call failed or its result object reports an error.
+**[1] `error.type`:** If the tool call failed or its result object indicates an error.
 
 **[2] `error.type`:** If the tool call resulted in an exception, `error.type` SHOULD match
 the error code obtained from the exception, the canonical name of the
 exception, or another low-cardinality error identifier.
 
-If the tool returned a result object that reports an error, instrumentation
+If the tool returned a result object that indicates an error, instrumentation
 SHOULD detect it using the library's convention. For example (field names and
 types vary by language and SDK):
 

@@ -16,13 +16,13 @@ attribute_groups:
     attributes:
       - ref: error.type
         requirement_level:
-          conditionally_required: "If the tool call failed or its result object reports an error."
+          conditionally_required: "If the tool call failed or its result object indicates an error."
         note: |
           If the tool call resulted in an exception, `error.type` SHOULD match
           the error code obtained from the exception, the canonical name of the
           exception, or another low-cardinality error identifier.
 
-          If the tool returned a result object that reports an error, instrumentation
+          If the tool returned a result object that indicates an error, instrumentation
           SHOULD detect it using the library's convention. For example (field names and
           types vary by language and SDK):
 
