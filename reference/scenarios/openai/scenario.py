@@ -912,6 +912,7 @@ def run_chat_with_document_input_reference(client):
             "modality": "document",
             "mime_type": mime_type,
             "content": pdf_b64,
+            "size": len(pdf_bytes),
         },
     ]
     input_messages = [{"role": "user", "parts": input_parts}]
@@ -984,6 +985,7 @@ def run_chat_image_reference(client):
             "modality": "image",
             "mime_type": mime_type,
             "content": image_b64,
+            "size": len(image_bytes),
         },
     ]
     input_messages = [{"role": "user", "parts": input_parts}]
@@ -1023,6 +1025,72 @@ def run_chat_image_reference(client):
             span.set_attribute(attr, value)
         # OpenAI does not report per-modality image token counts, so the counters put
         # these tokens under the `unknown` modality even though the input is an image.
+        record_inference_usage(usage, usage_metric_attributes(request_model, resp.model, host, port))
+        print(f"    -> {resp.choices[0].message.content[:60]}")
+
+
+def run_chat_with_remote_uri_reference(client):
+    """Scenario: chat with a caller-supplied image URL whose size is not observable.
+
+    The SDK input carries the URL and, from the `image_url` block, the image
+    modality. It does not carry the payload's size or MIME type, and the
+    instrumentation must not fetch the URL to find them, so the `uri` part
+    omits `size` and `mime_type`.
+    """
+    print("  [chat_remote_uri] chat with a remote image URL (reference implementation)")
+    request_model = "gpt-4o-mini"
+    instruction = "Describe the attached image."
+    image_url = "https://example.com/reference-image.png"
+    messages = [
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": instruction},
+                {"type": "image_url", "image_url": {"url": image_url}},
+            ],
+        }
+    ]
+    input_parts = [
+        {"type": "text", "content": instruction},
+        {"type": "uri", "modality": "image", "uri": image_url},
+    ]
+    input_messages = [{"role": "user", "parts": input_parts}]
+
+    host, port = mock_server_host_port(MOCK_BASE_URL)
+    span_attributes_uri = {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "openai",
+        "gen_ai.request.model": request_model,
+    }
+    if host:
+        span_attributes_uri["server.address"] = host
+    if port is not None:
+        span_attributes_uri["server.port"] = port
+    with _reference_tracer.start_as_current_span(
+        "chat gpt-4o-mini", kind=SpanKind.CLIENT, attributes=span_attributes_uri
+    ) as span:
+        span.set_attribute("gen_ai.input.messages", input_messages)
+        resp = client.chat.completions.create(
+            model=request_model,
+            messages=messages,
+        )
+        span.set_attribute("gen_ai.response.model", resp.model)
+        span.set_attribute("gen_ai.response.id", resp.id)
+        span.set_attribute("gen_ai.response.finish_reasons", chat_finish_reasons(resp.choices))
+        output_messages = [
+            {
+                "role": c.message.role,
+                "parts": [{"type": "text", "content": c.message.content}],
+            }
+            for c in resp.choices
+        ]
+        span.set_attribute("gen_ai.output.messages", output_messages)
+        usage = {}
+        if resp.usage:
+            usage["gen_ai.usage.input_tokens"] = resp.usage.prompt_tokens
+            usage["gen_ai.usage.output_tokens"] = resp.usage.completion_tokens
+        for attr, value in usage.items():
+            span.set_attribute(attr, value)
         record_inference_usage(usage, usage_metric_attributes(request_model, resp.model, host, port))
         print(f"    -> {resp.choices[0].message.content[:60]}")
 
@@ -1572,6 +1640,7 @@ def main():
     run_chat_tool_call_reference(client)
     run_chat_with_document_input_reference(client)
     run_chat_image_reference(client)
+    run_chat_with_remote_uri_reference(client)
     run_chat_audio_reference(client)
     run_responses_with_prompt_template_reference(client)
     run_fetch_response_reference(client)

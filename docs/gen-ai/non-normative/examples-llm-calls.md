@@ -268,6 +268,7 @@ See the [normative JSON schema](/model/gen-ai/gen-ai-input-messages.json) for mo
         "type": "blob",
         "modality": "image",
         "mime_type": "image/png",
+        "size": 37,
         "content": "aGVsbG8gd29ybGQgaW1hZ2luZSB0aGlzIGlzIGFuIGltYWdlCg=="
       },
       // Inline audio
@@ -284,11 +285,21 @@ See the [normative JSON schema](/model/gen-ai/gen-ai-input-messages.json) for mo
         "mime_type": "application/pdf",
         "uri": "s3://my-bucket/kyc-form.pdf"
       },
-      // An inline video without `content`
+      // A document the instrumentation received inline and uploaded to its own
+      // storage before recording the URI, so it measured the size
+      {
+        "type": "uri",
+        "modality": "document",
+        "mime_type": "application/pdf",
+        "size": 482113,
+        "uri": "s3://telemetry-media/0f3a9c/kyc-form.pdf"
+      },
+      // An inline video without `content`; `size` still records how large it was
       {
         "type": "blob",
         "modality": "video",
-        "mime_type": "video/mp4"
+        "mime_type": "video/mp4",
+        "size": 10485760
       }
     ]
   }

@@ -220,6 +220,14 @@ class BlobPart(BaseModel):
     content: Optional[bytes] = Field(
         default=None, description="Raw bytes of the attached data."
     )
+    size: Optional[int] = Field(
+        default=None,
+        ge=0,
+        description=(
+            "Raw unencoded byte length of the attached data. Instrumentations SHOULD set it when "
+            "they omit `content`, so the size of the payload is still recorded."
+        ),
+    )
 
 class FilePart(BaseModel):
     """Represents an external referenced file sent to the model by file id"""
@@ -258,6 +266,16 @@ class UriPart(BaseModel):
             "which should use the `blob` part instead. The URI may use a scheme known to "
             "the provider api (e.g. `gs://bucket/object.png`), or be a publicly accessible location."
         )
+    )
+    size: Optional[int] = Field(
+        default=None,
+        ge=0,
+        description=(
+            "Raw unencoded byte length of the data the URI references. Instrumentations SHOULD set it "
+            "only when the size is directly observable, for example when they held the bytes before "
+            "uploading them or the SDK input carries the size with the URI. Instrumentations MUST NOT "
+            "fetch the URI or make an extra API call to measure it."
+        ),
     )
 
     model_config = ConfigDict(extra="allow")
