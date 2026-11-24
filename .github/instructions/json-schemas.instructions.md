@@ -11,8 +11,17 @@ change that produced them. Sample documents under
 `make test-json-schemas`, with the errors each schema reports snapshotted in the
 case file's `errors:` block (see `docs/gen-ai/non-normative/tests/README.md`).
 
+## Schema compatibility rules
+
+Only structural union `type` discriminators may be required in `models.py`. Mark all other fields optional with `Optional[...] = Field(default=None, ...)`. Put attribute-level producer rules in the spec docs and field- or type-specific rules in `models.py` descriptions (generated into `model/gen-ai/*.json`), never in JSON Schema `required`. Never add a required field to an existing type:
+
+- **Backward compatibility.** Newer consumers reading older data will reject telemetry from older producers if a later version adds a `required` field to an existing type.
+- **Forward compatibility.** Older consumers reading newer data will reject payloads that omit a deprecated, replaced, or offloaded field if the earlier schema marked it `required`.
+- **Redaction.** Requiring payload fields like `content` forces instrumentations to emit dummy `""` values when redacting sensitive content.
+
 ## Reviewing a schema change
 
+- Reject any change that marks a non-discriminator field `required` in `models.py` or `model/gen-ai/*.json`.
 - Snapshot changes are the behaviour change. Read every modified `errors:`
   block and check it is the intended effect of the `models.py` diff.
 - A case whose `errors:` goes from `[]` to non-empty means documents that

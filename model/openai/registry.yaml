@@ -1,19 +1,5 @@
 file_format: definition/2
 attributes:
-  - key: openai.request.service_tier
-    type:
-      members:
-        - id: auto
-          value: "auto"
-          brief: The system will utilize scale tier credits until they are exhausted.
-          stability: development
-        - id: default
-          value: "default"
-          brief: The system will utilize the default scale tier.
-          stability: development
-    brief: The service tier requested. May be a specific tier, default, or auto.
-    examples: ['auto', 'default']
-    stability: development
   - key: openai.api.type
     type:
       members:
@@ -26,11 +12,6 @@ attributes:
           brief: The OpenAI [Responses API](https://developers.openai.com/api/reference/responses/overview).
           stability: development
     brief: The type of OpenAI API being used.
-    stability: development
-  - key: openai.response.service_tier
-    type: string
-    brief: The service tier used for the response.
-    examples: ['scale', 'default']
     stability: development
   - key: openai.response.system_fingerprint
     type: string

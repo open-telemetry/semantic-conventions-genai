@@ -25,3 +25,11 @@ scenarios:
           attributes:
             gen_ai.operation.name: text_completion
           type: gen_ai.client.inference
+  caller_close:
+    run: uv run --frozen --python 3.12 --project . python -c 'import scenario; scenario.main(caller_close=True)'
+    spans:
+      - match:
+          attributes:
+            gen_ai.operation.name: chat
+            gen_ai.response.finish_reasons: [interrupted]
+          type: gen_ai.client.inference
