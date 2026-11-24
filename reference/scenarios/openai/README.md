@@ -14,11 +14,9 @@ Assistants API is covered by the `openai-assistants` scenario).
 | retrieval | No - Vector Stores search is a search service call, not GenAI retrieval; `file_search` runs server-side | ✅ Correctly not emitted |
 | memory | Yes — Conversations API / stored responses | ❌ Not implemented |
 
-The first non-empty text, refusal, audio data/transcript, or function-call name/argument delta records time to first chunk on the span and histogram. Each subsequent output chunk records time since the previous output chunk in `gen_ai.client.inference.time_per_output_chunk`. Role, ID, usage, and empty deltas don't count as output.
+The Chat Completions scenario checks that both streaming timing measurements count text and non-text output, including audio without a transcript. It also checks that metadata-only events don't reset the interval and that streams with fewer than two output chunks record no interval.
 
-The output-chunk interval metric records the time between successive qualifying SDK events. Metadata-only events do not reset the interval, and streams with fewer than two qualifying events produce no interval measurements.
-
-The scenario also checks metadata filtering, non-text output, authentication, retry backoff, output-chunk intervals, and streams with zero or one output event using the real SDK, mock HTTP responses, and a controlled clock. These assertions run through the existing `run-scenario openai --strict` entry point.
+The scenario also checks authentication and retry backoff. These checks run through `run-scenario openai --strict` against the real SDK with mock HTTP responses and a controlled clock.
 
 The scenario assumes content capture is enabled. Tool definitions include
 descriptions and parameter schemas from the SDK's `tools` argument.

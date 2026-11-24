@@ -842,7 +842,7 @@ def run_chat_streaming_timing_checks():
             {"tool_calls": [{"index": 0, "function": {"name": "lookup", "arguments": "{}"}}]},
             {},
             {"refusal": "I cannot help with that."},
-            {"audio": {"data": "YQ==", "transcript": "Hello"}},
+            {"audio": {"data": "YQ=="}},
         ],
         0.5,
         [1.2, 0.8, 0.4],
