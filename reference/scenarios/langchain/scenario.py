@@ -80,7 +80,14 @@ async def agent_node(state: GraphState) -> GraphState:
             )
             agent_span.set_attribute(
                 "gen_ai.tool.definitions",
-                [{"type": "function", "name": get_weather.name, "description": get_weather.description}],
+                [
+                    {
+                        "type": "function",
+                        "name": get_weather.name,
+                        "description": get_weather.description,
+                        "parameters": get_weather.tool_call_schema.model_json_schema(),
+                    }
+                ],
             )
 
             # LangChain delegates the model call to the underlying LLM client (openai),
