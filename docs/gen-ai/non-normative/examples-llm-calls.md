@@ -859,10 +859,11 @@ sequenceDiagram
 ## Content without a matching part type
 
 This example is an Anthropic Messages API call with a `search_result` content
-block. No part type is defined for it and Anthropic semantic conventions don't
-document a custom part for it, so it isn't recorded:
+block, which has no defined part type. Assuming Anthropic documents a custom
+`anthropic.search_result` part, for example for its native instrumentation, the
+block is recorded with `type` prefixed by `gen_ai.provider.name`:
 
-```json
+```jsonc
 [
   {
     "role": "user",
@@ -870,11 +871,28 @@ document a custom part for it, so it isn't recorded:
       {
         "type": "text",
         "content": "Answer using the attached search result."
+      },
+      // Anthropic search_result block, recorded as a documented custom part
+      {
+        "type": "anthropic.search_result",
+        "source": "https://example.com/docs/otel",
+        "title": "OpenTelemetry overview",
+        "content": [
+          {
+            "type": "text",
+            "text": "OpenTelemetry is an observability framework."
+          }
+        ],
+        "citations": {
+          "enabled": true
+        }
       }
     ]
   }
 ]
 ```
+
+Without such documentation, the block isn't recorded.
 
 ## Chat completion with multiple choices
 
