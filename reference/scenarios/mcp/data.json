@@ -58,6 +58,12 @@
       "server.address",
       "server.port"
     ],
+    "mcp.client.session.duration": [
+      "mcp.protocol.version",
+      "network.protocol.name",
+      "server.address",
+      "server.port"
+    ],
     "mcp.server.operation.duration": [
       "error.type",
       "gen_ai.operation.name",
@@ -70,6 +76,10 @@
       "network.protocol.version",
       "network.transport",
       "rpc.status_code"
+    ],
+    "mcp.server.session.duration": [
+      "mcp.protocol.version",
+      "network.protocol.name"
     ]
   },
   "entities": {},
