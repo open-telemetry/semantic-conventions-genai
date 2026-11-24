@@ -415,8 +415,8 @@ def run_chat_multimodal():
                 "role": "user",
                 "parts": [
                     {"type": "text", "content": "Summarize the attached media."},
-                    {"type": "blob", "mime_type": "image/png", "modality": "image", "content": blob},
-                    {"type": "blob", "mime_type": "audio/wav", "modality": "audio", "content": blob},
+                    {"type": "blob", "mime_type": "image/png", "modality": "image", "content": blob, "size": len(blob)},
+                    {"type": "blob", "mime_type": "audio/wav", "modality": "audio", "content": blob, "size": len(blob)},
                 ],
             }
         ]

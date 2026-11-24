@@ -791,6 +791,7 @@ def run_generate_media():
                             # e.g. "image/png" -> "image", "audio/wav" -> "audio"
                             "modality": mime_type.split("/", 1)[0],
                             "content": part.inline_data.data,
+                            "size": len(part.inline_data.data),
                         }
                     )
             output_messages = [

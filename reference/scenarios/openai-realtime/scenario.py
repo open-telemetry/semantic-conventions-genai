@@ -86,6 +86,8 @@ def _user_audio_message(audio):
                         "modality": "audio",
                         "mime_type": "audio/pcm",
                         "content": audio,
+                        # `audio` is the base64 string sent in `input_audio_buffer.append`.
+                        "size": len(base64.b64decode(audio)),
                     }
                 ],
             }
@@ -357,13 +359,20 @@ class _RealtimeDriver:
         transcript = (
             gen["final_transcript"] if gen["final_transcript"] is not None else "".join(gen["transcript_deltas"])
         )
-        output_audio = base64.b64encode(b"".join(gen["audio_deltas"])).decode()
+        output_audio_bytes = b"".join(gen["audio_deltas"])
+        output_audio = base64.b64encode(output_audio_bytes).decode()
         finish_reason = _finish_reason(status, status_details)
         output_messages = [
             {
                 "role": "assistant",
                 "parts": [
-                    {"type": "blob", "modality": "audio", "mime_type": "audio/pcm", "content": output_audio},
+                    {
+                        "type": "blob",
+                        "modality": "audio",
+                        "mime_type": "audio/pcm",
+                        "content": output_audio,
+                        "size": len(output_audio_bytes),
+                    },
                     {"type": "transcription", "content": transcript},
                 ],
             }

@@ -101,6 +101,8 @@ def _user_audio_message():
                         "modality": "audio",
                         "mime_type": "audio/pcm",
                         "content": INPUT_AUDIO_B64,
+                        # The same decoded bytes `send_realtime_input` sends.
+                        "size": len(base64.b64decode(INPUT_AUDIO_B64)),
                     }
                 ],
             }
@@ -319,7 +321,8 @@ async def _run_generation(
             ]
         else:
             transcript = "".join(transcript_deltas)
-            output_audio = base64.b64encode(b"".join(audio_chunks)).decode() if audio_chunks else ""
+            output_audio_bytes = b"".join(audio_chunks)
+            output_audio = base64.b64encode(output_audio_bytes).decode() if audio_chunks else ""
             output_messages = [
                 {
                     "role": "assistant",
@@ -329,6 +332,7 @@ async def _run_generation(
                             "modality": "audio",
                             "mime_type": "audio/pcm",
                             "content": output_audio,
+                            "size": len(output_audio_bytes),
                         },
                         {
                             "type": "transcription",
