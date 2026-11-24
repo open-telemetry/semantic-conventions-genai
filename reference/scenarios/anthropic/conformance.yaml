@@ -7,7 +7,42 @@ server:
 
 env:
   MOCK_LLM_URL: ${MOCK_SERVER_URL}
+  ANTHROPIC_OPEN_TELEMETRY: "false"
 
 scenarios:
   reference:
     run: uv run --frozen --python 3.12 --project . python scenario.py
+    spans:
+      - match:
+          attributes:
+            gen_ai.operation.name: chat
+          type: gen_ai.client.inference
+      # The basic chat sends metadata.user_id. The compaction request omits it.
+      - match:
+          attributes:
+            gen_ai.operation.name: chat
+            gen_ai.request.reasoning.level: medium
+        expect:
+          count: 1
+          attributes:
+            gen_ai.user.id: usr_7f32a
+      - match:
+          attributes:
+            gen_ai.operation.name: chat
+            gen_ai.conversation.compacted: true
+        expect:
+          count: 1
+          attributes:
+            gen_ai.user.id: { present: false }
+      - match:
+          attributes:
+            gen_ai.operation.name: generate_content
+          type: gen_ai.client.inference
+      - match:
+          attributes:
+            gen_ai.operation.name: text_completion
+          type: gen_ai.client.inference
+      - match:
+          attributes:
+            gen_ai.operation.name: create_agent
+          type: gen_ai.create_agent.client

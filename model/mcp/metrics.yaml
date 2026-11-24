@@ -3,7 +3,6 @@ attribute_groups:
   - id: mcp.operation.metrics.attributes
     visibility: internal
     attributes:
-      - ref_group: mcp.common.attributes
       - ref: mcp.resource.uri
         requirement_level: opt_in
 
@@ -11,7 +10,15 @@ attribute_groups:
     visibility: internal
     attributes:
       - ref: mcp.protocol.version
-      - ref_group: mcp.network.protocol.attributes
+      - ref: network.protocol.name
+        requirement_level:
+          recommended: When applicable.
+        examples:
+          - "http"
+          - "websocket"
+      - ref: jsonrpc.protocol.version
+        requirement_level:
+          recommended: When it's not `2.0`.
       - ref: error.type
         requirement_level:
           conditionally_required: If and only if session ends with an error.
@@ -26,6 +33,8 @@ metrics:
       from the time it was sent until the response or ack is received.
     stability: development
     attributes:
+      - ref_group: mcp.common.attributes
+      - ref_group: mcp.network.protocol.attributes
       - ref_group: mcp.operation.metrics.attributes
       - ref_group: mcp.client.status.attributes
       - ref_group: mcp.client.address_and_port.attributes
@@ -39,6 +48,8 @@ metrics:
       from the time it was received until the result or ack is sent.
     stability: development
     attributes:
+      - ref_group: mcp.common.attributes
+      - ref_group: mcp.network.protocol.attributes
       - ref_group: mcp.operation.metrics.attributes
       - ref_group: mcp.server.status.attributes
 

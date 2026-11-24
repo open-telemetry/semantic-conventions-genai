@@ -1,0 +1,9 @@
+# yaml-language-server: $schema=../case.schema.json
+description: Memory records carry content of any shape plus optional id, metadata and score
+schema: gen-ai-memory-records.json
+document: [
+  { "id": "mem-1", "content": "User prefers metric units", "metadata": { "source": "chat" }, "score": 0.8 },
+  { "content": { "fact": "User's name is Ada", "confidence": 0.95 } }
+]
+# Regenerate with `uv run pytest --update-snapshots`, do not edit by hand.
+errors: []

@@ -1,5 +1,25 @@
 {
   "spans": {
+    "gen_ai.client.invoke_agent": [
+      "error.type",
+      "gen_ai.agent.name",
+      "gen_ai.input.messages",
+      "gen_ai.operation.name",
+      "gen_ai.output.messages",
+      "gen_ai.output.type",
+      "gen_ai.provider.name",
+      "gen_ai.request.max_tokens",
+      "gen_ai.request.model",
+      "gen_ai.request.temperature",
+      "gen_ai.request.top_p",
+      "gen_ai.response.finish_reasons",
+      "gen_ai.system_instructions",
+      "gen_ai.tool.definitions",
+      "gen_ai.usage.input_tokens",
+      "gen_ai.usage.output_tokens",
+      "server.address",
+      "server.port"
+    ],
     "gen_ai.create_agent.client": [
       "gen_ai.agent.description",
       "gen_ai.agent.id",
@@ -11,45 +31,57 @@
       "gen_ai.system_instructions",
       "server.address",
       "server.port"
-    ],
-    "gen_ai.invoke_agent.client": [
+    ]
+  },
+  "events": {
+    "gen_ai.client.invoke_agent.exception": [
+      "exception.message",
+      "exception.stacktrace",
+      "exception.type"
+    ]
+  },
+  "metrics": {
+    "gen_ai.client.invoke_agent.duration": [
+      "error.type",
       "gen_ai.agent.name",
-      "gen_ai.input.messages",
       "gen_ai.operation.name",
-      "gen_ai.output.messages",
-      "gen_ai.output.type",
       "gen_ai.provider.name",
-      "gen_ai.request.max_tokens",
       "gen_ai.request.model",
-      "gen_ai.request.temperature",
-      "gen_ai.request.top_p",
-      "gen_ai.system_instructions",
-      "gen_ai.tool.definitions",
-      "gen_ai.usage.input_tokens",
-      "gen_ai.usage.output_tokens",
       "server.address",
       "server.port"
     ]
   },
-  "events": {},
-  "metrics": {},
+  "entities": {},
   "findings": [
-    {
-      "id": "genai_content_schema",
-      "message": "Attribute 'gen_ai.tool.definitions' value does not conform to the GenAI schema: {\"function\":{\"description\":\"Get the current weather\",\"name\":\"get_weather\",\"parameters\":{\"properties\":{\"location\":{\"description\":\"City name\",\"type\":\"string\"}},\"required\":[\"location\"],\"type\":\"object\"}},\"type\":\"function\"} is not valid under any of the schemas listed in the 'anyOf' keyword",
-      "context": {
-        "attribute": "gen_ai.tool.definitions",
-        "errors": "{\"function\":{\"description\":\"Get the current weather\",\"name\":\"get_weather\",\"parameters\":{\"properties\":{\"location\":{\"description\":\"City name\",\"type\":\"string\"}},\"required\":[\"location\"],\"type\":\"object\"}},\"type\":\"function\"} is not valid under any of the schemas listed in the 'anyOf' keyword"
-      }
-    },
     {
       "id": "genai_expected_attribute_missing",
       "message": "Span 'invoke_agent refimpl-test-agent' (operation 'invoke_agent') is missing expected attribute 'gen_ai.response.finish_reasons'",
+      "signal_type": "span",
+      "signal_name": "invoke_agent refimpl-test-agent",
       "context": {
         "missing_attribute": "gen_ai.response.finish_reasons",
         "operation": "invoke_agent"
       }
+    },
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'invoke_agent refimpl-test-agent' (operation 'invoke_agent') is missing expected attribute 'gen_ai.usage.input_tokens'",
+      "signal_type": "span",
+      "signal_name": "invoke_agent refimpl-test-agent",
+      "context": {
+        "missing_attribute": "gen_ai.usage.input_tokens",
+        "operation": "invoke_agent"
+      }
+    },
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'invoke_agent refimpl-test-agent' (operation 'invoke_agent') is missing expected attribute 'gen_ai.usage.output_tokens'",
+      "signal_type": "span",
+      "signal_name": "invoke_agent refimpl-test-agent",
+      "context": {
+        "missing_attribute": "gen_ai.usage.output_tokens",
+        "operation": "invoke_agent"
+      }
     }
-  ],
-  "entities": {}
+  ]
 }

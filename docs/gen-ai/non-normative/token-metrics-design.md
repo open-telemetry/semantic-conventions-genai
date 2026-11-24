@@ -6,7 +6,7 @@ This document explains the design of the token instruments in
 ## TL;DR
 
 - **Histograms** (`gen_ai.client.inference.operation.*`) measure per-operation token size distributions. It is invalid to record more than one observation per operation that a histogram represents, so breakdowns like modality cannot go on the histogram without corrupting percentiles.
-- **Counters** (`gen_ai.client.inference.usage.*`) measure cumulative token consumption over time for cost and spend tracking. They safely carry breakdowns like modality where each token bucket increments independently.
+- **Counters** (`gen_ai.client.inference.usage.*`) measure cumulative token consumption over time for cost and spend tracking. Except for the reasoning counter, they safely carry breakdowns like modality where each token bucket increments independently.
 
 ## Why is modality on counters instead of histograms? Why two sets of metrics?
 
@@ -50,19 +50,40 @@ category explodes quickly, and histograms are expensive. Instead, the
 misleading quantiles, keep telemetry volume low, and answer the questions people
 care about: usage rates, cost approximations, and ratios across modalities.
 
+A histogram view does not combine a usage counter's modality contributions into
+inference totals. An inference with 100 text tokens and 200 image tokens produces
+two observations, 100 and 200, not one observation of 300. Dropping
+`gen_ai.token.modality` does not combine them.
+
+## Why record only positive contributions on usage counters?
+
+Zeros do not affect consumption totals. To support per-modality statistics
+across inferences, instrumentation would need to record a known count for each
+modality being analyzed on every inference, including zeros. Otherwise, averages
+and percentiles depend on which zero counts happen to be reported.
+
+Providers may report only a total without a modality breakdown. Instrumentation
+cannot fill missing modality counts with zeros.
+
+Per-operation token histograms instead record one total per inference, using
+zero when usage is missing.
+
 ## Why does `gen_ai.token.modality` have an `unknown` value?
 
-Summing a counter across `gen_ai.token.modality` must equal the total, even for
-providers that report no modality breakdown.
+Summing a counter across `gen_ai.token.modality` must equal the known total, even
+for providers that report no modality breakdown.
 
 The counters aggregate cleanly because each token lands in one modality bucket,
-and `gen_ai.token.modality` is required on all of them. When a provider reports
-no breakdown, instrumentation still has to put tokens somewhere. Without
-`unknown`, both options fail: omitting the attribute breaks sums across
-different providers, and guessing `text` invents data.
+and `gen_ai.token.modality` is required on all of them except
+`gen_ai.client.inference.usage.reasoning.output_tokens`. Providers report
+reasoning tokens without a modality breakdown and bill them as text or general
+output tokens, so that counter has nothing to split. When a provider reports no
+breakdown for the other counters, instrumentation still has to put tokens
+somewhere. Without `unknown`, both options fail: omitting the attribute breaks
+sums across different providers, and guessing `text` invents data.
 
-`unknown` means "the provider gave no modality breakdown", not "the token has no
-modality". It keeps the partition complete.
+`unknown` means "the positive count is known but its modality cannot reliably be
+determined", not "the count is unknown".
 
 ## Why are cached, cache-written, and reasoning tokens separate counters instead of attributes?
 
@@ -109,3 +130,14 @@ The two metric families serve different purposes, reflected in their namespaces:
   operations. The `operation` namespace indicates that each measurement represents
   a single operation's token count, producing per-operation distributions and
   percentiles rather than totals.
+
+## Why do embeddings have only a histogram?
+
+Embeddings responses report one input token count per request, with no output,
+cached, or reasoning tokens.
+
+So total embeddings usage comes from the sum of
+[`gen_ai.client.embeddings.operation.input_tokens`](/docs/gen-ai/client-embeddings.md#metric-gen_aiclientembeddingsoperationinput_tokens).
+
+Detailed usage for embeddings may be added later, see
+[#577](https://github.com/open-telemetry/semantic-conventions-genai/issues/577).

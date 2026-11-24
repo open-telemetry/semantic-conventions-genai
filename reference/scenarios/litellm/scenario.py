@@ -4,14 +4,63 @@ Exercises: chat, chat_streaming, chat_tool_call, embeddings
 against a mock OpenAI server, with manual OTel spans.
 """
 
-import json
 import os
+import time
+from urllib.parse import urlparse
 
-from reference_shared import flush_and_shutdown, reference_event_logger, reference_tracer, setup_otel
+from opentelemetry._logs import SeverityNumber
+from opentelemetry.trace import SpanKind, StatusCode
+from reference_shared import flush_and_shutdown, reference_event_logger, reference_meter, reference_tracer, setup_otel
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"] + "/v1"
+_SERVER_ADDRESS = urlparse(os.environ["MOCK_LLM_URL"]).hostname
+_SERVER_PORT = urlparse(os.environ["MOCK_LLM_URL"]).port
 
 _reference_tracer = reference_tracer()
+_reference_meter = reference_meter()
+
+_embeddings_duration = _reference_meter.create_histogram(
+    "gen_ai.client.embeddings.duration",
+    unit="s",
+    description="GenAI client embeddings operation duration.",
+    explicit_bucket_boundaries_advisory=[
+        0.01,
+        0.02,
+        0.04,
+        0.08,
+        0.16,
+        0.32,
+        0.64,
+        1.28,
+        2.56,
+        5.12,
+        10.24,
+        20.48,
+        40.96,
+        81.92,
+    ],
+)
+_embeddings_input_tokens = _reference_meter.create_histogram(
+    "gen_ai.client.embeddings.operation.input_tokens",
+    unit="{token}",
+    description="The number of input tokens used per embeddings operation.",
+    explicit_bucket_boundaries_advisory=[
+        1,
+        4,
+        16,
+        64,
+        256,
+        1024,
+        4096,
+        16384,
+        65536,
+        262144,
+        1048576,
+        4194304,
+        16777216,
+        67108864,
+    ],
+)
 
 
 def _provider_name(model_name: str) -> str:
@@ -33,16 +82,18 @@ def run_chat():
         "gen_ai.operation.name": "chat",
         "gen_ai.provider.name": provider_name,
         "gen_ai.request.model": request_model,
+        "server.address": _SERVER_ADDRESS,
+        "server.port": _SERVER_PORT,
     }
-    with _reference_tracer.start_as_current_span("chat gpt-4o-mini", attributes=span_attributes) as span:
+    with _reference_tracer.start_as_current_span(
+        "chat gpt-4o-mini", kind=SpanKind.CLIENT, attributes=span_attributes
+    ) as span:
         span.set_attribute(
             "gen_ai.input.messages",
-            json.dumps(
-                [
-                    {"role": message["role"], "parts": [{"type": "text", "content": message["content"]}]}
-                    for message in request_messages
-                ]
-            ),
+            [
+                {"role": message["role"], "parts": [{"type": "text", "content": message["content"]}]}
+                for message in request_messages
+            ],
         )
         resp = litellm.completion(
             model=litellm_model,
@@ -55,16 +106,14 @@ def run_chat():
         span.set_attribute("gen_ai.response.finish_reasons", [c.finish_reason for c in resp.choices])
         span.set_attribute(
             "gen_ai.output.messages",
-            json.dumps(
-                [
-                    {
-                        "role": "assistant",
-                        "parts": [{"type": "text", "content": choice.message.content}],
-                    }
-                    for choice in resp.choices
-                    if choice.message.content
-                ]
-            ),
+            [
+                {
+                    "role": "assistant",
+                    "parts": [{"type": "text", "content": choice.message.content}],
+                }
+                for choice in resp.choices
+                if choice.message.content
+            ],
         )
         if resp.usage:
             span.set_attribute("gen_ai.usage.input_tokens", resp.usage.prompt_tokens)
@@ -73,23 +122,22 @@ def run_chat():
         # Emit inference operation details event
         event_attrs = {
             "gen_ai.operation.name": "chat",
+            "gen_ai.provider.name": provider_name,
             "gen_ai.request.model": request_model,
             "gen_ai.response.id": resp.id,
             "gen_ai.response.model": resp.model,
             "gen_ai.response.finish_reasons": [c.finish_reason for c in resp.choices],
-            "gen_ai.input.messages": json.dumps(
-                [{"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]} for m in request_messages]
-            ),
-            "gen_ai.output.messages": json.dumps(
-                [
-                    {
-                        "role": "assistant",
-                        "parts": [{"type": "text", "content": c.message.content}],
-                    }
-                    for c in resp.choices
-                    if c.message.content
-                ]
-            ),
+            "gen_ai.input.messages": [
+                {"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]} for m in request_messages
+            ],
+            "gen_ai.output.messages": [
+                {
+                    "role": "assistant",
+                    "parts": [{"type": "text", "content": c.message.content}],
+                }
+                for c in resp.choices
+                if c.message.content
+            ],
         }
         if resp.usage:
             event_attrs["gen_ai.usage.input_tokens"] = resp.usage.prompt_tokens
@@ -117,16 +165,18 @@ def run_chat_streaming():
         "gen_ai.operation.name": "chat",
         "gen_ai.provider.name": provider_name,
         "gen_ai.request.model": request_model,
+        "server.address": _SERVER_ADDRESS,
+        "server.port": _SERVER_PORT,
     }
-    with _reference_tracer.start_as_current_span("chat gpt-4o-mini", attributes=span_attributes_2) as span:
+    with _reference_tracer.start_as_current_span(
+        "chat gpt-4o-mini", kind=SpanKind.CLIENT, attributes=span_attributes_2
+    ) as span:
         span.set_attribute(
             "gen_ai.input.messages",
-            json.dumps(
-                [
-                    {"role": message["role"], "parts": [{"type": "text", "content": message["content"]}]}
-                    for message in request_messages
-                ]
-            ),
+            [
+                {"role": message["role"], "parts": [{"type": "text", "content": message["content"]}]}
+                for message in request_messages
+            ],
         )
         resp = litellm.completion(
             model=litellm_model,
@@ -134,11 +184,18 @@ def run_chat_streaming():
             api_base=MOCK_BASE_URL,
             api_key="mock-key",
             stream=True,
+            stream_options={"include_usage": True},
         )
         text = ""
         seen_choice_indexes = set()
         finish_reasons_by_index = {}
+        response_id = None
+        response_model = None
+        usage = None
         for chunk in resp:
+            response_id = response_id or chunk.id
+            response_model = response_model or chunk.model
+            usage = getattr(chunk, "usage", None) or usage
             for choice in chunk.choices:
                 seen_choice_indexes.add(choice.index)
                 if choice.index == 0 and choice.delta.content:
@@ -150,16 +207,21 @@ def run_chat_streaming():
                 "gen_ai.response.finish_reasons",
                 [finish_reasons_by_index.get(index, "error") for index in range(max(seen_choice_indexes) + 1)],
             )
+        if response_id:
+            span.set_attribute("gen_ai.response.id", response_id)
+        if response_model:
+            span.set_attribute("gen_ai.response.model", response_model)
+        if usage:
+            span.set_attribute("gen_ai.usage.input_tokens", usage.prompt_tokens)
+            span.set_attribute("gen_ai.usage.output_tokens", usage.completion_tokens)
         span.set_attribute(
             "gen_ai.output.messages",
-            json.dumps(
-                [
-                    {
-                        "role": "assistant",
-                        "parts": [{"type": "text", "content": text}],
-                    }
-                ]
-            ),
+            [
+                {
+                    "role": "assistant",
+                    "parts": [{"type": "text", "content": text}],
+                }
+            ],
         )
         print(f"    -> {text[:60]}")
 
@@ -195,17 +257,19 @@ def run_chat_tool_call():
         "gen_ai.operation.name": "chat",
         "gen_ai.provider.name": provider_name,
         "gen_ai.request.model": request_model,
+        "server.address": _SERVER_ADDRESS,
+        "server.port": _SERVER_PORT,
     }
-    with _reference_tracer.start_as_current_span("chat gpt-4o-mini", attributes=span_attributes_3) as span:
-        span.set_attribute("gen_ai.tool.definitions", json.dumps([request_tool]))
+    with _reference_tracer.start_as_current_span(
+        "chat gpt-4o-mini", kind=SpanKind.CLIENT, attributes=span_attributes_3
+    ) as span:
+        span.set_attribute("gen_ai.tool.definitions", [{"type": t["type"], **t["function"]} for t in [request_tool]])
         span.set_attribute(
             "gen_ai.input.messages",
-            json.dumps(
-                [
-                    {"role": message["role"], "parts": [{"type": "text", "content": message["content"]}]}
-                    for message in request_messages
-                ]
-            ),
+            [
+                {"role": message["role"], "parts": [{"type": "text", "content": message["content"]}]}
+                for message in request_messages
+            ],
         )
         resp = litellm.completion(
             model=litellm_model,
@@ -237,25 +301,55 @@ def run_embeddings():
     request_model = "text-embedding-3-small"
     litellm_model = f"openai/{request_model}"
     provider_name = _provider_name(litellm_model)
+    encoding_format = "float"
     span_attributes_4 = {
         "gen_ai.operation.name": "embeddings",
         "gen_ai.provider.name": provider_name,
         "gen_ai.request.model": request_model,
+        "server.address": _SERVER_ADDRESS,
+        "server.port": _SERVER_PORT,
     }
+    start_time = time.perf_counter()
+    metric_attributes = dict(span_attributes_4)
+    input_token_count = 0
     with _reference_tracer.start_as_current_span(
-        "embeddings text-embedding-3-small", attributes=span_attributes_4
+        "embeddings text-embedding-3-small",
+        kind=SpanKind.CLIENT,
+        attributes=span_attributes_4,
+        record_exception=False,
     ) as span:
-        resp = litellm.embedding(
-            model=litellm_model,
-            input=["Hello, world!"],
-            api_base=MOCK_BASE_URL,
-            api_key="mock-key",
-        )
-        if resp.model:
-            span.set_attribute("gen_ai.response.model", resp.model)
-        if resp.usage:
-            span.set_attribute("gen_ai.usage.input_tokens", resp.usage.prompt_tokens)
-        print(f"    -> embedding dim: {len(resp.data[0]['embedding'])}")
+        try:
+            span.set_attribute("gen_ai.request.encoding_formats", [encoding_format])
+            resp = litellm.embedding(
+                model=litellm_model,
+                input=["Hello, world!"],
+                encoding_format=encoding_format,
+                api_base=MOCK_BASE_URL,
+                api_key="mock-key",
+            )
+            if resp.model:
+                span.set_attribute("gen_ai.response.model", resp.model)
+                metric_attributes["gen_ai.response.model"] = resp.model
+            if resp.data and resp.data[0].get("embedding"):
+                span.set_attribute("gen_ai.embeddings.dimension.count", len(resp.data[0]["embedding"]))
+            if resp.usage:
+                span.set_attribute("gen_ai.usage.input_tokens", resp.usage.prompt_tokens)
+                input_token_count = resp.usage.prompt_tokens
+            print(f"    -> embedding dim: {len(resp.data[0]['embedding'])}")
+        except Exception as e:
+            error_type = f"{type(e).__module__}.{type(e).__qualname__}"
+            span.set_status(StatusCode.ERROR, str(e))
+            span.set_attribute("error.type", error_type)
+            metric_attributes["error.type"] = error_type
+            reference_event_logger().emit(
+                event_name="gen_ai.client.embeddings.exception",
+                severity_number=SeverityNumber.WARN,
+                exception=e,
+            )
+            raise
+        finally:
+            _embeddings_duration.record(time.perf_counter() - start_time, metric_attributes)
+            _embeddings_input_tokens.record(input_token_count, metric_attributes)
 
 
 def main():

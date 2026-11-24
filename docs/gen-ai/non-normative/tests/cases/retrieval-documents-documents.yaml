@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../case.schema.json
+description: Retrieved documents with optional id and score; extra fields are allowed
+schema: gen-ai-retrieval-documents.json
+document: [
+  { "id": "doc-1", "score": 0.91, "title": "OpenTelemetry overview" },
+  { "id": "doc-2" },
+  {}
+]
+# Regenerate with `uv run pytest --update-snapshots`, do not edit by hand.
+errors: []
