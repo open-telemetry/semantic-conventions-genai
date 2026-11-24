@@ -23,7 +23,7 @@
 | gen_ai.request.service_tier | [anthropic], [groq], [openai] |
 | gen_ai.request.stream | [openai] |
 | gen_ai.request.top_k | (none) |
-| gen_ai.response.service_tier | [groq], [openai] |
+| gen_ai.response.service_tier | [azure-openai], [groq], [openai] |
 | server.port | [anthropic], [aws-bedrock], [azure-ai-inference], [azure-openai], [cohere], [google-genai], [litellm], [mistralai], [openai] |
 
 ## Recommended
