@@ -94,6 +94,9 @@ def run_chat_reference(client):
             )
             span.set_attribute("gen_ai.response.model", resp.model)
             metric_attributes["gen_ai.response.model"] = resp.model
+            if resp.service_tier is not None:
+                span.set_attribute("gen_ai.response.service_tier", resp.service_tier)
+                metric_attributes["gen_ai.response.service_tier"] = resp.service_tier
             span.set_attribute("gen_ai.response.id", resp.id)
             span.set_attribute("gen_ai.response.finish_reasons", [c.finish_reason for c in resp.choices])
             if resp.usage:
