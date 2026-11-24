@@ -75,23 +75,6 @@ _inference_duration = _meter.create_histogram(
 _SERVER_ADDRESS, _SERVER_PORT = mock_server_host_port(MOCK_BASE_URL)
 
 
-def _usage_details(usage):
-    """Return the cached input and reasoning output counts Groq reported, or 0."""
-    prompt_details = usage.prompt_tokens_details if usage else None
-    completion_details = usage.completion_tokens_details if usage else None
-    return (
-        getattr(prompt_details, "cached_tokens", None) or 0,
-        getattr(completion_details, "reasoning_tokens", None) or 0,
-    )
-
-
-def _set_usage_details(span, cache_read_tokens, reasoning_tokens):
-    if cache_read_tokens > 0:
-        span.set_attribute("gen_ai.usage.cache_read.input_tokens", cache_read_tokens)
-    if reasoning_tokens > 0:
-        span.set_attribute("gen_ai.usage.reasoning.output_tokens", reasoning_tokens)
-
-
 def _add_usage_details(cache_read_tokens, reasoning_tokens, modality_attributes):
     if cache_read_tokens > 0:
         _cache_read_input_token_usage.add(cache_read_tokens, modality_attributes)
@@ -144,8 +127,12 @@ def run_chat_reference(client):
                 span.set_attribute("gen_ai.usage.output_tokens", resp.usage.completion_tokens)
                 input_tokens = resp.usage.prompt_tokens or 0
                 output_tokens = resp.usage.completion_tokens or 0
-                cache_read_tokens, reasoning_tokens = _usage_details(resp.usage)
-                _set_usage_details(span, cache_read_tokens, reasoning_tokens)
+                cache_read_tokens = getattr(resp.usage.prompt_tokens_details, "cached_tokens", None) or 0
+                reasoning_tokens = getattr(resp.usage.completion_tokens_details, "reasoning_tokens", None) or 0
+                if cache_read_tokens > 0:
+                    span.set_attribute("gen_ai.usage.cache_read.input_tokens", cache_read_tokens)
+                if reasoning_tokens > 0:
+                    span.set_attribute("gen_ai.usage.reasoning.output_tokens", reasoning_tokens)
         except Exception as exc:
             metric_attributes["error.type"] = type(exc).__name__
             span.set_attribute("error.type", type(exc).__name__)
@@ -276,10 +263,14 @@ def run_chat_streaming_reference(client):
             if usage:
                 input_tokens = usage.prompt_tokens or 0
                 output_tokens = usage.completion_tokens or 0
-                cache_read_tokens, reasoning_tokens = _usage_details(usage)
                 span.set_attribute("gen_ai.usage.input_tokens", usage.prompt_tokens)
                 span.set_attribute("gen_ai.usage.output_tokens", usage.completion_tokens)
-                _set_usage_details(span, cache_read_tokens, reasoning_tokens)
+                cache_read_tokens = getattr(usage.prompt_tokens_details, "cached_tokens", None) or 0
+                reasoning_tokens = getattr(usage.completion_tokens_details, "reasoning_tokens", None) or 0
+                if cache_read_tokens > 0:
+                    span.set_attribute("gen_ai.usage.cache_read.input_tokens", cache_read_tokens)
+                if reasoning_tokens > 0:
+                    span.set_attribute("gen_ai.usage.reasoning.output_tokens", reasoning_tokens)
             _inference_duration.record(time.perf_counter() - start_time, metric_attributes)
             _input_tokens.record(input_tokens, metric_attributes)
             _output_tokens.record(output_tokens, metric_attributes)
@@ -346,8 +337,12 @@ def run_chat_tool_call_reference(client):
                 span.set_attribute("gen_ai.usage.output_tokens", resp.usage.completion_tokens)
                 input_tokens = resp.usage.prompt_tokens or 0
                 output_tokens = resp.usage.completion_tokens or 0
-                cache_read_tokens, reasoning_tokens = _usage_details(resp.usage)
-                _set_usage_details(span, cache_read_tokens, reasoning_tokens)
+                cache_read_tokens = getattr(resp.usage.prompt_tokens_details, "cached_tokens", None) or 0
+                reasoning_tokens = getattr(resp.usage.completion_tokens_details, "reasoning_tokens", None) or 0
+                if cache_read_tokens > 0:
+                    span.set_attribute("gen_ai.usage.cache_read.input_tokens", cache_read_tokens)
+                if reasoning_tokens > 0:
+                    span.set_attribute("gen_ai.usage.reasoning.output_tokens", reasoning_tokens)
         except Exception as exc:
             metric_attributes["error.type"] = type(exc).__name__
             span.set_attribute("error.type", type(exc).__name__)
