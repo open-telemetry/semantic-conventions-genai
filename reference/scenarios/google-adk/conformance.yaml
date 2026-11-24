@@ -64,6 +64,12 @@ scenarios:
           keyed_attr: gen_ai.tool.name
           operation: execute_tool
         reason: The runner does not recognize the span-name refinements for skill and command tools.
+      - id: genai_span_name_format
+        context:
+          expected_form: invoke_workflow
+          keyed_attr: gen_ai.workflow.name
+          operation: invoke_workflow
+        reason: The runner still keys invoke_workflow span names on gen_ai.workflow.name.
       - id: unit_mismatch
         context:
           expected: '{inference_call}'
@@ -82,6 +88,10 @@ scenarios:
       - match:
           attributes:
             gen_ai.operation.name: invoke_runner
+          type: gen_ai.invoke_agent.internal
+      - match:
+          attributes:
+            gen_ai.operation.name: invoke_workflow
           type: gen_ai.invoke_agent.internal
       - match:
           attributes:

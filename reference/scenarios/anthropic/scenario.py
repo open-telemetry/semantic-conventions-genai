@@ -117,6 +117,7 @@ def run_chat(handler):
     request_max_tokens = 100
     request_reasoning_level = "medium"
     system_instruction = "Answer briefly."
+    metadata = {"user_id": "usr_7f32a"}
     messages = [{"role": "user", "content": "Say hello."}]
     tool = {
         "name": "get_weather",
@@ -137,6 +138,7 @@ def run_chat(handler):
         server_port=port,
     ) as inv:
         inv.max_tokens = request_max_tokens  # -> gen_ai.request.max_tokens
+        inv.attributes["gen_ai.user.id"] = metadata["user_id"]
         inv.attributes["gen_ai.request.reasoning.level"] = request_reasoning_level  # -> gen_ai.request.reasoning.level
         inv.system_instruction = [Text(content=system_instruction)]  # -> gen_ai.system_instructions
         inv.tool_definitions = [  # -> gen_ai.tool.definitions
@@ -156,6 +158,7 @@ def run_chat(handler):
             max_tokens=request_max_tokens,
             messages=messages,
             output_config={"effort": request_reasoning_level},
+            metadata=metadata,
             system=system_instruction,
             tools=[tool],
         )

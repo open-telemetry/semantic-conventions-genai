@@ -22,6 +22,7 @@
 | gen_ai.request.seed | (none) |
 | gen_ai.request.stream | (none) |
 | gen_ai.request.top_k | (none) |
+| gen_ai.user.id | [anthropic] |
 | server.port | [anthropic], [azure-ai-inference], [openai] |
 
 ## Recommended

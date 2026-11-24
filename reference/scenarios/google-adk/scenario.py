@@ -184,6 +184,7 @@ def run_agent_reference():
         ) as tool_span:
             try:
                 tool_span.set_attribute("gen_ai.conversation.id", tool_context.session.id)
+                tool_span.set_attribute("gen_ai.user.id", tool_context.session.user_id)
                 tool_span.set_attribute("gen_ai.tool.description", "Get the current weather.")
                 if tool_context.function_call_id:
                     tool_span.set_attribute("gen_ai.tool.call.id", tool_context.function_call_id)
@@ -252,6 +253,7 @@ def run_agent_reference():
                 "invoke_runner", attributes=runner_span_attributes
             ) as runner_span:
                 runner_span.set_attribute("gen_ai.conversation.id", session.id)
+                runner_span.set_attribute("gen_ai.user.id", session.user_id)
                 runner_span.set_attribute(
                     "gen_ai.input.messages",
                     [{"role": "user", "parts": [{"type": "text", "content": input_text}]}],
@@ -275,6 +277,7 @@ def run_agent_reference():
                         agent_span.set_attribute("gen_ai.request.presence_penalty", request_presence_penalty)
                         agent_span.set_attribute("gen_ai.request.stop_sequences", request_stop_sequences)
                         agent_span.set_attribute("gen_ai.conversation.id", session.id)
+                        agent_span.set_attribute("gen_ai.user.id", session.user_id)
                         agent_span.set_attribute(
                             "gen_ai.system_instructions",
                             [{"type": "text", "content": agent.instruction}],
@@ -288,7 +291,7 @@ def run_agent_reference():
                         finish_reason = None
                         last_text = ""
                         async for event in runner.run_async(
-                            user_id="test_user",
+                            user_id=session.user_id,
                             session_id=session.id,
                             new_message=types.Content(
                                 role="user",
@@ -486,6 +489,7 @@ def run_multi_agent_delegation_reference():
                 "gen_ai.tool.name": agent_tool.name,
                 "gen_ai.tool.type": "function",
                 "gen_ai.conversation.id": tool_context.session.id,
+                "gen_ai.user.id": tool_context.session.user_id,
                 **transfer_attributes,
             }
             with _reference_tracer.start_as_current_span(
@@ -521,6 +525,7 @@ def run_multi_agent_delegation_reference():
                 "gen_ai.agent.name": agent.name,
                 "gen_ai.agent.description": agent.description,
                 "gen_ai.conversation.id": session_id,
+                "gen_ai.user.id": kwargs["user_id"],
             }
             with _reference_tracer.start_as_current_span(
                 f"invoke_agent {agent.name}", attributes=sub_agent_span_attributes, record_exception=False
@@ -589,6 +594,7 @@ def run_multi_agent_delegation_reference():
             ) as agent_span:
                 try:
                     agent_span.set_attribute("gen_ai.conversation.id", session.id)
+                    agent_span.set_attribute("gen_ai.user.id", session.user_id)
                     agent_span.set_attribute(
                         "gen_ai.input.messages",
                         [{"role": "user", "parts": [{"type": "text", "content": input_text}]}],
@@ -598,7 +604,7 @@ def run_multi_agent_delegation_reference():
                     input_tokens = None
                     output_tokens = None
                     async for event in runner.run_async(
-                        user_id="test_user",
+                        user_id=session.user_id,
                         session_id=session.id,
                         new_message=types.Content(role="user", parts=[types.Part(text=input_text)]),
                     ):
@@ -646,7 +652,7 @@ def run_multi_agent_delegation_reference():
 
 def run_multi_agent_handoff_reference():
     """Pass control with ADK's built-in transfer tool and sub-agent runner."""
-    from google.adk.agents import Agent, BaseAgent
+    from google.adk.agents import Agent, BaseAgent, SequentialAgent
     from google.adk.models.google_llm import Gemini
     from google.adk.runners import Runner
     from google.adk.sessions import InMemorySessionService
@@ -671,7 +677,8 @@ def run_multi_agent_handoff_reference():
         sub_agents=[specialist],
     )
     session_service = InMemorySessionService()
-    runner = Runner(agent=root_agent, app_name="handoff_app", session_service=session_service)
+    workflow = SequentialAgent(name="weather_workflow", sub_agents=[root_agent])
+    runner = Runner(agent=workflow, app_name="handoff_app", session_service=session_service)
     original_tool_run = TransferToAgentTool.run_async
     original_agent_run = BaseAgent.run_async
 
@@ -682,6 +689,7 @@ def run_multi_agent_handoff_reference():
             "gen_ai.tool.type": "function",
             "gen_ai.agent.name": tool_context.agent_name,
             "gen_ai.conversation.id": tool_context.session.id,
+            "gen_ai.user.id": tool_context.session.user_id,
         }
         with _reference_tracer.start_as_current_span(
             f"execute_tool {tool.name}", attributes=attributes, record_exception=False
@@ -709,13 +717,16 @@ def run_multi_agent_handoff_reference():
                 raise
 
     async def traced_agent_run(agent, parent_context):
+        operation = "invoke_workflow" if isinstance(agent, SequentialAgent) else "invoke_agent"
         attributes = {
-            "gen_ai.operation.name": "invoke_agent",
+            "gen_ai.operation.name": operation,
             "gen_ai.agent.name": agent.name,
-            "gen_ai.request.model": agent.model.model,
             "gen_ai.conversation.id": parent_context.session.id,
+            "gen_ai.user.id": parent_context.session.user_id,
         }
-        span = _reference_tracer.start_span(f"invoke_agent {agent.name}", attributes=attributes)
+        if isinstance(agent, Agent):
+            attributes["gen_ai.request.model"] = agent.model.model
+        span = _reference_tracer.start_span(f"{operation} {agent.name}", attributes=attributes)
         input_tokens = None
         output_tokens = None
         try:
@@ -768,7 +779,7 @@ def run_multi_agent_handoff_reference():
         session = await session_service.create_session(app_name=runner.app_name, user_id="test_user")
         # `Runner` is not itself an agent or a workflow, so its invocation is `invoke_runner`.
         with _reference_tracer.start_as_current_span(
-            "invoke_runner", attributes={"gen_ai.operation.name": "invoke_runner"}
+            "invoke_runner", attributes={"gen_ai.operation.name": "invoke_runner", "gen_ai.user.id": session.user_id}
         ):
             async for event in runner.run_async(
                 user_id=session.user_id,
@@ -863,6 +874,7 @@ def run_skills_reference():
                 try:
                     span.set_attribute("gen_ai.tool.description", self.description)
                     span.set_attribute("gen_ai.agent.name", tool_context.agent_name)
+                    span.set_attribute("gen_ai.user.id", tool_context.session.user_id)
                     if tool_context.function_call_id:
                         span.set_attribute("gen_ai.tool.call.id", tool_context.function_call_id)
                     span.set_attribute("gen_ai.tool.call.arguments", args)
@@ -1021,7 +1033,7 @@ def run_skills_reference():
                 session_service=session_service,
             )
 
-        async def invoke(runner, session_id, prompt, tool_name=None):
+        async def invoke(runner, session, prompt, tool_name=None):
             """One agent invocation, wrapped in its `invoke_agent` span.
 
             Exposing a single skill tool for the turn is what makes the model's
@@ -1040,7 +1052,8 @@ def run_skills_reference():
                 f"invoke_agent {agent_name}", attributes=agent_span_attributes, record_exception=False
             ) as agent_span:
                 try:
-                    agent_span.set_attribute("gen_ai.conversation.id", session_id)
+                    agent_span.set_attribute("gen_ai.conversation.id", session.id)
+                    agent_span.set_attribute("gen_ai.user.id", session.user_id)
                     agent_span.set_attribute(
                         "gen_ai.system_instructions",
                         [{"type": "text", "content": agent.instruction}],
@@ -1053,8 +1066,8 @@ def run_skills_reference():
                     finish_reason = None
                     last_text = ""
                     async for event in runner.run_async(
-                        user_id=user_id,
-                        session_id=session_id,
+                        user_id=session.user_id,
+                        session_id=session.id,
                         new_message=types.Content(role="user", parts=[types.Part(text=prompt)]),
                     ):
                         if getattr(event, "usage_metadata", None) is not None:
@@ -1105,14 +1118,14 @@ def run_skills_reference():
             ]
             for prompt, tool_name in stages:
                 session = await session_service.create_session(app_name="test_app", user_id=user_id)
-                await invoke(lifecycle_runner, session.id, prompt, tool_name)
+                await invoke(lifecycle_runner, session, prompt, tool_name)
 
             # A model can also name a skill that does not exist. No skill resolves,
             # so the span carries the name the call asked for and the failure, and
             # nothing else about a skill.
             load_skill_tool.skill_names = ["ocr-tables"]
             session = await session_service.create_session(app_name="test_app", user_id=user_id)
-            await invoke(lifecycle_runner, session.id, "Extract the tables from this PDF.", "load_skill")
+            await invoke(lifecycle_runner, session, "Extract the tables from this PDF.", "load_skill")
 
             # A script the skill does not bundle fails before anything runs, so the
             # execution carries `error.type` and no exit code — the two describe
@@ -1120,7 +1133,7 @@ def run_skills_reference():
             run_script_tool.script_paths = ["scripts/lint.sh"]
             run_script_tool.commands = [f"bash {toolset.skills_folder / 'code-review' / 'scripts/lint.sh'}"]
             session = await session_service.create_session(app_name="test_app", user_id=user_id)
-            await invoke(lifecycle_runner, session.id, "Lint it too.", "run_skill_script")
+            await invoke(lifecycle_runner, session, "Lint it too.", "run_skill_script")
 
         async def _run():
             try:

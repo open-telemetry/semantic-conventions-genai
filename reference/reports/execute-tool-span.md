@@ -16,6 +16,7 @@
 | gen_ai.agent.name | [google-adk], [openai-agents], [pydantic-ai] |
 | gen_ai.conversation.id | [google-adk], [openai-assistants] |
 | gen_ai.tool.call.id | [agent-framework], [autogen], [google-adk], [google-genai], [langchain], [llamaindex], [openai-agents], [openai-assistants], [pydantic-ai], [vertexai] |
+| gen_ai.user.id | [google-adk] |
 
 ## Recommended
 

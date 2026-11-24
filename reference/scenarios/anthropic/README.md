@@ -8,6 +8,9 @@ This reference configures the util-genai upload completion hook so real Messages
 API inference spans carry external references for captured system instructions,
 input messages, output messages, and tool definitions.
 
+The basic chat request supplies the application's opaque user ID in the Messages
+API's `metadata.user_id`. The inference span records that value as `gen_ai.user.id`.
+
 The scenario publishes inference durations from `opentelemetry-util-genai`
 under `gen_ai.client.inference.duration` using an OTel SDK view.
 
