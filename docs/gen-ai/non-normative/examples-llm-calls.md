@@ -859,10 +859,10 @@ sequenceDiagram
 ## Content without a matching part type
 
 This example is an Anthropic Messages API call with a `search_result` content
-block recorded with `type` prefixed by `gen_ai.provider.name`
-(`"anthropic.search_result"`):
+block. No part type is defined for it and Anthropic semantic conventions don't
+document a custom part for it, so it isn't recorded:
 
-```jsonc
+```json
 [
   {
     "role": "user",
@@ -870,21 +870,6 @@ block recorded with `type` prefixed by `gen_ai.provider.name`
       {
         "type": "text",
         "content": "Answer using the attached search result."
-      },
-      // Anthropic search_result block, recorded with its original fields
-      {
-        "type": "anthropic.search_result",
-        "source": "https://example.com/docs/otel",
-        "title": "OpenTelemetry overview",
-        "content": [
-          {
-            "type": "text",
-            "text": "OpenTelemetry is an observability framework."
-          }
-        ],
-        "citations": {
-          "enabled": true
-        }
       }
     ]
   }
