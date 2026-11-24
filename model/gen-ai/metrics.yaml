@@ -22,9 +22,8 @@ attribute_groups:
         note: |
           The value SHOULD be the one returned by the provider. It can differ from
           `gen_ai.request.service_tier` when `auto` is requested.
-          See [`gen_ai.response.service_tier`](/docs/registry/attributes/gen-ai.md#gen-ai-response-service-tier) for provider field mappings.
 
-          SHOULD be set only if the provider reports it by the time the first chunk is received.
+          Instrumentation SHOULD set this attribute only if the provider reports it by the time the first chunk is received.
           When set, it SHOULD be the same on all measurements from a streaming response.
 
   - id: metric_attributes.openai
