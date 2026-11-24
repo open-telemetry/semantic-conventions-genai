@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../case.schema.json
+description: Document content and object metadata can be recorded without id or score
+schema: gen-ai-retrieval-documents.json
+document:
+  - content: OpenTelemetry semantic conventions
+    metadata:
+      source: documentation
+      section: retrieval
+# Regenerate with `uv run pytest --update-snapshots`, do not edit by hand.
+errors: []
