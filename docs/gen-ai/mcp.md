@@ -190,7 +190,7 @@ result payload, this attribute SHOULD be set to the low-cardinality
 string representation of the error. When
 [CallToolResult](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/9c8a44e47e16b789a1f9d47c89ea23ed13a37cf9/schema/2025-06-18/schema.ts#L715)
 is returned with `isError` set to `true`, this attribute SHOULD be set to
-`tool_error`.
+`_OTHER`.
 
 `rpc.status_code` carries the same string representation of
 the JSON-RPC error code. Unlike `rpc.status_code`,
@@ -421,7 +421,7 @@ result payload, this attribute SHOULD be set to the low-cardinality
 string representation of the error. When
 [CallToolResult](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/9c8a44e47e16b789a1f9d47c89ea23ed13a37cf9/schema/2025-06-18/schema.ts#L715)
 is returned with `isError` set to `true`, this attribute SHOULD be set to
-`tool_error`.
+`_OTHER`.
 
 `rpc.status_code` carries the same string representation of
 the JSON-RPC error code. Unlike `rpc.status_code`,
@@ -643,7 +643,7 @@ result payload, this attribute SHOULD be set to the low-cardinality
 string representation of the error. When
 [CallToolResult](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/9c8a44e47e16b789a1f9d47c89ea23ed13a37cf9/schema/2025-06-18/schema.ts#L715)
 is returned with `isError` set to `true`, this attribute SHOULD be set to
-`tool_error`.
+`_OTHER`.
 
 `rpc.status_code` carries the same string representation of
 the JSON-RPC error code. Unlike `rpc.status_code`,
@@ -807,7 +807,7 @@ result payload, this attribute SHOULD be set to the low-cardinality
 string representation of the error. When
 [CallToolResult](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/9c8a44e47e16b789a1f9d47c89ea23ed13a37cf9/schema/2025-06-18/schema.ts#L715)
 is returned with `isError` set to `true`, this attribute SHOULD be set to
-`tool_error`.
+`_OTHER`.
 
 `rpc.status_code` carries the same string representation of
 the JSON-RPC error code. Unlike `rpc.status_code`,

@@ -880,9 +880,8 @@ def run_skills_reference():
                     if error_type:
                         span.set_attribute("error.type", error_type)
                         span.set_status(StatusCode.ERROR, result.get("error", ""))
-                    else:
-                        # TODO: Determine how to represent this string result in the object-only schema.
-                        span.set_attribute("gen_ai.tool.call.result", result)
+                    # TODO: Determine how to represent this string result in the object-only schema.
+                    span.set_attribute("gen_ai.tool.call.result", result)
                     self._record_skill_signals(span, args, result, error_type, tool_context)
                     return result
                 except Exception as e:

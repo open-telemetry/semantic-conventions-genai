@@ -166,8 +166,8 @@ class ReferenceMCPServerMiddleware(ServerMiddleware[Any]):
                         else None
                     )
                     if is_error:
-                        span.set_attribute("error.type", "tool_error")
-                        metric_attrs["error.type"] = "tool_error"
+                        span.set_attribute("error.type", "_OTHER")
+                        metric_attrs["error.type"] = "_OTHER"
                         span.set_status(StatusCode.ERROR)
                     if structured_content is not None:
                         span.set_attribute("gen_ai.tool.call.result", structured_content)
@@ -336,8 +336,8 @@ class ReferenceMCPClientSession(ClientSession):
 
                 if method == "tools/call" and isinstance(result, CallToolResult):
                     if result.is_error:
-                        span.set_attribute("error.type", "tool_error")
-                        metric_attrs["error.type"] = "tool_error"
+                        span.set_attribute("error.type", "_OTHER")
+                        metric_attrs["error.type"] = "_OTHER"
                         span.set_status(StatusCode.ERROR)
                     if result.structured_content is not None:
                         span.set_attribute("gen_ai.tool.call.result", result.structured_content)
@@ -427,7 +427,7 @@ async def run_tool_call_error_reference(session: ReferenceMCPClientSession) -> N
     print("  [tools/call error] MCP unknown tool error")
     result = await session.call_tool("missing_tool", {"location": "Seattle"})
     assert result.is_error
-    print("    -> CallToolResult isError=True (error.type=tool_error)")
+    print("    -> CallToolResult isError=True (error.type=_OTHER)")
 
     missing_uri = "file:///weather/missing.json"
     try:
