@@ -53,7 +53,7 @@ _invoke_duration = _reference_meter.create_histogram(
         1800,
         3600,
         7200,
-        18000,
+        21600,
         43200,
         86400,
     ],
