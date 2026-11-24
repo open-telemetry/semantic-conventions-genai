@@ -146,12 +146,8 @@ class ObservedStream:
         return self
 
     def __iter__(self):
-        try:
-            yield from self._stream
-            self.exhausted = True
-        except Exception as exc:
-            self.error = exc
-            raise
+        yield from self._stream
+        self.exhausted = True
 
     def __exit__(self, exc_type, exc, tb):
         self.closed_early = not self.exhausted
