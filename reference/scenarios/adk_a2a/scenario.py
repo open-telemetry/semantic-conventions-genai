@@ -1,13 +1,13 @@
 """A2A + `gen_ai.main_agent` showcase driven by a real Google ADK agent.
 
-This scenario only sets up the OTel pipeline and the process Resource
-(`gen_ai.main_agent.*`, derived from env with fallback to the served AgentCard).
-Everything else is a real Google ADK agent served over A2A via ``to_a2a`` and
-invoked by an A2A client -- ADK's own instrumentation emits the spans.
+The scenario derives `gen_ai.main_agent.*` from the environment and AgentCard.
+It supplies a histogram with bucket advice for ADK's client operation timing.
+An A2A client invokes a real Google ADK agent served via ``to_a2a``.
 """
 
 import asyncio
 import os
+from unittest.mock import patch
 
 import httpx
 from a2a.client import ClientConfig, ClientFactory
@@ -16,9 +16,10 @@ from google.adk.a2a.utils.agent_card_builder import AgentCardBuilder
 from google.adk.a2a.utils.agent_to_a2a import to_a2a
 from google.adk.agents import Agent
 from google.adk.models.google_llm import Gemini
+from google.adk.telemetry import _metrics as adk_metrics
 from google.protobuf.json_format import MessageToDict
 from opentelemetry.sdk.resources import Resource
-from reference_shared import flush_and_shutdown, setup_otel
+from reference_shared import flush_and_shutdown, reference_meter, setup_otel
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"]
 
@@ -57,6 +58,12 @@ async def run():
         }
     )
     tp, lp, mp = setup_otel(resource=resource)
+    operation_duration = reference_meter().create_histogram(
+        "gen_ai.client.operation.duration",
+        unit="s",
+        description="GenAI operation duration.",
+        explicit_bucket_boundaries_advisory=[0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10, 30, 60],
+    )
 
     # Serve the real ADK agent over A2A and invoke it
     app = to_a2a(agent, agent_card=card, host=AGENT_HOST, port=80, protocol="http")
@@ -73,8 +80,9 @@ async def run():
                 parts=[Part(text="Find me a flight to Seattle.")],
             )
         )
-        async for response in client.send_message(request):
-            print(f"    -> {MessageToDict(response)}"[:120])
+        with patch.object(adk_metrics, "_client_operation_duration", operation_duration):
+            async for response in client.send_message(request):
+                print(f"    -> {MessageToDict(response)}"[:120])
 
     flush_and_shutdown(tp, lp, mp)
 
