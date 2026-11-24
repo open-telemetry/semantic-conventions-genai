@@ -21,6 +21,7 @@
 | Attribute | Supporting Libraries |
 | --- | --- |
 | gen_ai.response.model | [openai] |
+| gen_ai.response.service_tier | [openai] |
 | server.address | [openai] |
 
 [openai]: ../scenarios/openai/scenario.py

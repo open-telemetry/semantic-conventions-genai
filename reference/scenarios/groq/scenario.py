@@ -65,10 +65,12 @@ def run_chat_reference(client):
     """Scenario: basic chat completion with reference implementation."""
     print("  [chat] basic chat completion (reference implementation)")
     request_model = "llama-3.1-8b-instant"
+    request_service_tier = "flex"
     span_attributes = {
         "gen_ai.operation.name": "chat",
         "gen_ai.provider.name": "groq",
         "gen_ai.request.model": request_model,
+        "gen_ai.request.service_tier": request_service_tier,
         "server.address": _SERVER_ADDRESS,
     }
     with _reference_tracer.start_as_current_span(
@@ -79,19 +81,21 @@ def run_chat_reference(client):
         resp = client.chat.completions.create(
             model=request_model,
             messages=messages,
+            service_tier=request_service_tier,
         )
         duration = time.perf_counter() - start_time
-        _inference_duration.record(
-            duration,
-            {
-                "gen_ai.operation.name": "chat",
-                "gen_ai.provider.name": "groq",
-                "gen_ai.request.model": request_model,
-                "gen_ai.response.model": resp.model,
-                "server.address": _SERVER_ADDRESS,
-                "server.port": _SERVER_PORT,
-            },
-        )
+        duration_attributes = {
+            "gen_ai.operation.name": "chat",
+            "gen_ai.provider.name": "groq",
+            "gen_ai.request.model": request_model,
+            "gen_ai.response.model": resp.model,
+            "server.address": _SERVER_ADDRESS,
+            "server.port": _SERVER_PORT,
+        }
+        if resp.service_tier is not None:
+            span.set_attribute("gen_ai.response.service_tier", resp.service_tier)
+            duration_attributes["gen_ai.response.service_tier"] = resp.service_tier
+        _inference_duration.record(duration, duration_attributes)
         span.set_attribute("gen_ai.response.model", resp.model)
         span.set_attribute("gen_ai.response.id", resp.id)
         span.set_attribute("gen_ai.response.finish_reasons", [c.finish_reason for c in resp.choices])
@@ -128,6 +132,7 @@ def run_chat_reference(client):
             "gen_ai.operation.name": "chat",
             "gen_ai.provider.name": "groq",
             "gen_ai.request.model": request_model,
+            "gen_ai.request.service_tier": request_service_tier,
             "gen_ai.response.id": resp.id,
             "gen_ai.response.model": resp.model,
             "gen_ai.response.finish_reasons": [c.finish_reason for c in resp.choices],
@@ -142,6 +147,8 @@ def run_chat_reference(client):
                 for c in resp.choices
             ],
         }
+        if resp.service_tier is not None:
+            event_attrs["gen_ai.response.service_tier"] = resp.service_tier
         if resp.usage:
             event_attrs["gen_ai.usage.input_tokens"] = resp.usage.prompt_tokens
             event_attrs["gen_ai.usage.output_tokens"] = resp.usage.completion_tokens
