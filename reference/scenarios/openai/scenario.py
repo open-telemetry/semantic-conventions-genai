@@ -712,6 +712,11 @@ def run_chat_streaming_reference(client, *, close_early=False):
                 error = stream.error
                 error_type = f"{type(error).__module__}.{type(error).__qualname__}"
                 span.set_attribute("error.type", error_type)
+                reference_event_logger().emit(
+                    event_name="gen_ai.client.inference.exception",
+                    severity_number=SeverityNumber.WARN,
+                    exception=error,
+                )
             metric_attributes = usage_metric_attributes(request_model, model, host, port)
             if service_tier is not None:
                 span.set_attribute("gen_ai.response.service_tier", service_tier)
@@ -732,6 +737,8 @@ def run_chat_streaming_timing_checks():
 
     import httpx2
     import openai
+    from opentelemetry.sdk._logs import LoggerProvider
+    from opentelemetry.sdk._logs.export import InMemoryLogRecordExporter, SimpleLogRecordProcessor
     from opentelemetry.sdk.metrics import MeterProvider
     from opentelemetry.sdk.metrics.export import InMemoryMetricReader
     from opentelemetry.sdk.trace import TracerProvider
@@ -826,6 +833,9 @@ def run_chat_streaming_timing_checks():
         exporter = InMemorySpanExporter()
         tracer_provider = TracerProvider()
         tracer_provider.add_span_processor(SimpleSpanProcessor(exporter))
+        log_exporter = InMemoryLogRecordExporter()
+        logger_provider = LoggerProvider()
+        logger_provider.add_log_record_processor(SimpleLogRecordProcessor(log_exporter))
         reader = InMemoryMetricReader()
         meter_provider = MeterProvider(metric_readers=[reader])
         meter = meter_provider.get_meter("gen_ai.reference")
@@ -834,6 +844,7 @@ def run_chat_streaming_timing_checks():
         try:
             with (
                 patch(f"{__name__}._reference_tracer", tracer_provider.get_tracer("gen_ai.reference")),
+                patch(f"{__name__}.reference_event_logger", return_value=logger_provider.get_logger("gen_ai.reference")),
                 patch(f"{__name__}.ObservedStream", side_effect=observe),
                 patch(f"{__name__}._time_to_first_chunk", meter.create_histogram(first_chunk_metric, unit="s")),
                 patch(f"{__name__}._time_per_output_chunk", meter.create_histogram(chunk_interval_metric, unit="s")),
@@ -883,10 +894,17 @@ def run_chat_streaming_timing_checks():
             assert record_usage.call_args.args[0] == expected_usage
             for key, value in expected_usage.items():
                 assert spans[0].attributes[key] == value
+            logs = log_exporter.get_finished_logs()
+            assert len(logs) == (1 if stream_error else 0)
             if stream_error:
                 assert spans[0].attributes["gen_ai.response.finish_reasons"] == (finish_reason or "error",)
                 assert spans[0].attributes["error.type"] == "openai.APIError"
                 assert spans[0].status.status_code == StatusCode.ERROR
+                log = logs[0].log_record
+                assert log.event_name == "gen_ai.client.inference.exception"
+                assert log.severity_number == SeverityNumber.WARN
+                assert log.trace_id == spans[0].context.trace_id
+                assert log.span_id == spans[0].context.span_id
             elif close_early:
                 assert spans[0].attributes["gen_ai.response.finish_reasons"] == (finish_reason or "interrupted",)
                 assert "error.type" not in spans[0].attributes
@@ -941,6 +959,7 @@ def run_chat_streaming_timing_checks():
                 assert point.attributes["gen_ai.response.model"] == "gpt-4o-mini"
         finally:
             tracer_provider.shutdown()
+            logger_provider.shutdown()
             meter_provider.shutdown()
 
     check_stream([{"content": "Hello"}, {"content": " world"}], 0.5, expected_interval=0.4)
