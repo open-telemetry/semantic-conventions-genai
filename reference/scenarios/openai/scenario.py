@@ -844,7 +844,9 @@ def run_chat_streaming_timing_checks():
         try:
             with (
                 patch(f"{__name__}._reference_tracer", tracer_provider.get_tracer("gen_ai.reference")),
-                patch(f"{__name__}.reference_event_logger", return_value=logger_provider.get_logger("gen_ai.reference")),
+                patch(
+                    f"{__name__}.reference_event_logger", return_value=logger_provider.get_logger("gen_ai.reference")
+                ),
                 patch(f"{__name__}.ObservedStream", side_effect=observe),
                 patch(f"{__name__}._time_to_first_chunk", meter.create_histogram(first_chunk_metric, unit="s")),
                 patch(f"{__name__}._time_per_output_chunk", meter.create_histogram(chunk_interval_metric, unit="s")),
