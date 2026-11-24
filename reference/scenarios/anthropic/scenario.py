@@ -91,6 +91,9 @@ def usage_metric_attributes(inv, request_model, server_address, server_port):
         attributes["server.address"] = server_address
     if server_port is not None:
         attributes["server.port"] = server_port
+    service_tier = inv.attributes.get("gen_ai.response.service_tier")
+    if service_tier is not None:
+        attributes["gen_ai.response.service_tier"] = service_tier
     return attributes
 
 
@@ -129,6 +132,7 @@ def run_chat(handler):
     request_model = "claude-sonnet-4-20250514"
     request_max_tokens = 100
     request_reasoning_level = "medium"
+    request_service_tier = "auto"
     system_instruction = "Answer briefly."
     messages = [{"role": "user", "content": "Say hello."}]
     tool = {
@@ -151,6 +155,7 @@ def run_chat(handler):
     ) as inv:
         inv.max_tokens = request_max_tokens  # -> gen_ai.request.max_tokens
         inv.attributes["gen_ai.request.reasoning.level"] = request_reasoning_level  # -> gen_ai.request.reasoning.level
+        inv.attributes["gen_ai.request.service_tier"] = request_service_tier  # -> gen_ai.request.service_tier
         inv.system_instruction = [Text(content=system_instruction)]  # -> gen_ai.system_instructions
         inv.tool_definitions = [  # -> gen_ai.tool.definitions
             FunctionToolDefinition(
@@ -169,6 +174,7 @@ def run_chat(handler):
             max_tokens=request_max_tokens,
             messages=messages,
             output_config={"effort": request_reasoning_level},
+            service_tier=request_service_tier,
             system=system_instruction,
             tools=[tool],
         )
@@ -178,6 +184,9 @@ def run_chat(handler):
         inv.finish_reasons = [resp.stop_reason]  # -> gen_ai.response.finish_reasons
 
         if resp.usage:
+            service_tier = resp.usage.service_tier
+            if service_tier is not None:
+                inv.attributes["gen_ai.response.service_tier"] = service_tier  # -> gen_ai.response.service_tier
             cache_creation = getattr(resp.usage, "cache_creation_input_tokens", None) or 0
             cache_read = getattr(resp.usage, "cache_read_input_tokens", None) or 0
             inv.input_tokens = resp.usage.input_tokens + cache_creation + cache_read  # -> gen_ai.usage.input_tokens

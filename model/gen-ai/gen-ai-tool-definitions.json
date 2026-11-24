@@ -11,9 +11,17 @@
                     "type": "string"
                 },
                 "name": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
                     "description": "The name of the tool.",
-                    "title": "Name",
-                    "type": "string"
+                    "title": "Name"
                 },
                 "description": {
                     "anyOf": [
@@ -25,7 +33,7 @@
                         }
                     ],
                     "default": null,
-                    "description": "The description of the tool. Since this attribute could be large, it's NOT RECOMMENDED to be populated by default. Instrumentations MAY provide a way to enable populating this property.",
+                    "description": "The description of the tool.",
                     "title": "Description"
                 },
                 "parameters": {
@@ -38,13 +46,12 @@
                         }
                     ],
                     "default": null,
-                    "description": "JSON Schema document describing the parameters accepted by the tool. The value MUST conform to JSON Schema draft-07. Since this attribute could be large, it's NOT RECOMMENDED to be populated by default. Instrumentations MAY provide a way to enable populating this property.",
+                    "description": "JSON Schema document describing the parameters accepted by the tool. The value MUST conform to JSON Schema draft-07.",
                     "title": "Parameters"
                 }
             },
             "required": [
-                "type",
-                "name"
+                "type"
             ],
             "title": "FunctionToolDefinition",
             "type": "object"
@@ -64,14 +71,21 @@
                     "type": "string"
                 },
                 "name": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
                     "description": "The name of the tool.",
-                    "title": "Name",
-                    "type": "string"
+                    "title": "Name"
                 }
             },
             "required": [
-                "type",
-                "name"
+                "type"
             ],
             "title": "GenericToolDefinition",
             "type": "object"

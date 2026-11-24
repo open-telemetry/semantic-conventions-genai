@@ -22,6 +22,7 @@
 | Attribute | Supporting Libraries |
 | --- | --- |
 | gen_ai.response.model | [anthropic], [google-genai], [openai] |
+| gen_ai.response.service_tier | [openai] |
 | server.address | [anthropic], [openai] |
 
 [anthropic]: ../scenarios/anthropic/scenario.py

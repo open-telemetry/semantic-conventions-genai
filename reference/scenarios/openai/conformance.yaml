@@ -11,6 +11,18 @@ env:
 scenarios:
   reference:
     run: uv run --frozen --python 3.12 --project . python scenario.py
+    metrics:
+      - gen_ai.client.embeddings.duration
+      - gen_ai.client.embeddings.operation.input_tokens
+      - gen_ai.client.inference.operation.input_tokens
+      - gen_ai.client.inference.operation.output_tokens
+      - gen_ai.client.inference.time_per_output_chunk
+      - gen_ai.client.inference.time_to_first_chunk
+      - gen_ai.client.inference.usage.cache_read.input_tokens
+      - gen_ai.client.inference.usage.cache_write.input_tokens
+      - gen_ai.client.inference.usage.input_tokens
+      - gen_ai.client.inference.usage.output_tokens
+      - gen_ai.client.inference.usage.reasoning.output_tokens
     events:
       - gen_ai.client.embeddings.exception
       - gen_ai.client.fetch_response.exception

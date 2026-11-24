@@ -4,6 +4,9 @@ The Google Agent Development Kit (ADK) is an agent framework. It calls models
 through its model layer (e.g. `google-genai`), so it **delegates inference**. It
 owns the agent, workflow, tool, and memory operations it runs directly.
 
+Agent and runner duration histograms use boundaries aligned with minutes, hours, and days.
+ADK records tool timings and attributes on a reference `gen_ai.execute_tool.duration` histogram created with the recommended bucket advice.
+
 The retry test runs the basic agent scenario with a real `google-genai` client
 and a mocked HTTP transport returning 503 then 200. For the two HTTP attempts,
 the scenario records one inference call in `gen_ai.invoke_agent.inference_calls`.

@@ -22,32 +22,26 @@ MOCK_BASE_URL = os.environ["MOCK_LLM_URL"] + "/v1"
 _reference_tracer = reference_tracer()
 _reference_meter = reference_meter()
 
+_CLIENT_DURATION_BUCKETS = [0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10, 30, 60]
+
 _time_to_first_chunk = _reference_meter.create_histogram(
     "gen_ai.client.inference.time_to_first_chunk",
     unit="s",
     description="Time to receive the first output chunk of a streaming inference operation.",
+    explicit_bucket_boundaries_advisory=_CLIENT_DURATION_BUCKETS,
+)
+_time_per_output_chunk = _reference_meter.create_histogram(
+    "gen_ai.client.inference.time_per_output_chunk",
+    unit="s",
+    description="Time between successive output chunks of a streaming inference operation.",
+    explicit_bucket_boundaries_advisory=_CLIENT_DURATION_BUCKETS,
 )
 
 _embeddings_duration = _reference_meter.create_histogram(
     "gen_ai.client.embeddings.duration",
     unit="s",
     description="GenAI client embeddings operation duration.",
-    explicit_bucket_boundaries_advisory=[
-        0.01,
-        0.02,
-        0.04,
-        0.08,
-        0.16,
-        0.32,
-        0.64,
-        1.28,
-        2.56,
-        5.12,
-        10.24,
-        20.48,
-        40.96,
-        81.92,
-    ],
+    explicit_bucket_boundaries_advisory=_CLIENT_DURATION_BUCKETS,
 )
 _embeddings_input_tokens = _reference_meter.create_histogram(
     "gen_ai.client.embeddings.operation.input_tokens",
@@ -252,6 +246,7 @@ def run_chat_reference(client):
     request_presence_penalty = 0.2
     request_top_p = 0.9
     request_reasoning_level = "medium"
+    request_service_tier = "auto"
     messages = [
         {"role": "system", "content": "You are a helpful assistant."},
         {"role": "user", "content": "Say hello."},
@@ -283,6 +278,7 @@ def run_chat_reference(client):
             span.set_attribute("gen_ai.request.presence_penalty", request_presence_penalty)
             span.set_attribute("gen_ai.request.top_p", request_top_p)
             span.set_attribute("gen_ai.request.reasoning.level", request_reasoning_level)
+            span.set_attribute("gen_ai.request.service_tier", request_service_tier)
             span.set_attribute("gen_ai.input.messages", input_messages)
             resp = client.chat.completions.create(
                 model=request_model,
@@ -296,6 +292,7 @@ def run_chat_reference(client):
                 presence_penalty=request_presence_penalty,
                 top_p=request_top_p,
                 reasoning_effort=request_reasoning_level,
+                service_tier=request_service_tier,
             )
             span.set_attribute("gen_ai.response.model", resp.model)
             span.set_attribute("gen_ai.response.id", resp.id)
@@ -323,19 +320,26 @@ def run_chat_reference(client):
                     usage["gen_ai.usage.cache_read.input_tokens"] = cached_tokens
             for attr, value in usage.items():
                 span.set_attribute(attr, value)
-            record_inference_usage(usage, usage_metric_attributes(request_model, resp.model, host, port))
+            metric_attributes = usage_metric_attributes(request_model, resp.model, host, port)
+            if resp.service_tier is not None:
+                span.set_attribute("gen_ai.response.service_tier", resp.service_tier)
+                metric_attributes["gen_ai.response.service_tier"] = resp.service_tier
+            record_inference_usage(usage, metric_attributes)
 
             # Emit inference operation details event
             event_attrs = {
                 "gen_ai.operation.name": "chat",
                 "gen_ai.provider.name": "openai",
                 "gen_ai.request.model": request_model,
+                "gen_ai.request.service_tier": request_service_tier,
                 "gen_ai.response.id": resp.id,
                 "gen_ai.response.model": resp.model,
                 "gen_ai.response.finish_reasons": finish_reasons,
                 "gen_ai.input.messages": input_messages,
                 "gen_ai.output.messages": output_messages,
             }
+            if resp.service_tier is not None:
+                event_attrs["gen_ai.response.service_tier"] = resp.service_tier
             event_attrs.update(usage)
             if host:
                 event_attrs["server.address"] = host
@@ -459,7 +463,11 @@ def run_responses_compaction_reference(client):
                 usage["gen_ai.usage.reasoning.output_tokens"] = reasoning_tokens
         for attr, value in usage.items():
             span.set_attribute(attr, value)
-        record_inference_usage(usage, usage_metric_attributes(request_model, response.model, host, port))
+        metric_attributes = usage_metric_attributes(request_model, response.model, host, port)
+        if response.service_tier is not None:
+            span.set_attribute("gen_ai.response.service_tier", response.service_tier)
+            metric_attributes["gen_ai.response.service_tier"] = response.service_tier
+        record_inference_usage(usage, metric_attributes)
 
         event_attrs = {
             "gen_ai.operation.name": "chat",
@@ -476,6 +484,8 @@ def run_responses_compaction_reference(client):
             event_attrs["gen_ai.response.finish_reasons"] = [finish_reason]
         if output_messages:
             event_attrs["gen_ai.output.messages"] = output_messages
+        if response.service_tier is not None:
+            event_attrs["gen_ai.response.service_tier"] = response.service_tier
         event_attrs.update(usage)
         if host:
             event_attrs["server.address"] = host
@@ -553,7 +563,11 @@ def run_responses_continuation_reference(client):
             usage["gen_ai.usage.output_tokens"] = response.usage.output_tokens
         for attr, value in usage.items():
             span.set_attribute(attr, value)
-        record_inference_usage(usage, usage_metric_attributes(request_model, response.model, host, port))
+        metric_attributes = usage_metric_attributes(request_model, response.model, host, port)
+        if response.service_tier is not None:
+            span.set_attribute("gen_ai.response.service_tier", response.service_tier)
+            metric_attributes["gen_ai.response.service_tier"] = response.service_tier
+        record_inference_usage(usage, metric_attributes)
 
         event_attrs = {
             "gen_ai.operation.name": "chat",
@@ -570,6 +584,8 @@ def run_responses_continuation_reference(client):
             event_attrs["gen_ai.response.finish_reasons"] = [finish_reason]
         if output_messages:
             event_attrs["gen_ai.output.messages"] = output_messages
+        if response.service_tier is not None:
+            event_attrs["gen_ai.response.service_tier"] = response.service_tier
         event_attrs.update(usage)
         if host:
             event_attrs["server.address"] = host
@@ -622,14 +638,16 @@ def run_chat_streaming_reference(client, *, close_early=False):
         finish_reasons_by_index = {}
         input_tokens = None
         output_tokens = None
-        first_chunk_received = False
+        service_tier = None
+        previous_output_received_at = None
         try:
             with stream:
                 for chunk in stream:
                     received_at = perf_counter()
                     model = model or getattr(chunk, "model", None)
                     response_id = response_id or getattr(chunk, "id", None)
-                    if not first_chunk_received and any(
+                    service_tier = service_tier or chunk.service_tier
+                    has_output = any(
                         choice.delta.content
                         or choice.delta.refusal
                         or (choice.delta.audio and (choice.delta.audio.data or choice.delta.audio.transcript))
@@ -642,11 +660,18 @@ def run_chat_streaming_reference(client, *, close_early=False):
                             for call in choice.delta.tool_calls or []
                         )
                         for choice in chunk.choices
-                    ):
-                        ttfc = received_at - request_started_at
-                        span.set_attribute("gen_ai.response.time_to_first_chunk", ttfc)
-                        _time_to_first_chunk.record(ttfc, usage_metric_attributes(request_model, model, host, port))
-                        first_chunk_received = True
+                    )
+                    if has_output:
+                        chunk_attributes = usage_metric_attributes(request_model, model, host, port)
+                        if service_tier is not None:
+                            chunk_attributes["gen_ai.response.service_tier"] = service_tier
+                        if previous_output_received_at is None:
+                            ttfc = received_at - request_started_at
+                            span.set_attribute("gen_ai.response.time_to_first_chunk", ttfc)
+                            _time_to_first_chunk.record(ttfc, chunk_attributes)
+                        else:
+                            _time_per_output_chunk.record(received_at - previous_output_received_at, chunk_attributes)
+                        previous_output_received_at = received_at
                     for choice in chunk.choices:
                         seen_choice_indexes.add(choice.index)
                         if choice.index == 0 and choice.delta.content:
@@ -656,7 +681,7 @@ def run_chat_streaming_reference(client, *, close_early=False):
                     if chunk.usage:
                         input_tokens = chunk.usage.prompt_tokens
                         output_tokens = chunk.usage.completion_tokens
-                    if close_early and first_chunk_received:
+                    if close_early and has_output:
                         break
         finally:
             if model:
@@ -687,16 +712,20 @@ def run_chat_streaming_reference(client, *, close_early=False):
                 error = stream.error
                 error_type = f"{type(error).__module__}.{type(error).__qualname__}"
                 span.set_attribute("error.type", error_type)
+            metric_attributes = usage_metric_attributes(request_model, model, host, port)
+            if service_tier is not None:
+                span.set_attribute("gen_ai.response.service_tier", service_tier)
+                metric_attributes["gen_ai.response.service_tier"] = service_tier
             record_inference_usage(
                 usage,
-                usage_metric_attributes(request_model, model, host, port),
+                metric_attributes,
                 record_missing=True,
                 error_type=error_type,
             )
             print(f"    -> {text[:60]}")
 
 
-def run_chat_streaming_ttfc_checks():
+def run_chat_streaming_timing_checks():
     """Check streaming boundaries through the SDK with a controlled clock."""
     from math import isclose
     from unittest.mock import patch
@@ -723,6 +752,7 @@ def run_chat_streaming_ttfc_checks():
         output_deltas,
         expected_ttfc,
         *,
+        expected_interval=None,
         retry=False,
         close_early=False,
         finish_reason=None,
@@ -770,6 +800,8 @@ def run_chat_streaming_ttfc_checks():
             for delta in output_deltas:
                 advance(0.3)
                 yield f"data: {json.dumps(chunk(delta, finish_reason))}\n\n".encode()
+                advance(0.1)
+                yield f"data: {json.dumps(chunk({}))}\n\n".encode()
             if stream_error:
                 yield b'data: {"error": {"message": "stream failed", "type": "server_error"}}\n\n'
                 return
@@ -796,14 +828,15 @@ def run_chat_streaming_ttfc_checks():
         tracer_provider.add_span_processor(SimpleSpanProcessor(exporter))
         reader = InMemoryMetricReader()
         meter_provider = MeterProvider(metric_readers=[reader])
-        histogram = meter_provider.get_meter("gen_ai.reference").create_histogram(
-            "gen_ai.client.inference.time_to_first_chunk", unit="s"
-        )
+        meter = meter_provider.get_meter("gen_ai.reference")
+        first_chunk_metric = "gen_ai.client.inference.time_to_first_chunk"
+        chunk_interval_metric = "gen_ai.client.inference.time_per_output_chunk"
         try:
             with (
                 patch(f"{__name__}._reference_tracer", tracer_provider.get_tracer("gen_ai.reference")),
                 patch(f"{__name__}.ObservedStream", side_effect=observe),
-                patch(f"{__name__}._time_to_first_chunk", histogram),
+                patch(f"{__name__}._time_to_first_chunk", meter.create_histogram(first_chunk_metric, unit="s")),
+                patch(f"{__name__}._time_per_output_chunk", meter.create_histogram(chunk_interval_metric, unit="s")),
                 patch(f"{__name__}._operation_input_tokens") as input_histogram,
                 patch(f"{__name__}._operation_output_tokens") as output_histogram,
                 patch(f"{__name__}._input_tokens") as input_counter,
@@ -879,32 +912,38 @@ def run_chat_streaming_ttfc_checks():
                 if attribute not in expected_usage:
                     assert attribute not in spans[0].attributes
             data = reader.get_metrics_data()
-            points = (
-                []
+            metrics = (
+                {}
                 if data is None
-                else [
-                    point
+                else {
+                    metric.name: metric.data.data_points
                     for resource in data.resource_metrics
                     for scope in resource.scope_metrics
                     for metric in scope.metrics
-                    for point in metric.data.data_points
-                ]
+                }
             )
             if expected_ttfc is None:
                 assert "gen_ai.response.time_to_first_chunk" not in spans[0].attributes
-                assert points == []
+                assert first_chunk_metric not in metrics
             else:
                 ttfc = spans[0].attributes["gen_ai.response.time_to_first_chunk"]
                 assert isclose(ttfc, expected_ttfc, abs_tol=1e-9), (ttfc, expected_ttfc, output_deltas)
-                assert len(points) == 1
-                assert points[0].count == 1
-                assert points[0].sum == ttfc
-                assert points[0].attributes["gen_ai.response.model"] == "gpt-4o-mini"
+                (point,) = metrics[first_chunk_metric]
+                assert point.count == 1
+                assert point.sum == ttfc
+                assert point.attributes["gen_ai.response.model"] == "gpt-4o-mini"
+            if expected_interval is None:
+                assert chunk_interval_metric not in metrics
+            else:
+                (point,) = metrics[chunk_interval_metric]
+                assert point.count == 1
+                assert isclose(point.sum, expected_interval, abs_tol=1e-9)
+                assert point.attributes["gen_ai.response.model"] == "gpt-4o-mini"
         finally:
             tracer_provider.shutdown()
             meter_provider.shutdown()
 
-    check_stream([{"content": "Hello"}, {"content": " world"}], 0.5)
+    check_stream([{"content": "Hello"}, {"content": " world"}], 0.5, expected_interval=0.4)
     for delta in (
         {"refusal": "I cannot help with that."},
         {"audio": {"data": "YQ=="}},
@@ -979,7 +1018,11 @@ def run_chat_tool_call_reference(client):
             usage["gen_ai.usage.output_tokens"] = resp.usage.completion_tokens
         for attr, value in usage.items():
             span.set_attribute(attr, value)
-        record_inference_usage(usage, usage_metric_attributes(request_model, resp.model, host, port))
+        metric_attributes = usage_metric_attributes(request_model, resp.model, host, port)
+        if resp.service_tier is not None:
+            span.set_attribute("gen_ai.response.service_tier", resp.service_tier)
+            metric_attributes["gen_ai.response.service_tier"] = resp.service_tier
+        record_inference_usage(usage, metric_attributes)
         choice = resp.choices[0]
         if choice.message.tool_calls:
             # The base client returns the tool call; running it is app code the
@@ -1074,7 +1117,11 @@ def run_chat_with_document_input_reference(client):
             usage["gen_ai.usage.output_tokens"] = resp.usage.completion_tokens
         for attr, value in usage.items():
             span.set_attribute(attr, value)
-        record_inference_usage(usage, usage_metric_attributes(request_model, resp.model, host, port))
+        metric_attributes = usage_metric_attributes(request_model, resp.model, host, port)
+        if resp.service_tier is not None:
+            span.set_attribute("gen_ai.response.service_tier", resp.service_tier)
+            metric_attributes["gen_ai.response.service_tier"] = resp.service_tier
+        record_inference_usage(usage, metric_attributes)
         print(f"    -> {resp.choices[0].message.content[:60]}")
 
 
@@ -1146,7 +1193,11 @@ def run_chat_image_reference(client):
             span.set_attribute(attr, value)
         # OpenAI does not report per-modality image token counts, so the counters put
         # these tokens under the `unknown` modality even though the input is an image.
-        record_inference_usage(usage, usage_metric_attributes(request_model, resp.model, host, port))
+        metric_attributes = usage_metric_attributes(request_model, resp.model, host, port)
+        if resp.service_tier is not None:
+            span.set_attribute("gen_ai.response.service_tier", resp.service_tier)
+            metric_attributes["gen_ai.response.service_tier"] = resp.service_tier
+        record_inference_usage(usage, metric_attributes)
         print(f"    -> {resp.choices[0].message.content[:60]}")
 
 
@@ -1217,7 +1268,11 @@ def run_chat_audio_reference(client):
         span.set_attribute("gen_ai.response.finish_reasons", finish_reasons)
         for attr, value in usage.items():
             span.set_attribute(attr, value)
-        record_inference_usage(usage, usage_metric_attributes(request_model, resp.model, host, port))
+        metric_attributes = usage_metric_attributes(request_model, resp.model, host, port)
+        if resp.service_tier is not None:
+            span.set_attribute("gen_ai.response.service_tier", resp.service_tier)
+            metric_attributes["gen_ai.response.service_tier"] = resp.service_tier
+        record_inference_usage(usage, metric_attributes)
 
         output_messages = [
             {
@@ -1237,6 +1292,8 @@ def run_chat_audio_reference(client):
             "gen_ai.input.messages": input_messages,
             "gen_ai.output.messages": output_messages,
         }
+        if resp.service_tier is not None:
+            event_attrs["gen_ai.response.service_tier"] = resp.service_tier
         event_attrs.update(usage)
         if host:
             event_attrs["server.address"] = host
@@ -1393,7 +1450,11 @@ def run_responses_with_prompt_template_reference(client):
             usage["gen_ai.usage.output_tokens"] = resp.usage.output_tokens
         for attr, value in usage.items():
             span.set_attribute(attr, value)
-        record_inference_usage(usage, usage_metric_attributes(request_model, resp.model, host, port))
+        metric_attributes = usage_metric_attributes(request_model, resp.model, host, port)
+        if resp.service_tier is not None:
+            span.set_attribute("gen_ai.response.service_tier", resp.service_tier)
+            metric_attributes["gen_ai.response.service_tier"] = resp.service_tier
+        record_inference_usage(usage, metric_attributes)
         finish_reason = responses_finish_reason(resp)
         if finish_reason is not None:
             span.set_attribute("gen_ai.response.finish_reasons", [finish_reason])
@@ -1414,6 +1475,8 @@ def run_responses_with_prompt_template_reference(client):
             event_attrs["gen_ai.output.messages"] = [
                 {"role": "assistant", "parts": [{"type": "text", "content": output_text}]}
             ]
+        if resp.service_tier is not None:
+            event_attrs["gen_ai.response.service_tier"] = resp.service_tier
         event_attrs.update(usage)
         if host:
             event_attrs["server.address"] = host
@@ -1454,7 +1517,7 @@ def _emit_fetch_response_span(client, response_id, starting_after=None, stream=F
       the fetched response's token counts belong to the original generation.
       Recording them would double-count tokens when summing spans in a
       multi-step run.
-    - `openai.api.type` is `responses`; `openai.response.service_tier` comes from
+    - `openai.api.type` is `responses`; `gen_ai.response.service_tier` comes from
       the fetched object.
     """
     host, port = mock_server_host_port(MOCK_BASE_URL)
@@ -1507,7 +1570,7 @@ def _emit_fetch_response_span(client, response_id, starting_after=None, stream=F
                 span.set_attribute("gen_ai.response.finish_reasons", [finish_reason])
             service_tier = getattr(fetched, "service_tier", None)
             if service_tier is not None:
-                span.set_attribute("openai.response.service_tier", service_tier)
+                span.set_attribute("gen_ai.response.service_tier", service_tier)
             # The fetched response does not carry the original input messages.
             instructions = getattr(fetched, "instructions", None)
             if instructions:
@@ -1782,7 +1845,7 @@ def main(*, caller_close=False):
     print("=== Reference Implementation: OpenAI Reference Implementation ===")
 
     # Keep controlled-clock checks separate from the OTLP-exported reference run.
-    run_chat_streaming_ttfc_checks()
+    run_chat_streaming_timing_checks()
     run_fetch_response_checks()
 
     tp, lp, mp = setup_otel()

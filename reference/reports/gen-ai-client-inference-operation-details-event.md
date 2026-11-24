@@ -20,8 +20,10 @@
 | gen_ai.request.choice.count | (none) |
 | gen_ai.request.model | [anthropic], [aws-bedrock], [azure-ai-inference], [cohere], [google-genai], [groq], [litellm], [mistralai], [openai], [vertexai] |
 | gen_ai.request.seed | (none) |
+| gen_ai.request.service_tier | [anthropic], [groq], [openai] |
 | gen_ai.request.stream | [anthropic] |
 | gen_ai.request.top_k | (none) |
+| gen_ai.response.service_tier | [groq], [openai] |
 | server.port | [anthropic], [azure-ai-inference], [openai] |
 
 ## Recommended
