@@ -1,0 +1,187 @@
+"""Reference server timing for Transformers Serve."""
+
+import asyncio
+import json
+from collections.abc import AsyncIterator
+from contextvars import ContextVar
+from dataclasses import dataclass
+from functools import partial
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from time import perf_counter
+from unittest.mock import patch
+
+import httpx
+import torch
+from reference_shared import flush_and_shutdown, reference_meter, setup_otel
+from starlette.responses import JSONResponse, StreamingResponse
+from tokenizers import Tokenizer
+from tokenizers.models import WordLevel
+from tokenizers.pre_tokenizers import Whitespace
+from transformers import GPT2Config, GPT2LMHeadModel, PreTrainedTokenizerFast
+from transformers.cli.serving import server
+from transformers.cli.serving import utils as serving_utils
+from transformers.cli.serving.chat_completion import ChatCompletionHandler
+from transformers.cli.serving.completion import CompletionHandler
+from transformers.cli.serving.model_manager import ModelManager
+from transformers.cli.serving.response import ResponseHandler
+from transformers.cli.serving.systemone import SystemOneHandler
+from transformers.cli.serving.transcription import TranscriptionHandler
+from transformers.cli.serving.utils import DirectStreamer, GenerationState
+
+_reference_meter = reference_meter()
+_request_duration = _reference_meter.create_histogram(
+    "gen_ai.server.request.duration",
+    unit="s",
+    description="Duration of a model server request.",
+    explicit_bucket_boundaries_advisory=[0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10, 30, 60],
+)
+_time_to_first_token = _reference_meter.create_histogram(
+    "gen_ai.server.time_to_first_token",
+    unit="s",
+    description="Time to generate the first output token.",
+    explicit_bucket_boundaries_advisory=[0.001, 0.0025, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10],
+)
+_time_per_output_token = _reference_meter.create_histogram(
+    "gen_ai.server.time_per_output_token",
+    unit="s",
+    description="Time per output token generated after the first token.",
+    explicit_bucket_boundaries_advisory=[0.001, 0.0025, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1],
+)
+
+
+@dataclass
+class TokenTiming:
+    first_token_at: float | None = None
+    output_tokens: int = 0
+    completed: bool = False
+
+
+_token_timing = ContextVar[TokenTiming | None]("token_timing", default=None)
+
+
+class ReferenceStreamer(DirectStreamer):
+    def __init__(self, tokenizer, loop, queue, response_parser=None):
+        super().__init__(tokenizer, loop, queue, response_parser=response_parser)
+        # The server creates the streamer on the request thread and calls put on the inference thread.
+        self._timing = _token_timing.get()
+
+    def put(self, value: torch.Tensor) -> None:
+        generated_at = perf_counter()
+        super().put(value)
+        if self._timing is not None and self.total_tokens > 0:
+            if self._timing.first_token_at is None:
+                self._timing.first_token_at = generated_at
+            self._timing.output_tokens = self.total_tokens
+
+    def end(self) -> None:
+        if self._timing is not None:
+            self._timing.completed = True
+        super().end()
+
+
+class ReferenceCompletionHandler(CompletionHandler):
+    async def handle_request(self, body: dict, request_id: str) -> StreamingResponse | JSONResponse:
+        started_at = perf_counter()
+        timing = TokenTiming()
+        context = _token_timing.set(timing)
+        try:
+            response = await super().handle_request(body, request_id)
+        finally:
+            _token_timing.reset(context)
+        if not isinstance(response, StreamingResponse):
+            return response
+
+        attributes = {"gen_ai.operation.name": "text_completion", "gen_ai.provider.name": "transformers"}
+        request_model = body.get("model")
+        if isinstance(request_model, str):
+            attributes["gen_ai.request.model"] = request_model
+        chunks = response.body_iterator
+
+        async def record_stream_duration() -> AsyncIterator[str | bytes | memoryview]:
+            async for chunk in chunks:
+                yield chunk
+            duration = perf_counter() - started_at
+            if not timing.completed:
+                _request_duration.record(duration, attributes | {"error.type": "generation_failed"})
+                return
+            _request_duration.record(duration, attributes)
+            if timing.first_token_at is not None:
+                ttft = timing.first_token_at - started_at
+                _time_to_first_token.record(ttft, attributes)
+                if timing.output_tokens > 1:
+                    _time_per_output_token.record((duration - ttft) / (timing.output_tokens - 1), attributes)
+
+        response.body_iterator = record_stream_duration()
+        return response
+
+
+def save_tiny_model(path: Path) -> None:
+    tokenizer = Tokenizer(WordLevel({"[UNK]": 0, "red": 1, "blue": 2}, unk_token="[UNK]"))
+    tokenizer.pre_tokenizer = Whitespace()
+    PreTrainedTokenizerFast(tokenizer_object=tokenizer, unk_token="[UNK]", pad_token="[UNK]").save_pretrained(path)
+    config = GPT2Config(
+        vocab_size=tokenizer.get_vocab_size(),
+        n_positions=32,
+        n_embd=16,
+        n_layer=1,
+        n_head=2,
+        pad_token_id=0,
+        bos_token_id=None,
+        eos_token_id=None,
+    )
+    GPT2LMHeadModel(config).save_pretrained(path)
+
+
+async def run_completion(model_path: Path) -> None:
+    model_manager = ModelManager(device="cpu")
+    generation_state = GenerationState()
+    fastapi_without_telemetry = partial(
+        server.FastAPI,
+        telemetry={"tracing": False, "metrics": False, "logs": False},
+    )
+    with patch.object(server, "FastAPI", fastapi_without_telemetry):
+        app = server.build_server(
+            model_manager,
+            ChatCompletionHandler(model_manager, generation_state),
+            ReferenceCompletionHandler(model_manager, generation_state),
+            ResponseHandler(model_manager, generation_state),
+            TranscriptionHandler(model_manager, generation_state),
+            SystemOneHandler(model_manager, generation_state),
+            generation_state,
+        )
+    with patch.object(serving_utils, "DirectStreamer", ReferenceStreamer):
+        async with (
+            app.router.lifespan_context(app),
+            httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://localhost") as client,
+        ):
+            response = await client.post(
+                "/v1/completions",
+                json={
+                    "model": str(model_path),
+                    "prompt": "red blue",
+                    "max_tokens": 4,
+                    "temperature": 0,
+                    "stream": True,
+                },
+            )
+    response.raise_for_status()
+    events = [json.loads(line[6:]) for line in response.text.splitlines() if line.startswith("data: {")]
+    assert events[-1]["usage"]["completion_tokens"] == 4, events
+
+
+def main() -> None:
+    tp, lp, mp = setup_otel()
+    torch.manual_seed(0)
+    torch.set_num_threads(1)
+    try:
+        with TemporaryDirectory() as directory:
+            model_path = Path(directory) / "tiny-gpt2"
+            save_tiny_model(model_path)
+            asyncio.run(run_completion(model_path))
+    finally:
+        flush_and_shutdown(tp, lp, mp)
+
+
+if __name__ == "__main__":
+    main()

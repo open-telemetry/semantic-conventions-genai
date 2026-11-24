@@ -5,6 +5,11 @@ instrumentation_library: reference
 scenarios:
   reference:
     run: uv run --frozen --python 3.12 --project . python scenario.py
+    metrics:
+      - mcp.client.operation.duration
+      - mcp.server.operation.duration
+      - mcp.client.session.duration
+      - mcp.server.session.duration
     spans:
       - match:
           attributes:
