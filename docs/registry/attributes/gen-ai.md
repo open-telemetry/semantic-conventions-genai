@@ -148,6 +148,10 @@ libraries.
 **[7] `gen_ai.evaluation.score.label`:** This attribute provides a human-readable interpretation of the evaluation score produced by an evaluator. For example, a score value of 1 could mean "relevant" in one evaluation system and "not relevant" in another, depending on the scoring range and evaluator. The label SHOULD have low cardinality. Possible values depend on the evaluation metric and evaluator used; implementations SHOULD document the possible values.
 
 **[8] `gen_ai.input.messages`:** Messages MUST be provided in the order they were sent to the model.
+
+Instrumentations SHOULD populate fields when values are available,
+unless the field description says otherwise.
+
 Instrumentations MAY provide a way for users to filter or truncate
 input messages.
 
@@ -188,6 +192,9 @@ by an explicit user opt-in via [content capture configuration](/docs/gen-ai/gen-
 **[15] `gen_ai.memory.records`:** Instrumentations SHOULD NOT capture this attribute by default. Capture SHOULD be gated
 by an explicit user opt-in via [content capture configuration](/docs/gen-ai/gen-ai-spans.md#content-capture-configuration).
 
+Instrumentations SHOULD populate fields when values are available,
+unless the field description says otherwise.
+
 > [!Warning]
 > This attribute may contain sensitive information including user/PII data.
 
@@ -201,6 +208,9 @@ This attribute MUST be recorded as an [AnyValue](https://opentelemetry.io/docs/s
 the model. Each message corresponds to exactly one generation
 (choice/candidate) and vice versa - one choice cannot be split across
 multiple messages or one message cannot contain parts from multiple choices.
+
+Instrumentations SHOULD populate fields when values are available,
+unless the field description says otherwise.
 
 Instrumentations MAY provide a way for users to filter or truncate
 output messages. `gen_ai.response.finish_reasons` remains aligned with the
@@ -355,6 +365,9 @@ chat history.
 Instructions that are part of the chat history SHOULD be recorded in
 `gen_ai.input.messages` attribute instead.
 
+Instrumentations SHOULD populate fields when values are available,
+unless the field description says otherwise.
+
 Instrumentations MAY provide a way for users to filter or truncate
 system instructions.
 
@@ -417,9 +430,13 @@ This attribute MUST be recorded as an [AnyValue](https://opentelemetry.io/docs/s
 > [!WARNING]
 > This attribute may contain sensitive information.
 
+Instrumentations SHOULD populate fields when values are available,
+unless the field description says otherwise.
+
 Since this attribute could be large, it's NOT RECOMMENDED to populate
-non-required properties by default. Instrumentations MAY provide a way
-to enable populating optional properties.
+properties other than `type` and `name` (such as `description` and
+`parameters`) by default. Instrumentations MAY provide a way to enable
+populating additional properties.
 
 This attribute MUST be recorded as an [AnyValue](https://opentelemetry.io/docs/specs/otel/common/#anyvalue) conforming to its [JSON schema](/model/gen-ai/gen-ai-tool-definitions.json).
 

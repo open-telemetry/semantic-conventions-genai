@@ -1,11 +1,14 @@
 # yaml-language-server: $schema=../case.schema.json
 description: >
   `finish_reason` and part `type` accept strings, not other JSON types;
-  `parts` must be an array
+  `parts` must be an array; non-discriminator wrapper fields (`role`, `parts`,
+  `finish_reason`) may be omitted
 schema: gen-ai-output-messages.json
 document: [
   { "role": "assistant", "parts": [{ "type": 123 }], "finish_reason": 0 },
-  { "role": "assistant", "parts": { "type": "text", "content": "oops" } }
+  { "role": "assistant", "parts": { "type": "text", "content": "oops" } },
+  { "finish_reason": "stop" },
+  { "parts": [{ "type": "text" }] }
 ]
 # Regenerate with `uv run pytest --update-snapshots`, do not edit by hand.
 errors:
