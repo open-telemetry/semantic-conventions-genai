@@ -55,13 +55,11 @@ span. Available refinements include
 [agents exposed as tools](/docs/gen-ai/execute-tool.md#agent-as-a-tool) and
 [Agent Skills](/docs/gen-ai/execute-tool.md#agent-skills).
 
-**Span status** SHOULD follow the [Recording Errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/general/recording-errors.md)
-document. When the tool result indicates an error, instrumentation SHOULD
-set the span status to `Error`.
-
 **Span name** SHOULD be `execute_tool {gen_ai.tool.name}`.
 
 **Span kind** SHOULD be `INTERNAL`.
+
+**Span status** SHOULD follow the [Recording Errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/general/recording-errors.md) document.
 
 **Entity Associations** The span SHOULD be associated with one of the following entities:
 
