@@ -107,7 +107,6 @@ def run_chat_reference(client):
             "server.port": _SERVER_PORT,
         }
         input_tokens = output_tokens = cache_read_tokens = reasoning_tokens = 0
-        response_service_tier = None
         start_time = time.perf_counter()
         try:
             resp = client.chat.completions.create(
@@ -122,6 +121,7 @@ def run_chat_reference(client):
             response_service_tier = resp.service_tier
             if response_service_tier is not None:
                 span.set_attribute("gen_ai.response.service_tier", response_service_tier)
+                metric_attributes["gen_ai.response.service_tier"] = response_service_tier
             if resp.usage:
                 span.set_attribute("gen_ai.usage.input_tokens", resp.usage.prompt_tokens)
                 span.set_attribute("gen_ai.usage.output_tokens", resp.usage.completion_tokens)
@@ -139,10 +139,7 @@ def run_chat_reference(client):
             span.set_status(StatusCode.ERROR)
             raise
         finally:
-            duration_attributes = metric_attributes.copy()
-            if response_service_tier is not None:
-                duration_attributes["gen_ai.response.service_tier"] = response_service_tier
-            _inference_duration.record(time.perf_counter() - start_time, duration_attributes)
+            _inference_duration.record(time.perf_counter() - start_time, metric_attributes)
             _input_tokens.record(input_tokens, metric_attributes)
             _output_tokens.record(output_tokens, metric_attributes)
             modality_attributes = {**metric_attributes, "gen_ai.token.modality": "unknown"}

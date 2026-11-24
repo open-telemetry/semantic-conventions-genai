@@ -15,6 +15,9 @@ Cached input and reasoning output counts from `prompt_tokens_details` and
 `completion_tokens_details` feed the cache-read and reasoning counters when
 Groq reports them.
 
+The basic chat scenario records Groq's response service tier on duration and
+token metrics when Groq returns it.
+
 The streaming-only conformance cases use Groq SDK chunks with usage in
 `x_groq.usage`. A terminal `x_groq.error` chunk marks the span and operation
 histograms as failed, with any reported token counts preserved.

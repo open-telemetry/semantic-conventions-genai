@@ -21,7 +21,7 @@
 | Attribute | Supporting Libraries |
 | --- | --- |
 | gen_ai.response.model | [anthropic], [azure-openai], [google-genai], [groq], [openai] |
-| gen_ai.response.service_tier | [azure-openai], [openai] |
+| gen_ai.response.service_tier | [azure-openai], [groq], [openai] |
 | server.address | [anthropic], [azure-openai], [groq], [openai] |
 
 [anthropic]: ../scenarios/anthropic/scenario.py

@@ -52,6 +52,7 @@
       "gen_ai.provider.name",
       "gen_ai.request.model",
       "gen_ai.response.model",
+      "gen_ai.response.service_tier",
       "server.address",
       "server.port"
     ],
@@ -61,6 +62,7 @@
       "gen_ai.provider.name",
       "gen_ai.request.model",
       "gen_ai.response.model",
+      "gen_ai.response.service_tier",
       "server.address",
       "server.port"
     ],
@@ -78,6 +80,7 @@
       "gen_ai.provider.name",
       "gen_ai.request.model",
       "gen_ai.response.model",
+      "gen_ai.response.service_tier",
       "gen_ai.token.modality",
       "server.address",
       "server.port"
@@ -87,6 +90,7 @@
       "gen_ai.provider.name",
       "gen_ai.request.model",
       "gen_ai.response.model",
+      "gen_ai.response.service_tier",
       "gen_ai.token.modality",
       "server.address",
       "server.port"
