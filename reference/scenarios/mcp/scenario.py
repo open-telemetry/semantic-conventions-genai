@@ -21,7 +21,15 @@ from mcp.shared._otel import extract_trace_context
 from mcp.shared.exceptions import MCPError
 from mcp.shared.jsonrpc_dispatcher import JSONRPCDispatcher
 from mcp.shared.message import SessionMessage
-from mcp_types import INTERNAL_ERROR, INVALID_PARAMS, CallToolResult, EmbeddedResource, ImageContent, TextContent, TextResourceContents
+from mcp_types import (
+    INTERNAL_ERROR,
+    INVALID_PARAMS,
+    CallToolResult,
+    EmbeddedResource,
+    ImageContent,
+    TextContent,
+    TextResourceContents,
+)
 from opentelemetry import trace
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
@@ -244,7 +252,7 @@ def _build_mcp_server() -> MCPServer:
                         mime_type="text/markdown",
                         text=f"# {location}\n72 degrees and sunny",
                     ),
-                )
+                ),
             ]
         )
 

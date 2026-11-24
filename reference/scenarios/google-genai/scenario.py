@@ -146,9 +146,7 @@ def _patch_automatic_function_calling():
                         # The SDK wraps what the tool returns in {"result": ...}, or {"error": ...} when it raises.
                         function_response = result_part.function_response.response
                         if "result" in function_response:
-                            tool_span.set_attribute(
-                                "gen_ai.tool.call.result", {"value": function_response["result"]}
-                            )
+                            tool_span.set_attribute("gen_ai.tool.call.result", {"value": function_response["result"]})
                     parts.extend(result_parts)
                 except Exception as e:
                     tool_span.set_status(StatusCode.ERROR, str(e))

@@ -8,7 +8,14 @@ from typing import TypedDict
 from langchain_core.tools import tool
 from opentelemetry._logs import SeverityNumber
 from opentelemetry.trace import StatusCode
-from reference_shared import deserialize_tool_result, flush_and_shutdown, reference_event_logger, reference_meter, reference_tracer, setup_otel
+from reference_shared import (
+    deserialize_tool_result,
+    flush_and_shutdown,
+    reference_event_logger,
+    reference_meter,
+    reference_tracer,
+    setup_otel,
+)
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"] + "/v1"
 
@@ -294,7 +301,9 @@ def run_command_execution_reference():
                 exit_code = tool_message.artifact.get("exit_code")
                 if exit_code is not None:
                     tool_span.set_attribute("process.exit.code", exit_code)
-                tool_span.set_attribute("gen_ai.tool.call.result", {"value": deserialize_tool_result(tool_message.content)})
+                tool_span.set_attribute(
+                    "gen_ai.tool.call.result", {"value": deserialize_tool_result(tool_message.content)}
+                )
                 return tool_message
             except Exception as e:
                 tool_span.set_status(StatusCode.ERROR, str(e))

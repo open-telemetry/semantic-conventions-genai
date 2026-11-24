@@ -21,7 +21,13 @@ from agents.tool import FunctionTool, ToolContext
 from opentelemetry import trace
 from opentelemetry._logs import SeverityNumber
 from opentelemetry.trace import StatusCode
-from reference_shared import deserialize_tool_result, flush_and_shutdown, reference_event_logger, reference_tracer, setup_otel
+from reference_shared import (
+    deserialize_tool_result,
+    flush_and_shutdown,
+    reference_event_logger,
+    reference_tracer,
+    setup_otel,
+)
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"] + "/v1"
 # The shell this deployment lets the sandboxed agent run commands with.
