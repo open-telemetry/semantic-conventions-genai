@@ -11,9 +11,17 @@
                     "type": "string"
                 },
                 "name": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
                     "description": "The name of the tool.",
-                    "title": "Name",
-                    "type": "string"
+                    "title": "Name"
                 },
                 "description": {
                     "anyOf": [
@@ -43,8 +51,7 @@
                 }
             },
             "required": [
-                "type",
-                "name"
+                "type"
             ],
             "title": "FunctionToolDefinition",
             "type": "object"
@@ -64,14 +71,21 @@
                     "type": "string"
                 },
                 "name": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
                     "description": "The name of the tool.",
-                    "title": "Name",
-                    "type": "string"
+                    "title": "Name"
                 }
             },
             "required": [
-                "type",
-                "name"
+                "type"
             ],
             "title": "GenericToolDefinition",
             "type": "object"

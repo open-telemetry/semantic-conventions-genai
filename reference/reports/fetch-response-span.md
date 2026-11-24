@@ -33,6 +33,6 @@
 | --- | --- |
 | gen_ai.output.messages | [openai] |
 | gen_ai.system_instructions | [openai] |
-| gen_ai.tool.definitions | (none) |
+| gen_ai.tool.definitions | [openai] |
 
 [openai]: ../scenarios/openai/scenario.py

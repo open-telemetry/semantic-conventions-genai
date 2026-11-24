@@ -1,0 +1,6 @@
+{
+    "additionalProperties": true,
+    "description": "Represents object-like variables passed to a prompt template.",
+    "title": "PromptVariables",
+    "type": "object"
+}

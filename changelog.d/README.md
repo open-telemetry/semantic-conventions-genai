@@ -26,6 +26,6 @@ Supported types:
 Preview the next changelog section with:
 
 ```bash
-VERSION=$(awk '/^schema_url:/ { n = split($2, parts, "/"); print parts[n]; exit }' model/manifest.yaml)
+VERSION=$(make -s print-version)
 PYTHONUTF8=1 uv run --project changelog.d --locked towncrier build --config changelog.d/towncrier.toml --draft --version "$VERSION"
 ```
