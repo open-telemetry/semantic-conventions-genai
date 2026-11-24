@@ -233,7 +233,18 @@ def test_span_types_absent_from_a_data_file_are_not_reported():
 
 def test_span_specs_are_named_in_recognized_registry_namespaces():
     for key, spec in span_specs().items():
-        assert spec.registry_id.startswith(("a2a.", "gen_ai.")), key
+        assert spec.registry_id.startswith(("a2a.", "gen_ai.", "mcp.")), key
+
+
+def test_mcp_scenario_reports_operation_duration_without_prompt_variables():
+    entries = {entry.library: entry for entry in load_scenario_data_files()}
+    mcp_entry = entries["mcp"]
+    for span_key in ("mcp_client", "mcp_server"):
+        assert mcp_entry.spans[span_key]["gen_ai.prompt.name"] == "present", span_key
+        assert mcp_entry.spans[span_key]["gen_ai.prompt.variables"] == "present", span_key
+    for metric_name in ("mcp.client.operation.duration", "mcp.server.operation.duration"):
+        assert mcp_entry.metrics[metric_name]["gen_ai.prompt.name"] == "present", metric_name
+        assert "gen_ai.prompt.variables" not in mcp_entry.metrics[metric_name], metric_name
 
 
 if __name__ == "__main__":
@@ -253,4 +264,5 @@ if __name__ == "__main__":
     test_events_keep_their_registry_names()
     test_span_types_absent_from_a_data_file_are_not_reported()
     test_span_specs_are_named_in_recognized_registry_namespaces()
+    test_mcp_scenario_reports_operation_duration_without_prompt_variables()
     print("ok")

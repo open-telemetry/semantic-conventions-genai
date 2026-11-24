@@ -12,6 +12,10 @@ Scenario authoring rules and examples live in
 [.github/skills/reference/SKILL.md](../skills/reference/SKILL.md).
 Flag each violation.
 
+Apply the [scenario scope](../../reference/CONTRIBUTING.md#scenario-scope)
+guidance in reviews. Do not request production defensive hardening or coverage
+of SDK failure modes outside the behavior a scenario demonstrates.
+
 ## Trace every value
 
 Instrumentation lives inside the library and sees only the library's own API, so
@@ -35,6 +39,9 @@ string was emitted.
 
 ## Also flag
 
+- a standalone test suite for a reference scenario. Keep checks in the
+  conformance run as described in the
+  [reference authoring instructions](../../reference/AGENTS.md).
 - a scenario that does not apply to a specific library
 - a scenario that instruments an arbitrary group of methods (i.e. span boundaries don't match specific library API)
 - a scenario that could emit an attribute or a signal but does not

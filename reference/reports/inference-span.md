@@ -20,8 +20,10 @@
 | gen_ai.request.choice.count | [agent-framework], [openai] |
 | gen_ai.request.model | [adk_a2a], [agent-framework], [anthropic], [aws-bedrock], [azure-ai-inference], [azure-openai], [cohere], [google-genai], [groq], [litellm], [mistralai], [openai], [vertexai] |
 | gen_ai.request.seed | [openai] |
-| gen_ai.request.stream | [openai] |
+| gen_ai.request.service_tier | [anthropic], [groq], [openai] |
+| gen_ai.request.stream | [anthropic], [openai] |
 | gen_ai.request.top_k | (none) |
+| gen_ai.response.service_tier | [azure-openai], [groq], [openai] |
 | server.port | [anthropic], [aws-bedrock], [azure-ai-inference], [azure-openai], [cohere], [google-genai], [litellm], [mistralai], [openai] |
 
 ## Recommended
@@ -40,7 +42,7 @@
 | gen_ai.response.finish_reasons | [adk_a2a], [anthropic], [aws-bedrock], [azure-ai-inference], [azure-openai], [claude-agent-sdk], [cohere], [google-genai], [groq], [litellm], [mistralai], [openai], [vertexai] |
 | gen_ai.response.id | [agent-framework], [anthropic], [azure-ai-inference], [azure-openai], [claude-agent-sdk], [cohere], [google-genai], [groq], [litellm], [mistralai], [openai], [vertexai] |
 | gen_ai.response.model | [agent-framework], [anthropic], [azure-ai-inference], [azure-openai], [claude-agent-sdk], [google-genai], [groq], [litellm], [mistralai], [openai], [vertexai] |
-| gen_ai.response.time_to_first_chunk | [openai] |
+| gen_ai.response.time_to_first_chunk | [anthropic], [openai] |
 | gen_ai.usage.audio.cache_read.input_tokens | [google-genai], [vertexai] |
 | gen_ai.usage.audio.input_tokens | [google-genai], [openai], [vertexai] |
 | gen_ai.usage.audio.output_tokens | [google-genai], [openai] |
@@ -65,7 +67,7 @@
 | gen_ai.input.messages_ref | [anthropic] |
 | gen_ai.output.messages | [agent-framework], [anthropic], [aws-bedrock], [claude-agent-sdk], [litellm], [mistralai], [openai] |
 | gen_ai.output.messages_ref | [anthropic] |
-| gen_ai.prompt.variable | (none) |
+| gen_ai.prompt.variables | [aws-bedrock], [openai] |
 | gen_ai.system_instructions | [agent-framework], [anthropic] |
 | gen_ai.system_instructions_ref | [anthropic] |
 | gen_ai.tool.definitions | [anthropic], [aws-bedrock], [azure-ai-inference], [cohere], [google-genai], [groq], [litellm], [mistralai], [openai], [vertexai] |

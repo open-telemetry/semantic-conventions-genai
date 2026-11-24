@@ -21,6 +21,7 @@
 | Attribute | Supporting Libraries |
 | --- | --- |
 | gen_ai.response.model | [google-genai], [groq], [openai] |
+| gen_ai.response.service_tier | [openai] |
 | server.address | [groq], [openai] |
 
 [google-genai]: ../scenarios/google-genai/scenario.py

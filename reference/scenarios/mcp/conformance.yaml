@@ -1,0 +1,53 @@
+runner: genai-conformance
+instrumented_library: mcp
+instrumentation_library: reference
+
+scenarios:
+  reference:
+    run: uv run --frozen --python 3.12 --project . python scenario.py
+    metrics:
+      - mcp.client.operation.duration
+      - mcp.server.operation.duration
+      - mcp.client.session.duration
+      - mcp.server.session.duration
+    spans:
+      - match:
+          attributes:
+            mcp.method.name: tools/list
+          kind: client
+          type: mcp.client
+      - match:
+          attributes:
+            mcp.method.name: tools/call
+          kind: client
+          type: mcp.client
+      - match:
+          attributes:
+            mcp.method.name: prompts/get
+          kind: client
+          type: mcp.client
+      - match:
+          attributes:
+            mcp.method.name: resources/read
+          kind: client
+          type: mcp.client
+      - match:
+          attributes:
+            mcp.method.name: tools/list
+          kind: server
+          type: mcp.server
+      - match:
+          attributes:
+            mcp.method.name: tools/call
+          kind: server
+          type: mcp.server
+      - match:
+          attributes:
+            mcp.method.name: prompts/get
+          kind: server
+          type: mcp.server
+      - match:
+          attributes:
+            mcp.method.name: resources/read
+          kind: server
+          type: mcp.server

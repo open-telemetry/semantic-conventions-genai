@@ -59,19 +59,17 @@ _inference_duration = _meter.create_histogram(
     description="GenAI client inference operation duration.",
     explicit_bucket_boundaries_advisory=[
         0.01,
-        0.02,
-        0.04,
-        0.08,
-        0.16,
-        0.32,
-        0.64,
-        1.28,
-        2.56,
-        5.12,
-        10.24,
-        20.48,
-        40.96,
-        81.92,
+        0.025,
+        0.05,
+        0.1,
+        0.25,
+        0.5,
+        1,
+        2.5,
+        5,
+        10,
+        30,
+        60,
     ],
 )
 _SERVER_ADDRESS, _SERVER_PORT = mock_server_host_port(MOCK_BASE_URL)
@@ -106,10 +104,12 @@ def run_chat_reference(client):
     """Scenario: basic chat completion with reference implementation."""
     print("  [chat] basic chat completion (reference implementation)")
     request_model = "llama-3.1-8b-instant"
+    request_service_tier = "flex"
     span_attributes = {
         "gen_ai.operation.name": "chat",
         "gen_ai.provider.name": "groq",
         "gen_ai.request.model": request_model,
+        "gen_ai.request.service_tier": request_service_tier,
         "server.address": _SERVER_ADDRESS,
     }
     with _reference_tracer.start_as_current_span(
@@ -124,16 +124,21 @@ def run_chat_reference(client):
             "server.port": _SERVER_PORT,
         }
         input_tokens = output_tokens = cache_read_tokens = reasoning_tokens = 0
+        response_service_tier = None
         start_time = time.perf_counter()
         try:
             resp = client.chat.completions.create(
                 model=request_model,
                 messages=messages,
+                service_tier=request_service_tier,
             )
             metric_attributes["gen_ai.response.model"] = resp.model
             span.set_attribute("gen_ai.response.model", resp.model)
             span.set_attribute("gen_ai.response.id", resp.id)
             span.set_attribute("gen_ai.response.finish_reasons", [c.finish_reason for c in resp.choices])
+            response_service_tier = resp.service_tier
+            if response_service_tier is not None:
+                span.set_attribute("gen_ai.response.service_tier", response_service_tier)
             if resp.usage:
                 span.set_attribute("gen_ai.usage.input_tokens", resp.usage.prompt_tokens)
                 span.set_attribute("gen_ai.usage.output_tokens", resp.usage.completion_tokens)
@@ -147,7 +152,10 @@ def run_chat_reference(client):
             span.set_status(StatusCode.ERROR)
             raise
         finally:
-            _inference_duration.record(time.perf_counter() - start_time, metric_attributes)
+            duration_attributes = metric_attributes.copy()
+            if response_service_tier is not None:
+                duration_attributes["gen_ai.response.service_tier"] = response_service_tier
+            _inference_duration.record(time.perf_counter() - start_time, duration_attributes)
             _input_tokens.record(input_tokens, metric_attributes)
             _output_tokens.record(output_tokens, metric_attributes)
             modality_attributes = {**metric_attributes, "gen_ai.token.modality": "unknown"}
@@ -162,6 +170,7 @@ def run_chat_reference(client):
             "gen_ai.operation.name": "chat",
             "gen_ai.provider.name": "groq",
             "gen_ai.request.model": request_model,
+            "gen_ai.request.service_tier": request_service_tier,
             "gen_ai.response.id": resp.id,
             "gen_ai.response.model": resp.model,
             "gen_ai.response.finish_reasons": [c.finish_reason for c in resp.choices],
@@ -176,6 +185,8 @@ def run_chat_reference(client):
                 for c in resp.choices
             ],
         }
+        if response_service_tier is not None:
+            event_attrs["gen_ai.response.service_tier"] = response_service_tier
         if resp.usage:
             event_attrs["gen_ai.usage.input_tokens"] = resp.usage.prompt_tokens
             event_attrs["gen_ai.usage.output_tokens"] = resp.usage.completion_tokens
