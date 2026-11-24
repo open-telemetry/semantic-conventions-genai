@@ -4,10 +4,12 @@
 """
 
 import base64
+import json
 import os
 from tempfile import mkdtemp
 
 import anthropic
+from anthropic.lib.tools import BetaToolRunner
 from opentelemetry.trace import SpanKind, StatusCode
 from opentelemetry.util.genai.completion_hook import load_completion_hook
 from opentelemetry.util.genai.handler import get_telemetry_handler
@@ -21,6 +23,7 @@ from opentelemetry.util.genai.types import (
     ToolCallRequest,
 )
 from reference_shared import (
+    deserialize_tool_result,
     flush_and_shutdown,
     inference_duration_view,
     mock_server_host_port,
@@ -598,6 +601,82 @@ def run_create_agent():
             raise
 
 
+def _tool_result_block_to_part(block):
+    source = block.get("source") or {}
+    if block["type"] == "text":
+        return {"type": "text", "content": block["text"]}
+    if block["type"] == "image" and source.get("type") == "url":
+        return {"type": "uri", "modality": "image", "uri": source["url"]}
+    if block["type"] == "image" and source.get("type") == "base64":
+        return {"type": "blob", "modality": "image", "mime_type": source["media_type"], "content": source["data"]}
+    # Blocks without a defined part type aren't recorded.
+    return None
+
+
+def run_tool_runner():
+    """Scenario: the SDK tool runner executes tools that return serialized JSON and content blocks."""
+    print("  [execute_tool] Anthropic tool runner: tools returning serialized JSON and content blocks")
+
+    # Tool results are strings or content blocks, so structured data is returned serialized.
+    @anthropic.beta_tool
+    def get_weather(location: str):
+        """Get the current weather for a location."""
+        return json.dumps({"location": location, "temperature": 57, "conditions": "rainy"})
+
+    @anthropic.beta_tool
+    def get_weather_map(location: str):
+        """Get a weather summary and map for a location."""
+        return [
+            {"type": "text", "text": "Weather map for " + location},
+            {"type": "image", "source": {"type": "url", "url": "https://example.com/weather-map.png"}},
+        ]
+
+    original_run_tool = BetaToolRunner._run_tool
+
+    def traced_run_tool(runner, tool, tool_use):
+        with reference_tracer().start_as_current_span(
+            f"execute_tool {tool.name}",
+            attributes={
+                "gen_ai.operation.name": "execute_tool",
+                "gen_ai.tool.name": tool.name,
+                "gen_ai.tool.type": "function",
+                "gen_ai.tool.call.id": tool_use.id,
+            },
+        ) as tool_span:
+            tool_span.set_attribute("gen_ai.tool.description", tool.description)
+            tool_span.set_attribute("gen_ai.tool.call.arguments", tool_use.input)
+            tool_result = original_run_tool(runner, tool, tool_use)
+            if tool_result.get("is_error"):
+                tool_span.set_status(StatusCode.ERROR)
+                tool_span.set_attribute("error.type", "tool_error")
+                return tool_result
+            content = tool_result["content"]
+            if isinstance(content, str):
+                tool_span.set_attribute("gen_ai.tool.call.result", {"value": deserialize_tool_result(content)})
+            elif content is not None:
+                parts = [part for part in map(_tool_result_block_to_part, content) if part is not None]
+                if parts:
+                    tool_span.set_attribute("gen_ai.tool.call.result", {"parts": parts})
+            return tool_result
+
+    BetaToolRunner._run_tool = traced_run_tool
+    try:
+        client = anthropic.Anthropic(base_url=MOCK_BASE_URL, api_key="mock-key")
+        for tool, prompt in (
+            (get_weather, "What is the weather in Seattle?"),
+            (get_weather_map, "Show me the weather map for Seattle."),
+        ):
+            runner = client.beta.messages.tool_runner(
+                model="claude-sonnet-5",
+                max_tokens=100,
+                tools=[tool],
+                messages=[{"role": "user", "content": prompt}],
+            )
+            print(f"    -> {runner.until_done().content[0].text[:60]}")
+    finally:
+        BetaToolRunner._run_tool = original_run_tool
+
+
 def main():
     """Run all Anthropic reference scenarios."""
     print("=== Reference Implementation: Anthropic (util-genai) ===")
@@ -621,6 +700,7 @@ def main():
     run_chat_with_image_input(handler)
     run_chat_with_search_result_input(handler)
     run_create_agent()
+    run_tool_runner()
 
     flush_and_shutdown(tp, lp, mp)
 

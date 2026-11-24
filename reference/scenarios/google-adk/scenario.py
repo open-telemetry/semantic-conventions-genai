@@ -1,6 +1,7 @@
 """Reference implementation for Google ADK."""
 
 import asyncio
+import base64
 import contextlib
 import os
 import pathlib
@@ -23,6 +24,10 @@ from reference_shared import (
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"]
 SKILLS_DIR = pathlib.Path(__file__).parent / "skills"
+# A 1x1 PNG.
+_WEATHER_MAP_PNG = base64.b64decode(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
+)
 
 _reference_tracer = reference_tracer()
 _reference_meter = reference_meter()
@@ -189,8 +194,7 @@ def run_agent_reference():
                     tool_span.set_attribute("gen_ai.tool.call.id", tool_context.function_call_id)
                 tool_span.set_attribute("gen_ai.tool.call.arguments", {"location": location})
                 result = f"Sunny in {location}"
-                # TODO: Determine how to represent this string result in the object-only schema.
-                tool_span.set_attribute("gen_ai.tool.call.result", result)
+                tool_span.set_attribute("gen_ai.tool.call.result", {"value": result})
             except Exception as e:
                 tool_span.set_status(StatusCode.ERROR, str(e))
                 tool_span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
@@ -356,6 +360,110 @@ def run_agent_reference():
         _tool_calls.record(call_counts["tool"], metric_attributes)
 
 
+def _function_response_part_to_message_part(part):
+    if part.inline_data is not None:
+        return {
+            "type": "blob",
+            "modality": part.inline_data.mime_type.split("/")[0],
+            "mime_type": part.inline_data.mime_type,
+            "content": base64.b64encode(part.inline_data.data).decode(),
+        }
+    return {
+        "type": "uri",
+        "modality": part.file_data.mime_type.split("/")[0],
+        "mime_type": part.file_data.mime_type,
+        "uri": part.file_data.file_uri,
+    }
+
+
+def run_tool_media_reference():
+    """Scenario: a tool returns data with an image; ADK moves the image into `FunctionResponse.parts`."""
+    from google.adk.agents import Agent
+    from google.adk.flows.llm_flows.tools import _batch_executor as adk_batch_executor
+    from google.adk.models.google_llm import Gemini
+    from google.adk.runners import Runner
+    from google.adk.sessions import InMemorySessionService
+    from google.genai import types
+
+    print("  [tool_media] ADK tool returning data and an image (reference implementation)")
+    os.environ.setdefault("GOOGLE_API_KEY", "mock-key")
+
+    def get_weather_map(location: str) -> dict:
+        """Get the current weather with a map."""
+        return {
+            "location": location,
+            "temperature_f": 72,
+            "map": types.Part.from_bytes(data=_WEATHER_MAP_PNG, mime_type="image/png"),
+        }
+
+    original_execute = adk_batch_executor._execute_single_prepared_call_async
+
+    # Runs the tool and builds the FunctionResponse event ADK sends to the model.
+    async def traced_execute(invocation_context, prepared_call, agent):
+        tool = prepared_call.tool
+        tool_context = prepared_call.tool_context
+        attributes = {
+            "gen_ai.operation.name": "execute_tool",
+            "gen_ai.tool.name": tool.name,
+            "gen_ai.tool.type": "function",
+            "gen_ai.agent.name": tool_context.agent_name,
+            "gen_ai.conversation.id": tool_context.session.id,
+        }
+        with _reference_tracer.start_as_current_span(
+            f"execute_tool {tool.name}", attributes=attributes, record_exception=False
+        ) as span:
+            try:
+                span.set_attribute("gen_ai.tool.description", tool.description)
+                if tool_context.function_call_id:
+                    span.set_attribute("gen_ai.tool.call.id", tool_context.function_call_id)
+                span.set_attribute("gen_ai.tool.call.arguments", prepared_call.function_args)
+                event = await original_execute(invocation_context, prepared_call, agent)
+                function_response = event.content.parts[0].function_response if event else None
+                if function_response is not None:
+                    # ADK moves media to `parts` and sends the rest in `response`.
+                    tool_result = {"value": function_response.response}
+                    if function_response.parts:
+                        tool_result["parts"] = [
+                            _function_response_part_to_message_part(part) for part in function_response.parts
+                        ]
+                    span.set_attribute("gen_ai.tool.call.result", tool_result)
+                return event
+            except Exception as e:
+                span.set_status(StatusCode.ERROR, str(e))
+                span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
+                reference_event_logger().emit(
+                    event_name="gen_ai.execute_tool.exception",
+                    severity_number=SeverityNumber.WARN,
+                    exception=e,
+                )
+                raise
+
+    with (
+        _suppress_adk_native_telemetry(),
+        patch.object(adk_batch_executor, "_execute_single_prepared_call_async", traced_execute),
+    ):
+        agent = Agent(
+            name="weather_map_agent",
+            model=Gemini(model="gemini-2.0-flash", base_url=MOCK_BASE_URL),
+            instruction="Show the weather map.",
+            tools=[get_weather_map],
+        )
+        session_service = InMemorySessionService()
+        runner = Runner(agent=agent, app_name="tool_media_app", session_service=session_service)
+
+        async def _run():
+            session = await session_service.create_session(app_name="tool_media_app", user_id="test_user")
+            async for event in runner.run_async(
+                user_id="test_user",
+                session_id=session.id,
+                new_message=types.Content(role="user", parts=[types.Part(text="Show the weather map for Seattle.")]),
+            ):
+                if event.content and event.content.parts and event.content.parts[0].text:
+                    print(f"    -> {event.content.parts[0].text[:60]}")
+
+        asyncio.run(_run())
+
+
 def run_memory_reference():
     """Scenario: Google ADK memory add/search with reference implementation."""
     from google.adk.events.event import Event
@@ -496,8 +604,7 @@ def run_multi_agent_delegation_reference():
                         tool_span.set_attribute("gen_ai.tool.call.id", tool_context.function_call_id)
                     tool_span.set_attribute("gen_ai.tool.call.arguments", args)
                     result = await original_run_async(args=args, tool_context=tool_context)
-                    # TODO: Determine how to represent this string result in the object-only schema.
-                    tool_span.set_attribute("gen_ai.tool.call.result", result)
+                    tool_span.set_attribute("gen_ai.tool.call.result", {"value": result})
                 except Exception as e:
                     tool_span.set_status(StatusCode.ERROR, str(e))
                     tool_span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
@@ -696,7 +803,7 @@ def run_multi_agent_handoff_reference():
                     span.set_attribute("gen_ai.transfer.mode", "pass_control")
                     span.set_attribute("gen_ai.transfer.target.name", target_name)
                 if result is not None:
-                    span.set_attribute("gen_ai.tool.call.result", result)
+                    span.set_attribute("gen_ai.tool.call.result", {"value": result})
                 return result
             except Exception as e:
                 span.set_status(StatusCode.ERROR, str(e))
@@ -881,8 +988,7 @@ def run_skills_reference():
                         span.set_attribute("error.type", error_type)
                         span.set_status(StatusCode.ERROR, result.get("error", ""))
                     else:
-                        # TODO: Determine how to represent this string result in the object-only schema.
-                        span.set_attribute("gen_ai.tool.call.result", result)
+                        span.set_attribute("gen_ai.tool.call.result", {"value": result})
                     self._record_skill_signals(span, args, result, error_type, tool_context)
                     return result
                 except Exception as e:
@@ -1146,6 +1252,7 @@ def main():
     tp.add_span_processor(span_counter)
 
     run_agent_reference()
+    run_tool_media_reference()
     run_multi_agent_delegation_reference()
     run_multi_agent_handoff_reference()
     run_memory_reference()

@@ -1,0 +1,24 @@
+# yaml-language-server: $schema=../case.schema.json
+description: >
+  Tool call result parts are validated like message parts: a text part without
+  `content`, a URI part without `uri`, and a blob part without `modality` are
+  rejected rather than accepted as generic parts.
+schema: gen-ai-tool-call-result.json
+document: {
+  "parts": [
+    { "type": "text" },
+    { "type": "uri", "modality": "image" },
+    { "type": "blob", "mime_type": "image/png", "content": "iVBORw0KGgo=" }
+  ]
+}
+# Regenerate with `uv run pytest --update-snapshots`, do not edit by hand.
+errors:
+  - path: $.parts[0]
+    keyword: required
+    message: "'content' is a required property"
+  - path: $.parts[1]
+    keyword: required
+    message: "'uri' is a required property"
+  - path: $.parts[2]
+    keyword: required
+    message: "'modality' is a required property"

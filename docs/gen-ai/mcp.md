@@ -175,7 +175,7 @@ to avoid high cardinality span names.
 | [`server.port`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When `server.address` is set. | int | Server port number. [12] | `80`; `8080`; `443` |
 | [`gen_ai.prompt.variables`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | The variables supplied to the prompt template in the request. [13] | {<br>&nbsp;&nbsp;"user_name": "Alice",<br>&nbsp;&nbsp;"language": "French"<br>} |
 | [`gen_ai.tool.call.arguments`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | Parameters passed to the tool call. [14] | {<br>&nbsp;&nbsp;&nbsp;&nbsp;"location": "San Francisco?",<br>&nbsp;&nbsp;&nbsp;&nbsp;"date": "2025-10-01"<br>} |
-| [`gen_ai.tool.call.result`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | The result returned by the tool call (if any and if execution was successful). [15] | {<br>&nbsp;&nbsp;"temperature_range": {<br>&nbsp;&nbsp;&nbsp;&nbsp;"high": 75,<br>&nbsp;&nbsp;&nbsp;&nbsp;"low": 60<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;"conditions": "sunny"<br>} |
+| [`gen_ai.tool.call.result`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | The result returned by the tool call (if any and if execution was successful). [15] | {<br>&nbsp;&nbsp;"value": {<br>&nbsp;&nbsp;&nbsp;&nbsp;"temperature_range": {<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"high": 75,<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"low": 60<br>&nbsp;&nbsp;&nbsp;&nbsp;},<br>&nbsp;&nbsp;&nbsp;&nbsp;"conditions": "sunny"<br>&nbsp;&nbsp;}<br>}; {<br>&nbsp;&nbsp;"parts": [<br>&nbsp;&nbsp;&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"type": "text",<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"content": "Weather map for Seattle"<br>&nbsp;&nbsp;&nbsp;&nbsp;},<br>&nbsp;&nbsp;&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"type": "uri",<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"modality": "image",<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"uri": "https://example.com/weather-map.png"<br>&nbsp;&nbsp;&nbsp;&nbsp;}<br>&nbsp;&nbsp;]<br>} |
 
 **[1] `error.type`:** When the response carries a JSON-RPC error code that classifies as an error,
 `error.type` SHOULD be set to the string representation of that code. See
@@ -254,9 +254,11 @@ This attribute MUST be recorded as an [AnyValue](https://opentelemetry.io/docs/s
 > [!WARNING]
 > This attribute may contain sensitive information.
 
-It's expected to be an object - in case a serialized string is available
-to the instrumentation, the instrumentation SHOULD do the best effort to
-deserialize it to an object.
+It's an object with the result recorded in `value`, as message parts in
+`parts`, or both. See [examples](/docs/gen-ai/non-normative/examples-llm-calls.md#tool-call-results).
+
+Instrumentations SHOULD NOT set this attribute when the tool returns no
+value.
 
 This attribute MUST be recorded as an [AnyValue](https://opentelemetry.io/docs/specs/otel/common/#anyvalue) conforming to its [JSON schema](/model/gen-ai/gen-ai-tool-call-result.json).
 
@@ -406,7 +408,7 @@ to avoid high cardinality span names.
 | [`network.transport`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | The transport protocol used for the observed MCP operation. [12] | `tcp`; `quic`; `pipe` |
 | [`gen_ai.prompt.variables`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | The variables supplied to the prompt template in the request. [13] | {<br>&nbsp;&nbsp;"user_name": "Alice",<br>&nbsp;&nbsp;"language": "French"<br>} |
 | [`gen_ai.tool.call.arguments`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | Parameters passed to the tool call. [14] | {<br>&nbsp;&nbsp;&nbsp;&nbsp;"location": "San Francisco?",<br>&nbsp;&nbsp;&nbsp;&nbsp;"date": "2025-10-01"<br>} |
-| [`gen_ai.tool.call.result`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | The result returned by the tool call (if any and if execution was successful). [15] | {<br>&nbsp;&nbsp;"temperature_range": {<br>&nbsp;&nbsp;&nbsp;&nbsp;"high": 75,<br>&nbsp;&nbsp;&nbsp;&nbsp;"low": 60<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;"conditions": "sunny"<br>} |
+| [`gen_ai.tool.call.result`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | The result returned by the tool call (if any and if execution was successful). [15] | {<br>&nbsp;&nbsp;"value": {<br>&nbsp;&nbsp;&nbsp;&nbsp;"temperature_range": {<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"high": 75,<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"low": 60<br>&nbsp;&nbsp;&nbsp;&nbsp;},<br>&nbsp;&nbsp;&nbsp;&nbsp;"conditions": "sunny"<br>&nbsp;&nbsp;}<br>}; {<br>&nbsp;&nbsp;"parts": [<br>&nbsp;&nbsp;&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"type": "text",<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"content": "Weather map for Seattle"<br>&nbsp;&nbsp;&nbsp;&nbsp;},<br>&nbsp;&nbsp;&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"type": "uri",<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"modality": "image",<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"uri": "https://example.com/weather-map.png"<br>&nbsp;&nbsp;&nbsp;&nbsp;}<br>&nbsp;&nbsp;]<br>} |
 
 **[1] `error.type`:** When the response carries a JSON-RPC error code that classifies as an error,
 `error.type` SHOULD be set to the string representation of that code. See
@@ -495,9 +497,11 @@ This attribute MUST be recorded as an [AnyValue](https://opentelemetry.io/docs/s
 > [!WARNING]
 > This attribute may contain sensitive information.
 
-It's expected to be an object - in case a serialized string is available
-to the instrumentation, the instrumentation SHOULD do the best effort to
-deserialize it to an object.
+It's an object with the result recorded in `value`, as message parts in
+`parts`, or both. See [examples](/docs/gen-ai/non-normative/examples-llm-calls.md#tool-call-results).
+
+Instrumentations SHOULD NOT set this attribute when the tool returns no
+value.
 
 This attribute MUST be recorded as an [AnyValue](https://opentelemetry.io/docs/specs/otel/common/#anyvalue) conforming to its [JSON schema](/model/gen-ai/gen-ai-tool-call-result.json).
 
@@ -1153,7 +1157,7 @@ MCP client span (`s3`):
 | Span status                            | `UNSET`                                                                                                                                                   |
 | Attribute `gen_ai.operation.name`      | `"execute_tool"`                                                                                                                                          |
 | Attribute `gen_ai.tool.call.arguments` | (if enabled)<br>{<br>&nbsp;&nbsp;&nbsp;&nbsp;"location": "San Francisco?",<br>&nbsp;&nbsp;&nbsp;&nbsp;"date": "2025-10-01"<br>}                           |
-| Attribute `gen_ai.tool.call.result`    | (if enabled)<br>{<br>&nbsp;&nbsp;"temperature_range": {<br>&nbsp;&nbsp;&nbsp;&nbsp;"high": 75,<br>&nbsp;&nbsp;&nbsp;&nbsp;"low": 60<br>&nbsp;&nbsp;}<br>} |
+| Attribute `gen_ai.tool.call.result`    | (if enabled)<br>{<br>&nbsp;&nbsp;"value": {<br>&nbsp;&nbsp;&nbsp;&nbsp;"temperature_range": {<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"high": 75,<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"low": 60<br>&nbsp;&nbsp;&nbsp;&nbsp;}<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;"parts": [<br>&nbsp;&nbsp;&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"type": "text",<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"content": "{\"temperature_range\": {\"high\": 75, \"low\": 60}}"<br>&nbsp;&nbsp;&nbsp;&nbsp;}<br>&nbsp;&nbsp;]<br>} |
 | Attribute `gen_ai.tool.name`           | `"get-weather"`                                                                                                                                           |
 | Attribute `jsonrpc.request.id`         | `"3"`                                                                                                                                                     |
 | Attribute `mcp.method.name`            | `"tools/call"`                                                                                                                                            |
@@ -1171,7 +1175,7 @@ MCP server span (`s4`):
 | Span status                            | `UNSET`                                                                                                                                                   |
 | Attribute `gen_ai.operation.name`      | `"execute_tool"`                                                                                                                                          |
 | Attribute `gen_ai.tool.call.arguments` | (if enabled)<br>{<br>&nbsp;&nbsp;&nbsp;&nbsp;"location": "San Francisco?",<br>&nbsp;&nbsp;&nbsp;&nbsp;"date": "2025-10-01"<br>}                           |
-| Attribute `gen_ai.tool.call.result`    | (if enabled)<br>{<br>&nbsp;&nbsp;"temperature_range": {<br>&nbsp;&nbsp;&nbsp;&nbsp;"high": 75,<br>&nbsp;&nbsp;&nbsp;&nbsp;"low": 60<br>&nbsp;&nbsp;}<br>} |
+| Attribute `gen_ai.tool.call.result`    | (if enabled)<br>{<br>&nbsp;&nbsp;"value": {<br>&nbsp;&nbsp;&nbsp;&nbsp;"temperature_range": {<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"high": 75,<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"low": 60<br>&nbsp;&nbsp;&nbsp;&nbsp;}<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;"parts": [<br>&nbsp;&nbsp;&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"type": "text",<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"content": "{\"temperature_range\": {\"high\": 75, \"low\": 60}}"<br>&nbsp;&nbsp;&nbsp;&nbsp;}<br>&nbsp;&nbsp;]<br>} |
 | Attribute `gen_ai.tool.name`           | `"get-weather"`                                                                                                                                           |
 | Attribute `jsonrpc.request.id`         | `"3"`                                                                                                                                                     |
 | Attribute `mcp.method.name`            | `"tools/call"`                                                                                                                                            |
@@ -1270,7 +1274,7 @@ MCP client span (`s4`):
 | Span status                            | `UNSET`                                                                                                                                                   |
 | Attribute `gen_ai.operation.name`      | `"execute_tool"`                                                                                                                                          |
 | Attribute `gen_ai.tool.call.arguments` | (if enabled)<br>{<br>&nbsp;&nbsp;&nbsp;&nbsp;"location": "San Francisco?",<br>&nbsp;&nbsp;&nbsp;&nbsp;"date": "2025-10-01"<br>}                           |
-| Attribute `gen_ai.tool.call.result`    | (if enabled)<br>{<br>&nbsp;&nbsp;"temperature_range": {<br>&nbsp;&nbsp;&nbsp;&nbsp;"high": 75,<br>&nbsp;&nbsp;&nbsp;&nbsp;"low": 60<br>&nbsp;&nbsp;}<br>} |
+| Attribute `gen_ai.tool.call.result`    | (if enabled)<br>{<br>&nbsp;&nbsp;"value": {<br>&nbsp;&nbsp;&nbsp;&nbsp;"temperature_range": {<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"high": 75,<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"low": 60<br>&nbsp;&nbsp;&nbsp;&nbsp;}<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;"parts": [<br>&nbsp;&nbsp;&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"type": "text",<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"content": "{\"temperature_range\": {\"high\": 75, \"low\": 60}}"<br>&nbsp;&nbsp;&nbsp;&nbsp;}<br>&nbsp;&nbsp;]<br>} |
 | Attribute `gen_ai.tool.name`           | `"get-weather"`                                                                                                                                           |
 | Attribute `jsonrpc.request.id`         | `"3"`                                                                                                                                                     |
 | Attribute `mcp.method.name`            | `"tools/call"`                                                                                                                                            |
@@ -1291,7 +1295,7 @@ MCP server span (`s7`):
 | Span status                            | `UNSET`                                                                                                                                                   |
 | Attribute `gen_ai.operation.name`      | `"execute_tool"`                                                                                                                                          |
 | Attribute `gen_ai.tool.call.arguments` | (if enabled)<br>{<br>&nbsp;&nbsp;&nbsp;&nbsp;"location": "San Francisco?",<br>&nbsp;&nbsp;&nbsp;&nbsp;"date": "2025-10-01"<br>}                           |
-| Attribute `gen_ai.tool.call.result`    | (if enabled)<br>{<br>&nbsp;&nbsp;"temperature_range": {<br>&nbsp;&nbsp;&nbsp;&nbsp;"high": 75,<br>&nbsp;&nbsp;&nbsp;&nbsp;"low": 60<br>&nbsp;&nbsp;}<br>} |
+| Attribute `gen_ai.tool.call.result`    | (if enabled)<br>{<br>&nbsp;&nbsp;"value": {<br>&nbsp;&nbsp;&nbsp;&nbsp;"temperature_range": {<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"high": 75,<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"low": 60<br>&nbsp;&nbsp;&nbsp;&nbsp;}<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;"parts": [<br>&nbsp;&nbsp;&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"type": "text",<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"content": "{\"temperature_range\": {\"high\": 75, \"low\": 60}}"<br>&nbsp;&nbsp;&nbsp;&nbsp;}<br>&nbsp;&nbsp;]<br>} |
 | Attribute `gen_ai.tool.name`           | `"get-weather"`                                                                                                                                           |
 | Attribute `jsonrpc.request.id`         | `"3"`                                                                                                                                                     |
 | Attribute `mcp.method.name`            | `"tools/call"`                                                                                                                                            |

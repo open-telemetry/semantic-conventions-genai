@@ -1,5 +1,6 @@
 """Shared OTel SDK setup for all Python reference implementation tests."""
 
+import json
 import os
 import re
 from pathlib import Path
@@ -57,6 +58,16 @@ def inference_duration_view() -> View:
         instrument_name="gen_ai.client.operation.duration",
         name="gen_ai.client.inference.duration",
     )
+
+
+def deserialize_tool_result(value):
+    """Deserializes a string tool call result, returning it unchanged when it's not valid JSON."""
+    if not isinstance(value, str):
+        return value
+    try:
+        return json.loads(value)
+    except ValueError:
+        return value
 
 
 def mock_server_host_port(url: str) -> tuple[str | None, int | None]:
