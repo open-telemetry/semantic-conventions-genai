@@ -326,9 +326,13 @@ spans:
           For providers with session-level tools and per-generation overrides, record
           the generation's tools if set, otherwise the session's tools.
 
+          Instrumentations SHOULD populate fields when values are available,
+          unless the field description says otherwise.
+
           Since this attribute could be large, it's NOT RECOMMENDED to populate
-          non-required properties by default. Instrumentations MAY provide a way
-          to enable populating optional properties.
+          properties other than `type` and `name` (such as `description` and
+          `parameters`) by default. Instrumentations MAY provide a way to enable
+          populating additional properties.
       - ref: gen_ai.request.max_tokens
         requirement_level: recommended
       - ref: gen_ai.request.reasoning.level
@@ -814,9 +818,13 @@ spans:
           Do not combine tool lists across child agents, handoffs, or steps. Record the tools
           supplied to each model call on its inference span instead.
 
+          Instrumentations SHOULD populate fields when values are available,
+          unless the field description says otherwise.
+
           Since this attribute could be large, it's NOT RECOMMENDED to populate
-          non-required properties by default. Instrumentations MAY provide a way
-          to enable populating optional properties.
+          properties other than `type` and `name` (such as `description` and
+          `parameters`) by default. Instrumentations MAY provide a way to enable
+          populating additional properties.
       - ref: gen_ai.operation.name
         annotations:
           markdown:
