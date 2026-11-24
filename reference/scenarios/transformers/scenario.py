@@ -2,7 +2,6 @@
 
 import asyncio
 import json
-from collections.abc import AsyncIterator
 from contextvars import ContextVar
 from dataclasses import dataclass
 from functools import partial
@@ -15,6 +14,7 @@ import httpx
 import torch
 from reference_shared import flush_and_shutdown, reference_meter, setup_otel
 from starlette.responses import JSONResponse, StreamingResponse
+from starlette.types import Message, Receive, Scope, Send
 from tokenizers import Tokenizer
 from tokenizers.models import WordLevel
 from tokenizers.pre_tokenizers import Whitespace
@@ -80,6 +80,54 @@ class ReferenceStreamer(DirectStreamer):
         super().end()
 
 
+class ReferenceStreamingResponse(StreamingResponse):
+    def __init__(
+        self, response: StreamingResponse, started_at: float, timing: TokenTiming, attributes: dict[str, str]
+    ) -> None:
+        super().__init__(
+            response.body_iterator,
+            status_code=response.status_code,
+            media_type=response.media_type,
+            background=response.background,
+        )
+        self.raw_headers = response.raw_headers
+        self.started_at = started_at
+        self.timing = timing
+        self.metric_attributes = attributes
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        response_finished = False
+
+        async def send_body(message: Message) -> None:
+            nonlocal response_finished
+            await send(message)
+            if message["type"] == "http.response.body" and not message.get("more_body", False):
+                response_finished = True
+
+        attributes = self.metric_attributes
+        error_type: str | None = None
+        try:
+            await super().__call__(scope, receive, send_body)
+        except (asyncio.CancelledError, Exception) as error:
+            error_type = type(error).__qualname__
+            raise
+        else:
+            if not response_finished:
+                error_type = "client_disconnected"
+            elif not self.timing.completed:
+                error_type = "generation_failed"
+        finally:
+            duration = perf_counter() - self.started_at
+            duration_attributes = attributes if error_type is None else attributes | {"error.type": error_type}
+            _request_duration.record(duration, duration_attributes)
+
+        if error_type is None and self.timing.first_token_at is not None:
+            ttft = self.timing.first_token_at - self.started_at
+            _time_to_first_token.record(ttft, attributes)
+            if self.timing.output_tokens > 1:
+                _time_per_output_token.record((duration - ttft) / (self.timing.output_tokens - 1), attributes)
+
+
 class ReferenceCompletionHandler(CompletionHandler):
     async def handle_request(self, body: dict, request_id: str) -> StreamingResponse | JSONResponse:
         started_at = perf_counter()
@@ -96,24 +144,7 @@ class ReferenceCompletionHandler(CompletionHandler):
         request_model = body.get("model")
         if isinstance(request_model, str):
             attributes["gen_ai.request.model"] = request_model
-        chunks = response.body_iterator
-
-        async def record_stream_duration() -> AsyncIterator[str | bytes | memoryview]:
-            async for chunk in chunks:
-                yield chunk
-            duration = perf_counter() - started_at
-            if not timing.completed:
-                _request_duration.record(duration, attributes | {"error.type": "generation_failed"})
-                return
-            _request_duration.record(duration, attributes)
-            if timing.first_token_at is not None:
-                ttft = timing.first_token_at - started_at
-                _time_to_first_token.record(ttft, attributes)
-                if timing.output_tokens > 1:
-                    _time_per_output_token.record((duration - ttft) / (timing.output_tokens - 1), attributes)
-
-        response.body_iterator = record_stream_duration()
-        return response
+        return ReferenceStreamingResponse(response, started_at, timing, attributes)
 
 
 def save_tiny_model(path: Path) -> None:
