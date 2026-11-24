@@ -201,6 +201,17 @@ attributes:
       or `last_event_id` in the [Google GenAI Interactions API](https://ai.google.dev/api/interactions-api).
     examples: ['42', 'event-abc123']
     stability: development
+  - key: gen_ai.request.service_tier
+    type: string
+    brief: The service tier requested for the inference operation.
+    note: |
+      The service tier affects processing priority, latency, and price of the operation.
+      The value SHOULD be the one passed to the provider.
+      For example, `service_tier` in [OpenAI](https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create)
+      and [Anthropic](https://platform.claude.com/docs/en/api/service-tiers),
+      or `serviceTier.type` in [Amazon Bedrock](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_runtime_Converse.html).
+    examples: ['auto', 'flex', 'priority']
+    stability: development
   - key: gen_ai.response.id
     type: string
     brief: The unique identifier for the completion.
@@ -274,6 +285,17 @@ attributes:
       values map to this attribute.
     examples: ['completed', 'in_progress']
     stability: development
+  - key: gen_ai.response.service_tier
+    type: string
+    brief: The service tier that processed the inference operation.
+    note: |
+      The value SHOULD be the one returned by the provider. It can differ from
+      `gen_ai.request.service_tier` when `auto` is requested.
+      For example, `service_tier` in [OpenAI](https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create),
+      `usage.service_tier` in [Anthropic](https://platform.claude.com/docs/en/api/service-tiers),
+      or [`usageMetadata.trafficType`](https://docs.cloud.google.com/gemini-enterprise-agent-platform/reference/rest/v1/GenerateContentResponse#UsageMetadata.FIELDS.traffic_type) in Vertex AI.
+    examples: ['default', 'priority', 'ON_DEMAND']
+    stability: development
   - key: gen_ai.response.time_to_first_chunk
     type: double
     brief: >
@@ -307,6 +329,9 @@ attributes:
       - `gen_ai.usage.text.input_tokens`: 100
       - `gen_ai.usage.text.cache_read.input_tokens`: 40
       - `gen_ai.usage.image.input_tokens`: 200
+
+      The same tokens can be reported on multiple types of spans. See
+      [how to aggregate token usage](/docs/gen-ai/gen-ai-token-metrics.md#how-to-aggregate-token-usage).
     examples: [100]
     stability: development
   - key: gen_ai.usage.cache_read.input_tokens
@@ -354,6 +379,9 @@ attributes:
       token counts (for example, Cohere exposes both `usage.billed_units` and
       `usage.tokens`), instrumentations SHOULD report the billed count so the
       value matches the units the customer is charged for.
+
+      The same tokens can be reported on multiple types of spans. See
+      [how to aggregate token usage](/docs/gen-ai/gen-ai-token-metrics.md#how-to-aggregate-token-usage).
     examples: [180]
     stability: development
   - key: gen_ai.usage.reasoning.output_tokens
@@ -670,9 +698,11 @@ attributes:
       > [!WARNING]
       > This attribute may contain sensitive information.
 
-      Since this attribute could be large, it's NOT RECOMMENDED to populate
-      non-required properties by default. Instrumentations MAY provide a way
-      to enable populating optional properties.
+      Instrumentations SHOULD populate fields when values are available,
+      unless the field description says otherwise.
+
+      See [Recording content on attributes](/docs/gen-ai/gen-ai-spans.md#recording-content-on-attributes)
+      section for more details.
     examples:
       - |
         [
@@ -944,6 +974,9 @@ attributes:
       Instrumentations SHOULD NOT capture this attribute by default. Capture SHOULD be gated
       by an explicit user opt-in via [content capture configuration](/docs/gen-ai/gen-ai-spans.md#content-capture-configuration).
 
+      Instrumentations SHOULD populate fields when values are available,
+      unless the field description says otherwise.
+
       > [!Warning]
       > This attribute may contain sensitive information including user/PII data.
     examples:
@@ -980,6 +1013,9 @@ attributes:
 
       Instructions that are part of the chat history SHOULD be recorded in
       `gen_ai.input.messages` attribute instead.
+
+      Instrumentations SHOULD populate fields when values are available,
+      unless the field description says otherwise.
 
       Instrumentations MAY provide a way for users to filter or truncate
       system instructions.
@@ -1036,6 +1072,10 @@ attributes:
         unbounded_size: true
     note: |
       Messages MUST be provided in the order they were sent to the model.
+
+      Instrumentations SHOULD populate fields when values are available,
+      unless the field description says otherwise.
+
       Instrumentations MAY provide a way for users to filter or truncate
       input messages.
 
@@ -1110,6 +1150,9 @@ attributes:
       the model. Each message corresponds to exactly one generation
       (choice/candidate) and vice versa - one choice cannot be split across
       multiple messages or one message cannot contain parts from multiple choices.
+
+      Instrumentations SHOULD populate fields when values are available,
+      unless the field description says otherwise.
 
       Instrumentations MAY provide a way for users to filter or truncate
       output messages. `gen_ai.response.finish_reasons` remains aligned with the
@@ -1212,25 +1255,27 @@ attributes:
       version identifier used by that system.
     examples: ["1.0.0", "2025-05-01", "prod", "v2"]
     stability: development
-  - key: gen_ai.prompt.variable
-    type: template[string]
-    brief: The variables supplied to the prompt template, the `<key>` being the variable name, the value being the variable value.
+  - key: gen_ai.prompt.variables
+    type: any
+    brief: Variables passed to the prompt template.
+    annotations:
+      type:
+        json_schema: model/gen-ai/gen-ai-prompt-variables.json
+      value:
+        unbounded_size: true
     note: |
-      Prompt templates are parameterized with variables that are filled in
-      at runtime. This attribute records the variable values passed to the
-      template. The attribute name defines the variable name, and the
-      attribute value is the variable value serialized as a string.
-
-      Examples:
-
-      - A variable `user_name` with value `Alice` SHOULD be recorded as
-        the `gen_ai.prompt.variable.user_name` attribute with value `"Alice"`.
-      - A variable `language` with value `French` SHOULD be recorded as
-        the `gen_ai.prompt.variable.language` attribute with value `"French"`.
-
-      > [!Warning]
+      > [!WARNING]
       > This attribute may contain sensitive information.
-    examples: ["Alice", "French"]
+
+      Prompt templates are parameterized with variables that are filled in
+      at runtime. This attribute records the map of variable names to their
+      values passed to the template.
+    examples:
+      - |
+        {
+          "user_name": "Alice",
+          "language": "French"
+        }
     stability: development
   - key: gen_ai.skill.name
     type: string
