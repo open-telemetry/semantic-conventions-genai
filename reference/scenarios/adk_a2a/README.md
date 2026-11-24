@@ -4,6 +4,6 @@ Google ADK serves an agent over A2A and delegates model calls to its Gemini clie
 
 | Operation | Should be instrumented here | Status |
 | --- | --- | --- |
-| Client operation duration | Yes - ADK's native instrumentation times the Gemini call | ✅ Implemented |
+| Client operation duration | No, model calls belong to the Gemini client | Suppressed |
 
-ADK records model call timings and attributes on a reference `gen_ai.client.operation.duration` histogram created with the recommended bucket advice.
+ADK's native `gen_ai.client.operation.duration` measures inference. The scenario suppresses it because inference duration belongs on `gen_ai.client.inference.duration` in the Gemini client.
