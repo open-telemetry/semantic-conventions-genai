@@ -8,6 +8,12 @@ attribute_groups:
       - ref: gen_ai.response.model
         requirement_level: recommended
 
+  - id: metric_attributes.gen_ai.inference
+    visibility: internal
+    attributes:
+      - ref: gen_ai.response.service_tier
+        requirement_level: recommended
+
   - id: metric_attributes.openai
     visibility: internal
     attributes:
@@ -15,8 +21,6 @@ attribute_groups:
         annotations:
           markdown:
             omit_enum_table: true
-      - ref: openai.response.service_tier
-        requirement_level: recommended
       - ref: openai.response.system_fingerprint
         requirement_level: recommended
 
@@ -69,6 +73,7 @@ metrics:
         metric_value_type: double
     attributes:
       - ref_group: metric_attributes.gen_ai
+      - ref_group: metric_attributes.gen_ai.inference
       - ref_group: attributes.gen_ai.error
   - name: gen_ai.client.embeddings.duration
     requirement_level: recommended
@@ -139,6 +144,7 @@ metrics:
         metric_value_type: double
     attributes:
       - ref_group: metric_attributes.gen_ai
+      - ref_group: metric_attributes.gen_ai.inference
   - name: gen_ai.client.inference.time_per_output_chunk
     requirement_level: recommended
     instrument: histogram
@@ -153,6 +159,7 @@ metrics:
         metric_value_type: double
     attributes:
       - ref_group: metric_attributes.gen_ai
+      - ref_group: metric_attributes.gen_ai.inference
   - name: gen_ai.server.request.duration
     requirement_level: recommended
     instrument: histogram
@@ -324,8 +331,7 @@ metric_refinements:
     ref: gen_ai.client.operation.duration
     brief: >
       OpenAI-specific extension to `gen_ai.client.operation.duration`. Adds
-      `openai.response.service_tier` and `openai.response.system_fingerprint`
-      when the provider is `openai`.
+      `openai.response.system_fingerprint` when the provider is `openai`.
     stability: development
     attributes:
       - ref_group: metric_attributes.openai
@@ -333,8 +339,7 @@ metric_refinements:
     ref: gen_ai.client.inference.duration
     brief: >
       OpenAI-specific extension to `gen_ai.client.inference.duration`. Adds
-      `openai.response.service_tier` and `openai.response.system_fingerprint`
-      when the provider is `openai`.
+      `openai.response.system_fingerprint` when the provider is `openai`.
     stability: development
     attributes:
       - ref_group: metric_attributes.openai
