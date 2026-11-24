@@ -126,6 +126,11 @@ if and only if one was supplied.
 defines for this purpose, such as Google ADK's `Session.user_id`. The same user may
 participate in multiple conversations.
 
+Browser login state, a visitor cookie, or a generic `user.id` alone is insufficient
+to identify the user of a GenAI operation. For example, if the application supplies
+its signed-in user's ID as `metadata.user_id` in an Anthropic Messages request,
+the instrumentation records the identifier from that request.
+
 Instrumentations MUST NOT infer the user from a conversation ID, a memory partition key,
 an agent identity, a service account, or the OS or IAM principal used to execute the operation.
 This identifier can differ from the application's `user.id`.
@@ -288,6 +293,11 @@ if and only if one was supplied.
 **[10] `gen_ai.user.id`:** Instrumentations MUST use only an identifier that the framework or provider explicitly
 defines for this purpose, such as Google ADK's `Session.user_id`. The same user may
 participate in multiple conversations.
+
+Browser login state, a visitor cookie, or a generic `user.id` alone is insufficient
+to identify the user of a GenAI operation. For example, if the application supplies
+its signed-in user's ID as `metadata.user_id` in an Anthropic Messages request,
+the instrumentation records the identifier from that request.
 
 Instrumentations MUST NOT infer the user from a conversation ID, a memory partition key,
 an agent identity, a service account, or the OS or IAM principal used to execute the operation.
@@ -460,6 +470,11 @@ if and only if one was supplied.
 defines for this purpose, such as Google ADK's `Session.user_id`. The same user may
 participate in multiple conversations.
 
+Browser login state, a visitor cookie, or a generic `user.id` alone is insufficient
+to identify the user of a GenAI operation. For example, if the application supplies
+its signed-in user's ID as `metadata.user_id` in an Anthropic Messages request,
+the instrumentation records the identifier from that request.
+
 Instrumentations MUST NOT infer the user from a conversation ID, a memory partition key,
 an agent identity, a service account, or the OS or IAM principal used to execute the operation.
 This identifier can differ from the application's `user.id`.
@@ -630,6 +645,11 @@ if and only if one was supplied.
 **[8] `gen_ai.user.id`:** Instrumentations MUST use only an identifier that the framework or provider explicitly
 defines for this purpose, such as Google ADK's `Session.user_id`. The same user may
 participate in multiple conversations.
+
+Browser login state, a visitor cookie, or a generic `user.id` alone is insufficient
+to identify the user of a GenAI operation. For example, if the application supplies
+its signed-in user's ID as `metadata.user_id` in an Anthropic Messages request,
+the instrumentation records the identifier from that request.
 
 Instrumentations MUST NOT infer the user from a conversation ID, a memory partition key,
 an agent identity, a service account, or the OS or IAM principal used to execute the operation.
@@ -827,6 +847,11 @@ if and only if one was supplied.
 **[10] `gen_ai.user.id`:** Instrumentations MUST use only an identifier that the framework or provider explicitly
 defines for this purpose, such as Google ADK's `Session.user_id`. The same user may
 participate in multiple conversations.
+
+Browser login state, a visitor cookie, or a generic `user.id` alone is insufficient
+to identify the user of a GenAI operation. For example, if the application supplies
+its signed-in user's ID as `metadata.user_id` in an Anthropic Messages request,
+the instrumentation records the identifier from that request.
 
 Instrumentations MUST NOT infer the user from a conversation ID, a memory partition key,
 an agent identity, a service account, or the OS or IAM principal used to execute the operation.
