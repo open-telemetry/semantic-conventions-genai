@@ -170,20 +170,20 @@ class ReferenceCompletionHandler(CompletionHandler):
             attributes["server.address"] = address
             if port is not None:
                 attributes["server.port"] = port
-        error_type: str | None = None
+        request_model = body.get("model")
+        if isinstance(request_model, str):
+            attributes["gen_ai.request.model"] = request_model
+
         context = _token_timing.set(timing)
         try:
             response = await super().handle_request(body, request_id)
         except (asyncio.CancelledError, Exception) as error:
-            error_type = type(error).__qualname__
+            if body.get("stream"):
+                error_attributes = attributes | {"error.type": type(error).__qualname__}
+                _request_duration.record(perf_counter() - started_at, error_attributes)
             raise
         finally:
             _token_timing.reset(context)
-            request_model = body.get("model")
-            if isinstance(request_model, str):
-                attributes["gen_ai.request.model"] = request_model
-            if error_type is not None and body.get("stream"):
-                _request_duration.record(perf_counter() - started_at, attributes | {"error.type": error_type})
         if not isinstance(response, StreamingResponse):
             return response
 
