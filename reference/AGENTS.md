@@ -87,6 +87,9 @@ inference-operation-details event — ask:
 
 ## Step 2 — Implement in a reference scenario
 
+Follow the [scenario scope](CONTRIBUTING.md#scenario-scope) guidance when deciding
+which cases to cover.
+
 The reference scenario is the test. Put cases and expected telemetry in
 `conformance.yaml`. If it cannot express a needed check, assert against the
 emitted telemetry in `scenario.py`. Do not add standalone test suites for
