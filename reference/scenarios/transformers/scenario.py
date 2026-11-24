@@ -14,7 +14,7 @@ import httpx
 import torch
 from reference_shared import flush_and_shutdown, reference_meter, setup_otel
 from starlette.responses import JSONResponse, StreamingResponse
-from starlette.types import Message, Receive, Scope, Send
+from starlette.types import ASGIApp, Message, Receive, Scope, Send
 from tokenizers import Tokenizer
 from tokenizers.models import WordLevel
 from tokenizers.pre_tokenizers import Whitespace
@@ -59,6 +59,23 @@ class TokenTiming:
 
 
 _token_timing = ContextVar[TokenTiming | None]("token_timing", default=None)
+_server_endpoint = ContextVar[tuple[str, int | None] | None]("server_endpoint", default=None)
+
+
+class CaptureServerEndpoint:
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        context = _server_endpoint.set(scope.get("server"))
+        try:
+            await self.app(scope, receive, send)
+        finally:
+            _server_endpoint.reset(context)
 
 
 class ReferenceStreamer(DirectStreamer):
@@ -108,9 +125,6 @@ class ReferenceStreamingResponse(StreamingResponse):
         attributes = self.metric_attributes
         if self.timing.response_model is not None:
             attributes["gen_ai.response.model"] = self.timing.response_model
-        endpoint = scope.get("server")
-        if endpoint is not None and endpoint[1] is not None:
-            attributes["server.address"], attributes["server.port"] = endpoint
 
         error_type: str | None = None
         try:
@@ -150,6 +164,12 @@ class ReferenceCompletionHandler(CompletionHandler):
             "gen_ai.operation.name": "text_completion",
             "gen_ai.provider.name": "transformers",
         }
+        endpoint = _server_endpoint.get()
+        if endpoint is not None:
+            address, port = endpoint
+            attributes["server.address"] = address
+            if port is not None:
+                attributes["server.port"] = port
         error_type: str | None = None
         context = _token_timing.set(timing)
         try:
@@ -204,6 +224,7 @@ async def run_completion(model_path: Path) -> None:
             SystemOneHandler(model_manager, generation_state),
             generation_state,
         )
+    app.add_middleware(CaptureServerEndpoint)
     with patch.object(serving_utils, "DirectStreamer", ReferenceStreamer):
         async with (
             app.router.lifespan_context(app),

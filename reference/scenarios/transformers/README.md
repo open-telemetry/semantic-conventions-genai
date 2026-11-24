@@ -10,4 +10,4 @@ Transformers Serve owns model loading, request handling, and token generation fo
 
 `DirectStreamer` counts model output tokens before decoding them to text. The scenario doesn't use SSE chunks to count tokens or measure time to first token. A request that fails before streaming or has a failed or interrupted stream records request duration with `error.type`, but neither token histogram.
 
-The streaming response records the canonical model ID that Transformers Serve puts in completion events, and the server address and port from the ASGI scope.
+The scenario reads the server address and port from the ASGI scope for both completed and rejected requests. The streaming response records the canonical model ID that Transformers Serve puts in completion events.
