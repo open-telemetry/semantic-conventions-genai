@@ -201,6 +201,17 @@ attributes:
       or `last_event_id` in the [Google GenAI Interactions API](https://ai.google.dev/api/interactions-api).
     examples: ['42', 'event-abc123']
     stability: development
+  - key: gen_ai.request.service_tier
+    type: string
+    brief: The service tier requested for the inference operation.
+    note: |
+      The service tier affects processing priority, latency, and price of the operation.
+      The value SHOULD be the one passed to the provider.
+      For example, `service_tier` in [OpenAI](https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create)
+      and [Anthropic](https://platform.claude.com/docs/en/api/service-tiers),
+      or `serviceTier.type` in [Amazon Bedrock](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_runtime_Converse.html).
+    examples: ['auto', 'flex', 'priority']
+    stability: development
   - key: gen_ai.response.id
     type: string
     brief: The unique identifier for the completion.
@@ -273,6 +284,17 @@ attributes:
       Semantic conventions for individual GenAI providers SHOULD document how their status
       values map to this attribute.
     examples: ['completed', 'in_progress']
+    stability: development
+  - key: gen_ai.response.service_tier
+    type: string
+    brief: The service tier that processed the inference operation.
+    note: |
+      The value SHOULD be the one returned by the provider. It can differ from
+      `gen_ai.request.service_tier` when `auto` is requested.
+      For example, `service_tier` in [OpenAI](https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create),
+      `usage.service_tier` in [Anthropic](https://platform.claude.com/docs/en/api/service-tiers),
+      or [`usageMetadata.trafficType`](https://docs.cloud.google.com/gemini-enterprise-agent-platform/reference/rest/v1/GenerateContentResponse#UsageMetadata.FIELDS.traffic_type) in Vertex AI.
+    examples: ['default', 'priority', 'ON_DEMAND']
     stability: development
   - key: gen_ai.response.time_to_first_chunk
     type: double
