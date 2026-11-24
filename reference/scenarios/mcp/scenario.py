@@ -169,7 +169,7 @@ class ReferenceMCPServerMiddleware(ServerMiddleware[Any]):
                         span.set_attribute("error.type", "tool_error")
                         metric_attrs["error.type"] = "tool_error"
                         span.set_status(StatusCode.ERROR)
-                    elif structured_content is not None:
+                    if structured_content is not None:
                         span.set_attribute("gen_ai.tool.call.result", structured_content)
                 return result
             finally:
@@ -339,7 +339,7 @@ class ReferenceMCPClientSession(ClientSession):
                         span.set_attribute("error.type", "tool_error")
                         metric_attrs["error.type"] = "tool_error"
                         span.set_status(StatusCode.ERROR)
-                    elif result.structured_content is not None:
+                    if result.structured_content is not None:
                         span.set_attribute("gen_ai.tool.call.result", result.structured_content)
                 return result
             finally:

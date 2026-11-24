@@ -11,6 +11,32 @@ attribute_groups:
           the canonical name of exception that occurred, or another low-cardinality error identifier.
           Instrumentations SHOULD document the list of errors they report.
 
+  - id: attributes.gen_ai.execute_tool.error
+    visibility: internal
+    attributes:
+      - ref: error.type
+        requirement_level:
+          conditionally_required: "If the tool call failed or its result object reports an error."
+        note: |
+          If the tool call resulted in an exception, `error.type` SHOULD match
+          the error code obtained from the exception, the canonical name of the
+          exception, or another low-cardinality error identifier.
+
+          If the tool returned a result object that reports an error, instrumentation
+          SHOULD detect it using the library's convention. For example (field names and
+          types vary by language and SDK):
+
+          - Anthropic Messages API: `is_error` is `true` on a `tool_result` content block
+          - MCP: `isError` is `true` on `CallToolResult`
+          - Amazon Bedrock Converse API: `status` is `error` on `toolResult`
+          - Gemini API: `FunctionResponse.response` contains an `error` key
+          - LangChain: `ToolMessage.status` is `error`
+
+          `error.type` SHOULD be set to the error code provided in the result when
+          one is available, and to `_OTHER` otherwise.
+
+          Instrumentations SHOULD document the list of errors they report.
+
   - id: attributes.gen_ai.common
     visibility: internal
     attributes:
