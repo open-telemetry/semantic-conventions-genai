@@ -101,7 +101,7 @@ types vary by language and SDK):
 - Amazon Bedrock Converse API: `status` is `error` on `toolResult`
   ([docs](https://docs.aws.amazon.com/bedrock/latest/userguide/tool-use-client-side.html))
 - Gemini API: `FunctionResponse.response` contains an `error` key
-  ([docs](https://ai.google.dev/api/caching#FunctionResponse))
+  ([docs](https://ai.google.dev/api/generate-content))
 - LangChain: `ToolMessage.status` is `error`
   ([docs](https://reference.langchain.com/python/langchain-core/messages/tool/ToolMessage))
 
@@ -270,7 +270,7 @@ types vary by language and SDK):
 - Amazon Bedrock Converse API: `status` is `error` on `toolResult`
   ([docs](https://docs.aws.amazon.com/bedrock/latest/userguide/tool-use-client-side.html))
 - Gemini API: `FunctionResponse.response` contains an `error` key
-  ([docs](https://ai.google.dev/api/caching#FunctionResponse))
+  ([docs](https://ai.google.dev/api/generate-content))
 - LangChain: `ToolMessage.status` is `error`
   ([docs](https://reference.langchain.com/python/langchain-core/messages/tool/ToolMessage))
 
@@ -455,7 +455,7 @@ types vary by language and SDK):
 - Amazon Bedrock Converse API: `status` is `error` on `toolResult`
   ([docs](https://docs.aws.amazon.com/bedrock/latest/userguide/tool-use-client-side.html))
 - Gemini API: `FunctionResponse.response` contains an `error` key
-  ([docs](https://ai.google.dev/api/caching#FunctionResponse))
+  ([docs](https://ai.google.dev/api/generate-content))
 - LangChain: `ToolMessage.status` is `error`
   ([docs](https://reference.langchain.com/python/langchain-core/messages/tool/ToolMessage))
 
@@ -636,7 +636,7 @@ types vary by language and SDK):
 - Amazon Bedrock Converse API: `status` is `error` on `toolResult`
   ([docs](https://docs.aws.amazon.com/bedrock/latest/userguide/tool-use-client-side.html))
 - Gemini API: `FunctionResponse.response` contains an `error` key
-  ([docs](https://ai.google.dev/api/caching#FunctionResponse))
+  ([docs](https://ai.google.dev/api/generate-content))
 - LangChain: `ToolMessage.status` is `error`
   ([docs](https://reference.langchain.com/python/langchain-core/messages/tool/ToolMessage))
 
@@ -839,7 +839,7 @@ types vary by language and SDK):
 - Amazon Bedrock Converse API: `status` is `error` on `toolResult`
   ([docs](https://docs.aws.amazon.com/bedrock/latest/userguide/tool-use-client-side.html))
 - Gemini API: `FunctionResponse.response` contains an `error` key
-  ([docs](https://ai.google.dev/api/caching#FunctionResponse))
+  ([docs](https://ai.google.dev/api/generate-content))
 - LangChain: `ToolMessage.status` is `error`
   ([docs](https://reference.langchain.com/python/langchain-core/messages/tool/ToolMessage))
 
@@ -1060,7 +1060,7 @@ types vary by language and SDK):
 - Amazon Bedrock Converse API: `status` is `error` on `toolResult`
   ([docs](https://docs.aws.amazon.com/bedrock/latest/userguide/tool-use-client-side.html))
 - Gemini API: `FunctionResponse.response` contains an `error` key
-  ([docs](https://ai.google.dev/api/caching#FunctionResponse))
+  ([docs](https://ai.google.dev/api/generate-content))
 - LangChain: `ToolMessage.status` is `error`
   ([docs](https://reference.langchain.com/python/langchain-core/messages/tool/ToolMessage))
 
