@@ -267,17 +267,6 @@ class UriPart(BaseModel):
             "the provider api (e.g. `gs://bucket/object.png`), or be a publicly accessible location."
         )
     )
-    size: Optional[int] = Field(
-        default=None,
-        ge=0,
-        description=(
-            "Raw unencoded byte length of the data the URI references. Instrumentations SHOULD set it "
-            "only when the size is directly observable, for example when they held the bytes before "
-            "uploading them or the SDK input carries the size with the URI. Instrumentations MUST NOT "
-            "fetch the URI or make an extra API call to measure it."
-        ),
-    )
-
     model_config = ConfigDict(extra="allow")
 
 

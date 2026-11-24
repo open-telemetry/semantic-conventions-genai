@@ -664,79 +664,6 @@ def run_chat_multimodal():
         print("    -> multimodal usage captured")
 
 
-def run_chat_with_file_uri():
-    """Scenario: a `types.File` passed to `generate_content`, recorded as a `uri` part with its size.
-
-    An app usually gets the `File` from `client.files.upload()` or `client.files.get()`. It carries
-    the file's URI, MIME type and `size_bytes`, and `generate_content` sends it as a `file_data`
-    part. The instrumentation reads all three from the argument it already has, so `size` is
-    directly observable: no download and no Files API call. The mock server has no Files endpoint,
-    so the scenario builds the same `File` object the upload would return.
-    """
-    from google import genai
-    from google.genai import types
-
-    print("  [chat_file_uri] generate_content with an uploaded File (reference implementation)")
-    client = genai.Client(
-        api_key="mock-key",
-        http_options=types.HttpOptions(base_url=MOCK_BASE_URL, api_version="v1beta"),
-    )
-    request_model = "gemini-2.0-flash"
-    uploaded = types.File(
-        name="files/reference-kyc",
-        uri=f"{MOCK_BASE_URL.rstrip('/')}/v1beta/files/reference-kyc",
-        mime_type="application/pdf",
-        size_bytes=482113,
-    )
-    instruction = "Summarize the attached document in one sentence."
-    span_attributes = {
-        "gen_ai.operation.name": "generate_content",
-        "gen_ai.provider.name": "gcp.gemini",
-        "gen_ai.request.model": request_model,
-        "server.address": _SERVER_ADDRESS,
-    }
-    with _reference_tracer.start_as_current_span(
-        "generate_content gemini-2.0-flash", kind=SpanKind.CLIENT, attributes=span_attributes
-    ) as span:
-        response = client.models.generate_content(model=request_model, contents=[instruction, uploaded])
-        if response.response_id:
-            span.set_attribute("gen_ai.response.id", response.response_id)
-        if response.model_version:
-            span.set_attribute("gen_ai.response.model", response.model_version)
-        if response.candidates and response.candidates[0].finish_reason:
-            span.set_attribute("gen_ai.response.finish_reasons", [str(response.candidates[0].finish_reason)])
-        usage = {}
-        if hasattr(response, "usage_metadata") and response.usage_metadata:
-            usage = _usage_attributes(response.usage_metadata)
-            for attr, value in usage.items():
-                span.set_attribute(attr, value)
-            _record_inference_usage(usage, _usage_metric_attributes(request_model, response))
-
-        input_messages = [
-            {
-                "role": "user",
-                "parts": [
-                    {"type": "text", "content": instruction},
-                    {
-                        "type": "uri",
-                        "modality": "document",
-                        "mime_type": uploaded.mime_type,
-                        "uri": uploaded.uri,
-                        "size": uploaded.size_bytes,
-                    },
-                ],
-            }
-        ]
-        output_messages = [
-            {
-                "role": "assistant",
-                "parts": [{"type": "text", "content": response.text}],
-            }
-        ]
-        _emit_inference_event(request_model, input_messages, output_messages, response, usage)
-        print(f"    -> {response.text[:60]}")
-
-
 def run_generate_media():
     """Scenario: image + audio output generation, emitting per-modality output usage."""
     from google import genai
@@ -972,7 +899,6 @@ def main():
     run_agent_interaction(stream=True)
     run_chat_tool_call()
     run_chat_multimodal()
-    run_chat_with_file_uri()
     run_generate_media()
     run_chat_streaming()
     run_embeddings()

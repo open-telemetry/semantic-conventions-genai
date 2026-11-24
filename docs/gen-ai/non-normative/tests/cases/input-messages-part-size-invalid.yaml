@@ -1,14 +1,12 @@
 # yaml-language-server: $schema=../case.schema.json
 description: >
-  `size` is a non-negative integer: a negative value or a string is rejected on
-  both `blob` and `uri` parts.
+  `size` is a non-negative integer: a negative value or a string is rejected.
 schema: gen-ai-input-messages.json
 document: [
   {
     "role": "user",
     "parts": [
       { "type": "blob", "modality": "image", "size": -1 },
-      { "type": "uri", "modality": "image", "size": -5, "uri": "https://example.com/image.png" },
       { "type": "blob", "modality": "audio", "size": "1024" }
     ]
   }
@@ -19,8 +17,5 @@ errors:
     keyword: minimum
     message: -1 is less than the minimum of 0
   - path: $[0].parts[1].size
-    keyword: minimum
-    message: -5 is less than the minimum of 0
-  - path: $[0].parts[2].size
     keyword: type
     message: "'1024' is not of type 'integer'"

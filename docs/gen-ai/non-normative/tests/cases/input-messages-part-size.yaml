@@ -1,8 +1,7 @@
 # yaml-language-server: $schema=../case.schema.json
 description: >
-  `blob` and `uri` parts may carry `size`, the raw unencoded byte length of the
-  data. A blob with `content` omitted keeps its `size`, and a `uri` part whose
-  size was not observable leaves it out.
+  `blob` parts may carry `size`, the raw unencoded byte length of the data. A
+  blob with `content` omitted keeps its `size`.
 schema: gen-ai-input-messages.json
 document: [
   {
@@ -10,8 +9,6 @@ document: [
     "parts": [
       { "type": "blob", "modality": "image", "mime_type": "image/png", "size": 4, "content": !!binary "iVBORw==" },
       { "type": "blob", "modality": "video", "mime_type": "video/mp4", "size": 10485760 },
-      { "type": "uri", "modality": "document", "mime_type": "application/pdf", "size": 482113, "uri": "s3://telemetry-media/kyc-form.pdf" },
-      { "type": "uri", "modality": "image", "uri": "https://example.com/image.png" },
       { "type": "blob", "modality": "audio", "size": 0 }
     ]
   }

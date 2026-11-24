@@ -285,15 +285,6 @@ See the [normative JSON schema](/model/gen-ai/gen-ai-input-messages.json) for mo
         "mime_type": "application/pdf",
         "uri": "s3://my-bucket/kyc-form.pdf"
       },
-      // A document the instrumentation received inline and uploaded to its own
-      // storage before recording the URI, so it measured the size
-      {
-        "type": "uri",
-        "modality": "document",
-        "mime_type": "application/pdf",
-        "size": 482113,
-        "uri": "s3://telemetry-media/0f3a9c/kyc-form.pdf"
-      },
       // An inline video without `content`; `size` still records how large it was
       {
         "type": "blob",
