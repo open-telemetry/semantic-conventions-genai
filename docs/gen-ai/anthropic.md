@@ -351,6 +351,9 @@ secured by other means, for example by storage-level access control.
 Instrumentations SHOULD populate fields when values are available,
 unless the field description says otherwise.
 
+See [Recording content on attributes](/docs/gen-ai/gen-ai-spans.md#recording-content-on-attributes)
+section for more details.
+
 This attribute MUST be recorded as an [AnyValue](https://opentelemetry.io/docs/specs/otel/common/#anyvalue) conforming to its [JSON schema](/model/gen-ai/gen-ai-tool-definitions.json).
 
 **[44] `gen_ai.tool.definitions_ref`:** The presence of this attribute does not indicate whether storing the

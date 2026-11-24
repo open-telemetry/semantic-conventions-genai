@@ -700,6 +700,9 @@ attributes:
 
       Instrumentations SHOULD populate fields when values are available,
       unless the field description says otherwise.
+
+      See [Recording content on attributes](/docs/gen-ai/gen-ai-spans.md#recording-content-on-attributes)
+      section for more details.
     examples:
       - |
         [
