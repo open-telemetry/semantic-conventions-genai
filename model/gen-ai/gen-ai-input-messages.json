@@ -31,34 +31,27 @@
                             "type": "string"
                         }
                     ],
-                    "description": "The general modality of the data if it is known. Instrumentations SHOULD also set the mimeType field if the specific type is known.",
+                    "description": "The general modality of the data if it is known. Instrumentations SHOULD also set the `mime_type` field if the specific type is known.",
                     "title": "Modality"
                 },
-                "byte_size": {
+                "content": {
                     "anyOf": [
                         {
-                            "minimum": 0,
-                            "type": "integer"
+                            "format": "binary",
+                            "type": "string"
                         },
                         {
                             "type": "null"
                         }
                     ],
                     "default": null,
-                    "description": "Size of the captured payload in bytes \u2014 the raw decoded byte length, not the length of the base64-encoded `content` string on the wire. Useful for cost-of-capture telemetry and storage planning.",
-                    "title": "Byte Size"
-                },
-                "content": {
-                    "description": "Raw bytes of the attached data. This field SHOULD be encoded as a base64 string when serialized to JSON.",
-                    "format": "binary",
-                    "title": "Content",
-                    "type": "string"
+                    "description": "Raw bytes of the attached data.",
+                    "title": "Content"
                 }
             },
             "required": [
                 "type",
-                "modality",
-                "content"
+                "modality"
             ],
             "title": "BlobPart",
             "type": "object"
@@ -105,6 +98,9 @@
                             },
                             {
                                 "$ref": "#/$defs/UriPart"
+                            },
+                            {
+                                "$ref": "#/$defs/TranscriptionPart"
                             },
                             {
                                 "$ref": "#/$defs/ReasoningPart"
@@ -216,22 +212,8 @@
                             "type": "string"
                         }
                     ],
-                    "description": "The general modality of the data if it is known. Instrumentations SHOULD also set the mimeType field if the specific type is known.",
+                    "description": "The general modality of the data if it is known. Instrumentations SHOULD also set the `mime_type` field if the specific type is known.",
                     "title": "Modality"
-                },
-                "byte_size": {
-                    "anyOf": [
-                        {
-                            "minimum": 0,
-                            "type": "integer"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "Size of the referenced file in bytes, as observed by the instrumentation at capture time. Useful for cost-of-capture telemetry and storage planning.",
-                    "title": "Byte Size"
                 },
                 "file_id": {
                     "description": "An identifier referencing a file that was pre-uploaded to the provider.",
@@ -263,6 +245,7 @@
                             "blob",
                             "file",
                             "uri",
+                            "transcription",
                             "reasoning",
                             "compaction"
                         ]
@@ -527,6 +510,29 @@
             "title": "ToolCallResponsePart",
             "type": "object"
         },
+        "TranscriptionPart": {
+            "additionalProperties": true,
+            "description": "Represents a text transcript of spoken audio, captured as a standalone part.",
+            "properties": {
+                "type": {
+                    "const": "transcription",
+                    "description": "The type of the content captured in this part.",
+                    "title": "Type",
+                    "type": "string"
+                },
+                "content": {
+                    "description": "The text transcript of spoken audio. For input audio this is the transcription of the user's speech; for output audio it is the transcript of the model's spoken response.",
+                    "title": "Content",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "type",
+                "content"
+            ],
+            "title": "TranscriptionPart",
+            "type": "object"
+        },
         "UriPart": {
             "additionalProperties": true,
             "description": "Represents an external referenced file sent to the model by URI",
@@ -559,22 +565,8 @@
                             "type": "string"
                         }
                     ],
-                    "description": "The general modality of the data if it is known. Instrumentations SHOULD also set the mimeType field if the specific type is known.",
+                    "description": "The general modality of the data if it is known. Instrumentations SHOULD also set the `mime_type` field if the specific type is known.",
                     "title": "Modality"
-                },
-                "byte_size": {
-                    "anyOf": [
-                        {
-                            "minimum": 0,
-                            "type": "integer"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "Size of the URI-referenced payload in bytes, as observed by the instrumentation at capture time. Useful for cost-of-capture telemetry and storage planning.",
-                    "title": "Byte Size"
                 },
                 "uri": {
                     "description": "A URI referencing attached data. It should not be a base64 data URL, which should use the `blob` part instead. The URI may use a scheme known to the provider api (e.g. `gs://bucket/object.png`), or be a publicly accessible location.",

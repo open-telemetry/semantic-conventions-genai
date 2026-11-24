@@ -22,7 +22,7 @@
 | gen_ai.request.seed | [openai] |
 | gen_ai.request.stream | [openai] |
 | gen_ai.request.top_k | (none) |
-| server.port | [anthropic], [aws-bedrock], [azure-ai-inference], [azure-openai], [cohere], [litellm], [mistralai], [openai] |
+| server.port | [anthropic], [aws-bedrock], [azure-ai-inference], [azure-openai], [cohere], [google-genai], [litellm], [mistralai], [openai] |
 
 ## Recommended
 
@@ -32,7 +32,7 @@
 | gen_ai.request.frequency_penalty | [openai] |
 | gen_ai.request.max_tokens | [anthropic], [openai] |
 | gen_ai.request.presence_penalty | [openai] |
-| gen_ai.request.previous_response.id | [openai] |
+| gen_ai.request.previous_response.id | [google-genai], [openai] |
 | gen_ai.request.reasoning.level | [anthropic], [openai] |
 | gen_ai.request.stop_sequences | [openai] |
 | gen_ai.request.temperature | [openai] |
@@ -65,7 +65,7 @@
 | gen_ai.input.messages_ref | [anthropic] |
 | gen_ai.output.messages | [agent-framework], [anthropic], [aws-bedrock], [claude-agent-sdk], [litellm], [mistralai], [openai] |
 | gen_ai.output.messages_ref | [anthropic] |
-| gen_ai.prompt.variable | (none) |
+| gen_ai.prompt.variables | [aws-bedrock], [openai] |
 | gen_ai.system_instructions | [agent-framework], [anthropic] |
 | gen_ai.system_instructions_ref | [anthropic] |
 | gen_ai.tool.definitions | [anthropic], [aws-bedrock], [azure-ai-inference], [cohere], [google-genai], [groq], [litellm], [mistralai], [openai], [vertexai] |

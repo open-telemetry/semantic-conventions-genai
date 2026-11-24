@@ -192,6 +192,19 @@ class CompactionPart(BaseModel):
     model_config = ConfigDict(extra="allow")
 
 
+class TranscriptionPart(BaseModel):
+    """Represents a text transcript of spoken audio, captured as a standalone part."""
+
+    type: Literal["transcription"] = Field(
+        description="The type of the content captured in this part."
+    )
+    content: str = Field(
+        description="The text transcript of spoken audio. For input audio this is the transcription of the user's speech; for output audio it is the transcript of the model's spoken response."
+    )
+
+    model_config = ConfigDict(extra="allow")
+
+
 class BlobPart(BaseModel):
     """Represents blob binary data sent inline to the model"""
 
@@ -202,21 +215,11 @@ class BlobPart(BaseModel):
         default=None, description="The IANA MIME type of the attached data."
     )
     modality: Union[Modality, str] = Field(
-        description="The general modality of the data if it is known. Instrumentations SHOULD also set the mimeType field if the specific type is known."
+        description="The general modality of the data if it is known. Instrumentations SHOULD also set the `mime_type` field if the specific type is known."
     )
-    byte_size: Optional[int] = Field(
-        default=None,
-        ge=0,
-        description=(
-            "Size of the captured payload in bytes — the raw decoded byte length, not the length "
-            "of the base64-encoded `content` string on the wire. Useful for cost-of-capture "
-            "telemetry and storage planning."
-        ),
+    content: Optional[bytes] = Field(
+        default=None, description="Raw bytes of the attached data."
     )
-    content: bytes = Field(
-        description="Raw bytes of the attached data. This field SHOULD be encoded as a base64 string when serialized to JSON."
-    )
-
 
 class FilePart(BaseModel):
     """Represents an external referenced file sent to the model by file id"""
@@ -228,15 +231,7 @@ class FilePart(BaseModel):
         default=None, description="The IANA MIME type of the attached data."
     )
     modality: Union[Modality, str] = Field(
-        description="The general modality of the data if it is known. Instrumentations SHOULD also set the mimeType field if the specific type is known."
-    )
-    byte_size: Optional[int] = Field(
-        default=None,
-        ge=0,
-        description=(
-            "Size of the referenced file in bytes, as observed by the instrumentation at capture "
-            "time. Useful for cost-of-capture telemetry and storage planning."
-        ),
+        description="The general modality of the data if it is known. Instrumentations SHOULD also set the `mime_type` field if the specific type is known."
     )
     file_id: str = Field(
         description="An identifier referencing a file that was pre-uploaded to the provider."
@@ -255,15 +250,7 @@ class UriPart(BaseModel):
         default=None, description="The IANA MIME type of the attached data."
     )
     modality: Union[Modality, str] = Field(
-        description="The general modality of the data if it is known. Instrumentations SHOULD also set the mimeType field if the specific type is known."
-    )
-    byte_size: Optional[int] = Field(
-        default=None,
-        ge=0,
-        description=(
-            "Size of the URI-referenced payload in bytes, as observed by the instrumentation at "
-            "capture time. Useful for cost-of-capture telemetry and storage planning."
-        ),
+        description="The general modality of the data if it is known. Instrumentations SHOULD also set the `mime_type` field if the specific type is known."
     )
     uri: str = Field(
         description=(
@@ -297,6 +284,7 @@ KnownMessagePart = Union[
     BlobPart,
     FilePart,
     UriPart,
+    TranscriptionPart,
     ReasoningPart,
     CompactionPart,
     # Add other message part types here as needed,
@@ -631,6 +619,19 @@ class ToolCallResult(RootModel[dict[str, Any]]):
 
 
 # --------------------------------------------------------------------------
+# `gen_ai.prompt.variables` model
+# --------------------------------------------------------------------------
+
+
+class PromptVariables(RootModel[dict[str, Any]]):
+    """
+    Represents object-like variables passed to a prompt template.
+    """
+
+    pass
+
+
+# --------------------------------------------------------------------------
 # Schema generation entry point
 # --------------------------------------------------------------------------
 
@@ -638,6 +639,7 @@ class ToolCallResult(RootModel[dict[str, Any]]):
 SCHEMAS: dict[str, type[BaseModel]] = {
     "gen-ai-input-messages.json": InputMessages,
     "gen-ai-output-messages.json": OutputMessages,
+    "gen-ai-prompt-variables.json": PromptVariables,
     "gen-ai-system-instructions.json": SystemInstructions,
     "gen-ai-tool-definitions.json": ToolDefinitions,
     "gen-ai-tool-call-arguments.json": ToolCallArguments,

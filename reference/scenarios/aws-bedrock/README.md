@@ -10,3 +10,6 @@ code. (Knowledge Bases / Agents live in separate Bedrock services and scenarios.
 | inference (`chat`) | Yes — `Converse` / `InvokeModel`, calls the model directly | ✅ Implemented |
 | embeddings | Yes — Titan / Cohere embedding models via `InvokeModel` | ✅ Implemented |
 | execute_tool | No — Converse returns tool-use requests but doesn't execute them; the tool runs in app code | ➖ Not instrumentable |
+
+The embeddings error handler records a correlated
+`gen_ai.client.embeddings.exception` WARN log. This scenario does not exercise that path.
