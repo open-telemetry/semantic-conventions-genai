@@ -21,22 +21,13 @@ from agents.tool import FunctionTool, ToolContext
 from opentelemetry import trace
 from opentelemetry._logs import SeverityNumber
 from opentelemetry.trace import StatusCode
-from reference_shared import flush_and_shutdown, reference_event_logger, reference_tracer, setup_otel
+from reference_shared import deserialize_tool_result, flush_and_shutdown, reference_event_logger, reference_tracer, setup_otel
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"] + "/v1"
 # The shell this deployment lets the sandboxed agent run commands with.
 SANDBOX_SHELL = "/bin/bash"
 
 _reference_tracer = reference_tracer()
-
-
-def _deserialize(value):
-    if not isinstance(value, str):
-        return value
-    try:
-        return json.loads(value)
-    except ValueError:
-        return value
 
 
 def instrument_function_tool(tool: FunctionTool) -> FunctionTool:
@@ -524,7 +515,7 @@ async def run_runner():
                     span.set_attribute("gen_ai.transfer.target.name", target.name)
                     span.set_attribute(
                         "gen_ai.tool.call.result",
-                        {"value": _deserialize(selected.handoff.get_transfer_message(target))},
+                        {"value": deserialize_tool_result(selected.handoff.get_transfer_message(target))},
                     )
                     return target
                 except Exception as e:

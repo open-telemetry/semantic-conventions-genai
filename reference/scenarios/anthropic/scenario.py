@@ -23,6 +23,7 @@ from opentelemetry.util.genai.types import (
     ToolCallRequest,
 )
 from reference_shared import (
+    deserialize_tool_result,
     flush_and_shutdown,
     inference_duration_view,
     mock_server_host_port,
@@ -606,15 +607,6 @@ def _tool_result_block_to_part(block):
     return {"type": "uri", "modality": "image", "uri": block["source"]["url"]}
 
 
-def _deserialize(value):
-    if not isinstance(value, str):
-        return value
-    try:
-        return json.loads(value)
-    except ValueError:
-        return value
-
-
 def run_tool_runner():
     """Scenario: the SDK tool runner executes tools that return serialized JSON and content blocks."""
     print("  [execute_tool] Anthropic tool runner: tools returning serialized JSON and content blocks")
@@ -640,7 +632,6 @@ def run_tool_runner():
             f"execute_tool {tool.name}",
             attributes={
                 "gen_ai.operation.name": "execute_tool",
-                "gen_ai.provider.name": "anthropic",
                 "gen_ai.tool.name": tool.name,
                 "gen_ai.tool.type": "function",
                 "gen_ai.tool.call.id": tool_use.id,
@@ -655,7 +646,7 @@ def run_tool_runner():
                 return tool_result
             content = tool_result["content"]
             if isinstance(content, str):
-                tool_span.set_attribute("gen_ai.tool.call.result", {"value": _deserialize(content)})
+                tool_span.set_attribute("gen_ai.tool.call.result", {"value": deserialize_tool_result(content)})
             else:
                 parts = [_tool_result_block_to_part(block) for block in content]
                 tool_span.set_attribute("gen_ai.tool.call.result", {"parts": parts})

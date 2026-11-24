@@ -21,7 +21,7 @@ from mcp.shared._otel import extract_trace_context
 from mcp.shared.exceptions import MCPError
 from mcp.shared.jsonrpc_dispatcher import JSONRPCDispatcher
 from mcp.shared.message import SessionMessage
-from mcp_types import INVALID_PARAMS, CallToolResult, EmbeddedResource, ImageContent, TextContent, TextResourceContents
+from mcp_types import INTERNAL_ERROR, INVALID_PARAMS, CallToolResult, EmbeddedResource, ImageContent, TextContent, TextResourceContents
 from opentelemetry import trace
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
@@ -247,6 +247,11 @@ def _build_mcp_server() -> MCPServer:
                 )
             ]
         )
+
+    @mcp_server.tool()
+    def get_weather_alerts(location: str) -> str:
+        """Fail with a JSON-RPC error."""
+        raise MCPError(code=INTERNAL_ERROR, message=f"No alert feed for {location}")
 
     @mcp_server.prompt()
     def analyze_weather(user_name: str, language: str) -> str:
@@ -494,6 +499,13 @@ async def run_tool_call_error_reference(session: ReferenceMCPClientSession) -> N
     result = await session.call_tool("missing_tool", {"location": "Seattle"})
     assert result.is_error
     print("    -> CallToolResult isError=True (error.type=tool_error)")
+
+    try:
+        await session.call_tool("get_weather_alerts", {"location": "Seattle"})
+    except MCPError as error:
+        print(f"    -> tools/call JSON-RPC error {error.error.code}: {error.error.message}")
+    else:
+        raise AssertionError("Expected MCPError for get_weather_alerts")
 
     missing_uri = "file:///weather/missing.json"
     try:

@@ -21,3 +21,4 @@ The `tools/call` spans cover these tool results:
 | `get_weather_summary` | One text block | `parts` (text) |
 | `get_weather_report` | A text block and an embedded `resource` block | `parts` (text); the `resource` block has no matching part type and isn't recorded |
 | `missing_tool` (not on the server) | `isError` | Nothing; `error.type` = `tool_error` |
+| `get_weather_alerts` | JSON-RPC error | Nothing; `error.type` and `rpc.status_code` |

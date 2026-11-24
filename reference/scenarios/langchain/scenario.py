@@ -1,7 +1,6 @@
 """Reference implementation for LangChain retrieval, planning, tool and workflow (LangGraph) runs."""
 
 import asyncio
-import json
 import os
 import time
 from typing import TypedDict
@@ -9,7 +8,7 @@ from typing import TypedDict
 from langchain_core.tools import tool
 from opentelemetry._logs import SeverityNumber
 from opentelemetry.trace import StatusCode
-from reference_shared import flush_and_shutdown, reference_event_logger, reference_meter, reference_tracer, setup_otel
+from reference_shared import deserialize_tool_result, flush_and_shutdown, reference_event_logger, reference_meter, reference_tracer, setup_otel
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"] + "/v1"
 
@@ -40,15 +39,6 @@ _retrieval_duration = _reference_meter.create_histogram(
         81.92,
     ],
 )
-
-
-def _deserialize(value):
-    if not isinstance(value, str):
-        return value
-    try:
-        return json.loads(value)
-    except ValueError:
-        return value
 
 
 @tool
@@ -248,7 +238,7 @@ def run_execute_tool_reference():
             tool_span.set_attribute("gen_ai.tool.call.id", tool_call["id"])
             tool_span.set_attribute("gen_ai.tool.call.arguments", tool_call["args"])
             tool_message = get_weather.invoke(tool_call)
-            tool_span.set_attribute("gen_ai.tool.call.result", {"value": _deserialize(tool_message.content)})
+            tool_span.set_attribute("gen_ai.tool.call.result", {"value": deserialize_tool_result(tool_message.content)})
         except Exception as e:
             tool_span.set_status(StatusCode.ERROR, str(e))
             tool_span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
@@ -304,7 +294,7 @@ def run_command_execution_reference():
                 exit_code = tool_message.artifact.get("exit_code")
                 if exit_code is not None:
                     tool_span.set_attribute("process.exit.code", exit_code)
-                tool_span.set_attribute("gen_ai.tool.call.result", {"value": _deserialize(tool_message.content)})
+                tool_span.set_attribute("gen_ai.tool.call.result", {"value": deserialize_tool_result(tool_message.content)})
                 return tool_message
             except Exception as e:
                 tool_span.set_status(StatusCode.ERROR, str(e))

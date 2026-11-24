@@ -13,6 +13,7 @@ from openai import OpenAI
 from opentelemetry._logs import SeverityNumber
 from opentelemetry.trace import SpanKind, StatusCode
 from reference_shared import (
+    deserialize_tool_result,
     flush_and_shutdown,
     reference_event_logger,
     reference_meter,
@@ -49,15 +50,6 @@ _invoke_agent_duration = _reference_meter.create_histogram(
         81.92,
     ],
 )
-
-
-def _deserialize(value):
-    if not isinstance(value, str):
-        return value
-    try:
-        return json.loads(value)
-    except ValueError:
-        return value
 
 
 def run_invoke_agent(client):
@@ -209,7 +201,7 @@ def run_invoke_agent(client):
                         tool_span.set_attribute("gen_ai.tool.call.arguments", arguments)
                         result = get_weather(arguments["location"])
                         # Tool outputs are strings, so structured data arrives serialized.
-                        tool_span.set_attribute("gen_ai.tool.call.result", {"value": _deserialize(result)})
+                        tool_span.set_attribute("gen_ai.tool.call.result", {"value": deserialize_tool_result(result)})
 
                     tool_outputs.append(
                         {
