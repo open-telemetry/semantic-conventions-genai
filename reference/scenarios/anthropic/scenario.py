@@ -602,9 +602,15 @@ def run_create_agent():
 
 
 def _tool_result_block_to_part(block):
+    source = block.get("source") or {}
     if block["type"] == "text":
         return {"type": "text", "content": block["text"]}
-    return {"type": "uri", "modality": "image", "uri": block["source"]["url"]}
+    if block["type"] == "image" and source.get("type") == "url":
+        return {"type": "uri", "modality": "image", "uri": source["url"]}
+    if block["type"] == "image" and source.get("type") == "base64":
+        return {"type": "blob", "modality": "image", "mime_type": source["media_type"], "content": source["data"]}
+    # Blocks without a defined part type aren't recorded.
+    return None
 
 
 def run_tool_runner():
@@ -647,9 +653,10 @@ def run_tool_runner():
             content = tool_result["content"]
             if isinstance(content, str):
                 tool_span.set_attribute("gen_ai.tool.call.result", {"value": deserialize_tool_result(content)})
-            else:
-                parts = [_tool_result_block_to_part(block) for block in content]
-                tool_span.set_attribute("gen_ai.tool.call.result", {"parts": parts})
+            elif content is not None:
+                parts = [part for part in map(_tool_result_block_to_part, content) if part is not None]
+                if parts:
+                    tool_span.set_attribute("gen_ai.tool.call.result", {"parts": parts})
             return tool_result
 
     BetaToolRunner._run_tool = traced_run_tool
