@@ -132,18 +132,24 @@ class ReferenceCompletionHandler(CompletionHandler):
     async def handle_request(self, body: dict, request_id: str) -> StreamingResponse | JSONResponse:
         started_at = perf_counter()
         timing = TokenTiming()
+        attributes = {"gen_ai.operation.name": "text_completion", "gen_ai.provider.name": "transformers"}
+        error_type: str | None = None
         context = _token_timing.set(timing)
         try:
             response = await super().handle_request(body, request_id)
+        except (asyncio.CancelledError, Exception) as error:
+            error_type = type(error).__qualname__
+            raise
         finally:
             _token_timing.reset(context)
+            request_model = body.get("model")
+            if isinstance(request_model, str):
+                attributes["gen_ai.request.model"] = request_model
+            if error_type is not None and body.get("stream"):
+                _request_duration.record(perf_counter() - started_at, attributes | {"error.type": error_type})
         if not isinstance(response, StreamingResponse):
             return response
 
-        attributes = {"gen_ai.operation.name": "text_completion", "gen_ai.provider.name": "transformers"}
-        request_model = body.get("model")
-        if isinstance(request_model, str):
-            attributes["gen_ai.request.model"] = request_model
         return ReferenceStreamingResponse(response, started_at, timing, attributes)
 
 
@@ -196,9 +202,14 @@ async def run_completion(model_path: Path) -> None:
                     "stream": True,
                 },
             )
+            invalid_response = await client.post(
+                "/v1/completions",
+                json={"model": str(model_path), "prompt": ["red blue"], "stream": True},
+            )
     response.raise_for_status()
     events = [json.loads(line[6:]) for line in response.text.splitlines() if line.startswith("data: {")]
     assert events[-1]["usage"]["completion_tokens"] == 4, events
+    assert invalid_response.status_code == 400, invalid_response.text
 
 
 def main() -> None:
