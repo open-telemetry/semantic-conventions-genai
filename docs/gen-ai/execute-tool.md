@@ -95,10 +95,15 @@ SHOULD detect it using the library's convention. For example (field names and
 types vary by language and SDK):
 
 - Anthropic Messages API: `is_error` is `true` on a `tool_result` content block
+  ([docs](https://platform.claude.com/docs/en/agents-and-tools/tool-use/handle-tool-calls#handling-errors-with-is-error))
 - MCP: `isError` is `true` on `CallToolResult`
+  ([spec](https://modelcontextprotocol.io/specification/2025-11-25/server/tools#error-handling))
 - Amazon Bedrock Converse API: `status` is `error` on `toolResult`
+  ([docs](https://docs.aws.amazon.com/bedrock/latest/userguide/tool-use-client-side.html))
 - Gemini API: `FunctionResponse.response` contains an `error` key
+  ([docs](https://ai.google.dev/api/caching#FunctionResponse))
 - LangChain: `ToolMessage.status` is `error`
+  ([docs](https://reference.langchain.com/python/langchain-core/messages/tool/ToolMessage))
 
 `error.type` SHOULD be set to the error code provided in the result when
 one is available, and to `_OTHER` otherwise.
@@ -259,10 +264,15 @@ SHOULD detect it using the library's convention. For example (field names and
 types vary by language and SDK):
 
 - Anthropic Messages API: `is_error` is `true` on a `tool_result` content block
+  ([docs](https://platform.claude.com/docs/en/agents-and-tools/tool-use/handle-tool-calls#handling-errors-with-is-error))
 - MCP: `isError` is `true` on `CallToolResult`
+  ([spec](https://modelcontextprotocol.io/specification/2025-11-25/server/tools#error-handling))
 - Amazon Bedrock Converse API: `status` is `error` on `toolResult`
+  ([docs](https://docs.aws.amazon.com/bedrock/latest/userguide/tool-use-client-side.html))
 - Gemini API: `FunctionResponse.response` contains an `error` key
+  ([docs](https://ai.google.dev/api/caching#FunctionResponse))
 - LangChain: `ToolMessage.status` is `error`
+  ([docs](https://reference.langchain.com/python/langchain-core/messages/tool/ToolMessage))
 
 `error.type` SHOULD be set to the error code provided in the result when
 one is available, and to `_OTHER` otherwise.
@@ -439,10 +449,15 @@ SHOULD detect it using the library's convention. For example (field names and
 types vary by language and SDK):
 
 - Anthropic Messages API: `is_error` is `true` on a `tool_result` content block
+  ([docs](https://platform.claude.com/docs/en/agents-and-tools/tool-use/handle-tool-calls#handling-errors-with-is-error))
 - MCP: `isError` is `true` on `CallToolResult`
+  ([spec](https://modelcontextprotocol.io/specification/2025-11-25/server/tools#error-handling))
 - Amazon Bedrock Converse API: `status` is `error` on `toolResult`
+  ([docs](https://docs.aws.amazon.com/bedrock/latest/userguide/tool-use-client-side.html))
 - Gemini API: `FunctionResponse.response` contains an `error` key
+  ([docs](https://ai.google.dev/api/caching#FunctionResponse))
 - LangChain: `ToolMessage.status` is `error`
+  ([docs](https://reference.langchain.com/python/langchain-core/messages/tool/ToolMessage))
 
 `error.type` SHOULD be set to the error code provided in the result when
 one is available, and to `_OTHER` otherwise.
@@ -615,10 +630,15 @@ SHOULD detect it using the library's convention. For example (field names and
 types vary by language and SDK):
 
 - Anthropic Messages API: `is_error` is `true` on a `tool_result` content block
+  ([docs](https://platform.claude.com/docs/en/agents-and-tools/tool-use/handle-tool-calls#handling-errors-with-is-error))
 - MCP: `isError` is `true` on `CallToolResult`
+  ([spec](https://modelcontextprotocol.io/specification/2025-11-25/server/tools#error-handling))
 - Amazon Bedrock Converse API: `status` is `error` on `toolResult`
+  ([docs](https://docs.aws.amazon.com/bedrock/latest/userguide/tool-use-client-side.html))
 - Gemini API: `FunctionResponse.response` contains an `error` key
+  ([docs](https://ai.google.dev/api/caching#FunctionResponse))
 - LangChain: `ToolMessage.status` is `error`
+  ([docs](https://reference.langchain.com/python/langchain-core/messages/tool/ToolMessage))
 
 `error.type` SHOULD be set to the error code provided in the result when
 one is available, and to `_OTHER` otherwise.
@@ -813,10 +833,15 @@ SHOULD detect it using the library's convention. For example (field names and
 types vary by language and SDK):
 
 - Anthropic Messages API: `is_error` is `true` on a `tool_result` content block
+  ([docs](https://platform.claude.com/docs/en/agents-and-tools/tool-use/handle-tool-calls#handling-errors-with-is-error))
 - MCP: `isError` is `true` on `CallToolResult`
+  ([spec](https://modelcontextprotocol.io/specification/2025-11-25/server/tools#error-handling))
 - Amazon Bedrock Converse API: `status` is `error` on `toolResult`
+  ([docs](https://docs.aws.amazon.com/bedrock/latest/userguide/tool-use-client-side.html))
 - Gemini API: `FunctionResponse.response` contains an `error` key
+  ([docs](https://ai.google.dev/api/caching#FunctionResponse))
 - LangChain: `ToolMessage.status` is `error`
+  ([docs](https://reference.langchain.com/python/langchain-core/messages/tool/ToolMessage))
 
 `error.type` SHOULD be set to the error code provided in the result when
 one is available, and to `_OTHER` otherwise.
@@ -1029,10 +1054,15 @@ SHOULD detect it using the library's convention. For example (field names and
 types vary by language and SDK):
 
 - Anthropic Messages API: `is_error` is `true` on a `tool_result` content block
+  ([docs](https://platform.claude.com/docs/en/agents-and-tools/tool-use/handle-tool-calls#handling-errors-with-is-error))
 - MCP: `isError` is `true` on `CallToolResult`
+  ([spec](https://modelcontextprotocol.io/specification/2025-11-25/server/tools#error-handling))
 - Amazon Bedrock Converse API: `status` is `error` on `toolResult`
+  ([docs](https://docs.aws.amazon.com/bedrock/latest/userguide/tool-use-client-side.html))
 - Gemini API: `FunctionResponse.response` contains an `error` key
+  ([docs](https://ai.google.dev/api/caching#FunctionResponse))
 - LangChain: `ToolMessage.status` is `error`
+  ([docs](https://reference.langchain.com/python/langchain-core/messages/tool/ToolMessage))
 
 `error.type` SHOULD be set to the error code provided in the result when
 one is available, and to `_OTHER` otherwise.
