@@ -912,7 +912,8 @@ def run_chat_with_document_input_reference(client):
             "modality": "document",
             "mime_type": mime_type,
             "content": pdf_b64,
-            "size": len(pdf_bytes),
+            # Decoded length of the base64 payload in the data URI passed as `file_data`.
+            "size": len(base64.b64decode(pdf_b64)),
         },
     ]
     input_messages = [{"role": "user", "parts": input_parts}]
@@ -985,7 +986,8 @@ def run_chat_image_reference(client):
             "modality": "image",
             "mime_type": mime_type,
             "content": image_b64,
-            "size": len(image_bytes),
+            # Decoded length of the base64 payload in the data URI passed as `image_url`.
+            "size": len(base64.b64decode(image_b64)),
         },
     ]
     input_messages = [{"role": "user", "parts": input_parts}]
@@ -1130,7 +1132,14 @@ def run_chat_audio_reference(client):
             "role": "user",
             "parts": [
                 {"type": "text", "content": "Respond to this audio clip."},
-                {"type": "blob", "mime_type": "audio/wav", "modality": "audio", "content": audio_b64},
+                {
+                    "type": "blob",
+                    "mime_type": "audio/wav",
+                    "modality": "audio",
+                    "content": audio_b64,
+                    # Decoded length of the base64 string passed as `input_audio.data`.
+                    "size": len(base64.b64decode(audio_b64)),
+                },
             ],
         }
     ]
