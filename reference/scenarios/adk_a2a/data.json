@@ -19,12 +19,6 @@
   },
   "events": {},
   "metrics": {
-    "gen_ai.client.operation.duration": [
-      "gen_ai.operation.name",
-      "gen_ai.provider.name",
-      "gen_ai.request.model",
-      "gen_ai.response.model"
-    ],
     "gen_ai.invoke_agent.duration": [
       "gen_ai.agent.name"
     ],
