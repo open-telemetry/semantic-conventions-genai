@@ -79,7 +79,7 @@ class ToolCallRequestPart(BaseModel):
 
 class ToolCallResponsePart(BaseModel):
     """
-    Represents a tool call result sent to the model or a built-in tool call outcome and details.
+    Represents a tool call result sent to the model.
     """
 
     type: Literal["tool_call_response"] = Field(
@@ -490,19 +490,13 @@ class FunctionToolDefinition(BaseModel):
     name: Optional[str] = Field(default=None, description="The name of the tool.")
     description: Optional[str] = Field(
         default=None,
-        description=(
-            "The description of the tool. "
-            "Since this attribute could be large, it's NOT RECOMMENDED to be populated by default. "
-            "Instrumentations MAY provide a way to enable populating this property."
-        ),
+        description="The description of the tool.",
     )
     parameters: Optional[JsonSchemaDraft7Dict] = Field(
         default=None,
         description=(
             "JSON Schema document describing the parameters accepted by the tool. "
-            "The value MUST conform to JSON Schema draft-07. "
-            "Since this attribute could be large, it's NOT RECOMMENDED to be populated by default. "
-            "Instrumentations MAY provide a way to enable populating this property."
+            "The value MUST conform to JSON Schema draft-07."
         ),
     )
 

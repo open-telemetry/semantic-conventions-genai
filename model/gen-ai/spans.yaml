@@ -329,10 +329,8 @@ spans:
           Instrumentations SHOULD populate fields when values are available,
           unless the field description says otherwise.
 
-          Since this attribute could be large, it's NOT RECOMMENDED to populate
-          properties other than `type` and `name` (such as `description` and
-          `parameters`) by default. Instrumentations MAY provide a way to enable
-          populating additional properties.
+          See [Recording content on attributes](/docs/gen-ai/gen-ai-spans.md#recording-content-on-attributes)
+          section for more details.
       - ref: gen_ai.request.max_tokens
         requirement_level: recommended
       - ref: gen_ai.request.reasoning.level
@@ -573,10 +571,12 @@ spans:
       - ref: gen_ai.response.finish_reasons
         requirement_level: recommended
         note: >
-          Conveys the outcome of the original generation as recorded on the fetched response,
-          derived from its status: a completed generation maps to its stop reason, an incomplete
-          one to why it was cut short (for example `length` or `content_filter`), and a failed or
-          cancelled generation to `error`.
+          When the fetched response has a final status, the finish reason describes the
+          original generation. A completed generation maps to its stop reason, an incomplete
+          one to why it was cut short (for example `length` or `content_filter`), a failed
+          generation to `error`, and a cancelled generation to `interrupted`.
+          If a fetched stream ends before a final status arrives, report `interrupted`
+          for a caller close without an error and `error` for an unexpected ending.
 
   - type: gen_ai.memory.client
     requirement_level: recommended
@@ -821,10 +821,8 @@ spans:
           Instrumentations SHOULD populate fields when values are available,
           unless the field description says otherwise.
 
-          Since this attribute could be large, it's NOT RECOMMENDED to populate
-          properties other than `type` and `name` (such as `description` and
-          `parameters`) by default. Instrumentations MAY provide a way to enable
-          populating additional properties.
+          See [Recording content on attributes](/docs/gen-ai/gen-ai-spans.md#recording-content-on-attributes)
+          section for more details.
       - ref: gen_ai.operation.name
         annotations:
           markdown:
@@ -1040,9 +1038,9 @@ span_refinements:
         requirement_level: recommended
         note: >
           Derived from the fetched response `status`: a `completed` response maps to its stop
-          reason, a `failed` or `cancelled` response to `error`, and an `incomplete` response to
-          its `incomplete_details.reason` (for example `max_output_tokens` maps to `length` and
-          `content_filter` to `content_filter`).
+          reason, a `failed` response to `error`, a `cancelled` response to `interrupted`, and an
+          `incomplete` response to its `incomplete_details.reason` (for example `max_output_tokens`
+          maps to `length` and `content_filter` to `content_filter`).
       - ref: gen_ai.response.service_tier
         requirement_level:
           conditionally_required: If and only if returned by the provider.

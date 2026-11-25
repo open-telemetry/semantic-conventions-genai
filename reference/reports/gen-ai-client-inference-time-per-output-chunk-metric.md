@@ -1,4 +1,4 @@
-# Client Inference Time per Output Chunk Metric
+# Client Inference Time Per Output Chunk Metric
 
 > **[Semantic Convention](../../docs/gen-ai/client-inference.md#metric-gen_aiclientinferencetime_per_output_chunk)**
 
