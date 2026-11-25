@@ -32,6 +32,7 @@ _execute_tool_duration = _reference_meter.create_histogram(
     "gen_ai.execute_tool.duration",
     unit="s",
     description="The duration of a single tool execution.",
+    explicit_bucket_boundaries_advisory=[0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10, 30, 60],
 )
 _invoke_agent_tool_calls = _reference_meter.create_histogram(
     "gen_ai.invoke_agent.tool_calls",
@@ -42,6 +43,7 @@ _invoke_agent_skill_loads = _reference_meter.create_histogram(
     "gen_ai.invoke_agent.skill_loads",
     unit="{skill_load}",
     description="The number of skill-loading tool calls a GenAI agent makes during a single invocation.",
+    explicit_bucket_boundaries_advisory=[0, 1, 2, 4, 8, 16, 32],
 )
 
 

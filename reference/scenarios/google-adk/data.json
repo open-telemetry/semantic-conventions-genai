@@ -53,8 +53,11 @@
     "gen_ai.execute_tool.duration": [
       "error.type",
       "gen_ai.agent.name",
+      "gen_ai.skill.name",
+      "gen_ai.skill.resource.name",
       "gen_ai.tool.name",
-      "gen_ai.tool.type"
+      "gen_ai.tool.type",
+      "process.exit.code"
     ],
     "gen_ai.invoke_agent.duration": [
       "gen_ai.agent.name",

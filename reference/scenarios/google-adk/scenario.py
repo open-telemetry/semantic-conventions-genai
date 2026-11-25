@@ -72,15 +72,11 @@ _tool_calls = _reference_meter.create_histogram(
     unit="{tool_call}",
     description="The number of tool calls a GenAI agent makes during a single invocation.",
 )
-_execute_tool_duration = _reference_meter.create_histogram(
-    "gen_ai.execute_tool.duration",
-    unit="s",
-    description="The duration of a single tool execution.",
-)
 _skill_loads = _reference_meter.create_histogram(
     "gen_ai.invoke_agent.skill_loads",
     unit="{skill_load}",
     description="The number of skill-loading tool calls a GenAI agent makes during a single invocation.",
+    explicit_bucket_boundaries_advisory=[0, 1, 2, 4, 8, 16, 32],
 )
 
 
@@ -877,6 +873,12 @@ def run_skills_reference():
                 attributes["gen_ai.skill.name"] = skill_name
             if resource_name:
                 attributes["gen_ai.skill.resource.name"] = resource_name
+            metric_attributes = {
+                "gen_ai.tool.name": self.name,
+                "gen_ai.tool.type": "function",
+                "gen_ai.agent.name": tool_context.agent_name,
+            }
+            skill = None
             started = time.perf_counter()
             with _reference_tracer.start_as_current_span(
                 self._span_name(skill_name, resource_name),
@@ -903,28 +905,27 @@ def run_skills_reference():
                     if error_type:
                         span.set_attribute("error.type", error_type)
                         span.set_status(StatusCode.ERROR, result.get("error", ""))
+                        metric_attributes["error.type"] = error_type
                     else:
                         # TODO: Determine how to represent this string result in the object-only schema.
                         span.set_attribute("gen_ai.tool.call.result", result)
-                    metric_attributes = {
-                        "gen_ai.tool.name": self.name,
-                        "gen_ai.tool.type": "function",
-                        "gen_ai.agent.name": tool_context.agent_name,
-                    }
-                    if error_type:
-                        metric_attributes["error.type"] = error_type
                     self._record_skill_attributes(span, args, result, error_type, metric_attributes)
-                    _execute_tool_duration.record(time.perf_counter() - started, metric_attributes)
                     return result
                 except Exception as e:
+                    error_type = f"{type(e).__module__}.{type(e).__qualname__}"
                     span.set_status(StatusCode.ERROR, str(e))
-                    span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
+                    span.set_attribute("error.type", error_type)
+                    metric_attributes["error.type"] = error_type
+                    if skill is not None:
+                        metric_attributes["gen_ai.skill.name"] = skill.name
                     reference_event_logger().emit(
                         event_name="gen_ai.execute_tool.exception",
                         severity_number=SeverityNumber.WARN,
                         exception=e,
                     )
                     raise
+                finally:
+                    _tool_execution_duration.record(time.perf_counter() - started, metric_attributes)
 
         def _record_skill_attributes(self, span, args, result, error_type, metric_attributes):
             """Hook for the skill attributes a refined tool adds to its span and metric."""

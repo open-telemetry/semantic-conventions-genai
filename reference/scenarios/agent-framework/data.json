@@ -62,6 +62,8 @@
     ],
     "gen_ai.execute_tool.duration": [
       "gen_ai.agent.name",
+      "gen_ai.skill.name",
+      "gen_ai.skill.resource.name",
       "gen_ai.tool.name",
       "gen_ai.tool.type"
     ],
