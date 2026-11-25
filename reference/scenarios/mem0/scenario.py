@@ -18,10 +18,14 @@ CAPTURE_CONTENT = os.environ.get("OTEL_INSTRUMENTATION_GENAI_CAPTURE_CONTENT", "
 )
 
 USER_ID = "test-user"
-MEMORY_TEXT = "User prefers vegetarian meals and dark mode."
+MESSAGES = [{"role": "user", "content": "User prefers vegetarian meals and dark mode."}]
 QUERY_TEXT = "vegetarian meal preference"
 # The mock server returns embeddings of the requested `dimensions`; the vector store must match.
 EMBEDDING_DIMS = 256
+
+
+def _error_type(error):
+    return f"{type(error).__module__}.{type(error).__qualname__}"
 
 
 def build_memory(storage_dir):
@@ -63,9 +67,15 @@ def run_create_memory_reference(memory):
     with _reference_tracer.start_as_current_span(
         "create_memory", kind=SpanKind.CLIENT, attributes={"gen_ai.operation.name": "create_memory"}
     ) as span:
-        response = memory.add(MEMORY_TEXT, user_id=USER_ID, infer=False)
+        # record.count is the attempted creations, known before the call: infer=False stores
+        # one record per non-system message.
+        span.set_attribute("gen_ai.memory.record.count", sum(message["role"] != "system" for message in MESSAGES))
+        try:
+            response = memory.add(MESSAGES, user_id=USER_ID, infer=False)
+        except Exception as e:
+            span.set_attribute("error.type", _error_type(e))
+            raise
         results = response["results"]
-        span.set_attribute("gen_ai.memory.record.count", len(results))
         if CAPTURE_CONTENT:
             span.set_attribute(
                 "gen_ai.memory.records",
@@ -81,7 +91,11 @@ def run_search_memory_reference(memory):
     ) as span:
         if CAPTURE_CONTENT:
             span.set_attribute("gen_ai.memory.query.text", QUERY_TEXT)
-        response = memory.search(QUERY_TEXT, filters={"user_id": USER_ID})
+        try:
+            response = memory.search(QUERY_TEXT, filters={"user_id": USER_ID})
+        except Exception as e:
+            span.set_attribute("error.type", _error_type(e))
+            raise
         results = response["results"]
         span.set_attribute("gen_ai.memory.record.count", len(results))
         if CAPTURE_CONTENT:
