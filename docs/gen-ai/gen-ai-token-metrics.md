@@ -53,9 +53,6 @@ sum(gen_ai.usage.input_tokens)
 
 The conventions described in this document are specific to Generative AI client
 applications and describe how inference token metrics are reported.
-These metrics apply only to non-realtime client inference operations (`chat`,
-`generate_content`, `text_completion`) and SHOULD NOT be reported for other
-operations such as `realtime_inference`.
 
 Individual systems may include additional system-specific attributes.
 It is recommended to check system-specific documentation, if available.
@@ -131,7 +128,8 @@ When a contribution's modality cannot reliably be determined, instrumentation MU
 | [`gen_ai.request.model`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If available. | string | The name of the GenAI model a request is being made to. [4] | `gpt-4` |
 | [`server.port`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If `server.address` is set. | int | GenAI server port. [5] | `80`; `8080`; `443` |
 | [`gen_ai.response.model`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The name of the model that generated the response. | `gpt-4-0613` |
-| [`server.address`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | GenAI server address. [6] | `example.com`; `10.1.2.80`; `/tmp/my.sock` |
+| [`gen_ai.response.service_tier`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The service tier that processed the inference operation. [6] | `default`; `priority`; `ON_DEMAND` |
+| [`server.address`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | GenAI server address. [7] | `example.com`; `10.1.2.80`; `/tmp/my.sock` |
 
 **[1] `gen_ai.operation.name`:** SHOULD be one of `chat`, `generate_content`, or `text_completion`.
 
@@ -167,7 +165,13 @@ provider reports 300 input tokens and 100 of them are audio, record 100 as
 
 **[5] `server.port`:** When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries, for example proxies, if it's available.
 
-**[6] `server.address`:** When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent the server address behind any intermediaries, for example proxies, if it's available.
+**[6] `gen_ai.response.service_tier`:** The value SHOULD be the one returned by the provider. It can differ from
+`gen_ai.request.service_tier` when `auto` is requested.
+For example, `service_tier` in [OpenAI](https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create),
+`usage.service_tier` in [Anthropic](https://platform.claude.com/docs/en/api/service-tiers),
+or [`usageMetadata.trafficType`](https://docs.cloud.google.com/gemini-enterprise-agent-platform/reference/rest/v1/GenerateContentResponse#UsageMetadata.FIELDS.traffic_type) in Vertex AI.
+
+**[7] `server.address`:** When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent the server address behind any intermediaries, for example proxies, if it's available.
 
 ---
 
@@ -181,9 +185,9 @@ provider reports 300 input tokens and 100 of them are audio, record 100 as
 | `azure.ai.openai` | [Azure OpenAI](https://learn.microsoft.com/en-us/azure/ai-services/openai/overview) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `cohere` | [Cohere](https://cohere.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `deepseek` | [DeepSeek](https://www.deepseek.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
-| `gcp.gemini` | [Gemini](https://cloud.google.com/products/gemini) [7] | ![Development](https://img.shields.io/badge/-development-blue) |
-| `gcp.gen_ai` | Any Google generative AI endpoint [8] | ![Development](https://img.shields.io/badge/-development-blue) |
-| `gcp.vertex_ai` | [Vertex AI](https://cloud.google.com/vertex-ai) [9] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `gcp.gemini` | [Gemini](https://cloud.google.com/products/gemini) [8] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `gcp.gen_ai` | Any Google generative AI endpoint [9] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `gcp.vertex_ai` | [Vertex AI](https://cloud.google.com/vertex-ai) [10] | ![Development](https://img.shields.io/badge/-development-blue) |
 | `groq` | [Groq](https://groq.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `ibm.watsonx.ai` | [IBM Watsonx AI](https://www.ibm.com/products/watsonx-ai) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `mistral` | [Mistral](https://mistral.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
@@ -193,11 +197,11 @@ provider reports 300 input tokens and 100 of them are audio, record 100 as
 | `perplexity` | [Perplexity](https://www.perplexity.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `x_ai` | [xAI](https://x.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 
-**[7]:** Used when accessing the 'generativelanguage.googleapis.com' endpoint. Also known as the AI Studio API.
+**[8]:** Used when accessing the 'generativelanguage.googleapis.com' endpoint. Also known as the AI Studio API.
 
-**[8]:** May be used when specific backend is unknown.
+**[9]:** May be used when specific backend is unknown.
 
-**[9]:** Used when accessing the 'aiplatform.googleapis.com' endpoint.
+**[10]:** Used when accessing the 'aiplatform.googleapis.com' endpoint.
 
 ---
 
@@ -243,7 +247,8 @@ When a contribution's modality cannot reliably be determined, instrumentation MU
 | [`gen_ai.request.model`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If available. | string | The name of the GenAI model a request is being made to. [4] | `gpt-4` |
 | [`server.port`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If `server.address` is set. | int | GenAI server port. [5] | `80`; `8080`; `443` |
 | [`gen_ai.response.model`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The name of the model that generated the response. | `gpt-4-0613` |
-| [`server.address`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | GenAI server address. [6] | `example.com`; `10.1.2.80`; `/tmp/my.sock` |
+| [`gen_ai.response.service_tier`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The service tier that processed the inference operation. [6] | `default`; `priority`; `ON_DEMAND` |
+| [`server.address`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | GenAI server address. [7] | `example.com`; `10.1.2.80`; `/tmp/my.sock` |
 
 **[1] `gen_ai.operation.name`:** SHOULD be one of `chat`, `generate_content`, or `text_completion`.
 
@@ -279,7 +284,13 @@ provider reports 300 input tokens and 100 of them are audio, record 100 as
 
 **[5] `server.port`:** When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries, for example proxies, if it's available.
 
-**[6] `server.address`:** When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent the server address behind any intermediaries, for example proxies, if it's available.
+**[6] `gen_ai.response.service_tier`:** The value SHOULD be the one returned by the provider. It can differ from
+`gen_ai.request.service_tier` when `auto` is requested.
+For example, `service_tier` in [OpenAI](https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create),
+`usage.service_tier` in [Anthropic](https://platform.claude.com/docs/en/api/service-tiers),
+or [`usageMetadata.trafficType`](https://docs.cloud.google.com/gemini-enterprise-agent-platform/reference/rest/v1/GenerateContentResponse#UsageMetadata.FIELDS.traffic_type) in Vertex AI.
+
+**[7] `server.address`:** When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent the server address behind any intermediaries, for example proxies, if it's available.
 
 ---
 
@@ -293,9 +304,9 @@ provider reports 300 input tokens and 100 of them are audio, record 100 as
 | `azure.ai.openai` | [Azure OpenAI](https://learn.microsoft.com/en-us/azure/ai-services/openai/overview) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `cohere` | [Cohere](https://cohere.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `deepseek` | [DeepSeek](https://www.deepseek.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
-| `gcp.gemini` | [Gemini](https://cloud.google.com/products/gemini) [7] | ![Development](https://img.shields.io/badge/-development-blue) |
-| `gcp.gen_ai` | Any Google generative AI endpoint [8] | ![Development](https://img.shields.io/badge/-development-blue) |
-| `gcp.vertex_ai` | [Vertex AI](https://cloud.google.com/vertex-ai) [9] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `gcp.gemini` | [Gemini](https://cloud.google.com/products/gemini) [8] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `gcp.gen_ai` | Any Google generative AI endpoint [9] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `gcp.vertex_ai` | [Vertex AI](https://cloud.google.com/vertex-ai) [10] | ![Development](https://img.shields.io/badge/-development-blue) |
 | `groq` | [Groq](https://groq.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `ibm.watsonx.ai` | [IBM Watsonx AI](https://www.ibm.com/products/watsonx-ai) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `mistral` | [Mistral](https://mistral.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
@@ -305,11 +316,11 @@ provider reports 300 input tokens and 100 of them are audio, record 100 as
 | `perplexity` | [Perplexity](https://www.perplexity.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `x_ai` | [xAI](https://x.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 
-**[7]:** Used when accessing the 'generativelanguage.googleapis.com' endpoint. Also known as the AI Studio API.
+**[8]:** Used when accessing the 'generativelanguage.googleapis.com' endpoint. Also known as the AI Studio API.
 
-**[8]:** May be used when specific backend is unknown.
+**[9]:** May be used when specific backend is unknown.
 
-**[9]:** Used when accessing the 'aiplatform.googleapis.com' endpoint.
+**[10]:** Used when accessing the 'aiplatform.googleapis.com' endpoint.
 
 ---
 
@@ -354,7 +365,8 @@ When a contribution's modality cannot reliably be determined, instrumentation MU
 | [`gen_ai.request.model`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If available. | string | The name of the GenAI model a request is being made to. [4] | `gpt-4` |
 | [`server.port`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If `server.address` is set. | int | GenAI server port. [5] | `80`; `8080`; `443` |
 | [`gen_ai.response.model`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The name of the model that generated the response. | `gpt-4-0613` |
-| [`server.address`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | GenAI server address. [6] | `example.com`; `10.1.2.80`; `/tmp/my.sock` |
+| [`gen_ai.response.service_tier`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The service tier that processed the inference operation. [6] | `default`; `priority`; `ON_DEMAND` |
+| [`server.address`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | GenAI server address. [7] | `example.com`; `10.1.2.80`; `/tmp/my.sock` |
 
 **[1] `gen_ai.operation.name`:** SHOULD be one of `chat`, `generate_content`, or `text_completion`.
 
@@ -390,7 +402,13 @@ provider reports 300 input tokens and 100 of them are audio, record 100 as
 
 **[5] `server.port`:** When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries, for example proxies, if it's available.
 
-**[6] `server.address`:** When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent the server address behind any intermediaries, for example proxies, if it's available.
+**[6] `gen_ai.response.service_tier`:** The value SHOULD be the one returned by the provider. It can differ from
+`gen_ai.request.service_tier` when `auto` is requested.
+For example, `service_tier` in [OpenAI](https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create),
+`usage.service_tier` in [Anthropic](https://platform.claude.com/docs/en/api/service-tiers),
+or [`usageMetadata.trafficType`](https://docs.cloud.google.com/gemini-enterprise-agent-platform/reference/rest/v1/GenerateContentResponse#UsageMetadata.FIELDS.traffic_type) in Vertex AI.
+
+**[7] `server.address`:** When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent the server address behind any intermediaries, for example proxies, if it's available.
 
 ---
 
@@ -404,9 +422,9 @@ provider reports 300 input tokens and 100 of them are audio, record 100 as
 | `azure.ai.openai` | [Azure OpenAI](https://learn.microsoft.com/en-us/azure/ai-services/openai/overview) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `cohere` | [Cohere](https://cohere.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `deepseek` | [DeepSeek](https://www.deepseek.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
-| `gcp.gemini` | [Gemini](https://cloud.google.com/products/gemini) [7] | ![Development](https://img.shields.io/badge/-development-blue) |
-| `gcp.gen_ai` | Any Google generative AI endpoint [8] | ![Development](https://img.shields.io/badge/-development-blue) |
-| `gcp.vertex_ai` | [Vertex AI](https://cloud.google.com/vertex-ai) [9] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `gcp.gemini` | [Gemini](https://cloud.google.com/products/gemini) [8] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `gcp.gen_ai` | Any Google generative AI endpoint [9] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `gcp.vertex_ai` | [Vertex AI](https://cloud.google.com/vertex-ai) [10] | ![Development](https://img.shields.io/badge/-development-blue) |
 | `groq` | [Groq](https://groq.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `ibm.watsonx.ai` | [IBM Watsonx AI](https://www.ibm.com/products/watsonx-ai) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `mistral` | [Mistral](https://mistral.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
@@ -416,11 +434,11 @@ provider reports 300 input tokens and 100 of them are audio, record 100 as
 | `perplexity` | [Perplexity](https://www.perplexity.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `x_ai` | [xAI](https://x.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 
-**[7]:** Used when accessing the 'generativelanguage.googleapis.com' endpoint. Also known as the AI Studio API.
+**[8]:** Used when accessing the 'generativelanguage.googleapis.com' endpoint. Also known as the AI Studio API.
 
-**[8]:** May be used when specific backend is unknown.
+**[9]:** May be used when specific backend is unknown.
 
-**[9]:** Used when accessing the 'aiplatform.googleapis.com' endpoint.
+**[10]:** Used when accessing the 'aiplatform.googleapis.com' endpoint.
 
 ---
 
@@ -465,7 +483,8 @@ When a contribution's modality cannot reliably be determined, instrumentation MU
 | [`gen_ai.request.model`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If available. | string | The name of the GenAI model a request is being made to. [4] | `gpt-4` |
 | [`server.port`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If `server.address` is set. | int | GenAI server port. [5] | `80`; `8080`; `443` |
 | [`gen_ai.response.model`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The name of the model that generated the response. | `gpt-4-0613` |
-| [`server.address`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | GenAI server address. [6] | `example.com`; `10.1.2.80`; `/tmp/my.sock` |
+| [`gen_ai.response.service_tier`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The service tier that processed the inference operation. [6] | `default`; `priority`; `ON_DEMAND` |
+| [`server.address`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | GenAI server address. [7] | `example.com`; `10.1.2.80`; `/tmp/my.sock` |
 
 **[1] `gen_ai.operation.name`:** SHOULD be one of `chat`, `generate_content`, or `text_completion`.
 
@@ -501,7 +520,13 @@ provider reports 300 input tokens and 100 of them are audio, record 100 as
 
 **[5] `server.port`:** When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries, for example proxies, if it's available.
 
-**[6] `server.address`:** When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent the server address behind any intermediaries, for example proxies, if it's available.
+**[6] `gen_ai.response.service_tier`:** The value SHOULD be the one returned by the provider. It can differ from
+`gen_ai.request.service_tier` when `auto` is requested.
+For example, `service_tier` in [OpenAI](https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create),
+`usage.service_tier` in [Anthropic](https://platform.claude.com/docs/en/api/service-tiers),
+or [`usageMetadata.trafficType`](https://docs.cloud.google.com/gemini-enterprise-agent-platform/reference/rest/v1/GenerateContentResponse#UsageMetadata.FIELDS.traffic_type) in Vertex AI.
+
+**[7] `server.address`:** When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent the server address behind any intermediaries, for example proxies, if it's available.
 
 ---
 
@@ -515,9 +540,9 @@ provider reports 300 input tokens and 100 of them are audio, record 100 as
 | `azure.ai.openai` | [Azure OpenAI](https://learn.microsoft.com/en-us/azure/ai-services/openai/overview) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `cohere` | [Cohere](https://cohere.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `deepseek` | [DeepSeek](https://www.deepseek.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
-| `gcp.gemini` | [Gemini](https://cloud.google.com/products/gemini) [7] | ![Development](https://img.shields.io/badge/-development-blue) |
-| `gcp.gen_ai` | Any Google generative AI endpoint [8] | ![Development](https://img.shields.io/badge/-development-blue) |
-| `gcp.vertex_ai` | [Vertex AI](https://cloud.google.com/vertex-ai) [9] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `gcp.gemini` | [Gemini](https://cloud.google.com/products/gemini) [8] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `gcp.gen_ai` | Any Google generative AI endpoint [9] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `gcp.vertex_ai` | [Vertex AI](https://cloud.google.com/vertex-ai) [10] | ![Development](https://img.shields.io/badge/-development-blue) |
 | `groq` | [Groq](https://groq.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `ibm.watsonx.ai` | [IBM Watsonx AI](https://www.ibm.com/products/watsonx-ai) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `mistral` | [Mistral](https://mistral.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
@@ -527,11 +552,11 @@ provider reports 300 input tokens and 100 of them are audio, record 100 as
 | `perplexity` | [Perplexity](https://www.perplexity.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `x_ai` | [xAI](https://x.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 
-**[7]:** Used when accessing the 'generativelanguage.googleapis.com' endpoint. Also known as the AI Studio API.
+**[8]:** Used when accessing the 'generativelanguage.googleapis.com' endpoint. Also known as the AI Studio API.
 
-**[8]:** May be used when specific backend is unknown.
+**[9]:** May be used when specific backend is unknown.
 
-**[9]:** Used when accessing the 'aiplatform.googleapis.com' endpoint.
+**[10]:** Used when accessing the 'aiplatform.googleapis.com' endpoint.
 
 ---
 
@@ -574,7 +599,8 @@ Instrumentation SHOULD record contributions from successful and failed inference
 | [`gen_ai.request.model`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If available. | string | The name of the GenAI model a request is being made to. [3] | `gpt-4` |
 | [`server.port`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If `server.address` is set. | int | GenAI server port. [4] | `80`; `8080`; `443` |
 | [`gen_ai.response.model`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The name of the model that generated the response. | `gpt-4-0613` |
-| [`server.address`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | GenAI server address. [5] | `example.com`; `10.1.2.80`; `/tmp/my.sock` |
+| [`gen_ai.response.service_tier`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The service tier that processed the inference operation. [5] | `default`; `priority`; `ON_DEMAND` |
+| [`server.address`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | GenAI server address. [6] | `example.com`; `10.1.2.80`; `/tmp/my.sock` |
 
 **[1] `gen_ai.operation.name`:** SHOULD be one of `chat`, `generate_content`, or `text_completion`.
 
@@ -600,7 +626,13 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 
 **[4] `server.port`:** When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries, for example proxies, if it's available.
 
-**[5] `server.address`:** When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent the server address behind any intermediaries, for example proxies, if it's available.
+**[5] `gen_ai.response.service_tier`:** The value SHOULD be the one returned by the provider. It can differ from
+`gen_ai.request.service_tier` when `auto` is requested.
+For example, `service_tier` in [OpenAI](https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create),
+`usage.service_tier` in [Anthropic](https://platform.claude.com/docs/en/api/service-tiers),
+or [`usageMetadata.trafficType`](https://docs.cloud.google.com/gemini-enterprise-agent-platform/reference/rest/v1/GenerateContentResponse#UsageMetadata.FIELDS.traffic_type) in Vertex AI.
+
+**[6] `server.address`:** When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent the server address behind any intermediaries, for example proxies, if it's available.
 
 ---
 
@@ -614,9 +646,9 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 | `azure.ai.openai` | [Azure OpenAI](https://learn.microsoft.com/en-us/azure/ai-services/openai/overview) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `cohere` | [Cohere](https://cohere.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `deepseek` | [DeepSeek](https://www.deepseek.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
-| `gcp.gemini` | [Gemini](https://cloud.google.com/products/gemini) [6] | ![Development](https://img.shields.io/badge/-development-blue) |
-| `gcp.gen_ai` | Any Google generative AI endpoint [7] | ![Development](https://img.shields.io/badge/-development-blue) |
-| `gcp.vertex_ai` | [Vertex AI](https://cloud.google.com/vertex-ai) [8] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `gcp.gemini` | [Gemini](https://cloud.google.com/products/gemini) [7] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `gcp.gen_ai` | Any Google generative AI endpoint [8] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `gcp.vertex_ai` | [Vertex AI](https://cloud.google.com/vertex-ai) [9] | ![Development](https://img.shields.io/badge/-development-blue) |
 | `groq` | [Groq](https://groq.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `ibm.watsonx.ai` | [IBM Watsonx AI](https://www.ibm.com/products/watsonx-ai) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `mistral` | [Mistral](https://mistral.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
@@ -626,11 +658,11 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 | `perplexity` | [Perplexity](https://www.perplexity.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `x_ai` | [xAI](https://x.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 
-**[6]:** Used when accessing the 'generativelanguage.googleapis.com' endpoint. Also known as the AI Studio API.
+**[7]:** Used when accessing the 'generativelanguage.googleapis.com' endpoint. Also known as the AI Studio API.
 
-**[7]:** May be used when specific backend is unknown.
+**[8]:** May be used when specific backend is unknown.
 
-**[8]:** Used when accessing the 'aiplatform.googleapis.com' endpoint.
+**[9]:** Used when accessing the 'aiplatform.googleapis.com' endpoint.
 
 <!-- prettier-ignore-end -->
 <!-- END AUTOGENERATED TEXT -->
@@ -667,7 +699,8 @@ Instrumentations SHOULD record this metric for each inference operation, includi
 | [`gen_ai.request.model`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If available. | string | The name of the GenAI model a request is being made to. [4] | `gpt-4` |
 | [`server.port`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If `server.address` is set. | int | GenAI server port. [5] | `80`; `8080`; `443` |
 | [`gen_ai.response.model`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The name of the model that generated the response. | `gpt-4-0613` |
-| [`server.address`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | GenAI server address. [6] | `example.com`; `10.1.2.80`; `/tmp/my.sock` |
+| [`gen_ai.response.service_tier`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The service tier that processed the inference operation. [6] | `default`; `priority`; `ON_DEMAND` |
+| [`server.address`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | GenAI server address. [7] | `example.com`; `10.1.2.80`; `/tmp/my.sock` |
 
 **[1] `gen_ai.operation.name`:** SHOULD be one of `chat`, `generate_content`, or `text_completion`.
 
@@ -697,7 +730,13 @@ Instrumentations SHOULD document the list of errors they report.
 
 **[5] `server.port`:** When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries, for example proxies, if it's available.
 
-**[6] `server.address`:** When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent the server address behind any intermediaries, for example proxies, if it's available.
+**[6] `gen_ai.response.service_tier`:** The value SHOULD be the one returned by the provider. It can differ from
+`gen_ai.request.service_tier` when `auto` is requested.
+For example, `service_tier` in [OpenAI](https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create),
+`usage.service_tier` in [Anthropic](https://platform.claude.com/docs/en/api/service-tiers),
+or [`usageMetadata.trafficType`](https://docs.cloud.google.com/gemini-enterprise-agent-platform/reference/rest/v1/GenerateContentResponse#UsageMetadata.FIELDS.traffic_type) in Vertex AI.
+
+**[7] `server.address`:** When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent the server address behind any intermediaries, for example proxies, if it's available.
 
 ---
 
@@ -719,9 +758,9 @@ Instrumentations SHOULD document the list of errors they report.
 | `azure.ai.openai` | [Azure OpenAI](https://learn.microsoft.com/en-us/azure/ai-services/openai/overview) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `cohere` | [Cohere](https://cohere.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `deepseek` | [DeepSeek](https://www.deepseek.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
-| `gcp.gemini` | [Gemini](https://cloud.google.com/products/gemini) [7] | ![Development](https://img.shields.io/badge/-development-blue) |
-| `gcp.gen_ai` | Any Google generative AI endpoint [8] | ![Development](https://img.shields.io/badge/-development-blue) |
-| `gcp.vertex_ai` | [Vertex AI](https://cloud.google.com/vertex-ai) [9] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `gcp.gemini` | [Gemini](https://cloud.google.com/products/gemini) [8] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `gcp.gen_ai` | Any Google generative AI endpoint [9] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `gcp.vertex_ai` | [Vertex AI](https://cloud.google.com/vertex-ai) [10] | ![Development](https://img.shields.io/badge/-development-blue) |
 | `groq` | [Groq](https://groq.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `ibm.watsonx.ai` | [IBM Watsonx AI](https://www.ibm.com/products/watsonx-ai) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `mistral` | [Mistral](https://mistral.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
@@ -731,11 +770,11 @@ Instrumentations SHOULD document the list of errors they report.
 | `perplexity` | [Perplexity](https://www.perplexity.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `x_ai` | [xAI](https://x.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 
-**[7]:** Used when accessing the 'generativelanguage.googleapis.com' endpoint. Also known as the AI Studio API.
+**[8]:** Used when accessing the 'generativelanguage.googleapis.com' endpoint. Also known as the AI Studio API.
 
-**[8]:** May be used when specific backend is unknown.
+**[9]:** May be used when specific backend is unknown.
 
-**[9]:** Used when accessing the 'aiplatform.googleapis.com' endpoint.
+**[10]:** Used when accessing the 'aiplatform.googleapis.com' endpoint.
 
 <!-- prettier-ignore-end -->
 <!-- END AUTOGENERATED TEXT -->
@@ -773,7 +812,8 @@ Instrumentations SHOULD record this metric for each inference operation, includi
 | [`gen_ai.request.model`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` If available. | string | The name of the GenAI model a request is being made to. [4] | `gpt-4` |
 | [`server.port`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If `server.address` is set. | int | GenAI server port. [5] | `80`; `8080`; `443` |
 | [`gen_ai.response.model`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The name of the model that generated the response. | `gpt-4-0613` |
-| [`server.address`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | GenAI server address. [6] | `example.com`; `10.1.2.80`; `/tmp/my.sock` |
+| [`gen_ai.response.service_tier`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The service tier that processed the inference operation. [6] | `default`; `priority`; `ON_DEMAND` |
+| [`server.address`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | GenAI server address. [7] | `example.com`; `10.1.2.80`; `/tmp/my.sock` |
 
 **[1] `gen_ai.operation.name`:** SHOULD be one of `chat`, `generate_content`, or `text_completion`.
 
@@ -803,7 +843,13 @@ Instrumentations SHOULD document the list of errors they report.
 
 **[5] `server.port`:** When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries, for example proxies, if it's available.
 
-**[6] `server.address`:** When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent the server address behind any intermediaries, for example proxies, if it's available.
+**[6] `gen_ai.response.service_tier`:** The value SHOULD be the one returned by the provider. It can differ from
+`gen_ai.request.service_tier` when `auto` is requested.
+For example, `service_tier` in [OpenAI](https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create),
+`usage.service_tier` in [Anthropic](https://platform.claude.com/docs/en/api/service-tiers),
+or [`usageMetadata.trafficType`](https://docs.cloud.google.com/gemini-enterprise-agent-platform/reference/rest/v1/GenerateContentResponse#UsageMetadata.FIELDS.traffic_type) in Vertex AI.
+
+**[7] `server.address`:** When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent the server address behind any intermediaries, for example proxies, if it's available.
 
 ---
 
@@ -825,9 +871,9 @@ Instrumentations SHOULD document the list of errors they report.
 | `azure.ai.openai` | [Azure OpenAI](https://learn.microsoft.com/en-us/azure/ai-services/openai/overview) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `cohere` | [Cohere](https://cohere.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `deepseek` | [DeepSeek](https://www.deepseek.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
-| `gcp.gemini` | [Gemini](https://cloud.google.com/products/gemini) [7] | ![Development](https://img.shields.io/badge/-development-blue) |
-| `gcp.gen_ai` | Any Google generative AI endpoint [8] | ![Development](https://img.shields.io/badge/-development-blue) |
-| `gcp.vertex_ai` | [Vertex AI](https://cloud.google.com/vertex-ai) [9] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `gcp.gemini` | [Gemini](https://cloud.google.com/products/gemini) [8] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `gcp.gen_ai` | Any Google generative AI endpoint [9] | ![Development](https://img.shields.io/badge/-development-blue) |
+| `gcp.vertex_ai` | [Vertex AI](https://cloud.google.com/vertex-ai) [10] | ![Development](https://img.shields.io/badge/-development-blue) |
 | `groq` | [Groq](https://groq.com/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `ibm.watsonx.ai` | [IBM Watsonx AI](https://www.ibm.com/products/watsonx-ai) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `mistral` | [Mistral](https://mistral.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
@@ -837,11 +883,11 @@ Instrumentations SHOULD document the list of errors they report.
 | `perplexity` | [Perplexity](https://www.perplexity.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 | `x_ai` | [xAI](https://x.ai/) | ![Development](https://img.shields.io/badge/-development-blue) |
 
-**[7]:** Used when accessing the 'generativelanguage.googleapis.com' endpoint. Also known as the AI Studio API.
+**[8]:** Used when accessing the 'generativelanguage.googleapis.com' endpoint. Also known as the AI Studio API.
 
-**[8]:** May be used when specific backend is unknown.
+**[9]:** May be used when specific backend is unknown.
 
-**[9]:** Used when accessing the 'aiplatform.googleapis.com' endpoint.
+**[10]:** Used when accessing the 'aiplatform.googleapis.com' endpoint.
 
 <!-- prettier-ignore-end -->
 <!-- END AUTOGENERATED TEXT -->

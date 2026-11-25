@@ -21,6 +21,7 @@
 | Attribute | Supporting Libraries |
 | --- | --- |
 | gen_ai.response.model | [agent-framework], [anthropic], [groq] |
+| gen_ai.response.service_tier | [groq] |
 | server.address | [agent-framework], [anthropic], [groq] |
 
 [agent-framework]: ../scenarios/agent-framework/scenario.py

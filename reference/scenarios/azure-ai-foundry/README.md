@@ -8,7 +8,7 @@ server-side, across a process boundary the client cannot observe.
 | Operation | Should be instrumented here | Status |
 | --- | --- | --- |
 | create_agent | Yes — creates the remote agent | ✅ Implemented |
-| invoke_agent (client) | Yes — runs the remote agent | ✅ Implemented |
+| invoke_agent (client) | Yes — runs the remote agent | ✅ Implemented with a [duration histogram](../../../docs/gen-ai/client-invoke-agent.md#metric-gen_aiclientinvoke_agentduration) |
 | inference (`chat`) | No — runs remotely inside the agent service | ✅ Correctly not emitted |
 | execute_tool | No — runs remotely inside the agent service | ✅ Correctly not emitted |
 

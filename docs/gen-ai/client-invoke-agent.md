@@ -97,7 +97,7 @@ Semantic conventions for individual GenAI systems and frameworks MAY specify dif
 | [`gen_ai.request.stop_sequences`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string[] | List of sequences that the model will use to stop generating further tokens. | `["forest", "lived"]` |
 | [`gen_ai.request.temperature`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | double | The temperature setting for the GenAI request. | `0.0` |
 | [`gen_ai.request.top_p`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | double | The top_p sampling setting for the GenAI request. | `1.0` |
-| [`gen_ai.response.finish_reasons`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string[] | Array of reasons the model stopped generating tokens, corresponding to each generation received. [17] | `["stop"]`; `["stop", "length"]`; `["stop", "length", "error"]` |
+| [`gen_ai.response.finish_reasons`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string[] | Array of reasons the model stopped generating tokens, corresponding to each generation received. [17] | `["stop"]`; `["stop", "length"]`; `["stop", "length", "error"]`; `["interrupted"]` |
 | [`gen_ai.usage.audio.cache_read.input_tokens`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` When reported by the provider and non-zero. | int | The number of audio input tokens served from a provider-managed cache. [18] | `60` |
 | [`gen_ai.usage.audio.input_tokens`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` When reported by the provider and non-zero. | int | The number of audio input tokens. [19] | `120` |
 | [`gen_ai.usage.audio.output_tokens`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` When reported by the provider and non-zero. | int | The number of audio output tokens. [20] | `240` |
@@ -205,10 +205,10 @@ For interrupted generations, instrumentations SHOULD report the
 provider-reported interruption reason when available and `interrupted` otherwise.
 
 Each position SHOULD contain the finish reason for the corresponding
-choice/candidate. If a finish reason was expected but not received, for
-example because generation failed, was cancelled, or a stream ended before
-the final event, instrumentations SHOULD report `error` for that position
-instead of omitting it.
+choice/candidate. If an expected finish reason is missing, instrumentations
+SHOULD report `interrupted` when the caller closes or disposes of the
+stream without an error, and `error` if generation fails or the stream
+ends unexpectedly.
 
 `error` indicates that the generation ended abnormally, whether reported
 by the provider or inferred by the instrumentation.
@@ -269,6 +269,10 @@ The same tokens can be reported on multiple types of spans. See
 **[31] `server.address`:** When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent the server address behind any intermediaries, for example proxies, if it's available.
 
 **[32] `gen_ai.input.messages`:** Messages MUST be provided in the order they were sent to the model.
+
+Instrumentations SHOULD populate fields when values are available,
+unless the field description says otherwise.
+
 Instrumentations MAY provide a way for users to filter or truncate
 input messages.
 
@@ -295,6 +299,9 @@ secured by other means, for example by storage-level access control.
 the model. Each message corresponds to exactly one generation
 (choice/candidate) and vice versa - one choice cannot be split across
 multiple messages or one message cannot contain parts from multiple choices.
+
+Instrumentations SHOULD populate fields when values are available,
+unless the field description says otherwise.
 
 Instrumentations MAY provide a way for users to filter or truncate
 output messages. `gen_ai.response.finish_reasons` remains aligned with the
@@ -332,6 +339,9 @@ chat history.
 Instructions that are part of the chat history SHOULD be recorded in
 `gen_ai.input.messages` attribute instead.
 
+Instrumentations SHOULD populate fields when values are available,
+unless the field description says otherwise.
+
 Instrumentations MAY provide a way for users to filter or truncate
 system instructions.
 
@@ -359,9 +369,11 @@ secured by other means, for example by storage-level access control.
 > [!WARNING]
 > This attribute may contain sensitive information.
 
-Since this attribute could be large, it's NOT RECOMMENDED to populate
-non-required properties by default. Instrumentations MAY provide a way
-to enable populating optional properties.
+Instrumentations SHOULD populate fields when values are available,
+unless the field description says otherwise.
+
+See [Recording content on attributes](/docs/gen-ai/gen-ai-spans.md#recording-content-on-attributes)
+section for more details.
 
 This attribute MUST be recorded as an [AnyValue](https://opentelemetry.io/docs/specs/otel/common/#anyvalue) conforming to its [JSON schema](/model/gen-ai/gen-ai-tool-definitions.json).
 
@@ -445,7 +457,8 @@ The following metric instruments describe remote agent invocations.
 
 ### Metric: `gen_ai.client.invoke_agent.duration`
 
-This metric SHOULD be specified with [ExplicitBucketBoundaries] of [0.01, 0.02, 0.04, 0.08, 0.16, 0.32, 0.64, 1.28, 2.56, 5.12, 10.24, 20.48, 40.96, 81.92].
+This metric SHOULD be specified with [ExplicitBucketBoundaries] of
+[0.1, 0.25, 0.5, 1, 2.5, 5, 10, 30, 60, 120, 300, 600, 1800, 3600, 7200, 18000, 43200, 86400].
 
 <!-- weaver .registry.metrics[] | select(.name == "gen_ai.client.invoke_agent.duration") -->
 <!-- NOTE: THIS TEXT IS AUTOGENERATED. DO NOT EDIT BY HAND. -->
@@ -605,3 +618,4 @@ classify the failure.
 <!-- endweaver -->
 
 [DocumentStatus]: https://opentelemetry.io/docs/specs/otel/document-status
+[ExplicitBucketBoundaries]: https://github.com/open-telemetry/opentelemetry-specification/blob/v1.55.0/specification/metrics/api.md#instrument-advisory-parameters

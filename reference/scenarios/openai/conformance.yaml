@@ -11,6 +11,18 @@ env:
 scenarios:
   reference:
     run: uv run --frozen --python 3.12 --project . python scenario.py
+    metrics:
+      - gen_ai.client.embeddings.duration
+      - gen_ai.client.embeddings.operation.input_tokens
+      - gen_ai.client.inference.operation.input_tokens
+      - gen_ai.client.inference.operation.output_tokens
+      - gen_ai.client.inference.time_per_output_chunk
+      - gen_ai.client.inference.time_to_first_chunk
+      - gen_ai.client.inference.usage.cache_read.input_tokens
+      - gen_ai.client.inference.usage.cache_write.input_tokens
+      - gen_ai.client.inference.usage.input_tokens
+      - gen_ai.client.inference.usage.output_tokens
+      - gen_ai.client.inference.usage.reasoning.output_tokens
     events:
       - gen_ai.client.embeddings.exception
       - gen_ai.client.fetch_response.exception
@@ -74,3 +86,22 @@ scenarios:
           attributes:
             gen_ai.operation.name: embeddings
           type: gen_ai.client.embeddings
+  caller_close:
+    run: uv run --frozen --python 3.12 --project . python -c 'import scenario; scenario.main(caller_close=True)'
+    expected_violations:
+      - id: genai_expected_attribute_missing
+        context:
+          missing_attribute: gen_ai.usage.input_tokens
+          operation: chat
+        reason: Caller closes the stream before the provider reports usage.
+      - id: genai_expected_attribute_missing
+        context:
+          missing_attribute: gen_ai.usage.output_tokens
+          operation: chat
+        reason: Caller closes the stream before the provider reports usage.
+    spans:
+      - match:
+          attributes:
+            gen_ai.operation.name: chat
+            gen_ai.response.finish_reasons: [interrupted]
+          type: gen_ai.client.inference

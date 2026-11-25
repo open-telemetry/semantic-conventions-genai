@@ -87,6 +87,18 @@ Regenerate the checked-in status section in `README.md` after updating committed
 uv run update-reports
 ```
 
+## Scenario scope
+
+Reference scenarios demonstrate that generic instrumentation can capture the
+conventions from real library APIs. They are not intended for production use
+and do not need defensive hardening for every possible SDK response or failure
+mode.
+
+Cover the behavior a scenario sets out to demonstrate, including error handling
+when it is part of that behavior. Fix incorrect telemetry or failures in those
+cases, but do not add guards, fallbacks, or tests for cases outside that scope.
+Unexpected failures should fail the scenario rather than hide missing telemetry.
+
 ## Contribution expectations
 
 - Keep reference coverage honest. Only emit signals and attributes that the

@@ -11,10 +11,12 @@ execution.
 | inference (`chat`) | No — delegates to the LLM client (`openai`) | ✅ Correctly not emitted |
 | invoke_workflow | Yes — chain/graph execution | ✅ Implemented |
 | invoke_agent (internal) | Yes — `create_agent` agent run | ✅ Implemented |
-| retrieval | Yes — retriever runs the retrieval | ✅ Implemented |
+| retrieval | Yes — retriever runs the retrieval | ✅ Implemented with a [duration histogram](../../../docs/gen-ai/retrieval.md#metric-gen_airetrievalduration) |
 | plan | Yes — Plan-and-Execute planning phase | ✅ Implemented |
 | execute_tool | Yes — `BaseTool.invoke()` runs the tool | ✅ Implemented |
 | execute_tool (command) | Yes — `ShellToolMiddleware`'s `shell` tool runs a general command | ✅ Implemented |
+
+The `invoke_agent` example assumes content capture is enabled.
 
 `gen_ai.retrieval.top_k` is read from `VectorStoreRetriever.search_kwargs["k"]`.
 Other retrievers have no common limit setting, and LangChain tracing metadata
