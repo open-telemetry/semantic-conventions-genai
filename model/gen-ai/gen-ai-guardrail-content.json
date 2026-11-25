@@ -1,4 +1,12 @@
 {
     "description": "Represents content evaluated or produced by a guardrail.",
-    "title": "GuardrailContent"
+    "title": "GuardrailContent",
+    "type": [
+        "string",
+        "object",
+        "array",
+        "boolean",
+        "number",
+        "null"
+    ]
 }

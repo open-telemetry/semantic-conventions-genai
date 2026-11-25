@@ -655,7 +655,11 @@ class GuardrailContent(RootModel[Any]):
     Represents content evaluated or produced by a guardrail.
     """
 
-    pass
+    model_config = ConfigDict(
+        json_schema_extra={
+            "type": ["string", "object", "array", "boolean", "number", "null"]
+        }
+    )
 
 
 # --------------------------------------------------------------------------
