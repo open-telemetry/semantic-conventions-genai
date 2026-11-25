@@ -49,6 +49,7 @@ import websockets
 
 _event_counter = itertools.count(1)
 _connection_counter = itertools.count(1)
+_response_counter = itertools.count(1)
 _OUTPUT_AUDIO_CHUNKS = (b"mock-assistant", b"-audio")
 
 
@@ -72,7 +73,7 @@ def _usage():
 
 
 async def _run_response(ws, behavior, tools, barge_in_received=None):
-    response_id = "resp_mock_realtime_001"
+    response_id = f"resp_mock_realtime_{next(_response_counter):03d}"
     item_id = "item_mock_assistant_001"
 
     if behavior == "function_call":

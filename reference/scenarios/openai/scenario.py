@@ -1,8 +1,11 @@
 """Reference implementation for OpenAI."""
 
+import itertools
 import json
 import os
 import time
+from pathlib import Path
+from tempfile import mkdtemp
 from time import perf_counter
 
 from opentelemetry._logs import SeverityNumber
@@ -18,6 +21,15 @@ from reference_shared import (
 )
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"] + "/v1"
+_UPLOAD_DIR = Path(mkdtemp())
+_upload_counter = itertools.count(1)
+
+
+def _upload_json(name: str, payload: object) -> str:
+    path = _UPLOAD_DIR / f"{next(_upload_counter):03d}_{name}"
+    path.write_text(json.dumps(payload), encoding="utf-8")
+    return path.as_uri()
+
 
 _reference_tracer = reference_tracer()
 _reference_meter = reference_meter()
@@ -1559,7 +1571,9 @@ def run_responses_with_prompt_template_reference(client):
     with _reference_tracer.start_as_current_span(
         "chat gpt-4o-mini", kind=SpanKind.CLIENT, attributes=span_attributes
     ) as span:
+        prompt_variables_ref = _upload_json("prompt.variables.json", prompt_variables)
         span.set_attribute("gen_ai.prompt.variables", prompt_variables)
+        span.set_attribute("gen_ai.prompt.variables_ref", prompt_variables_ref)
         resp = client.responses.create(
             model=request_model,
             input="Help me with my order.",
@@ -1610,6 +1624,7 @@ def run_responses_with_prompt_template_reference(client):
             "gen_ai.prompt.name": prompt_id,
             "gen_ai.prompt.version": prompt_version,
             "gen_ai.prompt.variables": prompt_variables,
+            "gen_ai.prompt.variables_ref": prompt_variables_ref,
             "gen_ai.response.id": resp.id,
             "gen_ai.response.model": resp.model,
         }
@@ -1718,13 +1733,19 @@ def _emit_fetch_response_span(client, response_id, starting_after=None, stream=F
             # The fetched response does not carry the original input messages.
             instructions = getattr(fetched, "instructions", None)
             if instructions:
+                system_instructions = [{"type": "text", "content": instructions}]
+                span.set_attribute("gen_ai.system_instructions", system_instructions)
                 span.set_attribute(
-                    "gen_ai.system_instructions",
-                    [{"type": "text", "content": instructions}],
+                    "gen_ai.system_instructions_ref",
+                    _upload_json(f"{fetched.id}_system_instructions.json", system_instructions),
                 )
             output_messages = responses_output_messages(fetched)
             if output_messages:
                 span.set_attribute("gen_ai.output.messages", output_messages)
+                span.set_attribute(
+                    "gen_ai.output.messages_ref",
+                    _upload_json(f"{fetched.id}_output.messages.json", output_messages),
+                )
             tools = getattr(fetched, "tools", None)
             if tools is not None:
                 tool_definitions = []
@@ -1738,7 +1759,12 @@ def _emit_fetch_response_span(client, response_id, starting_after=None, stream=F
                                 "name": getattr(tool, "name", None) or getattr(tool, "server_label", None) or tool.type,
                             }
                         )
-                span.set_attribute("gen_ai.tool.definitions", json.dumps(tool_definitions))
+                span.set_attribute("gen_ai.tool.definitions", tool_definitions)
+                if tool_definitions:
+                    span.set_attribute(
+                        "gen_ai.tool.definitions_ref",
+                        _upload_json(f"{fetched.id}_tool.definitions.json", tool_definitions),
+                    )
             # Token usage is intentionally NOT recorded on this span: no inference
             # happens on a fetch, and the fetched response's token counts belong to
             # the original generation (already accounted for on that operation).
