@@ -166,8 +166,12 @@ metrics:
     unit: "s"
     brief: >
       Time per output chunk, recorded for each chunk received after the first one, measured as the time elapsed from the end of the previous chunk to the end of the current chunk.
-    note: >
+    note: |
       This metric SHOULD be reported for streaming calls and SHOULD NOT be reported otherwise.
+
+      The chunk definition is the same as for [`gen_ai.response.time_to_first_chunk`](/docs/registry/attributes/gen-ai.md#gen-ai-response-time-to-first-chunk).
+
+      Chunk timestamps SHOULD be taken when each chunk is fully received by the client, before application processing.
     stability: development
     annotations:
       code_generation:
