@@ -30,6 +30,7 @@
       "gen_ai.request.previous_response.id",
       "gen_ai.request.reasoning.level",
       "gen_ai.request.seed",
+      "gen_ai.request.service_tier",
       "gen_ai.request.stop_sequences",
       "gen_ai.request.stream",
       "gen_ai.request.temperature",
@@ -37,6 +38,7 @@
       "gen_ai.response.finish_reasons",
       "gen_ai.response.id",
       "gen_ai.response.model",
+      "gen_ai.response.service_tier",
       "gen_ai.response.time_to_first_chunk",
       "gen_ai.tool.definitions",
       "gen_ai.usage.audio.input_tokens",
@@ -46,6 +48,7 @@
       "gen_ai.usage.input_tokens",
       "gen_ai.usage.output_tokens",
       "gen_ai.usage.reasoning.output_tokens",
+      "openai.api.type",
       "server.address",
       "server.port"
     ],
@@ -59,9 +62,11 @@
       "gen_ai.response.finish_reasons",
       "gen_ai.response.id",
       "gen_ai.response.model",
+      "gen_ai.response.service_tier",
       "gen_ai.response.status",
       "gen_ai.system_instructions",
       "gen_ai.tool.definitions",
+      "openai.api.type",
       "server.address",
       "server.port"
     ]
@@ -93,9 +98,11 @@
       "gen_ai.provider.name",
       "gen_ai.request.model",
       "gen_ai.request.previous_response.id",
+      "gen_ai.request.service_tier",
       "gen_ai.response.finish_reasons",
       "gen_ai.response.id",
       "gen_ai.response.model",
+      "gen_ai.response.service_tier",
       "gen_ai.usage.audio.input_tokens",
       "gen_ai.usage.audio.output_tokens",
       "gen_ai.usage.cache_read.input_tokens",
@@ -132,6 +139,7 @@
       "gen_ai.provider.name",
       "gen_ai.request.model",
       "gen_ai.response.model",
+      "gen_ai.response.service_tier",
       "server.address",
       "server.port"
     ],
@@ -141,6 +149,16 @@
       "gen_ai.provider.name",
       "gen_ai.request.model",
       "gen_ai.response.model",
+      "gen_ai.response.service_tier",
+      "server.address",
+      "server.port"
+    ],
+    "gen_ai.client.inference.time_per_output_chunk": [
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "gen_ai.request.model",
+      "gen_ai.response.model",
+      "gen_ai.response.service_tier",
       "server.address",
       "server.port"
     ],
@@ -149,6 +167,7 @@
       "gen_ai.provider.name",
       "gen_ai.request.model",
       "gen_ai.response.model",
+      "gen_ai.response.service_tier",
       "server.address",
       "server.port"
     ],
@@ -157,6 +176,7 @@
       "gen_ai.provider.name",
       "gen_ai.request.model",
       "gen_ai.response.model",
+      "gen_ai.response.service_tier",
       "gen_ai.token.modality",
       "server.address",
       "server.port"
@@ -166,6 +186,7 @@
       "gen_ai.provider.name",
       "gen_ai.request.model",
       "gen_ai.response.model",
+      "gen_ai.response.service_tier",
       "gen_ai.token.modality",
       "server.address",
       "server.port"
@@ -175,6 +196,7 @@
       "gen_ai.provider.name",
       "gen_ai.request.model",
       "gen_ai.response.model",
+      "gen_ai.response.service_tier",
       "gen_ai.token.modality",
       "server.address",
       "server.port"
@@ -184,6 +206,7 @@
       "gen_ai.provider.name",
       "gen_ai.request.model",
       "gen_ai.response.model",
+      "gen_ai.response.service_tier",
       "gen_ai.token.modality",
       "server.address",
       "server.port"
@@ -193,6 +216,7 @@
       "gen_ai.provider.name",
       "gen_ai.request.model",
       "gen_ai.response.model",
+      "gen_ai.response.service_tier",
       "server.address",
       "server.port"
     ]

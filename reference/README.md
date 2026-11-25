@@ -68,17 +68,21 @@ Run `uv run update-reports` to regenerate.
 
 | Metric | Libraries |
 | --- | --- |
-| [Client Inference Usage Input Tokens](reports/gen-ai-client-inference-usage-input-tokens-metric.md) | anthropic, google-genai, openai |
-| [Client Inference Usage Output Tokens](reports/gen-ai-client-inference-usage-output-tokens-metric.md) | anthropic, google-genai, openai |
-| [Client Inference Cache Read Input Tokens](reports/gen-ai-client-inference-usage-cache-read-input-tokens-metric.md) | anthropic, google-genai, openai |
+| [Client Inference Usage Input Tokens](reports/gen-ai-client-inference-usage-input-tokens-metric.md) | anthropic, google-genai, groq, openai |
+| [Client Inference Usage Output Tokens](reports/gen-ai-client-inference-usage-output-tokens-metric.md) | anthropic, google-genai, groq, openai |
+| [Client Inference Cache Read Input Tokens](reports/gen-ai-client-inference-usage-cache-read-input-tokens-metric.md) | anthropic, google-genai, groq, openai |
 | [Client Inference Cache Write Input Tokens](reports/gen-ai-client-inference-usage-cache-write-input-tokens-metric.md) | anthropic, openai |
-| [Client Inference Reasoning Output Tokens](reports/gen-ai-client-inference-usage-reasoning-output-tokens-metric.md) | google-genai, openai |
-| [Client Inference Operation Input Tokens](reports/gen-ai-client-inference-operation-input-tokens-metric.md) | anthropic, azure-openai, google-genai, oci-generative-ai, openai |
-| [Client Inference Operation Output Tokens](reports/gen-ai-client-inference-operation-output-tokens-metric.md) | anthropic, azure-openai, google-genai, oci-generative-ai, openai |
-| [Client Operation Duration](reports/gen-ai-client-operation-duration-metric.md) | adk_a2a |
+| [Client Inference Reasoning Output Tokens](reports/gen-ai-client-inference-usage-reasoning-output-tokens-metric.md) | google-genai, groq, openai |
+| [Client Inference Operation Input Tokens](reports/gen-ai-client-inference-operation-input-tokens-metric.md) | anthropic, azure-openai, google-genai, groq, oci-generative-ai, openai |
+| [Client Inference Operation Output Tokens](reports/gen-ai-client-inference-operation-output-tokens-metric.md) | anthropic, azure-openai, google-genai, groq, oci-generative-ai, openai |
+| [Client Operation Duration](reports/gen-ai-client-operation-duration-metric.md) | (none) |
 | [Client Inference Duration](reports/gen-ai-client-inference-duration-metric.md) | agent-framework, anthropic, groq |
+| [Client Inference Time Per Output Chunk](reports/gen-ai-client-inference-time-per-output-chunk-metric.md) | openai |
 | [Client Embeddings Duration](reports/gen-ai-client-embeddings-duration-metric.md) | aws-bedrock, azure-ai-inference, azure-openai, cohere, google-genai, litellm, mistralai, openai |
 | [Client Embeddings Operation Input Tokens](reports/gen-ai-client-embeddings-operation-input-tokens-metric.md) | aws-bedrock, azure-ai-inference, azure-openai, cohere, litellm, mistralai, openai |
+| [Server Request Duration](reports/gen-ai-server-request-duration-metric.md) | transformers |
+| [Server Time To First Token](reports/gen-ai-server-time-to-first-token-metric.md) | transformers |
+| [Server Time Per Output Token](reports/gen-ai-server-time-per-output-token-metric.md) | transformers |
 | [Execute Tool Duration](reports/gen-ai-execute-tool-duration-metric.md) | google-adk |
 | [Retrieval Duration](reports/gen-ai-retrieval-duration-metric.md) | haystack, langchain, llamaindex |
 | [Client Invoke Agent Duration](reports/gen-ai-client-invoke-agent-duration-metric.md) | aws-bedrock-agent, azure-ai-foundry, google-genai, openai-assistants |
@@ -86,4 +90,6 @@ Run `uv run update-reports` to regenerate.
 | [Invoke Agent Tool Calls](reports/gen-ai-invoke-agent-tool-calls-metric.md) | adk_a2a, google-adk |
 | [MCP Client Operation Duration](reports/mcp-client-operation-duration-metric.md) | mcp |
 | [MCP Server Operation Duration](reports/mcp-server-operation-duration-metric.md) | mcp |
+| [MCP Client Session Duration](reports/mcp-client-session-duration-metric.md) | mcp |
+| [MCP Server Session Duration](reports/mcp-server-session-duration-metric.md) | mcp |
 <!-- status:end -->

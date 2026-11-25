@@ -8,7 +8,7 @@ assistant run; the `file_search` tool also runs server-side.
 | Operation | Should be instrumented here | Status |
 | --- | --- | --- |
 | create_agent | Yes — creates the assistant | ✅ Implemented |
-| invoke_agent (client) | Yes — runs the assistant (threads / runs) | ✅ Implemented, including streaming |
+| invoke_agent (client) | Yes — runs the assistant (threads / runs) | ✅ Implemented, including streaming and a [duration histogram](../../../docs/gen-ai/client-invoke-agent.md#metric-gen_aiclientinvoke_agentduration) |
 | execute_tool | Yes — client-side function-tool execution | ✅ Implemented |
 | inference (`chat`) | No — runs server-side inside the assistant run | ✅ Correctly not emitted |
 | retrieval | No — `file_search` runs server-side | ✅ Correctly not emitted |

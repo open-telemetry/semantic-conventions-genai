@@ -7,6 +7,7 @@ import socket
 import time
 from collections.abc import AsyncIterator
 from typing import Any
+from unittest.mock import patch
 
 import anyio
 import mcp.shared._otel as _mcp_otel
@@ -14,7 +15,9 @@ import uvicorn
 from mcp.client.session import ClientSession
 from mcp.client.streamable_http import StreamableHTTPTransport, create_mcp_http_client
 from mcp.server import MCPServer
+from mcp.server.connection import Connection
 from mcp.server.context import CallNext, HandlerResult, ServerMiddleware, ServerRequestContext
+from mcp.server.runner import serve_connection
 from mcp.shared._context_streams import create_context_streams
 from mcp.shared._otel import extract_trace_context
 from mcp.shared.exceptions import MCPError
@@ -41,7 +44,7 @@ _mcp_otel._tracer = trace.NoOpTracer()
 _reference_tracer = reference_tracer()
 _reference_meter = reference_meter()
 
-_MCP_DURATION_BUCKETS = [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30, 60, 120, 300]
+_MCP_DURATION_BUCKETS = [0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10, 30, 60, 120, 300]
 
 _client_operation_duration = _reference_meter.create_histogram(
     "mcp.client.operation.duration",
@@ -61,6 +64,33 @@ _server_operation_duration = _reference_meter.create_histogram(
     ),
     explicit_bucket_boundaries_advisory=_MCP_DURATION_BUCKETS,
 )
+_client_session_duration = _reference_meter.create_histogram(
+    "mcp.client.session.duration",
+    unit="s",
+    description="The duration of the MCP session as observed on the MCP client.",
+    explicit_bucket_boundaries_advisory=_MCP_DURATION_BUCKETS,
+)
+_server_session_duration = _reference_meter.create_histogram(
+    "mcp.server.session.duration",
+    unit="s",
+    description="The duration of the MCP session as observed on the MCP server.",
+    explicit_bucket_boundaries_advisory=_MCP_DURATION_BUCKETS,
+)
+
+
+async def _serve_reference_connection(server, dispatcher, *, connection: Connection, **kwargs: Any) -> None:
+    """Measure a stateful Streamable HTTP session around the SDK connection loop."""
+    started_at = time.perf_counter()
+    attributes = {"network.protocol.name": "http"}
+    try:
+        await serve_connection(server, dispatcher, connection=connection, **kwargs)
+    except Exception as error:
+        attributes["error.type"] = type(error).__qualname__
+        raise
+    finally:
+        if connection.session_id is not None and connection.initialized.is_set():
+            attributes["mcp.protocol.version"] = connection.protocol_version
+            _server_session_duration.record(time.perf_counter() - started_at, attributes)
 
 
 class ReferenceMCPServerMiddleware(ServerMiddleware[Any]):
@@ -129,8 +159,8 @@ class ReferenceMCPServerMiddleware(ServerMiddleware[Any]):
                     result = await call_next(ctx)
                 except MCPError as error:
                     code = str(error.error.code)
-                    span.set_attribute("rpc.response.status_code", code)
-                    metric_attrs["rpc.response.status_code"] = code
+                    span.set_attribute("rpc.status_code", code)
+                    metric_attrs["rpc.status_code"] = code
                     # Per mcp.server.status.attributes, caller errors (-32700, -32600,
                     # -32601, -32602, -32002) are not server errors, while other codes are.
                     if error.error.code not in (-32700, -32600, -32601, -32602, -32002):
@@ -140,8 +170,8 @@ class ReferenceMCPServerMiddleware(ServerMiddleware[Any]):
                     raise
                 except ValidationError:
                     code = str(INVALID_PARAMS)
-                    span.set_attribute("rpc.response.status_code", code)
-                    metric_attrs["rpc.response.status_code"] = code
+                    span.set_attribute("rpc.status_code", code)
+                    metric_attrs["rpc.status_code"] = code
                     raise
                 except Exception as error:
                     error_type = type(error).__qualname__
@@ -322,9 +352,9 @@ class ReferenceMCPClientSession(ClientSession):
                 except MCPError as error:
                     code = str(error.error.code)
                     span.set_attribute("error.type", code)
-                    span.set_attribute("rpc.response.status_code", code)
+                    span.set_attribute("rpc.status_code", code)
                     metric_attrs["error.type"] = code
-                    metric_attrs["rpc.response.status_code"] = code
+                    metric_attrs["rpc.status_code"] = code
                     span.set_status(StatusCode.ERROR, error.error.message)
                     raise
                 except Exception as error:
@@ -378,19 +408,34 @@ async def _connect_session(
                 start_get_stream,
                 tg,
             )
+            session_attributes: dict[str, Any] = {"network.protocol.name": "http"}
+            if host:
+                session_attributes["server.address"] = host
+            if port is not None:
+                session_attributes["server.port"] = port
+            session_started_at = time.perf_counter()
             try:
-                async with ReferenceMCPClientSession(
-                    read_stream,
-                    write_stream,
-                    transport=transport,
-                    host=host,
-                    port=port,
-                ) as session:
-                    await session.initialize()
-                    yield session
+                try:
+                    async with ReferenceMCPClientSession(
+                        read_stream,
+                        write_stream,
+                        transport=transport,
+                        host=host,
+                        port=port,
+                    ) as session:
+                        initialization = await session.initialize()
+                        if transport.session_id:
+                            session_attributes["mcp.protocol.version"] = initialization.protocol_version
+                        yield session
+                finally:
+                    if transport.session_id:
+                        await transport.terminate_session(http_client)
+            except Exception as error:
+                session_attributes["error.type"] = type(error).__qualname__
+                raise
             finally:
-                if transport.session_id:
-                    await transport.terminate_session(http_client)
+                if "mcp.protocol.version" in session_attributes:
+                    _client_session_duration.record(time.perf_counter() - session_started_at, session_attributes)
                 tg.cancel_scope.cancel()
 
 
@@ -455,7 +500,8 @@ def main() -> None:
     tp, lp, mp = setup_otel()
     span_exporter = InMemorySpanExporter()
     tp.add_span_processor(SimpleSpanProcessor(span_exporter))
-    asyncio.run(run_scenarios())
+    with patch("mcp.server.runner.serve_connection", _serve_reference_connection):
+        asyncio.run(run_scenarios())
 
     finished_spans = span_exporter.get_finished_spans()
     client_spans = [s for s in finished_spans if s.kind == SpanKind.CLIENT and s.attributes]
