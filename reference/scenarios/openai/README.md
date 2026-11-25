@@ -7,7 +7,7 @@ Assistants API is covered by the `openai-assistants` scenario).
 
 | Operation | Should be instrumented here | Status |
 | --- | --- | --- |
-| inference (`chat`) | Yes — calls the model directly | ✅ Implemented, including streaming chunk timing |
+| inference (`chat`) | Yes — calls the model directly | ✅ Implemented, including streaming chunk timing and structured-output failures |
 | embeddings | Yes — calls the model directly | ✅ Implemented |
 | fetch_response | Yes — Responses API `client.responses.retrieve` | ✅ Implemented, including function and built-in tool definitions |
 | execute_tool | No — the base client returns tool calls but doesn't execute them; the tool runs in app code | ➖ Not instrumentable |
@@ -31,6 +31,8 @@ Inference exercises the SDK's `RateLimitError` from
 `client.chat.completions.create` using a mock HTTP 429 response, and an `APIError`
 from a streamed response. Both errors emit a correlated
 `gen_ai.client.inference.exception` WARN log and propagate to the caller.
+When the stream reports usage before it fails, the usage counters carry the
+same `error.type` as the span.
 Closing a stream without an error does not emit this log.
 
 Fetch spans record the built-in `web_search` tool with type `openai.web_search`

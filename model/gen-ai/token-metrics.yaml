@@ -32,6 +32,7 @@ metrics:
         examples: ["chat", "generate_content"]
       - ref: gen_ai.token.modality
         requirement_level: required
+      - ref_group: attributes.gen_ai.error
   - name: gen_ai.client.inference.usage.output_tokens
     requirement_level: recommended
     instrument: counter
@@ -49,6 +50,7 @@ metrics:
         examples: ["chat", "generate_content"]
       - ref: gen_ai.token.modality
         requirement_level: required
+      - ref_group: attributes.gen_ai.error
   - name: gen_ai.client.inference.usage.cache_read.input_tokens
     requirement_level: recommended
     instrument: counter
@@ -75,6 +77,7 @@ metrics:
         examples: ["chat", "generate_content"]
       - ref: gen_ai.token.modality
         requirement_level: required
+      - ref_group: attributes.gen_ai.error
   - name: gen_ai.client.inference.usage.cache_write.input_tokens
     requirement_level: recommended
     instrument: counter
@@ -101,6 +104,7 @@ metrics:
         examples: ["chat", "generate_content"]
       - ref: gen_ai.token.modality
         requirement_level: required
+      - ref_group: attributes.gen_ai.error
   - name: gen_ai.client.inference.usage.reasoning.output_tokens
     requirement_level: recommended
     instrument: counter
@@ -122,6 +126,7 @@ metrics:
       - ref_group: metric_attributes.gen_ai.inference
       - ref: gen_ai.operation.name
         examples: ["chat", "generate_content"]
+      - ref_group: attributes.gen_ai.error
 
   - name: gen_ai.client.inference.operation.input_tokens
     requirement_level: recommended

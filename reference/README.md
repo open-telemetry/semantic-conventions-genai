@@ -68,13 +68,13 @@ Run `uv run update-reports` to regenerate.
 
 | Metric | Libraries |
 | --- | --- |
-| [Client Inference Usage Input Tokens](reports/gen-ai-client-inference-usage-input-tokens-metric.md) | anthropic, google-genai, openai |
-| [Client Inference Usage Output Tokens](reports/gen-ai-client-inference-usage-output-tokens-metric.md) | anthropic, google-genai, openai |
-| [Client Inference Cache Read Input Tokens](reports/gen-ai-client-inference-usage-cache-read-input-tokens-metric.md) | anthropic, google-genai, openai |
+| [Client Inference Usage Input Tokens](reports/gen-ai-client-inference-usage-input-tokens-metric.md) | anthropic, google-genai, groq, openai |
+| [Client Inference Usage Output Tokens](reports/gen-ai-client-inference-usage-output-tokens-metric.md) | anthropic, google-genai, groq, openai |
+| [Client Inference Cache Read Input Tokens](reports/gen-ai-client-inference-usage-cache-read-input-tokens-metric.md) | anthropic, google-genai, groq, openai |
 | [Client Inference Cache Write Input Tokens](reports/gen-ai-client-inference-usage-cache-write-input-tokens-metric.md) | anthropic, openai |
-| [Client Inference Reasoning Output Tokens](reports/gen-ai-client-inference-usage-reasoning-output-tokens-metric.md) | google-genai, openai |
-| [Client Inference Operation Input Tokens](reports/gen-ai-client-inference-operation-input-tokens-metric.md) | anthropic, azure-openai, google-genai, openai |
-| [Client Inference Operation Output Tokens](reports/gen-ai-client-inference-operation-output-tokens-metric.md) | anthropic, azure-openai, google-genai, openai |
+| [Client Inference Reasoning Output Tokens](reports/gen-ai-client-inference-usage-reasoning-output-tokens-metric.md) | google-genai, groq, openai |
+| [Client Inference Operation Input Tokens](reports/gen-ai-client-inference-operation-input-tokens-metric.md) | anthropic, azure-openai, google-genai, groq, openai |
+| [Client Inference Operation Output Tokens](reports/gen-ai-client-inference-operation-output-tokens-metric.md) | anthropic, azure-openai, google-genai, groq, openai |
 | [Client Operation Duration](reports/gen-ai-client-operation-duration-metric.md) | (none) |
 | [Client Inference Duration](reports/gen-ai-client-inference-duration-metric.md) | agent-framework, anthropic, groq |
 | [Client Inference Time Per Output Chunk](reports/gen-ai-client-inference-time-per-output-chunk-metric.md) | openai |
