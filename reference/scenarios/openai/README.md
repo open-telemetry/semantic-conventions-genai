@@ -7,7 +7,7 @@ Assistants API is covered by the `openai-assistants` scenario).
 
 | Operation | Should be instrumented here | Status |
 | --- | --- | --- |
-| inference (`chat`) | Yes — calls the model directly | ✅ Implemented, including streaming TTFC, output-chunk intervals, and structured-output failures |
+| inference (`chat`) | Yes — calls the model directly | ✅ Implemented, including streaming TTFC, output-chunk intervals, service-tier timing labels, and structured-output failures |
 | embeddings | Yes — calls the model directly | ✅ Implemented |
 | fetch_response | Yes — Responses API `client.responses.retrieve` | ✅ Implemented, including function and built-in tool definitions |
 | execute_tool | No — the base client returns tool calls but doesn't execute them; the tool runs in app code | ➖ Not instrumentable |
@@ -16,7 +16,7 @@ Assistants API is covered by the `openai-assistants` scenario).
 
 The Chat Completions scenario checks that both streaming timing measurements count text and non-text output, including audio without a transcript. It also checks that metadata-only events don't reset the interval and that streams with fewer than two output chunks record no interval.
 
-The scenario also checks authentication and retry backoff. These checks run through `run-scenario openai --strict` against the real SDK with mock HTTP responses and a controlled clock.
+The scenario also checks metadata filtering, authentication, retry backoff, and streams with no output using the real SDK, mock HTTP responses, and a controlled clock. Service tiers reported before or in the first output chunk label every timing measurement; tiers reported later label none but remain available on the span. These assertions run through `run-scenario openai --strict`.
 
 The scenario assumes content capture is enabled. Tool definitions include
 descriptions and parameter schemas from the SDK's `tools` argument.

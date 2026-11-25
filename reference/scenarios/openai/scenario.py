@@ -744,6 +744,7 @@ def run_chat_streaming_reference(client, *, close_early=False):
         input_tokens = None
         output_tokens = None
         service_tier = None
+        chunk_attributes = None
         previous_output_received_at = None
         try:
             with stream:
@@ -767,10 +768,10 @@ def run_chat_streaming_reference(client, *, close_early=False):
                         for choice in chunk.choices
                     )
                     if has_output:
-                        chunk_attributes = usage_metric_attributes(request_model, model, host, port)
-                        if service_tier is not None:
-                            chunk_attributes["gen_ai.response.service_tier"] = service_tier
-                        if previous_output_received_at is None:
+                        if chunk_attributes is None:
+                            chunk_attributes = usage_metric_attributes(request_model, model, host, port)
+                            if service_tier is not None:
+                                chunk_attributes["gen_ai.response.service_tier"] = service_tier
                             ttfc = received_at - request_started_at
                             span.set_attribute("gen_ai.response.time_to_first_chunk", ttfc)
                             _time_to_first_chunk.record(ttfc, chunk_attributes)
@@ -850,8 +851,8 @@ def run_chat_streaming_timing_checks():
     from opentelemetry.sdk.trace.export import SimpleSpanProcessor
     from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 
-    def chunk(delta=None, finish_reason=None):
-        return {
+    def chunk(delta=None, finish_reason=None, service_tier=None):
+        event = {
             "id": "chatcmpl-ttfc",
             "object": "chat.completion.chunk",
             "created": 0,
@@ -859,6 +860,9 @@ def run_chat_streaming_timing_checks():
             "choices": [] if delta is None else [{"index": 0, "delta": delta, "finish_reason": finish_reason}],
             "usage": {"prompt_tokens": 1, "completion_tokens": 0, "total_tokens": 1} if delta is None else None,
         }
+        if service_tier is not None:
+            event["service_tier"] = service_tier
+        return event
 
     def check_stream(
         stream_deltas,
@@ -866,6 +870,7 @@ def run_chat_streaming_timing_checks():
         expected_intervals=(),
         *,
         retry=False,
+        service_tier_at=None,
         close_early=False,
         finish_reason=None,
         end_reason="stop",
@@ -894,24 +899,33 @@ def run_chat_streaming_timing_checks():
 
         def events():
             # None produces a usage-only event; the other deltas contain only metadata.
-            for delta in (
-                {"role": "assistant", "content": ""},
-                {"tool_calls": [{"index": 0, "id": "call-1", "type": "function"}]},
-                {"audio": {"id": "audio-1"}},
-                {"audio": {"expires_at": 1}},
-                None,
+            for index, delta in enumerate(
+                (
+                    {"role": "assistant", "content": ""},
+                    {"tool_calls": [{"index": 0, "id": "call-1", "type": "function"}]},
+                    {"audio": {"id": "audio-1"}},
+                    {"audio": {"expires_at": 1}},
+                    None,
+                )
             ):
                 if delta is None and not include_initial_usage:
                     continue
                 advance(0.01)
-                event = chunk(delta)
+                tier = "priority" if service_tier_at == "start" and index == 0 else None
+                event = chunk(delta, service_tier=tier)
                 if delta is None:
                     event["usage"]["completion_tokens"] = initial_output_tokens
                     event["usage"]["total_tokens"] = 1 + initial_output_tokens
                 yield f"data: {json.dumps(event)}\n\n".encode()
-            for delta in stream_deltas:
+            for index, delta in enumerate(stream_deltas):
                 advance(0.3)
-                yield f"data: {json.dumps(chunk(delta, finish_reason))}\n\n".encode()
+                tier = (
+                    "priority"
+                    if (service_tier_at == "first_chunk" and index == 0) or (service_tier_at == "late" and index == 1)
+                    else None
+                )
+                event = chunk(delta, finish_reason, service_tier=tier)
+                yield f"data: {json.dumps(event)}\n\n".encode()
                 advance(0.1)
                 yield f"data: {json.dumps(chunk({}))}\n\n".encode()
             if stream_error:
@@ -1057,6 +1071,10 @@ def run_chat_streaming_timing_checks():
                 assert ttfc_points[0].count == 1
                 assert ttfc_points[0].sum == ttfc
                 assert ttfc_points[0].attributes["gen_ai.response.model"] == "gpt-4o-mini"
+                expected_tier = "priority" if service_tier_at in ("start", "first_chunk") else None
+                assert ttfc_points[0].attributes.get("gen_ai.response.service_tier") == expected_tier
+                if service_tier_at is not None:
+                    assert spans[0].attributes["gen_ai.response.service_tier"] == "priority"
             output_chunk_points = points.pop(chunk_interval_metric, [])
             if expected_intervals:
                 assert len(output_chunk_points) == 1
@@ -1066,6 +1084,7 @@ def run_chat_streaming_timing_checks():
                 assert isclose(point.min, min(expected_intervals), abs_tol=1e-9)
                 assert isclose(point.max, max(expected_intervals), abs_tol=1e-9)
                 assert point.attributes == ttfc_points[0].attributes
+                assert point.attributes.get("gen_ai.response.service_tier") == expected_tier
             else:
                 assert output_chunk_points == []
             assert points == {}
@@ -1100,6 +1119,11 @@ def run_chat_streaming_timing_checks():
     # Failed attempt: 0.1 s auth + 0.05 s request + 0.2 s SDK backoff.
     check_stream([{"content": "Hello"}, {"content": " world"}], 0.85, [0.4], retry=True)
     check_stream([], None)
+    # A tier known by the first chunk labels every sample; one reported later labels none.
+    three_chunks = [{"content": "Hello"}, {"content": " big"}, {"content": " world"}]
+    check_stream(three_chunks, 0.5, [0.4, 0.4], service_tier_at="start")
+    check_stream(three_chunks, 0.5, [0.4, 0.4], service_tier_at="first_chunk")
+    check_stream(three_chunks, 0.5, [0.4, 0.4], service_tier_at="late")
     check_stream([{"content": "Hello"}, {"content": " world"}], 0.5, close_early=True)
     check_stream([{"content": "Hello"}], 0.5, close_early=True, finish_reason="stop")
     check_stream([{"content": "Hello"}], 0.5, end_reason=None)
