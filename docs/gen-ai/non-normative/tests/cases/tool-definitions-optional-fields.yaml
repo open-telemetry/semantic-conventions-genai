@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=../case.schema.json
+description: Every tool definition needs a `type` discriminator, while `name` is optional
+schema: gen-ai-tool-definitions.json
+document: [
+  { "type": "function", "description": "no name" },
+  { "type": "web_search" },
+  { "name": "no type" }
+]
+# Regenerate with `uv run pytest --update-snapshots`, do not edit by hand.
+errors:
+  - path: $[2]
+    keyword: required
+    message: "'type' is a required property"
