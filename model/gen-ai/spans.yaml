@@ -1292,6 +1292,7 @@ span_refinements:
       - ref: process.executable.path
         requirement_level:
           recommended: If the tool directly executes a single process and the executable path is available.
+      - ref_group: attributes.gen_ai.execute_tool.command.error
       - ref: process.exit.code
         requirement_level:
-          conditionally_required: If the tool reports a single command or process exit code.
+          conditionally_required: If the tool reports a single process exit code.
