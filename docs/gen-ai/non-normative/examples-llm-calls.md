@@ -301,6 +301,13 @@ See the [normative JSON schema](/model/gen-ai/gen-ai-input-messages.json) for mo
         "file_id": "provider_fileid_456",
         "name": "Contract 2025"
       },
+      // A document referenced by URL with a title given in the request
+      {
+        "type": "uri",
+        "modality": "document",
+        "uri": "https://example.com/contracts/2026.pdf",
+        "name": "Contract 2026"
+      },
       // An inline video without `content`
       {
         "type": "blob",
