@@ -224,6 +224,12 @@ spans:
       This span represents a logical client call to Generative AI model or
       service that generates a response or requests a tool call based on the input prompt.
     note: |
+      For streaming responses, the span ends when the stream completes, fails, or is
+      closed by the caller. Instrumentation SHOULD set the `gen_ai.usage.*` attributes
+      from the token usage the provider reported before then, including usage reported
+      after the last output chunk. If the stream ends early, these counts can be lower
+      than the tokens actually used.
+
       **Span kind** SHOULD be `CLIENT` and MAY be set to `INTERNAL` on spans representing
       call to models running in the same process. It's RECOMMENDED to use `CLIENT` kind
       when the GenAI system being instrumented usually runs in a different process than its

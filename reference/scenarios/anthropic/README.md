@@ -13,6 +13,10 @@ under `gen_ai.client.inference.duration` using an OTel SDK view.
 When a Messages stream fails, counters for reported token usage carry the same
 `error.type` as the span.
 
+The `caller_close` scenario closes the stream after the first text and keeps the
+token usage reported in `message_start`. Its streaming checks assert that the span,
+per-operation histograms, and usage counters retain those counts.
+
 The same client also drives the **Managed Agents** service (`beta.agents`,
 `beta.sessions`, `beta.memory_stores`), where agents run server-side. The client
 owns the create-agent and invoke-agent client operations; the agent's reasoning,
