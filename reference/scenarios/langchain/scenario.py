@@ -8,7 +8,15 @@ from typing import TypedDict
 from langchain_core.tools import tool
 from opentelemetry._logs import SeverityNumber
 from opentelemetry.trace import StatusCode
-from reference_shared import flush_and_shutdown, reference_event_logger, reference_meter, reference_tracer, setup_otel
+from reference_shared import (
+    flush_and_shutdown,
+    invocation_scope,
+    reference_event_logger,
+    reference_meter,
+    reference_tracer,
+    root_invocation_attributes,
+    setup_otel,
+)
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"] + "/v1"
 
@@ -64,6 +72,7 @@ async def agent_node(state: GraphState) -> GraphState:
     input_text = state["messages"][-1]
     agent_span_attributes = {
         "gen_ai.operation.name": "invoke_agent",
+        **root_invocation_attributes(),
         "gen_ai.agent.name": AGENT_NAME,
         "gen_ai.request.model": AGENT_MODEL,
     }
@@ -343,10 +352,14 @@ async def run_workflow_reference():
     workflow_name = graph.name
     workflow_span_attributes = {
         "gen_ai.operation.name": "invoke_workflow",
+        **root_invocation_attributes(),
     }
-    with _reference_tracer.start_as_current_span(
-        f"invoke_workflow {workflow_name}", attributes=workflow_span_attributes
-    ) as workflow_span:
+    with (
+        _reference_tracer.start_as_current_span(
+            f"invoke_workflow {workflow_name}", attributes=workflow_span_attributes
+        ) as workflow_span,
+        invocation_scope(),
+    ):
         workflow_span.set_attribute("gen_ai.agent.name", workflow_name)
         workflow_span.set_attribute(
             "gen_ai.input.messages", [{"role": "user", "parts": [{"type": "text", "content": input_text}]}]

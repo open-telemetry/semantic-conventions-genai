@@ -29,9 +29,26 @@ scenarios:
           type: gen_ai.retrieval
       - match:
           attributes:
+            gen_ai.operation.name: plan
+          type: gen_ai.plan.internal
+      - match:
+          attributes:
             gen_ai.operation.name: execute_tool
           type: gen_ai.execute_tool
       - match:
           attributes:
             gen_ai.operation.name: invoke_workflow
           type: gen_ai.invoke_agent.internal
+        expect:
+          count: 1
+          attributes:
+            gen_ai.agent.invocation.root: true
+      - match:
+          attributes:
+            gen_ai.operation.name: invoke_agent
+          type: gen_ai.invoke_agent.internal
+        expect:
+          count: 1
+          attributes:
+            gen_ai.agent.invocation.root:
+              present: false

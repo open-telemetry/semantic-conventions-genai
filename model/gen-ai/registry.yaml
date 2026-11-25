@@ -558,6 +558,25 @@ attributes:
     brief: The version of the GenAI agent.
     examples: ["1.0.0", "2025-05-01"]
     stability: development
+  - key: gen_ai.agent.invocation.root
+    type: boolean
+    brief: Whether this is the outermost agent invocation.
+    note: |
+      `true` when the invocation does not run within another invocation
+      (described by `gen_ai.invoke_agent.internal`, whether or not its span is
+      recorded).
+
+      Instrumentations SHOULD track active invocations in context (for example,
+      OpenTelemetry Context) independently of span recording, using keys that
+      other instrumentations can read.
+      They SHOULD make a best effort to detect invocations started by
+      other instrumentations.
+
+      Instrumentations SHOULD NOT set the attribute to `false`. They SHOULD
+      leave it unset when the invocation is nested or when they cannot reliably
+      determine whether it is nested.
+    examples: [true]
+    stability: development
   - key: gen_ai.transfer.mode
     type:
       members:

@@ -15,9 +15,11 @@ from opentelemetry.sdk.trace import SpanProcessor
 from opentelemetry.trace import StatusCode
 from reference_shared import (
     flush_and_shutdown,
+    invocation_scope,
     reference_event_logger,
     reference_meter,
     reference_tracer,
+    root_invocation_attributes,
     setup_otel,
 )
 
@@ -250,11 +252,15 @@ def run_agent_reference():
             # `Runner` is not itself an agent or a workflow, so its invocation is `invoke_runner`.
             runner_span_attributes = {
                 "gen_ai.operation.name": "invoke_runner",
+                **root_invocation_attributes(),
             }
             runner_start = time.perf_counter()
-            with _reference_tracer.start_as_current_span(
-                "invoke_runner", attributes=runner_span_attributes
-            ) as runner_span:
+            with (
+                _reference_tracer.start_as_current_span(
+                    "invoke_runner", attributes=runner_span_attributes
+                ) as runner_span,
+                invocation_scope(),
+            ):
                 runner_span.set_attribute("gen_ai.conversation.id", session.id)
                 runner_span.set_attribute(
                     "gen_ai.input.messages",
@@ -262,6 +268,7 @@ def run_agent_reference():
                 )
                 agent_span_attributes = {
                     "gen_ai.operation.name": "invoke_agent",
+                    **root_invocation_attributes(),
                     "gen_ai.request.model": request_model,
                     "gen_ai.agent.name": agent.name,
                 }
@@ -347,7 +354,7 @@ def run_agent_reference():
                             exception=e,
                         )
                         raise
-                # Each duration matches its span; the runner has no name, so only the operation is set.
+                # Each duration matches its span; the runner has no name, so `gen_ai.agent.name` is unset.
                 _invoke_duration.record(time.perf_counter() - agent_start, agent_span_attributes)
             _invoke_duration.record(time.perf_counter() - runner_start, runner_span_attributes)
 
@@ -521,6 +528,7 @@ def run_multi_agent_delegation_reference():
                 return
             sub_agent_span_attributes = {
                 "gen_ai.operation.name": "invoke_agent",
+                **root_invocation_attributes(),
                 "gen_ai.request.model": agent.model.model,
                 "gen_ai.agent.name": agent.name,
                 "gen_ai.agent.description": agent.description,
@@ -584,13 +592,17 @@ def run_multi_agent_delegation_reference():
             session = await session_service.create_session(app_name="delegation_app", user_id="test_user")
             agent_span_attributes = {
                 "gen_ai.operation.name": "invoke_agent",
+                **root_invocation_attributes(),
                 "gen_ai.request.model": request_model,
                 "gen_ai.agent.name": root_agent.name,
                 "gen_ai.agent.description": root_agent.description,
             }
-            with _reference_tracer.start_as_current_span(
-                "invoke_agent root_agent", attributes=agent_span_attributes, record_exception=False
-            ) as agent_span:
+            with (
+                _reference_tracer.start_as_current_span(
+                    "invoke_agent root_agent", attributes=agent_span_attributes, record_exception=False
+                ) as agent_span,
+                invocation_scope(),
+            ):
                 try:
                     agent_span.set_attribute("gen_ai.conversation.id", session.id)
                     agent_span.set_attribute(
@@ -715,6 +727,7 @@ def run_multi_agent_handoff_reference():
     async def traced_agent_run(agent, parent_context):
         attributes = {
             "gen_ai.operation.name": "invoke_agent",
+            **root_invocation_attributes(),
             "gen_ai.agent.name": agent.name,
             "gen_ai.request.model": agent.model.model,
             "gen_ai.conversation.id": parent_context.session.id,
@@ -771,8 +784,11 @@ def run_multi_agent_handoff_reference():
     async def run():
         session = await session_service.create_session(app_name=runner.app_name, user_id="test_user")
         # `Runner` is not itself an agent or a workflow, so its invocation is `invoke_runner`.
-        with _reference_tracer.start_as_current_span(
-            "invoke_runner", attributes={"gen_ai.operation.name": "invoke_runner"}
+        with (
+            _reference_tracer.start_as_current_span(
+                "invoke_runner", attributes={"gen_ai.operation.name": "invoke_runner", **root_invocation_attributes()}
+            ),
+            invocation_scope(),
         ):
             async for event in runner.run_async(
                 user_id=session.user_id,
