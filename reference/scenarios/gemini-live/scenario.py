@@ -101,6 +101,8 @@ def _user_audio_message():
                         "modality": "audio",
                         "mime_type": "audio/pcm",
                         "content": INPUT_AUDIO_B64,
+                        # The same decoded bytes `send_realtime_input` sends.
+                        "size": len(base64.b64decode(INPUT_AUDIO_B64)),
                     }
                 ],
             }
@@ -108,21 +110,21 @@ def _user_audio_message():
     )
 
 
-def _user_transcription_message(transcript):
-    """The provider's transcription of the user's spoken input."""
-    return json.dumps(
-        [
-            {
-                "role": "user",
-                "parts": [
-                    {
-                        "type": "transcription",
-                        "content": transcript,
-                    }
-                ],
-            }
-        ]
-    )
+def _with_user_transcription(input_messages, transcript):
+    """The turn's input messages with the provider's transcription of the user's speech.
+
+    The transcription joins the user's audio part in the same message, so the audio and its
+    size are kept rather than replaced.
+    """
+    messages = json.loads(input_messages)
+    transcription = {"type": "transcription", "content": transcript}
+    for message in reversed(messages):
+        if message["role"] == "user":
+            message["parts"] = [p for p in message["parts"] if p["type"] != "transcription"] + [transcription]
+            break
+    else:
+        messages.append({"role": "user", "parts": [transcription]})
+    return json.dumps(messages)
 
 
 def _output_type(response_modalities):
@@ -218,6 +220,7 @@ async def _run_generation(
 
     Returns the function call requested by the model, if any.
     """
+    turn_input_messages = input_messages
     from google.genai import types
 
     attributes = _live_attributes(request_model, host, port, "realtime_inference", output_type=output_type)
@@ -262,7 +265,7 @@ async def _run_generation(
             if server_content is not None:
                 if server_content.input_transcription and server_content.input_transcription.text:
                     input_transcript_deltas.append(server_content.input_transcription.text)
-                    input_messages = _user_transcription_message("".join(input_transcript_deltas))
+                    input_messages = _with_user_transcription(turn_input_messages, "".join(input_transcript_deltas))
                     if span is not None:
                         span.set_attribute("gen_ai.input.messages", input_messages)
                 has_output = bool(
@@ -319,7 +322,8 @@ async def _run_generation(
             ]
         else:
             transcript = "".join(transcript_deltas)
-            output_audio = base64.b64encode(b"".join(audio_chunks)).decode() if audio_chunks else ""
+            output_audio_bytes = b"".join(audio_chunks)
+            output_audio = base64.b64encode(output_audio_bytes).decode() if audio_chunks else ""
             output_messages = [
                 {
                     "role": "assistant",
@@ -329,6 +333,7 @@ async def _run_generation(
                             "modality": "audio",
                             "mime_type": "audio/pcm",
                             "content": output_audio,
+                            "size": len(output_audio_bytes),
                         },
                         {
                             "type": "transcription",

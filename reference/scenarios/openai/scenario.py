@@ -1203,6 +1203,8 @@ def run_chat_with_document_input_reference(client):
             "modality": "document",
             "mime_type": mime_type,
             "content": pdf_b64,
+            # Decoded length of the base64 payload in the data URI passed as `file_data`.
+            "size": len(base64.b64decode(pdf_b64)),
         },
     ]
     input_messages = [{"role": "user", "parts": input_parts}]
@@ -1279,6 +1281,8 @@ def run_chat_image_reference(client):
             "modality": "image",
             "mime_type": mime_type,
             "content": image_b64,
+            # Decoded length of the base64 payload in the data URI passed as `image_url`.
+            "size": len(base64.b64decode(image_b64)),
         },
     ]
     input_messages = [{"role": "user", "parts": input_parts}]
@@ -1361,7 +1365,14 @@ def run_chat_audio_reference(client):
             "role": "user",
             "parts": [
                 {"type": "text", "content": "Respond to this audio clip."},
-                {"type": "blob", "mime_type": "audio/wav", "modality": "audio", "content": audio_b64},
+                {
+                    "type": "blob",
+                    "mime_type": "audio/wav",
+                    "modality": "audio",
+                    "content": audio_b64,
+                    # Decoded length of the base64 string passed as `input_audio.data`.
+                    "size": len(base64.b64decode(audio_b64)),
+                },
             ],
         }
     ]
@@ -1399,14 +1410,24 @@ def run_chat_audio_reference(client):
             metric_attributes["gen_ai.response.service_tier"] = resp.service_tier
         record_inference_usage(usage, metric_attributes)
 
-        output_messages = [
-            {
-                "role": c.message.role,
-                # Audio output puts the text in the transcript, not in content.
-                "parts": [{"type": "text", "content": c.message.content or c.message.audio.transcript}],
-            }
-            for c in resp.choices
-        ]
+        output_messages = []
+        for c in resp.choices:
+            if c.message.audio is not None:
+                # The spoken reply: the audio returned in `message.audio.data` (base64) and the
+                # provider's transcript of it. The MIME type follows the requested `audio.format`.
+                parts = [
+                    {
+                        "type": "blob",
+                        "mime_type": "audio/wav",
+                        "modality": "audio",
+                        "content": c.message.audio.data,
+                        "size": len(base64.b64decode(c.message.audio.data)),
+                    },
+                    {"type": "transcription", "content": c.message.audio.transcript},
+                ]
+            else:
+                parts = [{"type": "text", "content": c.message.content}]
+            output_messages.append({"role": c.message.role, "parts": parts})
         event_attrs = {
             "gen_ai.operation.name": "chat",
             "gen_ai.provider.name": "openai",

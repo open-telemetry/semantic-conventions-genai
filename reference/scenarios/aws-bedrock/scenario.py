@@ -275,6 +275,7 @@ def run_converse_with_document_input_reference(client):
             "modality": "document",
             "mime_type": mime_type,
             "content": pdf_bytes,
+            "size": len(pdf_bytes),
         },
     ]
     input_messages = [{"role": "user", "parts": input_parts}]

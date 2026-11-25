@@ -51,6 +51,20 @@
                     "default": null,
                     "description": "Raw bytes of the attached data. Instrumentations MAY omit it, for example to avoid recording large binary payloads inline.",
                     "title": "Content"
+                },
+                "size": {
+                    "anyOf": [
+                        {
+                            "minimum": 0,
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Raw unencoded byte length of the attached data. Instrumentations SHOULD set it when they omit `content`, so the size of the payload is still recorded.",
+                    "title": "Size"
                 }
             },
             "required": [

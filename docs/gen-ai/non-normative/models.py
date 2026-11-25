@@ -233,6 +233,14 @@ class BlobPart(BaseModel):
         default=None,
         description="Raw bytes of the attached data. Instrumentations MAY omit it, for example to avoid recording large binary payloads inline.",
     )
+    size: Optional[int] = Field(
+        default=None,
+        ge=0,
+        description=(
+            "Raw unencoded byte length of the attached data. Instrumentations SHOULD set it when "
+            "they omit `content`, so the size of the payload is still recorded."
+        ),
+    )
 
 class FilePart(BaseModel):
     """Represents an external referenced file sent to the model by file id"""
@@ -276,7 +284,6 @@ class UriPart(BaseModel):
             "the provider api (e.g. `gs://bucket/object.png`), or be a publicly accessible location."
         ),
     )
-
     model_config = ConfigDict(extra="allow")
 
 

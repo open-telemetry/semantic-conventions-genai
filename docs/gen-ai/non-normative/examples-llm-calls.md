@@ -268,6 +268,7 @@ See the [normative JSON schema](/model/gen-ai/gen-ai-input-messages.json) for mo
         "type": "blob",
         "modality": "image",
         "mime_type": "image/png",
+        "size": 37,
         "content": "aGVsbG8gd29ybGQgaW1hZ2luZSB0aGlzIGlzIGFuIGltYWdlCg=="
       },
       // Inline audio
@@ -284,11 +285,12 @@ See the [normative JSON schema](/model/gen-ai/gen-ai-input-messages.json) for mo
         "mime_type": "application/pdf",
         "uri": "s3://my-bucket/kyc-form.pdf"
       },
-      // An inline video without `content`
+      // An inline video without `content`; `size` still records how large it was
       {
         "type": "blob",
         "modality": "video",
-        "mime_type": "video/mp4"
+        "mime_type": "video/mp4",
+        "size": 10485760
       }
     ]
   }
