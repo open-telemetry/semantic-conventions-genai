@@ -7,7 +7,7 @@ workflow operations it runs directly.
 | Operation | Should be instrumented here | Status |
 | --- | --- | --- |
 | inference (`chat`) | No — delegates to the model provider (e.g. `openai`) | ✅ Correctly not emitted |
-| retrieval | Yes — retriever / query engine | ✅ Implemented |
+| retrieval | Yes — retriever / query engine | ✅ Implemented with a [duration histogram](../../../docs/gen-ai/retrieval.md#metric-gen_airetrievalduration) |
 | execute_tool | Yes — LlamaIndex runs the tool | ✅ Implemented |
 | invoke_workflow | Yes — `Workflow` / query pipeline execution | ❌ Not implemented |
 

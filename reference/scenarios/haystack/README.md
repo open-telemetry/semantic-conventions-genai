@@ -7,5 +7,5 @@ the retrieval and pipeline (workflow) operations it runs directly.
 | Operation | Should be instrumented here | Status |
 | --- | --- | --- |
 | inference (`chat`) | No — delegates to the model provider (e.g. `openai`) | ✅ Correctly not emitted |
-| retrieval | Yes — retriever component | ✅ Implemented |
+| retrieval | Yes — retriever component | ✅ Implemented with a [duration histogram](../../../docs/gen-ai/retrieval.md#metric-gen_airetrievalduration) |
 | invoke_workflow | Yes — pipeline (graph) execution | ❌ Not implemented |
