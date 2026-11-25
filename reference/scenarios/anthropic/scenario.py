@@ -699,7 +699,7 @@ def run_chat_with_named_documents(handler):
                         "type": "blob",
                         "modality": "document",
                         "mime_type": inline_doc["source"]["media_type"],
-                        "content": inline_doc["source"]["data"],
+                        "content": pdf_bytes,
                         "name": inline_doc["title"],
                     },
                     {
