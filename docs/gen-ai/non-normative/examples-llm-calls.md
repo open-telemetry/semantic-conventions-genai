@@ -859,8 +859,9 @@ sequenceDiagram
 ## Content without a matching part type
 
 This example is an Anthropic Messages API call with a `search_result` content
-block recorded with `type` prefixed by `gen_ai.provider.name`
-(`"anthropic.search_result"`):
+block, which has no defined part type. Assuming Anthropic documents a custom
+`anthropic.search_result` part, for example for its native instrumentation, the
+block is recorded with `type` prefixed by `gen_ai.provider.name`:
 
 ```jsonc
 [
@@ -871,7 +872,7 @@ block recorded with `type` prefixed by `gen_ai.provider.name`
         "type": "text",
         "content": "Answer using the attached search result."
       },
-      // Anthropic search_result block, recorded with its original fields
+      // Anthropic search_result block, recorded as a documented custom part
       {
         "type": "anthropic.search_result",
         "source": "https://example.com/docs/otel",
@@ -890,6 +891,8 @@ block recorded with `type` prefixed by `gen_ai.provider.name`
   }
 ]
 ```
+
+Without such documentation, the block isn't recorded.
 
 ## Chat completion with multiple choices
 

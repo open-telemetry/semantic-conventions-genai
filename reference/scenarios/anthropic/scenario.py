@@ -725,8 +725,9 @@ def run_chat_with_image_input(handler):
 def run_chat_with_search_result_input(handler):
     """Scenario: chat with a search result block and a built-in web search tool.
 
-    Search result blocks and built-in tools have no defined semconv type, so
-    both are recorded with `type` prefixed by `gen_ai.provider.name` (`anthropic.`).
+    Search result blocks have no defined part type and Anthropic conventions don't
+    document a custom part for them, so they aren't recorded. Built-in tools are
+    recorded with `type` prefixed by `gen_ai.provider.name` (`anthropic.`).
     """
     print("  [chat_search_result] chat with search result block (util-genai handler)")
     request_model = "claude-sonnet-4-20250514"
@@ -756,15 +757,8 @@ def run_chat_with_search_result_input(handler):
         server_port=port,
     ) as inv:
         inv.max_tokens = request_max_tokens  # -> gen_ai.request.max_tokens
-        # util-genai has no type for provider-specific parts, so pass a plain dict.
         inv.input_messages = [  # -> gen_ai.input.messages
-            InputMessage(
-                role="user",
-                parts=[
-                    Text(content=instruction),
-                    {**search_result, "type": f"anthropic.{search_result['type']}"},
-                ],
-            )
+            InputMessage(role="user", parts=[Text(content=instruction)])
         ]
         inv.tool_definitions = [  # -> gen_ai.tool.definitions
             GenericToolDefinition(name=t["name"], type=f"anthropic.{t['type']}") for t in tools
