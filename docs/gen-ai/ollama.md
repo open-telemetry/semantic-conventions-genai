@@ -46,10 +46,10 @@ Tool calling is supported by the `/api/chat` endpoint, with the tool itself runn
 application code: `execute_tool` operations are not instrumented at the client boundary.
 Offered tools are recorded as `gen_ai.tool.definitions`, and a tool call the model returns
 is recorded as `tool_call` parts of the output message; Ollama tool calls carry no
-identifier, which the output message parts permit. `gen_ai.tool.definitions` is an
-opt-in attribute: tool schemas may be large and may contain sensitive information, so
-instrumentations SHOULD record it only when the application opts in to tool-definition
-capture, following the registry note for the attribute.
+identifier, which the output message parts permit. `gen_ai.tool.definitions` can
+contain large or sensitive tool schemas, so whether an instrumentation records it
+is Opt-In: follow the registry note for the attribute and the content-recording
+guidance when deciding whether to populate it.
 
 ## Request options mapping
 

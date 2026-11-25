@@ -41,14 +41,12 @@ UNREACHABLE_BASE_URL = "http://127.0.0.1:1"
 # carry the gen_ai.input.messages and gen_ai.output.messages payloads, and
 # the span capture modes are exercised with per-call overrides.
 
-# gen_ai.tool.definitions is opt-in on the inference span: tool schemas can
-# be large and may contain sensitive information, and the content capture
-# setting does not govern schema capture, per the attribute's registry note.
-# The scenario configuration enables the opt-in so the conformance runner can
+# gen_ai.tool.definitions records the schemas of the tools offered in the
+# request: tool schemas can be large and may contain sensitive information,
+# so whether an instrumentation records them is Opt-In, per the attribute's
+# registry note and the content-recording guidance. The reference scenario
+# records them whenever a tool is offered, so the conformance runner can
 # assert the definitions are recorded.
-_capture_tool_definitions = (
-    os.environ.get("OTEL_INSTRUMENTATION_GENAI_CAPTURE_TOOL_DEFINITIONS", "").strip().lower() == "true"
-)
 
 # The weather tool used by the tool-call scenarios: the ollama SDK takes
 # OpenAI-style tool definitions, while gen_ai.tool.definitions records the
@@ -86,8 +84,9 @@ _SDK_FAILURES = (httpx.HTTPError, ConnectionError, ollama.ResponseError)
 
 # Explicit bucket boundaries recommended by docs/gen-ai/client-inference.md,
 # docs/gen-ai/client-embeddings.md, and docs/gen-ai/gen-ai-token-metrics.md
-# for the duration, streaming chunk, and per-operation token histograms.
-_DURATION_BOUNDARIES = [0.01, 0.02, 0.04, 0.08, 0.16, 0.32, 0.64, 1.28, 2.56, 5.12, 10.24, 20.48, 40.96, 81.92]
+# for the duration, streaming chunk, and per-operation token histograms:
+# decimal 1/2.5/5 subdivisions aligned with minutes, hours, and days.
+_DURATION_BOUNDARIES = [0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10, 30, 60]
 _TOKEN_BOUNDARIES = [1, 4, 16, 64, 256, 1024, 4096, 16384, 65536, 262144, 1048576, 4194304, 16777216, 67108864]
 
 _reference_tracer = reference_tracer()
@@ -681,8 +680,8 @@ def run_chat_with_tools(client, base_url):
 
     The request offers a weather tool through the SDK `tools` argument, and
     the mock server answers with a tool call. The span records the offered
-    tools as `gen_ai.tool.definitions`, an opt-in attribute recorded only when
-    tool-definition capture is enabled; the operation details event records
+    tools as `gen_ai.tool.definitions`, recorded per the content-recording
+    guidance; the operation details event records
     the model's answer as `tool_call` parts of the output message, keeping any
     text of the same response as an independent part. Ollama tool calls carry
     no identifier, which the output message parts permit.
@@ -726,10 +725,7 @@ def run_chat_with_tools(client, base_url):
         "ollama.request.num_gpu": request_options["num_gpu"],
         "ollama.request.main_gpu": request_options["main_gpu"],
     }
-    # gen_ai.tool.definitions is opt-in: tool schemas may be large or
-    # sensitive, so they are only recorded when explicitly enabled.
-    if _capture_tool_definitions:
-        span_attributes["gen_ai.tool.definitions"] = tool_definitions
+    span_attributes["gen_ai.tool.definitions"] = tool_definitions
     if request_options["num_predict"] >= 0:
         span_attributes["gen_ai.request.max_tokens"] = request_options["num_predict"]
     if host:
@@ -860,8 +856,7 @@ def run_chat_with_tools(client, base_url):
                 "gen_ai.request.stop_sequences": request_options["stop"],
                 "gen_ai.request.seed": request_options["seed"],
             }
-            if _capture_tool_definitions:
-                event_attrs["gen_ai.tool.definitions"] = tool_definitions
+            event_attrs["gen_ai.tool.definitions"] = tool_definitions
             if _record_event_messages(mode):
                 event_attrs["gen_ai.input.messages"] = [
                     {"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]} for m in messages
@@ -1184,9 +1179,7 @@ def run_chat_streaming(
         "ollama.request.num_gpu": request_options["num_gpu"],
         "ollama.request.main_gpu": request_options["main_gpu"],
     }
-    # gen_ai.tool.definitions is opt-in: tool schemas may be large or
-    # sensitive, so they are only recorded when explicitly enabled.
-    if tools and _capture_tool_definitions:
+    if tools:
         span_attributes["gen_ai.tool.definitions"] = _WEATHER_TOOL_DEFINITIONS
     if request_options["num_predict"] >= 0:
         span_attributes["gen_ai.request.max_tokens"] = request_options["num_predict"]
@@ -1434,7 +1427,7 @@ def run_chat_streaming(
                 "gen_ai.request.stop_sequences": request_options["stop"],
                 "gen_ai.request.seed": request_options["seed"],
             }
-            if tools and _capture_tool_definitions:
+            if tools:
                 event_attrs["gen_ai.tool.definitions"] = _WEATHER_TOOL_DEFINITIONS
             if _record_event_messages(mode):
                 event_attrs["gen_ai.input.messages"] = [

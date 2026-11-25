@@ -28,9 +28,8 @@ the failure paths of chat and embeddings.
 
 - `gen_ai.client.inference` span for a chat completion (`gen_ai.operation.name = "chat"`), including:
   - generic GenAI request, response, and usage attributes
-  - `gen_ai.tool.definitions` when the request offers tools — recorded only when
-    tool-definition capture is opted in via `OTEL_INSTRUMENTATION_GENAI_CAPTURE_TOOL_DEFINITIONS`,
-    since tool schemas may be large and may contain sensitive information — and
+  - `gen_ai.tool.definitions` when the request offers tools — recorded per the
+    content-recording guidance, since the mock serves no sensitive content — and
     `tool_call` message parts when the model answers with a tool call, keeping any
     text of the same response as an independent part
   - `gen_ai.input.messages` and `gen_ai.output.messages` when message-content
@@ -116,9 +115,8 @@ exception event. The run fails if a failure-path call does not raise.
 `conformance.yaml` declares value assertions for every chat, text completion, and
 embeddings span, including the failure spans, and enables message-content capture
 (`OTEL_INSTRUMENTATION_GENAI_CAPTURE_CONTENT=EVENT_ONLY`) so the operation details
-events carry the input and output messages, and tool-definition capture
-(`OTEL_INSTRUMENTATION_GENAI_CAPTURE_TOOL_DEFINITIONS=true`) so the offered tool
-definitions are recorded. The span content capture modes are exercised with per-call
+events carry the input and output messages, so the offered tool definitions
+are recorded. The span content capture modes are exercised with per-call
 overrides, so the runs with `SPAN_ONLY` and `SPAN_AND_EVENT` record the input and
 output messages on the span.
 The cached prompt-token chat asserts the cached, total input, and output
