@@ -19,7 +19,10 @@ events:
 
       Instrumentations SHOULD set the severity number according to
       `agent.threat.detection.severity`: low -> 9 (INFO), medium -> 13 (WARN),
-      high -> 17 (ERROR), critical -> 21 (FATAL).
+      high and critical -> 17 (ERROR). A detection, including a blocked one,
+      is not an application or system failure, so instrumentations SHOULD NOT
+      record this event with a FATAL severity. The criticality of the matched
+      rule is carried by `agent.threat.detection.severity`.
     stability: development
     attributes:
       - ref: agent.threat.detection.rule_id
