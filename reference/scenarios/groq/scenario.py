@@ -272,7 +272,6 @@ def run_chat_streaming_reference(client):
             _input_tokens.record(input_tokens, metric_attributes)
             _output_tokens.record(output_tokens, metric_attributes)
             modality_attributes = {**metric_attributes, "gen_ai.token.modality": "unknown"}
-            modality_attributes.pop("error.type", None)
             if input_tokens > 0:
                 _input_token_usage.add(input_tokens, modality_attributes)
             if output_tokens > 0:
