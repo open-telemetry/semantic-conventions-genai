@@ -28,9 +28,10 @@ the exception. Failed requests record duration and zero input tokens with
 `error.type`.
 
 Inference exercises the SDK's `RateLimitError` from
-`client.chat.completions.create` using a mock HTTP 429 response. The error handler
-records a correlated `gen_ai.client.inference.exception` WARN log and re-raises
-the exception.
+`client.chat.completions.create` using a mock HTTP 429 response, and an `APIError`
+from a streamed response. Both errors emit a correlated
+`gen_ai.client.inference.exception` WARN log and propagate to the caller.
+Closing a stream without an error does not emit this log.
 
 Fetch spans record the built-in `web_search` tool with type `openai.web_search`
 and name `web_search`. They record `gen_ai.tool.definitions` as `[]` when the
