@@ -1,0 +1,11 @@
+runner: genai-conformance
+instrumented_library: transformers
+instrumentation_library: reference
+
+scenarios:
+  reference:
+    run: uv run --frozen --python 3.12 --project . python scenario.py
+    metrics:
+      - gen_ai.server.request.duration
+      - gen_ai.server.time_to_first_token
+      - gen_ai.server.time_per_output_token

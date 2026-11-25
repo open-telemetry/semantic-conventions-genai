@@ -11,6 +11,7 @@ from time import perf_counter
 from opentelemetry._logs import SeverityNumber
 from opentelemetry.trace import SpanKind, StatusCode
 from reference_shared import (
+    ObservedStream,
     flush_and_shutdown,
     mock_server_host_port,
     reference_event_logger,
@@ -33,53 +34,26 @@ def _upload_json(name: str, payload: object) -> str:
 _reference_tracer = reference_tracer()
 _reference_meter = reference_meter()
 
+_CLIENT_DURATION_BUCKETS = [0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10, 30, 60]
+
 _time_to_first_chunk = _reference_meter.create_histogram(
     "gen_ai.client.inference.time_to_first_chunk",
     unit="s",
     description="Time to receive the first output chunk of a streaming inference operation.",
+    explicit_bucket_boundaries_advisory=_CLIENT_DURATION_BUCKETS,
 )
 _time_per_output_chunk = _reference_meter.create_histogram(
     "gen_ai.client.inference.time_per_output_chunk",
     unit="s",
-    description="Time per output chunk received after the first chunk of a streaming inference operation.",
-    explicit_bucket_boundaries_advisory=[
-        0.01,
-        0.02,
-        0.04,
-        0.08,
-        0.16,
-        0.32,
-        0.64,
-        1.28,
-        2.56,
-        5.12,
-        10.24,
-        20.48,
-        40.96,
-        81.92,
-    ],
+    description="Time between successive output chunks of a streaming inference operation.",
+    explicit_bucket_boundaries_advisory=_CLIENT_DURATION_BUCKETS,
 )
 
 _embeddings_duration = _reference_meter.create_histogram(
     "gen_ai.client.embeddings.duration",
     unit="s",
     description="GenAI client embeddings operation duration.",
-    explicit_bucket_boundaries_advisory=[
-        0.01,
-        0.02,
-        0.04,
-        0.08,
-        0.16,
-        0.32,
-        0.64,
-        1.28,
-        2.56,
-        5.12,
-        10.24,
-        20.48,
-        40.96,
-        81.92,
-    ],
+    explicit_bucket_boundaries_advisory=_CLIENT_DURATION_BUCKETS,
 )
 _embeddings_input_tokens = _reference_meter.create_histogram(
     "gen_ai.client.embeddings.operation.input_tokens",
@@ -165,20 +139,23 @@ def _add_by_modality(counter, total, audio_tokens, metric_attributes):
         counter.add(remainder, {**metric_attributes, "gen_ai.token.modality": "unknown"})
 
 
-def record_inference_usage(usage, metric_attributes):
-    """Record the usage instruments from the same `gen_ai.usage.*` values the span carries.
+def record_inference_usage(usage, metric_attributes, *, record_missing=False, error_type=None):
+    """Record reported usage and optionally record zero in histograms for missing counts.
 
     OpenAI only breaks usage down by audio tokens, so the rest of the input and output
     goes to the `unknown` modality: the API gives no evidence that it is text. Cached
     and cache-written tokens carry no modality breakdown.
     """
+    histogram_attributes = {**metric_attributes, "error.type": error_type} if error_type else metric_attributes
     input_tokens = usage.get("gen_ai.usage.input_tokens")
+    if input_tokens is not None or record_missing:
+        _operation_input_tokens.record(input_tokens or 0, histogram_attributes)
     if input_tokens is not None:
-        _operation_input_tokens.record(input_tokens, metric_attributes)
         _add_by_modality(_input_tokens, input_tokens, usage.get("gen_ai.usage.audio.input_tokens"), metric_attributes)
     output_tokens = usage.get("gen_ai.usage.output_tokens")
+    if output_tokens is not None or record_missing:
+        _operation_output_tokens.record(output_tokens or 0, histogram_attributes)
     if output_tokens is not None:
-        _operation_output_tokens.record(output_tokens, metric_attributes)
         _add_by_modality(
             _output_tokens, output_tokens, usage.get("gen_ai.usage.audio.output_tokens"), metric_attributes
         )
@@ -210,6 +187,8 @@ def responses_finish_reason(response):
         return None
     if status == "completed":
         return "stop"
+    if status == "cancelled":
+        return "interrupted"
     if status == "incomplete":
         details = getattr(response, "incomplete_details", None)
         reason = getattr(details, "reason", None) if details else None
@@ -632,7 +611,7 @@ def run_responses_continuation_reference(client):
         print(f"    -> previous_response_id: {previous_response_id}")
 
 
-def run_chat_streaming_reference(client):
+def run_chat_streaming_reference(client, *, close_early=False):
     """Scenario: streaming chat completion with reference implementation."""
     print("  [chat_streaming] streaming chat completion (reference implementation)")
     request_model = "gpt-4o-mini"
@@ -656,11 +635,13 @@ def run_chat_streaming_reference(client):
             "gen_ai.input.messages",
             [{"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]} for m in request_messages],
         )
-        stream = client.chat.completions.create(
-            model=request_model,
-            messages=request_messages,
-            stream=True,
-            stream_options={"include_usage": True},
+        stream = ObservedStream(
+            client.chat.completions.create(
+                model=request_model,
+                messages=request_messages,
+                stream=True,
+                stream_options={"include_usage": True},
+            )
         )
         text = ""
         model = None
@@ -670,83 +651,106 @@ def run_chat_streaming_reference(client):
         input_tokens = None
         output_tokens = None
         service_tier = None
-        previous_chunk_at = None
-        for chunk in stream:
-            received_at = perf_counter()
-            model = model or getattr(chunk, "model", None)
-            response_id = response_id or getattr(chunk, "id", None)
-            service_tier = service_tier or chunk.service_tier
-            has_output = any(
-                choice.delta.content
-                or choice.delta.refusal
-                or (choice.delta.audio and (choice.delta.audio.data or choice.delta.audio.transcript))
-                or (
-                    choice.delta.function_call
-                    and (choice.delta.function_call.name or choice.delta.function_call.arguments)
+        previous_output_received_at = None
+        try:
+            with stream:
+                for chunk in stream:
+                    received_at = perf_counter()
+                    model = model or getattr(chunk, "model", None)
+                    response_id = response_id or getattr(chunk, "id", None)
+                    service_tier = service_tier or chunk.service_tier
+                    has_output = any(
+                        choice.delta.content
+                        or choice.delta.refusal
+                        or (choice.delta.audio and (choice.delta.audio.data or choice.delta.audio.transcript))
+                        or (
+                            choice.delta.function_call
+                            and (choice.delta.function_call.name or choice.delta.function_call.arguments)
+                        )
+                        or any(
+                            call.function and (call.function.name or call.function.arguments)
+                            for call in choice.delta.tool_calls or []
+                        )
+                        for choice in chunk.choices
+                    )
+                    if has_output:
+                        chunk_attributes = usage_metric_attributes(request_model, model, host, port)
+                        if service_tier is not None:
+                            chunk_attributes["gen_ai.response.service_tier"] = service_tier
+                        if previous_output_received_at is None:
+                            ttfc = received_at - request_started_at
+                            span.set_attribute("gen_ai.response.time_to_first_chunk", ttfc)
+                            _time_to_first_chunk.record(ttfc, chunk_attributes)
+                        else:
+                            _time_per_output_chunk.record(received_at - previous_output_received_at, chunk_attributes)
+                        previous_output_received_at = received_at
+                    for choice in chunk.choices:
+                        seen_choice_indexes.add(choice.index)
+                        if choice.index == 0 and choice.delta.content:
+                            text += choice.delta.content
+                        if choice.finish_reason is not None:
+                            finish_reasons_by_index[choice.index] = choice.finish_reason
+                    if chunk.usage:
+                        input_tokens = chunk.usage.prompt_tokens
+                        output_tokens = chunk.usage.completion_tokens
+                    if close_early and has_output:
+                        break
+        finally:
+            if model:
+                span.set_attribute("gen_ai.response.model", model)
+            if response_id:
+                span.set_attribute("gen_ai.response.id", response_id)
+            if seen_choice_indexes:
+                finish_reasons = [
+                    finish_reasons_by_index.get(index, stream.finish_reason)
+                    for index in range(max(seen_choice_indexes) + 1)
+                ]
+                span.set_attribute("gen_ai.response.finish_reasons", finish_reasons)
+            if text:
+                output_message = {
+                    "role": "assistant",
+                    "parts": [{"type": "text", "content": text}],
+                }
+                span.set_attribute("gen_ai.output.messages", [output_message])
+            usage = {}
+            if input_tokens is not None:
+                usage["gen_ai.usage.input_tokens"] = input_tokens
+            if output_tokens is not None:
+                usage["gen_ai.usage.output_tokens"] = output_tokens
+            for attr, value in usage.items():
+                span.set_attribute(attr, value)
+            error_type = None
+            if stream.error is not None:
+                error = stream.error
+                error_type = f"{type(error).__module__}.{type(error).__qualname__}"
+                span.set_attribute("error.type", error_type)
+                reference_event_logger().emit(
+                    event_name="gen_ai.client.inference.exception",
+                    severity_number=SeverityNumber.WARN,
+                    exception=error,
                 )
-                or any(
-                    call.function and (call.function.name or call.function.arguments)
-                    for call in choice.delta.tool_calls or []
-                )
-                for choice in chunk.choices
+            metric_attributes = usage_metric_attributes(request_model, model, host, port)
+            if service_tier is not None:
+                span.set_attribute("gen_ai.response.service_tier", service_tier)
+                metric_attributes["gen_ai.response.service_tier"] = service_tier
+            record_inference_usage(
+                usage,
+                metric_attributes,
+                record_missing=True,
+                error_type=error_type,
             )
-            if has_output:
-                chunk_attributes = usage_metric_attributes(request_model, model, host, port)
-                if service_tier is not None:
-                    chunk_attributes["gen_ai.response.service_tier"] = service_tier
-                if previous_chunk_at is None:
-                    ttfc = received_at - request_started_at
-                    span.set_attribute("gen_ai.response.time_to_first_chunk", ttfc)
-                    _time_to_first_chunk.record(ttfc, chunk_attributes)
-                else:
-                    _time_per_output_chunk.record(received_at - previous_chunk_at, chunk_attributes)
-                previous_chunk_at = received_at
-            for choice in chunk.choices:
-                seen_choice_indexes.add(choice.index)
-                if choice.index == 0 and choice.delta.content:
-                    text += choice.delta.content
-                if choice.finish_reason is not None:
-                    finish_reasons_by_index[choice.index] = choice.finish_reason
-            if chunk.usage:
-                input_tokens = chunk.usage.prompt_tokens
-                output_tokens = chunk.usage.completion_tokens
-        if model:
-            span.set_attribute("gen_ai.response.model", model)
-        if response_id:
-            span.set_attribute("gen_ai.response.id", response_id)
-        if seen_choice_indexes:
-            finish_reasons = [
-                finish_reasons_by_index.get(index, "error") for index in range(max(seen_choice_indexes) + 1)
-            ]
-            span.set_attribute("gen_ai.response.finish_reasons", finish_reasons)
-        if text:
-            output_message = {
-                "role": "assistant",
-                "parts": [{"type": "text", "content": text}],
-            }
-            span.set_attribute("gen_ai.output.messages", [output_message])
-        usage = {}
-        if input_tokens is not None:
-            usage["gen_ai.usage.input_tokens"] = input_tokens
-        if output_tokens is not None:
-            usage["gen_ai.usage.output_tokens"] = output_tokens
-        for attr, value in usage.items():
-            span.set_attribute(attr, value)
-        metric_attributes = usage_metric_attributes(request_model, model, host, port)
-        if service_tier is not None:
-            span.set_attribute("gen_ai.response.service_tier", service_tier)
-            metric_attributes["gen_ai.response.service_tier"] = service_tier
-        record_inference_usage(usage, metric_attributes)
-        print(f"    -> {text[:60]}")
+            print(f"    -> {text[:60]}")
 
 
-def run_chat_streaming_ttfc_checks():
+def run_chat_streaming_timing_checks():
     """Check streaming boundaries through the SDK with a controlled clock."""
     from math import isclose
     from unittest.mock import patch
 
     import httpx2
     import openai
+    from opentelemetry.sdk._logs import LoggerProvider
+    from opentelemetry.sdk._logs.export import InMemoryLogRecordExporter, SimpleLogRecordProcessor
     from opentelemetry.sdk.metrics import MeterProvider
     from opentelemetry.sdk.metrics.export import InMemoryMetricReader
     from opentelemetry.sdk.trace import TracerProvider
@@ -763,9 +767,29 @@ def run_chat_streaming_ttfc_checks():
             "usage": {"prompt_tokens": 1, "completion_tokens": 0, "total_tokens": 1} if delta is None else None,
         }
 
-    def check_stream(output_deltas, expected_ttfc, *, retry=False):
+    def check_stream(
+        output_deltas,
+        expected_ttfc,
+        *,
+        expected_interval=None,
+        retry=False,
+        close_early=False,
+        finish_reason=None,
+        end_reason="stop",
+        initial_output_tokens=0,
+        include_initial_usage=True,
+        stream_error=False,
+    ):
         now = 0.0
         attempts = 0
+        responses = []
+        observed = []
+        stream_type = ObservedStream
+
+        def observe(manager):
+            stream = stream_type(manager)
+            observed.append(stream)
+            return stream
 
         def advance(seconds):
             nonlocal now
@@ -784,13 +808,27 @@ def run_chat_streaming_ttfc_checks():
                 {"audio": {"expires_at": 1}},
                 None,
             ):
+                if delta is None and not include_initial_usage:
+                    continue
                 advance(0.01)
-                yield f"data: {json.dumps(chunk(delta))}\n\n".encode()
+                event = chunk(delta)
+                if delta is None:
+                    event["usage"]["completion_tokens"] = initial_output_tokens
+                    event["usage"]["total_tokens"] = 1 + initial_output_tokens
+                yield f"data: {json.dumps(event)}\n\n".encode()
             for delta in output_deltas:
                 advance(0.3)
-                yield f"data: {json.dumps(chunk(delta))}\n\n".encode()
+                yield f"data: {json.dumps(chunk(delta, finish_reason))}\n\n".encode()
+                advance(0.1)
+                yield f"data: {json.dumps(chunk({}))}\n\n".encode()
+            if stream_error:
+                yield b'data: {"error": {"message": "stream failed", "type": "server_error"}}\n\n'
+                return
             advance(0.4)
-            yield f"data: {json.dumps(chunk({}, 'stop'))}\n\ndata: [DONE]\n\n".encode()
+            yield f"data: {json.dumps(chunk({}, end_reason))}\n\n".encode()
+            final_usage = chunk()
+            final_usage["usage"] = {"prompt_tokens": 1, "completion_tokens": 2, "total_tokens": 3}
+            yield f"data: {json.dumps(final_usage)}\n\ndata: [DONE]\n\n".encode()
 
         def respond(request):
             nonlocal attempts
@@ -800,21 +838,35 @@ def run_chat_streaming_ttfc_checks():
             advance(0.05)
             if retry and attempts == 1:
                 return httpx2.Response(500, headers={"retry-after-ms": "200"}, json={"error": "retry"})
-            return httpx2.Response(200, headers={"content-type": "text/event-stream"}, content=events())
+            response = httpx2.Response(200, headers={"content-type": "text/event-stream"}, content=events())
+            responses.append(response)
+            return response
 
         exporter = InMemorySpanExporter()
         tracer_provider = TracerProvider()
         tracer_provider.add_span_processor(SimpleSpanProcessor(exporter))
+        log_exporter = InMemoryLogRecordExporter()
+        logger_provider = LoggerProvider()
+        logger_provider.add_log_record_processor(SimpleLogRecordProcessor(log_exporter))
         reader = InMemoryMetricReader()
         meter_provider = MeterProvider(metric_readers=[reader])
         meter = meter_provider.get_meter("gen_ai.reference")
-        histogram = meter.create_histogram("gen_ai.client.inference.time_to_first_chunk", unit="s")
-        tpoc_histogram = meter.create_histogram("gen_ai.client.inference.time_per_output_chunk", unit="s")
+        first_chunk_metric = "gen_ai.client.inference.time_to_first_chunk"
+        chunk_interval_metric = "gen_ai.client.inference.time_per_output_chunk"
         try:
             with (
                 patch(f"{__name__}._reference_tracer", tracer_provider.get_tracer("gen_ai.reference")),
-                patch(f"{__name__}._time_to_first_chunk", histogram),
-                patch(f"{__name__}._time_per_output_chunk", tpoc_histogram),
+                patch(
+                    f"{__name__}.reference_event_logger", return_value=logger_provider.get_logger("gen_ai.reference")
+                ),
+                patch(f"{__name__}.ObservedStream", side_effect=observe),
+                patch(f"{__name__}._time_to_first_chunk", meter.create_histogram(first_chunk_metric, unit="s")),
+                patch(f"{__name__}._time_per_output_chunk", meter.create_histogram(chunk_interval_metric, unit="s")),
+                patch(f"{__name__}._operation_input_tokens") as input_histogram,
+                patch(f"{__name__}._operation_output_tokens") as output_histogram,
+                patch(f"{__name__}._input_tokens") as input_counter,
+                patch(f"{__name__}._output_tokens") as output_counter,
+                patch(f"{__name__}.record_inference_usage", wraps=record_inference_usage) as record_usage,
                 patch(f"{__name__}.perf_counter", side_effect=lambda: now),
                 patch("openai._base_client.time.sleep", side_effect=advance) as sleep,
                 openai.OpenAI(
@@ -824,7 +876,21 @@ def run_chat_streaming_ttfc_checks():
                     http_client=httpx2.Client(transport=httpx2.MockTransport(respond)),
                 ) as client,
             ):
-                run_chat_streaming_reference(client)
+                if stream_error:
+                    try:
+                        run_chat_streaming_reference(client)
+                    except openai.APIError:
+                        pass
+                    else:
+                        raise AssertionError("Expected a stream error")
+                else:
+                    run_chat_streaming_reference(client, close_early=close_early)
+                if close_early:
+                    assert responses[-1].is_closed
+            (observed_stream,) = observed
+            assert observed_stream.closed_early == (close_early or stream_error)
+            assert observed_stream.exhausted == (not (close_early or stream_error))
+            assert responses[-1].is_closed
             assert attempts == (2 if retry else 1)
             if retry:
                 sleep.assert_called_once_with(0.2)
@@ -832,38 +898,85 @@ def run_chat_streaming_ttfc_checks():
                 sleep.assert_not_called()
             spans = exporter.get_finished_spans()
             assert len(spans) == 1
+            record_usage.assert_called_once()
+            expected_usage = {}
+            if include_initial_usage or not (close_early or stream_error):
+                expected_usage = {
+                    "gen_ai.usage.input_tokens": 1,
+                    "gen_ai.usage.output_tokens": initial_output_tokens if close_early or stream_error else 2,
+                }
+            assert record_usage.call_args.args[0] == expected_usage
+            for key, value in expected_usage.items():
+                assert spans[0].attributes[key] == value
+            logs = log_exporter.get_finished_logs()
+            assert len(logs) == (1 if stream_error else 0)
+            if stream_error:
+                assert spans[0].attributes["gen_ai.response.finish_reasons"] == (finish_reason or "error",)
+                assert spans[0].attributes["error.type"] == "openai.APIError"
+                assert spans[0].status.status_code == StatusCode.ERROR
+                log = logs[0].log_record
+                assert log.event_name == "gen_ai.client.inference.exception"
+                assert log.severity_number == SeverityNumber.WARN
+                assert log.trace_id == spans[0].context.trace_id
+                assert log.span_id == spans[0].context.span_id
+            elif close_early:
+                assert spans[0].attributes["gen_ai.response.finish_reasons"] == (finish_reason or "interrupted",)
+                assert "error.type" not in spans[0].attributes
+                assert spans[0].status.status_code.name == "UNSET"
+            elif output_deltas:
+                assert spans[0].attributes["gen_ai.response.finish_reasons"] == (end_reason or "error",)
+            histogram_attributes = dict(record_usage.call_args.args[1])
+            assert "error.type" not in histogram_attributes
+            if stream_error:
+                histogram_attributes["error.type"] = spans[0].attributes["error.type"]
+            for attribute, instrument, counter in (
+                ("gen_ai.usage.input_tokens", input_histogram, input_counter),
+                ("gen_ai.usage.output_tokens", output_histogram, output_counter),
+            ):
+                tokens = expected_usage.get(attribute, 0)
+                instrument.record.assert_called_once_with(tokens, histogram_attributes)
+                if tokens:
+                    counter.add.assert_called_once_with(
+                        tokens, {**record_usage.call_args.args[1], "gen_ai.token.modality": "unknown"}
+                    )
+                else:
+                    counter.add.assert_not_called()
+                if attribute not in expected_usage:
+                    assert attribute not in spans[0].attributes
             data = reader.get_metrics_data()
-            points_by_metric = {}
-            if data is not None:
-                for resource in data.resource_metrics:
-                    for scope in resource.scope_metrics:
-                        for metric in scope.metrics:
-                            points_by_metric.setdefault(metric.name, []).extend(metric.data.data_points)
-            points = points_by_metric.get("gen_ai.client.inference.time_to_first_chunk", [])
-            tpoc_points = points_by_metric.get("gen_ai.client.inference.time_per_output_chunk", [])
+            metrics = (
+                {}
+                if data is None
+                else {
+                    metric.name: metric.data.data_points
+                    for resource in data.resource_metrics
+                    for scope in resource.scope_metrics
+                    for metric in scope.metrics
+                }
+            )
             if expected_ttfc is None:
                 assert "gen_ai.response.time_to_first_chunk" not in spans[0].attributes
-                assert points == []
-                assert tpoc_points == []
+                assert first_chunk_metric not in metrics
             else:
                 ttfc = spans[0].attributes["gen_ai.response.time_to_first_chunk"]
                 assert isclose(ttfc, expected_ttfc, abs_tol=1e-9), (ttfc, expected_ttfc, output_deltas)
-                assert len(points) == 1
-                assert points[0].count == 1
-                assert points[0].sum == ttfc
-                assert points[0].attributes["gen_ai.response.model"] == "gpt-4o-mini"
-                if len(output_deltas) > 1:
-                    assert len(tpoc_points) == 1
-                    assert tpoc_points[0].count == len(output_deltas) - 1
-                    assert isclose(tpoc_points[0].sum, 0.3 * (len(output_deltas) - 1), abs_tol=1e-9)
-                    assert tpoc_points[0].attributes["gen_ai.response.model"] == "gpt-4o-mini"
-                else:
-                    assert tpoc_points == []
+                (point,) = metrics[first_chunk_metric]
+                assert point.count == 1
+                assert point.sum == ttfc
+                assert point.attributes["gen_ai.response.model"] == "gpt-4o-mini"
+            if expected_interval is None:
+                assert chunk_interval_metric not in metrics
+            else:
+                (point,) = metrics[chunk_interval_metric]
+                assert point.count == 1
+                assert isclose(point.sum, expected_interval, abs_tol=1e-9)
+                assert point.attributes["gen_ai.response.model"] == "gpt-4o-mini"
         finally:
             tracer_provider.shutdown()
+            logger_provider.shutdown()
             meter_provider.shutdown()
 
-    check_stream([{"content": "Hello"}, {"content": " world"}], 0.5)
+    check_stream([{"content": "Hello"}, {"content": " world"}], 0.5, expected_interval=0.4)
     for delta in (
         {"refusal": "I cannot help with that."},
         {"audio": {"data": "YQ=="}},
@@ -876,6 +989,14 @@ def run_chat_streaming_ttfc_checks():
     # Failed attempt: 0.1 s auth + 0.05 s request + 0.2 s SDK backoff.
     check_stream([{"content": "Hello"}], 0.85, retry=True)
     check_stream([], None)
+    check_stream([{"content": "Hello"}, {"content": " world"}], 0.5, close_early=True)
+    check_stream([{"content": "Hello"}], 0.5, close_early=True, finish_reason="stop")
+    check_stream([{"content": "Hello"}], 0.5, end_reason=None)
+    check_stream([{"content": "Hello"}], 0.5, close_early=True, initial_output_tokens=1)
+    check_stream([{"content": "Hello"}], 0.5, stream_error=True, initial_output_tokens=1)
+    check_stream([{"content": "Hello"}], 0.5, stream_error=True, finish_reason="stop")
+    check_stream([{"content": "Hello"}], 0.49, close_early=True, include_initial_usage=False)
+    check_stream([{"content": "Hello"}], 0.49, stream_error=True, include_initial_usage=False)
     print("    -> TTFC boundary checks passed")
 
 
@@ -1406,7 +1527,7 @@ def run_responses_with_prompt_template_reference(client):
         print(f"    -> {(output_text or '')[:60]}")
 
 
-def _emit_fetch_response_span(client, response_id, starting_after=None, stream=False):
+def _emit_fetch_response_span(client, response_id, starting_after=None, stream=False, *, close_early=False):
     """Fetch a response by id and emit the `gen_ai.fetch_response.client` span.
 
     Owns its own span boundary, so all attributes are set inline here. Every
@@ -1415,12 +1536,11 @@ def _emit_fetch_response_span(client, response_id, starting_after=None, stream=F
     - `gen_ai.response.id`, `gen_ai.response.model` come from the fetched object.
     - `gen_ai.response.status` conveys the lifecycle state of the fetched response
       (for example `completed` or `failed`), taken from the fetched `status` field.
-    - `gen_ai.response.finish_reasons` conveys the ORIGINAL generation's outcome,
-      derived from the fetched `status`/`incomplete_details` (see helper above).
-      It is only recorded for terminal statuses; a still-`queued` or `in_progress`
-      response has no finish reason. A fetched response whose original generation
-      failed or is incomplete is NOT an error of this fetch, so `error.type`/span
-      status are not set for it.
+    - `gen_ai.response.finish_reasons` comes from the fetched status and incomplete
+      details. A non-streaming `queued` or `in_progress` response has no finish reason.
+      Before a final status, a caller close records `interrupted` and an unexpected
+      ending records `error`. A failed or incomplete generation leaves the fetch
+      span's status and `error.type` unset.
     - `gen_ai.system_instructions`, `gen_ai.output.messages`, and
       `gen_ai.tool.definitions` are the content carried by the fetched response.
       The original input messages are NOT part of the fetched response object,
@@ -1454,25 +1574,34 @@ def _emit_fetch_response_span(client, response_id, starting_after=None, stream=F
     with _reference_tracer.start_as_current_span(
         "fetch_response", attributes=span_attributes, record_exception=False
     ) as span:
+        finish_reason = None
         try:
             if stream:
-                # The terminal `response.completed` event carries the full response object.
                 fetched = None
                 retrieve_kwargs = {"stream": True}
                 if starting_after is not None:
                     retrieve_kwargs["starting_after"] = starting_after
-                for event in client.responses.retrieve(response_id, **retrieve_kwargs):
-                    candidate = getattr(event, "response", None)
-                    if candidate is not None:
-                        fetched = candidate
+                fetched_stream = ObservedStream(client.responses.retrieve(response_id, **retrieve_kwargs))
+                with fetched_stream:
+                    for event in fetched_stream:
+                        candidate = getattr(event, "response", None)
+                        if candidate is not None:
+                            fetched = candidate
+                            finish_reason = responses_finish_reason(candidate) or finish_reason
+                        if close_early:
+                            break
+                finish_reason = finish_reason or fetched_stream.finish_reason
+                if fetched is None:
+                    span.set_attribute("gen_ai.response.finish_reasons", [finish_reason])
+                    return
             else:
                 fetched = client.responses.retrieve(response_id)
+                finish_reason = responses_finish_reason(fetched)
             span.set_attribute("gen_ai.response.id", fetched.id)
             span.set_attribute("gen_ai.response.model", fetched.model)
             status = getattr(fetched, "status", None)
             if status is not None:
                 span.set_attribute("gen_ai.response.status", status)
-            finish_reason = responses_finish_reason(fetched)
             if finish_reason is not None:
                 span.set_attribute("gen_ai.response.finish_reasons", [finish_reason])
             service_tier = getattr(fetched, "service_tier", None)
@@ -1518,6 +1647,8 @@ def _emit_fetch_response_span(client, response_id, starting_after=None, stream=F
             # the original generation (already accounted for on that operation).
             print(f"    -> fetched {fetched.id} (status={getattr(fetched, 'status', None)})")
         except Exception as e:
+            if stream:
+                span.set_attribute("gen_ai.response.finish_reasons", [finish_reason or "error"])
             span.set_status(StatusCode.ERROR, str(e))
             span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
             reference_event_logger().emit(
@@ -1664,17 +1795,116 @@ def run_fetch_response_error_reference():
             raise AssertionError("Expected the SDK to reject the fetch response request")
 
 
-def main():
+def run_fetch_response_checks():
+    """Check fetched-response status and stream endings through the SDK."""
+    from unittest.mock import patch
+
+    import httpx2
+    import openai
+    from opentelemetry.sdk.trace import TracerProvider
+    from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+    from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
+
+    exporter = InMemorySpanExporter()
+    tracer_provider = TracerProvider()
+    tracer_provider.add_span_processor(SimpleSpanProcessor(exporter))
+
+    def check_fetch(status, expected, *, stream=True, stream_error=False, close_early=False):
+        response = {
+            "id": "resp-check",
+            "object": "response",
+            "created_at": 0,
+            "model": "gpt-4o-mini",
+            "status": status,
+            "output": [],
+            "usage": {"input_tokens": 1, "output_tokens": 0, "total_tokens": 1},
+            "incomplete_details": {"reason": "max_output_tokens"} if status == "incomplete" else None,
+        }
+        payloads = []
+        if status:
+            payloads.append({"type": f"response.{status}", "response": response, "sequence_number": 0})
+        if close_early:
+            terminal = {**response, "status": "completed"}
+            payloads.append({"type": "response.completed", "response": terminal, "sequence_number": 1})
+        if stream_error:
+            payloads.append({"error": {"message": "stream failed", "type": "server_error"}})
+        body = "".join(f"data: {json.dumps(payload)}\n\n" for payload in payloads)
+        body += "data: [DONE]\n\n"
+        responses = []
+
+        def respond(request):
+            assert request.url.path == "/v1/responses/resp-check"
+            assert request.url.params.get("stream") == ("true" if stream else None)
+            result = (
+                httpx2.Response(200, headers={"content-type": "text/event-stream"}, content=body.encode())
+                if stream
+                else httpx2.Response(200, json=response)
+            )
+            responses.append(result)
+            return result
+
+        exporter.clear()
+        with openai.OpenAI(
+            base_url=MOCK_BASE_URL,
+            api_key="mock-key",
+            max_retries=0,
+            http_client=httpx2.Client(transport=httpx2.MockTransport(respond)),
+        ) as client:
+            try:
+                _emit_fetch_response_span(client, response["id"], stream=stream, close_early=close_early)
+            except openai.APIError:
+                if not stream_error:
+                    raise
+            else:
+                assert not stream_error, "expected the OpenAI SDK to raise"
+
+        (span,) = exporter.get_finished_spans()
+        (http_response,) = responses
+        assert http_response.is_closed
+        assert span.attributes.get("gen_ai.request.stream") == (True if stream else None)
+        if not stream_error:
+            assert span.attributes.get("gen_ai.response.status") == status
+        assert span.attributes.get("gen_ai.response.finish_reasons") == ((expected,) if expected else None)
+        assert span.status.status_code == (StatusCode.ERROR if stream_error else StatusCode.UNSET)
+        assert ("error.type" in span.attributes) == stream_error
+        assert not any(key.startswith("gen_ai.usage.") for key in span.attributes)
+
+    try:
+        with patch(f"{__name__}._reference_tracer", tracer_provider.get_tracer("gen_ai.reference")):
+            for status, finish_reason in (
+                (None, "error"),
+                ("in_progress", "error"),
+                ("completed", "stop"),
+                ("incomplete", "length"),
+                ("failed", "error"),
+            ):
+                check_fetch(status, finish_reason)
+            check_fetch(None, "error", stream_error=True)
+            check_fetch("completed", "stop", stream_error=True)
+            check_fetch("in_progress", "interrupted", close_early=True)
+            check_fetch("cancelled", "interrupted", stream=False)
+    finally:
+        tracer_provider.shutdown()
+    print("    -> fetch response checks passed")
+
+
+def main(*, caller_close=False):
     print("=== Reference Implementation: OpenAI Reference Implementation ===")
 
     # Keep controlled-clock checks separate from the OTLP-exported reference run.
-    run_chat_streaming_ttfc_checks()
+    run_chat_streaming_timing_checks()
+    run_fetch_response_checks()
 
     tp, lp, mp = setup_otel()
 
     import openai
 
     client = openai.OpenAI(base_url=MOCK_BASE_URL, api_key="mock-key")
+
+    if caller_close:
+        run_chat_streaming_reference(client, close_early=True)
+        flush_and_shutdown(tp, lp, mp)
+        return
 
     run_chat_reference(client)
     run_chat_error_reference()

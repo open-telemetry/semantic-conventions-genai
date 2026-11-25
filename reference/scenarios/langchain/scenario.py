@@ -35,19 +35,17 @@ _retrieval_duration = _reference_meter.create_histogram(
     description="The duration of a single retrieval operation.",
     explicit_bucket_boundaries_advisory=[
         0.01,
-        0.02,
-        0.04,
-        0.08,
-        0.16,
-        0.32,
-        0.64,
-        1.28,
-        2.56,
-        5.12,
-        10.24,
-        20.48,
-        40.96,
-        81.92,
+        0.025,
+        0.05,
+        0.1,
+        0.25,
+        0.5,
+        1,
+        2.5,
+        5,
+        10,
+        30,
+        60,
     ],
 )
 
@@ -91,7 +89,14 @@ async def agent_node(state: GraphState) -> GraphState:
             )
             agent_span.set_attribute(
                 "gen_ai.tool.definitions",
-                [{"type": "function", "name": get_weather.name, "description": get_weather.description}],
+                [
+                    {
+                        "type": "function",
+                        "name": get_weather.name,
+                        "description": get_weather.description,
+                        "parameters": get_weather.tool_call_schema.model_json_schema(),
+                    }
+                ],
             )
 
             # LangChain delegates the model call to the underlying LLM client (openai),

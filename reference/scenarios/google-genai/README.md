@@ -11,7 +11,7 @@ tool execution is instrumentable here.
 | embeddings | Yes — calls the model directly | ✅ Implemented |
 | execute_tool | Yes — automatic function calling executes the tool | ✅ Implemented |
 | create_agent | Yes — `google.genai.Client.agents` supports remote agent creation | ✅ Implemented |
-| invoke_agent (client) | Yes - `client.interactions.create(agent=...)` invokes a managed agent | ✅ Implemented, including streaming |
+| invoke_agent (client) | Yes - `client.interactions.create(agent=...)` invokes a managed agent | ✅ Implemented, including streaming and a [duration histogram](../../../docs/gen-ai/client-invoke-agent.md#metric-gen_aiclientinvoke_agentduration) |
 
 The embeddings error handler records a correlated
 `gen_ai.client.embeddings.exception` WARN log. This scenario does not exercise that path.

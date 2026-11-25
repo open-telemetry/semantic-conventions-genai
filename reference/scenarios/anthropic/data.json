@@ -12,9 +12,11 @@
       "gen_ai.request.model",
       "gen_ai.request.reasoning.level",
       "gen_ai.request.service_tier",
+      "gen_ai.request.stream",
       "gen_ai.response.finish_reasons",
       "gen_ai.response.id",
       "gen_ai.response.model",
+      "gen_ai.response.time_to_first_chunk",
       "gen_ai.system_instructions",
       "gen_ai.system_instructions_ref",
       "gen_ai.tool.definitions",
@@ -53,9 +55,11 @@
       "gen_ai.request.model",
       "gen_ai.request.reasoning.level",
       "gen_ai.request.service_tier",
+      "gen_ai.request.stream",
       "gen_ai.response.finish_reasons",
       "gen_ai.response.id",
       "gen_ai.response.model",
+      "gen_ai.response.time_to_first_chunk",
       "gen_ai.system_instructions",
       "gen_ai.system_instructions_ref",
       "gen_ai.tool.definitions",
@@ -86,6 +90,14 @@
       "server.port"
     ],
     "gen_ai.client.inference.operation.output_tokens": [
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "gen_ai.request.model",
+      "gen_ai.response.model",
+      "server.address",
+      "server.port"
+    ],
+    "gen_ai.client.inference.time_to_first_chunk": [
       "gen_ai.operation.name",
       "gen_ai.provider.name",
       "gen_ai.request.model",

@@ -4,8 +4,10 @@
 """
 
 import base64
+import json
 import os
 from tempfile import mkdtemp
+from time import perf_counter
 
 import anthropic
 from opentelemetry.trace import SpanKind, StatusCode
@@ -21,6 +23,7 @@ from opentelemetry.util.genai.types import (
     ToolCallRequest,
 )
 from reference_shared import (
+    ObservedStream,
     flush_and_shutdown,
     inference_duration_view,
     mock_server_host_port,
@@ -32,6 +35,12 @@ from reference_shared import (
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"]
 
 _reference_meter = reference_meter()
+
+_time_to_first_chunk = _reference_meter.create_histogram(
+    "gen_ai.client.inference.time_to_first_chunk",
+    unit="s",
+    description="Time to receive the first output chunk of a streaming inference operation.",
+)
 
 _operation_input_tokens = _reference_meter.create_histogram(
     "gen_ai.client.inference.operation.input_tokens",
@@ -88,7 +97,7 @@ def usage_metric_attributes(inv, request_model, server_address, server_port):
     return attributes
 
 
-def record_inference_usage(inv, request_model, server_address, server_port):
+def record_inference_usage(inv, request_model, server_address, server_port, *, error=None):
     """Record the usage instruments from the same values the span carries.
 
     The Messages API reports no per-modality token breakdown - not even for the
@@ -98,12 +107,16 @@ def record_inference_usage(inv, request_model, server_address, server_port):
     """
     metric_attributes = usage_metric_attributes(inv, request_model, server_address, server_port)
     modality_attributes = {**metric_attributes, "gen_ai.token.modality": "unknown"}
+    histogram_attributes = metric_attributes
+    if error is not None:
+        error_type = f"{type(error).__module__}.{type(error).__qualname__}"
+        histogram_attributes = {**metric_attributes, "error.type": error_type}
     if inv.input_tokens is not None:
-        _operation_input_tokens.record(inv.input_tokens, metric_attributes)
+        _operation_input_tokens.record(inv.input_tokens, histogram_attributes)
         if inv.input_tokens > 0:
             _input_tokens.add(inv.input_tokens, modality_attributes)
     if inv.output_tokens is not None:
-        _operation_output_tokens.record(inv.output_tokens, metric_attributes)
+        _operation_output_tokens.record(inv.output_tokens, histogram_attributes)
         if inv.output_tokens > 0:
             _output_tokens.add(inv.output_tokens, modality_attributes)
     if inv.cache_read_input_tokens is not None and inv.cache_read_input_tokens > 0:
@@ -210,6 +223,227 @@ def run_chat(handler):
         print(f"    -> tool_call: {first_block.name}")
     else:
         print(f"    -> {first_block.type}")
+
+
+def run_chat_streaming_close(handler, client, *, close_early=True):
+    """Scenario: leave the Messages stream context after its first text delta."""
+    print("  [chat_streaming_close] caller closes before the final message")
+    request_model = "claude-sonnet-4-20250514"
+    request_max_tokens = 100
+    messages = [{"role": "user", "content": "Tell me a story."}]
+    host, port = mock_server_host_port(MOCK_BASE_URL)
+    with handler.inference(
+        provider="anthropic",
+        request_model=request_model,
+        server_address=host,
+        server_port=port,
+    ) as inv:
+        inv.attributes["gen_ai.request.stream"] = True
+        inv.max_tokens = request_max_tokens
+        inv.input_messages = [InputMessage(role="user", parts=[Text(content=messages[0]["content"])])]
+        text = ""
+        started_at = perf_counter()
+        stream = ObservedStream(
+            client.messages.stream(model=request_model, max_tokens=request_max_tokens, messages=messages)
+        )
+        try:
+            with stream:
+                for event in stream:
+                    received_at = perf_counter()
+                    if event.type == "message_start":
+                        message = event.message
+                        inv.response_id = message.id
+                        inv.response_model_name = message.model
+                        cache_read = message.usage.cache_read_input_tokens or 0
+                        cache_write = message.usage.cache_creation_input_tokens or 0
+                        inv.input_tokens = message.usage.input_tokens + cache_read + cache_write
+                        inv.cache_read_input_tokens = cache_read or None
+                        if cache_write:
+                            inv.attributes["gen_ai.usage.cache_write.input_tokens"] = cache_write
+                        inv.output_tokens = message.usage.output_tokens
+                    elif event.type == "message_delta":
+                        if event.delta.stop_reason:
+                            inv.finish_reasons = [event.delta.stop_reason]
+                        inv.output_tokens = event.usage.output_tokens
+                    elif event.type == "content_block_delta" and event.delta.type == "text_delta" and event.delta.text:
+                        if not text:
+                            ttfc = received_at - started_at
+                            inv.attributes["gen_ai.response.time_to_first_chunk"] = ttfc
+                            _time_to_first_chunk.record(ttfc, usage_metric_attributes(inv, request_model, host, port))
+                        text += event.delta.text
+                        if close_early:
+                            break
+        finally:
+            if not inv.finish_reasons:
+                inv.finish_reasons = [stream.finish_reason]
+            if text:
+                inv.output_messages = [OutputMessage(role="assistant", parts=[Text(content=text)])]
+            record_inference_usage(inv, request_model, host, port, error=stream.error)
+            print(f"    -> {inv.finish_reasons[0]}, input tokens: {inv.input_tokens}")
+
+
+def run_chat_streaming_checks():
+    """Check stream endings and first-chunk timing through the SDK."""
+    from unittest.mock import patch
+
+    import httpx2
+    from opentelemetry.sdk._logs import LoggerProvider
+    from opentelemetry.sdk.metrics import MeterProvider
+    from opentelemetry.sdk.trace import TracerProvider
+    from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+    from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
+    from opentelemetry.util.genai.handler import TelemetryHandler
+
+    def check_stream(*, close_early=False, stop_reason=None, stream_error=False, include_text=True):
+        observed = []
+        responses = []
+        now = 0.0
+        stream_type = ObservedStream
+
+        def observe(manager):
+            stream = stream_type(manager)
+            observed.append(stream)
+            return stream
+
+        def events():
+            nonlocal now
+            payloads = [
+                {
+                    "type": "message_start",
+                    "message": {
+                        "id": "msg-stream",
+                        "type": "message",
+                        "role": "assistant",
+                        "model": "claude-sonnet-4-20250514",
+                        "content": [],
+                        "stop_reason": None,
+                        "usage": {"input_tokens": 10, "output_tokens": 1, "cache_read_input_tokens": 2},
+                    },
+                },
+                {"type": "content_block_start", "index": 0, "content_block": {"type": "text", "text": ""}},
+                {"type": "content_block_delta", "index": 0, "delta": {"type": "text_delta", "text": ""}},
+            ]
+            if include_text:
+                payloads.extend(
+                    {"type": "content_block_delta", "index": 0, "delta": {"type": "text_delta", "text": text}}
+                    for text in ("Hello", " world")
+                )
+            payloads.extend(
+                (
+                    {"type": "content_block_stop", "index": 0},
+                    {"type": "message_delta", "delta": {"stop_reason": stop_reason}, "usage": {"output_tokens": 3}},
+                )
+            )
+            if stream_error:
+                payloads.append({"type": "error", "error": {"type": "overloaded_error", "message": "stream failed"}})
+            else:
+                payloads.append({"type": "message_stop"})
+            for payload in payloads:
+                now += 0.125
+                yield f"event: {payload['type']}\ndata: {json.dumps(payload)}\n\n".encode()
+
+        def respond(request):
+            nonlocal now
+            assert request.url.path == "/v1/messages"
+            request_body = json.loads(request.content)
+            assert request_body["stream"] is True
+            assert request_body["max_tokens"] == 100
+            now += 0.5
+            response = httpx2.Response(200, headers={"content-type": "text/event-stream"}, content=events())
+            responses.append(response)
+            return response
+
+        exporter = InMemorySpanExporter()
+        tracer_provider = TracerProvider()
+        tracer_provider.add_span_processor(SimpleSpanProcessor(exporter))
+        meter_provider = MeterProvider()
+        logger_provider = LoggerProvider()
+        try:
+            handler = TelemetryHandler(
+                tracer_provider=tracer_provider, meter_provider=meter_provider, logger_provider=logger_provider
+            )
+            with (
+                patch(f"{__name__}.ObservedStream", side_effect=observe),
+                patch(f"{__name__}.perf_counter", side_effect=lambda: now),
+                patch(f"{__name__}._time_to_first_chunk") as histogram,
+                patch(f"{__name__}._operation_input_tokens") as input_histogram,
+                patch(f"{__name__}._operation_output_tokens") as output_histogram,
+                patch(f"{__name__}._input_tokens") as input_counter,
+                patch(f"{__name__}._output_tokens") as output_counter,
+                anthropic.Anthropic(
+                    api_key="mock-key",
+                    base_url=MOCK_BASE_URL,
+                    max_retries=0,
+                    http_client=httpx2.Client(transport=httpx2.MockTransport(respond)),
+                ) as client,
+            ):
+                try:
+                    run_chat_streaming_close(handler, client, close_early=close_early)
+                except anthropic.APIError:
+                    if not stream_error:
+                        raise
+                else:
+                    assert not stream_error, "expected the Anthropic SDK to raise"
+
+            (span,) = exporter.get_finished_spans()
+            (stream,) = observed
+            (http_response,) = responses
+            assert stream.closed_early == (close_early or stream_error)
+            assert stream.exhausted == (not (close_early or stream_error))
+            assert http_response.is_closed
+            expected_reason = "interrupted" if close_early else stop_reason or "error"
+            assert span.attributes["gen_ai.response.finish_reasons"] == (expected_reason,)
+            assert span.attributes["gen_ai.request.max_tokens"] == 100
+            if include_text:
+                assert span.attributes["gen_ai.response.time_to_first_chunk"] == 1.0
+                host, port = mock_server_host_port(MOCK_BASE_URL)
+                histogram.record.assert_called_once_with(
+                    1.0,
+                    {
+                        "gen_ai.operation.name": "chat",
+                        "gen_ai.provider.name": "anthropic",
+                        "gen_ai.request.model": "claude-sonnet-4-20250514",
+                        "gen_ai.response.model": "claude-sonnet-4-20250514",
+                        "server.address": host,
+                        "server.port": port,
+                    },
+                )
+            else:
+                assert "gen_ai.response.time_to_first_chunk" not in span.attributes
+                histogram.record.assert_not_called()
+            assert span.attributes["gen_ai.usage.input_tokens"] == 12
+            assert span.attributes["gen_ai.usage.output_tokens"] == (1 if close_early else 3)
+            assert span.status.status_code == (StatusCode.ERROR if stream_error else StatusCode.UNSET)
+            assert ("error.type" in span.attributes) == stream_error
+            host, port = mock_server_host_port(MOCK_BASE_URL)
+            attributes = {
+                "gen_ai.operation.name": "chat",
+                "gen_ai.provider.name": "anthropic",
+                "gen_ai.request.model": "claude-sonnet-4-20250514",
+                "gen_ai.response.model": "claude-sonnet-4-20250514",
+                "server.address": host,
+                "server.port": port,
+            }
+            histogram_attributes = dict(attributes)
+            if stream_error:
+                histogram_attributes["error.type"] = span.attributes["error.type"]
+            counter_attributes = {**attributes, "gen_ai.token.modality": "unknown"}
+            input_histogram.record.assert_called_once_with(12, histogram_attributes)
+            output_histogram.record.assert_called_once_with(1 if close_early else 3, histogram_attributes)
+            input_counter.add.assert_called_once_with(12, counter_attributes)
+            output_counter.add.assert_called_once_with(1 if close_early else 3, counter_attributes)
+        finally:
+            tracer_provider.shutdown()
+            meter_provider.shutdown()
+            logger_provider.shutdown()
+
+    check_stream()
+    check_stream(close_early=True)
+    check_stream(stop_reason="end_turn")
+    check_stream(stream_error=True)
+    check_stream(stop_reason="end_turn", stream_error=True)
+    check_stream(stop_reason="end_turn", include_text=False)
+    print("    -> chat streaming checks passed")
 
 
 def _has_compaction_block_in_input(messages):
@@ -613,9 +847,12 @@ def run_create_agent(completion_hook):
             raise
 
 
-def main():
+def main(*, caller_close=False):
     """Run all Anthropic reference scenarios."""
     print("=== Reference Implementation: Anthropic (util-genai) ===")
+
+    # Keep controlled-clock checks separate from the OTLP-exported reference run.
+    run_chat_streaming_checks()
 
     os.environ["OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT"] = "SPAN_AND_EVENT"
     os.environ["OTEL_INSTRUMENTATION_GENAI_EMIT_EVENT"] = "true"
@@ -630,6 +867,12 @@ def main():
         logger_provider=lp,
         completion_hook=completion_hook,
     )
+
+    if caller_close:
+        with anthropic.Anthropic(base_url=MOCK_BASE_URL, api_key="mock-key") as client:
+            run_chat_streaming_close(handler, client)
+        flush_and_shutdown(tp, lp, mp)
+        return
 
     run_chat(handler)
     run_compaction(handler)
