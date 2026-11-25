@@ -76,6 +76,7 @@ _METRICS = {
     "gen_ai.client.inference.operation.output_tokens": "Client Inference Operation Output Tokens",
     "gen_ai.client.operation.duration": "Client Operation Duration",
     "gen_ai.client.inference.duration": "Client Inference Duration",
+    "gen_ai.client.inference.time_to_first_chunk": "Client Inference Time To First Chunk",
     "gen_ai.client.inference.time_per_output_chunk": "Client Inference Time Per Output Chunk",
     "gen_ai.client.embeddings.duration": "Client Embeddings Duration",
     "gen_ai.client.embeddings.operation.input_tokens": "Client Embeddings Operation Input Tokens",
