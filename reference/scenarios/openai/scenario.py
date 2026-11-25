@@ -134,15 +134,16 @@ def record_inference_usage(usage, metric_attributes, *, record_missing=False, er
     goes to the `unknown` modality: the API gives no evidence that it is text. Cached
     and cache-written tokens carry no modality breakdown.
     """
-    histogram_attributes = {**metric_attributes, "error.type": error_type} if error_type else metric_attributes
+    if error_type is not None:
+        metric_attributes = {**metric_attributes, "error.type": error_type}
     input_tokens = usage.get("gen_ai.usage.input_tokens")
     if input_tokens is not None or record_missing:
-        _operation_input_tokens.record(input_tokens or 0, histogram_attributes)
+        _operation_input_tokens.record(input_tokens or 0, metric_attributes)
     if input_tokens is not None:
         _add_by_modality(_input_tokens, input_tokens, usage.get("gen_ai.usage.audio.input_tokens"), metric_attributes)
     output_tokens = usage.get("gen_ai.usage.output_tokens")
     if output_tokens is not None or record_missing:
-        _operation_output_tokens.record(output_tokens or 0, histogram_attributes)
+        _operation_output_tokens.record(output_tokens or 0, metric_attributes)
     if output_tokens is not None:
         _add_by_modality(
             _output_tokens, output_tokens, usage.get("gen_ai.usage.audio.output_tokens"), metric_attributes
@@ -489,8 +490,7 @@ def run_chat_parse_error_reference():
                     usage["gen_ai.usage.reasoning.output_tokens"] = completion_details.reasoning_tokens
             span.set_attributes(usage)
             metric_attributes = usage_metric_attributes(request_model, completion.model, host, port)
-            metric_attributes["error.type"] = error_type
-            record_inference_usage(usage, metric_attributes)
+            record_inference_usage(usage, metric_attributes, error_type=error_type)
             reference_event_logger().emit(
                 event_name="gen_ai.client.inference.exception",
                 severity_number=SeverityNumber.WARN,
@@ -1018,20 +1018,19 @@ def run_chat_streaming_timing_checks():
                 assert spans[0].status.status_code.name == "UNSET"
             elif output_deltas:
                 assert spans[0].attributes["gen_ai.response.finish_reasons"] == (end_reason or "error",)
-            histogram_attributes = dict(record_usage.call_args.args[1])
-            assert "error.type" not in histogram_attributes
+            metric_attributes = dict(record_usage.call_args.args[1])
+            assert "error.type" not in metric_attributes
             if stream_error:
-                histogram_attributes["error.type"] = spans[0].attributes["error.type"]
+                metric_attributes["error.type"] = spans[0].attributes["error.type"]
+            counter_attributes = {**metric_attributes, "gen_ai.token.modality": "unknown"}
             for attribute, instrument, counter in (
                 ("gen_ai.usage.input_tokens", input_histogram, input_counter),
                 ("gen_ai.usage.output_tokens", output_histogram, output_counter),
             ):
                 tokens = expected_usage.get(attribute, 0)
-                instrument.record.assert_called_once_with(tokens, histogram_attributes)
+                instrument.record.assert_called_once_with(tokens, metric_attributes)
                 if tokens:
-                    counter.add.assert_called_once_with(
-                        tokens, {**record_usage.call_args.args[1], "gen_ai.token.modality": "unknown"}
-                    )
+                    counter.add.assert_called_once_with(tokens, counter_attributes)
                 else:
                     counter.add.assert_not_called()
                 if attribute not in expected_usage:

@@ -31,6 +31,8 @@ Inference exercises the SDK's `RateLimitError` from
 `client.chat.completions.create` using a mock HTTP 429 response, and an `APIError`
 from a streamed response. Both errors emit a correlated
 `gen_ai.client.inference.exception` WARN log and propagate to the caller.
+When the stream reports usage before it fails, the usage counters carry the
+same `error.type` as the span.
 Closing a stream without an error does not emit this log.
 
 Fetch spans record the built-in `web_search` tool with type `openai.web_search`
