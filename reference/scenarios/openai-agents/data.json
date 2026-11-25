@@ -42,7 +42,112 @@
       "exception.type"
     ]
   },
-  "metrics": {},
+  "metrics": {
+    "gen_ai.client.inference.duration": [
+      "gen_ai.agent.name",
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "gen_ai.request.model",
+      "gen_ai.response.model",
+      "gen_ai.response.service_tier",
+      "server.address",
+      "server.port"
+    ],
+    "gen_ai.client.inference.operation.input_tokens": [
+      "gen_ai.agent.name",
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "gen_ai.request.model",
+      "gen_ai.response.model",
+      "gen_ai.response.service_tier",
+      "server.address",
+      "server.port"
+    ],
+    "gen_ai.client.inference.operation.output_tokens": [
+      "gen_ai.agent.name",
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "gen_ai.request.model",
+      "gen_ai.response.model",
+      "gen_ai.response.service_tier",
+      "server.address",
+      "server.port"
+    ],
+    "gen_ai.client.inference.time_per_output_chunk": [
+      "gen_ai.agent.name",
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "gen_ai.request.model",
+      "gen_ai.response.model",
+      "gen_ai.response.service_tier",
+      "server.address",
+      "server.port"
+    ],
+    "gen_ai.client.inference.time_to_first_chunk": [
+      "gen_ai.agent.name",
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "gen_ai.request.model",
+      "gen_ai.response.model",
+      "gen_ai.response.service_tier",
+      "server.address",
+      "server.port"
+    ],
+    "gen_ai.client.inference.usage.cache_read.input_tokens": [
+      "gen_ai.agent.name",
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "gen_ai.request.model",
+      "gen_ai.response.model",
+      "gen_ai.response.service_tier",
+      "gen_ai.token.modality",
+      "server.address",
+      "server.port"
+    ],
+    "gen_ai.client.inference.usage.cache_write.input_tokens": [
+      "gen_ai.agent.name",
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "gen_ai.request.model",
+      "gen_ai.response.model",
+      "gen_ai.response.service_tier",
+      "gen_ai.token.modality",
+      "server.address",
+      "server.port"
+    ],
+    "gen_ai.client.inference.usage.input_tokens": [
+      "gen_ai.agent.name",
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "gen_ai.request.model",
+      "gen_ai.response.model",
+      "gen_ai.response.service_tier",
+      "gen_ai.token.modality",
+      "server.address",
+      "server.port"
+    ],
+    "gen_ai.client.inference.usage.output_tokens": [
+      "gen_ai.agent.name",
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "gen_ai.request.model",
+      "gen_ai.response.model",
+      "gen_ai.response.service_tier",
+      "gen_ai.token.modality",
+      "server.address",
+      "server.port"
+    ],
+    "gen_ai.client.inference.usage.reasoning.output_tokens": [
+      "gen_ai.agent.name",
+      "gen_ai.operation.name",
+      "gen_ai.provider.name",
+      "gen_ai.request.model",
+      "gen_ai.response.model",
+      "gen_ai.response.service_tier",
+      "server.address",
+      "server.port"
+    ]
+  },
   "entities": {},
   "findings": [
     {

@@ -6,22 +6,24 @@
 
 | Attribute | Supporting Libraries |
 | --- | --- |
-| gen_ai.operation.name | [openai] |
-| gen_ai.provider.name | [openai] |
+| gen_ai.operation.name | [openai], [openai-agents] |
+| gen_ai.provider.name | [openai], [openai-agents] |
 
 ## Conditionally Required
 
 | Attribute | Supporting Libraries |
 | --- | --- |
-| gen_ai.request.model | [openai] |
-| server.port | [openai] |
+| gen_ai.agent.name | [openai-agents] |
+| gen_ai.request.model | [openai], [openai-agents] |
+| server.port | [openai], [openai-agents] |
 
 ## Recommended
 
 | Attribute | Supporting Libraries |
 | --- | --- |
-| gen_ai.response.model | [openai] |
-| gen_ai.response.service_tier | [openai] |
-| server.address | [openai] |
+| gen_ai.response.model | [openai], [openai-agents] |
+| gen_ai.response.service_tier | [openai], [openai-agents] |
+| server.address | [openai], [openai-agents] |
 
 [openai]: ../scenarios/openai/scenario.py
+[openai-agents]: ../scenarios/openai-agents/scenario.py
