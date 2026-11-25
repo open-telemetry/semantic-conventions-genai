@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=../case.schema.json
+description: >
+  The `name` of blob, file and uri parts must be a string.
+schema: gen-ai-input-messages.json
+document: [
+  {
+    "role": "user",
+    "parts": [
+      { "type": "blob", "modality": "document", "name": 123 },
+      { "type": "file", "file_id": "file-abc123", "name": ["Contract 2025"] },
+      { "type": "uri", "uri": "https://example.com/contracts/2026.pdf", "name": { "title": "Contract 2026" } }
+    ]
+  }
+]
+# Regenerate with `uv run pytest --update-snapshots`, do not edit by hand.
+errors:
+  - path: $[0].parts[0].name
+    keyword: type
+    message: 123 is not of type 'string'
+  - path: $[0].parts[1].name
+    keyword: type
+    message: "['Contract 2025'] is not of type 'string'"
+  - path: $[0].parts[2].name
+    keyword: type
+    message: "{'title': 'Contract 2026'} is not of type 'string'"

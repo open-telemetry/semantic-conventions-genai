@@ -233,12 +233,12 @@ class BlobPart(BaseModel):
         default=None,
         description="Raw bytes of the attached data. Instrumentations MAY omit it, for example to avoid recording large binary payloads inline.",
     )
-    filename: Optional[str] = Field(
+    name: Optional[str] = Field(
         default=None,
         description=(
-            "The name of the file the data came from, without directory components, "
-            "as given in the request (for example OpenAI `file.filename`) or supplied by the application. "
-            "Instrumentations SHOULD NOT set it when no name is available."
+            "A human-readable name, title, or filename for the attached data, "
+            "recorded as provided in the instrumented call or response. "
+            "Instrumentations SHOULD leave it unset when no name is provided."
         ),
     )
 
@@ -259,12 +259,13 @@ class FilePart(BaseModel):
         default=None,
         description="An identifier referencing a file that was pre-uploaded to the provider.",
     )
-    filename: Optional[str] = Field(
+    name: Optional[str] = Field(
         default=None,
         description=(
-            "The name of the file the data came from, without directory components, "
-            "as given in the request (for example OpenAI `file.filename`) or supplied by the application. "
-            "Instrumentations SHOULD NOT set it when no name is available."
+            "A human-readable name, title, or filename for the referenced file, "
+            "recorded as provided in the instrumented call or response. "
+            "Instrumentations SHOULD leave it unset when not directly available "
+            "and MUST NOT make extra API calls or cache state across calls to resolve it."
         ),
     )
 
@@ -292,12 +293,14 @@ class UriPart(BaseModel):
             "the provider api (e.g. `gs://bucket/object.png`), or be a publicly accessible location."
         ),
     )
-    filename: Optional[str] = Field(
+    name: Optional[str] = Field(
         default=None,
         description=(
-            "The name of the file the data came from, without directory components, "
-            "as given in the request (for example OpenAI `file.filename`) or supplied by the application. "
-            "Instrumentations SHOULD NOT set it when no name is available."
+            "A human-readable name, title, or filename for the referenced data "
+            "(not a provider resource identifier), recorded as provided alongside the URI "
+            "in the instrumented call or response. "
+            "Instrumentations SHOULD leave it unset when not directly available "
+            "and MUST NOT derive it by parsing the URI path or make extra API calls to resolve it."
         ),
     )
 

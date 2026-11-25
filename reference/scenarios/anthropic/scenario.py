@@ -645,6 +645,104 @@ def run_chat_with_document_input(handler):
     print(f"    -> {resp.content[0].text[:60]}")
 
 
+def run_chat_with_named_documents(handler):
+    """Scenario: chat with titled document blocks from base64, file and URL sources.
+
+    Each document block's `title` is recorded as `name` on the matching part:
+    base64 source -> `blob`, `file` source -> `file`, `url` source -> `uri`.
+    util-genai's `Blob` has no `name` yet, so the parts are passed as plain dicts.
+    """
+    print("  [chat_named_documents] chat with titled document blocks (util-genai handler)")
+    request_model = "claude-sonnet-4-20250514"
+    request_max_tokens = 100
+    instruction = "Compare the three attached contracts."
+    pdf_bytes = b"%PDF-1.4\n%mock pdf for reference scenario\n%%EOF\n"
+    pdf_b64 = base64.b64encode(pdf_bytes).decode("ascii")
+    mime_type = "application/pdf"
+    inline_doc = {
+        "type": "document",
+        "source": {"type": "base64", "media_type": mime_type, "data": pdf_b64},
+        "title": "Contract 2024",
+    }
+    file_doc = {
+        "type": "document",
+        "source": {"type": "file", "file_id": "file_011CNha8iCJcU1wXNR6q4V8w"},
+        "title": "Contract 2025",
+    }
+    url_doc = {
+        "type": "document",
+        "source": {"type": "url", "url": "https://example.com/contracts/2026.pdf"},
+        "title": "Contract 2026",
+    }
+    messages = [
+        {
+            "role": "user",
+            "content": [{"type": "text", "text": instruction}, inline_doc, file_doc, url_doc],
+        }
+    ]
+    client = anthropic.Anthropic(base_url=MOCK_BASE_URL, api_key="mock-key")
+
+    host, port = mock_server_host_port(MOCK_BASE_URL)
+    with handler.inference(
+        provider="anthropic",
+        request_model=request_model,
+        server_address=host,
+        server_port=port,
+    ) as inv:
+        inv.max_tokens = request_max_tokens  # -> gen_ai.request.max_tokens
+        inv.input_messages = [  # -> gen_ai.input.messages
+            InputMessage(
+                role="user",
+                parts=[
+                    Text(content=instruction),
+                    {
+                        "type": "blob",
+                        "modality": "document",
+                        "mime_type": inline_doc["source"]["media_type"],
+                        "content": inline_doc["source"]["data"],
+                        "name": inline_doc["title"],
+                    },
+                    {
+                        "type": "file",
+                        "modality": "document",
+                        "file_id": file_doc["source"]["file_id"],
+                        "name": file_doc["title"],
+                    },
+                    {
+                        "type": "uri",
+                        "modality": "document",
+                        "uri": url_doc["source"]["url"],
+                        "name": url_doc["title"],
+                    },
+                ],
+            )
+        ]
+
+        resp = client.beta.messages.create(
+            model=request_model,
+            max_tokens=request_max_tokens,
+            messages=messages,
+            betas=["files-api-2025-04-14"],
+        )
+
+        inv.response_model_name = resp.model  # -> gen_ai.response.model
+        inv.response_id = resp.id  # -> gen_ai.response.id
+        inv.finish_reasons = [resp.stop_reason]  # -> gen_ai.response.finish_reasons
+
+        if resp.usage:
+            inv.input_tokens = resp.usage.input_tokens  # -> gen_ai.usage.input_tokens
+            inv.output_tokens = resp.usage.output_tokens  # -> gen_ai.usage.output_tokens
+
+        output_parts = [Text(content=block.text) for block in resp.content if hasattr(block, "text")]
+        if output_parts:
+            inv.output_messages = [  # -> gen_ai.output.messages
+                OutputMessage(role="assistant", parts=output_parts)
+            ]
+        record_inference_usage(inv, request_model, host, port)
+
+    print(f"    -> {resp.content[0].text[:60]}")
+
+
 def run_chat_with_image_input(handler):
     """Scenario: chat with an image block (image modality)."""
     print("  [chat_image] chat with image block (util-genai handler)")
@@ -870,6 +968,7 @@ def main(*, caller_close=False):
     run_chat(handler)
     run_compaction(handler)
     run_chat_with_document_input(handler)
+    run_chat_with_named_documents(handler)
     run_chat_with_image_input(handler)
     run_chat_with_search_result_input(handler)
     run_create_agent()
