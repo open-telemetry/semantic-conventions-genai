@@ -940,3 +940,4 @@ Tool execution metrics are defined in [Execute Tool](execute-tool.md#metrics).
 
 [DocumentStatus]: https://opentelemetry.io/docs/specs/otel/document-status
 [ExplicitBucketBoundaries]: https://github.com/open-telemetry/opentelemetry-specification/blob/v1.55.0/specification/metrics/api.md#instrument-advisory-parameters
+[MetricRecommended]: https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/general/signal-requirement-level.md

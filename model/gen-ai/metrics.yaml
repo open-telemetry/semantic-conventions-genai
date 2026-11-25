@@ -326,6 +326,7 @@ metrics:
       - ref_group: attributes.gen_ai.error
       - ref_group: attributes.gen_ai.retrieval.common
   - name: gen_ai.invoke_agent.skill_loads
+    requirement_level: recommended
     annotations:
       code_generation:
         metric_value_type: int

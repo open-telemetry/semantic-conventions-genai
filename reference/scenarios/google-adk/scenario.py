@@ -906,10 +906,10 @@ def run_skills_reference():
                         span.set_attribute("error.type", error_type)
                         span.set_status(StatusCode.ERROR, result.get("error", ""))
                         metric_attributes["error.type"] = error_type
-                    else:
+                    self._record_skill_attributes(span, args, result, error_type, metric_attributes)
+                    if "error.type" not in metric_attributes:
                         # TODO: Determine how to represent this string result in the object-only schema.
                         span.set_attribute("gen_ai.tool.call.result", result)
-                    self._record_skill_attributes(span, args, result, error_type, metric_attributes)
                     return result
                 except Exception as e:
                     error_type = f"{type(e).__module__}.{type(e).__qualname__}"
@@ -1151,7 +1151,8 @@ def run_skills_reference():
                         exception=e,
                     )
                     raise
-            _skill_loads.record(skill_loads["count"], {"gen_ai.agent.name": agent_name})
+                finally:
+                    _skill_loads.record(skill_loads["count"], {"gen_ai.agent.name": agent_name})
 
         async def _phases():
             # The skill lifecycle. Each stage is its own conversation, so each

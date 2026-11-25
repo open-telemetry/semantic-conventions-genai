@@ -372,12 +372,14 @@ async def run_skills():
             instructions="You review code changes.",
             context_providers=[provider],
         ) as agent:
-            result = await agent.run(prompt)
-            print(f"    -> {result.text[:60]}")
-            _invoke_agent_tool_calls.record(
-                tool_calls["count"], {"gen_ai.operation.name": "invoke_agent", "gen_ai.agent.name": agent.name}
-            )
-            _invoke_agent_skill_loads.record(tool_calls["skill_loads"], {"gen_ai.agent.name": agent.name})
+            try:
+                result = await agent.run(prompt)
+                print(f"    -> {result.text[:60]}")
+            finally:
+                _invoke_agent_tool_calls.record(
+                    tool_calls["count"], {"gen_ai.operation.name": "invoke_agent", "gen_ai.agent.name": agent.name}
+                )
+                _invoke_agent_skill_loads.record(tool_calls["skill_loads"], {"gen_ai.agent.name": agent.name})
 
 
 def main():
