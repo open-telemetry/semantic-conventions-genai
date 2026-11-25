@@ -441,6 +441,7 @@ def run_chat_parse_error_reference():
         ) as span,
     ):
         span.set_attribute("gen_ai.request.max_tokens", request_max_tokens)
+        span.set_attribute("gen_ai.output.type", "json")
         span.set_attribute(
             "gen_ai.input.messages",
             [
@@ -476,8 +477,7 @@ def run_chat_parse_error_reference():
                 completion_details = completion.usage.completion_tokens_details
                 if completion_details is not None and completion_details.reasoning_tokens is not None:
                     usage["gen_ai.usage.reasoning.output_tokens"] = completion_details.reasoning_tokens
-            for attribute, value in usage.items():
-                span.set_attribute(attribute, value)
+            span.set_attributes(usage)
             metric_attributes = usage_metric_attributes(request_model, completion.model, host, port)
             metric_attributes["error.type"] = error_type
             record_inference_usage(usage, metric_attributes)
