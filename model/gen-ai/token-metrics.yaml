@@ -26,10 +26,12 @@ metrics:
         metric_value_type: int
     attributes:
       - ref_group: metric_attributes.gen_ai
+      - ref_group: metric_attributes.gen_ai.inference
       - ref: gen_ai.operation.name
         examples: ["chat", "generate_content"]
       - ref: gen_ai.token.modality
         requirement_level: required
+      - ref_group: attributes.gen_ai.error
   - name: gen_ai.client.inference.usage.output_tokens
     requirement_level: recommended
     instrument: counter
@@ -42,10 +44,12 @@ metrics:
         metric_value_type: int
     attributes:
       - ref_group: metric_attributes.gen_ai
+      - ref_group: metric_attributes.gen_ai.inference
       - ref: gen_ai.operation.name
         examples: ["chat", "generate_content"]
       - ref: gen_ai.token.modality
         requirement_level: required
+      - ref_group: attributes.gen_ai.error
   - name: gen_ai.client.inference.usage.cache_read.input_tokens
     requirement_level: recommended
     instrument: counter
@@ -66,10 +70,12 @@ metrics:
         metric_value_type: int
     attributes:
       - ref_group: metric_attributes.gen_ai
+      - ref_group: metric_attributes.gen_ai.inference
       - ref: gen_ai.operation.name
         examples: ["chat", "generate_content"]
       - ref: gen_ai.token.modality
         requirement_level: required
+      - ref_group: attributes.gen_ai.error
   - name: gen_ai.client.inference.usage.cache_write.input_tokens
     requirement_level: recommended
     instrument: counter
@@ -90,10 +96,12 @@ metrics:
         metric_value_type: int
     attributes:
       - ref_group: metric_attributes.gen_ai
+      - ref_group: metric_attributes.gen_ai.inference
       - ref: gen_ai.operation.name
         examples: ["chat", "generate_content"]
       - ref: gen_ai.token.modality
         requirement_level: required
+      - ref_group: attributes.gen_ai.error
   - name: gen_ai.client.inference.usage.reasoning.output_tokens
     requirement_level: recommended
     instrument: counter
@@ -111,8 +119,10 @@ metrics:
         metric_value_type: int
     attributes:
       - ref_group: metric_attributes.gen_ai
+      - ref_group: metric_attributes.gen_ai.inference
       - ref: gen_ai.operation.name
         examples: ["chat", "generate_content"]
+      - ref_group: attributes.gen_ai.error
 
   - name: gen_ai.client.inference.operation.input_tokens
     requirement_level: recommended
@@ -142,6 +152,7 @@ metrics:
         metric_value_type: int
     attributes:
       - ref_group: metric_attributes.gen_ai
+      - ref_group: metric_attributes.gen_ai.inference
       - ref: gen_ai.operation.name
         examples: ["chat", "generate_content"]
       - ref_group: attributes.gen_ai.error
@@ -157,6 +168,7 @@ metrics:
         metric_value_type: int
     attributes:
       - ref_group: metric_attributes.gen_ai
+      - ref_group: metric_attributes.gen_ai.inference
       - ref: gen_ai.operation.name
         examples: ["chat", "generate_content"]
       - ref_group: attributes.gen_ai.error
@@ -187,8 +199,7 @@ metric_refinements:
     ref: gen_ai.client.inference.usage.input_tokens
     brief: >
       OpenAI-specific extension to `gen_ai.client.inference.usage.input_tokens`. Adds
-      `openai.response.service_tier` and `openai.response.system_fingerprint`
-      when the provider is `openai`.
+      `openai.response.system_fingerprint` when the provider is `openai`.
     stability: development
     attributes:
       - ref_group: metric_attributes.openai
@@ -196,8 +207,7 @@ metric_refinements:
     ref: gen_ai.client.inference.usage.output_tokens
     brief: >
       OpenAI-specific extension to `gen_ai.client.inference.usage.output_tokens`. Adds
-      `openai.response.service_tier` and `openai.response.system_fingerprint`
-      when the provider is `openai`.
+      `openai.response.system_fingerprint` when the provider is `openai`.
     stability: development
     attributes:
       - ref_group: metric_attributes.openai
@@ -205,8 +215,7 @@ metric_refinements:
     ref: gen_ai.client.inference.usage.cache_read.input_tokens
     brief: >
       OpenAI-specific extension to `gen_ai.client.inference.usage.cache_read.input_tokens`. Adds
-      `openai.response.service_tier` and `openai.response.system_fingerprint`
-      when the provider is `openai`.
+      `openai.response.system_fingerprint` when the provider is `openai`.
     stability: development
     attributes:
       - ref_group: metric_attributes.openai
@@ -214,8 +223,7 @@ metric_refinements:
     ref: gen_ai.client.inference.usage.cache_write.input_tokens
     brief: >
       OpenAI-specific extension to `gen_ai.client.inference.usage.cache_write.input_tokens`. Adds
-      `openai.response.service_tier` and `openai.response.system_fingerprint`
-      when the provider is `openai`.
+      `openai.response.system_fingerprint` when the provider is `openai`.
     stability: development
     attributes:
       - ref_group: metric_attributes.openai
@@ -223,8 +231,7 @@ metric_refinements:
     ref: gen_ai.client.inference.usage.reasoning.output_tokens
     brief: >
       OpenAI-specific extension to `gen_ai.client.inference.usage.reasoning.output_tokens`. Adds
-      `openai.response.service_tier` and `openai.response.system_fingerprint`
-      when the provider is `openai`.
+      `openai.response.system_fingerprint` when the provider is `openai`.
     stability: development
     attributes:
       - ref_group: metric_attributes.openai
@@ -232,8 +239,7 @@ metric_refinements:
     ref: gen_ai.client.inference.operation.input_tokens
     brief: >
       OpenAI-specific extension to `gen_ai.client.inference.operation.input_tokens`. Adds
-      `openai.response.service_tier` and `openai.response.system_fingerprint`
-      when the provider is `openai`.
+      `openai.response.system_fingerprint` when the provider is `openai`.
     stability: development
     attributes:
       - ref_group: metric_attributes.openai
@@ -241,8 +247,7 @@ metric_refinements:
     ref: gen_ai.client.inference.operation.output_tokens
     brief: >
       OpenAI-specific extension to `gen_ai.client.inference.operation.output_tokens`. Adds
-      `openai.response.service_tier` and `openai.response.system_fingerprint`
-      when the provider is `openai`.
+      `openai.response.system_fingerprint` when the provider is `openai`.
     stability: development
     attributes:
       - ref_group: metric_attributes.openai
