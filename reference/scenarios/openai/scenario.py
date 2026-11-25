@@ -134,15 +134,16 @@ def record_inference_usage(usage, metric_attributes, *, record_missing=False, er
     goes to the `unknown` modality: the API gives no evidence that it is text. Cached
     and cache-written tokens carry no modality breakdown.
     """
-    histogram_attributes = {**metric_attributes, "error.type": error_type} if error_type else metric_attributes
+    if error_type is not None:
+        metric_attributes = {**metric_attributes, "error.type": error_type}
     input_tokens = usage.get("gen_ai.usage.input_tokens")
     if input_tokens is not None or record_missing:
-        _operation_input_tokens.record(input_tokens or 0, histogram_attributes)
+        _operation_input_tokens.record(input_tokens or 0, metric_attributes)
     if input_tokens is not None:
         _add_by_modality(_input_tokens, input_tokens, usage.get("gen_ai.usage.audio.input_tokens"), metric_attributes)
     output_tokens = usage.get("gen_ai.usage.output_tokens")
     if output_tokens is not None or record_missing:
-        _operation_output_tokens.record(output_tokens or 0, histogram_attributes)
+        _operation_output_tokens.record(output_tokens or 0, metric_attributes)
     if output_tokens is not None:
         _add_by_modality(
             _output_tokens, output_tokens, usage.get("gen_ai.usage.audio.output_tokens"), metric_attributes
@@ -393,6 +394,110 @@ def run_chat_error_reference():
             pass
         else:
             raise AssertionError("Expected the SDK to reject the inference request")
+
+
+def run_chat_parse_error_reference():
+    """Exercise a non-streaming parsing error whose SDK exception retains usage."""
+    import httpx2
+    import openai
+    from pydantic import BaseModel
+
+    class Answer(BaseModel):
+        answer: str
+
+    request_model = "gpt-5.6-sol"
+    request_max_tokens = 32
+    messages = [
+        {
+            "role": "user",
+            "content": "Summarize these notes as JSON:\n" + "Reference note. " * 1024,
+        }
+    ]
+    transport = httpx2.MockTransport(
+        lambda request: httpx2.Response(
+            200,
+            json={
+                "id": "chatcmpl-parse-error",
+                "object": "chat.completion",
+                "created": 1730000000,
+                "model": request_model,
+                "choices": [
+                    {
+                        "index": 0,
+                        "message": {"role": "assistant", "content": '{"answer":"The summary is'},
+                        "finish_reason": "length",
+                    }
+                ],
+                "usage": {
+                    "prompt_tokens": 4096,
+                    "completion_tokens": 32,
+                    "total_tokens": 4128,
+                    "prompt_tokens_details": {"cached_tokens": 2048, "cache_write_tokens": 1024},
+                    "completion_tokens_details": {"reasoning_tokens": 16},
+                },
+            },
+        )
+    )
+    host, port = mock_server_host_port(MOCK_BASE_URL)
+    span_attributes = usage_metric_attributes(request_model, None, host, port)
+    with (
+        openai.OpenAI(
+            base_url=MOCK_BASE_URL,
+            api_key="mock-key",
+            max_retries=0,
+            http_client=httpx2.Client(transport=transport),
+        ) as client,
+        _reference_tracer.start_as_current_span(
+            f"chat {request_model}", kind=SpanKind.CLIENT, attributes=span_attributes, record_exception=False
+        ) as span,
+    ):
+        span.set_attribute("gen_ai.request.max_tokens", request_max_tokens)
+        span.set_attribute("gen_ai.output.type", "json")
+        span.set_attribute(
+            "gen_ai.input.messages",
+            [
+                {"role": message["role"], "parts": [{"type": "text", "content": message["content"]}]}
+                for message in messages
+            ],
+        )
+        try:
+            client.chat.completions.parse(
+                model=request_model,
+                messages=messages,
+                max_completion_tokens=request_max_tokens,
+                response_format=Answer,
+            )
+        except openai.LengthFinishReasonError as error:
+            completion = error.completion
+            error_type = f"{type(error).__module__}.{type(error).__qualname__}"
+            span.set_status(StatusCode.ERROR, str(error))
+            span.set_attribute("error.type", error_type)
+            span.set_attribute("gen_ai.response.id", completion.id)
+            span.set_attribute("gen_ai.response.model", completion.model)
+            span.set_attribute("gen_ai.response.finish_reasons", chat_finish_reasons(completion.choices))
+            usage = {}
+            if completion.usage is not None:
+                usage["gen_ai.usage.input_tokens"] = completion.usage.prompt_tokens
+                usage["gen_ai.usage.output_tokens"] = completion.usage.completion_tokens
+                prompt_details = completion.usage.prompt_tokens_details
+                if prompt_details is not None:
+                    if prompt_details.cached_tokens is not None:
+                        usage["gen_ai.usage.cache_read.input_tokens"] = prompt_details.cached_tokens
+                    if prompt_details.cache_write_tokens is not None:
+                        usage["gen_ai.usage.cache_write.input_tokens"] = prompt_details.cache_write_tokens
+                completion_details = completion.usage.completion_tokens_details
+                if completion_details is not None and completion_details.reasoning_tokens is not None:
+                    usage["gen_ai.usage.reasoning.output_tokens"] = completion_details.reasoning_tokens
+            span.set_attributes(usage)
+            metric_attributes = usage_metric_attributes(request_model, completion.model, host, port)
+            record_inference_usage(usage, metric_attributes, error_type=error_type)
+            reference_event_logger().emit(
+                event_name="gen_ai.client.inference.exception",
+                severity_number=SeverityNumber.WARN,
+                exception=error,
+            )
+        else:
+            raise AssertionError("Expected the SDK to reject the truncated structured output")
 
 
 def run_responses_compaction_reference(client):
@@ -913,20 +1018,19 @@ def run_chat_streaming_timing_checks():
                 assert spans[0].status.status_code.name == "UNSET"
             elif output_deltas:
                 assert spans[0].attributes["gen_ai.response.finish_reasons"] == (end_reason or "error",)
-            histogram_attributes = dict(record_usage.call_args.args[1])
-            assert "error.type" not in histogram_attributes
+            metric_attributes = dict(record_usage.call_args.args[1])
+            assert "error.type" not in metric_attributes
             if stream_error:
-                histogram_attributes["error.type"] = spans[0].attributes["error.type"]
+                metric_attributes["error.type"] = spans[0].attributes["error.type"]
+            counter_attributes = {**metric_attributes, "gen_ai.token.modality": "unknown"}
             for attribute, instrument, counter in (
                 ("gen_ai.usage.input_tokens", input_histogram, input_counter),
                 ("gen_ai.usage.output_tokens", output_histogram, output_counter),
             ):
                 tokens = expected_usage.get(attribute, 0)
-                instrument.record.assert_called_once_with(tokens, histogram_attributes)
+                instrument.record.assert_called_once_with(tokens, metric_attributes)
                 if tokens:
-                    counter.add.assert_called_once_with(
-                        tokens, {**record_usage.call_args.args[1], "gen_ai.token.modality": "unknown"}
-                    )
+                    counter.add.assert_called_once_with(tokens, counter_attributes)
                 else:
                     counter.add.assert_not_called()
                 if attribute not in expected_usage:
@@ -1882,6 +1986,7 @@ def main(*, caller_close=False):
 
     run_chat_reference(client)
     run_chat_error_reference()
+    run_chat_parse_error_reference()
     run_responses_compaction_reference(client)
     run_responses_continuation_reference(client)
     run_chat_streaming_reference(client)
