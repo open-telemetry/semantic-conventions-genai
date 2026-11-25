@@ -1,0 +1,92 @@
+file_format: definition/2
+
+span_refinements:
+  - id: ollama.gen_ai.client.inference
+    ref: gen_ai.client.inference
+    brief: >
+      Semantic Conventions for [Ollama](https://ollama.com/) client spans extend
+      and override the semantic conventions for [Gen AI Spans](gen-ai-spans.md).
+    note: |
+      `gen_ai.provider.name` MUST be set to `"ollama"` and SHOULD be provided **at span creation time**.
+    stability: development
+    attributes:
+      - ref: ollama.request.base_url
+        requirement_level: recommended
+        note: >
+          Corresponds to the `host` configuration of the Ollama client: the base
+          URL of the API endpoint the client connects to. User information
+          (credentials) embedded in the URL MUST be removed before the URL is
+          recorded, and sensitive query parameter values MUST be scrubbed.
+      - ref: ollama.request.num_ctx
+        requirement_level:
+          conditionally_required: If the request `options` include `num_ctx`.
+        note: >
+          Corresponds to the `num_ctx` option in the request `options` object.
+      - ref: ollama.request.num_batch
+        requirement_level:
+          conditionally_required: If the request `options` include `num_batch`.
+        note: >
+          Corresponds to the `num_batch` option in the request `options` object.
+      - ref: ollama.request.num_gpu
+        requirement_level:
+          conditionally_required: If the request `options` include `num_gpu`.
+        note: >
+          Corresponds to the `num_gpu` option in the request `options` object.
+      - ref: ollama.request.main_gpu
+        requirement_level:
+          conditionally_required: If the request `options` include `main_gpu`.
+        note: >
+          Corresponds to the `main_gpu` option in the request `options` object.
+      - ref: ollama.response.total_duration
+        requirement_level: recommended
+        note: >
+          Corresponds to the `total_duration` field of the Ollama response.
+      - ref: ollama.response.load_duration
+        requirement_level: recommended
+        note: >
+          Corresponds to the `load_duration` field of the Ollama response.
+
+  - id: ollama.gen_ai.client.embeddings
+    ref: gen_ai.client.embeddings
+    brief: >
+      Semantic Conventions for [Ollama](https://ollama.com/) embeddings operations
+      extend and override the semantic conventions for [Gen AI Spans](gen-ai-spans.md).
+    note: |
+      `gen_ai.provider.name` MUST be set to `"ollama"` and SHOULD be provided **at span creation time**.
+    stability: development
+    attributes:
+      - ref: ollama.request.base_url
+        requirement_level: recommended
+        note: >
+          Corresponds to the `host` configuration of the Ollama client: the base
+          URL of the API endpoint the client connects to. User information
+          (credentials) embedded in the URL MUST be removed before the URL is
+          recorded, and sensitive query parameter values MUST be scrubbed.
+      - ref: ollama.request.num_ctx
+        requirement_level:
+          conditionally_required: If the request `options` include `num_ctx`.
+        note: >
+          Corresponds to the `num_ctx` option in the request `options` object.
+      - ref: ollama.request.num_batch
+        requirement_level:
+          conditionally_required: If the request `options` include `num_batch`.
+        note: >
+          Corresponds to the `num_batch` option in the request `options` object.
+      - ref: ollama.request.num_gpu
+        requirement_level:
+          conditionally_required: If the request `options` include `num_gpu`.
+        note: >
+          Corresponds to the `num_gpu` option in the request `options` object.
+      - ref: ollama.request.main_gpu
+        requirement_level:
+          conditionally_required: If the request `options` include `main_gpu`.
+        note: >
+          Corresponds to the `main_gpu` option in the request `options` object.
+      - ref: ollama.response.total_duration
+        requirement_level: recommended
+        note: >
+          Corresponds to the `total_duration` field of the Ollama response.
+      - ref: ollama.response.load_duration
+        requirement_level: recommended
+        note: >
+          Corresponds to the `load_duration` field of the Ollama response.
