@@ -6,22 +6,23 @@
 
 | Attribute | Supporting Libraries |
 | --- | --- |
-| gen_ai.operation.name | [openai] |
-| gen_ai.provider.name | [openai] |
+| gen_ai.operation.name | [ollama], [openai] |
+| gen_ai.provider.name | [ollama], [openai] |
 
 ## Conditionally Required
 
 | Attribute | Supporting Libraries |
 | --- | --- |
-| gen_ai.request.model | [openai] |
-| server.port | [openai] |
+| gen_ai.request.model | [ollama], [openai] |
+| server.port | [ollama], [openai] |
 
 ## Recommended
 
 | Attribute | Supporting Libraries |
 | --- | --- |
-| gen_ai.response.model | [openai] |
+| gen_ai.response.model | [ollama], [openai] |
 | gen_ai.response.service_tier | [openai] |
-| server.address | [openai] |
+| server.address | [ollama], [openai] |
 
+[ollama]: ../scenarios/ollama/scenario.py
 [openai]: ../scenarios/openai/scenario.py

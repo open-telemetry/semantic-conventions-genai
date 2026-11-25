@@ -8,6 +8,13 @@
       "gen_ai.request.model",
       "gen_ai.response.model",
       "gen_ai.usage.input_tokens",
+      "ollama.request.base_url",
+      "ollama.request.main_gpu",
+      "ollama.request.num_batch",
+      "ollama.request.num_ctx",
+      "ollama.request.num_gpu",
+      "ollama.response.load_duration",
+      "ollama.response.total_duration",
       "server.address",
       "server.port"
     ],
@@ -35,6 +42,13 @@
       "gen_ai.usage.cache_read.input_tokens",
       "gen_ai.usage.input_tokens",
       "gen_ai.usage.output_tokens",
+      "ollama.request.base_url",
+      "ollama.request.main_gpu",
+      "ollama.request.num_batch",
+      "ollama.request.num_ctx",
+      "ollama.request.num_gpu",
+      "ollama.response.load_duration",
+      "ollama.response.total_duration",
       "server.address",
       "server.port"
     ]
