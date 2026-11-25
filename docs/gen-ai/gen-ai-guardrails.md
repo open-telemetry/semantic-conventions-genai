@@ -74,13 +74,6 @@ it SHOULD be `apply_guardrail`.
 Semantic conventions for individual guardrail services MAY specify a
 different span name format.
 
-**Span name** SHOULD be `apply_guardrail {gen_ai.guardrail.component.name}` when
-`gen_ai.guardrail.component.name` is readily available. When it is not available,
-it SHOULD be `apply_guardrail`.
-
-Semantic conventions for individual guardrail services MAY specify a
-different span name format.
-
 **Span kind** SHOULD be `CLIENT`.
 
 **Span status** SHOULD follow the [Recording Errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/general/recording-errors.md) document.
