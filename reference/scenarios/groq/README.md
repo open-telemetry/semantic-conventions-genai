@@ -19,5 +19,5 @@ The basic chat scenario records Groq's response service tier on duration and
 token metrics when Groq returns it.
 
 The streaming-only conformance cases use Groq SDK chunks with usage in
-`x_groq.usage`. A terminal `x_groq.error` chunk marks the span and operation
-histograms as failed, with any reported token counts preserved.
+`x_groq.usage`. A terminal `x_groq.error` chunk sets `error.type` on the span,
+operation histograms, and usage counters for reported token counts.
