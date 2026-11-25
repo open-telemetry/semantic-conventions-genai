@@ -75,7 +75,7 @@ Run `uv run update-reports` to regenerate.
 | [Client Inference Reasoning Output Tokens](reports/gen-ai-client-inference-usage-reasoning-output-tokens-metric.md) | google-genai, groq, openai |
 | [Client Inference Operation Input Tokens](reports/gen-ai-client-inference-operation-input-tokens-metric.md) | anthropic, azure-openai, google-genai, groq, openai |
 | [Client Inference Operation Output Tokens](reports/gen-ai-client-inference-operation-output-tokens-metric.md) | anthropic, azure-openai, google-genai, groq, openai |
-| [Client Operation Duration](reports/gen-ai-client-operation-duration-metric.md) | (none) |
+| [Client Operation Duration](reports/gen-ai-client-operation-duration-metric.md) | openai |
 | [Client Inference Duration](reports/gen-ai-client-inference-duration-metric.md) | agent-framework, anthropic, groq |
 | [Client Inference Time Per Output Chunk](reports/gen-ai-client-inference-time-per-output-chunk-metric.md) | openai |
 | [Client Embeddings Duration](reports/gen-ai-client-embeddings-duration-metric.md) | aws-bedrock, azure-ai-inference, azure-openai, cohere, google-genai, litellm, mistralai, openai |
