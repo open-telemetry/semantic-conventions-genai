@@ -33,6 +33,8 @@ from semconv_genai.conformance import coverage_model
 _SPANS = {
     "a2a_client": ("a2a.client", "A2A Client"),
     "a2a_server": ("a2a.server", "A2A Server"),
+    "mcp_client": ("mcp.client", "MCP Client"),
+    "mcp_server": ("mcp.server", "MCP Server"),
     "inference": ("gen_ai.client.inference", "Inference"),
     "embeddings": ("gen_ai.client.embeddings", "Embeddings"),
     "retrieval": ("gen_ai.retrieval", "Retrieval"),
@@ -74,13 +76,21 @@ _METRICS = {
     "gen_ai.client.inference.operation.output_tokens": "Client Inference Operation Output Tokens",
     "gen_ai.client.operation.duration": "Client Operation Duration",
     "gen_ai.client.inference.duration": "Client Inference Duration",
+    "gen_ai.client.inference.time_per_output_chunk": "Client Inference Time Per Output Chunk",
     "gen_ai.client.embeddings.duration": "Client Embeddings Duration",
     "gen_ai.client.embeddings.operation.input_tokens": "Client Embeddings Operation Input Tokens",
+    "gen_ai.server.request.duration": "Server Request Duration",
+    "gen_ai.server.time_to_first_token": "Server Time To First Token",
+    "gen_ai.server.time_per_output_token": "Server Time Per Output Token",
     "gen_ai.execute_tool.duration": "Execute Tool Duration",
     "gen_ai.retrieval.duration": "Retrieval Duration",
     "gen_ai.client.invoke_agent.duration": "Client Invoke Agent Duration",
     "gen_ai.invoke_agent.inference_calls": "Invoke Agent Inference Calls",
     "gen_ai.invoke_agent.tool_calls": "Invoke Agent Tool Calls",
+    "mcp.client.operation.duration": "MCP Client Operation Duration",
+    "mcp.server.operation.duration": "MCP Server Operation Duration",
+    "mcp.client.session.duration": "MCP Client Session Duration",
+    "mcp.server.session.duration": "MCP Server Session Duration",
 }
 
 _ENTITIES = {

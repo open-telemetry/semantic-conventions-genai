@@ -6,14 +6,13 @@
 
 | Attribute | Supporting Libraries |
 | --- | --- |
-| exception.message | [ollama], [openai] |
-| exception.type | [ollama], [openai] |
+| exception.message | [openai] |
+| exception.type | [openai] |
 
 ## Recommended
 
 | Attribute | Supporting Libraries |
 | --- | --- |
-| exception.stacktrace | [ollama], [openai] |
+| exception.stacktrace | [openai] |
 
-[ollama]: ../scenarios/ollama/scenario.py
 [openai]: ../scenarios/openai/scenario.py

@@ -20,10 +20,10 @@ telemetry:
 
 ```yaml
 # yaml-language-server: $schema=../case.schema.json
-description: Every message needs `role` and `parts`
+description: Every message part needs a `type` discriminator
 schema: gen-ai-input-messages.json
 document: [
-  { "role": "user" }
+  { "role": "user", "parts": [{ "content": "hi" }] }
 ]
 ```
 
@@ -45,9 +45,9 @@ Review it: an empty list means the document is valid.
 
 ```yaml
 errors:
-  - path: $[0]
+  - path: $[0].parts[0]
     keyword: required
-    message: "'parts' is a required property"
+    message: "'type' is a required property"
 ```
 
 Each error records the JSON path of the offending value, the failing keyword,
