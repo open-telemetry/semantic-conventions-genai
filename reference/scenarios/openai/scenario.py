@@ -861,10 +861,10 @@ def run_chat_streaming_timing_checks():
         }
 
     def check_stream(
-        output_deltas,
+        stream_deltas,
         expected_ttfc,
+        expected_intervals=(),
         *,
-        expected_interval=None,
         retry=False,
         close_early=False,
         finish_reason=None,
@@ -909,7 +909,7 @@ def run_chat_streaming_timing_checks():
                     event["usage"]["completion_tokens"] = initial_output_tokens
                     event["usage"]["total_tokens"] = 1 + initial_output_tokens
                 yield f"data: {json.dumps(event)}\n\n".encode()
-            for delta in output_deltas:
+            for delta in stream_deltas:
                 advance(0.3)
                 yield f"data: {json.dumps(chunk(delta, finish_reason))}\n\n".encode()
                 advance(0.1)
@@ -1016,7 +1016,7 @@ def run_chat_streaming_timing_checks():
                 assert spans[0].attributes["gen_ai.response.finish_reasons"] == (finish_reason or "interrupted",)
                 assert "error.type" not in spans[0].attributes
                 assert spans[0].status.status_code.name == "UNSET"
-            elif output_deltas:
+            elif stream_deltas:
                 assert spans[0].attributes["gen_ai.response.finish_reasons"] == (end_reason or "error",)
             metric_attributes = dict(record_usage.call_args.args[1])
             assert "error.type" not in metric_attributes
@@ -1036,11 +1036,11 @@ def run_chat_streaming_timing_checks():
                 if attribute not in expected_usage:
                     assert attribute not in spans[0].attributes
             data = reader.get_metrics_data()
-            metrics = (
+            points = (
                 {}
                 if data is None
                 else {
-                    metric.name: metric.data.data_points
+                    metric.name: list(metric.data.data_points)
                     for resource in data.resource_metrics
                     for scope in resource.scope_metrics
                     for metric in scope.metrics
@@ -1048,27 +1048,46 @@ def run_chat_streaming_timing_checks():
             )
             if expected_ttfc is None:
                 assert "gen_ai.response.time_to_first_chunk" not in spans[0].attributes
-                assert first_chunk_metric not in metrics
+                assert points == {}
             else:
                 ttfc = spans[0].attributes["gen_ai.response.time_to_first_chunk"]
-                assert isclose(ttfc, expected_ttfc, abs_tol=1e-9), (ttfc, expected_ttfc, output_deltas)
-                (point,) = metrics[first_chunk_metric]
-                assert point.count == 1
-                assert point.sum == ttfc
-                assert point.attributes["gen_ai.response.model"] == "gpt-4o-mini"
-            if expected_interval is None:
-                assert chunk_interval_metric not in metrics
+                assert isclose(ttfc, expected_ttfc, abs_tol=1e-9), (ttfc, expected_ttfc, stream_deltas)
+                ttfc_points = points.pop(first_chunk_metric)
+                assert len(ttfc_points) == 1
+                assert ttfc_points[0].count == 1
+                assert ttfc_points[0].sum == ttfc
+                assert ttfc_points[0].attributes["gen_ai.response.model"] == "gpt-4o-mini"
+            output_chunk_points = points.pop(chunk_interval_metric, [])
+            if expected_intervals:
+                assert len(output_chunk_points) == 1
+                point = output_chunk_points[0]
+                assert point.count == len(expected_intervals)
+                assert isclose(point.sum, sum(expected_intervals), abs_tol=1e-9)
+                assert isclose(point.min, min(expected_intervals), abs_tol=1e-9)
+                assert isclose(point.max, max(expected_intervals), abs_tol=1e-9)
+                assert point.attributes == ttfc_points[0].attributes
             else:
-                (point,) = metrics[chunk_interval_metric]
-                assert point.count == 1
-                assert isclose(point.sum, expected_interval, abs_tol=1e-9)
-                assert point.attributes["gen_ai.response.model"] == "gpt-4o-mini"
+                assert output_chunk_points == []
+            assert points == {}
         finally:
             tracer_provider.shutdown()
             logger_provider.shutdown()
             meter_provider.shutdown()
 
-    check_stream([{"content": "Hello"}, {"content": " world"}], 0.5, expected_interval=0.4)
+    check_stream([{"content": "Hello"}, {"content": " world"}], 0.5, [0.4])
+    check_stream(
+        [
+            {"content": "Hello"},
+            {"role": "assistant", "content": ""},
+            None,
+            {"tool_calls": [{"index": 0, "function": {"name": "lookup", "arguments": "{}"}}]},
+            {},
+            {"refusal": "I cannot help with that."},
+            {"audio": {"data": "YQ=="}},
+        ],
+        0.5,
+        [1.2, 0.8, 0.4],
+    )
     for delta in (
         {"refusal": "I cannot help with that."},
         {"audio": {"data": "YQ=="}},
@@ -1079,7 +1098,7 @@ def run_chat_streaming_timing_checks():
     ):
         check_stream([delta], 0.5)
     # Failed attempt: 0.1 s auth + 0.05 s request + 0.2 s SDK backoff.
-    check_stream([{"content": "Hello"}], 0.85, retry=True)
+    check_stream([{"content": "Hello"}, {"content": " world"}], 0.85, [0.4], retry=True)
     check_stream([], None)
     check_stream([{"content": "Hello"}, {"content": " world"}], 0.5, close_early=True)
     check_stream([{"content": "Hello"}], 0.5, close_early=True, finish_reason="stop")
@@ -1089,7 +1108,7 @@ def run_chat_streaming_timing_checks():
     check_stream([{"content": "Hello"}], 0.5, stream_error=True, finish_reason="stop")
     check_stream([{"content": "Hello"}], 0.49, close_early=True, include_initial_usage=False)
     check_stream([{"content": "Hello"}], 0.49, stream_error=True, include_initial_usage=False)
-    print("    -> TTFC boundary checks passed")
+    print("    -> Streaming timing boundary checks passed")
 
 
 def run_chat_tool_call_reference(client):
