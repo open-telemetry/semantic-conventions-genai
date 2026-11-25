@@ -44,9 +44,12 @@ UNREACHABLE_BASE_URL = "http://127.0.0.1:1"
 # gen_ai.tool.definitions records the schemas of the tools offered in the
 # request: tool schemas can be large and may contain sensitive information,
 # so whether an instrumentation records them is Opt-In, per the attribute's
-# registry note and the content-recording guidance. The reference scenario
-# records them whenever a tool is offered, so the conformance runner can
-# assert the definitions are recorded.
+# registry note. They are content, so the scenario records them per the
+# content capture configuration: on the span when a span-enabled mode is
+# active and on the operation details event when an event-enabled mode is
+# active. The tool-call scenarios run with the SPAN_AND_EVENT capture mode,
+# so the conformance runner can assert the definitions are recorded on the
+# span, and the operation details events carry them as well.
 
 # The weather tool used by the tool-call scenarios: the ollama SDK takes
 # OpenAI-style tool definitions, while gen_ai.tool.definitions records the
@@ -675,19 +678,21 @@ def run_chat(client, base_url, *, expect_error=False, capture_mode=None, seed=42
         print(f"    -> {content[:60]}")
 
 
-def run_chat_with_tools(client, base_url):
+def run_chat_with_tools(client, base_url, *, capture_mode=None):
     """Scenario: chat completion offering a tool and receiving a tool call.
 
     The request offers a weather tool through the SDK `tools` argument, and
     the mock server answers with a tool call. The span records the offered
-    tools as `gen_ai.tool.definitions`, recorded per the content-recording
-    guidance; the operation details event records
+    tools as `gen_ai.tool.definitions`, recorded on the span and the event
+    only on the capture sides the content capture configuration enables;
+    this scenario runs with the SPAN_AND_EVENT mode so both sides are
+    exercised. The event records
     the model's answer as `tool_call` parts of the output message, keeping any
     text of the same response as an independent part. Ollama tool calls carry
     no identifier, which the output message parts permit.
     """
     print("  [chat] tool call (reference implementation)")
-    mode = _capture_mode()
+    mode = _capture_mode() if capture_mode is None else capture_mode
     request_model = "llama3.2"
     host, port = mock_server_host_port(base_url)
     # One options object handed to the SDK call; the ollama.request.* and
@@ -725,7 +730,11 @@ def run_chat_with_tools(client, base_url):
         "ollama.request.num_gpu": request_options["num_gpu"],
         "ollama.request.main_gpu": request_options["main_gpu"],
     }
-    span_attributes["gen_ai.tool.definitions"] = tool_definitions
+    # Tool definitions are content: they are recorded on the span when the
+    # SPAN_ONLY or SPAN_AND_EVENT capture mode is enabled, per the content
+    # capture configuration section of docs/gen-ai/gen-ai-spans.md.
+    if _record_span_messages(mode):
+        span_attributes["gen_ai.tool.definitions"] = tool_definitions
     if request_options["num_predict"] >= 0:
         span_attributes["gen_ai.request.max_tokens"] = request_options["num_predict"]
     if host:
@@ -856,8 +865,8 @@ def run_chat_with_tools(client, base_url):
                 "gen_ai.request.stop_sequences": request_options["stop"],
                 "gen_ai.request.seed": request_options["seed"],
             }
-            event_attrs["gen_ai.tool.definitions"] = tool_definitions
             if _record_event_messages(mode):
+                event_attrs["gen_ai.tool.definitions"] = tool_definitions
                 event_attrs["gen_ai.input.messages"] = [
                     {"role": m["role"], "parts": [{"type": "text", "content": m["content"]}]} for m in messages
                 ]
@@ -1179,7 +1188,10 @@ def run_chat_streaming(
         "ollama.request.num_gpu": request_options["num_gpu"],
         "ollama.request.main_gpu": request_options["main_gpu"],
     }
-    if tools:
+    # Tool definitions are content: they are recorded on the span when the
+    # SPAN_ONLY or SPAN_AND_EVENT capture mode is enabled, per the content
+    # capture configuration section of docs/gen-ai/gen-ai-spans.md.
+    if tools and _record_span_messages(mode):
         span_attributes["gen_ai.tool.definitions"] = _WEATHER_TOOL_DEFINITIONS
     if request_options["num_predict"] >= 0:
         span_attributes["gen_ai.request.max_tokens"] = request_options["num_predict"]
@@ -1427,7 +1439,10 @@ def run_chat_streaming(
                 "gen_ai.request.stop_sequences": request_options["stop"],
                 "gen_ai.request.seed": request_options["seed"],
             }
-            if tools:
+            if tools and _record_event_messages(mode):
+                # The event records the offered tool definitions only when
+                # event capture is enabled, per the content capture
+                # configuration.
                 event_attrs["gen_ai.tool.definitions"] = _WEATHER_TOOL_DEFINITIONS
             if _record_event_messages(mode):
                 event_attrs["gen_ai.input.messages"] = [
@@ -1882,7 +1897,9 @@ def run_chat_streaming_tools():
     followed by a tool call, so the first chunk with output carries the
     reasoning payload and the stream also exercises the reasoning capture:
     the chunk arrival times, and with them time_to_first_chunk, are driven
-    by the reasoning chunk, per the chunk definition.
+    by the reasoning chunk, per the chunk definition. The run uses the
+    SPAN_AND_EVENT capture mode, so the offered tool definitions are also
+    recorded on the span, per the content capture configuration.
     """
     server = ThreadingHTTPServer(("127.0.0.1", 0), _StreamingToolsMockHandler)
     port = server.server_address[1]
@@ -1891,7 +1908,15 @@ def run_chat_streaming_tools():
     try:
         base_url = f"http://127.0.0.1:{port}"
         client = ollama.Client(host=base_url)
-        run_chat_streaming(client, base_url, tools=_WEATHER_TOOLS, seed=48, mock_host="127.0.0.1", mock_port=port)
+        run_chat_streaming(
+            client,
+            base_url,
+            tools=_WEATHER_TOOLS,
+            seed=48,
+            capture_mode="SPAN_AND_EVENT",
+            mock_host="127.0.0.1",
+            mock_port=port,
+        )
     finally:
         server.shutdown()
         server.server_close()
@@ -1946,7 +1971,10 @@ def main():
     client = ollama.Client(host=MOCK_BASE_URL)
 
     run_chat(client, MOCK_BASE_URL)
-    run_chat_with_tools(client, MOCK_BASE_URL)
+    # The tool-call scenarios run with the SPAN_AND_EVENT capture mode: tool
+    # definitions are content, so recording them on the span requires a
+    # span-enabled capture mode, while the event side stays enabled too.
+    run_chat_with_tools(client, MOCK_BASE_URL, capture_mode="SPAN_AND_EVENT")
     run_chat_formatted(client, MOCK_BASE_URL)
     run_chat_streaming(client, MOCK_BASE_URL)
     # The span content capture modes are exercised with explicit per-call

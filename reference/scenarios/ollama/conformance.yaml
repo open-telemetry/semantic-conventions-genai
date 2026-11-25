@@ -82,8 +82,10 @@ scenarios:
             ollama.request.main_gpu: 0
             ollama.response.total_duration: 1000000000
             ollama.response.load_duration: 100000000
-      # The tool-call scenario is singled out by its seed and must record the
-      # offered tool definitions and the provider-reported finish reason.
+      # The tool-call scenario is singled out by its seed: the run uses the
+      # SPAN_AND_EVENT capture mode, so the content capture configuration
+      # enables recording the offered tool definitions on the span, alongside
+      # the provider-reported finish reason.
       - match:
           attributes:
             gen_ai.operation.name: chat
@@ -151,8 +153,10 @@ scenarios:
               present: true
       # The streaming tool-call scenario is singled out by its seed: the
       # request offers the weather tool, so the span carries the tool
-      # definitions, and the first chunk with output carries the tool-call
-      # payload, so the time to it is recorded.
+      # definitions (the run uses the SPAN_AND_EVENT capture mode, enabling
+      # the definitions on the span per the content capture configuration),
+      # and the first chunk with output carries the tool-call payload, so
+      # the time to it is recorded.
       - match:
           attributes:
             gen_ai.operation.name: chat
