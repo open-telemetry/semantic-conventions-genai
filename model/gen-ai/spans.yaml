@@ -901,7 +901,7 @@ spans:
     entity_associations:
       - "gen_ai.main_agent"
     attributes:
-      - ref_group: attributes.gen_ai.error
+      - ref_group: attributes.gen_ai.execute_tool.error
       - ref_group: attributes.gen_ai.execute_tool.common
       - ref: gen_ai.operation.name
         annotations:

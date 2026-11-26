@@ -1,6 +1,7 @@
 {
   "spans": {
     "gen_ai.execute_tool": [
+      "error.type",
       "gen_ai.operation.name",
       "gen_ai.tool.call.arguments",
       "gen_ai.tool.call.id",

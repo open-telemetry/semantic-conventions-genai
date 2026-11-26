@@ -663,7 +663,7 @@ attributes:
     stability: development
   - key: gen_ai.tool.call.result
     type: any
-    brief: The result returned by the tool call (if any and if execution was successful).
+    brief: The result returned by the tool call, if any, including results that indicate an error.
     annotations:
       type:
         json_schema: model/gen-ai/gen-ai-tool-call-result.json

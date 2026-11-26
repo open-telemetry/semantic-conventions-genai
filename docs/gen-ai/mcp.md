@@ -175,7 +175,7 @@ to avoid high cardinality span names.
 | [`server.port`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` When `server.address` is set. | int | Server port number. [12] | `80`; `8080`; `443` |
 | [`gen_ai.prompt.variables`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | The variables supplied to the prompt template in the request. [13] | {<br>&nbsp;&nbsp;"user_name": "Alice",<br>&nbsp;&nbsp;"language": "French"<br>} |
 | [`gen_ai.tool.call.arguments`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | Parameters passed to the tool call. [14] | {<br>&nbsp;&nbsp;&nbsp;&nbsp;"location": "San Francisco?",<br>&nbsp;&nbsp;&nbsp;&nbsp;"date": "2025-10-01"<br>} |
-| [`gen_ai.tool.call.result`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | The result returned by the tool call (if any and if execution was successful). [15] | {<br>&nbsp;&nbsp;"temperature_range": {<br>&nbsp;&nbsp;&nbsp;&nbsp;"high": 75,<br>&nbsp;&nbsp;&nbsp;&nbsp;"low": 60<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;"conditions": "sunny"<br>} |
+| [`gen_ai.tool.call.result`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | The result returned by the tool call, if any, including results that indicate an error. [15] | {<br>&nbsp;&nbsp;"temperature_range": {<br>&nbsp;&nbsp;&nbsp;&nbsp;"high": 75,<br>&nbsp;&nbsp;&nbsp;&nbsp;"low": 60<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;"conditions": "sunny"<br>} |
 
 **[1] `error.type`:** When the response carries a JSON-RPC error code that classifies as an error,
 `error.type` SHOULD be set to the string representation of that code. See
@@ -190,7 +190,7 @@ result payload, this attribute SHOULD be set to the low-cardinality
 string representation of the error. When
 [CallToolResult](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/9c8a44e47e16b789a1f9d47c89ea23ed13a37cf9/schema/2025-06-18/schema.ts#L715)
 is returned with `isError` set to `true`, this attribute SHOULD be set to
-`tool_error`.
+`_OTHER`.
 
 `rpc.status_code` carries the same string representation of
 the JSON-RPC error code. Unlike `rpc.status_code`,
@@ -406,7 +406,7 @@ to avoid high cardinality span names.
 | [`network.transport`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/network.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | The transport protocol used for the observed MCP operation. [12] | `tcp`; `quic`; `pipe` |
 | [`gen_ai.prompt.variables`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | The variables supplied to the prompt template in the request. [13] | {<br>&nbsp;&nbsp;"user_name": "Alice",<br>&nbsp;&nbsp;"language": "French"<br>} |
 | [`gen_ai.tool.call.arguments`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | Parameters passed to the tool call. [14] | {<br>&nbsp;&nbsp;&nbsp;&nbsp;"location": "San Francisco?",<br>&nbsp;&nbsp;&nbsp;&nbsp;"date": "2025-10-01"<br>} |
-| [`gen_ai.tool.call.result`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | The result returned by the tool call (if any and if execution was successful). [15] | {<br>&nbsp;&nbsp;"temperature_range": {<br>&nbsp;&nbsp;&nbsp;&nbsp;"high": 75,<br>&nbsp;&nbsp;&nbsp;&nbsp;"low": 60<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;"conditions": "sunny"<br>} |
+| [`gen_ai.tool.call.result`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Opt-In` | any | The result returned by the tool call, if any, including results that indicate an error. [15] | {<br>&nbsp;&nbsp;"temperature_range": {<br>&nbsp;&nbsp;&nbsp;&nbsp;"high": 75,<br>&nbsp;&nbsp;&nbsp;&nbsp;"low": 60<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;"conditions": "sunny"<br>} |
 
 **[1] `error.type`:** When the response carries a JSON-RPC error code that classifies as an error,
 `error.type` SHOULD be set to the string representation of that code. See
@@ -421,7 +421,7 @@ result payload, this attribute SHOULD be set to the low-cardinality
 string representation of the error. When
 [CallToolResult](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/9c8a44e47e16b789a1f9d47c89ea23ed13a37cf9/schema/2025-06-18/schema.ts#L715)
 is returned with `isError` set to `true`, this attribute SHOULD be set to
-`tool_error`.
+`_OTHER`.
 
 `rpc.status_code` carries the same string representation of
 the JSON-RPC error code. Unlike `rpc.status_code`,
@@ -643,7 +643,7 @@ result payload, this attribute SHOULD be set to the low-cardinality
 string representation of the error. When
 [CallToolResult](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/9c8a44e47e16b789a1f9d47c89ea23ed13a37cf9/schema/2025-06-18/schema.ts#L715)
 is returned with `isError` set to `true`, this attribute SHOULD be set to
-`tool_error`.
+`_OTHER`.
 
 `rpc.status_code` carries the same string representation of
 the JSON-RPC error code. Unlike `rpc.status_code`,
@@ -807,7 +807,7 @@ result payload, this attribute SHOULD be set to the low-cardinality
 string representation of the error. When
 [CallToolResult](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/9c8a44e47e16b789a1f9d47c89ea23ed13a37cf9/schema/2025-06-18/schema.ts#L715)
 is returned with `isError` set to `true`, this attribute SHOULD be set to
-`tool_error`.
+`_OTHER`.
 
 `rpc.status_code` carries the same string representation of
 the JSON-RPC error code. Unlike `rpc.status_code`,

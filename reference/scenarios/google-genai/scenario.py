@@ -145,10 +145,12 @@ def _patch_automatic_function_calling():
                     single.candidates[0].content.parts = [part]
                     result_parts = original(single, function_map)
                     for result_part in result_parts:
-                        tool_span.set_attribute(
-                            "gen_ai.tool.call.result",
-                            {"output": result_part.function_response.response},
-                        )
+                        func_response = result_part.function_response.response
+                        tool_span.set_attribute("gen_ai.tool.call.result", {"output": func_response})
+                        # The SDK catches tool exceptions and returns them as {"error": str(e)}.
+                        if isinstance(func_response, dict) and "error" in func_response:
+                            tool_span.set_attribute("error.type", "_OTHER")
+                            tool_span.set_status(StatusCode.ERROR)
                     parts.extend(result_parts)
                 except Exception as e:
                     tool_span.set_status(StatusCode.ERROR, str(e))
@@ -514,12 +516,16 @@ def run_agent_interaction(stream=False):
             _invoke_agent_duration.record(time.perf_counter() - start_time, metric_attributes)
 
 
-def run_chat_tool_call():
-    """Scenario: chat with tool calling with reference implementation."""
+def run_chat_tool_call(fail=False):
+    """Scenario: chat with tool calling with reference implementation.
+
+    With `fail=True` the tool raises; automatic function calling catches the
+    exception and returns it as `{"error": ...}` in the function response.
+    """
     from google import genai
     from google.genai import types
 
-    print("  [chat_tool_call] chat with tool calling via Google GenAI (reference implementation)")
+    print(f"  [chat_tool_call] chat with tool calling via Google GenAI (fail={fail}) (reference implementation)")
     client = genai.Client(
         api_key="mock-key",
         http_options=types.HttpOptions(
@@ -537,7 +543,16 @@ def run_chat_tool_call():
         """
         return f"Sunny in {location}"
 
-    tools = [get_weather]
+    def get_forecast(location: str) -> str:
+        """Get the weather forecast.
+
+        Args:
+            location: City name
+        """
+        raise ValueError(f"Forecast is not available for {location}")
+
+    tool = get_forecast if fail else get_weather
+    tools = [tool]
     span_attributes_2 = {
         "gen_ai.operation.name": "generate_content",
         "gen_ai.provider.name": "gcp.gemini",
@@ -555,8 +570,8 @@ def run_chat_tool_call():
             [
                 {
                     "type": "function",
-                    "name": "get_weather",
-                    "description": "Get the current weather",
+                    "name": tool.__name__,
+                    "description": tool.__doc__.strip().splitlines()[0].rstrip("."),
                     "parameters": {
                         "type": "object",
                         "properties": {"location": {"type": "string", "description": "City name"}},
@@ -899,6 +914,7 @@ def main():
     run_interactions_continuation()
     run_agent_interaction(stream=True)
     run_chat_tool_call()
+    run_chat_tool_call(fail=True)
     run_chat_multimodal()
     run_generate_media()
     run_chat_streaming()

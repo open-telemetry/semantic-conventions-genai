@@ -322,7 +322,7 @@ metrics:
     unit: "s"
     stability: development
     attributes:
-      - ref_group: attributes.gen_ai.error
+      - ref_group: attributes.gen_ai.execute_tool.error
       - ref_group: attributes.gen_ai.execute_tool.common
   - name: gen_ai.retrieval.duration
     requirement_level: recommended

@@ -5,7 +5,7 @@ import os
 import time
 from typing import TypedDict
 
-from langchain_core.tools import tool
+from langchain_core.tools import StructuredTool, ToolException, tool
 from opentelemetry._logs import SeverityNumber
 from opentelemetry.trace import StatusCode
 from reference_shared import flush_and_shutdown, reference_event_logger, reference_meter, reference_tracer, setup_otel
@@ -205,7 +205,15 @@ def run_plan_and_execute_reference():
         print(f"    -> planned {len(plan.steps)} step(s)")
 
 
-def run_execute_tool_reference():
+def _get_forecast(location: str) -> str:
+    """Get the weather forecast for a location."""
+    raise ToolException(f"Forecast is not available for {location}")
+
+
+get_forecast = StructuredTool.from_function(_get_forecast, name="get_forecast", handle_tool_error=True)
+
+
+def run_execute_tool_reference(lc_tool):
     """Scenario: tool execution via LangChain's tool runner.
 
     The model call that produces the tool call is issued by
@@ -214,15 +222,18 @@ def run_execute_tool_reference():
     here. Running the tool is LangChain's own work: `BaseTool.invoke()` executes
     the function and builds the `ToolMessage`, so that is where generic LangChain
     instrumentation produces the execute_tool span.
+
+    A tool with `handle_tool_error=True` returns `ToolMessage(status="error")`
+    instead of raising.
     """
-    print("  [execute_tool] tool execution via LangChain tool runner (reference implementation)")
+    print(f"  [execute_tool] {lc_tool.name} via LangChain tool runner (reference implementation)")
     from langchain_openai import ChatOpenAI
 
     chat_model = ChatOpenAI(
         model="gpt-4o-mini",
         base_url=MOCK_BASE_URL,
         api_key="mock-key",
-    ).bind_tools([get_weather])
+    ).bind_tools([lc_tool])
 
     response = chat_model.invoke("What's the weather in Seattle?")
     if not response.tool_calls:
@@ -232,19 +243,23 @@ def run_execute_tool_reference():
     tool_call = response.tool_calls[0]
     tool_span_attributes = {
         "gen_ai.operation.name": "execute_tool",
-        "gen_ai.tool.name": get_weather.name,
-        "gen_ai.tool.description": get_weather.description,
+        "gen_ai.tool.name": lc_tool.name,
+        "gen_ai.tool.description": lc_tool.description,
         "gen_ai.tool.type": "function",
     }
     with _reference_tracer.start_as_current_span(
-        f"execute_tool {get_weather.name}", attributes=tool_span_attributes, record_exception=False
+        f"execute_tool {lc_tool.name}", attributes=tool_span_attributes, record_exception=False
     ) as tool_span:
         try:
             tool_span.set_attribute("gen_ai.tool.call.id", tool_call["id"])
             tool_span.set_attribute("gen_ai.tool.call.arguments", tool_call["args"])
-            tool_message = get_weather.invoke(tool_call)
+            tool_message = lc_tool.invoke(tool_call)
             # TODO: Determine how to represent this string result in the object-only schema.
             tool_span.set_attribute("gen_ai.tool.call.result", tool_message.content)
+            if tool_message.status == "error":
+                # ToolMessage has no error code.
+                tool_span.set_attribute("error.type", "_OTHER")
+                tool_span.set_status(StatusCode.ERROR)
         except Exception as e:
             tool_span.set_status(StatusCode.ERROR, str(e))
             tool_span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
@@ -254,7 +269,7 @@ def run_execute_tool_reference():
                 exception=e,
             )
             raise
-    print(f"    -> {tool_message.content[:60]}")
+    print(f"    -> status={tool_message.status}: {tool_message.content[:60]}")
 
 
 def run_command_execution_reference():
@@ -378,7 +393,8 @@ def main():
     tp, lp, mp = setup_otel()
     run_retrieval_reference()
     run_plan_and_execute_reference()
-    run_execute_tool_reference()
+    run_execute_tool_reference(get_weather)
+    run_execute_tool_reference(get_forecast)
     run_command_execution_reference()
     asyncio.run(run_workflow_reference())
 

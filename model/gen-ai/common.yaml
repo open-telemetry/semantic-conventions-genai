@@ -11,6 +11,37 @@ attribute_groups:
           the canonical name of exception that occurred, or another low-cardinality error identifier.
           Instrumentations SHOULD document the list of errors they report.
 
+  - id: attributes.gen_ai.execute_tool.error
+    visibility: internal
+    attributes:
+      - ref: error.type
+        requirement_level:
+          conditionally_required: "If the tool call failed or its result object indicates an error."
+        note: |
+          If the tool call resulted in an exception, `error.type` SHOULD match
+          the error code obtained from the exception, the canonical name of the
+          exception, or another low-cardinality error identifier.
+
+          If the tool returned a result object that indicates an error, instrumentation
+          SHOULD detect it using the library's convention. For example (field names and
+          types vary by language and SDK):
+
+          - Anthropic Messages API: `is_error` is `true` on a `tool_result` content block
+            ([docs](https://platform.claude.com/docs/en/agents-and-tools/tool-use/handle-tool-calls#handling-errors-with-is-error))
+          - MCP: `isError` is `true` on `CallToolResult`
+            ([spec](https://modelcontextprotocol.io/specification/2025-11-25/server/tools#error-handling))
+          - Amazon Bedrock Converse API: `status` is `error` on `toolResult`
+            ([docs](https://docs.aws.amazon.com/bedrock/latest/userguide/tool-use-client-side.html))
+          - Gemini API: `FunctionResponse.response` contains an `error` key
+            ([docs](https://googleapis.github.io/python-genai/genai.html#genai.types.FunctionResponseDict.response))
+          - LangChain: `ToolMessage.status` is `error`
+            ([docs](https://reference.langchain.com/python/langchain-core/messages/tool/ToolMessage))
+
+          `error.type` SHOULD be set to the error code provided in the result when
+          one is available, and to `_OTHER` otherwise.
+
+          Instrumentations SHOULD document the list of errors they report.
+
   - id: attributes.gen_ai.common
     visibility: internal
     attributes:
