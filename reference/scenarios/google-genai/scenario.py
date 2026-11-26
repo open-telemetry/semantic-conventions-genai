@@ -4,11 +4,13 @@ Exercises: chat, chat_streaming, embeddings, create_agent, invoke_agent
 against a mock Google GenAI server, with manual OTel spans.
 """
 
+import json
 import os
 import time
 from contextlib import contextmanager
 from urllib.parse import urlparse
 
+import httpx
 from opentelemetry._logs import SeverityNumber
 from opentelemetry.trace import SpanKind, StatusCode
 from reference_shared import (
@@ -732,7 +734,30 @@ def run_generate_media():
             print(f"    -> {label} output usage captured")
 
 
-def run_chat_streaming():
+def _stream_usage_response(request):
+    """Gemini stream with tool-use and reasoning counts on the final chunk."""
+    assert request.url.path.endswith(":streamGenerateContent")
+    chunks = [
+        {"candidates": [{"content": {"role": "model", "parts": [{"text": "Hello!"}]}}]},
+        {
+            "candidates": [{"finishReason": "STOP"}],
+            "usageMetadata": {
+                "promptTokenCount": 12,
+                "toolUsePromptTokenCount": 3,
+                "candidatesTokenCount": 7,
+                "thoughtsTokenCount": 5,
+                "totalTokenCount": 27,
+            },
+        },
+    ]
+    for chunk in chunks:
+        chunk["responseId"] = "stream-usage"
+        chunk["modelVersion"] = "gemini-2.0-flash"
+    body = "".join(f"data: {json.dumps(chunk)}\n\n" for chunk in chunks)
+    return httpx.Response(200, text=body, headers={"Content-Type": "text/event-stream"})
+
+
+def run_chat_streaming(*, httpx_client=None):
     """Scenario: streaming chat completion with reference implementation."""
     from google import genai
     from google.genai import types
@@ -743,6 +768,7 @@ def run_chat_streaming():
         http_options=types.HttpOptions(
             base_url=MOCK_BASE_URL,
             api_version="v1beta",
+            httpx_client=httpx_client,
         ),
     )
     request_model = "gemini-2.0-flash"
@@ -776,16 +802,7 @@ def run_chat_streaming():
         if last_chunk and last_chunk.candidates and last_chunk.candidates[0].finish_reason:
             span.set_attribute("gen_ai.response.finish_reasons", [str(last_chunk.candidates[0].finish_reason)])
         if last_chunk and hasattr(last_chunk, "usage_metadata") and last_chunk.usage_metadata:
-            if (
-                hasattr(last_chunk.usage_metadata, "prompt_token_count")
-                and last_chunk.usage_metadata.prompt_token_count
-            ):
-                span.set_attribute("gen_ai.usage.input_tokens", last_chunk.usage_metadata.prompt_token_count)
-            if (
-                hasattr(last_chunk.usage_metadata, "candidates_token_count")
-                and last_chunk.usage_metadata.candidates_token_count
-            ):
-                span.set_attribute("gen_ai.usage.output_tokens", last_chunk.usage_metadata.candidates_token_count)
+            span.set_attributes(_usage_attributes(last_chunk.usage_metadata))
         print(f"    -> {text[:60]}")
 
 
@@ -902,6 +919,8 @@ def main():
     run_chat_multimodal()
     run_generate_media()
     run_chat_streaming()
+    with httpx.Client(transport=httpx.MockTransport(_stream_usage_response)) as httpx_client:
+        run_chat_streaming(httpx_client=httpx_client)
     run_embeddings()
     run_create_agent()
     run_agent_interaction()
