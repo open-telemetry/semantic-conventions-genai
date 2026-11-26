@@ -106,17 +106,15 @@ def record_inference_usage(inv, request_model, server_address, server_port, *, e
     separate count, so there is no reasoning counter to record.
     """
     metric_attributes = usage_metric_attributes(inv, request_model, server_address, server_port)
-    modality_attributes = {**metric_attributes, "gen_ai.token.modality": "unknown"}
-    histogram_attributes = metric_attributes
     if error is not None:
-        error_type = f"{type(error).__module__}.{type(error).__qualname__}"
-        histogram_attributes = {**metric_attributes, "error.type": error_type}
+        metric_attributes["error.type"] = f"{type(error).__module__}.{type(error).__qualname__}"
+    modality_attributes = {**metric_attributes, "gen_ai.token.modality": "unknown"}
     if inv.input_tokens is not None:
-        _operation_input_tokens.record(inv.input_tokens, histogram_attributes)
+        _operation_input_tokens.record(inv.input_tokens, metric_attributes)
         if inv.input_tokens > 0:
             _input_tokens.add(inv.input_tokens, modality_attributes)
     if inv.output_tokens is not None:
-        _operation_output_tokens.record(inv.output_tokens, histogram_attributes)
+        _operation_output_tokens.record(inv.output_tokens, metric_attributes)
         if inv.output_tokens > 0:
             _output_tokens.add(inv.output_tokens, modality_attributes)
     if inv.cache_read_input_tokens is not None and inv.cache_read_input_tokens > 0:
@@ -424,12 +422,11 @@ def run_chat_streaming_checks():
                 "server.address": host,
                 "server.port": port,
             }
-            histogram_attributes = dict(attributes)
             if stream_error:
-                histogram_attributes["error.type"] = span.attributes["error.type"]
+                attributes["error.type"] = span.attributes["error.type"]
             counter_attributes = {**attributes, "gen_ai.token.modality": "unknown"}
-            input_histogram.record.assert_called_once_with(12, histogram_attributes)
-            output_histogram.record.assert_called_once_with(1 if close_early else 3, histogram_attributes)
+            input_histogram.record.assert_called_once_with(12, attributes)
+            output_histogram.record.assert_called_once_with(1 if close_early else 3, attributes)
             input_counter.add.assert_called_once_with(12, counter_attributes)
             output_counter.add.assert_called_once_with(1 if close_early else 3, counter_attributes)
         finally:

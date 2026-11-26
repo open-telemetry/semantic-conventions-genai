@@ -709,6 +709,9 @@ For example, `service_tier` in [OpenAI](https://developers.openai.com/api/refere
 `usage.service_tier` in [Anthropic](https://platform.claude.com/docs/en/api/service-tiers),
 or [`usageMetadata.trafficType`](https://docs.cloud.google.com/gemini-enterprise-agent-platform/reference/rest/v1/GenerateContentResponse#UsageMetadata.FIELDS.traffic_type) in Vertex AI.
 
+Instrumentation SHOULD set this attribute only if the provider reports it by the time the first chunk is received.
+When set, it SHOULD be the same on all measurements from a streaming response.
+
 **[6] `server.address`:** When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent the server address behind any intermediaries, for example proxies, if it's available.
 
 ---
@@ -759,7 +762,12 @@ This metric SHOULD be specified with [ExplicitBucketBoundaries] of [0.01, 0.025,
 | `gen_ai.client.inference.time_per_output_chunk` | Histogram | `s` | Time per output chunk, recorded for each chunk received after the first one, measured as the time elapsed from the end of the previous chunk to the end of the current chunk. [1] | ![Development](https://img.shields.io/badge/-development-blue) | |
 
 **[1]:** Applies only to streaming non-realtime client inference operations (`chat`, `generate_content`, `text_completion`).
+
 This metric SHOULD be reported for streaming calls and SHOULD NOT be reported otherwise.
+
+The chunk definition is the same as for [`gen_ai.response.time_to_first_chunk`](/docs/registry/attributes/gen-ai.md#gen-ai-response-time-to-first-chunk).
+
+Chunk timestamps SHOULD be taken when each chunk is fully received by the client, before application processing.
 
 **Requirement level:** [Recommended](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/general/signal-requirement-level.md).
 
@@ -804,6 +812,9 @@ applicable `aws.bedrock.*` attributes and are not expected to include
 For example, `service_tier` in [OpenAI](https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create),
 `usage.service_tier` in [Anthropic](https://platform.claude.com/docs/en/api/service-tiers),
 or [`usageMetadata.trafficType`](https://docs.cloud.google.com/gemini-enterprise-agent-platform/reference/rest/v1/GenerateContentResponse#UsageMetadata.FIELDS.traffic_type) in Vertex AI.
+
+Instrumentation SHOULD set this attribute only if the provider reports it by the time the first chunk is received.
+When set, it SHOULD be the same on all measurements from a streaming response.
 
 **[6] `server.address`:** When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent the server address behind any intermediaries, for example proxies, if it's available.
 
