@@ -37,15 +37,22 @@ See also:
 
 Instrumentations MAY propagate context containing attributes listed below to nested
 instrumentations within the same process. This allows queries to select related
-spans without traversing the hierarchy.
+telemetry without traversing the hierarchy.
 
 When an attribute is available both from the instrumented library and from outer
 context, instrumentation SHOULD prefer the library's value.
+
+On operations where `gen_ai.agent.name` identifies the target (`invoke_agent`,
+`create_agent`, or A2A client spans), instrumentations MUST NOT populate it from
+outer context. Instrumentation of a nested agent SHOULD replace the propagated
+`gen_ai.agent.name` with that agent's name, or clear it when the agent has no
+name, for operations it performs.
 
 Instrumentations SHOULD NOT propagate attributes not listed here.
 Instrumentations SHOULD NOT use these attributes on signals that don't reference them
 explicitly.
 
+* [`gen_ai.agent.name`](/docs/registry/attributes/gen-ai.md#gen-ai-agent-name)
 * [`gen_ai.conversation.id`](/docs/registry/attributes/gen-ai.md#gen-ai-conversation-id)
 
 [DocumentStatus]: https://opentelemetry.io/docs/specs/otel/document-status

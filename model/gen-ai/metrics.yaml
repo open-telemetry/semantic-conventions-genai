@@ -11,12 +11,20 @@ attribute_groups:
   - id: metric_attributes.gen_ai.inference
     visibility: internal
     attributes:
+      - ref: gen_ai.agent.name
+        brief: The human-readable name of the agent that makes the inference request.
+        requirement_level:
+          conditionally_required: If available.
       - ref: gen_ai.response.service_tier
         requirement_level: recommended
 
   - id: metric_attributes.gen_ai.inference.streaming
     visibility: internal
     attributes:
+      - ref: gen_ai.agent.name
+        brief: The human-readable name of the agent that makes the inference request.
+        requirement_level:
+          conditionally_required: If available.
       - ref: gen_ai.response.service_tier
         requirement_level: recommended
         note: |

@@ -1,8 +1,16 @@
 # openai-agents
 
 The OpenAI Agents SDK orchestrates agents. It calls the model through the
-`openai` client, so it **delegates inference**. It owns the agent run and tool
-execution it drives directly, including the sandbox tools it ships.
+`openai` client, so it **delegates inference** spans and events. It owns the
+agent run and tool execution it drives directly, including the sandbox tools it
+ships.
+
+To demonstrate in-process propagation of `gen_ai.agent.name` onto client
+inference metrics, the scenario attaches the name of the agent performing the
+operation to OTel context in the agent layer (including across agent-as-tool
+delegation and `handoff()` control transfers) and wraps the underlying `openai`
+client to record the `gen_ai.client.inference.*` metrics with that propagated
+`gen_ai.agent.name`.
 
 Agent-as-tool calls use `execute_tool {gen_ai.tool.name}` span names and record
 the SDK tool's target separately in `gen_ai.transfer.target.name`. Agent spans
@@ -22,7 +30,8 @@ target's SDK turn begins. Each agent's turn has its own `invoke_agent` span.
 
 | Operation | Should be instrumented here | Status |
 | --- | --- | --- |
-| inference (`chat`) | No — delegates to the `openai` client | ✅ Correctly not emitted |
+| inference (`chat`) spans and events | No - delegates to the `openai` client | ✅ Correctly not emitted |
+| inference metrics (client layer) | Exception - wrapped `openai` client records `gen_ai.client.inference.*` metrics to exercise in-process `gen_ai.agent.name` propagation | ✅ Implemented |
 | invoke_agent (internal) | Yes — each agent that `Runner.run` executes | ✅ Implemented |
 | invoke_runner | Yes — `Runner.run` is the SDK entrypoint | ✅ Implemented |
 | execute_tool | Yes — the SDK runs the function tool | ✅ Implemented |

@@ -33,6 +33,17 @@ scenarios:
     events:
       - gen_ai.execute_tool.exception
       - gen_ai.invoke_agent.exception
+    metrics:
+      - gen_ai.client.inference.duration
+      - gen_ai.client.inference.operation.input_tokens
+      - gen_ai.client.inference.operation.output_tokens
+      - gen_ai.client.inference.time_per_output_chunk
+      - gen_ai.client.inference.time_to_first_chunk
+      - gen_ai.client.inference.usage.cache_read.input_tokens
+      - gen_ai.client.inference.usage.cache_write.input_tokens
+      - gen_ai.client.inference.usage.input_tokens
+      - gen_ai.client.inference.usage.output_tokens
+      - gen_ai.client.inference.usage.reasoning.output_tokens
     spans:
       - match:
           attributes:
