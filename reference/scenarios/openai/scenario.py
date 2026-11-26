@@ -201,7 +201,6 @@ def response_has_compaction_item(response):
 def responses_output_messages(response):
     """Convert Responses API output items into OTel output messages."""
     output_messages = []
-    pending_parts = []
     for item in getattr(response, "output", []) or []:
         item_type = item.get("type") if isinstance(item, dict) else getattr(item, "type", None)
         if item_type == "compaction":
@@ -209,17 +208,13 @@ def responses_output_messages(response):
             compaction_id = item.get("id") if isinstance(item, dict) else getattr(item, "id", None)
             if compaction_id:
                 compaction_part["id"] = compaction_id
-            if output_messages and output_messages[-1].get("role") == "assistant":
-                output_messages[-1]["parts"].append(compaction_part)
-            else:
-                pending_parts.append(compaction_part)
+            output_messages.append({"parts": [compaction_part]})
             continue
         if item_type != "message":
             continue
         role = item.get("role") if isinstance(item, dict) else getattr(item, "role", None)
         content = item.get("content", []) if isinstance(item, dict) else getattr(item, "content", [])
-        parts = pending_parts
-        pending_parts = []
+        parts = []
         for block in content or []:
             block_type = block.get("type") if isinstance(block, dict) else getattr(block, "type", None)
             if block_type != "output_text":
@@ -232,8 +227,6 @@ def responses_output_messages(response):
             if role:
                 message["role"] = role
             output_messages.append(message)
-    if pending_parts:
-        output_messages.append({"parts": pending_parts})
     return output_messages
 
 

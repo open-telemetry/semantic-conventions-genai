@@ -319,7 +319,6 @@ class _RealtimeDriver:
         function_call = self._function_call
         output_messages = [
             {
-                "role": "assistant",
                 "parts": [
                     {
                         "type": "tool_call",
@@ -432,7 +431,6 @@ def _tool_result_message(function_call, result):
     return json.dumps(
         [
             {
-                "role": "tool",
                 "parts": [
                     {
                         "type": "tool_call_response",

@@ -156,7 +156,6 @@ def _tool_result_message(function_call, result):
     return json.dumps(
         [
             {
-                "role": "tool",
                 "parts": [
                     {
                         "type": "tool_call_response",
@@ -306,7 +305,6 @@ async def _run_generation(
         if function_call is not None:
             output_messages = [
                 {
-                    "role": "assistant",
                     "parts": [
                         {
                             "type": "tool_call",
