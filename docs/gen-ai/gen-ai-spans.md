@@ -82,7 +82,7 @@ GenAI providers MAY specify a different span name format.
 | [`gen_ai.request.stream`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [5] | boolean | Indicates whether the GenAI request was made in streaming mode. | |
 | [`gen_ai.request.stream_cursor`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Conditionally Required` [6] | string | The cursor identifying the last streamed event already received, used to resume a streamed response from that position. [7] | `42`; `event-abc123` |
 | [`server.port`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If `server.address` is set. | int | GenAI server port. [8] | `80`; `8080`; `443` |
-| [`gen_ai.response.finish_reasons`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string[] | Array of reasons the model stopped generating tokens, corresponding to each generation received. [9] | `["stop"]`; `["stop", "length"]`; `["stop", "length", "error"]` |
+| [`gen_ai.response.finish_reasons`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string[] | Array of reasons the model stopped generating tokens, corresponding to each generation received. [9] | `["stop"]`; `["stop", "length"]`; `["stop", "length", "error"]`; `["interrupted"]` |
 | [`gen_ai.response.model`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The name of the model that generated the response. | `gpt-4-0613` |
 | [`gen_ai.response.status`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The lifecycle status of a generated response, as reported by the provider when the response is fetched or polled. [10] | `completed`; `in_progress` |
 | [`server.address`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Recommended` | string | GenAI server address. [11] | `example.com`; `10.1.2.80`; `/tmp/my.sock` |
@@ -124,7 +124,7 @@ Instrumentations SHOULD document the list of errors they report.
 
 **[8] `server.port`:** When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries, for example proxies, if it's available.
 
-**[9] `gen_ai.response.finish_reasons`:** Conveys the outcome of the original generation as recorded on the fetched response, derived from its status: a completed generation maps to its stop reason, an incomplete one to why it was cut short (for example `length` or `content_filter`), and a failed or cancelled generation to `error`.
+**[9] `gen_ai.response.finish_reasons`:** When the fetched response has a final status, the finish reason describes the original generation. A completed generation maps to its stop reason, an incomplete one to why it was cut short (for example `length` or `content_filter`), a failed generation to `error`, and a cancelled generation to `interrupted`. If a fetched stream ends before a final status arrives, report `interrupted` for a caller close without an error and `error` for an unexpected ending.
 
 **[10] `gen_ai.response.status`:** The lifecycle status of the fetched response as reported by the provider, mapped onto the cross-provider enum. For a background or streamed response this conveys whether generation is still queued or in progress, or has reached a terminal state such as completed, failed, or cancelled.
 
@@ -134,6 +134,9 @@ Instrumentations SHOULD document the list of errors they report.
 the model. Each message corresponds to exactly one generation
 (choice/candidate) and vice versa - one choice cannot be split across
 multiple messages or one message cannot contain parts from multiple choices.
+
+Instrumentations SHOULD populate fields when values are available,
+unless the field description says otherwise.
 
 Instrumentations MAY provide a way for users to filter or truncate
 output messages. `gen_ai.response.finish_reasons` remains aligned with the
@@ -162,9 +165,11 @@ This attribute MUST be recorded as an [AnyValue](https://opentelemetry.io/docs/s
 > [!WARNING]
 > This attribute may contain sensitive information.
 
-Since this attribute could be large, it's NOT RECOMMENDED to populate
-non-required properties by default. Instrumentations MAY provide a way
-to enable populating optional properties.
+Instrumentations SHOULD populate fields when values are available,
+unless the field description says otherwise.
+
+See [Recording content on attributes](/docs/gen-ai/gen-ai-spans.md#recording-content-on-attributes)
+section for more details.
 
 This attribute MUST be recorded as an [AnyValue](https://opentelemetry.io/docs/specs/otel/common/#anyvalue) conforming to its [JSON schema](/model/gen-ai/gen-ai-tool-definitions.json).
 
@@ -377,6 +382,9 @@ by an explicit user opt-in via [content capture configuration](/docs/gen-ai/gen-
 **[12] `gen_ai.memory.records`:** Instrumentations SHOULD NOT capture this attribute by default. Capture SHOULD be gated
 by an explicit user opt-in via [content capture configuration](/docs/gen-ai/gen-ai-spans.md#content-capture-configuration).
 
+Instrumentations SHOULD populate fields when values are available,
+unless the field description says otherwise.
+
 > [!Warning]
 > This attribute may contain sensitive information including user/PII data.
 
@@ -503,7 +511,7 @@ application needs and maturity:
 #### Recording content on attributes
 
 The content captured in `gen_ai.system_instructions`, `gen_ai.input.messages`,
-and `gen_ai.output.messages` attributes is likely to be large.
+`gen_ai.output.messages`, and `gen_ai.tool.definitions` attributes is likely to be large.
 
 It may contain media, and even in the text form, it may be larger than
 observability backend limits for telemetry envelopes or attribute values.
@@ -515,7 +523,8 @@ in [Python code](./non-normative/models.py).
 
 These attributes MUST be recorded as
 [AnyValue](https://opentelemetry.io/docs/specs/otel/common/#anyvalue) values
-conforming to their JSON schemas.
+conforming to their JSON schemas. Instrumentations SHOULD populate fields when
+values are available, unless the field description says otherwise.
 
 The JSON schemas describe the structure of these attribute values in the
 OpenTelemetry data model, not an export format or encoding. Producers SHOULD
@@ -528,7 +537,7 @@ such as individual message contents, preserving JSON structure.
 
 ##### Content capture configuration
 
-Capturing model instructions, prompts, completions, retrieval queries, prompt template variables, and memory records is gated by an explicit user opt-in.
+Capturing model instructions, prompts, completions, tool definitions, retrieval queries, prompt template variables, and memory records is gated by an explicit user opt-in.
 Instrumentations that support capturing content MUST provide a configuration option to control
 whether content is captured and which telemetry signals receive it.
 
@@ -537,14 +546,13 @@ The content capture configuration governs the following attributes and their rep
 - [`gen_ai.input.messages`](/docs/registry/attributes/gen-ai.md#gen-ai-input-messages)
 - [`gen_ai.output.messages`](/docs/registry/attributes/gen-ai.md#gen-ai-output-messages)
 - [`gen_ai.system_instructions`](/docs/registry/attributes/gen-ai.md#gen-ai-system-instructions)
+- [`gen_ai.tool.definitions`](/docs/registry/attributes/gen-ai.md#gen-ai-tool-definitions)
 - [`gen_ai.tool.call.arguments`](/docs/registry/attributes/gen-ai.md#gen-ai-tool-call-arguments)
 - [`gen_ai.tool.call.result`](/docs/registry/attributes/gen-ai.md#gen-ai-tool-call-result)
 - [`gen_ai.retrieval.query.text`](/docs/registry/attributes/gen-ai.md#gen-ai-retrieval-query-text)
 - [`gen_ai.prompt.variables`](/docs/registry/attributes/gen-ai.md#gen-ai-prompt-variables)
 - [`gen_ai.memory.query.text`](/docs/registry/attributes/gen-ai.md#gen-ai-memory-query-text)
 - [`gen_ai.memory.records`](/docs/registry/attributes/gen-ai.md#gen-ai-memory-records)
-
-Attributes providing schemas rather than user/model payload content (such as [`gen_ai.tool.definitions`](/docs/registry/attributes/gen-ai.md#gen-ai-tool-definitions)) are not governed by this configuration.
 
 A content attribute MUST NOT be reported on a signal unless that signal's conventions
 reference the attribute or explicitly permit copying it from another signal.
