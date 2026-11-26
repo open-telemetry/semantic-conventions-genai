@@ -201,7 +201,6 @@ def response_has_compaction_item(response):
 def responses_output_messages(response):
     """Convert Responses API output items into OTel output messages."""
     output_messages = []
-    pending_parts = []
     for item in getattr(response, "output", []) or []:
         item_type = item.get("type") if isinstance(item, dict) else getattr(item, "type", None)
         if item_type == "compaction":
@@ -209,17 +208,13 @@ def responses_output_messages(response):
             compaction_id = item.get("id") if isinstance(item, dict) else getattr(item, "id", None)
             if compaction_id:
                 compaction_part["id"] = compaction_id
-            if output_messages and output_messages[-1].get("role") == "assistant":
-                output_messages[-1]["parts"].append(compaction_part)
-            else:
-                pending_parts.append(compaction_part)
+            output_messages.append({"parts": [compaction_part]})
             continue
         if item_type != "message":
             continue
         role = item.get("role") if isinstance(item, dict) else getattr(item, "role", None)
         content = item.get("content", []) if isinstance(item, dict) else getattr(item, "content", [])
-        parts = pending_parts
-        pending_parts = []
+        parts = []
         for block in content or []:
             block_type = block.get("type") if isinstance(block, dict) else getattr(block, "type", None)
             if block_type != "output_text":
@@ -228,9 +223,10 @@ def responses_output_messages(response):
             if text:
                 parts.append({"type": "text", "content": text})
         if parts:
-            output_messages.append({"role": role or "assistant", "parts": parts})
-    if pending_parts:
-        output_messages.append({"role": "assistant", "parts": pending_parts})
+            message = {"parts": parts}
+            if role:
+                message["role"] = role
+            output_messages.append(message)
     return output_messages
 
 
@@ -702,6 +698,78 @@ def run_responses_continuation_reference(client):
             attributes=event_attrs,
         )
         print(f"    -> previous_response_id: {previous_response_id}")
+
+
+def run_responses_roleless_tool_items_reference(client):
+    """Scenario: Responses API function_call and function_call_output input items have no role."""
+    print("  [responses_roleless_tool_items] responses with role-less tool items (reference implementation)")
+    request_model = "gpt-4o-mini"
+    conversation = [
+        {"type": "message", "role": "user", "content": "What's the weather in Seattle?"},
+        {
+            "type": "function_call",
+            "call_id": "call_weather_1",
+            "name": "get_weather",
+            "arguments": json.dumps({"location": "Seattle"}),
+        },
+        {"type": "function_call_output", "call_id": "call_weather_1", "output": "Rainy, 14 C"},
+    ]
+    input_messages = []
+    for item in conversation:
+        if item["type"] == "message":
+            input_messages.append({"role": item["role"], "parts": [{"type": "text", "content": item["content"]}]})
+        elif item["type"] == "function_call":
+            input_messages.append(
+                {
+                    "parts": [
+                        {
+                            "type": "tool_call",
+                            "id": item["call_id"],
+                            "name": item["name"],
+                            "arguments": json.loads(item["arguments"]),
+                        }
+                    ]
+                }
+            )
+        elif item["type"] == "function_call_output":
+            input_messages.append(
+                {"parts": [{"type": "tool_call_response", "id": item["call_id"], "response": item["output"]}]}
+            )
+
+    host, port = mock_server_host_port(MOCK_BASE_URL)
+    span_attributes = {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "openai",
+        "gen_ai.request.model": request_model,
+        "openai.api.type": "responses",
+    }
+    if host:
+        span_attributes["server.address"] = host
+    if port is not None:
+        span_attributes["server.port"] = port
+
+    with _reference_tracer.start_as_current_span(
+        "chat gpt-4o-mini", kind=SpanKind.CLIENT, attributes=span_attributes
+    ) as span:
+        span.set_attribute("gen_ai.input.messages", input_messages)
+        response = client.responses.create(model=request_model, input=conversation)
+
+        span.set_attribute("gen_ai.response.model", response.model)
+        span.set_attribute("gen_ai.response.id", response.id)
+        finish_reason = responses_finish_reason(response)
+        if finish_reason is not None:
+            span.set_attribute("gen_ai.response.finish_reasons", [finish_reason])
+        output_messages = responses_output_messages(response)
+        if output_messages:
+            span.set_attribute("gen_ai.output.messages", output_messages)
+        usage = {}
+        if response.usage:
+            usage["gen_ai.usage.input_tokens"] = response.usage.input_tokens
+            usage["gen_ai.usage.output_tokens"] = response.usage.output_tokens
+        for attr, value in usage.items():
+            span.set_attribute(attr, value)
+        record_inference_usage(usage, usage_metric_attributes(request_model, response.model, host, port))
+        print(f"    -> {response.output_text[:60]}")
 
 
 def run_chat_streaming_reference(client, *, close_early=False):
@@ -2032,6 +2100,7 @@ def main(*, caller_close=False):
     run_chat_parse_error_reference()
     run_responses_compaction_reference(client)
     run_responses_continuation_reference(client)
+    run_responses_roleless_tool_items_reference(client)
     run_chat_streaming_reference(client)
     run_chat_tool_call_reference(client)
     run_chat_with_document_input_reference(client)

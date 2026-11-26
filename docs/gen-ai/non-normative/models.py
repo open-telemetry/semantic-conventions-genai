@@ -374,7 +374,13 @@ class Role(StrEnum):
 
 class ChatMessage(BaseModel):
     role: Union[Role, str, None] = Field(
-        default=None, description="Role of the entity that created the message."
+        default=None,
+        description=(
+            "Role of the entity that created the message. "
+            "Instrumentations SHOULD record the role supplied by the application or provider API, "
+            "including on messages that contain tool call responses, "
+            "and SHOULD NOT set a role when the API does not supply one."
+        ),
     )
     parts: Optional[List[MessagePart]] = Field(
         default=None,
