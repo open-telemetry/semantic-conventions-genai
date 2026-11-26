@@ -5,9 +5,11 @@
       "a2a.message.reference_task_ids",
       "a2a.method.name",
       "a2a.protocol.version",
+      "a2a.request.return_immediately",
       "a2a.task.id",
       "a2a.task.state",
       "a2a.tenant",
+      "error.type",
       "gen_ai.agent.description",
       "gen_ai.agent.name",
       "gen_ai.agent.version",
@@ -20,6 +22,7 @@
       "a2a.message.reference_task_ids",
       "a2a.method.name",
       "a2a.protocol.version",
+      "a2a.request.return_immediately",
       "a2a.task.id",
       "a2a.task.state",
       "a2a.tenant",
@@ -35,7 +38,32 @@
     ]
   },
   "events": {},
-  "metrics": {},
+  "metrics": {
+    "a2a.client.operation.active": [
+      "a2a.method.name",
+      "a2a.protocol.version",
+      "server.address",
+      "server.port"
+    ],
+    "a2a.client.operation.duration": [
+      "a2a.method.name",
+      "a2a.protocol.version",
+      "a2a.request.return_immediately",
+      "error.type",
+      "server.address",
+      "server.port"
+    ],
+    "a2a.server.operation.active": [
+      "a2a.method.name",
+      "a2a.protocol.version"
+    ],
+    "a2a.server.operation.duration": [
+      "a2a.method.name",
+      "a2a.protocol.version",
+      "a2a.request.return_immediately",
+      "error.type"
+    ]
+  },
   "entities": {},
   "findings": []
 }

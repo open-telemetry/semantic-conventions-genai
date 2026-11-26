@@ -11,8 +11,9 @@
 | <a id="a2a-message-reference-task-ids" href="#a2a-message-reference-task-ids">`a2a.message.reference_task_ids`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string[] | Task IDs referenced by the A2A request message. [2] | `["task-abc-5678"]` |
 | <a id="a2a-method-name" href="#a2a-method-name">`a2a.method.name`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The name of the A2A request method. [3] | `SendMessage`; `SendStreamingMessage`; `GetTask` |
 | <a id="a2a-protocol-version" href="#a2a-protocol-version">`a2a.protocol.version`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The version of the A2A protocol used. [4] | `1.0` |
-| <a id="a2a-task-id" href="#a2a-task-id">`a2a.task.id`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The unique identifier of an A2A task. [5] | `task-5f2a7c7d9f8e4d2a` |
-| <a id="a2a-task-state" href="#a2a-task-state">`a2a.task.state`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The state of an A2A task. [6] | `TASK_STATE_SUBMITTED`; `TASK_STATE_WORKING`; `TASK_STATE_INPUT_REQUIRED` |
+| <a id="a2a-request-return-immediately" href="#a2a-request-return-immediately">`a2a.request.return_immediately`</a> | ![Development](https://img.shields.io/badge/-development-blue) | boolean | Whether `SendMessage` was requested to return before the task reaches a terminal or interrupted state. [5] | `true` |
+| <a id="a2a-task-id" href="#a2a-task-id">`a2a.task.id`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The unique identifier of an A2A task. [6] | `task-5f2a7c7d9f8e4d2a` |
+| <a id="a2a-task-state" href="#a2a-task-state">`a2a.task.state`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The state of an A2A task. [7] | `TASK_STATE_SUBMITTED`; `TASK_STATE_WORKING`; `TASK_STATE_INPUT_REQUIRED` |
 | <a id="a2a-tenant" href="#a2a-tenant">`a2a.tenant`</a> | ![Development](https://img.shields.io/badge/-development-blue) | string | The opaque routing identifier of the target [A2A tenant](https://github.com/a2aproject/A2A/blob/main/docs/topics/multi-tenancy.md). | `billing` |
 
 
@@ -24,9 +25,11 @@
 
 **[4] `a2a.protocol.version`:** See the A2A specification for [versioning](https://a2a-protocol.org/latest/specification/#36-versioning).
 
-**[5] `a2a.task.id`:** See the A2A specification for the [Task](https://a2a-protocol.org/latest/specification/#411-task) object and [task identifier semantics](https://a2a-protocol.org/latest/specification/#342-task-identifier-semantics).
+**[5] `a2a.request.return_immediately`:** Corresponds to the `returnImmediately` field of the A2A request `SendMessageConfiguration`. See the A2A specification for [SendMessageConfiguration](https://a2a-protocol.org/latest/specification/#322-sendmessageconfiguration).
 
-**[6] `a2a.task.state`:** See the A2A specification for [TaskState](https://a2a-protocol.org/latest/specification/#413-taskstate).
+**[6] `a2a.task.id`:** See the A2A specification for the [Task](https://a2a-protocol.org/latest/specification/#411-task) object and [task identifier semantics](https://a2a-protocol.org/latest/specification/#342-task-identifier-semantics).
+
+**[7] `a2a.task.state`:** See the A2A specification for [TaskState](https://a2a-protocol.org/latest/specification/#413-taskstate).
 
 ---
 
