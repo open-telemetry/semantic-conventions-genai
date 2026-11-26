@@ -15,3 +15,20 @@ env:
 scenarios:
   reference:
     run: uv run --frozen --python 3.12 --project . python scenario.py
+    spans:
+      - match:
+          attributes:
+            gen_ai.operation.name: create_memory
+          type: gen_ai.memory.client
+        expect:
+          count: 1
+          attributes:
+            gen_ai.memory.record.count: 1
+      - match:
+          attributes:
+            gen_ai.operation.name: search_memory
+          type: gen_ai.memory.client
+        expect:
+          count: 1
+          attributes:
+            gen_ai.memory.record.count: 1
