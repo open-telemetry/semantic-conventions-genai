@@ -6,8 +6,10 @@ metrics:
     unit: "{token}"
     brief: 'The number of input (prompt) tokens used, including cached tokens.'
     note: &inference_usage_note >
-      This metric SHOULD be reported when an operation involves the usage of
-      tokens and the count is readily available.
+      This metric SHOULD be reported for non-realtime client inference operations
+      (`chat`, `generate_content`, `text_completion`) when the operation involves
+      the usage of tokens and the count is readily available, and SHOULD NOT be
+      reported for `realtime_inference` or other operations.
 
       When systems report both used tokens and billable tokens, instrumentation
       MUST report billable tokens.
@@ -25,10 +27,7 @@ metrics:
       code_generation:
         metric_value_type: int
     attributes:
-      - ref_group: metric_attributes.gen_ai
       - ref_group: metric_attributes.gen_ai.inference
-      - ref: gen_ai.operation.name
-        examples: ["chat", "generate_content"]
       - ref: gen_ai.token.modality
         requirement_level: required
       - ref_group: attributes.gen_ai.error
@@ -43,10 +42,7 @@ metrics:
       code_generation:
         metric_value_type: int
     attributes:
-      - ref_group: metric_attributes.gen_ai
       - ref_group: metric_attributes.gen_ai.inference
-      - ref: gen_ai.operation.name
-        examples: ["chat", "generate_content"]
       - ref: gen_ai.token.modality
         requirement_level: required
       - ref_group: attributes.gen_ai.error
@@ -56,6 +52,10 @@ metrics:
     unit: "{token}"
     brief: 'The number of input tokens served from a provider-managed cache.'
     note: >
+      Applies only to non-realtime client inference operations (`chat`,
+      `generate_content`, `text_completion`) and SHOULD NOT be reported for
+      `realtime_inference` or other operations.
+
       This value is a subset of `gen_ai.client.inference.usage.input_tokens`.
 
       Instrumentation SHOULD record contributions from successful and failed
@@ -69,10 +69,7 @@ metrics:
       code_generation:
         metric_value_type: int
     attributes:
-      - ref_group: metric_attributes.gen_ai
       - ref_group: metric_attributes.gen_ai.inference
-      - ref: gen_ai.operation.name
-        examples: ["chat", "generate_content"]
       - ref: gen_ai.token.modality
         requirement_level: required
       - ref_group: attributes.gen_ai.error
@@ -82,6 +79,10 @@ metrics:
     unit: "{token}"
     brief: 'The number of input tokens written to a provider-managed cache.'
     note: >
+      Applies only to non-realtime client inference operations (`chat`,
+      `generate_content`, `text_completion`) and SHOULD NOT be reported for
+      `realtime_inference` or other operations.
+
       This value is a subset of `gen_ai.client.inference.usage.input_tokens`.
 
       Instrumentation SHOULD record contributions from successful and failed
@@ -95,10 +96,7 @@ metrics:
       code_generation:
         metric_value_type: int
     attributes:
-      - ref_group: metric_attributes.gen_ai
       - ref_group: metric_attributes.gen_ai.inference
-      - ref: gen_ai.operation.name
-        examples: ["chat", "generate_content"]
       - ref: gen_ai.token.modality
         requirement_level: required
       - ref_group: attributes.gen_ai.error
@@ -108,6 +106,10 @@ metrics:
     unit: "{token}"
     brief: 'The number of output tokens used for reasoning (e.g. chain-of-thought, extended thinking).'
     note: >
+      Applies only to non-realtime client inference operations (`chat`,
+      `generate_content`, `text_completion`) and SHOULD NOT be reported for
+      `realtime_inference` or other operations.
+
       This value is a subset of `gen_ai.client.inference.usage.output_tokens`.
 
       Instrumentation SHOULD record contributions from successful and failed
@@ -118,10 +120,7 @@ metrics:
       code_generation:
         metric_value_type: int
     attributes:
-      - ref_group: metric_attributes.gen_ai
       - ref_group: metric_attributes.gen_ai.inference
-      - ref: gen_ai.operation.name
-        examples: ["chat", "generate_content"]
       - ref_group: attributes.gen_ai.error
 
   - name: gen_ai.client.inference.operation.input_tokens
@@ -130,8 +129,10 @@ metrics:
     unit: "{token}"
     brief: 'The number of input (prompt) tokens used per inference operation.'
     note: &token_usage_note >
-      This metric SHOULD be reported when an operation involves the usage
-      of tokens and the count is readily available.
+      This metric SHOULD be reported for non-realtime client inference operations
+      (`chat`, `generate_content`, `text_completion`) when the operation involves
+      the usage of tokens and the count is readily available, and SHOULD NOT be
+      reported for `realtime_inference` or other operations.
 
       For example, if GenAI system returns usage information in the streaming response,
       it SHOULD be used. Or if GenAI system returns each token independently,
@@ -151,10 +152,7 @@ metrics:
       code_generation:
         metric_value_type: int
     attributes:
-      - ref_group: metric_attributes.gen_ai
       - ref_group: metric_attributes.gen_ai.inference
-      - ref: gen_ai.operation.name
-        examples: ["chat", "generate_content"]
       - ref_group: attributes.gen_ai.error
   - name: gen_ai.client.inference.operation.output_tokens
     requirement_level: recommended
@@ -167,10 +165,7 @@ metrics:
       code_generation:
         metric_value_type: int
     attributes:
-      - ref_group: metric_attributes.gen_ai
       - ref_group: metric_attributes.gen_ai.inference
-      - ref: gen_ai.operation.name
-        examples: ["chat", "generate_content"]
       - ref_group: attributes.gen_ai.error
   - name: gen_ai.client.embeddings.operation.input_tokens
     requirement_level: recommended

@@ -24,6 +24,13 @@ _reference_meter = reference_meter()
 
 _CLIENT_DURATION_BUCKETS = [0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10, 30, 60]
 
+_fetch_response_duration = _reference_meter.create_histogram(
+    "gen_ai.client.operation.duration",
+    unit="s",
+    description="GenAI operation duration.",
+    explicit_bucket_boundaries_advisory=_CLIENT_DURATION_BUCKETS,
+)
+
 _time_to_first_chunk = _reference_meter.create_histogram(
     "gen_ai.client.inference.time_to_first_chunk",
     unit="s",
@@ -1660,7 +1667,7 @@ def run_responses_with_prompt_template_reference(client):
 
 
 def _emit_fetch_response_span(client, response_id, starting_after=None, stream=False, *, close_early=False):
-    """Fetch a response by id and emit the `gen_ai.fetch_response.client` span.
+    """Fetch a response by id and record its span and duration.
 
     Owns its own span boundary, so all attributes are set inline here. Every
     value is derived from the retrieve-call boundary:
@@ -1688,10 +1695,17 @@ def _emit_fetch_response_span(client, response_id, starting_after=None, stream=F
     - `openai.api.type` is `responses`; `gen_ai.response.service_tier` comes from
       the fetched object.
     """
-    host, port = mock_server_host_port(MOCK_BASE_URL)
-    span_attributes = {
+    host, port = mock_server_host_port(str(client.base_url))
+    metric_attributes = {
         "gen_ai.operation.name": "fetch_response",
         "gen_ai.provider.name": "openai",
+    }
+    if host:
+        metric_attributes["server.address"] = host
+    if port is not None:
+        metric_attributes["server.port"] = port
+    span_attributes = {
+        **metric_attributes,
         "gen_ai.response.id": response_id,
         "openai.api.type": "responses",
     }
@@ -1699,14 +1713,12 @@ def _emit_fetch_response_span(client, response_id, starting_after=None, stream=F
         span_attributes["gen_ai.request.stream"] = True
     if starting_after is not None:
         span_attributes["gen_ai.request.stream_cursor"] = str(starting_after)
-    if host:
-        span_attributes["server.address"] = host
-    if port is not None:
-        span_attributes["server.port"] = port
     with _reference_tracer.start_as_current_span(
         "fetch_response", attributes=span_attributes, record_exception=False
     ) as span:
         finish_reason = None
+        duration = None
+        start_time = perf_counter()
         try:
             if stream:
                 fetched = None
@@ -1722,13 +1734,17 @@ def _emit_fetch_response_span(client, response_id, starting_after=None, stream=F
                             finish_reason = responses_finish_reason(candidate) or finish_reason
                         if close_early:
                             break
+                duration = perf_counter() - start_time
                 finish_reason = finish_reason or fetched_stream.finish_reason
                 if fetched is None:
                     span.set_attribute("gen_ai.response.finish_reasons", [finish_reason])
                     return
             else:
                 fetched = client.responses.retrieve(response_id)
+                duration = perf_counter() - start_time
                 finish_reason = responses_finish_reason(fetched)
+            if fetched.model:
+                metric_attributes["gen_ai.response.model"] = fetched.model
             span.set_attribute("gen_ai.response.id", fetched.id)
             span.set_attribute("gen_ai.response.model", fetched.model)
             status = getattr(fetched, "status", None)
@@ -1768,16 +1784,23 @@ def _emit_fetch_response_span(client, response_id, starting_after=None, stream=F
             # the original generation (already accounted for on that operation).
             print(f"    -> fetched {fetched.id} (status={getattr(fetched, 'status', None)})")
         except Exception as e:
+            if duration is None:
+                duration = perf_counter() - start_time
+            error_type = f"{type(e).__module__}.{type(e).__qualname__}"
+            metric_attributes["error.type"] = error_type
             if stream:
                 span.set_attribute("gen_ai.response.finish_reasons", [finish_reason or "error"])
             span.set_status(StatusCode.ERROR, str(e))
-            span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
+            span.set_attribute("error.type", error_type)
             reference_event_logger().emit(
                 event_name="gen_ai.client.fetch_response.exception",
                 severity_number=SeverityNumber.WARN,
                 exception=e,
             )
             raise
+        finally:
+            if duration is not None:
+                _fetch_response_duration.record(duration, metric_attributes)
 
 
 def run_fetch_response_reference(client):
