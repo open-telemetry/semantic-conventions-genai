@@ -5,6 +5,7 @@ import json
 import socket
 import time
 from contextlib import asynccontextmanager
+from functools import partial
 
 import httpx
 import uvicorn
@@ -105,8 +106,8 @@ def _a2a_error_reason(details: object) -> str | None:
 
 
 class _AsgiCallWrapper:
-    """Record the metric and end the span once the response is sent, even if
-    the client disconnects before the body iterator runs.
+    """Record the metrics (and end a streaming span) once the response is sent,
+    even if the client disconnects before the body iterator runs.
     """
 
     def __init__(self, response, on_done):
@@ -128,6 +129,15 @@ class _AsgiCallWrapper:
             return
         self._done = True
         self._on_done(exc)
+
+
+def _record_server_metrics(start, metric_attrs, duration_attrs, exc=None):
+    # A failed send (e.g. `ClientDisconnect`) is the operation's error unless
+    # the response already carried one.
+    if exc is not None and "error.type" not in duration_attrs:
+        duration_attrs["error.type"] = type(exc).__qualname__
+    _server_duration.record(time.perf_counter() - start, duration_attrs)
+    _server_active.add(-1, metric_attrs)
 
 
 class ReferenceJsonRpcDispatcher(JsonRpcDispatcher):
@@ -217,12 +227,13 @@ class ReferenceJsonRpcDispatcher(JsonRpcDispatcher):
         else:
             span = _reference_tracer.start_span(method, kind=SpanKind.SERVER, attributes=span_attrs)
 
-        # A streaming response is recorded when its stream ends, not here.
-        streaming = False
+        # A returned response is recorded once it is sent, not here.
+        deferred = False
         # Both metrics start here, once nothing can fail before the `finally`
         # that records the duration and decrements the active count.
         start = time.perf_counter()
         _server_active.add(1, metric_attrs)
+        record = partial(_record_server_metrics, start, metric_attrs, duration_attrs)
         try:
             with use_span(span, end_on_exit=False):
                 response = await super().handle_requests(request)
@@ -241,7 +252,11 @@ class ReferenceJsonRpcDispatcher(JsonRpcDispatcher):
                     span.set_attribute("a2a.task.id", task["id"])
                     span.set_attribute("a2a.task.state", task["status"]["state"])
                     span.set_attribute("gen_ai.conversation.id", task["contextId"])
-                return response
+                # The span covers producing the response; the metrics also cover sending it.
+                if not self._enrich_transport_span:
+                    span.end()
+                deferred = True
+                return _AsgiCallWrapper(response, record)
 
             # A streaming call is not served until the client has drained the
             # stream, so the span stays open until the last event is yielded,
@@ -288,19 +303,17 @@ class ReferenceJsonRpcDispatcher(JsonRpcDispatcher):
 
             def _finish_streaming(exc):
                 # If the dispatch itself failed (e.g. `ClientDisconnect` before
-                # the body iterator ran), tag the metric with that error unless
+                # the body iterator ran), tag the span with that error unless
                 # the stream already recorded one.
                 if exc is not None and "error.type" not in duration_attrs:
                     span.set_status(StatusCode.ERROR)
                     span.set_attribute("error.type", type(exc).__qualname__)
-                    duration_attrs["error.type"] = type(exc).__qualname__
                 if not self._enrich_transport_span:
                     span.end()
-                _server_duration.record(time.perf_counter() - start, duration_attrs)
-                _server_active.add(-1, metric_attrs)
+                record(exc)
 
             response.body_iterator = traced_events()
-            streaming = True
+            deferred = True
             return _AsgiCallWrapper(response, _finish_streaming)
         except Exception as exc:
             span.set_status(StatusCode.ERROR)
@@ -308,11 +321,10 @@ class ReferenceJsonRpcDispatcher(JsonRpcDispatcher):
             duration_attrs["error.type"] = type(exc).__qualname__
             raise
         finally:
-            if not streaming:
+            if not deferred:
                 if not self._enrich_transport_span:
                     span.end()
-                _server_duration.record(time.perf_counter() - start, duration_attrs)
-                _server_active.add(-1, metric_attrs)
+                record()
 
 
 class ReferenceRestDispatcher(RestDispatcher):
@@ -346,6 +358,8 @@ class ReferenceRestDispatcher(RestDispatcher):
         )
         start = time.perf_counter()
         _server_active.add(1, metric_attrs)
+        record = partial(_record_server_metrics, start, metric_attrs, duration_attrs)
+        deferred = False
         try:
             response = await super().on_get_task(request)
             if error := json.loads(response.body).get("error"):
@@ -354,15 +368,16 @@ class ReferenceRestDispatcher(RestDispatcher):
                 span.set_status(StatusCode.ERROR)
                 span.set_attribute("error.type", error_type)
                 duration_attrs["error.type"] = error_type
-            return response
+            deferred = True
+            return _AsgiCallWrapper(response, record)
         except Exception as exc:
             span.set_status(StatusCode.ERROR)
             span.set_attribute("error.type", type(exc).__qualname__)
             duration_attrs["error.type"] = type(exc).__qualname__
             raise
         finally:
-            _server_duration.record(time.perf_counter() - start, duration_attrs)
-            _server_active.add(-1, metric_attrs)
+            if not deferred:
+                record()
 
 
 def _free_port() -> int:
