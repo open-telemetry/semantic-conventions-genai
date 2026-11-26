@@ -5,3 +5,14 @@ instrumentation_library: reference
 scenarios:
   reference:
     run: uv run --frozen --python 3.12 --project . python scenario.py
+    spans:
+      - match:
+          attributes:
+            gen_ai.operation.name: apply_guardrail
+          type: gen_ai.apply_guardrail.client
+        expect:
+          count: 1
+    events:
+      - gen_ai.guardrail.result
+    metrics:
+      - gen_ai.client.apply_guardrail.duration
