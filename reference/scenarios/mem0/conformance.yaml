@@ -1,0 +1,34 @@
+runner: genai-conformance
+instrumented_library: mem0
+instrumentation_library: reference
+
+server:
+  run: genai-mock-server --host 127.0.0.1 --port ${PORT}
+
+env:
+  MOCK_LLM_URL: ${MOCK_SERVER_URL}
+  # mem0 sends product telemetry to PostHog unless this is off.
+  MEM0_TELEMETRY: "False"
+  # Opt in to the memory content attributes (query text and records).
+  OTEL_INSTRUMENTATION_GENAI_CAPTURE_CONTENT: SPAN_ONLY
+
+scenarios:
+  reference:
+    run: uv run --frozen --python 3.12 --project . python scenario.py
+    spans:
+      - match:
+          attributes:
+            gen_ai.operation.name: create_memory
+          type: gen_ai.memory.client
+        expect:
+          count: 1
+          attributes:
+            gen_ai.memory.record.count: 1
+      - match:
+          attributes:
+            gen_ai.operation.name: search_memory
+          type: gen_ai.memory.client
+        expect:
+          count: 1
+          attributes:
+            gen_ai.memory.record.count: 1
