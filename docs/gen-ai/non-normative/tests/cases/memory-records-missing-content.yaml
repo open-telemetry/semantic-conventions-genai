@@ -1,5 +1,5 @@
 # yaml-language-server: $schema=../case.schema.json
-description: Every memory record needs `content`, and `metadata` must be an object
+description: Memory records may omit `content`, while `metadata` must be an object when present
 schema: gen-ai-memory-records.json
 document: [
   { "id": "mem-1" },
@@ -7,9 +7,6 @@ document: [
 ]
 # Regenerate with `uv run pytest --update-snapshots`, do not edit by hand.
 errors:
-  - path: $[0]
-    keyword: required
-    message: "'content' is a required property"
   - path: $[1].metadata
     keyword: type
     message: "'source=chat' is not of type 'object'"
