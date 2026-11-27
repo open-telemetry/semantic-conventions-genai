@@ -48,3 +48,10 @@ scenarios:
           attributes:
             gen_ai.operation.name: apply_guardrail
           type: gen_ai.apply_guardrail.client
+    events:
+      - gen_ai.client.inference.operation.details
+      - gen_ai.guardrail.result
+    metrics:
+      - gen_ai.client.apply_guardrail.duration
+      - gen_ai.client.embeddings.duration
+      - gen_ai.client.embeddings.operation.input_tokens
