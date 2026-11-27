@@ -226,7 +226,7 @@ These parts contain an optional `modality` field to capture the general category
 content, and an optional `mime_type` to capture the specific [IANA media
 type](https://www.iana.org/assignments/media-types/media-types.xhtml) of the content, if known.
 An optional `name` captures a human-readable name, title, or filename when the instrumented call
-or response provides one, for example a document title.
+provides one, for example a document title.
 See the [normative JSON schema](/model/gen-ai/gen-ai-input-messages.json) for more details.
 
 ### Multimodal inputs example

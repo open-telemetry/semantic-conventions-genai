@@ -237,7 +237,7 @@ class BlobPart(BaseModel):
         default=None,
         description=(
             "A human-readable name, title, or filename for the attached data, "
-            "recorded as provided in the instrumented call or response. "
+            "recorded as provided in the instrumented call. "
             "Instrumentations SHOULD leave it unset when no name is provided."
         ),
     )
@@ -263,7 +263,7 @@ class FilePart(BaseModel):
         default=None,
         description=(
             "A human-readable name, title, or filename for the referenced file, "
-            "recorded as provided in the instrumented call or response. "
+            "recorded as provided in the instrumented call. "
             "Instrumentations SHOULD leave it unset when not directly available "
             "and MUST NOT make extra API calls or cache state across calls to resolve it."
         ),
@@ -298,7 +298,7 @@ class UriPart(BaseModel):
         description=(
             "A human-readable name, title, or filename for the referenced data "
             "(not a provider resource identifier), recorded as provided alongside the URI "
-            "in the instrumented call or response. "
+            "in the instrumented call. "
             "Instrumentations SHOULD leave it unset when not directly available "
             "and MUST NOT derive it by parsing the URI path or make extra API calls to resolve it."
         ),
