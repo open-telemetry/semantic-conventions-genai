@@ -1,9 +1,7 @@
 """A2A + `gen_ai.main_agent` showcase driven by a real Google ADK agent.
 
-This scenario only sets up the OTel pipeline and the process Resource
-(`gen_ai.main_agent.*`, derived from env with fallback to the served AgentCard).
-Everything else is a real Google ADK agent served over A2A via ``to_a2a`` and
-invoked by an A2A client -- ADK's own instrumentation emits the spans.
+The scenario derives `gen_ai.main_agent.*` from the environment and AgentCard.
+An A2A client invokes a real Google ADK agent served via ``to_a2a``.
 """
 
 import asyncio
@@ -17,6 +15,7 @@ from google.adk.a2a.utils.agent_to_a2a import to_a2a
 from google.adk.agents import Agent
 from google.adk.models.google_llm import Gemini
 from google.protobuf.json_format import MessageToDict
+from opentelemetry.sdk.metrics.view import DropAggregation, View
 from opentelemetry.sdk.resources import Resource
 from reference_shared import flush_and_shutdown, setup_otel
 
@@ -56,7 +55,11 @@ async def run():
             "gen_ai.main_agent.description": card.description or "",
         }
     )
-    tp, lp, mp = setup_otel(resource=resource)
+    # ADK uses this metric for inference that belongs to the underlying Gemini client.
+    tp, lp, mp = setup_otel(
+        resource=resource,
+        metric_views=(View(instrument_name="gen_ai.client.operation.duration", aggregation=DropAggregation()),),
+    )
 
     # Serve the real ADK agent over A2A and invoke it
     app = to_a2a(agent, agent_card=card, host=AGENT_HOST, port=80, protocol="http")

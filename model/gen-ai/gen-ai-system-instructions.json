@@ -32,14 +32,21 @@
                     "type": "string"
                 },
                 "content": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
                     "description": "Text content sent to or received from the model.",
-                    "title": "Content",
-                    "type": "string"
+                    "title": "Content"
                 }
             },
             "required": [
-                "type",
-                "content"
+                "type"
             ],
             "title": "TextPart",
             "type": "object"

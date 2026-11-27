@@ -75,7 +75,7 @@ and MUST follow the overall [guidelines for span names](https://github.com/open-
 | [`server.port`](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/registry/attributes/server.md) | ![Stable](https://img.shields.io/badge/-stable-lightgreen) | `Conditionally Required` If `server.address` is set. | int | GenAI server port. [11] | `80`; `8080`; `443` |
 | [`gen_ai.request.max_tokens`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | int | The maximum number of tokens the model generates for a request. | `100` |
 | [`gen_ai.request.reasoning.level`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` When applicable. | string | The reasoning or thinking effort level requested for a GenAI model. [12] | `low`; `medium`; `high` |
-| [`gen_ai.response.finish_reasons`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string[] | Array of reasons the model stopped generating tokens, corresponding to each generation received. [13] | `["stop"]`; `["stop", "length"]`; `["stop", "length", "error"]` |
+| [`gen_ai.response.finish_reasons`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string[] | Array of reasons the model stopped generating tokens, corresponding to each generation received. [13] | `["stop"]`; `["stop", "length"]`; `["stop", "length", "error"]`; `["interrupted"]` |
 | [`gen_ai.response.id`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` When available. | string | The unique identifier for the completion. | `chatcmpl-123` |
 | [`gen_ai.response.model`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` | string | The name of the model that generated the response. | `gpt-4-0613` |
 | [`gen_ai.usage.audio.cache_read.input_tokens`](/docs/registry/attributes/gen-ai.md) | ![Development](https://img.shields.io/badge/-development-blue) | `Recommended` When reported by the provider and non-zero. | int | The number of audio input tokens served from a provider-managed cache. [14] | `60` |
@@ -181,10 +181,10 @@ For interrupted generations, instrumentations SHOULD report the
 provider-reported interruption reason when available and `interrupted` otherwise.
 
 Each position SHOULD contain the finish reason for the corresponding
-choice/candidate. If a finish reason was expected but not received, for
-example because generation failed, was cancelled, or a stream ended before
-the final event, instrumentations SHOULD report `error` for that position
-instead of omitting it.
+choice/candidate. If an expected finish reason is missing, instrumentations
+SHOULD report `interrupted` when the caller closes or disposes of the
+stream without an error, and `error` if generation fails or the stream
+ends unexpectedly.
 
 `error` indicates that the generation ended abnormally, whether reported
 by the provider or inferred by the instrumentation.
@@ -261,6 +261,9 @@ chat history.
 Instructions that are part of the chat history SHOULD be recorded in
 `gen_ai.input.messages` attribute instead.
 
+Instrumentations SHOULD populate fields when values are available,
+unless the field description says otherwise.
+
 Instrumentations MAY provide a way for users to filter or truncate
 system instructions.
 
@@ -280,9 +283,11 @@ This attribute MUST be recorded as an [AnyValue](https://opentelemetry.io/docs/s
 For providers with session-level tools and per-generation overrides, record
 the generation's tools if set, otherwise the session's tools.
 
-Since this attribute could be large, it's NOT RECOMMENDED to populate
-non-required properties by default. Instrumentations MAY provide a way
-to enable populating optional properties.
+Instrumentations SHOULD populate fields when values are available,
+unless the field description says otherwise.
+
+See [Recording content on attributes](/docs/gen-ai/gen-ai-spans.md#recording-content-on-attributes)
+section for more details.
 
 This attribute MUST be recorded as an [AnyValue](https://opentelemetry.io/docs/specs/otel/common/#anyvalue) conforming to its [JSON schema](/model/gen-ai/gen-ai-tool-definitions.json).
 

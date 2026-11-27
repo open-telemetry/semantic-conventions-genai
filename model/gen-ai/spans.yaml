@@ -168,6 +168,9 @@ attribute_groups:
       - ref: gen_ai.request.reasoning.level
         requirement_level:
           recommended: When applicable.
+      - ref: gen_ai.request.service_tier
+        requirement_level:
+          conditionally_required: If and only if provided in the request.
       - ref: gen_ai.request.previous_response.id
         requirement_level:
           recommended: When available and if the request references a previous response.
@@ -179,6 +182,9 @@ attribute_groups:
         requirement_level: recommended
       - ref: gen_ai.response.finish_reasons
         requirement_level: recommended
+      - ref: gen_ai.response.service_tier
+        requirement_level:
+          conditionally_required: If and only if returned by the provider.
       - ref: gen_ai.response.time_to_first_chunk
         requirement_level:
           recommended: If the request was a streaming request.
@@ -320,9 +326,11 @@ spans:
           For providers with session-level tools and per-generation overrides, record
           the generation's tools if set, otherwise the session's tools.
 
-          Since this attribute could be large, it's NOT RECOMMENDED to populate
-          non-required properties by default. Instrumentations MAY provide a way
-          to enable populating optional properties.
+          Instrumentations SHOULD populate fields when values are available,
+          unless the field description says otherwise.
+
+          See [Recording content on attributes](/docs/gen-ai/gen-ai-spans.md#recording-content-on-attributes)
+          section for more details.
       - ref: gen_ai.request.max_tokens
         requirement_level: recommended
       - ref: gen_ai.request.reasoning.level
@@ -566,10 +574,12 @@ spans:
       - ref: gen_ai.response.finish_reasons
         requirement_level: recommended
         note: >
-          Conveys the outcome of the original generation as recorded on the fetched response,
-          derived from its status: a completed generation maps to its stop reason, an incomplete
-          one to why it was cut short (for example `length` or `content_filter`), and a failed or
-          cancelled generation to `error`.
+          When the fetched response has a final status, the finish reason describes the
+          original generation. A completed generation maps to its stop reason, an incomplete
+          one to why it was cut short (for example `length` or `content_filter`), a failed
+          generation to `error`, and a cancelled generation to `interrupted`.
+          If a fetched stream ends before a final status arrives, report `interrupted`
+          for a caller close without an error and `error` for an unexpected ending.
       - ref: gen_ai.usage.input_tokens
         requirement_level:
           recommended: If the fetched response carries input token usage.
@@ -826,9 +836,11 @@ spans:
           Do not combine tool lists across child agents, handoffs, or steps. Record the tools
           supplied to each model call on its inference span instead.
 
-          Since this attribute could be large, it's NOT RECOMMENDED to populate
-          non-required properties by default. Instrumentations MAY provide a way
-          to enable populating optional properties.
+          Instrumentations SHOULD populate fields when values are available,
+          unless the field description says otherwise.
+
+          See [Recording content on attributes](/docs/gen-ai/gen-ai-spans.md#recording-content-on-attributes)
+          section for more details.
       - ref: gen_ai.operation.name
         annotations:
           markdown:
@@ -1006,12 +1018,6 @@ span_refinements:
       - ref: gen_ai.request.reasoning.level
         note: >
           Corresponds to the [`reasoning.effort`](https://platform.openai.com/docs/guides/reasoning#reasoning-effort) request parameter.
-      - ref: openai.request.service_tier
-        requirement_level:
-          conditionally_required: If the request includes a service_tier and the value is not 'auto'.
-      - ref: openai.response.service_tier
-        requirement_level:
-          conditionally_required: If the response was received and includes a service_tier.
       - ref: openai.response.system_fingerprint
         requirement_level: recommended
       - ref: openai.api.type
@@ -1050,12 +1056,12 @@ span_refinements:
         requirement_level: recommended
         note: >
           Derived from the fetched response `status`: a `completed` response maps to its stop
-          reason, a `failed` or `cancelled` response to `error`, and an `incomplete` response to
-          its `incomplete_details.reason` (for example `max_output_tokens` maps to `length` and
-          `content_filter` to `content_filter`).
-      - ref: openai.response.service_tier
+          reason, a `failed` response to `error`, a `cancelled` response to `interrupted`, and an
+          `incomplete` response to its `incomplete_details.reason` (for example `max_output_tokens`
+          maps to `length` and `content_filter` to `content_filter`).
+      - ref: gen_ai.response.service_tier
         requirement_level:
-          conditionally_required: If the response was received and includes a service_tier.
+          conditionally_required: If and only if returned by the provider.
       - ref: gen_ai.usage.input_tokens
         note: >
           Corresponds to `usage.input_tokens` on the fetched response. Absent while the response
