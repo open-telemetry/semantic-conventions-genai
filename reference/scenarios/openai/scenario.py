@@ -1699,7 +1699,8 @@ def _emit_fetch_response_span(client, response_id, starting_after=None, stream=F
       present, through `responses_usage_attributes`, shared with the Responses
       inference span. They describe the original generation identified by
       `gen_ai.response.id`. A fetched response without `usage`, such as one
-      still `in_progress`, sets none of them.
+      still `in_progress`, sets none of them. If a streamed fetch fails after a
+      response arrived, the usage of the last one received is kept.
     - `openai.api.type` is `responses`; `gen_ai.response.service_tier` comes from
       the fetched object.
     """
@@ -1722,9 +1723,9 @@ def _emit_fetch_response_span(client, response_id, starting_after=None, stream=F
         "fetch_response", attributes=span_attributes, record_exception=False
     ) as span:
         finish_reason = None
+        fetched = None
         try:
             if stream:
-                fetched = None
                 retrieve_kwargs = {"stream": True}
                 if starting_after is not None:
                     retrieve_kwargs["starting_after"] = starting_after
@@ -1783,6 +1784,9 @@ def _emit_fetch_response_span(client, response_id, starting_after=None, stream=F
         except Exception as e:
             if stream:
                 span.set_attribute("gen_ai.response.finish_reasons", [finish_reason or "error"])
+                if fetched is not None:
+                    # Keep the usage of the last response received before the stream failed.
+                    span.set_attributes(responses_usage_attributes(fetched))
             span.set_status(StatusCode.ERROR, str(e))
             span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
             reference_event_logger().emit(
@@ -2006,10 +2010,10 @@ def run_fetch_response_checks():
         assert span.attributes.get("gen_ai.response.finish_reasons") == ((expected,) if expected else None)
         assert span.status.status_code == (StatusCode.ERROR if stream_error else StatusCode.UNSET)
         assert ("error.type" in span.attributes) == stream_error
-        # Usage mirrors the fetched response, and is absent when none arrived or the stream failed.
+        # Usage mirrors the last fetched response received, even if the stream fails afterwards.
         usage = {key: value for key, value in span.attributes.items() if key.startswith("gen_ai.usage.")}
         expected_usage = {"gen_ai.usage.input_tokens": 1, "gen_ai.usage.output_tokens": 0}
-        assert usage == (expected_usage if status is not None and not stream_error else {})
+        assert usage == (expected_usage if status is not None else {})
 
     try:
         with patch(f"{__name__}._reference_tracer", tracer_provider.get_tracer("gen_ai.reference")):
