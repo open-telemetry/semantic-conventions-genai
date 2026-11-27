@@ -62,7 +62,8 @@ Describes a request to a Generative AI provider that fetches a previously genera
 The `gen_ai.operation.name` SHOULD be `fetch_response`.
 
 The fetch consumes no tokens. Token usage carried on the fetched response describes the
-generation identified by `gen_ai.response.id`.
+generation identified by `gen_ai.response.id`. Instrumentations SHOULD NOT report
+token usage metrics for this operation.
 
 **Span name** SHOULD be `{gen_ai.operation.name}`. The response identifier is high
 cardinality, so it is not included in the span name. Semantic conventions for individual

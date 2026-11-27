@@ -204,9 +204,9 @@ def responses_usage_attributes(response):
     }
     itd = getattr(usage, "input_tokens_details", None)
     otd = getattr(usage, "output_tokens_details", None)
-    cached_tokens = getattr(itd, "cached_tokens", None) if itd else None
-    cache_write_tokens = getattr(itd, "cache_write_tokens", None) if itd else None
-    reasoning_tokens = getattr(otd, "reasoning_tokens", None) if otd else None
+    cached_tokens = getattr(itd, "cached_tokens", None)
+    cache_write_tokens = getattr(itd, "cache_write_tokens", None)
+    reasoning_tokens = getattr(otd, "reasoning_tokens", None)
     if cached_tokens:
         attributes["gen_ai.usage.cache_read.input_tokens"] = cached_tokens
     if cache_write_tokens:
