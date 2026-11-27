@@ -1698,8 +1698,8 @@ def _emit_fetch_response_span(client, response_id, starting_after=None, stream=F
       and reasoning details come from `usage` on the fetched response object when
       present, through `responses_usage_attributes`, shared with the Responses
       inference span. They describe the original generation identified by
-      `gen_ai.response.id`. A response fetched while still `in_progress`, or a
-      `failed` response without usage, sets none of them.
+      `gen_ai.response.id`. A fetched response without `usage`, such as one
+      still `in_progress`, sets none of them.
     - `openai.api.type` is `responses`; `gen_ai.response.service_tier` comes from
       the fetched object.
     """
@@ -2006,10 +2006,10 @@ def run_fetch_response_checks():
         assert span.attributes.get("gen_ai.response.finish_reasons") == ((expected,) if expected else None)
         assert span.status.status_code == (StatusCode.ERROR if stream_error else StatusCode.UNSET)
         assert ("error.type" in span.attributes) == stream_error
-        # Usage mirrors the fetched response, and is absent when no response was received.
+        # Usage mirrors the fetched response, and is absent when none arrived or the stream failed.
         usage = {key: value for key, value in span.attributes.items() if key.startswith("gen_ai.usage.")}
         expected_usage = {"gen_ai.usage.input_tokens": 1, "gen_ai.usage.output_tokens": 0}
-        assert usage == (expected_usage if "gen_ai.response.model" in span.attributes else {})
+        assert usage == (expected_usage if status is not None and not stream_error else {})
 
     try:
         with patch(f"{__name__}._reference_tracer", tracer_provider.get_tracer("gen_ai.reference")):
