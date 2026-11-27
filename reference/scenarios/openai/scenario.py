@@ -189,6 +189,33 @@ def responses_finish_reason(response):
     return "error"
 
 
+def responses_usage_attributes(response):
+    """Map `usage` on a Responses API object to `gen_ai.usage.*` attributes.
+
+    Input and output counts are always set when `usage` is present; cache and
+    reasoning counts only when non-zero. Returns an empty dict without `usage`.
+    """
+    usage = getattr(response, "usage", None)
+    if not usage:
+        return {}
+    attributes = {
+        "gen_ai.usage.input_tokens": usage.input_tokens,
+        "gen_ai.usage.output_tokens": usage.output_tokens,
+    }
+    itd = getattr(usage, "input_tokens_details", None)
+    otd = getattr(usage, "output_tokens_details", None)
+    cached_tokens = getattr(itd, "cached_tokens", None)
+    cache_write_tokens = getattr(itd, "cache_write_tokens", None)
+    reasoning_tokens = getattr(otd, "reasoning_tokens", None)
+    if cached_tokens:
+        attributes["gen_ai.usage.cache_read.input_tokens"] = cached_tokens
+    if cache_write_tokens:
+        attributes["gen_ai.usage.cache_write.input_tokens"] = cache_write_tokens
+    if reasoning_tokens:
+        attributes["gen_ai.usage.reasoning.output_tokens"] = reasoning_tokens
+    return attributes
+
+
 def response_has_compaction_item(response):
     """Return whether the Responses API output includes a ResponseCompactionItem."""
     for item in getattr(response, "output", []) or []:
@@ -551,21 +578,7 @@ def run_responses_compaction_reference(client):
         if output_messages:
             span.set_attribute("gen_ai.output.messages", output_messages)
         # Build usage attributes once so the span and the event stay identical.
-        usage = {}
-        if response.usage:
-            usage["gen_ai.usage.input_tokens"] = response.usage.input_tokens
-            usage["gen_ai.usage.output_tokens"] = response.usage.output_tokens
-            itd = response.usage.input_tokens_details
-            otd = response.usage.output_tokens_details
-            cached_tokens = getattr(itd, "cached_tokens", None) if itd else None
-            cache_write_tokens = getattr(itd, "cache_write_tokens", None) if itd else None
-            reasoning_tokens = getattr(otd, "reasoning_tokens", None) if otd else None
-            if cached_tokens:
-                usage["gen_ai.usage.cache_read.input_tokens"] = cached_tokens
-            if cache_write_tokens:
-                usage["gen_ai.usage.cache_write.input_tokens"] = cache_write_tokens
-            if reasoning_tokens:
-                usage["gen_ai.usage.reasoning.output_tokens"] = reasoning_tokens
+        usage = responses_usage_attributes(response)
         for attr, value in usage.items():
             span.set_attribute(attr, value)
         metric_attributes = usage_metric_attributes(request_model, response.model, host, port)
@@ -1681,10 +1694,13 @@ def _emit_fetch_response_span(client, response_id, starting_after=None, stream=F
     - `gen_ai.request.stream_cursor` is the resume cursor (OpenAI `starting_after`),
       a request-side parameter available at the call boundary, recorded only when
       the fetch resumes a streamed response from a prior position.
-    - Token usage is intentionally NOT recorded: no inference happens here, and
-      the fetched response's token counts belong to the original generation.
-      Recording them would double-count tokens when summing spans in a
-      multi-step run.
+    - `gen_ai.usage.input_tokens`, `gen_ai.usage.output_tokens` and the cache
+      and reasoning details come from `usage` on the fetched response object when
+      present, through `responses_usage_attributes`, shared with the Responses
+      inference span. They describe the original generation identified by
+      `gen_ai.response.id`. A fetched response without `usage`, such as one
+      still `in_progress`, sets none of them. If a streamed fetch fails after a
+      response arrived, the usage of the last one received is kept.
     - `openai.api.type` is `responses`; `gen_ai.response.service_tier` comes from
       the fetched object.
     """
@@ -1707,9 +1723,9 @@ def _emit_fetch_response_span(client, response_id, starting_after=None, stream=F
         "fetch_response", attributes=span_attributes, record_exception=False
     ) as span:
         finish_reason = None
+        fetched = None
         try:
             if stream:
-                fetched = None
                 retrieve_kwargs = {"stream": True}
                 if starting_after is not None:
                     retrieve_kwargs["starting_after"] = starting_after
@@ -1763,13 +1779,14 @@ def _emit_fetch_response_span(client, response_id, starting_after=None, stream=F
                             }
                         )
                 span.set_attribute("gen_ai.tool.definitions", json.dumps(tool_definitions))
-            # Token usage is intentionally NOT recorded on this span: no inference
-            # happens on a fetch, and the fetched response's token counts belong to
-            # the original generation (already accounted for on that operation).
+            span.set_attributes(responses_usage_attributes(fetched))
             print(f"    -> fetched {fetched.id} (status={getattr(fetched, 'status', None)})")
         except Exception as e:
             if stream:
                 span.set_attribute("gen_ai.response.finish_reasons", [finish_reason or "error"])
+                if fetched is not None:
+                    # Keep the usage of the last response received before the stream failed.
+                    span.set_attributes(responses_usage_attributes(fetched))
             span.set_status(StatusCode.ERROR, str(e))
             span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
             reference_event_logger().emit(
@@ -1785,9 +1802,10 @@ def run_fetch_response_reference(client):
 
     Emits the `gen_ai.fetch_response.client` span (OpenAI `openai.fetch_response.client`
     refinement) around `client.responses.retrieve(...)`. This operation performs
-    no inference: a response is first created with `store=True`, then fetched by
-    id. A background streaming response is then created, consumed until the
-    caller disconnects, and resumed from the last event's cursor to show
+    no inference: a background response is first created with `store=True`, then
+    fetched by id three times: while it is still running, once it has completed,
+    and again later. A background streaming response is then created, consumed
+    until the caller disconnects, and resumed from the last event's cursor to show
     `gen_ai.request.stream_cursor` being recorded. A final fetch retrieves a
     response whose original generation failed, to show that the fetch still
     succeeds and the failure is conveyed through `gen_ai.response.finish_reasons`
@@ -1796,16 +1814,20 @@ def run_fetch_response_reference(client):
     print("  [fetch_response] fetch a stored Responses API result by id (reference implementation)")
     request_model = "gpt-4o-mini"
 
-    # Create a stored response first so there is a real id to fetch. This
+    # Create a background response first so there is a real id to poll. This
     # create call is a separate inference operation and not part of the
-    # fetch_response span below.
+    # fetch_response spans below. The first fetch finds the response
+    # `in_progress`, without usage; the second finds it `completed`, and the
+    # third gets the same response and usage again.
     created = client.responses.create(
         model=request_model,
         instructions="You are a helpful assistant.",
         input="Say hello.",
+        background=True,
         store=True,
     )
-    _emit_fetch_response_span(client, created.id)
+    for _ in range(3):
+        _emit_fetch_response_span(client, created.id)
 
     # Resume a streamed fetch from a real cursor. Only a background response
     # created with streaming can be resumed by id, so create one, consume it
@@ -1988,7 +2010,10 @@ def run_fetch_response_checks():
         assert span.attributes.get("gen_ai.response.finish_reasons") == ((expected,) if expected else None)
         assert span.status.status_code == (StatusCode.ERROR if stream_error else StatusCode.UNSET)
         assert ("error.type" in span.attributes) == stream_error
-        assert not any(key.startswith("gen_ai.usage.") for key in span.attributes)
+        # Usage mirrors the last fetched response received, even if the stream fails afterwards.
+        usage = {key: value for key, value in span.attributes.items() if key.startswith("gen_ai.usage.")}
+        expected_usage = {"gen_ai.usage.input_tokens": 1, "gen_ai.usage.output_tokens": 0}
+        assert usage == (expected_usage if status is not None else {})
 
     try:
         with patch(f"{__name__}._reference_tracer", tracer_provider.get_tracer("gen_ai.reference")):
