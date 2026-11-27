@@ -1,0 +1,18 @@
+# yaml-language-server: $schema=../case.schema.json
+description: >
+  Blob, file and uri parts carry the optional human-readable `name` of the
+  attached data.
+schema: gen-ai-input-messages.json
+document: [
+  {
+    "role": "user",
+    "parts": [
+      { "type": "text", "content": "Compare contract_2024.pdf with Contract 2025 and Contract 2026." },
+      { "type": "blob", "modality": "document", "mime_type": "application/pdf", "content": !!binary "JVBERi0xLjQ=", "name": "contract_2024.pdf" },
+      { "type": "file", "modality": "document", "file_id": "file-abc123", "name": "Contract 2025" },
+      { "type": "uri", "modality": "document", "uri": "https://example.com/contracts/2026.pdf", "name": "Contract 2026" }
+    ]
+  }
+]
+# Regenerate with `uv run pytest --update-snapshots`, do not edit by hand.
+errors: []

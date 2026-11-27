@@ -225,6 +225,8 @@ completion](#simple-chat-completion) above, but contain additional types of Part
 These parts contain an optional `modality` field to capture the general category of the
 content, and an optional `mime_type` to capture the specific [IANA media
 type](https://www.iana.org/assignments/media-types/media-types.xhtml) of the content, if known.
+An optional `name` captures a human-readable name, title, or filename when the instrumented call
+provides one, for example a document title.
 See the [normative JSON schema](/model/gen-ai/gen-ai-input-messages.json) for more details.
 
 ### Multimodal inputs example
@@ -283,6 +285,28 @@ See the [normative JSON schema](/model/gen-ai/gen-ai-input-messages.json) for mo
         "modality": "document",
         "mime_type": "application/pdf",
         "uri": "s3://my-bucket/kyc-form.pdf"
+      },
+      // An inline document with a filename given in the request
+      {
+        "type": "blob",
+        "modality": "document",
+        "mime_type": "application/pdf",
+        "content": "JVBERi0xLjQKJSVFT0YK",
+        "name": "contract_2026.pdf"
+      },
+      // A pre-uploaded document with a title given in the request
+      {
+        "type": "file",
+        "modality": "document",
+        "file_id": "provider_fileid_456",
+        "name": "Contract 2025"
+      },
+      // A document referenced by URL with a title given in the request
+      {
+        "type": "uri",
+        "modality": "document",
+        "uri": "https://example.com/contracts/2026.pdf",
+        "name": "Contract 2026"
       },
       // An inline video without `content`
       {

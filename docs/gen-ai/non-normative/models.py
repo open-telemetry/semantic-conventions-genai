@@ -233,6 +233,14 @@ class BlobPart(BaseModel):
         default=None,
         description="Raw bytes of the attached data. Instrumentations MAY omit it, for example to avoid recording large binary payloads inline.",
     )
+    name: Optional[str] = Field(
+        default=None,
+        description=(
+            "A human-readable name, title, or filename for the attached data, "
+            "recorded as provided in the instrumented call. "
+            "Instrumentations SHOULD leave it unset when no name is provided."
+        ),
+    )
 
 class FilePart(BaseModel):
     """Represents an external referenced file sent to the model by file id"""
@@ -250,6 +258,15 @@ class FilePart(BaseModel):
     file_id: Optional[str] = Field(
         default=None,
         description="An identifier referencing a file that was pre-uploaded to the provider.",
+    )
+    name: Optional[str] = Field(
+        default=None,
+        description=(
+            "A human-readable name, title, or filename for the referenced file, "
+            "recorded as provided in the instrumented call. "
+            "Instrumentations SHOULD leave it unset when not directly available "
+            "and MUST NOT make extra API calls or cache state across calls to resolve it."
+        ),
     )
 
     model_config = ConfigDict(extra="allow")
@@ -274,6 +291,16 @@ class UriPart(BaseModel):
             "A URI referencing attached data. It should not be a base64 data URL, "
             "which should use the `blob` part instead. The URI may use a scheme known to "
             "the provider api (e.g. `gs://bucket/object.png`), or be a publicly accessible location."
+        ),
+    )
+    name: Optional[str] = Field(
+        default=None,
+        description=(
+            "A human-readable name, title, or filename for the referenced data "
+            "(not a provider resource identifier), recorded as provided alongside the URI "
+            "in the instrumented call. "
+            "Instrumentations SHOULD leave it unset when not directly available "
+            "and MUST NOT derive it by parsing the URI path or make extra API calls to resolve it."
         ),
     )
 

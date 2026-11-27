@@ -267,6 +267,7 @@ def run_converse_with_document_input_reference(client):
     #   - mime_type: classification of `format` "pdf" -> "application/pdf"
     #   - content:   raw `source.bytes`
     #   - modality:  classification of mime "application/pdf" -> "document"
+    #   - name:      the DocumentBlock `name`
     mime_type = "application/pdf"
     input_parts = [
         {"type": "text", "content": instruction},
@@ -275,6 +276,7 @@ def run_converse_with_document_input_reference(client):
             "modality": "document",
             "mime_type": mime_type,
             "content": pdf_bytes,
+            "name": document_name,
         },
     ]
     input_messages = [{"role": "user", "parts": input_parts}]
