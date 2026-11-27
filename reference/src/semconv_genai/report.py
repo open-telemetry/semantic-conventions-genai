@@ -92,6 +92,7 @@ SEMCONV_DOC_LINKS: dict[str, str] = {
     "fetch_response": "../../docs/gen-ai/gen-ai-spans.md#fetch-response",
     "memory": "../../docs/gen-ai/gen-ai-spans.md#memory",
     "execute_tool": "../../docs/gen-ai/execute-tool.md#span-gen_aiexecute_tool",
+    "apply_guardrail_client": "../../docs/gen-ai/gen-ai-guardrails.md#apply-guardrail-client-span",
     "gen_ai.client.embeddings.exception": "../../docs/gen-ai/client-embeddings.md#event-gen_aiclientembeddingsexception",
     "gen_ai.client.fetch_response.exception": "../../docs/gen-ai/gen-ai-spans.md#event-gen_aiclientfetch_responseexception",
     "gen_ai.client.inference.exception": "../../docs/gen-ai/client-inference.md#event-gen_aiclientinferenceexception",
@@ -109,6 +110,7 @@ SEMCONV_DOC_LINKS: dict[str, str] = {
     "gen_ai.client.inference.operation.input_tokens": "../../docs/gen-ai/gen-ai-token-metrics.md#metric-gen_aiclientinferenceoperationinput_tokens",
     "gen_ai.client.inference.operation.output_tokens": "../../docs/gen-ai/gen-ai-token-metrics.md#metric-gen_aiclientinferenceoperationoutput_tokens",
     "gen_ai.client.operation.duration": "../../docs/gen-ai/gen-ai-metrics.md#metric-gen_aiclientoperationduration",
+    "gen_ai.client.apply_guardrail.duration": "../../docs/gen-ai/gen-ai-metrics.md#metric-gen_aiclientapply_guardrailduration",
     "gen_ai.client.inference.duration": "../../docs/gen-ai/client-inference.md#metric-gen_aiclientinferenceduration",
     "gen_ai.client.inference.time_per_output_chunk": "../../docs/gen-ai/client-inference.md#metric-gen_aiclientinferencetime_per_output_chunk",
     "gen_ai.client.embeddings.duration": "../../docs/gen-ai/client-embeddings.md#metric-gen_aiclientembeddingsduration",
@@ -125,6 +127,7 @@ SEMCONV_DOC_LINKS: dict[str, str] = {
     "mcp.server.operation.duration": "../../docs/gen-ai/mcp.md#metric-mcpserveroperationduration",
     "mcp.client.session.duration": "../../docs/gen-ai/mcp.md#metric-mcpclientsessionduration",
     "mcp.server.session.duration": "../../docs/gen-ai/mcp.md#metric-mcpserversessionduration",
+    "gen_ai.guardrail.result": "../../docs/gen-ai/gen-ai-events.md#event-gen_aiguardrailresult",
 }
 
 

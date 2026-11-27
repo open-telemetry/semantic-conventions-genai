@@ -20,6 +20,7 @@ Semantic conventions for Generative AI operations are defined for the following 
 * [Model spans](gen-ai-spans.md): Semantic Conventions for Generative AI model operations - *spans and events*.
 * [Realtime content generation](gen-ai-realtime.md): Semantic Conventions for Generative AI realtime, bidirectional streaming operations.
 * [Agent spans](gen-ai-agent-spans.md): Semantic Conventions for Generative AI agent operations - *spans and events*.
+* [Guardrails](gen-ai-guardrails.md): Semantic Conventions for GenAI guardrail evaluations.
 
 Technology specific semantic conventions are defined for the following GenAI system:
 
