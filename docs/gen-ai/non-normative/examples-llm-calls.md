@@ -283,6 +283,12 @@ See the [normative JSON schema](/model/gen-ai/gen-ai-input-messages.json) for mo
         "modality": "document",
         "mime_type": "application/pdf",
         "uri": "s3://my-bucket/kyc-form.pdf"
+      },
+      // An inline video without `content`
+      {
+        "type": "blob",
+        "modality": "video",
+        "mime_type": "video/mp4"
       }
     ]
   }
@@ -372,7 +378,7 @@ They are likely to be siblings if there is an encompassing span.
 
 **Tool call:**
 
-If tool call is [instrumented according to execute-tool span definition](/docs/gen-ai/gen-ai-spans.md#execute-tool-span), it may look like
+If tool call is [instrumented according to execute-tool span definition](/docs/gen-ai/execute-tool.md#span-gen_aiexecute_tool), it may look like
 
 | Property                | Value                             |
 | ----------------------- | --------------------------------- |
@@ -494,7 +500,7 @@ They are likely to be siblings if there is an encompassing span.
 
 **Tool call:**
 
-If tool call is [instrumented according to execute-tool span definition](/docs/gen-ai/gen-ai-spans.md#execute-tool-span), it may look like this:
+If tool call is [instrumented according to execute-tool span definition](/docs/gen-ai/execute-tool.md#span-gen_aiexecute_tool), it may look like this:
 
 | Property                | Value                             |
 | ----------------------- | --------------------------------- |

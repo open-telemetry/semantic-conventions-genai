@@ -1,0 +1,75 @@
+name: Prepare release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'The version to release, e.g. 0.1.0'
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  create-pull-request:
+    permissions:
+      contents: write # required for pushing the release branch
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # zizmor: ignore[artipacked] Credentials are required by the branch push below.
+          persist-credentials: true
+
+      - name: Validate version
+        env:
+          INPUTS_VERSION: ${{ inputs.version }}
+        run: |
+          version=${INPUTS_VERSION#v}
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "unexpected version: $version"
+            exit 1
+          fi
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+
+      - name: Use CLA approved github bot
+        run: .github/scripts/use-cla-approved-github-bot.sh
+
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+
+      - name: Update schema_url and change log
+        run: |
+          make set-schema-url-dev VERSION="$VERSION"
+          PYTHONUTF8=1 uv run --project changelog.d --locked towncrier build \
+            --config changelog.d/towncrier.toml --yes --version "v$VERSION"
+
+      - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        id: otelbot-token
+        with:
+          client-id: ${{ vars.OTELBOT_SEMANTIC_CONVENTIONS_GENAI_CLIENT_ID }}
+          private-key: ${{ secrets.OTELBOT_SEMANTIC_CONVENTIONS_GENAI_PRIVATE_KEY }}
+          permission-pull-requests: write
+          permission-issues: write # required for creating the `release` label
+
+      - name: Create pull request
+        env:
+          # Use the App token for PR creation so the pull request runs workflows.
+          GH_TOKEN: ${{ steps.otelbot-token.outputs.token }}
+        run: |
+          message="[chore] Prepare release v${VERSION}"
+          branch="otelbot/prepare-release-v${VERSION}"
+
+          git checkout -b "$branch"
+          git add -A model CHANGELOG.md changelog.d
+          git commit -m "$message"
+          # --force lets a re-run replace the branch left by a failed attempt.
+          git push --force --set-upstream origin "$branch"
+
+          # The release workflow only runs for merged pull requests with this label.
+          gh label create release --description "Triggers the release workflow when merged" --color 0e8a16 || true
+
+          gh pr create --title "$message" \
+                       --body "Prepare release \`v${VERSION}\`. Merging this pull request tags the repository and publishes the GitHub release." \
+                       --head "$branch" \
+                       --base main \
+                       --label release

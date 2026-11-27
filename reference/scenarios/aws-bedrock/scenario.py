@@ -1,6 +1,5 @@
 """Reference implementation for AWS Bedrock."""
 
-import json
 import os
 import time
 
@@ -26,19 +25,17 @@ _embeddings_duration = _reference_meter.create_histogram(
     description="GenAI client embeddings operation duration.",
     explicit_bucket_boundaries_advisory=[
         0.01,
-        0.02,
-        0.04,
-        0.08,
-        0.16,
-        0.32,
-        0.64,
-        1.28,
-        2.56,
-        5.12,
-        10.24,
-        20.48,
-        40.96,
-        81.92,
+        0.025,
+        0.05,
+        0.1,
+        0.25,
+        0.5,
+        1,
+        2.5,
+        5,
+        10,
+        30,
+        60,
     ],
 )
 _embeddings_input_tokens = _reference_meter.create_histogram(
@@ -102,9 +99,7 @@ def run_converse_reference(client):
     ) as span:
         span.set_attribute(
             "gen_ai.input.messages",
-            json.dumps(
-                [{"role": m["role"], "parts": [{"type": "text", "content": m["content"][0]["text"]}]} for m in messages]
-            ),
+            [{"role": m["role"], "parts": [{"type": "text", "content": m["content"][0]["text"]}]} for m in messages],
         )
         response = client.converse(
             modelId=request_model,
@@ -121,14 +116,12 @@ def run_converse_reference(client):
         text = response["output"]["message"]["content"][0]["text"]
         span.set_attribute(
             "gen_ai.output.messages",
-            json.dumps(
-                [
-                    {
-                        "role": "assistant",
-                        "parts": [{"type": "text", "content": text}],
-                    }
-                ]
-            ),
+            [
+                {
+                    "role": "assistant",
+                    "parts": [{"type": "text", "content": text}],
+                }
+            ],
         )
 
         # Emit inference operation details event
@@ -136,17 +129,15 @@ def run_converse_reference(client):
             "gen_ai.operation.name": "chat",
             "gen_ai.provider.name": "aws.bedrock",
             "gen_ai.request.model": request_model,
-            "gen_ai.input.messages": json.dumps(
-                [{"role": m["role"], "parts": [{"type": "text", "content": m["content"][0]["text"]}]} for m in messages]
-            ),
-            "gen_ai.output.messages": json.dumps(
-                [
-                    {
-                        "role": "assistant",
-                        "parts": [{"type": "text", "content": text}],
-                    }
-                ]
-            ),
+            "gen_ai.input.messages": [
+                {"role": m["role"], "parts": [{"type": "text", "content": m["content"][0]["text"]}]} for m in messages
+            ],
+            "gen_ai.output.messages": [
+                {
+                    "role": "assistant",
+                    "parts": [{"type": "text", "content": text}],
+                }
+            ],
         }
         if stop_reason:
             event_attrs["gen_ai.response.finish_reasons"] = [stop_reason]
@@ -198,17 +189,15 @@ def run_converse_tool_call_reference(client):
     ) as span:
         span.set_attribute(
             "gen_ai.tool.definitions",
-            json.dumps(
-                [
-                    {
-                        "type": "function",
-                        "name": t["toolSpec"]["name"],
-                        "description": t["toolSpec"]["description"],
-                        "parameters": t["toolSpec"]["inputSchema"]["json"],
-                    }
-                    for t in tool_config["tools"]
-                ]
-            ),
+            [
+                {
+                    "type": "function",
+                    "name": t["toolSpec"]["name"],
+                    "description": t["toolSpec"]["description"],
+                    "parameters": t["toolSpec"]["inputSchema"]["json"],
+                }
+                for t in tool_config["tools"]
+            ],
         )
         messages = [
             {
@@ -249,8 +238,6 @@ def run_converse_with_document_input_reference(client):
       {"document": {"format": "pdf", "name": "...",
                     "source": {"bytes": <raw bytes>}}}
     """
-    import base64
-
     print("  [converse_document] Bedrock Converse with PDF document block (reference implementation)")
     request_model = "anthropic.claude-3-haiku-20240307-v1:0"
     instruction = "Summarize the attached document in one sentence."
@@ -278,9 +265,8 @@ def run_converse_with_document_input_reference(client):
     # Canonical OTel parts: TextPart + BlobPart(modality="document"). Each
     # BlobPart field is derivable from the DocumentBlock above:
     #   - mime_type: classification of `format` "pdf" -> "application/pdf"
-    #   - content:   base64-encoded `source.bytes`
+    #   - content:   raw `source.bytes`
     #   - modality:  classification of mime "application/pdf" -> "document"
-    pdf_b64 = base64.b64encode(pdf_bytes).decode("ascii")
     mime_type = "application/pdf"
     input_parts = [
         {"type": "text", "content": instruction},
@@ -288,10 +274,10 @@ def run_converse_with_document_input_reference(client):
             "type": "blob",
             "modality": "document",
             "mime_type": mime_type,
-            "content": pdf_b64,
+            "content": pdf_bytes,
         },
     ]
-    input_messages = json.dumps([{"role": "user", "parts": input_parts}])
+    input_messages = [{"role": "user", "parts": input_parts}]
 
     host, port = mock_server_host_port(MOCK_BASE_URL)
     span_attributes_doc = {
@@ -322,14 +308,12 @@ def run_converse_with_document_input_reference(client):
         text = response["output"]["message"]["content"][0]["text"]
         span.set_attribute(
             "gen_ai.output.messages",
-            json.dumps(
-                [
-                    {
-                        "role": "assistant",
-                        "parts": [{"type": "text", "content": text}],
-                    }
-                ]
-            ),
+            [
+                {
+                    "role": "assistant",
+                    "parts": [{"type": "text", "content": text}],
+                }
+            ],
         )
         print(f"    -> {text[:60]}")
 
@@ -339,7 +323,7 @@ def run_converse_with_prompt_template_reference(client):
 
     Bedrock Prompt Management prompts are invoked by passing the prompt version ARN
     as `modelId` and variable values in `promptVariables`. Instrumentation extracts
-    gen_ai.prompt.name, gen_ai.prompt.version, and gen_ai.prompt.variable.* from
+    gen_ai.prompt.name, gen_ai.prompt.version, and gen_ai.prompt.variables from
     the request. This scenario does not record gen_ai.input.messages because the
     Converse request carries no messages.
     """
@@ -347,8 +331,10 @@ def run_converse_with_prompt_template_reference(client):
     prompt_name = "order-inquiry"
     prompt_version = "2.0.1"
     prompt_arn = f"arn:aws:bedrock:us-east-1:123456789012:prompt/{prompt_name}:{prompt_version}"
-    prompt_variables = {"customer_id": "C-12345", "order_id": "ORD-67890"}
-    bedrock_prompt_variables = {name: {"text": value} for name, value in prompt_variables.items()}
+    bedrock_prompt_variables = {
+        "customer_id": {"text": "C-12345"},
+        "order_id": {"text": "ORD-67890"},
+    }
 
     host, port = mock_server_host_port(MOCK_BASE_URL)
     span_attributes = {
@@ -362,8 +348,10 @@ def run_converse_with_prompt_template_reference(client):
     if port is not None:
         span_attributes["server.port"] = port
     with _reference_tracer.start_as_current_span("chat", kind=SpanKind.CLIENT, attributes=span_attributes) as span:
-        for var_name, var_value in prompt_variables.items():
-            span.set_attribute(f"gen_ai.prompt.variable.{var_name}", var_value)
+        span.set_attribute(
+            "gen_ai.prompt.variables",
+            {name: value["text"] for name, value in bedrock_prompt_variables.items()},
+        )
         response = client.converse(
             modelId=prompt_arn,
             promptVariables=bedrock_prompt_variables,
@@ -379,14 +367,12 @@ def run_converse_with_prompt_template_reference(client):
         text = response["output"]["message"]["content"][0]["text"]
         span.set_attribute(
             "gen_ai.output.messages",
-            json.dumps(
-                [
-                    {
-                        "role": "assistant",
-                        "parts": [{"type": "text", "content": text}],
-                    }
-                ]
-            ),
+            [
+                {
+                    "role": "assistant",
+                    "parts": [{"type": "text", "content": text}],
+                }
+            ],
         )
 
         event_attrs = {
@@ -394,17 +380,14 @@ def run_converse_with_prompt_template_reference(client):
             "gen_ai.provider.name": "aws.bedrock",
             "gen_ai.prompt.name": prompt_name,
             "gen_ai.prompt.version": prompt_version,
-            "gen_ai.output.messages": json.dumps(
-                [
-                    {
-                        "role": "assistant",
-                        "parts": [{"type": "text", "content": text}],
-                    }
-                ]
-            ),
+            "gen_ai.prompt.variables": {name: value["text"] for name, value in bedrock_prompt_variables.items()},
+            "gen_ai.output.messages": [
+                {
+                    "role": "assistant",
+                    "parts": [{"type": "text", "content": text}],
+                }
+            ],
         }
-        for var_name, var_value in prompt_variables.items():
-            event_attrs[f"gen_ai.prompt.variable.{var_name}"] = var_value
         if stop_reason:
             event_attrs["gen_ai.response.finish_reasons"] = [stop_reason]
         if usage.get("inputTokens") is not None:

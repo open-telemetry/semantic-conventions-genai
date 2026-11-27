@@ -1,0 +1,22 @@
+[project]
+name = "transformers-reference-test"
+version = "0.0.0"
+requires-python = ">=3.12"
+dependencies = [
+    "genai-reference-shared",
+    "httpx==0.28.1",
+    "torch==2.15.0",
+    "transformers[serving]==5.24.1",
+]
+
+[tool.uv.sources]
+genai-reference-shared = { path = "../../shared", editable = true }
+torch = { index = "pytorch-cpu", marker = "sys_platform == 'linux' or sys_platform == 'win32'" }
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv]
+package = false

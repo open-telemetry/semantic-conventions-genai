@@ -10,7 +10,9 @@ Semantic conventions for Generative AI operations are defined for the following 
 
 * [Client Inference](client-inference.md): Semantic Conventions for Generative AI inference operations - *spans, events, and metrics*.
 * [Client Embeddings](client-embeddings.md): Semantic Conventions for Generative AI embeddings operations - *spans, events, and metrics*.
+* [Execute Tool](execute-tool.md): Semantic Conventions for Generative AI tool execution - *spans, events, and metrics*.
 * [Retrieval](retrieval.md): Semantic Conventions for Generative AI retrieval operations - *spans and metrics*.
+* [Client Agent Invocations](client-invoke-agent.md): Semantic Conventions for Generative AI remote agent invocations - *spans and metrics*.
 * [Events](gen-ai-events.md): Semantic Conventions for Generative AI inputs and outputs - *events*.
 * [Exceptions](gen-ai-exceptions.md): Semantic Conventions for Generative AI *exceptions*.
 * [Metrics](gen-ai-metrics.md): Semantic Conventions for Generative AI operations - *metrics*.

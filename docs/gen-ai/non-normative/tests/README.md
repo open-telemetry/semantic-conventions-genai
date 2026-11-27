@@ -20,10 +20,10 @@ telemetry:
 
 ```yaml
 # yaml-language-server: $schema=../case.schema.json
-description: Every message needs `role` and `parts`
+description: Every message part needs a `type` discriminator
 schema: gen-ai-input-messages.json
 document: [
-  { "role": "user" }
+  { "role": "user", "parts": [{ "content": "hi" }] }
 ]
 ```
 
@@ -35,15 +35,19 @@ validation squiggles that match what the test reports. If you want completion
 while drafting, block-style YAML gets better results than JSON; either is
 accepted.
 
+Write `"format": "binary"` values as bytes with YAML's `!!binary` tag (for
+example `"content": !!binary "iVBORw0KGgo="`). The runner validates the
+document's JSON form, where bytes become base64 strings.
+
 Then run `uv run pytest --update-snapshots`. The runner appends an `errors:`
 block with what the schema reports and leaves the rest of the file untouched.
 Review it: an empty list means the document is valid.
 
 ```yaml
 errors:
-  - path: $[0]
+  - path: $[0].parts[0]
     keyword: required
-    message: "'parts' is a required property"
+    message: "'type' is a required property"
 ```
 
 Each error records the JSON path of the offending value, the failing keyword,

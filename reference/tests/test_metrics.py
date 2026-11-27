@@ -16,7 +16,7 @@ from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 from semconv_genai.data_files import _normalize_scenario_data_entry, load_scenario_data_files
-from semconv_genai.report import _entities_of, _render_signal_section
+from semconv_genai.report import SEMCONV_DOC_LINKS, _entities_of, _render_signal_section, generate_index_markdown
 from semconv_genai.semconv_model import entity_specs, metric_specs, span_specs
 
 _TOOL_CALLS = "gen_ai.invoke_agent.tool_calls"
@@ -58,13 +58,37 @@ def test_inference_scenarios_report_inference_duration():
 
 def test_embeddings_scenarios_report_embeddings_metrics():
     entries = {entry.library: entry for entry in load_scenario_data_files()}
-    libraries = ("aws-bedrock", "azure-ai-inference", "azure-openai", "cohere", "google-genai", "litellm", "mistralai", "openai")
+    libraries = (
+        "aws-bedrock",
+        "azure-ai-inference",
+        "azure-openai",
+        "cohere",
+        "google-genai",
+        "litellm",
+        "mistralai",
+        "openai",
+    )
     for library in libraries:
         metrics = entries[library].metrics
         assert "gen_ai.client.embeddings.duration" in metrics, library
         assert metrics["gen_ai.client.embeddings.duration"]["gen_ai.operation.name"] == "present", library
     for library in set(libraries) - {"google-genai"}:
         assert "gen_ai.client.embeddings.operation.input_tokens" in entries[library].metrics, library
+
+
+def test_execute_tool_scenario_reports_duration():
+    entries = load_scenario_data_files()
+    adk = next(entry for entry in entries if entry.library == "google-adk")
+    for attribute in ("error.type", "gen_ai.agent.name", "gen_ai.tool.name", "gen_ai.tool.type"):
+        assert adk.metrics["gen_ai.execute_tool.duration"][attribute] == "present", attribute
+    assert (
+        "| [Execute Tool Duration](reports/gen-ai-execute-tool-duration-metric.md) | google-adk |"
+        in generate_index_markdown(entries)
+    )
+    assert (
+        SEMCONV_DOC_LINKS["gen_ai.execute_tool.duration"]
+        == "../../docs/gen-ai/execute-tool.md#metric-gen_aiexecute_toolduration"
+    )
 
 
 def test_retrieval_scenarios_report_retrieval_metrics():
@@ -74,6 +98,14 @@ def test_retrieval_scenarios_report_retrieval_metrics():
         assert "gen_ai.client.operation.duration" not in metrics, library
         assert metrics["gen_ai.retrieval.duration"]["gen_ai.operation.name"] == "present", library
     assert entries["llamaindex"].metrics["gen_ai.retrieval.duration"]["error.type"] == "present"
+
+
+def test_invoke_agent_client_scenarios_report_invoke_agent_duration():
+    entries = {entry.library: entry for entry in load_scenario_data_files()}
+    for library in ("aws-bedrock-agent", "azure-ai-foundry", "google-genai", "openai-assistants"):
+        metrics = entries[library].metrics
+        assert "gen_ai.client.invoke_agent.duration" in metrics, library
+        assert metrics["gen_ai.client.invoke_agent.duration"]["gen_ai.operation.name"] == "present", library
 
 
 def test_entity_specs_expose_required_id():
@@ -201,7 +233,18 @@ def test_span_types_absent_from_a_data_file_are_not_reported():
 
 def test_span_specs_are_named_in_recognized_registry_namespaces():
     for key, spec in span_specs().items():
-        assert spec.registry_id.startswith(("a2a.", "gen_ai.")), key
+        assert spec.registry_id.startswith(("a2a.", "gen_ai.", "mcp.")), key
+
+
+def test_mcp_scenario_reports_operation_duration_without_prompt_variables():
+    entries = {entry.library: entry for entry in load_scenario_data_files()}
+    mcp_entry = entries["mcp"]
+    for span_key in ("mcp_client", "mcp_server"):
+        assert mcp_entry.spans[span_key]["gen_ai.prompt.name"] == "present", span_key
+        assert mcp_entry.spans[span_key]["gen_ai.prompt.variables"] == "present", span_key
+    for metric_name in ("mcp.client.operation.duration", "mcp.server.operation.duration"):
+        assert mcp_entry.metrics[metric_name]["gen_ai.prompt.name"] == "present", metric_name
+        assert "gen_ai.prompt.variables" not in mcp_entry.metrics[metric_name], metric_name
 
 
 if __name__ == "__main__":
@@ -210,6 +253,8 @@ if __name__ == "__main__":
     test_committed_google_adk_metrics_round_trip()
     test_inference_scenarios_report_inference_duration()
     test_embeddings_scenarios_report_embeddings_metrics()
+    test_invoke_agent_client_scenarios_report_invoke_agent_duration()
+    test_execute_tool_scenario_reports_duration()
     test_entity_specs_expose_required_id()
     test_entities_keep_their_registry_names()
     test_entities_with_sections_round_trip()
@@ -219,4 +264,5 @@ if __name__ == "__main__":
     test_events_keep_their_registry_names()
     test_span_types_absent_from_a_data_file_are_not_reported()
     test_span_specs_are_named_in_recognized_registry_namespaces()
+    test_mcp_scenario_reports_operation_duration_without_prompt_variables()
     print("ok")

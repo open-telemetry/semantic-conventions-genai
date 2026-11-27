@@ -48,9 +48,10 @@ def instrument_function_tool(tool: FunctionTool) -> FunctionTool:
                 tool_span.set_attribute("gen_ai.tool.description", tool.description)
                 if ctx.tool_call_id:
                     tool_span.set_attribute("gen_ai.tool.call.id", ctx.tool_call_id)
-                tool_span.set_attribute("gen_ai.tool.call.arguments", input_json)
+                tool_span.set_attribute("gen_ai.tool.call.arguments", json.loads(input_json or "{}"))
                 result = await original_on_invoke_tool(ctx, input_json)
-                tool_span.set_attribute("gen_ai.tool.call.result", str(result))
+                # TODO: Determine how to represent this string result in the object-only schema.
+                tool_span.set_attribute("gen_ai.tool.call.result", result)
                 return result
             except Exception as e:
                 tool_span.set_status(StatusCode.ERROR, str(e))
@@ -86,27 +87,25 @@ async def _emit_agent_span(client, agent, input_text, **run_kwargs):
         try:
             if agent.instructions:
                 agent_span.set_attribute(
-                    "gen_ai.system_instructions", json.dumps([{"type": "text", "content": agent.instructions}])
+                    "gen_ai.system_instructions", [{"type": "text", "content": agent.instructions}]
                 )
             agent_span.set_attribute(
                 "gen_ai.input.messages",
-                json.dumps([{"role": "user", "parts": [{"type": "text", "content": input_text}]}]),
+                [{"role": "user", "parts": [{"type": "text", "content": input_text}]}],
             )
             if agent.tools:
                 agent_span.set_attribute(
                     "gen_ai.tool.definitions",
-                    json.dumps(
-                        [
-                            {
-                                "type": "function",
-                                "name": t.name,
-                                "description": t.description,
-                                "parameters": t.params_json_schema,
-                            }
-                            for t in agent.tools
-                            if isinstance(t, FunctionTool)
-                        ]
-                    ),
+                    [
+                        {
+                            "type": "function",
+                            "name": t.name,
+                            "description": t.description,
+                            "parameters": t.params_json_schema,
+                        }
+                        for t in agent.tools
+                        if isinstance(t, FunctionTool)
+                    ],
                 )
             original_create = client.chat.completions.create
 
@@ -135,14 +134,12 @@ async def _emit_agent_span(client, agent, input_text, **run_kwargs):
             if result.final_output:
                 agent_span.set_attribute(
                     "gen_ai.output.messages",
-                    json.dumps(
-                        [
-                            {
-                                "role": "assistant",
-                                "parts": [{"type": "text", "content": str(result.final_output)}],
-                            }
-                        ]
-                    ),
+                    [
+                        {
+                            "role": "assistant",
+                            "parts": [{"type": "text", "content": str(result.final_output)}],
+                        }
+                    ],
                 )
             print(f"    -> {str(result.final_output)[:60]}")
         except Exception as e:
@@ -262,9 +259,10 @@ async def run_agent_as_tool_delegation():
         ) as tool_span:
             try:
                 tool_span.set_attribute("gen_ai.tool.call.id", tool_context.tool_call_id)
-                tool_span.set_attribute("gen_ai.tool.call.arguments", input_json)
+                tool_span.set_attribute("gen_ai.tool.call.arguments", json.loads(input_json or "{}"))
                 result = await original_on_invoke_tool(tool_context, input_json)
-                tool_span.set_attribute("gen_ai.tool.call.result", str(result))
+                # TODO: Determine how to represent this string result in the object-only schema.
+                tool_span.set_attribute("gen_ai.tool.call.result", result)
             except Exception as e:
                 tool_span.set_status(StatusCode.ERROR, str(e))
                 tool_span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
@@ -298,11 +296,11 @@ async def run_agent_as_tool_delegation():
         ) as agent_span:
             try:
                 agent_span.set_attribute(
-                    "gen_ai.system_instructions", json.dumps([{"type": "text", "content": starting_agent.instructions}])
+                    "gen_ai.system_instructions", [{"type": "text", "content": starting_agent.instructions}]
                 )
                 agent_span.set_attribute(
                     "gen_ai.input.messages",
-                    json.dumps([{"role": "user", "parts": [{"type": "text", "content": input}]}]),
+                    [{"role": "user", "parts": [{"type": "text", "content": input}]}],
                 )
                 responses = []
                 token = model_responses.set(responses)
@@ -334,7 +332,7 @@ async def run_agent_as_tool_delegation():
                 }
                 if len(finish_reasons) == 1:
                     output_message["finish_reason"] = finish_reasons[0]
-                agent_span.set_attribute("gen_ai.output.messages", json.dumps([output_message]))
+                agent_span.set_attribute("gen_ai.output.messages", [output_message])
             except Exception as e:
                 agent_span.set_status(StatusCode.ERROR, str(e))
                 agent_span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
@@ -402,10 +400,11 @@ async def run_command_execution():
                 try:
                     span.set_attribute("gen_ai.tool.description", self.description)
                     span.set_attribute("gen_ai.tool.call.id", ctx.tool_call_id)
-                    span.set_attribute("gen_ai.tool.call.arguments", raw_input)
+                    span.set_attribute("gen_ai.tool.call.arguments", json.loads(raw_input))
                     if executable_name and posixpath.isabs(executable):
                         span.set_attribute("process.executable.path", executable)
                     result = await self.run(args)
+                    # TODO: Determine how to represent this string result in the object-only schema.
                     span.set_attribute("gen_ai.tool.call.result", result)
                     return result
                 except Exception as exc:
@@ -513,11 +512,13 @@ async def run_runner():
             ) as span:
                 try:
                     span.set_attribute("gen_ai.tool.call.id", selected.tool_call.call_id)
-                    span.set_attribute("gen_ai.tool.call.arguments", arguments)
+                    span.set_attribute("gen_ai.tool.call.arguments", json.loads(arguments or "{}"))
                     target = await original_invoke(context, arguments)
                     span.set_attribute("gen_ai.transfer.mode", "pass_control")
                     span.set_attribute("gen_ai.transfer.target.name", target.name)
-                    span.set_attribute("gen_ai.tool.call.result", selected.handoff.get_transfer_message(target))
+                    span.set_attribute(
+                        "gen_ai.tool.call.result", json.loads(selected.handoff.get_transfer_message(target))
+                    )
                     return target
                 except Exception as e:
                     span.set_status(StatusCode.ERROR, str(e))
@@ -560,11 +561,11 @@ async def run_runner():
                                 "type": "tool_call",
                                 "id": item.call_id,
                                 "name": item.name,
-                                "arguments": json.loads(item.arguments),
+                                "arguments": json.loads(item.arguments or "{}"),
                             }
                         )
                 if parts:
-                    span.set_attribute("gen_ai.output.messages", json.dumps([{"role": "assistant", "parts": parts}]))
+                    span.set_attribute("gen_ai.output.messages", [{"role": "assistant", "parts": parts}])
                 return result
             except Exception as e:
                 span.set_status(StatusCode.ERROR, str(e))
@@ -590,7 +591,7 @@ async def run_runner():
     }
     with _reference_tracer.start_as_current_span("invoke_runner", attributes=runner_span_attributes) as runner_span:
         runner_span.set_attribute(
-            "gen_ai.input.messages", json.dumps([{"role": "user", "parts": [{"type": "text", "content": input_text}]}])
+            "gen_ai.input.messages", [{"role": "user", "parts": [{"type": "text", "content": input_text}]}]
         )
 
         with (
@@ -601,14 +602,12 @@ async def run_runner():
             result = await Runner.run(agent_a, input_text)
 
         if result.final_output:
-            output_messages = json.dumps(
-                [
-                    {
-                        "role": "assistant",
-                        "parts": [{"type": "text", "content": str(result.final_output)}],
-                    }
-                ]
-            )
+            output_messages = [
+                {
+                    "role": "assistant",
+                    "parts": [{"type": "text", "content": str(result.final_output)}],
+                }
+            ]
             runner_span.set_attribute("gen_ai.output.messages", output_messages)
         print(f"    -> {str(result.final_output)[:60]}")
 

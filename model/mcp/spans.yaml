@@ -3,7 +3,6 @@ attribute_groups:
   - id: trace.mcp.common.attributes
     visibility: internal
     attributes:
-      - ref_group: mcp.common.attributes
       - ref: mcp.session.id
         requirement_level:
           recommended: When the MCP request or notification is part of a session.
@@ -13,6 +12,24 @@ attribute_groups:
       - ref: jsonrpc.request.id
         requirement_level:
           conditionally_required: When the client executes a request.
+      - ref: gen_ai.tool.call.arguments
+        requirement_level: opt_in
+      - ref: gen_ai.tool.call.result
+        requirement_level: opt_in
+      - ref: gen_ai.prompt.variables
+        brief: The variables supplied to the prompt template in the request.
+        requirement_level: opt_in
+        note: |
+          > [!WARNING]
+          > This attribute may contain sensitive information.
+
+          Prompt templates are parameterized with variables that are filled in
+          at runtime. This attribute records the map of variable names to their
+          values passed to the template.
+
+          In MCP, [prompt arguments](https://modelcontextprotocol.io/specification/2025-11-25/schema#prompt)
+          supplied in `prompts/get` requests SHOULD be recorded as the
+          `gen_ai.prompt.variables` attribute.
 
 spans:
   - type: mcp.client
@@ -35,12 +52,12 @@ spans:
       It covers the time to receive the response or ack from the peer.
 
       **Span status**: refer to the [Recording Errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/general/recording-errors.md)
-      document for details on how to record span status. See also `rpc.response.status_code` attribute
+      document for details on how to record span status. See also `rpc.status_code` attribute
       for the details on which values classify as errors.
 
       If the span status is set to `ERROR`, the status description SHOULD match the `JSONRPCError.message` if the message is available.
 
-      MCP tool call execution spans are compatible with GenAI [execute_tool spans](/docs/gen-ai/gen-ai-spans.md#execute-tool-span).
+      MCP tool call execution spans are compatible with GenAI [execute_tool spans](/docs/gen-ai/execute-tool.md#span-gen_aiexecute_tool).
 
       If the MCP instrumentation can reliably detect that outer GenAI instrumentation
       is already tracing the tool execution, it SHOULD NOT create a separate span.
@@ -50,33 +67,11 @@ spans:
       option to enable it.
     stability: development
     attributes:
+      - ref_group: mcp.common.attributes
+      - ref_group: mcp.network.protocol.attributes
       - ref_group: trace.mcp.common.attributes
       - ref_group: mcp.client.address_and_port.attributes
       - ref_group: mcp.client.status.attributes
-      - ref: gen_ai.tool.call.arguments
-        requirement_level: opt_in
-      - ref: gen_ai.tool.call.result
-        requirement_level: opt_in
-      - ref: gen_ai.prompt.variable
-        note: |
-          Prompt templates are parameterized with variables that are filled in
-          at runtime. This attribute records the variable values passed to the
-          template. The attribute name defines the variable name, and the
-          attribute value is the variable value serialized as a string.
-
-          Examples:
-
-          - A variable `user_name` with value `Alice` SHOULD be recorded as
-            the `gen_ai.prompt.variable.user_name` attribute with value `"Alice"`.
-          - A variable `language` with value `French` SHOULD be recorded as
-            the `gen_ai.prompt.variable.language` attribute with value `"French"`.
-
-          In MCP, [prompt arguments](https://modelcontextprotocol.io/specification/2025-11-25/schema#prompt)
-          supplied in `prompts/get` requests SHOULD be recorded as
-          `gen_ai.prompt.variable.<argument_name>` attributes.
-
-          > [!Warning]
-          > This attribute may contain sensitive information.
 
   - type: mcp.server
     requirement_level: recommended
@@ -97,12 +92,14 @@ spans:
       (or notification) or by the MCP client when server initiates the operation.
 
       **Span status**: refer to the [Recording Errors](https://github.com/open-telemetry/semantic-conventions/blob/v1.45.0/docs/general/recording-errors.md)
-      document for details on how to record span status. See also `rpc.response.status_code` attribute
+      document for details on how to record span status. See also `rpc.status_code` attribute
       for the details on which values classify as errors.
 
       If the span status is set to `ERROR`, the status description SHOULD match the `JSONRPCError.message` if the message is available.
     stability: development
     attributes:
+      - ref_group: mcp.common.attributes
+      - ref_group: mcp.network.protocol.attributes
       - ref_group: trace.mcp.common.attributes
       - ref_group: mcp.server.status.attributes
       - ref: client.address
@@ -112,28 +109,3 @@ spans:
       - ref: client.port
         requirement_level:
           recommended: When `client.address` is set.
-
-      - ref: gen_ai.tool.call.arguments
-        requirement_level: opt_in
-      - ref: gen_ai.tool.call.result
-        requirement_level: opt_in
-      - ref: gen_ai.prompt.variable
-        note: |
-          Prompt templates are parameterized with variables that are filled in
-          at runtime. This attribute records the variable values passed to the
-          template. The attribute name defines the variable name, and the
-          attribute value is the variable value serialized as a string.
-
-          Examples:
-
-          - A variable `user_name` with value `Alice` SHOULD be recorded as
-            the `gen_ai.prompt.variable.user_name` attribute with value `"Alice"`.
-          - A variable `language` with value `French` SHOULD be recorded as
-            the `gen_ai.prompt.variable.language` attribute with value `"French"`.
-
-          In MCP, [prompt arguments](https://modelcontextprotocol.io/specification/2025-11-25/schema#prompt)
-          supplied in `prompts/get` requests SHOULD be recorded as
-          `gen_ai.prompt.variable.<argument_name>` attributes.
-
-          > [!Warning]
-          > This attribute may contain sensitive information.

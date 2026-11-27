@@ -1,6 +1,5 @@
 """Reference implementation for Azure AI Inference."""
 
-import json
 import os
 import time
 
@@ -26,19 +25,17 @@ _embeddings_duration = _reference_meter.create_histogram(
     description="GenAI client embeddings operation duration.",
     explicit_bucket_boundaries_advisory=[
         0.01,
-        0.02,
-        0.04,
-        0.08,
-        0.16,
-        0.32,
-        0.64,
-        1.28,
-        2.56,
-        5.12,
-        10.24,
-        20.48,
-        40.96,
-        81.92,
+        0.025,
+        0.05,
+        0.1,
+        0.25,
+        0.5,
+        1,
+        2.5,
+        5,
+        10,
+        30,
+        60,
     ],
 )
 _embeddings_input_tokens = _reference_meter.create_histogram(
@@ -103,18 +100,14 @@ def run_chat_reference(client):
             "gen_ai.request.model": request_model,
             "gen_ai.response.id": resp.id,
             "gen_ai.response.model": resp.model,
-            "gen_ai.input.messages": json.dumps(
-                [{"role": "user", "parts": [{"type": "text", "content": user_content}]}]
-            ),
-            "gen_ai.output.messages": json.dumps(
-                [
-                    {
-                        "role": "assistant",
-                        "parts": [{"type": "text", "content": c.message.content}],
-                    }
-                    for c in resp.choices
-                ]
-            ),
+            "gen_ai.input.messages": [{"role": "user", "parts": [{"type": "text", "content": user_content}]}],
+            "gen_ai.output.messages": [
+                {
+                    "role": "assistant",
+                    "parts": [{"type": "text", "content": c.message.content}],
+                }
+                for c in resp.choices
+            ],
         }
         event_attrs["gen_ai.response.finish_reasons"] = finish_reasons
         if resp.usage:
@@ -172,16 +165,14 @@ def run_chat_tool_call_reference(client):
     ) as span:
         span.set_attribute(
             "gen_ai.tool.definitions",
-            json.dumps(
-                [
-                    {
-                        "type": "function",
-                        "name": tool.function.name,
-                        "description": tool.function.description,
-                        "parameters": tool.function.parameters,
-                    }
-                ]
-            ),
+            [
+                {
+                    "type": "function",
+                    "name": tool.function.name,
+                    "description": tool.function.description,
+                    "parameters": tool.function.parameters,
+                }
+            ],
         )
         resp = client.complete(
             model=request_model,
