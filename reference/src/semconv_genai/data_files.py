@@ -52,6 +52,7 @@ EVENT_TYPE_ORDER = [
     "gen_ai.client.invoke_agent.exception",
     "gen_ai.evaluation.result",
     "gen_ai.execute_tool.exception",
+    "gen_ai.execution.state.changed",
     "gen_ai.invoke_agent.exception",
 ]
 

@@ -32,7 +32,7 @@ Run `uv run update-reports` to regenerate.
 | [MCP Server](reports/mcp-server-span.md) | mcp |
 | [Create Agent](reports/create-agent-span.md) | anthropic, aws-bedrock-agent, azure-ai-foundry, google-genai, mistralai, openai-assistants |
 | [Invoke Agent Client](reports/invoke-agent-client-span.md) | aws-bedrock-agent, azure-ai-foundry, google-genai, openai-assistants |
-| [Invoke Agent Internal](reports/invoke-agent-internal-span.md) | adk_a2a, agent-framework, autogen, crewai, google-adk, langchain, openai-agents, pydantic-ai |
+| [Invoke Agent Internal](reports/invoke-agent-internal-span.md) | adk_a2a, agent-framework, autogen, crewai, google-adk, langchain, langgraph, openai-agents, pydantic-ai |
 | [Plan](reports/plan-span.md) | crewai, langchain |
 | [Inference](reports/inference-span.md) | adk_a2a, agent-framework, anthropic, aws-bedrock, azure-ai-inference, azure-openai, claude-agent-sdk, cohere, google-genai, groq, litellm, mistralai, openai, vertexai |
 | [Realtime Inference](reports/realtime-inference-span.md) | google-genai, openai |
@@ -56,6 +56,7 @@ Run `uv run update-reports` to regenerate.
 | [Client Invoke Agent Exception](reports/gen-ai-client-invoke-agent-exception-event.md) | aws-bedrock-agent, azure-ai-foundry |
 | [Evaluation Result](reports/gen-ai-evaluation-result-event.md) | azure-ai-evaluation, deepeval, dspy |
 | [Execute Tool Exception](reports/gen-ai-execute-tool-exception-event.md) | openai-agents |
+| [Execution State Changed](reports/gen-ai-execution-state-changed-event.md) | google-adk, langgraph |
 | [Invoke Agent Exception](reports/gen-ai-invoke-agent-exception-event.md) | openai-agents |
 
 ### Entities

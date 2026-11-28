@@ -78,6 +78,8 @@ scenarios:
         context:
           attribute_key: gen_ai.operation.name
         reason: ADK native instrumentation records the gen_ai.invoke_agent.* metrics without gen_ai.operation.name.
+    events:
+      - gen_ai.execution.state.changed
     spans:
       - match:
           attributes:
