@@ -3,8 +3,16 @@
 import os
 import time
 
+from opentelemetry._logs import SeverityNumber
 from opentelemetry.trace import SpanKind, StatusCode
-from reference_shared import flush_and_shutdown, mock_server_host_port, reference_meter, reference_tracer, setup_otel
+from reference_shared import (
+    flush_and_shutdown,
+    mock_server_host_port,
+    reference_event_logger,
+    reference_meter,
+    reference_tracer,
+    setup_otel,
+)
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"]
 
@@ -17,19 +25,17 @@ _embeddings_duration = _reference_meter.create_histogram(
     description="GenAI client embeddings operation duration.",
     explicit_bucket_boundaries_advisory=[
         0.01,
-        0.02,
-        0.04,
-        0.08,
-        0.16,
-        0.32,
-        0.64,
-        1.28,
-        2.56,
-        5.12,
-        10.24,
-        20.48,
-        40.96,
-        81.92,
+        0.025,
+        0.05,
+        0.1,
+        0.25,
+        0.5,
+        1,
+        2.5,
+        5,
+        10,
+        30,
+        60,
     ],
 )
 
@@ -86,6 +92,9 @@ def run_chat_reference(client):
             )
             span.set_attribute("gen_ai.response.model", resp.model)
             metric_attributes["gen_ai.response.model"] = resp.model
+            if resp.service_tier is not None:
+                span.set_attribute("gen_ai.response.service_tier", resp.service_tier)
+                metric_attributes["gen_ai.response.service_tier"] = resp.service_tier
             span.set_attribute("gen_ai.response.id", resp.id)
             span.set_attribute("gen_ai.response.finish_reasons", [c.finish_reason for c in resp.choices])
             if resp.usage:
@@ -146,9 +155,15 @@ def run_embeddings_reference(client):
                 input_token_count = resp.usage.prompt_tokens
             print(f"    -> embedding dim: {len(resp.data[0].embedding)}")
         except Exception as e:
+            error_type = f"{type(e).__module__}.{type(e).__qualname__}"
             span.set_status(StatusCode.ERROR, str(e))
-            span.set_attribute("error.type", type(e).__qualname__)
-            metric_attributes["error.type"] = type(e).__qualname__
+            span.set_attribute("error.type", error_type)
+            metric_attributes["error.type"] = error_type
+            reference_event_logger().emit(
+                event_name="gen_ai.client.embeddings.exception",
+                severity_number=SeverityNumber.WARN,
+                exception=e,
+            )
             raise
         finally:
             _embeddings_duration.record(time.perf_counter() - start_time, metric_attributes)

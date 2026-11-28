@@ -1,0 +1,87 @@
+{
+  "spans": {
+    "mcp.client": [
+      "error.type",
+      "gen_ai.operation.name",
+      "gen_ai.prompt.name",
+      "gen_ai.prompt.variables",
+      "gen_ai.tool.call.arguments",
+      "gen_ai.tool.call.result",
+      "gen_ai.tool.name",
+      "jsonrpc.request.id",
+      "mcp.method.name",
+      "mcp.protocol.version",
+      "mcp.resource.uri",
+      "mcp.session.id",
+      "network.protocol.name",
+      "network.protocol.version",
+      "network.transport",
+      "rpc.status_code",
+      "server.address",
+      "server.port"
+    ],
+    "mcp.server": [
+      "client.address",
+      "client.port",
+      "error.type",
+      "gen_ai.operation.name",
+      "gen_ai.prompt.name",
+      "gen_ai.prompt.variables",
+      "gen_ai.tool.call.arguments",
+      "gen_ai.tool.call.result",
+      "gen_ai.tool.name",
+      "jsonrpc.request.id",
+      "mcp.method.name",
+      "mcp.protocol.version",
+      "mcp.resource.uri",
+      "mcp.session.id",
+      "network.protocol.name",
+      "network.protocol.version",
+      "network.transport",
+      "rpc.status_code"
+    ]
+  },
+  "events": {},
+  "metrics": {
+    "mcp.client.operation.duration": [
+      "error.type",
+      "gen_ai.operation.name",
+      "gen_ai.prompt.name",
+      "gen_ai.tool.name",
+      "mcp.method.name",
+      "mcp.protocol.version",
+      "mcp.resource.uri",
+      "network.protocol.name",
+      "network.protocol.version",
+      "network.transport",
+      "rpc.status_code",
+      "server.address",
+      "server.port"
+    ],
+    "mcp.client.session.duration": [
+      "mcp.protocol.version",
+      "network.protocol.name",
+      "server.address",
+      "server.port"
+    ],
+    "mcp.server.operation.duration": [
+      "error.type",
+      "gen_ai.operation.name",
+      "gen_ai.prompt.name",
+      "gen_ai.tool.name",
+      "mcp.method.name",
+      "mcp.protocol.version",
+      "mcp.resource.uri",
+      "network.protocol.name",
+      "network.protocol.version",
+      "network.transport",
+      "rpc.status_code"
+    ],
+    "mcp.server.session.duration": [
+      "mcp.protocol.version",
+      "network.protocol.name"
+    ]
+  },
+  "entities": {},
+  "findings": []
+}

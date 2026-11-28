@@ -35,7 +35,7 @@ async def run_durable_workflow_reference() -> None:
     builder.add_node("wait_for_approval", wait_for_approval)
     builder.add_edge(START, "wait_for_approval")
     builder.add_edge("wait_for_approval", END)
-    graph = builder.compile(checkpointer=InMemorySaver())
+    graph = builder.compile(name="durable approval workflow", checkpointer=InMemorySaver())
 
     thread_id = "langgraph-durable-reference-thread"
     initial_config = {
@@ -47,11 +47,13 @@ async def run_durable_workflow_reference() -> None:
         "run_id": UUID("10000000-0000-4000-8000-000000000002"),
     }
 
+    workflow_name = graph.name
+
     with _reference_tracer.start_as_current_span(
-        "invoke_workflow durable approval workflow",
+        f"invoke_workflow {workflow_name}",
         attributes={
             "gen_ai.operation.name": "invoke_workflow",
-            "gen_ai.workflow.name": "durable approval workflow",
+            "gen_ai.agent.name": workflow_name,
         },
     ):
         suspended_result = await graph.ainvoke({}, config=initial_config)
@@ -64,10 +66,10 @@ async def run_durable_workflow_reference() -> None:
             raise RuntimeError("LangGraph did not expose a checkpoint ID before suspension")
 
     with _reference_tracer.start_as_current_span(
-        "invoke_workflow durable approval workflow",
+        f"invoke_workflow {workflow_name}",
         attributes={
             "gen_ai.operation.name": "invoke_workflow",
-            "gen_ai.workflow.name": "durable approval workflow",
+            "gen_ai.agent.name": workflow_name,
         },
     ):
         resumed_updates = [

@@ -1,16 +1,23 @@
 {
   "spans": {
-    "gen_ai.execute_tool.internal": [
+    "gen_ai.execute_tool": [
       "error.type",
       "gen_ai.agent.name",
       "gen_ai.conversation.id",
       "gen_ai.operation.name",
+      "gen_ai.skill.description",
+      "gen_ai.skill.name",
+      "gen_ai.skill.resource.name",
+      "gen_ai.skill.source.uri",
       "gen_ai.tool.call.arguments",
       "gen_ai.tool.call.id",
       "gen_ai.tool.call.result",
       "gen_ai.tool.description",
       "gen_ai.tool.name",
-      "gen_ai.tool.type"
+      "gen_ai.tool.type",
+      "gen_ai.transfer.mode",
+      "gen_ai.transfer.target.name",
+      "process.exit.code"
     ],
     "gen_ai.invoke_agent.internal": [
       "gen_ai.agent.description",
@@ -33,13 +40,6 @@
       "gen_ai.usage.input_tokens",
       "gen_ai.usage.output_tokens"
     ],
-    "gen_ai.invoke_workflow.internal": [
-      "gen_ai.conversation.id",
-      "gen_ai.input.messages",
-      "gen_ai.operation.name",
-      "gen_ai.output.messages",
-      "gen_ai.workflow.name"
-    ],
     "gen_ai.memory.client": [
       "gen_ai.memory.query.text",
       "gen_ai.memory.record.count",
@@ -61,13 +61,17 @@
       "gen_ai.tool.type"
     ],
     "gen_ai.invoke_agent.duration": [
-      "gen_ai.agent.name"
+      "gen_ai.agent.name",
+      "gen_ai.operation.name",
+      "gen_ai.request.model"
     ],
     "gen_ai.invoke_agent.inference_calls": [
-      "gen_ai.agent.name"
+      "gen_ai.agent.name",
+      "gen_ai.operation.name"
     ],
     "gen_ai.invoke_agent.tool_calls": [
-      "gen_ai.agent.name"
+      "gen_ai.agent.name",
+      "gen_ai.operation.name"
     ]
   },
   "entities": {},
@@ -85,6 +89,24 @@
       }
     },
     {
+      "id": "required_attribute_not_present",
+      "message": "Required attribute 'gen_ai.operation.name' is not present.",
+      "signal_type": "metric",
+      "signal_name": "gen_ai.invoke_agent.duration",
+      "context": {
+        "attribute_key": "gen_ai.operation.name"
+      }
+    },
+    {
+      "id": "required_attribute_not_present",
+      "message": "Required attribute 'gen_ai.operation.name' is not present.",
+      "signal_type": "metric",
+      "signal_name": "gen_ai.invoke_agent.inference_calls",
+      "context": {
+        "attribute_key": "gen_ai.operation.name"
+      }
+    },
+    {
       "id": "unit_mismatch",
       "message": "Unit should be '{inference_call}', but found '1'.",
       "signal_type": "metric",
@@ -92,6 +114,15 @@
       "context": {
         "expected": "{inference_call}",
         "unit": "1"
+      }
+    },
+    {
+      "id": "required_attribute_not_present",
+      "message": "Required attribute 'gen_ai.operation.name' is not present.",
+      "signal_type": "metric",
+      "signal_name": "gen_ai.invoke_agent.tool_calls",
+      "context": {
+        "attribute_key": "gen_ai.operation.name"
       }
     },
     {

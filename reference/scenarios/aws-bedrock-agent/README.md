@@ -10,6 +10,11 @@ here. Everything else belongs to the remote agent service.
 | Operation | Should be instrumented here | Status |
 | --- | --- | --- |
 | create_agent | Yes — creates the remote agent | ✅ Implemented |
-| invoke_agent (client) | Yes — invokes the remote agent | ✅ Implemented |
+| invoke_agent (client) | Yes — invokes the remote agent | ✅ Implemented with a [duration histogram](../../../docs/gen-ai/client-invoke-agent.md#metric-gen_aiclientinvoke_agentduration) |
 | inference (`chat`) | No — runs remotely inside the agent service | ✅ Correctly not emitted |
 | execute_tool | No — runs remotely inside the agent service | ✅ Correctly not emitted |
+
+Client agent invocation exercises the SDK's `ValidationException` from
+`client.invoke_agent` using a mock HTTP 400 response. The error handler
+records a correlated `gen_ai.client.invoke_agent.exception` WARN log and re-raises
+the exception.

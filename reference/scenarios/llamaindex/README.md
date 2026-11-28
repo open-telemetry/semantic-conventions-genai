@@ -7,6 +7,9 @@ workflow operations it runs directly.
 | Operation | Should be instrumented here | Status |
 | --- | --- | --- |
 | inference (`chat`) | No — delegates to the model provider (e.g. `openai`) | ✅ Correctly not emitted |
-| retrieval | Yes — retriever / query engine | ✅ Implemented |
+| retrieval | Yes — retriever / query engine | ✅ Implemented with a [duration histogram](../../../docs/gen-ai/retrieval.md#metric-gen_airetrievalduration) |
 | execute_tool | Yes — LlamaIndex runs the tool | ✅ Implemented |
 | invoke_workflow | Yes — `Workflow` / query pipeline execution | ❌ Not implemented |
+
+The tool execution error handler records a correlated
+`gen_ai.execute_tool.exception` WARN log. This scenario does not exercise that path.

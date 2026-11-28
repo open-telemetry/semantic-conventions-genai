@@ -7,16 +7,47 @@ attribute_groups:
       - ref_group: attributes.gen_ai.common
       - ref: gen_ai.response.model
         requirement_level: recommended
-      - ref: gen_ai.provider.name
-        requirement_level: required
+
+  - id: metric_attributes.gen_ai.inference
+    visibility: internal
+    attributes:
+      - ref: gen_ai.response.service_tier
+        requirement_level: recommended
+
+  - id: metric_attributes.gen_ai.inference.streaming
+    visibility: internal
+    attributes:
+      - ref: gen_ai.response.service_tier
+        requirement_level: recommended
+        note: |
+          The value SHOULD be the one returned by the provider. It can differ from
+          `gen_ai.request.service_tier` when `auto` is requested.
+          For example, `service_tier` in [OpenAI](https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create),
+          `usage.service_tier` in [Anthropic](https://platform.claude.com/docs/en/api/service-tiers),
+          or [`usageMetadata.trafficType`](https://docs.cloud.google.com/gemini-enterprise-agent-platform/reference/rest/v1/GenerateContentResponse#UsageMetadata.FIELDS.traffic_type) in Vertex AI.
+
+          Instrumentation SHOULD set this attribute only if the provider reports it by the time the first chunk is received.
+          When set, it SHOULD be the same on all measurements from a streaming response.
 
   - id: metric_attributes.openai
     visibility: internal
     attributes:
-      - ref: openai.response.service_tier
-        requirement_level: recommended
+      - ref: gen_ai.provider.name
+        annotations:
+          markdown:
+            omit_enum_table: true
       - ref: openai.response.system_fingerprint
         requirement_level: recommended
+
+  - id: metric_attributes.gen_ai.invoke_agent.calls
+    visibility: internal
+    attributes:
+      - ref: gen_ai.operation.name
+        requirement_level: required
+      - ref: gen_ai.agent.name
+        requirement_level:
+          conditionally_required: When available.
+
 metrics:
   - name: gen_ai.client.operation.duration
     requirement_level: recommended
@@ -24,8 +55,9 @@ metrics:
     unit: "s"
     brief: 'GenAI operation duration.'
     note: >
-      This metric SHOULD NOT be reported for inference or embeddings operations;
-      use `gen_ai.client.inference.duration` or `gen_ai.client.embeddings.duration` instead.
+      This metric SHOULD NOT be reported for inference, embeddings, execute tool, or invoke agent client
+      operations; use `gen_ai.client.inference.duration`, `gen_ai.client.embeddings.duration`,
+      `gen_ai.execute_tool.duration`, or `gen_ai.client.invoke_agent.duration` instead.
 
       This metric SHOULD NOT be reported for retrieval operations.
     stability: development
@@ -56,6 +88,7 @@ metrics:
         metric_value_type: double
     attributes:
       - ref_group: metric_attributes.gen_ai
+      - ref_group: metric_attributes.gen_ai.inference
       - ref_group: attributes.gen_ai.error
   - name: gen_ai.client.embeddings.duration
     requirement_level: recommended
@@ -74,18 +107,43 @@ metrics:
       code_generation:
         metric_value_type: double
     attributes:
-      - ref_group: metric_attributes.gen_ai
+      - ref_group: attributes.gen_ai.embeddings
+      - ref_group: attributes.gen_ai.address_and_port
       - ref_group: attributes.gen_ai.error
+  - name: gen_ai.client.invoke_agent.duration
+    requirement_level: recommended
+    instrument: histogram
+    unit: "s"
+    brief: 'GenAI client invoke agent operation duration.'
+    note: >
+      Represents the end-to-end duration of a remote agent invocation,
+      measured from when the client issues the invocation request to when the
+      final response is fully received or the operation ends with an error or cancellation.
+
+      When this metric is reported alongside a `gen_ai.client.invoke_agent`
+      span, the metric value SHOULD be the same as the span duration.
+
+      `gen_ai.provider.name` identifies the GenAI provider of the agent service,
+      for example `openai` or `aws.bedrock`. Instrumentation SHOULD NOT set it
+      to a protocol or framework name, such as `a2a`.
+    stability: development
+    annotations:
+      code_generation:
+        metric_value_type: double
+    attributes:
+      - ref_group: attributes.gen_ai.address_and_port
+      - ref_group: attributes.gen_ai.error
+      - ref_group: attributes.gen_ai.invoked_agent
+      - ref: gen_ai.provider.name
+        requirement_level:
+          conditionally_required: If the GenAI provider of the agent service is known to the instrumentation.
       - ref: gen_ai.operation.name
         annotations:
           markdown:
             omit_enum_table: true
-        examples: ["embeddings"]
-        note: SHOULD be `embeddings`.
-      - ref: gen_ai.request.model
-        examples: ["text-embedding-3-small", "gemini-embedding-001"]
-      - ref: gen_ai.response.model
-        examples: ["text-embedding-3-small"]
+        requirement_level: required
+        examples: ["invoke_agent"]
+        note: SHOULD be `invoke_agent`.
   - name: gen_ai.client.inference.time_to_first_chunk
     requirement_level: recommended
     instrument: histogram
@@ -101,20 +159,26 @@ metrics:
         metric_value_type: double
     attributes:
       - ref_group: metric_attributes.gen_ai
+      - ref_group: metric_attributes.gen_ai.inference.streaming
   - name: gen_ai.client.inference.time_per_output_chunk
     requirement_level: recommended
     instrument: histogram
     unit: "s"
     brief: >
       Time per output chunk, recorded for each chunk received after the first one, measured as the time elapsed from the end of the previous chunk to the end of the current chunk.
-    note: >
+    note: |
       This metric SHOULD be reported for streaming calls and SHOULD NOT be reported otherwise.
+
+      The chunk definition is the same as for [`gen_ai.response.time_to_first_chunk`](/docs/registry/attributes/gen-ai.md#gen-ai-response-time-to-first-chunk).
+
+      Chunk timestamps SHOULD be taken when each chunk is fully received by the client, before application processing.
     stability: development
     annotations:
       code_generation:
         metric_value_type: double
     attributes:
       - ref_group: metric_attributes.gen_ai
+      - ref_group: metric_attributes.gen_ai.inference.streaming
   - name: gen_ai.server.request.duration
     requirement_level: recommended
     instrument: histogram
@@ -149,58 +213,23 @@ metrics:
         metric_value_type: double
     attributes:
       - ref_group: metric_attributes.gen_ai
-  - name: gen_ai.invoke_workflow.duration
-    requirement_level: recommended
-    annotations:
-      code_generation:
-        metric_value_type: double
-    brief: 'Records duration of GenAI workflow.'
-    note: >
-      Represents the end-to-end duration of a workflow execution, measured from the point
-      where application code initiates the workflow to the point where the workflow completes,
-      independent of workflow complexity.
-
-      A workflow is a coordinated process composed of multiple agents or other
-      operations involving generative AI.
-
-      If instrumentation measures only a single provider-facing client operation
-      (for example, one model API call), `gen_ai.client.operation.duration` SHOULD be used instead.
-      Instrumentation MAY emit both metrics for the same request path when both boundaries are available.
-
-      When this metric is reported alongside a `gen_ai.invoke_workflow.internal` span, the metric value SHOULD be the same as the span duration.
-
-      Individual systems may include additional system-specific attributes.
-      Refer to system-specific documentation, if available.
-    instrument: histogram
-    unit: "s"
-    stability: development
-    attributes:
-      - ref_group: attributes.gen_ai.error
-      - ref: gen_ai.workflow.name
-        requirement_level:
-          conditionally_required: If available.
   - name: gen_ai.invoke_agent.duration
     requirement_level: recommended
     annotations:
       code_generation:
         metric_value_type: double
     brief: >
-      The end-to-end duration of a single in-process agent invocation,
-      from the moment the invocation starts until the agent emits
-      the last chunk of its final response or terminates with an error.
+      The end-to-end duration of a single in-process agent, workflow, or
+      framework entrypoint invocation, from the moment the invocation starts until
+      it emits the last chunk of its final response or terminates with an error.
     note: |
       Intended for instrumentations of agent frameworks (for example, ADK,
       LangChain agents, CrewAI agents) that can reliably bound a single
-      agent invocation.
+      agent, workflow, or framework entrypoint invocation.
 
       If instrumentation can only measure a single provider-facing client
       operation (for example, one model API call),
-      `gen_ai.client.operation.duration` SHOULD be used instead. If
-      instrumentation can reliably bound a higher-level workflow that
-      coordinates multiple agents, `gen_ai.invoke_workflow.duration` SHOULD be
-      used for that workflow. Instrumentation MAY emit several of these
-      metrics for the same request path when more than one boundary is
-      available.
+      `gen_ai.client.*.duration` SHOULD be used instead.
 
       When this metric is reported alongside a `gen_ai.invoke_agent.internal`
       span, the metric value SHOULD be the same as the span duration.
@@ -209,20 +238,30 @@ metrics:
     stability: development
     attributes:
       - ref_group: attributes.gen_ai.error
-      - ref_group: attributes.gen_ai.invoked_agent.internal.common
+      - ref: gen_ai.operation.name
+        requirement_level: required
+      - ref_group: attributes.gen_ai.invoked_agent
+      - ref: gen_ai.request.model
+        requirement_level:
+          recommended: When `gen_ai.operation.name` is `invoke_agent`, if applicable.
   - name: gen_ai.invoke_agent.inference_calls
     annotations:
       code_generation:
         metric_value_type: int
     brief: >
-      The number of inference (model) calls a GenAI agent makes during a
-      single invocation.
+      The number of inference (model) calls a GenAI agent, workflow, or
+      framework entrypoint makes during a single invocation.
     note: |
-      The distribution is scoped to a single agent invocation and SHOULD include
-      only the inference calls the agent itself issued including failed ones;
-      calls made by sub-agents or transferred-to agents are recorded against
-      those agents' own invocations so that each inference call is counted
-      exactly once across the call tree.
+      The distribution is scoped to a single invocation and SHOULD include
+      only the inference calls the invocation itself issued including failed
+      ones; calls made by nested invocations (for example, sub-agents or
+      transferred-to agents) are recorded against those invocations so that
+      each inference call is counted exactly once across the call tree.
+
+      Instrumentations SHOULD NOT report this metric for invocations that never
+      issue inference calls themselves, for example a framework entrypoint that only
+      delegates to agents. They SHOULD report `0` when an invocation that can
+      issue inference calls issued none.
 
       Each logical inference operation, which corresponds to one
       `gen_ai.client.inference` span, counts once, no matter how many retry
@@ -234,21 +273,25 @@ metrics:
     unit: "{inference_call}"
     stability: development
     attributes:
-      - ref: gen_ai.agent.name
-        requirement_level: recommended
+      - ref_group: metric_attributes.gen_ai.invoke_agent.calls
   - name: gen_ai.invoke_agent.tool_calls
     annotations:
       code_generation:
         metric_value_type: int
     brief: >
-      The number of tool calls a GenAI agent makes during a single
-      invocation.
+      The number of tool calls a GenAI agent, workflow, or framework
+      entrypoint makes during a single invocation.
     note: |
-      The distribution is scoped to a single agent invocation and SHOULD include
-      only the tool calls the agent itself triggers including failed ones;
-      calls made by sub-agents or transferred-to agents are recorded against
-      those agents' own invocations so that each tool call is counted exactly
-      once across the call tree.
+      The distribution is scoped to a single invocation and SHOULD include
+      only the tool calls the invocation itself triggers including failed
+      ones; calls made by nested invocations (for example, sub-agents or
+      transferred-to agents) are recorded against those invocations so that
+      each tool call is counted exactly once across the call tree.
+
+      Instrumentations SHOULD NOT report this metric for invocations that never
+      issue tool calls themselves, for example a framework entrypoint that only
+      delegates to agents. They SHOULD report `0` when an invocation that can
+      issue tool calls issued none.
 
       Only client-side tool calls (tools executed by the agent or framework)
       are counted. Tools executed server-side by the model provider (for
@@ -261,8 +304,7 @@ metrics:
     unit: "{tool_call}"
     stability: development
     attributes:
-      - ref: gen_ai.agent.name
-        requirement_level: recommended
+      - ref_group: metric_attributes.gen_ai.invoke_agent.calls
   - name: gen_ai.execute_tool.duration
     requirement_level: recommended
     annotations:
@@ -308,24 +350,15 @@ metric_refinements:
     ref: gen_ai.client.operation.duration
     brief: >
       OpenAI-specific extension to `gen_ai.client.operation.duration`. Adds
-      `openai.response.service_tier` and `openai.response.system_fingerprint`
-      when the provider is `openai`.
+      `openai.response.system_fingerprint` when the provider is `openai`.
     stability: development
     attributes:
-      # - ref_group: metric_attributes.openai - does not work, https://github.com/open-telemetry/weaver/issues/1411
-      - ref: openai.response.service_tier
-        requirement_level: recommended
-      - ref: openai.response.system_fingerprint
-        requirement_level: recommended
+      - ref_group: metric_attributes.openai
   - id: openai.gen_ai.client.inference.duration
     ref: gen_ai.client.inference.duration
     brief: >
       OpenAI-specific extension to `gen_ai.client.inference.duration`. Adds
-      `openai.response.service_tier` and `openai.response.system_fingerprint`
-      when the provider is `openai`.
+      `openai.response.system_fingerprint` when the provider is `openai`.
     stability: development
     attributes:
-      - ref: openai.response.service_tier
-        requirement_level: recommended
-      - ref: openai.response.system_fingerprint
-        requirement_level: recommended
+      - ref_group: metric_attributes.openai

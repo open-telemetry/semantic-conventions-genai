@@ -34,6 +34,6 @@ def test_langgraph_state_coverage_preserves_runtime_version():
 
 def test_langgraph_workflow_span_coverage_survives_report_normalization():
     entries = {entry.library: entry for entry in load_scenario_data_files()}
-    attributes = entries["langgraph"].spans["invoke_workflow"]
+    attributes = entries["langgraph"].spans["invoke_agent_internal"]
     assert attributes["gen_ai.operation.name"] == "present"
-    assert attributes["gen_ai.workflow.name"] == "present"
+    assert attributes["gen_ai.agent.name"] == "present"

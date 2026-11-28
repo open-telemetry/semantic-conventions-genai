@@ -4,6 +4,9 @@ The Google Agent Development Kit (ADK) is an agent framework. It calls models
 through its model layer (e.g. `google-genai`), so it **delegates inference**. It
 owns the agent, workflow, tool, and memory operations it runs directly.
 
+Agent and runner duration histograms use boundaries aligned with minutes, hours, and days.
+ADK records tool timings and attributes on a reference `gen_ai.execute_tool.duration` histogram created with the recommended bucket advice.
+
 The retry test runs the basic agent scenario with a real `google-genai` client
 and a mocked HTTP transport returning 503 then 200. For the two HTTP attempts,
 the scenario records one inference call in `gen_ai.invoke_agent.inference_calls`.
@@ -22,8 +25,8 @@ tool executes. The transfer records `pass_control`; the target's separate
 | Operation | Should be instrumented here | Status |
 | --- | --- | --- |
 | inference (`chat`) | No — delegates to the model client (`google-genai`) | ✅ Correctly not emitted |
-| invoke_agent (internal) | Yes — agent run | ✅ Implemented |
-| invoke_workflow | Yes — workflow agents (e.g. `SequentialAgent`) | ✅ Implemented |
+| invoke_agent (internal) | Yes — each agent that `Runner.run` executes | ✅ Implemented |
+| invoke_runner | Yes — `Runner.run` is the SDK entrypoint | ✅ Implemented |
 | execute_tool | Yes — ADK runs the tool | ✅ Implemented |
 | memory | Yes — memory service upsert / search | ✅ Implemented |
 | skills | Yes — `SkillToolset` runs the skill tools | ✅ Implemented |
@@ -34,10 +37,16 @@ for resumability, an in-memory session, and a confirmation-gated `FunctionTool`.
 The first `Runner.run_async` invocation suspends when its event stream reports a
 tool-confirmation request. A second call resumes the same ADK `invocation_id`
 with the matching confirmed function response. The proof emits existing
-workflow, agent, and owned tool spans, and records the
+runner, agent, and owned tool spans, and records the
 `EventActions.state_delta` produced when the confirmed tool updates
 `ToolContext.state`. It uses `Event.invocation_id` only to verify that ADK
 resumed the same execution; the identifier is not emitted. The event records
 only the delta size, never application-controlled key names or state values. It does not record
 messages, tool arguments or results, session state, or idempotency data for
 this path.
+
+The tool execution error handlers record a correlated
+`gen_ai.execute_tool.exception` WARN log. This scenario does not exercise those paths.
+
+The internal agent invocation error handlers record a correlated
+`gen_ai.invoke_agent.exception` WARN log. This scenario does not exercise those paths.

@@ -20,8 +20,10 @@
 | gen_ai.request.choice.count | (none) |
 | gen_ai.request.model | [anthropic], [aws-bedrock], [azure-ai-inference], [cohere], [google-genai], [groq], [litellm], [mistralai], [openai], [vertexai] |
 | gen_ai.request.seed | (none) |
-| gen_ai.request.stream | (none) |
+| gen_ai.request.service_tier | [anthropic], [groq], [openai] |
+| gen_ai.request.stream | [anthropic] |
 | gen_ai.request.top_k | (none) |
+| gen_ai.response.service_tier | [groq], [openai] |
 | server.port | [anthropic], [azure-ai-inference], [openai] |
 
 ## Recommended
@@ -40,7 +42,7 @@
 | gen_ai.response.finish_reasons | [anthropic], [aws-bedrock], [azure-ai-inference], [cohere], [google-genai], [groq], [litellm], [mistralai], [openai], [vertexai] |
 | gen_ai.response.id | [anthropic], [azure-ai-inference], [cohere], [google-genai], [groq], [litellm], [mistralai], [openai], [vertexai] |
 | gen_ai.response.model | [anthropic], [azure-ai-inference], [google-genai], [groq], [litellm], [mistralai], [openai], [vertexai] |
-| gen_ai.response.time_to_first_chunk | (none) |
+| gen_ai.response.time_to_first_chunk | [anthropic] |
 | gen_ai.usage.audio.cache_read.input_tokens | [google-genai], [vertexai] |
 | gen_ai.usage.audio.input_tokens | [google-genai], [openai], [vertexai] |
 | gen_ai.usage.audio.output_tokens | [google-genai], [openai] |
@@ -65,7 +67,7 @@
 | gen_ai.input.messages_ref | [anthropic] |
 | gen_ai.output.messages | [anthropic], [aws-bedrock], [azure-ai-inference], [cohere], [google-genai], [groq], [litellm], [mistralai], [openai], [vertexai] |
 | gen_ai.output.messages_ref | [anthropic] |
-| gen_ai.prompt.variable | (none) |
+| gen_ai.prompt.variables | [aws-bedrock], [openai] |
 | gen_ai.system_instructions | [anthropic] |
 | gen_ai.system_instructions_ref | [anthropic] |
 | gen_ai.tool.definitions | [anthropic] |

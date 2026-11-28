@@ -1,15 +1,15 @@
 """Reference implementation for Google GenAI.
 
-Exercises: chat, chat_streaming, embeddings
+Exercises: chat, chat_streaming, embeddings, create_agent, invoke_agent
 against a mock Google GenAI server, with manual OTel spans.
 """
 
-import json
 import os
 import time
 from contextlib import contextmanager
 from urllib.parse import urlparse
 
+from opentelemetry._logs import SeverityNumber
 from opentelemetry.trace import SpanKind, StatusCode
 from reference_shared import (
     flush_and_shutdown,
@@ -21,6 +21,7 @@ from reference_shared import (
 
 MOCK_BASE_URL = os.environ["MOCK_LLM_URL"]
 _SERVER_ADDRESS = urlparse(MOCK_BASE_URL).hostname
+_SERVER_PORT = urlparse(MOCK_BASE_URL).port
 
 _reference_tracer = reference_tracer()
 _reference_meter = reference_meter()
@@ -31,19 +32,42 @@ _embeddings_duration = _reference_meter.create_histogram(
     description="GenAI client embeddings operation duration.",
     explicit_bucket_boundaries_advisory=[
         0.01,
-        0.02,
-        0.04,
-        0.08,
-        0.16,
-        0.32,
-        0.64,
-        1.28,
-        2.56,
-        5.12,
-        10.24,
-        20.48,
-        40.96,
-        81.92,
+        0.025,
+        0.05,
+        0.1,
+        0.25,
+        0.5,
+        1,
+        2.5,
+        5,
+        10,
+        30,
+        60,
+    ],
+)
+_invoke_agent_duration = _reference_meter.create_histogram(
+    "gen_ai.client.invoke_agent.duration",
+    unit="s",
+    description="GenAI client invoke agent operation duration.",
+    explicit_bucket_boundaries_advisory=[
+        0.1,
+        0.25,
+        0.5,
+        1,
+        2.5,
+        5,
+        10,
+        30,
+        60,
+        120,
+        300,
+        600,
+        1800,
+        3600,
+        7200,
+        18000,
+        43200,
+        86400,
     ],
 )
 
@@ -111,20 +135,30 @@ def _patch_automatic_function_calling():
             if description:
                 tool_span_attributes["gen_ai.tool.description"] = description[0]
             with _reference_tracer.start_as_current_span(
-                f"execute_tool {call.name}", attributes=tool_span_attributes
+                f"execute_tool {call.name}", attributes=tool_span_attributes, record_exception=False
             ) as tool_span:
-                if call.id:
-                    tool_span.set_attribute("gen_ai.tool.call.id", call.id)
-                tool_span.set_attribute("gen_ai.tool.call.arguments", json.dumps(dict(call.args or {})))
-                single = response.model_copy(deep=True)
-                single.candidates[0].content.parts = [part]
-                result_parts = original(single, function_map)
-                for result_part in result_parts:
-                    tool_span.set_attribute(
-                        "gen_ai.tool.call.result",
-                        json.dumps({"output": result_part.function_response.response}),
+                try:
+                    if call.id:
+                        tool_span.set_attribute("gen_ai.tool.call.id", call.id)
+                    tool_span.set_attribute("gen_ai.tool.call.arguments", dict(call.args or {}))
+                    single = response.model_copy(deep=True)
+                    single.candidates[0].content.parts = [part]
+                    result_parts = original(single, function_map)
+                    for result_part in result_parts:
+                        tool_span.set_attribute(
+                            "gen_ai.tool.call.result",
+                            {"output": result_part.function_response.response},
+                        )
+                    parts.extend(result_parts)
+                except Exception as e:
+                    tool_span.set_status(StatusCode.ERROR, str(e))
+                    tool_span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
+                    reference_event_logger().emit(
+                        event_name="gen_ai.execute_tool.exception",
+                        severity_number=SeverityNumber.WARN,
+                        exception=e,
                     )
-                parts.extend(result_parts)
+                    raise
         return parts
 
     _extra_utils.get_function_response_parts = instrumented
@@ -195,7 +229,7 @@ def _usage_attributes(um):
 def _usage_metric_attributes(request_model, response):
     """Build the attributes shared by every inference usage instrument."""
     attributes = {
-        "gen_ai.operation.name": "chat",
+        "gen_ai.operation.name": "generate_content",
         "gen_ai.provider.name": "gcp.gemini",
         "gen_ai.request.model": request_model,
     }
@@ -238,18 +272,17 @@ def _record_inference_usage(usage, metric_attributes):
         )
     reasoning_tokens = usage.get("gen_ai.usage.reasoning.output_tokens")
     if reasoning_tokens is not None and reasoning_tokens > 0:
-        # Google reports no modality for thoughts tokens.
-        _reasoning_output_tokens.add(reasoning_tokens, {**metric_attributes, "gen_ai.token.modality": "unknown"})
+        _reasoning_output_tokens.add(reasoning_tokens, metric_attributes)
 
 
 def _emit_inference_event(request_model, input_messages, output_messages, response, usage):
     """Emit an inference-details event carrying the same usage attributes as the span."""
     event_attrs = {
-        "gen_ai.operation.name": "chat",
+        "gen_ai.operation.name": "generate_content",
         "gen_ai.provider.name": "gcp.gemini",
         "gen_ai.request.model": request_model,
-        "gen_ai.input.messages": json.dumps(input_messages),
-        "gen_ai.output.messages": json.dumps(output_messages),
+        "gen_ai.input.messages": input_messages,
+        "gen_ai.output.messages": output_messages,
     }
     if response.model_version:
         event_attrs["gen_ai.response.model"] = response.model_version
@@ -278,13 +311,13 @@ def run_chat():
     )
     request_model = "gemini-2.0-flash"
     span_attributes = {
-        "gen_ai.operation.name": "chat",
+        "gen_ai.operation.name": "generate_content",
         "gen_ai.provider.name": "gcp.gemini",
         "gen_ai.request.model": request_model,
         "server.address": _SERVER_ADDRESS,
     }
     with _reference_tracer.start_as_current_span(
-        "chat gemini-2.0-flash", kind=SpanKind.CLIENT, attributes=span_attributes
+        "generate_content gemini-2.0-flash", kind=SpanKind.CLIENT, attributes=span_attributes
     ) as span:
         prompt_text = "Say hello."
         response = client.models.generate_content(
@@ -338,63 +371,147 @@ def run_interactions_continuation():
 
     prompt_text = "Follow up prompt."
     span_attributes = {
-        "gen_ai.operation.name": "invoke_agent",
+        "gen_ai.operation.name": "chat",
         "gen_ai.provider.name": "gcp.gemini",
         "gen_ai.request.model": request_model,
-        "gen_ai.agent.name": "interactions_agent",
         "gen_ai.request.previous_response.id": previous_interaction_id,
         "server.address": _SERVER_ADDRESS,
+        "server.port": _SERVER_PORT,
     }
     with _reference_tracer.start_as_current_span(
-        "invoke_agent interactions_agent", kind=SpanKind.CLIENT, attributes=span_attributes
+        f"chat {request_model}", kind=SpanKind.CLIENT, attributes=span_attributes, record_exception=False
     ) as span:
-        interaction = client.interactions.create(
-            model=request_model,
-            previous_interaction_id=previous_interaction_id,
-            input=prompt_text,
-        )
+        try:
+            interaction = client.interactions.create(
+                model=request_model,
+                previous_interaction_id=previous_interaction_id,
+                input=prompt_text,
+            )
+        except Exception as e:
+            span.set_status(StatusCode.ERROR, str(e))
+            span.set_attribute("error.type", type(e).__qualname__)
+            raise
         if interaction.id:
             span.set_attribute("gen_ai.response.id", interaction.id)
+        metric_attributes = {
+            "gen_ai.operation.name": "chat",
+            "gen_ai.provider.name": "gcp.gemini",
+            "gen_ai.request.model": request_model,
+        }
         if interaction.model:
             span.set_attribute("gen_ai.response.model", str(interaction.model))
+            metric_attributes["gen_ai.response.model"] = str(interaction.model)
+        usage = {}
         if interaction.usage:
             if interaction.usage.total_input_tokens:
-                span.set_attribute("gen_ai.usage.input_tokens", interaction.usage.total_input_tokens)
+                usage["gen_ai.usage.input_tokens"] = interaction.usage.total_input_tokens
             if interaction.usage.total_output_tokens:
-                span.set_attribute("gen_ai.usage.output_tokens", interaction.usage.total_output_tokens)
+                usage["gen_ai.usage.output_tokens"] = interaction.usage.total_output_tokens
+        for attr, value in usage.items():
+            span.set_attribute(attr, value)
+        _record_inference_usage(usage, metric_attributes)
 
         event_attrs = {
             "gen_ai.operation.name": "chat",
             "gen_ai.provider.name": "gcp.gemini",
             "gen_ai.request.model": request_model,
             "gen_ai.request.previous_response.id": previous_interaction_id,
-            "gen_ai.input.messages": json.dumps(
-                [{"role": "user", "parts": [{"type": "text", "content": prompt_text}]}]
-            ),
-            "gen_ai.output.messages": json.dumps(
-                [
-                    {
-                        "role": "assistant",
-                        "parts": [{"type": "text", "content": "This is a response from the mock interactions server."}],
-                    }
-                ]
-            ),
+            "gen_ai.input.messages": [{"role": "user", "parts": [{"type": "text", "content": prompt_text}]}],
         }
+        if interaction.output_text is not None:
+            event_attrs["gen_ai.output.messages"] = [
+                {
+                    "role": "assistant",
+                    "parts": [{"type": "text", "content": interaction.output_text}],
+                }
+            ]
         if interaction.id:
             event_attrs["gen_ai.response.id"] = interaction.id
         if interaction.model:
             event_attrs["gen_ai.response.model"] = str(interaction.model)
-        if interaction.usage:
-            if interaction.usage.total_input_tokens:
-                event_attrs["gen_ai.usage.input_tokens"] = interaction.usage.total_input_tokens
-            if interaction.usage.total_output_tokens:
-                event_attrs["gen_ai.usage.output_tokens"] = interaction.usage.total_output_tokens
+        event_attrs.update(usage)
         reference_event_logger().emit(
             event_name="gen_ai.client.inference.operation.details",
             body="Inference operation details",
             attributes=event_attrs,
         )
         print(f"    -> previous_response_id: {previous_interaction_id}")
+
+
+def run_agent_interaction(stream=False):
+    """Scenario: invoke a Gemini managed agent through the Interactions API (`agent=` flavor).
+
+    The agent runs server-side, so only the client invoke_agent operation is instrumentable here.
+    """
+    from google import genai
+    from google.genai import types
+    from google.genai.interactions import Interaction
+
+    print(f"  [agent_interaction] Google GenAI: invoke agent via Interactions API (stream={stream})")
+    client = genai.Client(
+        api_key="mock-key",
+        http_options=types.HttpOptions(
+            base_url=MOCK_BASE_URL,
+            api_version="v1beta",
+        ),
+    )
+    agent = "deep-research-pro-preview-12-2025"
+    span_attributes = {
+        "gen_ai.operation.name": "invoke_agent",
+        "gen_ai.provider.name": "gcp.gemini",
+        "gen_ai.agent.name": agent,
+        "server.address": _SERVER_ADDRESS,
+        "server.port": _SERVER_PORT,
+    }
+    metric_attributes = dict(span_attributes)
+    if stream:
+        span_attributes["gen_ai.request.stream"] = True
+    start_time = time.perf_counter()
+    with _reference_tracer.start_as_current_span(
+        f"invoke_agent {agent}", kind=SpanKind.CLIENT, attributes=span_attributes, record_exception=False
+    ) as span:
+        try:
+            if stream:
+                interaction_stream = client.interactions.create(
+                    agent=agent,
+                    input="Research the history of the transistor.",
+                    background=True,
+                    stream=True,
+                )
+                # The mock server answers streaming requests with a plain Interaction.
+                if isinstance(interaction_stream, Interaction):
+                    interaction = interaction_stream
+                else:
+                    interaction = None
+                    for event in interaction_stream:
+                        if event.event_type == "interaction.completed":
+                            interaction = event.interaction
+            else:
+                interaction = client.interactions.create(
+                    agent=agent,
+                    input="Research the history of the transistor.",
+                )
+            if interaction is not None:
+                if stream and interaction.id:
+                    span.set_attribute("gen_ai.response.id", interaction.id)
+                if interaction.usage:
+                    if interaction.usage.total_input_tokens:
+                        span.set_attribute("gen_ai.usage.input_tokens", interaction.usage.total_input_tokens)
+                    if interaction.usage.total_output_tokens:
+                        span.set_attribute("gen_ai.usage.output_tokens", interaction.usage.total_output_tokens)
+                print(f"    -> {interaction.id} ({interaction.status})")
+        except Exception as e:
+            span.set_status(StatusCode.ERROR, str(e))
+            span.set_attribute("error.type", f"{type(e).__module__}.{type(e).__qualname__}")
+            metric_attributes["error.type"] = f"{type(e).__module__}.{type(e).__qualname__}"
+            reference_event_logger().emit(
+                event_name="gen_ai.client.invoke_agent.exception",
+                severity_number=SeverityNumber.WARN,
+                exception=e,
+            )
+            raise
+        finally:
+            _invoke_agent_duration.record(time.perf_counter() - start_time, metric_attributes)
 
 
 def run_chat_tool_call():
@@ -422,7 +539,7 @@ def run_chat_tool_call():
 
     tools = [get_weather]
     span_attributes_2 = {
-        "gen_ai.operation.name": "chat",
+        "gen_ai.operation.name": "generate_content",
         "gen_ai.provider.name": "gcp.gemini",
         "gen_ai.request.model": request_model,
         "server.address": _SERVER_ADDRESS,
@@ -430,25 +547,23 @@ def run_chat_tool_call():
     with (
         _patch_automatic_function_calling(),
         _reference_tracer.start_as_current_span(
-            "chat gemini-2.0-flash", kind=SpanKind.CLIENT, attributes=span_attributes_2
+            "generate_content gemini-2.0-flash", kind=SpanKind.CLIENT, attributes=span_attributes_2
         ) as span,
     ):
         span.set_attribute(
             "gen_ai.tool.definitions",
-            json.dumps(
-                [
-                    {
-                        "type": "function",
-                        "name": "get_weather",
-                        "description": "Get the current weather",
-                        "parameters": {
-                            "type": "object",
-                            "properties": {"location": {"type": "string", "description": "City name"}},
-                            "required": ["location"],
-                        },
-                    }
-                ]
-            ),
+            [
+                {
+                    "type": "function",
+                    "name": "get_weather",
+                    "description": "Get the current weather",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {"location": {"type": "string", "description": "City name"}},
+                        "required": ["location"],
+                    },
+                }
+            ],
         )
         response = client.models.generate_content(
             model=request_model,
@@ -501,17 +616,14 @@ def run_chat_multimodal():
     request_model = "gemini-2.0-flash"
     # Payload bytes are ignored by the mock, which only inspects the MIME type.
     blob = b"\x00" * 16
-    import base64
-
-    blob_b64 = base64.b64encode(blob).decode("ascii")
     span_attributes = {
-        "gen_ai.operation.name": "chat",
+        "gen_ai.operation.name": "generate_content",
         "gen_ai.provider.name": "gcp.gemini",
         "gen_ai.request.model": request_model,
         "server.address": _SERVER_ADDRESS,
     }
     with _reference_tracer.start_as_current_span(
-        "chat gemini-2.0-flash", kind=SpanKind.CLIENT, attributes=span_attributes
+        "generate_content gemini-2.0-flash", kind=SpanKind.CLIENT, attributes=span_attributes
     ) as span:
         response = client.models.generate_content(
             model=request_model,
@@ -539,8 +651,8 @@ def run_chat_multimodal():
                 "role": "user",
                 "parts": [
                     {"type": "text", "content": "Summarize the attached media."},
-                    {"type": "blob", "mime_type": "image/png", "modality": "image", "content": blob_b64},
-                    {"type": "blob", "mime_type": "audio/wav", "modality": "audio", "content": blob_b64},
+                    {"type": "blob", "mime_type": "image/png", "modality": "image", "content": blob},
+                    {"type": "blob", "mime_type": "audio/wav", "modality": "audio", "content": blob},
                 ],
             }
         ]
@@ -556,8 +668,6 @@ def run_chat_multimodal():
 
 def run_generate_media():
     """Scenario: image + audio output generation, emitting per-modality output usage."""
-    import base64
-
     from google import genai
     from google.genai import types
 
@@ -570,13 +680,13 @@ def run_generate_media():
     # (label, requested output modalities) -> exercises image and audio output token counts.
     for label, modalities in (("image", ["TEXT", "IMAGE"]), ("audio", ["AUDIO"])):
         span_attributes = {
-            "gen_ai.operation.name": "chat",
+            "gen_ai.operation.name": "generate_content",
             "gen_ai.provider.name": "gcp.gemini",
             "gen_ai.request.model": request_model,
             "server.address": _SERVER_ADDRESS,
         }
         with _reference_tracer.start_as_current_span(
-            "chat gemini-2.0-flash", kind=SpanKind.CLIENT, attributes=span_attributes
+            "generate_content gemini-2.0-flash", kind=SpanKind.CLIENT, attributes=span_attributes
         ) as span:
             response = client.models.generate_content(
                 model=request_model,
@@ -609,7 +719,7 @@ def run_generate_media():
                             "mime_type": mime_type,
                             # e.g. "image/png" -> "image", "audio/wav" -> "audio"
                             "modality": mime_type.split("/", 1)[0],
-                            "content": base64.b64encode(part.inline_data.data).decode("ascii"),
+                            "content": part.inline_data.data,
                         }
                     )
             output_messages = [
@@ -637,13 +747,13 @@ def run_chat_streaming():
     )
     request_model = "gemini-2.0-flash"
     span_attributes_3 = {
-        "gen_ai.operation.name": "chat",
+        "gen_ai.operation.name": "generate_content",
         "gen_ai.provider.name": "gcp.gemini",
         "gen_ai.request.model": request_model,
         "server.address": _SERVER_ADDRESS,
     }
     with _reference_tracer.start_as_current_span(
-        "chat gemini-2.0-flash", kind=SpanKind.CLIENT, attributes=span_attributes_3
+        "generate_content gemini-2.0-flash", kind=SpanKind.CLIENT, attributes=span_attributes_3
     ) as span:
         text = ""
         model_version = None
@@ -717,9 +827,15 @@ def run_embeddings():
                 span.set_attribute("gen_ai.embeddings.dimension.count", len(response.embeddings[0].values))
             print(f"    -> embedding dim: {len(response.embeddings[0].values)}")
         except Exception as e:
+            error_type = f"{type(e).__module__}.{type(e).__qualname__}"
             span.set_status(StatusCode.ERROR, str(e))
-            span.set_attribute("error.type", type(e).__qualname__)
-            metric_attributes["error.type"] = type(e).__qualname__
+            span.set_attribute("error.type", error_type)
+            metric_attributes["error.type"] = error_type
+            reference_event_logger().emit(
+                event_name="gen_ai.client.embeddings.exception",
+                severity_number=SeverityNumber.WARN,
+                exception=e,
+            )
             raise
         finally:
             _embeddings_duration.record(time.perf_counter() - start_time, metric_attributes)
@@ -758,7 +874,7 @@ def run_create_agent():
         f"create_agent {agent_name}", kind=SpanKind.CLIENT, attributes=span_attributes
     ) as span:
         span.set_attribute("gen_ai.agent.description", agent_description)
-        span.set_attribute("gen_ai.system_instructions", json.dumps([{"type": "text", "content": agent_system}]))
+        span.set_attribute("gen_ai.system_instructions", [{"type": "text", "content": agent_system}])
         try:
             agent = client.agents.create(
                 id=agent_name,
@@ -781,12 +897,14 @@ def main():
 
     run_chat()
     run_interactions_continuation()
+    run_agent_interaction(stream=True)
     run_chat_tool_call()
     run_chat_multimodal()
     run_generate_media()
     run_chat_streaming()
     run_embeddings()
     run_create_agent()
+    run_agent_interaction()
 
     flush_and_shutdown(tp, lp, mp)
 

@@ -21,7 +21,7 @@
       "gen_ai.usage.text.output_tokens",
       "server.address"
     ],
-    "gen_ai.execute_tool.internal": [
+    "gen_ai.execute_tool": [
       "gen_ai.operation.name",
       "gen_ai.tool.call.arguments",
       "gen_ai.tool.call.id",
@@ -56,26 +56,5 @@
   },
   "metrics": {},
   "entities": {},
-  "findings": [
-    {
-      "id": "genai_expected_attribute_missing",
-      "message": "Span 'chat gemini-2.0-flash' (operation 'chat') is missing expected attribute 'gen_ai.response.id'",
-      "signal_type": "span",
-      "signal_name": "chat gemini-2.0-flash",
-      "context": {
-        "missing_attribute": "gen_ai.response.id",
-        "operation": "chat"
-      }
-    },
-    {
-      "id": "genai_expected_attribute_missing",
-      "message": "Span 'chat gemini-2.0-flash' (operation 'chat') is missing expected attribute 'gen_ai.response.model'",
-      "signal_type": "span",
-      "signal_name": "chat gemini-2.0-flash",
-      "context": {
-        "missing_attribute": "gen_ai.response.model",
-        "operation": "chat"
-      }
-    }
-  ]
+  "findings": []
 }
