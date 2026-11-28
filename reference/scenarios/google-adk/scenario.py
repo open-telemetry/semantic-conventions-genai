@@ -387,6 +387,7 @@ def run_resumable_execution_reference():
                 "gen_ai.tool.type": "function",
             },
         ) as tool_span:
+            tool_span.set_attribute("gen_ai.conversation.id", tool_context.session.id)
             if not tool_context.invocation_id:
                 raise RuntimeError("ADK did not expose an invocation ID to the tool.")
             if tool_context.function_call_id:
@@ -427,6 +428,7 @@ def run_resumable_execution_reference():
                 "invoke_runner",
                 attributes={
                     "gen_ai.operation.name": "invoke_runner",
+                    "gen_ai.conversation.id": session.id,
                 },
             ):
                 with _reference_tracer.start_as_current_span(
@@ -435,6 +437,7 @@ def run_resumable_execution_reference():
                         "gen_ai.operation.name": "invoke_agent",
                         "gen_ai.agent.name": agent.name,
                         "gen_ai.request.model": agent.model.model,
+                        "gen_ai.conversation.id": session.id,
                     },
                 ) as suspended_agent_span:
                     async for event in runner.run_async(
@@ -506,6 +509,7 @@ def run_resumable_execution_reference():
                 "invoke_runner",
                 attributes={
                     "gen_ai.operation.name": "invoke_runner",
+                    "gen_ai.conversation.id": session.id,
                 },
             ):
                 with _reference_tracer.start_as_current_span(
@@ -514,6 +518,7 @@ def run_resumable_execution_reference():
                         "gen_ai.operation.name": "invoke_agent",
                         "gen_ai.agent.name": agent.name,
                         "gen_ai.request.model": agent.model.model,
+                        "gen_ai.conversation.id": session.id,
                     },
                 ) as resumed_agent_span:
                     async for event in runner.run_async(
