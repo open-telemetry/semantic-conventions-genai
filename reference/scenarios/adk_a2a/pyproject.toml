@@ -3,7 +3,7 @@ name = "adk-a2a-reference-test"
 version = "0.0.0"
 requires-python = ">=3.12"
 dependencies = [
-    "google-adk[a2a]==2.11.0",
+    "google-adk[a2a]==2.15.1",
     "google-genai==2.34.0",
     "httpx>=0.28.0",
     "starlette>=0.40.0",

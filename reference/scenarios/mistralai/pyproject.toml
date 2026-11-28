@@ -3,7 +3,7 @@ name = "mistralai-reference-test"
 version = "0.0.0"
 requires-python = ">=3.12"
 dependencies = [
-    "mistralai==3.8.0",
+    "mistralai==3.9.0",
     "genai-reference-shared",
 ]
 
