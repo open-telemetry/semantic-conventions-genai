@@ -4,7 +4,7 @@ version = "0.0.0"
 requires-python = ">=3.12"
 dependencies = [
     "httpx2==2.16.2",
-    "openai==3.57.0",
+    "openai==3.60.0",
     "genai-reference-shared",
 ]
 

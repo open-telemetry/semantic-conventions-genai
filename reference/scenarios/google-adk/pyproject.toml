@@ -3,7 +3,7 @@ name = "google-adk-reference-test"
 version = "0.0.0"
 requires-python = ">=3.12"
 dependencies = [
-    "google-adk==2.11.0",
+    "google-adk==2.15.1",
     "google-genai==2.34.0",
     "genai-reference-shared",
 ]

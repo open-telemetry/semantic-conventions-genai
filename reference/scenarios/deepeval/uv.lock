@@ -409,7 +409,7 @@ wheels = [
 
 [[package]]
 name = "deepeval"
-version = "4.3.4"
+version = "4.3.6"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiohttp" },
@@ -432,6 +432,7 @@ dependencies = [
     { name = "pytest-rerunfailures" },
     { name = "pytest-xdist" },
     { name = "python-dotenv" },
+    { name = "pyyaml" },
     { name = "questionary" },
     { name = "requests" },
     { name = "rich" },
@@ -442,9 +443,9 @@ dependencies = [
     { name = "typer" },
     { name = "wheel" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/05/40/515742bc3165b5653dd1902162d868320c0fd8f87eab442705a6eb395040/deepeval-4.3.4.tar.gz", hash = "sha256:4699ff32626ae725c101a8a419425728585b767a0f6022c4d048e7db8dbc5ec4", size = 1007686, upload-time = "2026-11-11T18:43:13.436Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/da/90/589e038e3d071b91502bb874927509748a3134ee2c68e8c6e68c347acf01/deepeval-4.3.6.tar.gz", hash = "sha256:8c7e0835c5a9fe81e3368e841ab1a441afb72af8996f65189972caf0c6aa4666", size = 1603616, upload-time = "2026-11-25T16:18:49.838Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/6b/57/87a2c3880f8f41eb4cc7153d96a4803e2f05fd1c70080be59bcb75c9d05d/deepeval-4.3.4-py3-none-any.whl", hash = "sha256:b3d15701c758134ad16d2e076fefe721f1574ebdefcce80bb10cbb04772569e3", size = 1472546, upload-time = "2026-11-11T18:43:19.072Z" },
+    { url = "https://files.pythonhosted.org/packages/fa/f6/8d7d6d437fb514d8a6a96323909476eeade62556de7c43afed70fa4d5454/deepeval-4.3.6-py3-none-any.whl", hash = "sha256:c73132777caac8662cbea86790d5e256008bab8900080545054deb69d3b5988b", size = 2522248, upload-time = "2026-11-25T16:18:54.883Z" },
 ]
 
 [[package]]
@@ -460,10 +461,10 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "deepeval", specifier = "==4.3.4" },
+    { name = "deepeval", specifier = "==4.3.6" },
     { name = "genai-reference-shared", editable = "../../shared" },
     { name = "langchain", specifier = "==1.5.2" },
-    { name = "openai", specifier = "==3.57.0" },
+    { name = "openai", specifier = "==3.60.0" },
 ]
 
 [[package]]
@@ -1293,7 +1294,7 @@ wheels = [
 
 [[package]]
 name = "openai"
-version = "3.57.0"
+version = "3.60.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
@@ -1303,9 +1304,9 @@ dependencies = [
     { name = "sniffio" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/90/b2/97780581dab39384d1de4bc15f1f6cbaff26ce965a46c23a10bd948b71a8/openai-3.57.0.tar.gz", hash = "sha256:5a0a89d6a542efc85e2a8cec701ca9265b795d578c777828e10fafdf80e333b6", size = 2425150, upload-time = "2026-11-20T01:28:43.575Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/3d/25/e8930142b7d668fac78b1d7bd278f7142ea32c233ef762f9aebef0c07ea6/openai-3.60.0.tar.gz", hash = "sha256:077657587f7d2d55b943a135c3e183f87cf7dc66644caa3c0bbc2bde1fe65de9", size = 2430829, upload-time = "2026-11-26T07:10:37.418Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/e0/40/0475208a470f90a1d3e94b41382678b44f311c2ea2a317228531e2193567/openai-3.57.0-py3-none-any.whl", hash = "sha256:f97bc74024c06ced8428b56c4a3594066709d3082779bf9d0b4b6092fbf587a8", size = 2451809, upload-time = "2026-11-20T01:28:41.48Z" },
+    { url = "https://files.pythonhosted.org/packages/33/c3/8190c2a9bc1776056b6d08b7d8d1782ad843ca3dc049b52de0f2053b546d/openai-3.60.0-py3-none-any.whl", hash = "sha256:476e79f256a4ce74848b7abae9f074352a69dca6e7e8987d565ee883a3b7e496", size = 2455657, upload-time = "2026-11-26T07:10:35.78Z" },
 ]
 
 [[package]]
