@@ -146,8 +146,9 @@ This attribute SHOULD contain only bounded, schema-defined keys exposed
 by the instrumented runtime. Instrumentations MUST NOT record keys that
 contain user identifiers, request content, tool arguments, secrets, or
 other dynamically generated values. When key names cannot be recorded
-safely, instrumentations MUST leave this attribute unset and record only
-`gen_ai.execution.state.changed_key.count`.
+safely, instrumentations MUST leave this attribute unset while still
+recording `gen_ai.execution.state.changed_key.count` (and
+`gen_ai.execution.state.version` when exposed by the runtime).
 
 **[9] `gen_ai.execution.state.version`:** This attribute MUST be populated only from a version exposed by the
 instrumented runtime. It MUST NOT be derived from state values, content,

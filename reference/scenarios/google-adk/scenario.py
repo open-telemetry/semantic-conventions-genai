@@ -376,27 +376,9 @@ def run_resumable_execution_reference():
     os.environ.setdefault("GOOGLE_API_KEY", "mock-key")
     tool_execution_count = 0
 
-    def record_agent_response_attributes(span, event) -> None:
-        usage_metadata = getattr(event, "usage_metadata", None)
-        if usage_metadata is not None:
-            input_tokens = getattr(usage_metadata, "prompt_token_count", None)
-            output_tokens = getattr(usage_metadata, "candidates_token_count", None)
-            if input_tokens is not None:
-                span.set_attribute("gen_ai.usage.input_tokens", input_tokens)
-            if output_tokens is not None:
-                span.set_attribute("gen_ai.usage.output_tokens", output_tokens)
-        finish_reason = getattr(event, "finish_reason", None)
-        if finish_reason is not None:
-            span.set_attribute(
-                "gen_ai.response.finish_reasons",
-                [str(getattr(finish_reason, "value", finish_reason)).lower()],
-            )
-
     def submit_change(tool_context: ToolContext) -> dict[str, str]:
         """Submit the pending change after the caller confirms it."""
         nonlocal tool_execution_count
-        tool_execution_count += 1
-        tool_context.state["approval_status"] = "accepted"
         with _reference_tracer.start_as_current_span(
             "execute_tool submit_change",
             attributes={
@@ -409,6 +391,8 @@ def run_resumable_execution_reference():
                 raise RuntimeError("ADK did not expose an invocation ID to the tool.")
             if tool_context.function_call_id:
                 tool_span.set_attribute("gen_ai.tool.call.id", tool_context.function_call_id)
+            tool_execution_count += 1
+            tool_context.state["approval_status"] = "accepted"
         # This return value is consumed by ADK, but is intentionally not recorded
         # in telemetry.
         return {"status": "accepted"}
@@ -461,7 +445,20 @@ def run_resumable_execution_reference():
                             parts=[types.Part(text="Submit the pending change.")],
                         ),
                     ):
-                        record_agent_response_attributes(suspended_agent_span, event)
+                        usage_metadata = getattr(event, "usage_metadata", None)
+                        if usage_metadata is not None:
+                            input_tokens = getattr(usage_metadata, "prompt_token_count", None)
+                            output_tokens = getattr(usage_metadata, "candidates_token_count", None)
+                            if input_tokens is not None:
+                                suspended_agent_span.set_attribute("gen_ai.usage.input_tokens", input_tokens)
+                            if output_tokens is not None:
+                                suspended_agent_span.set_attribute("gen_ai.usage.output_tokens", output_tokens)
+                        finish_reason = getattr(event, "finish_reason", None)
+                        if finish_reason is not None:
+                            suspended_agent_span.set_attribute(
+                                "gen_ai.response.finish_reasons",
+                                [str(getattr(finish_reason, "value", finish_reason)).lower()],
+                            )
                         if not event.invocation_id:
                             raise RuntimeError("ADK emitted an event without an invocation ID.")
                         if execution_id is None:
@@ -528,7 +525,20 @@ def run_resumable_execution_reference():
                             parts=[confirmation_response],
                         ),
                     ):
-                        record_agent_response_attributes(resumed_agent_span, event)
+                        usage_metadata = getattr(event, "usage_metadata", None)
+                        if usage_metadata is not None:
+                            input_tokens = getattr(usage_metadata, "prompt_token_count", None)
+                            output_tokens = getattr(usage_metadata, "candidates_token_count", None)
+                            if input_tokens is not None:
+                                resumed_agent_span.set_attribute("gen_ai.usage.input_tokens", input_tokens)
+                            if output_tokens is not None:
+                                resumed_agent_span.set_attribute("gen_ai.usage.output_tokens", output_tokens)
+                        finish_reason = getattr(event, "finish_reason", None)
+                        if finish_reason is not None:
+                            resumed_agent_span.set_attribute(
+                                "gen_ai.response.finish_reasons",
+                                [str(getattr(finish_reason, "value", finish_reason)).lower()],
+                            )
                         if event.invocation_id != execution_id:
                             raise RuntimeError("ADK resumed a different invocation.")
                         if not resumed_event_seen:

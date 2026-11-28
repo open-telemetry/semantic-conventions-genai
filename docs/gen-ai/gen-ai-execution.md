@@ -13,8 +13,8 @@ model, or durable execution identity.
 Use the `gen_ai.execution.state.changed` event only when the runtime exposes a
 non-empty state delta. Record it in the context of the internal workflow or
 agent span that observes the update. Do not infer a change by comparing full
-state payloads, and do not emit the event for an unchanged snapshot, retry, or
-replay.
+state payloads, and do not emit the event for an unchanged snapshot or for a
+retry or replay that does not apply a new state update.
 
 `gen_ai.execution.state.changed_key.count` records the size of the runtime-owned
 delta without exposing the state. `gen_ai.execution.state.changed_keys` is

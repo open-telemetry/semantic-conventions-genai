@@ -15,6 +15,8 @@ scenarios:
           keyed_attr: gen_ai.workflow.name
           operation: invoke_workflow
         reason: The runner still keys invoke_workflow span names on gen_ai.workflow.name.
+    events:
+      - gen_ai.execution.state.changed
     spans:
       - match:
           attributes:
